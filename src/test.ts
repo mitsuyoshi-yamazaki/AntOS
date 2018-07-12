@@ -36,7 +36,8 @@ function calculate(room: Room): void {
   const sources = room.find(FIND_SOURCES)
 
   const size = 50
-  const attenuation_rate = Memory.parameters.attenuation
+  const attenuationRate = Memory.parameters.attenuation
+  const creepCarryConstant = Memory.parameters.creepCarryConstant
 
   for (let x = 0; x < size; x++) {
     values.push([])
@@ -68,7 +69,7 @@ function calculate(room: Room): void {
           let r = range
 
           while((r > 0) && (value > 1)) {
-            value = Math.ceil(value / attenuation_rate)
+            value = Math.ceil(value / attenuationRate)
             r--
           }
 
@@ -77,7 +78,26 @@ function calculate(room: Room): void {
         }
       }
     }
-  });
+  })
+
+  for (const creepName in Game.creeps) {
+    const creep = Game.creeps[creepName]
+    const carryConstant = -(creep.getActiveBodyparts(CARRY) * CARRY_CAPACITY * creepCarryConstant)
+
+    const value = values[creep.pos.x][creep.pos.y]
+    const newValue = value + carryConstant
+    values[creep.pos.x][creep.pos.y] = Math.max(newValue, 1)
+
+    getSurrounded(creep.pos.x, creep.pos.y).forEach((p) => {
+      const value = values[p.x][p.y]
+      if (!value) {
+        return
+      }
+
+      const newValue = value + Math.ceil(carryConstant / attenuationRate)
+      values[p.x][p.y] = Math.max(newValue, 1)
+    })
+  }
 
   if (Memory.debug.show_visual) {
     values.forEach((row, x) => {
@@ -99,7 +119,7 @@ function spawnCreep(spawn: StructureSpawn): void {
 
   const name = `Creep${Game.time}`
   const body: BodyPartConstant[] = [
-    CARRY, WORK, MOVE
+    CARRY, WORK, MOVE, MOVE,
   ]
   const opt = {}
 
@@ -141,7 +161,38 @@ function runCreeps(room: Room, spawn: StructureSpawn): void {
 function moveCreep(creep: Creep): void {
   const x = creep.pos.x
   const y = creep.pos.y
-  const surrounded: {x:number, y:number, value:number, direction:DirectionConstant}[] = [
+  const surrounded: {x:number, y:number, value:number, direction:DirectionConstant}[] = getSurrounded(x, y).map((p) => {
+    return {
+      x: p.x,
+      y: p.y,
+      value: values[p.x][p.y],
+      direction: p.direction,
+    }
+  }).filter((p) => {
+    return p.value != null
+  }).sort((lhs, rhs) => {
+    if (lhs.value < rhs.value) return 1
+    if (lhs.value > rhs.value) return -1
+    return ((Game.time % 2) == 0) ? 1 : -1
+  })
+
+  const index = (creep.pos.x == creep.memory.position.x) && (creep.pos.y == creep.memory.position.y) ? 1 : 0
+  const destination = surrounded[index]
+
+  if (destination) {
+    const move_result = creep.move(destination.direction)
+
+    if (move_result != OK) {
+      creep.say(`E${move_result}`)
+    }
+  }
+  else {
+    creep.say(`NO MOV`)
+  }
+}
+
+function getSurrounded(x: number, y: number): {x:number, y:number, direction:DirectionConstant}[] {
+  return [
     {
       x: x-1,
       y: y-1,
@@ -182,32 +233,5 @@ function moveCreep(creep: Creep): void {
       y: y+1,
       direction: BOTTOM_RIGHT,
     },
-  ].map((p) => {
-    return {
-      x: p.x,
-      y: p.y,
-      value: values[p.x][p.y],
-      direction: p.direction,
-    }
-  }).filter((p) => {
-    return p.value != null
-  }).sort((lhs, rhs) => {
-    if (lhs.value < rhs.value) return 1
-    if (lhs.value > rhs.value) return -1
-    return 0
-  })
-
-  const index = (creep.pos.x == creep.memory.position.x) && (creep.pos.y == creep.memory.position.y) ? 1 : 0
-  const destination = surrounded[index]
-
-  if (destination) {
-    const move_result = creep.move(destination.direction)
-
-    if (move_result != OK) {
-      creep.say(`E${move_result}`)
-    }
-  }
-  else {
-    creep.say(`NO MOV`)
-  }
+  ]
 }

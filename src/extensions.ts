@@ -17,10 +17,11 @@ declare global {
     cpu_usages: number[]
     versions: string[]
     debug: {
-      show_visual: boolean
+      show_visual: boolean,
     }
     parameters: {
-      attenuation: number
+      attenuation: number,
+      creepCarryConstant: number,
     }
 
     refresh(): void
@@ -34,7 +35,7 @@ declare global {
 }
 
 export function init(): void {
-  Game.version = '3.1.3'
+  Game.version = '3.1.9'
 
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
@@ -56,7 +57,8 @@ export function init(): void {
 
   if (!Memory.parameters) {
     Memory.parameters = {
-      attenuation: 2.0
+      attenuation: 2.0,
+      creepCarryConstant: 1.0,
     }
   }
 
