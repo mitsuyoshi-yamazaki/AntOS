@@ -1,8 +1,12 @@
 import { ErrorMapper } from "ErrorMapper"
-import { hoge } from "test"
-import Tasks from 'creep-tasks'
+import { init } from "extensions"
 
 export const loop = ErrorMapper.wrapLoop(() => {
-  console.log(`Hello, World`)
-  hoge()
+  const before_cpu_usage = Game.cpu.getUsed()
+
+  init()
+
+  const after_cpu_usage = Game.cpu.getUsed()
+
+  Memory.cpu_usages.push(Math.ceil(after_cpu_usage - before_cpu_usage))
 })
