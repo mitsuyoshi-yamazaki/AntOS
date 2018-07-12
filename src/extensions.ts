@@ -1,4 +1,13 @@
 
+export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks
+NONE    = "none",
+HARVEST = "harvest",
+CHARGE  = "charge",
+BUILD   = "build",
+REPAIR  = "repair",
+UPGRADE = "upgrade",
+}
+
 declare global {
   interface Game {
     version: string
@@ -13,11 +22,18 @@ declare global {
     parameters: {
       attenuation: number
     }
+
+    refresh(): void
+  }
+
+  interface CreepMemory {
+    status: CreepStatus
+    debug?: boolean
   }
 }
 
 export function init(): void {
-  Game.version = '3.0.12'
+  Game.version = '3.1.1'
 
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
@@ -50,5 +66,16 @@ export function init(): void {
 
   if ((Game.time % cpu_ticks) == 0) {
     console.log(`CPU usage: ${Memory.cpu_usages}, ave: ${_.sum(Memory.cpu_usages) / cpu_ticks}`)
+  }
+
+  // --
+  Memory.refresh = function(): void {
+    // @todo: clear spawn, squad memory
+    // Automatically delete memory of missing creeps
+    for (const name in Memory.creeps) {
+      if (!(name in Game.creeps)) {
+        delete Memory.creeps[name]
+      }
+    }
   }
 }

@@ -8,6 +8,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
   init()
   test()
 
+  Memory.refresh()
+
   const after_cpu_usage = Game.cpu.getUsed()
 
   Memory.cpu_usages.push(Math.ceil(after_cpu_usage - before_cpu_usage))
