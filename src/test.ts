@@ -1,4 +1,5 @@
 import { CreepStatus } from "extensions";
+import { ErrorMapper } from "ErrorMapper"
 
 let values: number[][] = []
 
@@ -15,13 +16,21 @@ export function test(): void {
     return
   }
 
-  calculate(room)
-  spawnCreep(spawn)
-  runCreeps(room, spawn)
+  ErrorMapper.wrapLoop(() => {
+    calculate(room)
+  })()
+
+  ErrorMapper.wrapLoop(() => {
+    spawnCreep(spawn)
+  })()
+
+  ErrorMapper.wrapLoop(() => {
+    runCreeps(room, spawn)
+  })()
 }
 
 function calculate(room: Room): void {
-  console.log(`values.len: ${values.length}`)
+  // console.log(`values.len: ${values.length}`)
   values = []
 
   const sources = room.find(FIND_SOURCES)
@@ -116,73 +125,8 @@ function runCreeps(room: Room, spawn: StructureSpawn): void {
     }
 
     if (creep.memory.status == CreepStatus.HARVEST) {
-      const x = creep.pos.x
-      const y = creep.pos.y
-      const surrounded: {x:number, y:number, value:number, direction:DirectionConstant}[] = [
-        {
-          x: x-1,
-          y: y-1,
-          direction: TOP_LEFT,
-        },
-        {
-          x: x-1,
-          y: y,
-          direction: LEFT,
-        },
-        {
-          x: x-1,
-          y: y+1,
-          direction: BOTTOM_LEFT,
-        },
-        {
-          x: x,
-          y: y-1,
-          direction: TOP,
-        },
-        {
-          x: x,
-          y: y+1,
-          direction: BOTTOM,
-        },
-        {
-          x: x+1,
-          y: y-1,
-          direction: TOP_RIGHT,
-        },
-        {
-          x: x+1,
-          y: y,
-          direction: RIGHT,
-        },
-        {
-          x: x+1,
-          y: y+1,
-          direction: BOTTOM_RIGHT,
-        },
-      ].map((p) => {
-        return {
-          x: p.x,
-          y: p.y,
-          value: values[p.x][p.y],
-          direction: p.direction,
-        }
-      }).filter((p) => {
-        return p.value != null
-      }).sort((lhs, rhs) => {
-        if (lhs.value < rhs.value) return 1
-        if (lhs.value > rhs.value) return -1
-        return 0
-      })
-
-      if (surrounded[0]) {
-        const move_result = creep.move(surrounded[0].direction)
-
-        if (move_result != OK) {
-          creep.say(`E${move_result}`)
-        }
-      }
-      else {
-        creep.say(`NO MOV`)
+      if (creep.harvest(creep.pos.findClosestByRange(FIND_SOURCES)) == ERR_NOT_IN_RANGE) {
+        moveCreep(creep)
       }
     }
 
@@ -191,5 +135,79 @@ function runCreeps(room: Room, spawn: StructureSpawn): void {
         creep.moveTo(spawn)
       }
     }
+  }
+}
+
+function moveCreep(creep: Creep): void {
+  const x = creep.pos.x
+  const y = creep.pos.y
+  const surrounded: {x:number, y:number, value:number, direction:DirectionConstant}[] = [
+    {
+      x: x-1,
+      y: y-1,
+      direction: TOP_LEFT,
+    },
+    {
+      x: x-1,
+      y: y,
+      direction: LEFT,
+    },
+    {
+      x: x-1,
+      y: y+1,
+      direction: BOTTOM_LEFT,
+    },
+    {
+      x: x,
+      y: y-1,
+      direction: TOP,
+    },
+    {
+      x: x,
+      y: y+1,
+      direction: BOTTOM,
+    },
+    {
+      x: x+1,
+      y: y-1,
+      direction: TOP_RIGHT,
+    },
+    {
+      x: x+1,
+      y: y,
+      direction: RIGHT,
+    },
+    {
+      x: x+1,
+      y: y+1,
+      direction: BOTTOM_RIGHT,
+    },
+  ].map((p) => {
+    return {
+      x: p.x,
+      y: p.y,
+      value: values[p.x][p.y],
+      direction: p.direction,
+    }
+  }).filter((p) => {
+    return p.value != null
+  }).sort((lhs, rhs) => {
+    if (lhs.value < rhs.value) return 1
+    if (lhs.value > rhs.value) return -1
+    return 0
+  })
+
+  const index = (creep.pos.x == creep.memory.position.x) && (creep.pos.y == creep.memory.position.y) ? 1 : 0
+  const destination = surrounded[index]
+
+  if (destination) {
+    const move_result = creep.move(destination.direction)
+
+    if (move_result != OK) {
+      creep.say(`E${move_result}`)
+    }
+  }
+  else {
+    creep.say(`NO MOV`)
   }
 }

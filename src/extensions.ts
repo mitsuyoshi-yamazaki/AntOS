@@ -28,12 +28,13 @@ declare global {
 
   interface CreepMemory {
     status: CreepStatus
+    position: {x:number, y:number, roomName: string}
     debug?: boolean
   }
 }
 
 export function init(): void {
-  Game.version = '3.1.1'
+  Game.version = '3.1.3'
 
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []

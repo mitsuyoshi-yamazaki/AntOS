@@ -5,10 +5,21 @@ import { test } from "test";
 export const loop = ErrorMapper.wrapLoop(() => {
   const before_cpu_usage = Game.cpu.getUsed()
 
-  init()
-  test()
+  ErrorMapper.wrapLoop(() => {
+    init()
+    test()
 
-  Memory.refresh()
+    Memory.refresh()
+
+    for (const creepName in Game.creeps) {
+      const creep = Game.creeps[creepName]
+      creep.memory.position = {
+        x: creep.pos.x,
+        y: creep.pos.y,
+        roomName: creep.pos.roomName,
+      }
+    }
+  })()
 
   const after_cpu_usage = Game.cpu.getUsed()
 
