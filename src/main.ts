@@ -1,10 +1,12 @@
 import { ErrorMapper } from "ErrorMapper"
 import { init } from "extensions"
+import { test } from "test";
 
 export const loop = ErrorMapper.wrapLoop(() => {
   const before_cpu_usage = Game.cpu.getUsed()
 
   init()
+  test()
 
   const after_cpu_usage = Game.cpu.getUsed()
 

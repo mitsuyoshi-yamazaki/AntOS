@@ -7,11 +7,17 @@ declare global {
   interface Memory {
     cpu_usages: number[]
     versions: string[]
+    debug: {
+      show_visual: boolean
+    }
+    parameters: {
+      attenuation: number
+    }
   }
 }
 
 export function init(): void {
-  Game.version = '3.0.1'
+  Game.version = '3.0.12'
 
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
@@ -23,6 +29,18 @@ export function init(): void {
   if (Memory.versions.indexOf(Game.version) < 0) {
     Memory.versions.push(Game.version)
     console.log(`Updated v${Game.version}`)
+  }
+
+  if (!Memory.debug) {
+    Memory.debug = {
+      show_visual: false
+    }
+  }
+
+  if (!Memory.parameters) {
+    Memory.parameters = {
+      attenuation: 2.0
+    }
   }
 
   const cpu_ticks = 20
