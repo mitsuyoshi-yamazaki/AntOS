@@ -102,9 +102,7 @@ function calculate(room: Room): void {
   if (Memory.debug.show_visual) {
     values.forEach((row, x) => {
       row.forEach((value, y) => {
-        const pos = new RoomPosition(x, y, room.name)
-
-        room.visual.text(`${value}`, pos, {
+        room.visual.text(`${value}`, x, y, {
           color: '#ffffff',
           align: 'center',
           font: '12px',
