@@ -11,6 +11,7 @@ interface InvaderSquadMemory extends SquadMemory {
   target_ids: {[room_name: string]: string[]}
   only_once: boolean
   no_spawn: boolean
+  lightweight?: boolean
 }
 
 export class InvaderSquad extends Squad {
@@ -165,32 +166,41 @@ export class InvaderSquad extends Squad {
 
   // --- Private ---
   private addDismantler(energy_available: number, spawn_func: SpawnFunction): void {
-    // 3420
-    // const body: BodyPartConstant[] = [
-    //   TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //   TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //   TOUGH, TOUGH,
-    //   WORK, WORK, WORK, WORK, WORK,
-    //   WORK, WORK, WORK, WORK, WORK,
-    //   WORK, WORK, WORK, WORK, WORK,
-    //   WORK, WORK, WORK, WORK, WORK,
-    //   WORK, WORK, WORK, WORK, WORK,
-    //   WORK, WORK, WORK,
-    //   MOVE, MOVE, MOVE, MOVE, MOVE,
-    //   MOVE, MOVE, MOVE, MOVE, MOVE,
-    // ]
-    const body: BodyPartConstant[] = [  // no boost
-      TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-      WORK, WORK, WORK, WORK, WORK,
-      WORK, WORK, WORK, WORK, WORK,
-      WORK, WORK, WORK, WORK, WORK,
-      WORK, WORK, WORK, WORK, WORK,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-    ]
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+    let body: BodyPartConstant[]
+
+    if (squad_memory && squad_memory.lightweight) {
+      // no boost
+      body = [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+      ]
+    }
+    else {
+      // 3420
+      body = [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        TOUGH, TOUGH,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+      ]
+    }
+
     const memory: InvaderMemory = {
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -210,33 +220,41 @@ export class InvaderSquad extends Squad {
       return
     }
 
-    // 7620
-    // let body: BodyPartConstant[] = [
-    //   TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //   TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-    //   TOUGH, TOUGH,
-    //   HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   MOVE, MOVE, MOVE, MOVE, MOVE,
-    //   MOVE, MOVE, MOVE, MOVE, MOVE,
-    //   HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   HEAL, HEAL, HEAL, HEAL, HEAL,
-    //   HEAL, HEAL, HEAL,
-    // ]
-    let body: BodyPartConstant[] = [  // no boost
-      TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-      TOUGH,
-      HEAL, HEAL, HEAL, HEAL, HEAL,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      HEAL, HEAL, HEAL, HEAL, HEAL,
-      HEAL, HEAL, HEAL, HEAL, HEAL,
-      HEAL, HEAL, HEAL, HEAL,
-    ]
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+    let body: BodyPartConstant[]
+
+    if (squad_memory && squad_memory.lightweight) {
+      // no boost
+      body = [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        TOUGH,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL,
+      ]
+    }
+    else {
+      // 7620
+      body = [
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        TOUGH, TOUGH,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL,
+      ]
+    }
 
     const pair_id = (this.leader.memory as InvaderMemory).pair_id
 
