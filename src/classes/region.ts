@@ -110,6 +110,7 @@ export class Region {
         charger_position: null,
         room_need_scout: [],
         rooms_need_to_be_defended: [],
+        observe_target: null,
         observe_index: 0,
         excluded_walls: [],
         repairing_wall_id: null,
@@ -730,13 +731,8 @@ export class Region {
             break
           }
           case SquadType.INVADER: {
-            if (['dummy'].indexOf(this.room.name) >= 0) {
-              const squad = new InvaderSquad(squad_memory.name, this.room)
-              this.squads.set(squad.name, squad)
-            }
-            else {
-              this.no_instantiations.push(`    - ${squad_memory.name}`)
-            }
+            const squad = new InvaderSquad(squad_memory.name, this.room)
+            this.squads.set(squad.name, squad)
             break
           }
           case SquadType.TEMP: {

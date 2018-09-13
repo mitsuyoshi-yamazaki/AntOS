@@ -8,12 +8,13 @@ interface InvaderMemory extends CreepMemory {
 
 interface InvaderSquadMemory extends SquadMemory {
   target_room_names: string[]
-  target_ids: string[]
+  target_ids: {[room_name: string]: string[]}
   only_once: boolean
+  no_spawn: boolean
 }
 
 export class InvaderSquad extends Squad {
-  private target_room: string | undefined
+  private target_room_name: string | undefined
   private target: Structure | undefined
 
   private leader: Creep | undefined
@@ -27,11 +28,41 @@ export class InvaderSquad extends Squad {
     const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (squad_memory) {
       const target_room_names = squad_memory.target_room_names || []
-      this.target_room = target_room_names[0]
+      this.target_room_name = target_room_names[0]
 
-      const target_ids = squad_memory.target_ids || []
+      const target_room = Game.rooms[this.target_room_name] as Room | undefined
+      if (target_room) {
+        const target_ids = (squad_memory.target_ids || {})[this.target_room_name]
+        if (target_ids) {
+          for (const id of target_ids.reverse()) {
+            const target = Game.getObjectById(id) as Structure | undefined
+
+            if (target) {
+              this.target = target
+              break
+            }
+
+              const index = target_ids.indexOf(id)
+              if (index >= 0) {
+                target_ids.splice(index, 1)
+              }
+          }
+        }
+      }
+
+
+      // for (const room_name in target_ids) {
+      //   if
+
+      //   const ids = target_ids[room_name]
+      //   if (ids.length == 0) {
+      //     continue
+      //   }
+
+      // }
+
       // while (!this.target && (squad_memory.target_ids.length > 0)) {
-        this.target = Game.getObjectById(target_ids[0] || '') as Structure | undefined
+        // this.target = Game.getObjectById(target_ids[0] || '') as Structure | undefined
 
         // if (this.target) {
         //   break
@@ -60,6 +91,11 @@ export class InvaderSquad extends Squad {
   }
 
   private set_next_creep(): void {
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+    if (!squad_memory || squad_memory.no_spawn) {
+      return
+    }
+
     if (!this.leader) {
       if (this.follower) {
         return
@@ -71,6 +107,10 @@ export class InvaderSquad extends Squad {
     if (!this.follower) {
       this.next_creep = CreepType.HEALER
       return
+    }
+
+    if (squad_memory.only_once) {
+      squad_memory.no_spawn = true
     }
   }
 
@@ -261,14 +301,14 @@ export class InvaderSquad extends Squad {
     }
     const creep = this.leader
 
-    if (!this.target_room) {
+    if (!this.target_room_name) {
       this.say(`NO TGT`)
       return
     }
 
     const can_move = (creep.fatigue == 0) && this.follower && (this.follower.fatigue == 0) && (creep.pos.getRangeTo(this.follower) <= 1)
     if (can_move) {
-      if (creep.moveToRoom(this.target_room) == ActionResult.IN_PROGRESS) {
+      if (creep.moveToRoom(this.target_room_name) == ActionResult.IN_PROGRESS) {
         return
       }
     }
