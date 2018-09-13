@@ -38,6 +38,7 @@ declare global {
     reset_costmatrix: (room_name: string) => void
     reset_all_costmatrixes: () => void
     creep_positions: (squad_name: string) => void
+    last_attacked_rooms: (opts?: {last?: number}) => void
 
     resource_transfer: (opts?: {reversed?: boolean, room?: string} | string) => void
     transfer_energy: (target_room_name: string, opts?: {stop?: boolean, notify?: boolean}) => void
@@ -49,6 +50,7 @@ declare global {
     build_remote_roads(squad_name: string, opts?: {dry_run?: boolean}): void
 
     test(energy: number): void
+    refresh_room_memory(): void // @todo:
   }
 
   interface Memory {
@@ -783,6 +785,52 @@ export function tick(): void {
     }, `Game.creep_positions`)()
   }
 
+  Game.last_attacked_rooms = (opts?: {last?: number}) => {
+    opts = opts || {}
+    const last = opts.last || 2000
+    const time = Game.time
+
+    console.log(`Attacked rooms in ${last} ticks`)
+
+    for (const room_name in Memory.rooms) {
+      const room_memory = Memory.rooms[room_name]
+      if (!room_memory) {
+        continue
+      }
+
+      const attacked_time = room_memory.attacked_time || room_memory.last_attacked_time
+      if (!attacked_time) {
+        continue
+      }
+
+      const ticks_ago = time - attacked_time
+      if (ticks_ago > last) {
+        continue
+      }
+
+      const text = `${ticks_ago} ticks ago`
+
+      let color = 'white'
+      const room = Game.rooms[room_name] as Room | undefined
+      if (room && room.is_keeperroom) {
+        continue
+      }
+
+      if (room && room.controller) {
+        if (room.controller.my) {
+          color = '#E74C3C'
+        }
+        else if (room.controller.reservation && (room.controller.reservation.username == 'Mitsuyoshi')) {
+          color = '#F9E79F'
+        }
+      }
+
+      console.log(`- ${room_link(room_name, {color})} \tattacked: ${room_history_link(room_name, attacked_time, {text})}`)
+    }
+
+    console.log(`\n`)
+  }
+
   Game.show_excluded_walls = function(room_name: string): void {
     const room = Game.rooms[room_name]
     if (!room) {
@@ -985,6 +1033,11 @@ export function tick(): void {
 
     console.log(`TEST:\n${body.map(b=>colored_body_part(b))}`)
   }
+
+  Game.refresh_room_memory = function(): void {
+    console.log(`Game.refresh_room_memory NOT IMPLEMENTED YET`) // @todo
+  }
+
 
   // --- Room
   Room.prototype.initialize = function() {
