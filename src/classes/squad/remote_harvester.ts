@@ -1048,7 +1048,7 @@ export class RemoteHarvesterSquad extends Squad {
         }
       }
 
-      const should_escape = ((creep.room.attacked && !creep.room.is_keeperroom) || (this.is_room_attacked)) && (this.room_name != 'W49S6')
+      const should_escape = ((creep.room.attacker_info().attacked && !creep.room.is_keeperroom) || (this.is_room_attacked)) && (this.room_name != 'W49S6')
       if (should_escape) {
         creep.memory.status = CreepStatus.CHARGE
 
@@ -1295,7 +1295,7 @@ export class RemoteHarvesterSquad extends Squad {
         return
       }
 
-      const closest_hostile = creep.pos.findClosestByPath(creep.room.attacker_info.hostile_creeps)
+      const closest_hostile = creep.pos.findClosestByPath(creep.room.attacker_info().hostile_creeps)
 
       if (closest_hostile) {
         creep.destroy(closest_hostile)

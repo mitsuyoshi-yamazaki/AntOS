@@ -191,7 +191,7 @@ export class WorkerSquad extends Squad {
         continue
       }
 
-      if (room_to_escape && ((this.room.attacker_info.attack + this.room.attacker_info.ranged_attack) > 0) && this.room.controller && this.room.controller.my && (this.room.controller.level <= 3)) {
+      if (room_to_escape && ((this.room.attacker_info().attack + this.room.attacker_info().ranged_attack) > 0) && this.room.controller && this.room.controller.my && (this.room.controller.level <= 3)) {
         if (creep.memory.type == CreepType.WORKER) {
           creep.drop(RESOURCE_ENERGY)
         }

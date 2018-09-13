@@ -28,7 +28,7 @@ export class AttackerSquad extends Squad {
       const room = Game.rooms[memory.target_room_name]
 
       if (room) {
-        if (room.attacked) {
+        if (room.attacker_info().attacked) {
           this.destination_room_name = room.name
         }
         else {
@@ -47,10 +47,10 @@ export class AttackerSquad extends Squad {
     (Memory.squads[this.name] as AttackerSquadMemory).target_room_name = this.destination_room_name
 
     if (base_room_attacked) {
-      const heal_part_count = this.base_room.attacker_info.heal + this.base_room.attacker_info.tough
+      const heal_part_count = this.base_room.attacker_info().heal + this.base_room.attacker_info().tough
       let attack_needs = heal_part_count / 2
 
-      if (this.base_room.attacker_info.hostile_teams.indexOf('Invader') >= 0) {
+      if (this.base_room.attacker_info().hostile_teams.indexOf('Invader') >= 0) {
         attack_needs *= 0.7
       }
       attack_needs = Math.ceil(attack_needs)
@@ -63,10 +63,10 @@ export class AttackerSquad extends Squad {
         this.max_energy = Math.min((this.energy_capacity - 150), max)
 
         this.is_heavy_attacker = true
-        // console.log(`Attacker ${this.base_room.name} ${this.base_room.attacker_info.heal} * HEAL, ${this.base_room.attacker_info.tough} * TOUGH, need: ${attack_needs}, ${this.energy_unit}, ${this.max_energy}, ${this.base_room.attacker_info.hostile_teams}`)
+        // console.log(`Attacker ${this.base_room.name} ${this.base_room.attacker_info().heal} * HEAL, ${this.base_room.attacker_info().tough} * TOUGH, need: ${attack_needs}, ${this.energy_unit}, ${this.max_energy}, ${this.base_room.attacker_info().hostile_teams}`)
       }
       else {
-        // console.log(`No big attacker ${this.base_room.name} ${this.base_room.attacker_info.heal} * HEAL, ${this.base_room.attacker_info.tough} * TOUGH, need: ${attack_needs}, ${this.energy_unit}, ${this.max_energy}, ${this.base_room.attacker_info.hostile_teams}`)
+        // console.log(`No big attacker ${this.base_room.name} ${this.base_room.attacker_info().heal} * HEAL, ${this.base_room.attacker_info().tough} * TOUGH, need: ${attack_needs}, ${this.energy_unit}, ${this.max_energy}, ${this.base_room.attacker_info().hostile_teams}`)
       }
     }
   }
@@ -153,7 +153,7 @@ export class AttackerSquad extends Squad {
       let teams: string[] = []
 
       if (region_memory) {
-        teams = this.base_room.attacker_info.hostile_teams
+        teams = this.base_room.attacker_info().hostile_teams
 
         region_memory.last_heavy_attacker = {
           ticks: Game.time,

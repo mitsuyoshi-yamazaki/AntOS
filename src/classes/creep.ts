@@ -812,7 +812,7 @@ export function init() {
   Creep.prototype.find_charge_target = function(opts?: CreepChargeTargetOption): ChargeTarget | undefined {
     const options = opts || {}
     const additional_container_ids = options.additional_container_ids || []
-    const is_attacked = this.room.attacked
+    const is_attacked = this.room.attacker_info().attacked
     let structures_needed_to_be_charged: ChargeTarget[]
 
     if (this.room.structures_needed_to_be_charged) {
@@ -866,7 +866,7 @@ export function init() {
             return structure.energy < capacity
           }
           else if (structure.structureType == STRUCTURE_TOWER) {
-            let margin = this.room.attacked ? 100 : 200
+            let margin = this.room.attacker_info().attacked ? 100 : 200
             const capacity = options.should_fully_charged ? structure.energyCapacity : (structure.energyCapacity - margin)
             return structure.energy <= capacity
           }
@@ -923,7 +923,7 @@ export function init() {
               return structure.energy < capacity
             }
             else if (structure.structureType == STRUCTURE_TOWER) {
-              let margin = this.room.attacked ? 100 : 200
+              let margin = this.room.attacker_info().attacked ? 100 : 200
               const capacity = options.should_fully_charged ? structure.energyCapacity : (structure.energyCapacity - margin)
               return structure.energy <= capacity
             }
@@ -1539,7 +1539,7 @@ export function init() {
           this.say('H2C')
         }
 
-        const should_split_charger_and_upgrader = false//(this.room.attacked == false) && (['W43N5', 'W47N5', 'W47S6'].indexOf(this.room.name) < 0)
+        const should_split_charger_and_upgrader = false//(this.room.attacker_info().attacked == false) && (['W43N5', 'W47N5', 'W47S6'].indexOf(this.room.name) < 0)
 
         if (should_split_charger_and_upgrader) { // @fixme: temp code
           let number = 0
@@ -1707,7 +1707,7 @@ export function init() {
 
     // Build
     if (this.memory.status == CreepStatus.BUILD) {
-      if (this.room.attacked && ((this.memory.birth_time % 2) == 0)) {
+      if (this.room.attacker_info().attacked && ((this.memory.birth_time % 2) == 0)) {
         this.memory.status = CreepStatus.CHARGE
         return
       }
@@ -1816,7 +1816,7 @@ export function init() {
 
     // Upgrade
     if (this.memory.status == CreepStatus.UPGRADE) {
-      if (this.room.attacked) {
+      if (this.room.attacker_info().attacked) {
         this.memory.status = CreepStatus.CHARGE
         this.say('U2C-1')
       }
@@ -1893,7 +1893,7 @@ export function init() {
     if (this.room.name != room_name) {
       let hostile_creep: Creep | undefined
       if (attack_anything) {
-        hostile_creep = this.pos.findClosestByPath(this.room.attacker_info.hostile_creeps, {
+        hostile_creep = this.pos.findClosestByPath(this.room.attacker_info().hostile_creeps, {
           filter: (creep: Creep) => {
             if (creep.owner.username == 'Source Keeper') {
               return false
@@ -1903,7 +1903,7 @@ export function init() {
         })
       }
       else {
-        hostile_creep = this.pos.findInRange(this.room.attacker_info.hostile_creeps, 4, {
+        hostile_creep = this.pos.findInRange(this.room.attacker_info().hostile_creeps, 4, {
           filter: (creep: Creep) => {
             if (creep.owner.username == 'Source Keeper') {
               return false
@@ -1951,7 +1951,7 @@ export function init() {
 
     const memory = this.memory as {target_id?: string}
 
-    const hostile_attacker: Creep = this.pos.findClosestByPath(this.room.attacker_info.hostile_creeps, {
+    const hostile_attacker: Creep = this.pos.findClosestByPath(this.room.attacker_info().hostile_creeps, {
       filter: (creep: Creep) => {
         const is_attacker = creep.body.filter((body: BodyPartDefinition) => {
           return (body.type == ATTACK) || (body.type == RANGED_ATTACK) || (body.type == HEAL)
@@ -2141,7 +2141,7 @@ export function init() {
           const filter = function(creep: Creep): boolean {
             return creep.hasActiveBodyPart(ATTACK) || creep.hasActiveBodyPart(RANGED_ATTACK)
           }
-          if (hostile_creep.hasActiveBodyPart(ATTACK) || (hostile_creep.pos.findInRange(hostile_creep.room.attacker_info.hostile_creeps, 2, {filter}).length > 1)) {
+          if (hostile_creep.hasActiveBodyPart(ATTACK) || (hostile_creep.pos.findInRange(hostile_creep.room.attacker_info().hostile_creeps, 2, {filter}).length > 1)) {
             should_flee = true
           }
         }

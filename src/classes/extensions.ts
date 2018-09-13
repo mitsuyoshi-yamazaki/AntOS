@@ -7,6 +7,9 @@ import { RoomLayout, RoomLayoutOpts } from "./room_layout";
 import { EmpireMemory } from './empire';
 
 export interface AttackerInfo  {
+  attacked: boolean
+  heavyly_attacked: boolean
+
   hostile_creeps: Creep[]
   hostile_teams: string[]
   attack: number
@@ -87,15 +90,15 @@ declare global {
   interface Room {
     sources: Source[]
     spawns: StructureSpawn[]  // Initialized in Spawn.initialize()
-    attacked: boolean // @todo: change it to Creep[]
-    heavyly_attacked: boolean
     resourceful_tombstones: Tombstone[]
-    attacker_info: AttackerInfo // @todo: make it on-demand
     is_keeperroom: boolean
     is_centerroom: boolean
     cost_matrix(): CostMatrix | undefined
     construction_sites?: ConstructionSite[]  // Only checked if controller.my is true
     owned_structures?: Map<StructureConstant, AnyOwnedStructure[]>
+    _attacker_info: AttackerInfo | undefined
+    attacker_info(): AttackerInfo
+
     owned_structures_not_found_error(structure_type: StructureConstant): void
     add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string | null
     remote_layout(x: number, y: number): CostMatrix | null
@@ -996,46 +999,6 @@ export function tick(): void {
 
     this.sources = this.find(FIND_SOURCES)
 
-    const attacker_info: AttackerInfo = {
-      hostile_creeps: [],
-      hostile_teams: [],
-      attack: 0,
-      ranged_attack: 0,
-      heal: 0,
-      work: 0,
-      tough: 0,
-    }
-
-    attacker_info.hostile_creeps = this.find(FIND_HOSTILE_CREEPS)
-
-    attacker_info.hostile_creeps.forEach((creep: Creep) => {
-      if (attacker_info.hostile_teams.indexOf(creep.owner.username) < 0) {
-        attacker_info.hostile_teams.push(creep.owner.username)
-      }
-
-      attacker_info.attack += creep.getActiveBodyparts(ATTACK)
-      attacker_info.ranged_attack += creep.getActiveBodyparts(RANGED_ATTACK)
-      attacker_info.heal += creep.getActiveBodyparts(HEAL)
-      attacker_info.work += creep.getActiveBodyparts(WORK)
-      attacker_info.tough += creep.getActiveBodyparts(TOUGH)
-    })
-    this.attacker_info = attacker_info
-
-    if (this.attacker_info.hostile_creeps.length > 0) {
-      (Memory.rooms[this.name] as RoomMemory).last_attacked_time = (Memory.rooms[this.name] as RoomMemory).attacked_time;
-      (Memory.rooms[this.name] as RoomMemory).attacked_time = Game.time;
-    }
-    else {
-      (Memory.rooms[this.name] as RoomMemory).attacked_time = undefined
-    }
-
-    const hostiles: Creep[] = this.find(FIND_HOSTILE_CREEPS)
-
-    this.attacked = hostiles.length > 0
-
-    const number_of_attacks = (attacker_info.attack * 2) + attacker_info.ranged_attack + (attacker_info.heal * 5)
-    this.heavyly_attacked = number_of_attacks > 16
-
     this.resourceful_tombstones = this.find(FIND_TOMBSTONES, {
       filter: (tombstone: Tombstone) => {
         const sum = _.sum(tombstone.store)
@@ -1114,6 +1077,59 @@ export function tick(): void {
     cost_matrixes.set(this.name, cost_matrix)
 
     return cost_matrix
+  }
+
+  Room.prototype.attacker_info = function(): AttackerInfo {
+    const room = this as Room
+
+    if (room._attacker_info) {
+      return room._attacker_info
+    }
+
+    const attacker_info: AttackerInfo = {
+      attacked: false,
+      heavyly_attacked: false,
+      hostile_creeps: [],
+      hostile_teams: [],
+      attack: 0,
+      ranged_attack: 0,
+      heal: 0,
+      work: 0,
+      tough: 0,
+    }
+
+    attacker_info.hostile_creeps = room.find(FIND_HOSTILE_CREEPS)
+
+    attacker_info.hostile_creeps.forEach((creep: Creep) => {
+      if (attacker_info.hostile_teams.indexOf(creep.owner.username) < 0) {
+        attacker_info.hostile_teams.push(creep.owner.username)
+      }
+
+      attacker_info.attack += creep.getActiveBodyparts(ATTACK)
+      attacker_info.ranged_attack += creep.getActiveBodyparts(RANGED_ATTACK)
+      attacker_info.heal += creep.getActiveBodyparts(HEAL)
+      attacker_info.work += creep.getActiveBodyparts(WORK)
+      attacker_info.tough += creep.getActiveBodyparts(TOUGH)
+    })
+
+    attacker_info.attacked = (attacker_info.hostile_creeps.length > 0)
+
+    const number_of_attacks = (attacker_info.attack * 2) + attacker_info.ranged_attack + (attacker_info.heal * 5)
+    attacker_info.heavyly_attacked = number_of_attacks > 16
+
+    if (room.memory.attacked_time) {
+      room.memory.last_attacked_time = room.memory.attacked_time
+    }
+
+    if (attacker_info.attacked) {
+      room.memory.attacked_time = Game.time
+    }
+    else {
+      room.memory.attacked_time = undefined
+    }
+
+    room._attacker_info = attacker_info
+    return attacker_info
   }
 
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {

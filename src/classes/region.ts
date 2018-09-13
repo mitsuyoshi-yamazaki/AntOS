@@ -1350,7 +1350,7 @@ export class Region {
     }
 
     // If there's no healer, towers and attackers can deal with it
-    if (this.room.attacker_info.heal == 0) {
+    if (this.room.attacker_info().heal == 0) {
       return
     }
     console.log(`DETECT Healer-Attackers!!! ${room_link(this.room.name)}`)

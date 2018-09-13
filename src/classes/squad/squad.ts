@@ -302,7 +302,7 @@ export abstract class Squad {
     const range = 6
     const ticks = range
     let flee_from: {x: number, y: number}
-    const closest_hostile = creep.room.attacked ? creep.pos.findInRange(creep.room.attacker_info.hostile_creeps, range)[0] : undefined
+    const closest_hostile = creep.room.attacker_info().attacked ? creep.pos.findInRange(creep.room.attacker_info().hostile_creeps, range)[0] : undefined
     if (closest_hostile) {
       flee_from = closest_hostile.pos
     }

@@ -9,7 +9,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
   opts = opts || {}
   const wall_max_hits = opts.wall_max_hits || 20000000  // 20M
 
-  const damaged_hostiles: Creep[] = room.attacker_info.hostile_creeps.filter((creep) => {
+  const damaged_hostiles: Creep[] = room.attacker_info().hostile_creeps.filter((creep) => {
     return (creep.hits < creep.hitsMax)
   })
 
@@ -75,7 +75,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
     }
   }
 
-  const should_attack_hostile = room.attacked && ((room.attacker_info.heal <= 25) || (room.attacker_info.hostile_teams.indexOf('Invader') >= 0) || (room.attacker_info.hostile_creeps.length < 3))
+  const should_attack_hostile = room.attacker_info().attacked && ((room.attacker_info().heal <= 25) || (room.attacker_info().hostile_teams.indexOf('Invader') >= 0) || (room.attacker_info().hostile_creeps.length < 3))
 
   towers.forEach((tower) => {
 
@@ -101,13 +101,13 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
         }
       }
       else {
-        const hostile = tower.pos.findClosestByRange(room.attacker_info.hostile_creeps)
+        const hostile = tower.pos.findClosestByRange(room.attacker_info().hostile_creeps)
         if (hostile) {
           tower.attack(hostile)
           return
         }
         else {
-          console.log(`Region ${room.name} unexpected error: hostile not found ${room.attacked}, ${room.attacker_info.hostile_creeps}.`)
+          console.log(`Region ${room.name} unexpected error: hostile not found ${room.attacker_info().attacked}, ${room.attacker_info().hostile_creeps}.`)
         }
       }
     }

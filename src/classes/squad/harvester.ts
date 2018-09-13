@@ -402,7 +402,7 @@ export class HarvesterSquad extends Squad {
     }
 
     if (this.needs_harvester) {
-      if (room && room.heavyly_attacked && (this.resource_type != RESOURCE_ENERGY)) {
+      if (room && room.attacker_info().heavyly_attacked && (this.resource_type != RESOURCE_ENERGY)) {
         this.creeps.forEach((creep) => {
           creep.memory.let_thy_die = true
         })
@@ -787,7 +787,7 @@ export class HarvesterSquad extends Squad {
 
       const carry_amount = _.sum(creep.carry)
 
-      if (!creep.room.attacked && (creep.room.resourceful_tombstones.length > 0) && ((carry_amount - creep.carry.energy) < (creep.carryCapacity - 100))) {
+      if (!creep.room.attacker_info().attacked && (creep.room.resourceful_tombstones.length > 0) && ((carry_amount - creep.carry.energy) < (creep.carryCapacity - 100))) {
         const target = creep.room.resourceful_tombstones[0]
         const resource_amount = _.sum(target.store) - target.store.energy
         if (resource_amount > 0) {
@@ -824,7 +824,7 @@ export class HarvesterSquad extends Squad {
         else if ((carry_amount > 0) && (this.harvesters.length == 0)) {
           creep.memory.status = CreepStatus.CHARGE
         }
-        else if (creep.room.attacked && (_.sum(creep.carry) > 0) && ((!creep.room.controller || !creep.room.controller.my))) { // If there's no creep in the room, there's no way to know the room is under attack
+        else if (creep.room.attacker_info().attacked && (_.sum(creep.carry) > 0) && ((!creep.room.controller || !creep.room.controller.my))) { // If there's no creep in the room, there's no way to know the room is under attack
           creep.say('RUN')
           creep.moveTo(this.destination)
           creep.memory.status = CreepStatus.CHARGE
