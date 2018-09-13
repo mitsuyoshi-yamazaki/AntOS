@@ -599,7 +599,7 @@ export class ManualSquad extends Squad {
 
       case 'W54S7': {
         this.creeps.forEach((creep) => {
-          creep.dismantleObjects('W54S8', true)
+          creep.dismantleObjects('W54S8', {include_wall: true})
 
         })
         return
@@ -1342,7 +1342,7 @@ export class ManualSquad extends Squad {
     let result_sum: ActionResult = ActionResult.DONE
 
     this.creeps.forEach((creep) => {
-      const result = creep.dismantleObjects(target_room_name, include_wall)
+      const result = creep.dismantleObjects(target_room_name, {include_wall})
 
       if (result == ActionResult.IN_PROGRESS) {
         result_sum = ActionResult.IN_PROGRESS

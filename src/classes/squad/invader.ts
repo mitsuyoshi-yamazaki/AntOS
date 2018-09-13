@@ -201,11 +201,10 @@ export class InvaderSquad extends Squad {
     // ]
     const body: BodyPartConstant[] = [  // no boost
       TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
-      TOUGH,
       WORK, WORK, WORK, WORK, WORK,
       WORK, WORK, WORK, WORK, WORK,
       WORK, WORK, WORK, WORK, WORK,
-      WORK, WORK, WORK, WORK,
+      WORK, WORK, WORK, WORK, WORK,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -332,10 +331,14 @@ export class InvaderSquad extends Squad {
       if (creep.dismantle(this.target) == ERR_NOT_IN_RANGE) {
         creep.moveTo(this.target)
       }
+      return
     }
-    else {
-      creep.say(`DONE`)
+
+    if (creep.dismantleObjects(this.target_room_name) == ActionResult.IN_PROGRESS) {
+      return
     }
+
+    creep.say(`DONE`)
   }
 
   private runHealer() {

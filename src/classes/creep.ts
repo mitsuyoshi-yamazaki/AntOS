@@ -85,7 +85,7 @@ declare global {
     transferResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
     withdrawResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
     dropResources(opt?: CreepTransferOption): ScreepsReturnCode
-    dismantleObjects(target_room_name: string, include_wall?: boolean): ActionResult
+    dismantleObjects(target_room_name: string, opts?:{include_wall?: boolean}): ActionResult
     transferLinkToStorage(link: StructureLink | undefined, pos: {x: number, y: number}, opt?: CreepTransferLinkToStorageOption): void
 
     // Worker tasks
@@ -1108,13 +1108,8 @@ export function init() {
     return return_code
   }
 
-  Creep.prototype.dismantleObjects = function(target_room_name: string, include_wall?: boolean): ActionResult {
-    if (this.getActiveBodyparts(WORK) == 0) {
-      this.say(`ERROR`)
-      return ActionResult.IN_PROGRESS
-    }
-
-    this.drop(RESOURCE_ENERGY)
+  Creep.prototype.dismantleObjects = function(target_room_name: string, opts?:{include_wall?: boolean}): ActionResult {
+    opts = opts || {}
 
     if (this.moveToRoom(target_room_name) != ActionResult.DONE) {
       this.say(target_room_name)
@@ -1126,75 +1121,69 @@ export function init() {
     if (memory.target_id) {
       const specified_target = Game.getObjectById(memory.target_id) as Structure | undefined
 
-      if (specified_target && (specified_target as Structure).structureType) {
-        if (this.dismantle((specified_target as Structure)) == ERR_NOT_IN_RANGE) {
-          this.moveTo((specified_target as Structure))
+      if (specified_target && ('structureType' in specified_target)) {
+        if (this.pos.isNearTo(specified_target)) {
+          this.dismantle(specified_target)
+        }
+        else {
+          this.moveTo(specified_target)
           this.say(`${specified_target.pos.x},${specified_target.pos.y}`)
         }
         return ActionResult.IN_PROGRESS
       }
       else {
-        this.say(`NO T`)
-        console.log(`No target ${memory.target_id} for ${this.name}`);
         (this.memory as {target_id?: string}).target_id = undefined
       }
     }
 
-    const target = this.pos.findClosestByPath(FIND_HOSTILE_SPAWNS)
+    const hostile_structures = this.room.find(FIND_HOSTILE_STRUCTURES)
+    const towers = hostile_structures.filter(s=>s.structureType == STRUCTURE_TOWER)
 
-    if (target) {
-      if (this.dismantle(target) == ERR_NOT_IN_RANGE) {
-        this.moveTo(target)
-      }
+    let target: Structure | undefined
+
+    if (towers.length > 0) {
+      target = this.pos.findClosestByPath(towers)
     }
-    else {
-      const structure = this.pos.findClosestByPath(FIND_HOSTILE_STRUCTURES, {
+    if (!target) {
+      target = this.pos.findClosestByPath(FIND_HOSTILE_SPAWNS)
+    }
+    if (!target) {
+      const excludes: StructureConstant[] = [
+        STRUCTURE_CONTROLLER,
+        STRUCTURE_KEEPER_LAIR,
+        STRUCTURE_POWER_BANK,
+      ]
+      target = this.pos.findClosestByPath(hostile_structures.filter(s=>(excludes.indexOf(s.structureType) < 0)))
+    }
+    if (!target && opts.include_wall) {
+      const walls: StructureConstant[] = [
+        STRUCTURE_WALL,
+        STRUCTURE_RAMPART,
+      ]
+      target = this.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: (structure) => {
-          if (structure.structureType == STRUCTURE_CONTROLLER) {
-            return false
-          }
-          else if (structure.structureType == STRUCTURE_STORAGE) {
-            return _.sum((structure as StructureStorage).store) < 1000
-          }
-          return true
+          return walls.indexOf(structure.structureType) >= 0
         }
       })
-      if (structure) {
-        if (this.dismantle(structure) == ERR_NOT_IN_RANGE) {
-          this.moveTo(structure)
-        }
+    }
+
+    if (target) {
+      memory.target_id = target.id
+
+      if (this.pos.isNearTo(target)) {
+        this.dismantle(target)
       }
       else {
-        const construction_site = this.pos.findClosestByPath(FIND_HOSTILE_CONSTRUCTION_SITES)
-
-        if (construction_site) {
-          this.moveTo(construction_site)
-        }
-        else {
-          const wall = this.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: (structure) => {
-              if ((structure as {my?: boolean}).my) {
-                return false
-              }
-              return (structure.structureType == STRUCTURE_RAMPART)
-                || (structure.structureType == STRUCTURE_WALL)
-            }
-          })
-
-          if (wall && include_wall) {
-            if (this.dismantle(wall) == ERR_NOT_IN_RANGE) {
-              this.moveTo(wall)
-            }
-          }
-          else {
-            this.say('DONE')
-            console.log(`No more targets in ${target_room_name}, ${this.name}`)
-            return ActionResult.DONE
-          }
-        }
+        this.moveTo(target)
       }
+
+      return ActionResult.IN_PROGRESS
     }
-    return ActionResult.IN_PROGRESS
+    else {
+      this.say('DONE')
+      console.log(`No more targets in ${target_room_name}, ${this.name}`)
+      return ActionResult.DONE
+    }
   }
 
   Creep.prototype.transferLinkToStorage = function(link: StructureLink | undefined, pos: {x: number, y: number}, opt?: CreepTransferLinkToStorageOption): void {
