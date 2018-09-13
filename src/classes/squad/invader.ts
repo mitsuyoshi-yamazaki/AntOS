@@ -49,26 +49,6 @@ export class InvaderSquad extends Squad {
           }
         }
       }
-
-
-      // for (const room_name in target_ids) {
-      //   if
-
-      //   const ids = target_ids[room_name]
-      //   if (ids.length == 0) {
-      //     continue
-      //   }
-
-      // }
-
-      // while (!this.target && (squad_memory.target_ids.length > 0)) {
-        // this.target = Game.getObjectById(target_ids[0] || '') as Structure | undefined
-
-        // if (this.target) {
-        //   break
-        // }
-        // squad_memory.target_ids.splice(0, 1)
-      // }
     }
 
     this.creeps.forEach((creep) => {
@@ -336,6 +316,16 @@ export class InvaderSquad extends Squad {
 
     if (creep.dismantleObjects(this.target_room_name) == ActionResult.IN_PROGRESS) {
       return
+    }
+
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+    if (squad_memory) {
+      const index = squad_memory.target_room_names.indexOf(this.target_room_name)
+      if (index >= 0) {
+        squad_memory.target_room_names.splice(index, 1)
+      }
+
+      delete squad_memory.target_ids[this.target_room_name]
     }
 
     creep.say(`DONE`)

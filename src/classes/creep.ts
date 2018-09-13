@@ -1181,7 +1181,9 @@ export function init() {
     }
     else {
       this.say('DONE')
-      console.log(`No more targets in ${target_room_name}, ${this.name}`)
+      if ((Game.time % 43) == 5) {
+        console.log(`No more targets in ${target_room_name}, ${this.name}`)
+      }
       return ActionResult.DONE
     }
   }
