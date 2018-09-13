@@ -14,7 +14,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
   })
 
   const damaged_healers: Creep[] = damaged_hostiles.filter((creep) => {
-    return creep.getActiveBodyparts(HEAL) > 0
+    return creep.hasActiveBodyPart(HEAL)
   })
 
   const damaged_my_creeps: Creep[] = room.find(FIND_MY_CREEPS, {
@@ -23,22 +23,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
     }
   })
 
-  let hits_max = 114000
-
-  // if (room.storage && (room.storage.store.energy > 400000)) {
-  //   hits_max = 386000
-  // }
-
-  // if ((room.name == 'W51S29') && !room.heavyly_attacked) {
-  //   hits_max = 1500000
-  // }
-  // else if ((room.name == 'W44S7')) {
-  //   hits_max = 300000
-  // }
-  // else if ((room.name == 'W38S7')) {
-  //   hits_max = 100000
-  // }
-
+  const hits_max = 114000
   const has_much_energy = !(!room.storage) && (room.storage.store.energy > 500000)
 
   const excluded_walls = !opts.excluded_wall_ids ? [] : opts.excluded_wall_ids

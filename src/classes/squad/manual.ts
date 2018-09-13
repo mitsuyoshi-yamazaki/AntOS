@@ -917,7 +917,7 @@ export class ManualSquad extends Squad {
     }
 
     this.creeps.forEach((creep) => {
-      if (creep.getActiveBodyparts(CARRY) == 0) {
+      if (!creep.hasActiveBodyPart(CARRY)) {
         console.log(`ManualSquad.transferMineralToLab no CARRY body parts  ${this.name}`)
         creep.say(`ERROR`)
         return
@@ -1022,7 +1022,7 @@ export class ManualSquad extends Squad {
     // }
 
     this.creeps.forEach((creep) => {
-      if (creep.getActiveBodyparts(CARRY) == 0) {
+      if (!creep.hasActiveBodyPart(CARRY)) {
         console.log(`ManualSquad.transferMineral no CARRY body parts`)
         creep.say(`ERROR`)
         return

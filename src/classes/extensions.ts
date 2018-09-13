@@ -90,7 +90,7 @@ declare global {
     attacked: boolean // @todo: change it to Creep[]
     heavyly_attacked: boolean
     resourceful_tombstones: Tombstone[]
-    attacker_info: AttackerInfo
+    attacker_info: AttackerInfo // @todo: make it on-demand
     is_keeperroom: boolean
     is_centerroom: boolean
     cost_matrix(): CostMatrix | undefined
@@ -1013,11 +1013,11 @@ export function tick(): void {
         attacker_info.hostile_teams.push(creep.owner.username)
       }
 
-      attacker_info.attack = creep.getActiveBodyparts(ATTACK)
-      attacker_info.ranged_attack = creep.getActiveBodyparts(RANGED_ATTACK)
-      attacker_info.heal = creep.getActiveBodyparts(HEAL)
-      attacker_info.work = creep.getActiveBodyparts(WORK)
-      attacker_info.tough = creep.getActiveBodyparts(TOUGH)
+      attacker_info.attack += creep.getActiveBodyparts(ATTACK)
+      attacker_info.ranged_attack += creep.getActiveBodyparts(RANGED_ATTACK)
+      attacker_info.heal += creep.getActiveBodyparts(HEAL)
+      attacker_info.work += creep.getActiveBodyparts(WORK)
+      attacker_info.tough += creep.getActiveBodyparts(TOUGH)
     })
     this.attacker_info = attacker_info
 
@@ -1029,33 +1029,11 @@ export function tick(): void {
       (Memory.rooms[this.name] as RoomMemory).attacked_time = undefined
     }
 
-    const hostiles: Creep[] = this.find(FIND_HOSTILE_CREEPS, {
-      // filter: function(creep: Creep): boolean {
-      //   if (creep.pos.x == 0) {
-      //     return false
-      //   }
-      //   if (creep.pos.x == 49) {
-      //     return false
-      //   }
-      //   if (creep.pos.y == 0) {
-      //     return false
-      //   }
-      //   if (creep.pos.y == 49) {
-      //     return false
-      //   }
-
-      //   const attack_parts = creep.getActiveBodyparts(ATTACK) + creep.getActiveBodyparts(RANGED_ATTACK)
-      //   return attack_parts > 0
-      // }
-    })
+    const hostiles: Creep[] = this.find(FIND_HOSTILE_CREEPS)
 
     this.attacked = hostiles.length > 0
 
-    let number_of_attacks = 0
-
-    hostiles.forEach((creep: Creep) => {
-      number_of_attacks += (creep.getActiveBodyparts(ATTACK) * 3) + creep.getActiveBodyparts(RANGED_ATTACK) + creep.getActiveBodyparts(HEAL)
-    })
+    const number_of_attacks = (attacker_info.attack * 2) + attacker_info.ranged_attack + (attacker_info.heal * 5)
     this.heavyly_attacked = number_of_attacks > 16
 
     this.resourceful_tombstones = this.find(FIND_TOMBSTONES, {

@@ -77,10 +77,12 @@ declare global {
     _carrying_resources: ResourceConstant[]
     carrying_resources(): ResourceConstant[]
 
+    // Attributes
+    hasActiveBodyPart(body_part: BodyPartConstant): boolean
+
     // General tasks
     moveToRoom(destination_room_name: string): ActionResult
     goToRenew(spawn: StructureSpawn, opts?:{ticks?: number, no_auto_finish?: boolean, withdraw?: boolean}): ActionResult
-    makeShell(): ActionResult
     find_charge_target(opts?: CreepChargeTargetOption): ChargeTarget | undefined
     transferResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
     withdrawResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
@@ -163,6 +165,20 @@ export function init() {
       }
     }
     return this._carrying_resources
+  }
+
+  // --- Attributes ---
+  Creep.prototype.hasActiveBodyPart = function(body_part: BodyPartConstant): boolean {
+    // https://github.com/screeps/engine/blob/551aa41163c45273d706ce238c6b35f379c0149e/src/game/creeps.js#L20-L28
+    for(var i = this.body.length-1; i>=0; i--) {
+      if (this.body[i].hits <= 0) {
+        break
+      }
+      if (this.body[i].type === body_part) {
+        return true
+      }
+    }
+    return false
   }
 
   // --- General tasks ---
@@ -472,10 +488,6 @@ export function init() {
     }
     else if ((this.room.name == 'W49S27') && (exit == TOP)) { // @fixme: temp code
       this.moveTo(31, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((this.room.name == 'W49S48') && (exit == TOP) && (this.getActiveBodyparts(ATTACK) > 0)) { // @fixme: temp code
-      this.moveTo(24, 0, opt)
       return ActionResult.IN_PROGRESS
     }
     else if (((this.room.name == 'W50S29') || (this.room.name == 'W50S28') || (this.room.name == 'W50S27')) && ((destination_room_name == 'W51S21') || (destination_room_name == 'W49S26'))) { // @fixme: temp code
@@ -795,55 +807,6 @@ export function init() {
     }
 
     return ActionResult.IN_PROGRESS
-  }
-
-  /**
-   * returns IN_PROGRESS if the creep should work as usual
-   * returns DONE if the creep does something in this method
-   */
-  Creep.prototype.makeShell = function(): ActionResult {
-    return ActionResult.IN_PROGRESS // This method DOES NOT WORK since RCL is insufficient to build rampart
-
-    // if (this.room.controller && this.room.controller.my) {  // It should be this.room.towers.length > 0 but for computing resource
-    //   return ActionResult.IN_PROGRESS
-    // }
-    // if ((this.getActiveBodyparts(WORK) == 0) || (this.carry.energy == 0)) {
-    //   return ActionResult.IN_PROGRESS
-    // }
-
-    // const construction_site_obj = this.room.lookAt(this).filter((obj) => {
-    //   return (obj.type == LOOK_CONSTRUCTION_SITES)
-    // })[0]
-
-    // if (construction_site_obj) {
-    //   const build_result = this.build(construction_site_obj.constructionSite!)
-    //   if (build_result != OK) {
-    //     console.log(`Creep.makeShell() unexpected build result ${build_result}, ${this.name} at ${this.pos}`)
-    //     return ActionResult.IN_PROGRESS
-    //   }
-    //   return ActionResult.DONE
-    // }
-
-    // const rampart_obj = this.room.lookAt(this).filter((obj) => {
-    //   return (obj.type == LOOK_STRUCTURES) && (obj.structure!.structureType == STRUCTURE_RAMPART)
-    // })[0]
-
-    // if (rampart_obj && (rampart_obj.structure!.hits < 40000)) {
-    //   const repair_result = this.repair(rampart_obj.structure!)
-    //   if (repair_result != OK) {
-    //     console.log(`Creep.makeShell() unexpected repair result ${repair_result}, ${this.name} at ${this.pos}`)
-    //     return ActionResult.IN_PROGRESS
-    //   }
-    //   return ActionResult.DONE
-    // }
-    // else {
-    //   const construction_result = this.room.createConstructionSite(this.pos.x, this.pos.y, STRUCTURE_RAMPART)
-    //   if (construction_result != OK) {
-    //     console.log(`Creep.makeShell() unexpected createConstructionSite result ${construction_result}, ${this.name} at ${this.pos}`)
-    //     return ActionResult.IN_PROGRESS
-    //   }
-    //   return ActionResult.IN_PROGRESS
-    // }
   }
 
   Creep.prototype.find_charge_target = function(opts?: CreepChargeTargetOption): ChargeTarget | undefined {
@@ -1986,12 +1949,6 @@ export function init() {
   Creep.prototype.searchAndDestroy = function(opt?: CreepSearchAndDestroyOption): ActionResult {
     opt = opt || {}
 
-    if ((this.getActiveBodyparts(ATTACK) + this.getActiveBodyparts(RANGED_ATTACK)) == 0) {
-      console.log(`searchAndDestroy no attacker body parts ${this.name} ${this.pos}, ${room_link(this.room.name)}`)
-      this.say('DAMAGED')
-      // return ActionResult.DONE
-    }
-
     const memory = this.memory as {target_id?: string}
 
     const hostile_attacker: Creep = this.pos.findClosestByPath(this.room.attacker_info.hostile_creeps, {
@@ -2163,7 +2120,7 @@ export function init() {
       return ActionResult.IN_PROGRESS
     }
 
-    const is_ranged_attacker = (this.getActiveBodyparts(RANGED_ATTACK) > 0) && (this.getActiveBodyparts(ATTACK) == 0)
+    const is_ranged_attacker = this.hasActiveBodyPart(RANGED_ATTACK) && !this.hasActiveBodyPart(ATTACK)
 
     // if (is_ranged_attacker && (this.pos.getRangeTo(target) <= 1)) {
     //   opt.no_move = true
@@ -2182,9 +2139,9 @@ export function init() {
         const hostile_creep = target as Creep
         if (this.pos.getRangeTo(hostile_creep) < 3) {
           const filter = function(creep: Creep): boolean {
-            return (creep.getActiveBodyparts(ATTACK) + creep.getActiveBodyparts(RANGED_ATTACK)) > 0
+            return creep.hasActiveBodyPart(ATTACK) || creep.hasActiveBodyPart(RANGED_ATTACK)
           }
-          if ((hostile_creep.getActiveBodyparts(ATTACK) > 1) || (hostile_creep.pos.findInRange(hostile_creep.room.attacker_info.hostile_creeps, 2, {filter}).length > 1)) {
+          if (hostile_creep.hasActiveBodyPart(ATTACK) || (hostile_creep.pos.findInRange(hostile_creep.room.attacker_info.hostile_creeps, 2, {filter}).length > 1)) {
             should_flee = true
           }
         }

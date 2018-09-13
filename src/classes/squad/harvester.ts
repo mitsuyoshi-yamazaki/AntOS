@@ -948,7 +948,7 @@ export function runHarvester(creep: Creep, room_name: string, source: Source | M
     options.resource_type = resource_type
   }
 
-  if (creep.getActiveBodyparts(CARRY) == 0) {
+  if (!creep.hasActiveBodyPart(CARRY)) {
     if (creep.room.is_keeperroom && (creep.moveToRoom(room_name) == ActionResult.IN_PROGRESS)) {
       return
     }
