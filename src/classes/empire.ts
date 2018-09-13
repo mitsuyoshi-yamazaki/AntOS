@@ -139,10 +139,11 @@ export class Empire {
     else {
       if (empire_memory && empire_memory.farm_room) {
         const farm_info = gcl_farm_rooms[empire_memory.farm_room]
+        const next_farm_info = gcl_farm_rooms[farm_info.next]
 
         next_farm = {
           target_room_name: farm_info.next,
-          base_room_name: farm_info.base,
+          base_room_name: next_farm_info.base,
         }
       }
     }
