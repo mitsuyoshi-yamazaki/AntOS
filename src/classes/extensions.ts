@@ -104,6 +104,8 @@ declare global {
     place_construction_sites(): void
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
 
+    show_weakest_walls(opts?:{max?: number}): void
+
     info(): void
 
     initialize(): void
@@ -1549,6 +1551,51 @@ export function tick(): void {
 
       return road_positions
     // }
+  }
+
+  Room.prototype.show_weakest_walls = function(opts?:{max?: number}): void {
+    opts = opts || {}
+
+    const room = this as Room
+
+    const wall_types: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    const walls = room.find(FIND_STRUCTURES, {
+      filter: (structure) => {
+        return wall_types.indexOf(structure.structureType) >= 0
+      }
+    }) as (StructureWall | StructureRampart)[]
+
+    const sorted = walls.sort((lhs, rhs) => {
+      if (lhs.hits > rhs.hits) return 1
+      return -1
+    })
+
+    const max = opts.max || 10
+    const colors: {[index: number]: string} = {
+      0: '#ee2222',
+      1: '#ee2222',
+      2: '#ee2222',
+      3: '#ee2222',
+      4: '#eeee11',
+      5: '#eeee11',
+      6: '#eeee11',
+      7: '#eeee11',
+    }
+
+    sorted.forEach((wall, index) => {
+      if (index >= max) {
+        return
+      }
+
+      const color = colors[index] || '#ffffff'
+
+      room.visual.text(`${index}`, wall.pos, {
+        color,
+        align: 'center',
+        font: '12px',
+        opacity: 0.9,
+      })
+    })
   }
 
   Room.prototype.info = function(): void {
