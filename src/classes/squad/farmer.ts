@@ -125,10 +125,10 @@ export class FarmerSquad extends Squad {
     })
 
     this.upgraders.all = this.upgraders.all.sort((lhs, rhs) => {
-      if ((lhs.memory.status == CreepStatus.WAITING_FOR_RENEW) || lhs.spawning) {
+      if ((lhs.memory.status == CreepStatus.WAITING_FOR_RENEW) || rhs.spawning) {
         return -1
       }
-      if ((rhs.memory.status == CreepStatus.WAITING_FOR_RENEW) || rhs.spawning) {
+      if ((rhs.memory.status == CreepStatus.WAITING_FOR_RENEW) || lhs.spawning) {
         return 1
       }
 
