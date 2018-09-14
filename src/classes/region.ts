@@ -579,19 +579,6 @@ export class Region {
 
       ErrorMapper.wrapLoop(() => {
         switch (squad_memory.type) {
-          // case SquadType.CONTROLLER_KEEPER: {
-          //   const controller_keeper_squad_memory = squad_memory as ControllerKeeperSquadMemory
-          //   const room_name = controller_keeper_squad_memory.room_name
-
-          //   const squad = new ControllerKeeperSquad(squad_memory.name, room_name, energy_capacity)
-          //   this.squads.set(squad.name, squad)
-
-          //   const room = Game.rooms[room_name]
-          //   if (room) {
-          //     room.keeper = squad
-          //   }
-          //   break
-          // }
           case SquadType.WORKER: {
             const opts: {source?: StructureContainer | undefined, additional_container_ids?: string[]} = {}
             if (harvester_destination && (harvester_destination.structureType == STRUCTURE_CONTAINER)) {

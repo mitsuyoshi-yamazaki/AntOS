@@ -10,7 +10,6 @@ export enum SpawnPriority {
 }
 
 export enum SquadType {
-  CONTROLLER_KEEPER = "controller_keeper",
   WORKER            = "worker",
   UPGRADER          = "upgrader",
   CHARGER           = "charger",
@@ -50,7 +49,6 @@ export interface SquadMemory {
 }
 
 /**
- * 1 ControllerKeeperSquad for each rooms
  * 1 WorkerSquad for each spawn
  */
 export abstract class Squad {
