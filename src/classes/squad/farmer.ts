@@ -430,29 +430,6 @@ export class FarmerSquad extends Squad {
         }
       }
     }
-
-    if (((Game.time % 311) == 1) && room && room.controller) {
-      squad_memory.rcl = room.controller.level
-
-      if (room.controller.level == 6) {
-        const progress_percentage = Math.round((room.controller.progress / room.controller.progressTotal) * 1000) / 10
-
-        if (progress_percentage < 3) {
-          const message = `FarmerSquad RCL ${room.controller.level} ${progress_percentage}% ${room_link(room.name)}`
-          console.log(message)
-          Game.notify(message)
-        }
-      }
-      else if ((room.controller.level == 7)) {
-        const progress_percentage = Math.round((room.controller.progress / room.controller.progressTotal) * 1000) / 10
-
-        if (progress_percentage > 95) {
-          const message = `FarmerSquad RCL ${room.controller.level} ${progress_percentage}% ${room_link(room.name)}`
-          console.log(message)
-          Game.notify(message)
-        }
-      }
-    }
   }
 
   public description(): string {
