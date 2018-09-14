@@ -1,10 +1,10 @@
-import { SquadMemory, SquadType } from "./squad/squad";
+import { SquadMemory, SquadType } from "./squad/squad"
 import { RegionMemory } from "./region"
-import { ErrorMapper } from "ErrorMapper";
-import { RemoteHarvesterSquadMemory } from './squad/remote_harvester';
-import { UID, room_history_link, room_link, colored_resource_type, profile_link, colored_body_part } from "./utils";
-import { RoomLayout, RoomLayoutOpts } from "./room_layout";
-import { EmpireMemory } from './empire';
+import { ErrorMapper } from "utils/ErrorMapper"
+import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
+import { UID, room_history_link, room_link, colored_resource_type, profile_link, colored_body_part } from "./utils"
+import { RoomLayout, RoomLayoutOpts } from "./room_layout"
+import { EmpireMemory } from './empire'
 
 export interface AttackerInfo  {
   attacked: boolean

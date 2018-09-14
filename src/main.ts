@@ -1,4 +1,4 @@
-import { ErrorMapper } from "ErrorMapper"
+import { ErrorMapper } from "utils/ErrorMapper"
 
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"

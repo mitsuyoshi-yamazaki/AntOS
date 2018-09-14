@@ -1,5 +1,5 @@
 
-import { ErrorMapper } from "ErrorMapper"
+import { ErrorMapper } from "utils/ErrorMapper"
 import { Region, RegionOpt } from "./region"
 import { Squad, SpawnPriority, SquadType } from "./squad/squad";
 
