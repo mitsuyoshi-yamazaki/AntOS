@@ -1187,7 +1187,6 @@ export function init() {
 
     // withdraw
     if ((carry == 0) && ((this.ticksToLive || 0) > 2)) {
-      let withdrawn = false
       let should_withdraw = true
 
       if (opt.transfer_energy) {
@@ -1203,19 +1202,19 @@ export function init() {
       if (link && (link.energy > 0) && should_withdraw) {
         const withdraw_result = this.withdraw(link, RESOURCE_ENERGY)
         if (withdraw_result == OK) {
-          withdrawn = true
+          return
         }
         else {
           this.say(`E${withdraw_result}`)
         }
       }
-      else if (this.room.terminal) {
+      if (this.room.terminal) {
         for (const resource_type of RESOURCES_ALL) {
           let amount_min = 10000
           let amount_max = 11000
 
           if (resource_type == RESOURCE_ENERGY) {
-            const is_rcl8 = !(!this.room.controller) && this.room.controller.my && (this.room.controller.level == 8)
+            // const is_rcl8 = !(!this.room.controller) && this.room.controller.my && (this.room.controller.level == 8)
             const multiply = 10//(is_rcl8 && (storage.store.energy > 200000)) ? 15 : 10
 
             amount_min *= multiply
@@ -1225,23 +1224,33 @@ export function init() {
           const amount = (this.room.terminal.store[resource_type] || 0)
           if ((amount < amount_min) && ((storage.store[resource_type] || 0) > 0)) {
             this.withdraw(storage, resource_type)
-            withdrawn = true
-            break
+            return
           }
           else if (amount > amount_max) {
             this.withdraw(this.room.terminal, resource_type)
-            withdrawn = true
-            break
+            return
           }
           else {
             continue
           }
         }
+
+        if (this.room.owned_structures) {
+          const nukers = this.room.owned_structures.get(STRUCTURE_NUKER) as StructureNuker[]
+          if (nukers) {
+            const nuker = nukers[0]
+
+            if (nuker && (nuker.ghodium < nuker.ghodiumCapacity) && ((this.room.terminal.store[RESOURCE_GHODIUM] || 0) > 0)) {
+              this.withdraw(this.room.terminal, RESOURCE_GHODIUM)
+              return
+            }
+          }
+
+        }
       }
 
-      if (!withdrawn) {
-        this.withdraw(storage, RESOURCE_ENERGY)
-      }
+      this.withdraw(storage, RESOURCE_ENERGY)
+      return
     }
 
     // transfer
@@ -1273,14 +1282,43 @@ export function init() {
           }
         }
 
-        // if (opt.has_support_links && link && (link.energy == 0) && (link.cooldown == 0)) {
-        //   this.transfer(link, RESOURCE_ENERGY)
-        //   return
-        // }
+        if (this.room.owned_structures) {
+          const nukers = this.room.owned_structures.get(STRUCTURE_NUKER) as StructureNuker[]
+          if (nukers) {
+            const nuker = nukers[0]
+
+            if (nuker && (nuker.energy < nuker.energyCapacity)) {
+              this.transfer(nuker, RESOURCE_ENERGY)
+              return
+            }
+          }
+
+          const power_spawns = this.room.owned_structures.get(STRUCTURE_POWER_SPAWN) as StructurePowerSpawn[]
+          if (power_spawns) {
+            const power_spawn = power_spawns[0]
+
+            if (power_spawn && (power_spawn.energy < power_spawn.energyCapacity)) {
+              this.transfer(power_spawn, RESOURCE_ENERGY)
+              return
+            }
+          }
+        }
 
         this.transfer(storage, RESOURCE_ENERGY)
       }
       else {
+        if (this.room.owned_structures && ((this.carry[RESOURCE_GHODIUM] || 0) > 0)) {
+          const nukers = this.room.owned_structures.get(STRUCTURE_NUKER) as StructureNuker[]
+          if (nukers) {
+            const nuker = nukers[0]
+
+            if (nuker && (nuker.ghodium < nuker.ghodiumCapacity)) {
+              this.transfer(nuker, RESOURCE_GHODIUM)
+              return
+            }
+          }
+        }
+
         if (this.room.terminal && this.carrying_resources()[0]) {
           const amount = this.room.terminal.store[this.carrying_resources()[0]] || 0
 
