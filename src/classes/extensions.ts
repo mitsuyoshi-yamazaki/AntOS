@@ -50,7 +50,7 @@ declare global {
     build_remote_roads(squad_name: string, opts?: {dry_run?: boolean}): void
 
     test(energy: number): void
-    refresh_room_memory(): void // @todo:
+    refresh_room_memory(opts?:{dry_run?: boolean}): void
   }
 
   interface Memory {
@@ -78,7 +78,6 @@ declare global {
   }
 
   interface RoomMemory {
-    keeper_squad_name?: string
     harvesting_source_ids: string[]
     cost_matrix?: number[] | undefined
     attacked_time?: number
@@ -1034,8 +1033,28 @@ export function tick(): void {
     console.log(`TEST:\n${body.map(b=>colored_body_part(b))}`)
   }
 
-  Game.refresh_room_memory = function(): void {
-    console.log(`Game.refresh_room_memory NOT IMPLEMENTED YET`) // @todo
+  Game.refresh_room_memory = function(opts?:{dry_run?: boolean}): void {
+    // Every rooms have room.memory and they should(for now)
+    console.log(`Game.refresh_room_memory is not fully functional`)
+
+    opts = opts || {}
+    const dry_run = (opts.dry_run != false)
+
+    console.log(`Refresh room memory:`)
+
+    for (const room_name in Memory.rooms) {
+      const room = Game.rooms[room_name]
+      if (room) {
+        continue
+      }
+
+      const room_memory = Memory.rooms[room_name]
+      if (room_memory.ancestor || room_memory.exits || room_memory.is_gcl_farm) {
+        continue
+      }
+
+      console.log(`- ${room_name}`)
+    }
   }
 
 
