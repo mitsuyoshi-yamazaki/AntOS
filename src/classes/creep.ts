@@ -712,7 +712,7 @@ export function init() {
       destination_room_name = 'W50S26'  // @fixme: this is waypoint
     }
 
-    if (this.moveTo(closest_exit, opt) == ERR_NO_PATH) { // When too close to source in source keeper's room
+    if (!closest_exit || (this.moveTo(closest_exit, opt) == ERR_NO_PATH)) { // When too close to source in source keeper's room
       // if (opt) {
       //   this.moveTo(closest_exit, {
       //     costCallback: (room_name: string) => new PathFinder.CostMatrix(), // Reset cached CostMatrix

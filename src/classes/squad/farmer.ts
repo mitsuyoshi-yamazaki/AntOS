@@ -39,7 +39,7 @@ export class FarmerSquad extends Squad {
   private lab: StructureLab | undefined
   private towers: StructureTower[] = []
 
-  private boost_resource_type: ResourceConstant = RESOURCE_GHODIUM_ACID
+  private boost_resource_type: ResourceConstant = RESOURCE_CATALYZED_GHODIUM_ACID
 
   constructor(readonly name: string, readonly base_room: Room, readonly room_name: string) {
     super(name)
@@ -550,15 +550,15 @@ export class FarmerSquad extends Squad {
       // }
       else {
         // test
-        // const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
-        //   filter: (d: Resource) => {
-        //     return d.resourceType == RESOURCE_ENERGY
-        //   }
-        // })[0]
+        const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
+          filter: (d: Resource) => {
+            return d.resourceType == RESOURCE_ENERGY
+          }
+        })[0]
 
-        // if (drop) {
-        //   creep.pickup(drop)
-        // }
+        if (drop) {
+          creep.pickup(drop)
+        }
       }
 
       if (!creep.boosted()) {
