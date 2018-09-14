@@ -153,12 +153,12 @@ export class FarmerSquad extends Squad {
     const destination_room = Game.rooms[this.room_name]
     const rcl = (destination_room && destination_room.controller) ? destination_room.controller.level : 0
 
-    if ((rcl >= 6) && destination_room && destination_room.storage) {
+    if (destination_room && destination_room.storage) {
       const energy_max = Math.floor(destination_room.storage.store.energy / 100000)
       this.upgrader_max = Math.min(positions_count, Math.max(1, energy_max))
     }
     else if (rcl < 6) {
-      this.upgrader_max = 4
+      this.upgrader_max = 2
     }
 
     if ((Game.time % 193) == 1) {
