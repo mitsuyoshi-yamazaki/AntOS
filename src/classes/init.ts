@@ -1,7 +1,9 @@
-import * as Extensions from "classes/extensions"
-import * as CreepInitializer from "classes/creep"
-import * as SpawnInitializer from "classes/spawn"
-const version = '2.54.17'
+import { init as extensionInit, tick as extensionTick } from "classes/extensions"
+import { init as creepInit } from "classes/creep"
+import { init as spawnInit } from "classes/spawn"
+import { tick as roomTick } from "classes/room"
+
+const version = '2.55.0'
 
 export function init(): void {
   Game.version = version
@@ -57,7 +59,7 @@ export function init(): void {
     }
   }
 
-  Extensions.init()
+  extensionInit()
 }
 
 export function tick(): void {
@@ -176,7 +178,8 @@ export function tick(): void {
     }
   }
 
-  Extensions.tick()
+  extensionTick()
+  roomTick()
 
   if ((Game.time % 89) == 1) {
     refreshMemory()
@@ -189,8 +192,8 @@ export function tick(): void {
   }
 
   // Followings set functions to prototype, and the prototypes are reset every tick
-  SpawnInitializer.init()
-  CreepInitializer.init()
+  spawnInit()
+  creepInit()
 
   Game.squad_creeps = {}
 

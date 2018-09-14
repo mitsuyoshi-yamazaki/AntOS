@@ -1,6 +1,6 @@
 import { StructureFilter, room_link } from "./utils"
 import { Squad } from "classes/squad/squad"
-import { ChargeTarget } from "./extensions";
+import { ChargeTarget } from "./room";
 
 export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks
   NONE    = "none",
