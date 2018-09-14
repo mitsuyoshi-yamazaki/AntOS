@@ -481,6 +481,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
  * cancel spawning attacker if the invader is eliminated within 10 ticks
  * E13N45
  * https://screeps.com/a/#!/room/shard1/E22N32
+ * remove ERR_NOT_IN_RANGE
  */
 
 

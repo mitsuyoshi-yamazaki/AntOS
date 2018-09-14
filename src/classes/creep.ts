@@ -91,10 +91,7 @@ declare global {
     transferLinkToStorage(link: StructureLink | undefined, pos: {x: number, y: number}, opt?: CreepTransferLinkToStorageOption): void
 
     // Worker tasks
-    harvestFrom(source: Source): ActionResult
     work(room: Room, sources: WorkerSource[], opts?: {additional_container_ids?: string[]}): void
-    buildTo(source: Source, target: ConstructionSite): ActionResult
-    repairTo(source: Source, target: Structure, max_hits?: number): ActionResult
     upgrade(source_filter: StructureFilter | undefined): ActionResult
     searchAndDestroyTo(room_name: string, attack_anything: boolean, opt?: CreepSearchAndDestroyOption): ActionResult
     searchAndDestroy(opt?: CreepSearchAndDestroyOption): ActionResult
@@ -1338,95 +1335,6 @@ export function init() {
 
 
   // --- Worker tasks ---
-  Creep.prototype.harvestFrom = function(source: Source): ActionResult {
-    this.memory.status = CreepStatus.HARVEST
-
-    if (this.carry.energy == this.carryCapacity) {
-      this.memory.status = CreepStatus.NONE
-      return ActionResult.DONE
-    }
-    if (this.harvest(source) == ERR_NOT_IN_RANGE) {
-      this.moveTo(source)
-    }
-
-    return ActionResult.IN_PROGRESS
-  }
-
-  Creep.prototype.buildTo = function(source: Source, target: ConstructionSite): ActionResult {
-    if (!target) {
-      console.log(`Creep.repairTo no target specified ${this.name}`)
-      return ActionResult.IN_PROGRESS
-    }
-
-    if ((this.memory.status == CreepStatus.NONE) || (this.carry.energy == 0)) {
-      this.memory.status = CreepStatus.HARVEST
-    }
-
-    // Harvest
-    if (this.memory.status == CreepStatus.HARVEST) {
-      if (this.carry.energy == this.carryCapacity) {
-        this.memory.status = CreepStatus.BUILD
-      }
-      else if (this.harvest(source) == ERR_NOT_IN_RANGE) {
-        this.moveTo(source)
-        return ActionResult.IN_PROGRESS
-      }
-    }
-
-    // Build
-    if (this.memory.status == CreepStatus.BUILD) {
-      if (!target) {
-        this.memory.status = CreepStatus.NONE
-        return ActionResult.DONE
-      }
-      else if (this.carry.energy == 0) {
-        this.memory.status = CreepStatus.HARVEST
-      }
-      else if (this.build(target) == ERR_NOT_IN_RANGE) {
-        this.moveTo(target)
-        return ActionResult.IN_PROGRESS
-      }
-    }
-
-    return ActionResult.IN_PROGRESS
-  }
-
-  Creep.prototype.repairTo = function(source: Source, target: Structure, max_hits?: number): ActionResult {
-    if (!target) {
-      console.log(`Creep.repairTo no target specified ${this.name}`)
-      return ActionResult.IN_PROGRESS
-    }
-
-    if ((this.memory.status == CreepStatus.NONE) || (this.carry.energy == 0)) {
-      this.memory.status = CreepStatus.HARVEST
-    }
-
-    // Harvest
-    if (this.memory.status == CreepStatus.HARVEST) {
-      if (this.carry.energy == this.carryCapacity) {
-        this.memory.status = CreepStatus.REPAIR
-      }
-      else if (this.harvest(source) == ERR_NOT_IN_RANGE) {
-        this.moveTo(source)
-        return ActionResult.IN_PROGRESS
-      }
-    }
-
-    // Repair
-    if (this.memory.status == CreepStatus.REPAIR) {
-      if (target.hits >= (max_hits || target.hitsMax)) {
-        this.memory.status = CreepStatus.NONE
-        return ActionResult.DONE
-      }
-      if (this.repair(target) == ERR_NOT_IN_RANGE) {
-        this.moveTo(target)
-        return ActionResult.IN_PROGRESS
-      }
-    }
-
-    return ActionResult.IN_PROGRESS
-  }
-
   /**
    * source_filter: Filter structure that creep can withdrow from it
    */
