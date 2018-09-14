@@ -233,8 +233,8 @@ export class WorkerSquad extends Squad {
         }
       }
 
-      if ((creep.ticksToLive || 0) < 15) {
-        if (creep.transfer(creep.room.storage!, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+      if (((creep.ticksToLive || 0) < 15) && creep.room.storage) {
+        if (creep.transferResources(creep.room.storage) == ERR_NOT_IN_RANGE) {
           creep.moveTo(creep.room.storage!)
         }
         continue

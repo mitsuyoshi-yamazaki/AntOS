@@ -667,7 +667,10 @@ export class FarmerSquad extends Squad {
           }
         }
 
-        if (creep.withdraw(storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+        if (creep.pos.isNearTo(storage)) {
+          creep.withdraw(storage, RESOURCE_ENERGY)
+        }
+        else {
           creep.moveTo(storage, {maxRooms:2, reusePath: 10})
         }
       }
@@ -683,25 +686,20 @@ export class FarmerSquad extends Squad {
         }
 
         if (destination_room.storage && destination_room.controller && (destination_room.controller.level >= 4)) {
-          if (creep.transfer(destination_room.storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+          if (creep.pos.isNearTo(destination_room.storage)) {
+            creep.transfer(destination_room.storage, RESOURCE_ENERGY)
+          }
+          else {
             creep.moveTo(destination_room.storage, {maxRooms:2, reusePath: 10})
           }
         }
         else {
-          // if (this.container && (this.container.store.energy < this.container.storeCapacity)) {
-          //   if (creep.transfer(this.container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          //     creep.moveTo(this.container)
-          //   }
-          // }
-          // else {
-            // creep.say(`2`)
-            if ((creep.pos.x != pos.x) || (creep.pos.y != pos.y)) {
-              creep.moveTo(pos, {maxRooms:2, reusePath: 10})
-            }
-            else {
-              creep.drop(RESOURCE_ENERGY)
-            }
-          // }
+          if ((creep.pos.x != pos.x) || (creep.pos.y != pos.y)) {
+            creep.moveTo(pos, {maxRooms:2, reusePath: 10})
+          }
+          else {
+            creep.drop(RESOURCE_ENERGY)
+          }
         }
       }
     })

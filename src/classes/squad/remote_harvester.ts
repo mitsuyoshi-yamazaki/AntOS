@@ -769,8 +769,11 @@ export class RemoteHarvesterSquad extends Squad {
             }
             else {
               if (creep.room.storage && (creep.room.storage.store.energy > 0)) {
-                if (creep.withdraw(creep.room.storage, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                  creep.moveTo(creep.room.storage)
+                if (creep.pos.isNearTo(creep.room.storage)) {
+                  creep.withdraw(creep.room.storage, RESOURCE_ENERGY)
+                }
+                else {
+                 creep.moveTo(creep.room.storage)
                 }
               }
               else {
@@ -781,7 +784,10 @@ export class RemoteHarvesterSquad extends Squad {
                 })
 
                 if (container) {
-                  if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                  if (creep.pos.isNearTo(container)) {
+                    creep.withdraw(container, RESOURCE_ENERGY)
+                  }
+                  else {
                     creep.moveTo(container, {maxRooms: 1})
                   }
                 }
@@ -819,7 +825,10 @@ export class RemoteHarvesterSquad extends Squad {
           })
 
           if (container) {
-            if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            if (creep.pos.isNearTo(container)) {
+              creep.withdraw(container, RESOURCE_ENERGY)
+            }
+            else {
               creep.moveTo(container, move_to_ops)
             }
             return
@@ -827,7 +836,10 @@ export class RemoteHarvesterSquad extends Squad {
 
           let source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
           if (source) {
-            if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
+            if (creep.pos.isNearTo(source)) {
+              creep.harvest(source)
+            }
+            else {
               const result = creep.moveTo(source, move_to_ops)
               if (result != OK) {
                 creep.say(`E${result}`)
@@ -1035,14 +1047,16 @@ export class RemoteHarvesterSquad extends Squad {
         }
 
         if (drop) {
-          const pickup_result = creep.pickup(drop)
-          creep.memory.pickup_target = drop.id
+          if (creep.pos.isNearTo(drop)) {
+            const pickup_result = creep.pickup(drop)
+            creep.memory.pickup_target = drop.id
 
-          if (pickup_result == ERR_NOT_IN_RANGE) {
-            creep.moveTo(drop, {maxRooms: 1, reusePath: 10})
+            if (pickup_result == OK) {
+              creep.memory.pickup_target = undefined
+            }
           }
-          else if (pickup_result == OK) {
-            creep.memory.pickup_target = undefined
+          else {
+            creep.moveTo(drop, {maxRooms: 1, reusePath: 10})
           }
           return
         }
@@ -1222,29 +1236,31 @@ export class RemoteHarvesterSquad extends Squad {
         }
 
         if (!has_minerals || !this.destination.room.storage) {
-          const transfer_result = creep.transfer(this.destination, RESOURCE_ENERGY)
-          if (transfer_result == ERR_NOT_IN_RANGE) {
-            // const ignore_creeps = (Game.time % 5) < 3
-
-            if (['W46S26', 'W45S26', 'W47S7'].indexOf(creep.room.name) >= 0) {
-              creep.moveToRoom(this.destination.room.name)
-              return
-            }
-            else if (creep.room.name == 'W46S5') {
-              creep.moveTo(17, 49)
-            }
-            else if (creep.room.name == 'W45S4') {
-              creep.moveTo(0, 38)
-            }
-            else {
-              if (creep.moveTo(this.destination, move_to_ops) == ERR_NO_PATH) {
-                creep.say(`NO PATH`)
-                creep.moveToRoom(this.destination.room.name)
-              }
+          if (creep.pos.isNearTo(this.destination)) {
+            const transfer_result = creep.transfer(this.destination, RESOURCE_ENERGY)
+            if (transfer_result != OK) {
+              creep.say(`E${transfer_result}`)
             }
           }
-          else if (transfer_result != OK) {
-            creep.say(`E${transfer_result}`)
+          else {
+              // const ignore_creeps = (Game.time % 5) < 3
+
+              if (['W46S26', 'W45S26', 'W47S7'].indexOf(creep.room.name) >= 0) {
+                creep.moveToRoom(this.destination.room.name)
+                return
+              }
+              else if (creep.room.name == 'W46S5') {
+                creep.moveTo(17, 49)
+              }
+              else if (creep.room.name == 'W45S4') {
+                creep.moveTo(0, 38)
+              }
+              else {
+                if (creep.moveTo(this.destination, move_to_ops) == ERR_NO_PATH) {
+                  creep.say(`NO PATH`)
+                  creep.moveToRoom(this.destination.room.name)
+                }
+              }
           }
         }
         else {

@@ -189,8 +189,10 @@ export class RemoteMineralHarvesterSquad extends Squad {
     }
 
     if (this.mineral) {
-      if (creep.harvest(this.mineral) == ERR_NOT_IN_RANGE) {
-
+      if (creep.pos.isNearTo(this.mineral)) {
+        creep.harvest(this.mineral)
+      }
+      else {
         if ((this.room_name == 'W46S26') && (creep.room.name == 'W45S27')) {
           creep.moveToRoom('W45S26')
           return
@@ -246,10 +248,10 @@ export class RemoteMineralHarvesterSquad extends Squad {
         }
 
         if (this.mineral) {
-          const transfer_result = this.harvester.transfer(creep, this.mineral.mineralType)
-          // creep.say(`${transfer_result}`)
-
-          if (transfer_result == ERR_NOT_IN_RANGE) {
+          if (this.harvester.pos.isNearTo(creep)) {
+            this.harvester.transfer(creep, this.mineral.mineralType)
+          }
+          else {
             creep.moveTo(this.harvester)
           }
 

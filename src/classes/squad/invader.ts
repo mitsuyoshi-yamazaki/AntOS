@@ -286,7 +286,11 @@ export class InvaderSquad extends Squad {
         creep.moveTo(spawn)
         return
       }
-      if (spawn.recycleCreep(creep) == ERR_NOT_IN_RANGE) {
+
+      if (spawn.pos.isNearTo(creep)) {
+        spawn.recycleCreep(creep)
+      }
+      else {
         creep.moveTo(spawn)
       }
     })
@@ -326,7 +330,10 @@ export class InvaderSquad extends Squad {
     }
 
     if (this.target) {
-      if (creep.dismantle(this.target) == ERR_NOT_IN_RANGE) {
+      if (creep.pos.isNearTo(this.target)) {
+        creep.dismantle(this.target)
+      }
+      else {
         creep.moveTo(this.target)
       }
       return
@@ -363,7 +370,10 @@ export class InvaderSquad extends Squad {
 
     const heal_target = (this.leader.hits < creep.hits) ? this.leader : creep
 
-    if (creep.heal(heal_target) == ERR_NOT_IN_RANGE) {
+    if (creep.pos.isNearTo(heal_target)) {
+      creep.heal(heal_target)
+    }
+    else {
       if (creep.rangedHeal(heal_target) == ERR_NOT_IN_RANGE) {
         creep.heal(creep)
       }

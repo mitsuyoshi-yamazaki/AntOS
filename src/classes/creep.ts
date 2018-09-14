@@ -978,6 +978,10 @@ export function init() {
       return ERR_INVALID_ARGS
     }
 
+    if (!this.pos.isNearTo(target)) {
+      return ERR_NOT_IN_RANGE
+    }
+
     let return_code: ScreepsReturnCode = ERR_NOT_ENOUGH_RESOURCES
     for (const key of Object.keys(this.carry)) {
       const resource_type = key as ResourceConstant
@@ -1013,6 +1017,10 @@ export function init() {
         Game.notify(message)
       }
       return ERR_INVALID_ARGS
+    }
+
+    if (!this.pos.isNearTo(target)) {
+      return ERR_NOT_IN_RANGE
     }
 
     let return_code: ScreepsReturnCode = ERR_NOT_ENOUGH_RESOURCES
@@ -1361,17 +1369,18 @@ export function init() {
         this.say('NO Src')
       }
       else {
-        const withdraw_result = this.withdraw(target, RESOURCE_ENERGY)
+        if (this.pos.isNearTo(target)) {
+          const withdraw_result = this.withdraw(target, RESOURCE_ENERGY)
 
-        if ((withdraw_result != OK) && this.memory.stop) {
-          this.memory.stop = false
+          if ((withdraw_result != OK) && this.memory.stop) {
+            this.memory.stop = false
+          }
+          if ((withdraw_result == OK) && (target.structureType != STRUCTURE_STORAGE)) {
+            is_target_for_upgrader = true
+          }
         }
-
-        if (withdraw_result == ERR_NOT_IN_RANGE) {
+        else {
           this.moveTo(target)
-        }
-        else if ((withdraw_result == OK) && (target.structureType != STRUCTURE_STORAGE)) {
-          is_target_for_upgrader = true
         }
       }
     }
@@ -1446,7 +1455,10 @@ export function init() {
     }
 
     if ((_.sum(this.carry) > this.carry.energy) && this.room.storage) {
-      if (this.transferResources(this.room.storage) == ERR_NOT_IN_RANGE) {
+      if (this.pos.isNearTo(this.room.storage)) {
+        this.transferResources(this.room.storage)
+      }
+      else {
         this.moveTo(this.room.storage, move_to_opt)
         return
       }
@@ -1526,7 +1538,10 @@ export function init() {
           // }
 
           if (drop) {
-            if (this.pickup(drop) == ERR_NOT_IN_RANGE) {
+            if (this.pos.isNearTo(drop)) {
+              this.pickup(drop)
+            }
+            else {
               this.moveTo(drop, move_to_opt)
               return
             }
@@ -1539,7 +1554,10 @@ export function init() {
             })[0]
 
             if (container) {
-              if (this.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+              if (this.pos.isNearTo(container)) {
+                this.withdraw(container, RESOURCE_ENERGY)
+              }
+              else {
                 if (carry > (this.carryCapacity * 0.7)) {
                   this.memory.status = CreepStatus.CHARGE
                 }
@@ -1560,16 +1578,6 @@ export function init() {
           // }
         }
 
-        if (this.room.name == 'W56S7') {
-          const source_link = Game.getObjectById('5b64042a3081766dddad9352') as StructureLink | undefined
-          if (source_link && (source_link.energy > 0) && (this.pos.getRangeTo(source_link) < 12)) {
-            if (this.withdraw(source_link, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-              this.moveTo(source_link, move_to_opt)
-            }
-            return
-          }
-        }
-
         if ((sources.length > 0)) {
           const source = ((sources.length == 1) && (sources[0].store.energy > 0)) ? sources[0] : this.pos.findClosestByPath(sources, {
             filter: (s: WorkerSource) => {
@@ -1580,7 +1588,10 @@ export function init() {
             }
           })
           if (source) {
-            if (this.withdraw(source, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            if (this.pos.isNearTo(source)) {
+              this.withdraw(source, RESOURCE_ENERGY)
+            }
+            else {
               if (carry > (this.carryCapacity * 0.7)) {
                 this.memory.status = CreepStatus.CHARGE
               }
@@ -1595,7 +1606,10 @@ export function init() {
         const target = this.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
 
         if (target) {
-          if (this.harvest(target) == ERR_NOT_IN_RANGE) {
+          if (this.pos.isNearTo(target)) {
+            this.harvest(target)
+          }
+          else {
             if (carry > (this.carryCapacity * 0.7)) {
               this.memory.status = CreepStatus.CHARGE
             }
@@ -1607,7 +1621,10 @@ export function init() {
         }
         else {
           const target = this.pos.findClosestByPath(FIND_SOURCES)
-          if (this.harvest(target) == ERR_NOT_IN_RANGE) {
+          if (this.pos.isNearTo(target)) {
+            this.harvest(target)
+          }
+          else {
             if (carry > (this.carryCapacity * 0.7)) {
               this.memory.status = CreepStatus.CHARGE
             }
@@ -1668,24 +1685,8 @@ export function init() {
 
     if (this.memory.status == CreepStatus.BUILD) {
 
-      // if (this.room.name == 'W49S34') {
-      //   const damaged_structure = this.pos.findClosestByPath(FIND_STRUCTURES, {
-      //     filter: (structure) => {
-      //       return ((structure.structureType == STRUCTURE_ROAD) || (structure.structureType == STRUCTURE_CONTAINER))
-      //         && (structure.hits < (structure.hitsMax * 0.6))
-      //     }
-      //   })
-
-      //   if (damaged_structure) {
-      //     if (this.repair(damaged_structure) == ERR_NOT_IN_RANGE) {
-      //       this.moveTo(damaged_structure)
-      //     }
-      //     return
-      //   }
-      // }
-
       let should_upgrade = true
-      if (['W45S27'].indexOf(this.room.name) >= 0) {
+      if (['dummy'].indexOf(this.room.name) >= 0) {
         let number = 0
 
         for (const creep_name in Game.creeps) {
@@ -1706,9 +1707,6 @@ export function init() {
         }
       }
 
-      if (this.room.name == 'W47S9') {
-        should_upgrade = false
-      }
       if (this.room.controller && (this.room.controller.level >= 8)) {
         should_upgrade = false
       }
@@ -1820,7 +1818,10 @@ export function init() {
       })[0]
 
       if (heal_target) {
-        if (this.heal(heal_target) == ERR_NOT_IN_RANGE) {
+        if (this.pos.isNearTo(heal_target)) {
+          this.heal(heal_target)
+        }
+        else {
           this.rangedHeal(heal_target)
         }
         return ActionResult.IN_PROGRESS

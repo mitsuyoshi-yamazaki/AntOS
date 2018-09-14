@@ -168,7 +168,10 @@ export class UpgraderSquad extends Squad {
         }
 
         if (lab) {
-          if (lab.boostCreep(creep) == ERR_NOT_IN_RANGE) {
+          if (lab.pos.isNearTo(creep)) {
+            lab.boostCreep(creep)
+          }
+          else {
             creep.moveTo(lab)
           }
           return

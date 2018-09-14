@@ -177,18 +177,11 @@ export class AttackerSquad extends Squad {
         return
       }
 
-      const is_safemode_active = (attacker.room.controller) ? ((attacker.room.controller!.safeMode || 0) > 0) : false
-
-      // if (attacker.room.name == 'W43N7') {
-
-      // }
-      // else {
-        const target = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
-        if (target) {
-          attacker.destroy(target)
-          return
-        }
-      // }
+      const target = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
+      if (target) {
+        attacker.destroy(target)
+        return
+      }
 
       if (!this.destination_room_name) {
         if (attacker.moveToRoom(this.base_room.name) == ActionResult.DONE) {
@@ -254,35 +247,7 @@ export class AttackerSquad extends Squad {
         return
       }
 
-      // const hostile_creep: Creep = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
-      // if (hostile_creep) {
-      //   if (Game.time % 5) {
-      //     attacker.say('FOUND YOU', true)
-      //   }
-
-      //   const rr = attacker.rangedAttack(hostile_creep)
-      //   if (rr == ERR_NOT_IN_RANGE) {
-      //     const r = attacker.moveTo(hostile_creep)
-      //     // console.log(`FUGA ${attacker}, ${r}, ${hostile_creep}, ${hostile_creep.pos}`)
-      //   }
-      //   // console.log(`HOGE ${attacker}, ${rr}, ${hostile_creep}, ${hostile_creep.pos}`)
-      //   return
-      // }
-
-      // if (!this.destination) {
-      //   // console.log(`Attacker wait ${attacker!.name}, ${this.name}`)
-      //   // if (attacker!.moveToRoom(this.room_for_wait.name) == ActionResult.IN_PROGRESS) {
-      //   //   attacker!.say(this.room_for_wait.name)
-      //   // }
-      //   return
-      // }
-
-      if (attacker.room.name == 'W43N7') {
-
-      }
-      else {
-        attacker.searchAndDestroy()
-      }
+      attacker.searchAndDestroy()
 
       if (attacker.moveToRoom(this.destination_room_name) != ActionResult.DONE) {
         attacker.say(this.destination_room_name)
@@ -295,18 +260,5 @@ export class AttackerSquad extends Squad {
     const attacker = Array.from(this.creeps.values())[0]
     const attacker_info = attacker ? `${attacker.name} ${attacker.pos}` : ''
     return `${super.description()}, ${attacker_info}\n    - to ${this.destination_room_name} (${this.rooms_to_defend})`
-  }
-
-  // -- Private --
-  private suicide(): void {
-    // @todo:
-  }
-
-  private addAttacker(spawnFunc: SpawnFunction) {
-    // @todo:
-  }
-
-  private addHealer(spawnFunc: SpawnFunction) {
-    // @todo:
   }
 }
