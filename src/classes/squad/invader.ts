@@ -20,6 +20,7 @@ export class InvaderSquad extends Squad {
 
   private leader: Creep | undefined
   private follower: Creep | undefined
+  private charger: Creep | undefined
 
   private next_creep: CreepType | undefined
 

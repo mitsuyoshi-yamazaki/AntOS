@@ -622,6 +622,7 @@ export function tick(): void {
         'W55S13',
         'W55S23',
         'W51S29',
+        'W58S4',
       ]
 
       for (const region_name in Memory.regions) {
