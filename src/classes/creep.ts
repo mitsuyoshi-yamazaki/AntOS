@@ -1245,7 +1245,7 @@ export function init() {
           if (nukers) {
             const nuker = nukers[0]
 
-            if (nuker && (nuker.ghodium < nuker.ghodiumCapacity) && ((this.room.terminal.store[RESOURCE_GHODIUM] || 0) > 0)) {
+            if (nuker && this.pos.isNearTo(nuker) && (nuker.ghodium < nuker.ghodiumCapacity) && ((this.room.terminal.store[RESOURCE_GHODIUM] || 0) > 0)) {
               this.withdraw(this.room.terminal, RESOURCE_GHODIUM)
               return
             }
@@ -1292,7 +1292,7 @@ export function init() {
           if (nukers) {
             const nuker = nukers[0]
 
-            if (nuker && (nuker.energy < nuker.energyCapacity)) {
+            if (nuker && this.pos.isNearTo(nuker) && (nuker.energy < nuker.energyCapacity)) {
               this.transfer(nuker, RESOURCE_ENERGY)
               return
             }
@@ -1302,7 +1302,7 @@ export function init() {
           if (power_spawns) {
             const power_spawn = power_spawns[0]
 
-            if (power_spawn && (power_spawn.energy < power_spawn.energyCapacity)) {
+            if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.energy < power_spawn.energyCapacity)) {
               this.transfer(power_spawn, RESOURCE_ENERGY)
               return
             }
@@ -1317,7 +1317,7 @@ export function init() {
           if (nukers) {
             const nuker = nukers[0]
 
-            if (nuker && (nuker.ghodium < nuker.ghodiumCapacity)) {
+            if (nuker && this.pos.isNearTo(nuker) && (nuker.ghodium < nuker.ghodiumCapacity)) {
               this.transfer(nuker, RESOURCE_GHODIUM)
               return
             }
