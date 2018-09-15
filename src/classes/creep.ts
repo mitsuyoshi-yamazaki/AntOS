@@ -1251,6 +1251,17 @@ export function init() {
             }
           }
 
+          if ((this.room.terminal.store[RESOURCE_POWER] || 0) > 0) {
+            const power_spawns = this.room.owned_structures.get(STRUCTURE_POWER_SPAWN) as StructurePowerSpawn[]
+            if (power_spawns) {
+              const power_spawn = power_spawns[0]
+
+              if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.power == 0)) {
+                this.withdraw(this.room.terminal, RESOURCE_POWER)
+                return
+              }
+            }
+          }
         }
       }
 
@@ -1312,14 +1323,28 @@ export function init() {
         this.transfer(storage, RESOURCE_ENERGY)
       }
       else {
-        if (this.room.owned_structures && ((this.carry[RESOURCE_GHODIUM] || 0) > 0)) {
-          const nukers = this.room.owned_structures.get(STRUCTURE_NUKER) as StructureNuker[]
-          if (nukers) {
-            const nuker = nukers[0]
+        if (this.room.owned_structures) {
+          if (((this.carry[RESOURCE_GHODIUM] || 0) > 0)) {
+            const nukers = this.room.owned_structures.get(STRUCTURE_NUKER) as StructureNuker[]
+            if (nukers) {
+              const nuker = nukers[0]
 
-            if (nuker && this.pos.isNearTo(nuker) && (nuker.ghodium < nuker.ghodiumCapacity)) {
-              this.transfer(nuker, RESOURCE_GHODIUM)
-              return
+              if (nuker && this.pos.isNearTo(nuker) && (nuker.ghodium < nuker.ghodiumCapacity)) {
+                this.transfer(nuker, RESOURCE_GHODIUM)
+                return
+              }
+            }
+          }
+
+          if (((this.carry[RESOURCE_POWER] || 0) > 0)) {
+            const power_spawns = this.room.owned_structures.get(STRUCTURE_POWER_SPAWN) as StructurePowerSpawn[]
+            if (power_spawns) {
+              const power_spawn = power_spawns[0]
+
+              if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.power == 0)) {
+                this.transfer(power_spawn, RESOURCE_POWER)
+                return
+              }
             }
           }
         }
