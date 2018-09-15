@@ -114,14 +114,31 @@ export class UpgraderSquad extends Squad {
     // capacity: 2300
     // 8 units, 2C, 16W, 9M
 
+    const type = CreepType.WORKER
     const room = Game.rooms[this.room_name]
 
-    if (this.max_energy) {
-      this.addUpgrader(energyAvailable, spawnFunc, CreepType.WORKER, {max_energy: this.max_energy})
+    if (room && room.controller && (room.controller.level >= 8)) {
+      // max 15 WORKs
+
+      const body: BodyPartConstant[] = [
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        WORK, WORK, WORK, WORK, WORK,
+        CARRY, MOVE,
+      ]
+
+      this.addGeneralCreep(spawnFunc, body, type)
       return
     }
 
-    this.addUpgrader(energyAvailable, spawnFunc, CreepType.WORKER)
+    if (this.max_energy) {
+      this.addUpgrader(energyAvailable, spawnFunc, type, {max_energy: this.max_energy})
+      return
+    }
+
+    this.addUpgrader(energyAvailable, spawnFunc, type)
   }
 
   public run(): void {
