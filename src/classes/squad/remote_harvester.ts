@@ -82,6 +82,12 @@ export class RemoteHarvesterSquad extends Squad {
     if (room && room.storage && room.controller && room.controller.my && (room.controller.level >= 4)) {
       this.destination = room.storage
     }
+    else if ((this.room_name == 'W45S9')) {
+      const w46s9 = Game.rooms['W46S9']
+      if (w46s9 && w46s9.storage && w46s9.controller && w46s9.controller.my && (w46s9.controller.level >= 4)) {
+        this.destination = w46s9.storage
+      }
+    }
     else if (squad_memory.destination_id) {
       const specified_destination = Game.getObjectById(squad_memory.destination_id) as HarvesterDestination | undefined
 
