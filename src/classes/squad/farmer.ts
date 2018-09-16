@@ -538,7 +538,8 @@ export class FarmerSquad extends Squad {
         }
       }
 
-      if (!creep.boosted()) {
+      // if (!creep.boosted()) {
+      if (creep.room.construction_sites && (creep.room.construction_sites.length > 0)) {
         const construction_site = creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 3)[0]
         if (construction_site) {
           creep.build(construction_site)  // @fixme: when build storage
