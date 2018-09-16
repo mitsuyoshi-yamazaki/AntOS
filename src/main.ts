@@ -199,7 +199,7 @@ function trade():void {
 
   sellResource({
     resource_type: RESOURCE_CATALYST,
-    price: 0.200,
+    price: 0.250,
     rooms,
   })
 
