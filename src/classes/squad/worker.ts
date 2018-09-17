@@ -46,12 +46,6 @@ export class WorkerSquad extends Squad {
     else if (room_name == 'W43S5') {
       this.number_of_workers = 3
     }
-    else if (room_name == 'W43S2') {
-      this.number_of_workers = 6
-    }
-    else if (room_name == 'W47N5') {
-      this.number_of_workers = 4
-    }
     else {
       this.number_of_workers = 8
     }

@@ -211,7 +211,9 @@ export function tick(): void {
   }
 
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {
-    console.log(`Room.owned_structures_not_found_error ${structure_type} ${room_link(this.name)}`)
+    if ((Game.time % 13) == 3) {
+      console.log(`Room.owned_structures_not_found_error ${structure_type} ${room_link(this.name)}`)
+    }
   }
 
   Room.prototype.add_remote_harvester = function(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string | null {

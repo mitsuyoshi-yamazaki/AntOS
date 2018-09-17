@@ -84,6 +84,10 @@ export class UpgraderSquad extends Squad {
         this.max_energy = 4500
       }
     }
+
+    if (this.room_name == 'W45S3') {
+      this.max_energy = 4500
+    }
   }
 
   public get type(): SquadType {
