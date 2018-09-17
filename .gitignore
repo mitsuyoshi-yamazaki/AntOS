@@ -1,62 +1,33 @@
-# yarn lock file
-/yarn.lock
-
-# npm lock file (v5.0.0+)
-/package-lock.json
-
-# Ignore basic folders
-/dist
-/.rpt2_cache
-/tsc-out
-/node_modules
-/_book
-
-# TypeScript definitions installed by Typings
-/typings
-
-# Screeps Config
+# Screeps config
 screeps.json
 
-# Numerous always-ignore extensions
-*.diff
-*.err
-*.orig
-*.log
-*.rej
-*.swo
-*.swp
-*.zip
-*.vi
-*~
+#
+/dist
+/.rpt2_cache
+/node_modules
 
-# Editor folders
-.cache
-.project
-.settings
-.tmproj
-*.esproj
-nbproject
-*.sublime-project
-*.sublime-workspace
-.idea
+# Created by https://www.gitignore.io/api/macos
 
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
-
+### macOS ###
+# General
 .DS_Store
 .AppleDouble
 .LSOverride
 
+# Icon must end with two \r
+Icon
+
 # Thumbnails
 ._*
 
-# Files that might appear on external disk
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
 .Spotlight-V100
+.TemporaryItems
 .Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
 
 # Directories potentially created on remote AFP share
 .AppleDB
@@ -64,3 +35,6 @@ nbproject
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+# End of https://www.gitignore.io/api/macos
