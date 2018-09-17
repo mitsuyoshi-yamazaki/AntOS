@@ -8,7 +8,7 @@ const leveled_colors: {[index: string]: string} = {
   almost: '#47CAB0',
 }
 
-type ColorLevel = 'info' | 'warn' | 'error' | 'high' | 'almost'
+export type ColorLevel = 'info' | 'warn' | 'error' | 'high' | 'almost'
 export function leveled_color(level: ColorLevel): string {
   return leveled_colors[level]
 }

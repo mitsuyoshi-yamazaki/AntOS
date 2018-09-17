@@ -2,9 +2,11 @@ import { ErrorMapper } from "utils/ErrorMapper"
 
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"
+import { leveled_colored_text } from './classes/utils';
 
 Initializer.init()
-console.log(`<b><span style='color:#F9E79F'>Initializer.init() v${Game.version} at ${Game.time}</span></b>`)
+const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
+console.log(leveled_colored_text(initializing_message, 'warn'))
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code

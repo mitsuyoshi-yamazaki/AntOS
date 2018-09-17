@@ -2,7 +2,7 @@ import { SquadMemory, SquadType } from "./squad/squad"
 import { RegionMemory } from "./region"
 import { ErrorMapper } from "utils/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
-import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part } from "./utils"
+import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color } from './utils';
 import { EmpireMemory } from './empire'
 
 const cost_matrixes = new Map<string, CostMatrix>()
@@ -276,19 +276,6 @@ export function tick(): void {
     const high = 'high'
     const almost = 'almost'
 
-    const colors: {[index: string]: string} = {
-      info: 'white',
-      warn: '#F9E79F',
-      error: '#E74C3C',
-      high: '#64C3F9',
-      almost: '#47CAB0',
-    }
-
-    const colored_text = (text: string, label: 'info' | 'warn' | 'error' | 'high' | 'almost') => {
-      const color = colors[label] || 'white'
-      return `<span style='color:${color}'>${text}</span>`
-    }
-
     const gcl_progress = Math.round(Game.gcl.progress / 1000000)
     const gcl_progress_total = Math.round(Game.gcl.progressTotal / 1000000)
     const gcl_progress_percentage = Math.round((Game.gcl.progress / Game.gcl.progressTotal) * 1000) / 10
@@ -300,7 +287,7 @@ export function tick(): void {
       gcl_label = high
     }
 
-    const gcl_progress_text = colored_text(`${gcl_progress_percentage}`, gcl_label)
+    const gcl_progress_text = leveled_colored_text(`${gcl_progress_percentage}`, gcl_label)
 
     console.log(`v${Game.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%`)
 
@@ -338,7 +325,7 @@ export function tick(): void {
         progress_label = high
       }
 
-      const progress_text = colored_text(`${progress_percentage}`, progress_label)
+      const progress_text = leveled_colored_text(`${progress_percentage}`, progress_label)
       const progress = (rcl >= 8) ? 'Max' : `<b>${progress_text}</b> %`
 
       let rcl_level: 'info' | 'high' | 'almost' = info
@@ -351,7 +338,7 @@ export function tick(): void {
         rcl_level = high
       }
 
-      const rcl_text = colored_text(`${rcl}`, rcl_level)
+      const rcl_text = leveled_colored_text(`${rcl}`, rcl_level)
 
       const region_memory = Memory.regions[room_name] as RegionMemory | undefined // Assuming region.name == region.room.name
       let reaction_output: string
@@ -361,11 +348,11 @@ export function tick(): void {
         reaction_output = '-'
       }
       else if (!region_memory || !region_memory.reaction_outputs || !region_memory.reaction_outputs[0]) {
-        reaction_output = `<span style='color:${colors[warn]}'>none</span>`
+        reaction_output = leveled_colored_text('none', warn)
       }
       else {
         const color = region_memory.no_reaction ? error : info
-        reaction_output = colored_text(region_memory.reaction_outputs[0], color)
+        reaction_output = leveled_colored_text(region_memory.reaction_outputs[0], color)
 
         if (region_memory.reaction_outputs.length > 1) {
           number_of_reactions = `(${region_memory.reaction_outputs.length}`
@@ -384,7 +371,7 @@ export function tick(): void {
           storage_amount_level = warn
         }
 
-        storage_amount_text = colored_text(`${storage_amount}`, storage_amount_level) + '%'
+        storage_amount_text = leveled_colored_text(`${storage_amount}`, storage_amount_level) + '%'
       }
       else {
         storage_amount_text = ""
@@ -407,7 +394,7 @@ export function tick(): void {
         energy_amount_level = almost
       }
 
-      const storage_capacity = !room.storage ? "" : ` <b>${colored_text(energy_amount_text, energy_amount_level)}</b>kE`
+      const storage_capacity = !room.storage ? "" : ` <b>${leveled_colored_text(energy_amount_text, energy_amount_level)}</b>kE`
 
       let spawn_busy_time = 0
       let spawn_time = 0
@@ -430,7 +417,7 @@ export function tick(): void {
         spawn_log_level = 'info'
       }
 
-      const spawn = `Spawn usage ${colored_text(spawn_usage.toString(10), spawn_log_level)} % (${room.spawns.length})`
+      const spawn = `Spawn usage ${leveled_colored_text(spawn_usage.toString(10), spawn_log_level)} % (${room.spawns.length})`
 
       let heavyly_attacked = ''
       if (region_memory && region_memory.last_heavy_attacker) {
@@ -445,7 +432,7 @@ export function tick(): void {
           ticks_ago_level = 'warn'
         }
 
-        const text = colored_text(`${ticks_ago} ticks ago`, ticks_ago_level)
+        const text = leveled_colored_text(`${ticks_ago} ticks ago`, ticks_ago_level)
         const teams = !(!region_memory.last_heavy_attacker.teams) ? `, from ${region_memory.last_heavy_attacker.teams.map(t=>profile_link(t))}` : ''
 
         heavyly_attacked = `heavyly attacked ${room_history_link(room_name, ticks, {text})}${teams}`
@@ -761,7 +748,7 @@ export function tick(): void {
 
       const text = `${ticks_ago} ticks ago`
 
-      let color = 'white'
+      let level: ColorLevel = 'info'
       const room = Game.rooms[room_name] as Room | undefined
       if (room && room.is_keeperroom) {
         continue
@@ -769,14 +756,14 @@ export function tick(): void {
 
       if (room && room.controller) {
         if (room.controller.my) {
-          color = '#E74C3C'
+          level = 'error'
         }
         else if (room.controller.reservation && (room.controller.reservation.username == 'Mitsuyoshi')) {
-          color = '#F9E79F'
+          level = 'warn'
         }
       }
 
-      console.log(`- ${room_link(room_name, {color})} \tattacked: ${room_history_link(room_name, attacked_time, {text})}`)
+      console.log(`- ${room_link(room_name, {color: leveled_color(level)})} \tattacked: ${room_history_link(room_name, attacked_time, {text})}`)
     }
 
     console.log(`\n`)
