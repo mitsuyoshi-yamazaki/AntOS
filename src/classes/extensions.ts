@@ -301,7 +301,7 @@ export function tick(): void {
 
     const gcl_progress_text = colored_text(`${gcl_progress_percentage}`, gcl_label)
 
-    console.log(`GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%`)
+    console.log(`v${Game.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%`)
 
     let rooms: Room[] = []
 
