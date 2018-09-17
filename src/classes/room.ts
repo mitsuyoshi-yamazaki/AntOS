@@ -447,6 +447,7 @@ export function tick(): void {
 
   Room.prototype.place_construction_sites = function(): void {
     const room = this as Room
+    let message = ''
 
     if (room.construction_sites && (room.construction_sites.length > 0)) {
       return
@@ -526,11 +527,18 @@ export function tick(): void {
           // so call it one by one
         }
       }
-      else if (result != ERR_RCL_NOT_ENOUGH) {
-        const message = `ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}`
-        console.log(message)
-        Game.notify(message)
+      else if (result == ERR_INVALID_TARGET) {
+        message += `ERROR ${structure_type} construction site invalid args: removing ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}\n`
+        flag.remove()
       }
+      else if (result != ERR_RCL_NOT_ENOUGH) {
+        message += `ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}\n`
+      }
+    }
+
+    if (message.length > 0) {
+      console.log(message)
+      Game.notify(message)
     }
   }
 
