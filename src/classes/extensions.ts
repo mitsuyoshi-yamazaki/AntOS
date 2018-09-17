@@ -37,6 +37,7 @@ declare global {
     build_remote_roads(squad_name: string, opts?: {dry_run?: boolean}): void
 
     test(energy: number): void
+    dump_memory(): void // @todo:
     refresh_room_memory(opts?:{dry_run?: boolean}): void
   }
 
