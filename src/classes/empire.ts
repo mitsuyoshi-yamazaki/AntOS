@@ -110,12 +110,25 @@ export class Empire {
           const boost_amount = (farm_room.controller.my && farm_room.room.terminal) ? (farm_room.room.terminal.store[boost_resource] || 0) : 0
 
           if (farm_room.room.terminal && (boost_amount >= 100)) {
-            const transfer_result = farm_room.room.terminal.send(boost_resource, boost_amount, farm_room.base)
-            avoid_unclaim = transfer_result == OK
+            const base_room = Game.rooms[farm_room.base]
+            const energy_needed = boost_amount + 2000
 
-            const message = `Transfer ${boost_resource} * ${boost_amount} from ${farm_room.room.name} to ${farm_room.base}: ${transfer_result}`
-            console.log(message)
-            Game.notify(message)
+            if ((farm_room.room.terminal.store.energy < boost_amount) && base_room && base_room.terminal && (base_room.terminal.store.energy >= energy_needed)) {
+              const transfer_result = base_room.terminal.send(RESOURCE_ENERGY, energy_needed, farm_room.room.name)
+              avoid_unclaim = transfer_result == OK
+
+              const message = `Transfer ${RESOURCE_ENERGY} * ${energy_needed} from ${base_room.name} to ${farm_room.room.name}: ${transfer_result}`
+              console.log(message)
+              Game.notify(message)
+            }
+            else {
+              const transfer_result = farm_room.room.terminal.send(boost_resource, boost_amount, farm_room.base)
+              avoid_unclaim = transfer_result == OK
+
+              const message = `Transfer ${boost_resource} * ${boost_amount} from ${farm_room.room.name} to ${farm_room.base}: ${transfer_result}`
+              console.log(message)
+              Game.notify(message)
+            }
           }
 
           if (!avoid_unclaim && (['W49S6', 'W46S9', 'W47S8'].indexOf(farm_room.room.name) >= 0)) {
