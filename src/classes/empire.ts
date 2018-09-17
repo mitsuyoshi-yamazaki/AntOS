@@ -34,7 +34,7 @@ export class Empire {
       target_room_name: 'W45S3',
       base_room_name: 'W46S3',
       forced: true,
-      at_level: 16,
+      // at_level: 16,
     }
 
     // {

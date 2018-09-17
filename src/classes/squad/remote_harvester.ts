@@ -45,6 +45,7 @@ export class RemoteHarvesterSquad extends Squad {
   private keeper_lairs: StructureKeeperLair[] = []
   private containers: StructureContainer[] = []
   private containers_with_energy: StructureContainer[]
+  private construction_sites: ConstructionSite[] | undefined
 
   private debug = false
   private next_creep: CreepType | undefined
@@ -888,9 +889,19 @@ export class RemoteHarvesterSquad extends Squad {
           return
         }
 
-        const construction_site = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, {
-          filter: construction_site_filter
-        })
+        if (!this.construction_sites) {
+          this.construction_sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: construction_site_filter})
+        }
+
+        let construction_site: ConstructionSite | undefined
+        if (this.construction_sites && (this.construction_sites.length)) {
+          construction_site = creep.pos.findClosestByPath(this.construction_sites)
+        }
+
+        if (!construction_site && this.construction_sites && this.construction_sites[0]) {
+          creep.say(`NO PATH`)
+          construction_site = this.construction_sites[0]
+        }
 
         if (!construction_site) {
           const flag = creep.pos.findClosestByPath(FIND_FLAGS, {
