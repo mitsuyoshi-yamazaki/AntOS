@@ -446,7 +446,7 @@ export function tick(): void {
   }
 
   Room.prototype.place_construction_sites = function(): void {
-    const room = this
+    const room = this as Room
 
     if (room.construction_sites && (room.construction_sites.length > 0)) {
       return
@@ -507,7 +507,11 @@ export function tick(): void {
         structure_type = STRUCTURE_EXTENSION
       }
 
-      const result = room.createConstructionSite(flag.pos, structure_type)
+      let result = room.createConstructionSite(flag.pos, structure_type)
+      if ((result == ERR_RCL_NOT_ENOUGH) && (structure_type == STRUCTURE_SPAWN)) {
+        result = room.createConstructionSite(flag.pos, STRUCTURE_POWER_SPAWN)
+      }
+
 
       if (result == OK) {
         if (structure_type != STRUCTURE_ROAD) {
@@ -522,8 +526,10 @@ export function tick(): void {
           // so call it one by one
         }
       }
-      else if (result != ERR_RCL_NOT_ENOUGH) {
-        console.log(`ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}`)
+      else {
+        const message = `ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}`
+        console.log(message)
+        Game.notify(message)
       }
     }
   }
