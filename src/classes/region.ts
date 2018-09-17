@@ -1586,6 +1586,8 @@ export class Region {
 
   private create_squad_memory(): void {
 
+    const new_squads: {[name: string]: SquadMemory} = {}
+
     // --- Upgrader ---
     const upgrader_name = `upgrader_${this.room.name.toLowerCase()}` //UpgraderSquad.generateNewName()
     const upgrader_memory: SquadMemory = {
@@ -1594,8 +1596,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[upgrader_name] = upgrader_memory
-    console.log(`Create upgrader ${upgrader_name} for ${this.name}`)
+    new_squads[upgrader_name] = upgrader_memory
 
 
     // --- Charger ---
@@ -1606,8 +1607,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[charger_name] = charger_memory
-    console.log(`Create charger ${charger_name} for ${this.name}`)
+    new_squads[charger_name] = charger_memory
 
 
     // --- Scout ---
@@ -1618,8 +1618,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[scout_name] = scout_memory
-    console.log(`Create scout ${scout_name} for ${this.name}`)
+    new_squads[scout_name] = scout_memory
 
 
     // --- Researcher ---
@@ -1630,8 +1629,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[researcher_name] = researcher_memory
-    console.log(`Create researcher ${researcher_name} for ${this.name}`)
+    new_squads[researcher_name] = researcher_memory
 
 
     // --- Attacker ---
@@ -1642,8 +1640,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[attacker_name] = attacker_memory
-    console.log(`Create attacker ${attacker_name} for ${this.name}`)
+    new_squads[attacker_name] = attacker_memory
 
 
     // --- Manual ---
@@ -1654,8 +1651,7 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[manual_name] = manual_memory
-    console.log(`Create manual ${manual_name} for ${this.name}`)
+    new_squads[manual_name] = manual_memory
 
 
     // --- Temp ---
@@ -1666,21 +1662,32 @@ export class Region {
       owner_name: this.name,
       number_of_creeps: 0,
     }
-    Memory.squads[temp_name] = temp_memory
-    console.log(`Create temp ${temp_name} for ${this.name}`)
+    new_squads[temp_name] = temp_memory
 
 
-    // --- Nuker Charger ---
-    const nuker_charger_name = `nuker_charger_${this.room.name.toLowerCase()}`
-    const nuker_charger_memory: NukerChargerSquadMemory = {
-      name: nuker_charger_name,
-      type: SquadType.NUKER_CHARGER_SQUAD,
-      owner_name: this.name,
-      number_of_creeps: 0,
-      nuker_id: undefined,
+    // no longer needed
+    // // --- Nuker Charger ---
+    // const nuker_charger_name = `nuker_charger_${this.room.name.toLowerCase()}`
+    // const nuker_charger_memory: NukerChargerSquadMemory = {
+    //   name: nuker_charger_name,
+    //   type: SquadType.NUKER_CHARGER_SQUAD,
+    //   owner_name: this.name,
+    //   number_of_creeps: 0,
+    //   nuker_id: undefined,
+    // }
+    // new_squads[nuker_charger_name] = nuker_charger_memory
+
+    for (const squad_name in new_squads) {
+      if (Memory.squads[squad_name]) {
+        console.log(`${this.name}, ${squad_name} already exsists`)
+        continue
+      }
+
+      const squad_memory = new_squads[squad_name]
+      Memory.squads[squad_name] = squad_memory
+
+      console.log(`${this.name}, creates ${squad_name}`)
     }
-    Memory.squads[nuker_charger_name] = nuker_charger_memory
-    console.log(`Create nuker charger ${nuker_charger_name} for ${this.name}`)
   }
 
   private drawDebugInfo(): void { // @todo: Show debug info for each rooms
