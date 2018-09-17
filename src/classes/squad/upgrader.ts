@@ -32,6 +32,10 @@ export class UpgraderSquad extends Squad {
     let max = 0
     const room = Game.rooms[room_name]
 
+    if ((room_name == 'W45S3') && room.controller && room.controller.my && (room.controller.level < 6)) {
+      return (creeps_size < 1) ? SpawnPriority.LOW : SpawnPriority.NONE
+    }
+
     if (!room || !room.controller || !room.controller.my || !room.storage || !room.storage.my) {
       return SpawnPriority.NONE
     }
@@ -155,6 +159,12 @@ export class UpgraderSquad extends Squad {
         return
       }
 
+      if (creep.room.name != this.room_name) {
+        creep.drop(RESOURCE_ENERGY)
+        creep.moveToRoom(this.room_name)
+        return
+      }
+
       const should_boost = !creep.boosted() && ((creep.ticksToLive || 0) > 1450) && !creep.memory.stop
       if (should_boost && room && room.owned_structures && !is_rcl8) {
         const boost_compounds: ResourceConstant[] = [RESOURCE_GHODIUM_ACID, RESOURCE_CATALYZED_GHODIUM_ACID]
@@ -214,6 +224,15 @@ export class UpgraderSquad extends Squad {
         }
         return false
       })
+
+      if ((this.room_name == 'W45S3') && (this.creeps.size == 1) && (creep.memory.stop == true)) {
+        const x = 18
+        const y = 42
+
+        if ((creep.pos.x != x) || (creep.pos.y != y)) {
+          creep.moveTo(x, y)
+        }
+      }
     })
   }
 }
