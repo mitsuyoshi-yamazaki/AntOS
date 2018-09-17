@@ -152,6 +152,16 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
+      case 'W46S3': {
+        const target_room_name = 'W45S3'
+        const target_room = Game.rooms[target_room_name]
+        if (!target_room || !target_room.controller || (target_room.controller.level >= 6)) {
+          return SpawnPriority.NONE
+        }
+
+        return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
+      }
+
       case 'E16N37': {
         const target_room_name = 'E15N37'
         const room = Game.rooms[target_room_name]
@@ -222,6 +232,10 @@ export class ManualSquad extends Squad {
 
       case 'W47S9': {
         return energy_available > 2500
+      }
+
+      case 'W46S3': {
+        return energy_available >= 850
       }
 
       case 'E16N37': {
@@ -361,6 +375,36 @@ export class ManualSquad extends Squad {
           MOVE, MOVE, MOVE, MOVE, MOVE,
         ]
         this.addGeneralCreep(spawn_func, body, CreepType.WORKER)
+        return
+      }
+
+      case 'W46S3': {
+        const body_unit: BodyPartConstant[] = [
+          CARRY, CARRY, MOVE
+        ]
+        const energy_unit = 150
+
+        const name = this.generateNewName()
+        let body: BodyPartConstant[] = []
+        const memory: CreepMemory = {
+          squad_name: this.name,
+          status: CreepStatus.NONE,
+          birth_time: Game.time,
+          type: CreepType.CARRIER,
+          should_notify_attack: false,
+          let_thy_die: true,
+        }
+
+        energy_available = Math.min(energy_available, (energy_unit * 16))
+
+        while (energy_available >= energy_unit) {
+          body = body.concat(body_unit)
+          energy_available -= energy_unit
+        }
+
+        const result = spawn_func(body, name, {
+          memory: memory
+        })
         return
       }
 
@@ -567,6 +611,38 @@ export class ManualSquad extends Squad {
 
       case 'W47S9': {
         this.stealEnergyFrom('W55S13', 'W55S12', 18, 17)
+        return
+      }
+
+      case 'W46S3': {
+        if (!this.base_room || !this.base_room.storage) {
+          console.log(`ManualSquad.run no base room ${this.original_room_name}, ${this.name}`)
+          this.say(`NO SRC`)
+          return
+        }
+
+        const storage = this.base_room.storage
+        const target_room_name = 'W45S3'
+        const target_pos = new RoomPosition(19, 41, target_room_name)
+
+        this.creeps.forEach((creep) => {
+          if (creep.carry.energy == 0) {
+            if (creep.pos.isNearTo(storage)) {
+              creep.withdraw(storage, RESOURCE_ENERGY)
+            }
+            else {
+              creep.moveTo(storage)
+            }
+          }
+          else {
+            if ((creep.pos.x == target_pos.x) && (creep.pos.y == target_pos.y) && (creep.room.name == target_pos.roomName)) {
+              creep.drop(RESOURCE_ENERGY)
+            }
+            else {
+              creep.moveTo(target_pos)
+            }
+          }
+        })
         return
       }
 
@@ -1176,12 +1252,12 @@ export class ManualSquad extends Squad {
             return
           }
 
-          let target: AnyStructure | undefined
+          let target: Structure | null = null
           let no_more_target = true
           const memory = creep.memory as ManualMemory
 
           if (memory.target_id) {
-            target = Game.getObjectById(memory.target_id) as AnyStructure | undefined
+            target = Game.getObjectById(memory.target_id) as Structure | null
           }
 
           if (!target) {
@@ -1239,14 +1315,14 @@ export class ManualSquad extends Squad {
           }
 
           let withdraw_result: ScreepsReturnCode
-          const has_store = target as {store: StoreDefinition}
 
-          if (has_store.store) {
-            withdraw_result = creep.withdrawResources(has_store)
+          if ('store' in target) {
+            withdraw_result = creep.withdrawResources(target)
           }
           else if (target.structureType == STRUCTURE_LAB) {
-            if (target.mineralType && (target.mineralAmount > 0)) {
-              withdraw_result = creep.withdraw(target, target.mineralType)
+            const lab = target as StructureLab
+            if (lab.mineralType && (lab.mineralAmount > 0)) {
+              withdraw_result = creep.withdraw(target, lab.mineralType)
             }
             else {
               withdraw_result = creep.withdraw(target, RESOURCE_ENERGY)
