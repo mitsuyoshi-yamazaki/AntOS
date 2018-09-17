@@ -32,9 +32,9 @@ export class UpgraderSquad extends Squad {
     let max = 0
     const room = Game.rooms[room_name]
 
-    if ((room_name == 'W45S3') && room.controller && room.controller.my && (room.controller.level < 6)) {
-      return (creeps_size < 1) ? SpawnPriority.LOW : SpawnPriority.NONE
-    }
+    // if ((room_name == 'W45S3') && room.controller && room.controller.my && (room.controller.level < 6)) {
+    //   return (creeps_size < 1) ? SpawnPriority.LOW : SpawnPriority.NONE
+    // }
 
     if (!room || !room.controller || !room.controller.my || !room.storage || !room.storage.my) {
       return SpawnPriority.NONE
@@ -85,9 +85,9 @@ export class UpgraderSquad extends Squad {
       }
     }
 
-    if (this.room_name == 'W45S3') {
-      this.max_energy = 4500
-    }
+    // if (this.room_name == 'W45S3') {
+    //   this.max_energy = 4500
+    // }
   }
 
   public get type(): SquadType {
@@ -229,14 +229,14 @@ export class UpgraderSquad extends Squad {
         return false
       })
 
-      if ((this.room_name == 'W45S3') && (this.creeps.size == 1) && (creep.memory.stop == true)) {
-        const x = 18
-        const y = 42
+      // if ((this.room_name == 'W45S3') && (this.creeps.size == 1) && (creep.memory.stop == true)) {
+      //   const x = 18
+      //   const y = 42
 
-        if ((creep.pos.x != x) || (creep.pos.y != y)) {
-          creep.moveTo(x, y)
-        }
-      }
+      //   if ((creep.pos.x != x) || (creep.pos.y != y)) {
+      //     creep.moveTo(x, y)
+      //   }
+      // }
     })
   }
 }
