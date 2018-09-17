@@ -526,7 +526,7 @@ export function tick(): void {
           // so call it one by one
         }
       }
-      else {
+      else if (result != ERR_RCL_NOT_ENOUGH) {
         const message = `ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}`
         console.log(message)
         Game.notify(message)
