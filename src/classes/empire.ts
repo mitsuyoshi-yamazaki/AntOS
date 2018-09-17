@@ -10,6 +10,12 @@ enum State {
 export interface EmpireMemory {
   farm_room: string | null
   farm_energy_room: string | null
+  claim_to?: {
+    target_room_name: string,
+    base_room_name: string,
+    forced: boolean,
+    at_level: number | null,
+  }
 }
 
 export class Empire {
@@ -30,22 +36,10 @@ export class Empire {
     const attack_to: string | null = null
 
     // --- Claim
-    let claim_to: {target_room_name: string, base_room_name: string, forced: boolean, at_level?: number} | null = {
-      target_room_name: 'W45S3',
-      base_room_name: 'W46S3',
-      forced: true,
-      // at_level: 16,
-    }
+    let claim_to: {target_room_name: string, base_room_name: string, forced: boolean, at_level: number | null} | undefined = empire_memory ? empire_memory.claim_to : undefined
 
-    // {
-    //   target_room_name: 'E13N45',
-    //   base_room_name: 'W55S23',
-    //   forced: true,
-    //   at_level: 15,
-    // }
-
-    if (claim_to.at_level && (Game.gcl.level < claim_to.at_level)) {
-      claim_to = null
+    if (claim_to && claim_to.at_level && (Game.gcl.level < claim_to.at_level)) {
+      claim_to = undefined
     }
 
     // --- GCL Farm
