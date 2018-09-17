@@ -14,6 +14,13 @@ interface InvaderSquadMemory extends SquadMemory {
   lightweight?: boolean
 }
 
+export interface InvaderSquadLabs {
+  move: StructureLab
+  heal: StructureLab
+  tough: StructureLab
+  dismantle: StructureLab
+}
+
 export class InvaderSquad extends Squad {
   private target_room_name: string | undefined
   private target: Structure | undefined
@@ -21,14 +28,25 @@ export class InvaderSquad extends Squad {
   private leader: Creep | undefined
   private follower: Creep | undefined
   private charger: Creep | undefined
+  // 24T, 28W, 28H, 20M
+  // XGHO2 * 24 = 720
+  // XLHO2 * 28 = 840
+  // XZH2O * 28 = 840
+  // XZHO2 * 20 = 600
 
-  private next_creep: CreepType | undefined
+  private next_creep: CreepType | null
+  private is_lightweight = false
 
-  constructor(readonly name: string, readonly base_room: Room) {
+  constructor(readonly name: string, readonly base_room: Room, readonly labs: InvaderSquadLabs | null) {
     super(name)
 
     const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (squad_memory) {
+      if (!this.labs) {
+        squad_memory.lightweight = true
+      }
+      this.is_lightweight = squad_memory.lightweight || false
+
       const target_room_names = squad_memory.target_room_names || []
       this.target_room_name = target_room_names[0]
 
@@ -63,37 +81,44 @@ export class InvaderSquad extends Squad {
           this.follower = creep
           break
 
+        case CreepType.CHARGER:
+          this.charger = creep
+          break
+
         default:
           console.log(`InvaderSquad unexpected creep type ${creep.memory.type}, ${this.name}, ${creep.pos}`)
           break
       }
     })
 
-    this.set_next_creep()
+    this.next_creep = this.set_next_creep()
   }
 
-  private set_next_creep(): void {
+  private set_next_creep(): CreepType | null {
     const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (!squad_memory || squad_memory.no_spawn) {
-      return
+      return null
+    }
+
+    if ((this.creeps.size == 0) && !this.is_lightweight) {
+      return CreepType.CHARGER
     }
 
     if (!this.leader) {
       if (this.follower) {
-        return
+        return null
       }
-      this.next_creep = CreepType.WORKER
-      return
+      return CreepType.WORKER
     }
 
     if (!this.follower) {
-      this.next_creep = CreepType.HEALER
-      return
+      return CreepType.HEALER
     }
 
     if (squad_memory.only_once) {
       squad_memory.no_spawn = true
     }
+    return null
   }
 
   public get type(): SquadType {
@@ -126,6 +151,9 @@ export class InvaderSquad extends Squad {
 
       case CreepType.HEALER:
         return SpawnPriority.URGENT
+
+      case CreepType.CHARGER:
+        return SpawnPriority.HIGH
     }
 
     return SpawnPriority.NONE
@@ -138,6 +166,10 @@ export class InvaderSquad extends Squad {
 
       case CreepType.HEALER:
         return energy_available >= 7620
+
+      case CreepType.CHARGER:
+        // 18 CARRYs
+        return energy_available >= 1350
     }
 
     return false
@@ -147,17 +179,24 @@ export class InvaderSquad extends Squad {
     switch (this.next_creep) {
       case CreepType.WORKER:
         this.addDismantler(energy_available, spawn_func)
-        return
+        break
 
       case CreepType.HEALER:
         this.addHealer(energy_available, spawn_func)
-        return
+        break
+
+      case CreepType.CHARGER:
+        this.addCharger(energy_available, spawn_func)
+        break
     }
+
+    this.next_creep = null
   }
 
   public run(): void {
     this.runDismantler()
     this.runHealer()
+    this.runCharger()
   }
 
   public description(): string {
@@ -187,6 +226,7 @@ export class InvaderSquad extends Squad {
     }
     else {
       // 3420
+      // 12T, 28W, 10M
       body = [
         TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
         TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
@@ -242,6 +282,7 @@ export class InvaderSquad extends Squad {
     }
     else {
       // 7620
+      // 12T, 28H, 10M
       body = [
         TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
         TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
@@ -272,6 +313,18 @@ export class InvaderSquad extends Squad {
     this.addGeneralCreep(spawn_func, body, CreepType.WORKER, {memory})
   }
 
+  private addCharger(energy_available: number, spawn_func: SpawnFunction) {
+    const body: BodyPartConstant[] = [
+      CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+      CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+      CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+      CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+      CARRY, CARRY, MOVE,
+    ]
+
+    this.addGeneralCreep(spawn_func, body, CreepType.CHARGER)
+  }
+
   private recycle(): void {
     this.creeps.forEach((creep) => {
       if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
@@ -297,7 +350,7 @@ export class InvaderSquad extends Squad {
     })
   }
 
-  private runDismantler() {
+  private runDismantler(): void {
     if (!this.leader) {
       return
     }
@@ -357,7 +410,7 @@ export class InvaderSquad extends Squad {
     creep.say(`DONE`)
   }
 
-  private runHealer() {
+  private runHealer(): void {
     if (!this.follower) {
       return
     }
@@ -379,5 +432,9 @@ export class InvaderSquad extends Squad {
         creep.heal(creep)
       }
     }
+  }
+
+  private runCharger(): void {
+    console.log(`InvaderSquad.runCharger is not implemented yet ${this.name}`)
   }
 }
