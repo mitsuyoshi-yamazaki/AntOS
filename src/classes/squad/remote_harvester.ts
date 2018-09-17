@@ -1,4 +1,4 @@
-import { UID } from "classes/utils"
+import { UID, room_link } from "classes/utils"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, SquadStatus } from "./squad"
 import { CreepStatus, ActionResult, CreepType, CreepSearchAndDestroyOption } from "classes/creep"
 import { runHarvester } from "./harvester"
@@ -894,7 +894,7 @@ export class RemoteHarvesterSquad extends Squad {
         }
 
         let construction_site: ConstructionSite | undefined
-        if (this.construction_sites && (this.construction_sites.length)) {
+        if (this.construction_sites && (this.construction_sites.length > 0)) {
           construction_site = creep.pos.findClosestByPath(this.construction_sites)
         }
 
@@ -911,11 +911,12 @@ export class RemoteHarvesterSquad extends Squad {
           })
 
           if (flag) {
-            if (creep.room.createConstructionSite(flag.pos, STRUCTURE_ROAD) == OK) {
+            const result = creep.room.createConstructionSite(flag.pos, STRUCTURE_ROAD)
+            if (result == OK) {
               flag.remove()
             }
             else {
-              console.log(`RemoteHarvesterSquad.runBuilder creating construction site failed at ${flag.pos}, ${this.name}`)
+              console.log(`RemoteHarvesterSquad.runBuilder creating construction site failed: ${result} at ${flag.pos} in ${room_link(this.room_name)}, ${this.name}`)
             }
           }
           else {
