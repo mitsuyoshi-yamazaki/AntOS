@@ -1559,7 +1559,7 @@ export function init() {
           //   drop = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES, opt)
           // }
           // else {
-            drop = this.pos.findInRange(FIND_DROPPED_RESOURCES, 11, opt)[0] as Resource | undefined
+            drop = this.pos.findInRange(FIND_DROPPED_RESOURCES, 8, opt)[0] as Resource | undefined
           // }
 
           if (drop) {
@@ -1571,34 +1571,25 @@ export function init() {
               return
             }
           }
-          else {
-            const container = this.pos.findInRange(FIND_STRUCTURES, 5, {
-              filter: (structure: AnyStructure) => {
-                return (structure.structureType == STRUCTURE_CONTAINER) && (structure.store.energy > 0)
-              }
-            })[0]
+          // else {
+          //   const container = this.pos.findInRange(FIND_STRUCTURES, 5, {
+          //     filter: (structure: AnyStructure) => {
+          //       return (structure.structureType == STRUCTURE_CONTAINER) && (structure.store.energy > 0)
+          //     }
+          //   })[0]
 
-            if (container) {
-              if (this.pos.isNearTo(container)) {
-                this.withdraw(container, RESOURCE_ENERGY)
-              }
-              else {
-                if (carry > (this.carryCapacity * 0.7)) {
-                  this.memory.status = CreepStatus.CHARGE
-                }
-                else {
-                  this.moveTo(container, move_to_opt)
-                }
-              }
-            }
-          }
-          // const tomb = this.pos.findInRange(FIND_TOMBSTONES, 4, {
-          //   filter: (t: Tombstone) => t.store.energy > 0
-          // })[0]
-          // if (tomb) {
-          //   if (this.withdrawResources(tomb) == ERR_NOT_IN_RANGE) {
-          //     this.moveTo(tomb, move_to_opt)
-          //     return
+          //   if (container) {
+          //     if (this.pos.isNearTo(container)) {
+          //       this.withdraw(container, RESOURCE_ENERGY)
+          //     }
+          //     else {
+          //       if (carry > (this.carryCapacity * 0.7)) {
+          //         this.memory.status = CreepStatus.CHARGE
+          //       }
+          //       else {
+          //         this.moveTo(container, move_to_opt)
+          //       }
+          //     }
           //   }
           // }
         }
