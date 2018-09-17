@@ -26,57 +26,6 @@ export class HarvesterSquad extends Squad {
 
     this.destination_storage = this.destination as StructureStorage // @fixme:
 
-    if ((this.source_info.room_name == 'W48S49') || (this.source_info.room_name == 'W47S49')) { // @fixme: temp code
-      const destination = Game.getObjectById('5aeed7712e007b09769feb8f') as StructureLink // Link in W48S47 bottom right
-      if (destination) {
-        this.destination = destination
-      }
-    }
-    else if ((this.source_info.room_name == 'W48S48')) { // @fixme: temp code
-      const destination = Game.getObjectById('5afb8dffdea4db08d5fe3a1c') as StructureLink // Link in W48S47 bottom left
-      if (destination) {
-        this.destination = destination
-      }
-    }
-    else if ((this.source_info.room_name == 'W49S46') || (this.source_info.room_name == 'W48S46')) {
-      const destination = Game.getObjectById('5aef62f86627413133777bdf') as StructureStorage // Storage in W49S47
-      if (destination) {
-        this.destination = destination
-      }
-    }
-    else if ((this.source_info.room_name == 'W49S49')) { // @fixme: temp code
-      const destination = Game.getObjectById('5b1348599bf6fe5c1aeadba6') as StructureLink // Link in W49S48 bottom
-      if (destination) {
-        this.destination = destination
-      }
-    }
-    else if (['W49S48'].indexOf(this.source_info.room_name) >= 0) {
-
-      const target_room = Game.rooms['W49S48']
-      if ((this.source_info.id != '59f19ff082100e1594f35c88') && target_room && target_room.storage) {
-        this.destination = target_room.storage
-      }
-      else {
-        const destination = Game.getObjectById('5af5ffea42aa150cf94d8d48') as StructureLink // Link in W49S47 bottom
-        if (destination) {
-          this.destination = destination
-        }
-      }
-    }
-    else if ((this.source_info.room_name == 'W49S6')) {
-      const room = Game.rooms[this.source_info.room_name] as Room | undefined
-      if (room && room.storage) {
-        this.destination = room.storage
-      }
-    }
-    // else if ((this.source_info.id == '59f1c0ce7d0b3d79de5f01bc')) { // W49S6 Oxygen
-    //   const w49s6 = Game.rooms['W49S6']
-    //   if (w49s6 && w49s6.storage) {
-    //     this.destination = w49s6.storage
-    //     this.destination_storage = this.destination
-    //   }
-    // }
-
     const is_alive = (this.energy_capacity > 300)
 
     if (!this.destination && is_alive) {
@@ -393,10 +342,6 @@ export class HarvesterSquad extends Squad {
 
     const room = Game.rooms[this.source_info.room_name]
 
-    if ((room.name == 'W49S6') && room.controller && room.controller.my && (room.controller.level < 4)) {
-      return SpawnPriority.NONE
-    }
-
     if (this.energy_capacity < 550) {
       return SpawnPriority.NONE
     }
@@ -408,37 +353,6 @@ export class HarvesterSquad extends Squad {
         })
         return SpawnPriority.NONE
       }
-
-      if ((this.source_info.id == '59f1c0cf7d0b3d79de5f02fd')) {  // W46S33 Zynthium
-        if (!Game.getObjectById('5b2121da4e899551a6595ae7') || !Game.getObjectById('5b209ad0b8917c5f23cde3fa')) {
-          const message = `W46S33 missing zynthium extractor or container`
-          console.log(message)
-          if ((Game.time % 51) == 0) {
-            Game.notify(message)
-          }
-        }
-      }
-
-      // Extactorがない場合の処理
-      // if (this.source_info.id == '59f1c0cf7d0b3d79de5f0392') {
-      //   if (!room || room.heavyly_attacked) {
-      //     return SpawnPriority.NONE
-      //   }
-      //   else if (!Game.getObjectById('5b04ba4ed36ad43822b2ccfe')) {
-      //     return SpawnPriority.NONE
-      //   }
-
-      //   const position = RoomPosition(42, 13, this.source_info.room_name)
-      //   const extractor = position.findInRange(FIND_STRUCTURES, 1, {
-      //     filter: (structure: AnyStructure) => {
-      //       return (structure.structureType == STRUCTURE_EXTRACTOR)
-      //     }
-      //   })
-
-      //   if (!extractor) {
-      //     return SpawnPriority.NONE
-      //   }
-      // }
 
       const source = Game.getObjectById(this.source_info.id) as Source | Mineral
       // Using (source as Mineral).mineralType because (source as Mineral).mineralAmount when it's 0 value, it's considered as false
@@ -457,88 +371,6 @@ export class HarvesterSquad extends Squad {
 
     if (this.destination && (this.destination.room.name != this.source_info.room_name)) {
       number_of_carriers = 2
-    }
-
-    const rooms_needs_one_carriers = [ // @fixme: temp code
-      'W48S48', // Close to link
-      // 'W47S48', // Close to link
-    ]
-
-    if (rooms_needs_one_carriers.indexOf(this.source_info.room_name) >= 0) {
-      number_of_carriers = 1
-    }
-    else if (this.source_info.id == '59f1a00e82100e1594f35f85') { // W47S48 top right
-      number_of_carriers = 1
-    }
-    else if (this.source_info.id == '59f1a00e82100e1594f35f82') { // W47S47
-      number_of_carriers = 2
-    }
-    else if (this.source_info.id == '59f19ff082100e1594f35c83') {  // top left of W49S47
-      number_of_carriers = 2
-    }
-    else if (this.source_info.id == '59f19fff82100e1594f35e08') {  // W48S47 center
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f1c0ce7d0b3d79de5f024d') {  // W48S47 oxygen
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f1c0ce7d0b3d79de5f01e1') {  // W49S47 utrium
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f1c0ce7d0b3d79de5f01e2') {  // W49S48 hydrogen
-      number_of_carriers = 1
-    }
-    else if (this.source_info.id == '59f19fff82100e1594f35ded') { // W48S39
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f19ff082100e1594f35c89') { // W49S48 bottom left
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f19ff082100e1594f35c88') { // W49S48 right
-      number_of_carriers = 1
-    }
-    else if (this.source_info.id == '59f1a01e82100e1594f36173') { // W46S33 center
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f19ff082100e1594f35c8b') { // W49S49
-      number_of_carriers = 1
-    }
-    else if (this.source_info.id == '59f19fd382100e1594f35a4b') { // W51S29 left
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f19fd382100e1594f35a4c') { // W51S29 bottom
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f1a01e82100e1594f36174') { // W46S33 bottom left
-      number_of_carriers = 2
-    }
-    else if (this.source_info.id == '59f1a03882100e1594f36569') { // W44S7 top
-      number_of_carriers = 0
-    }
-    else if (this.source_info.id == '59f1a00882100e1594f35ee0') { // W47N5
-      number_of_carriers = (!(!room) && room.storage) ? 1 : 0  // To drop energy on the ground
-    }
-    else if (this.source_info.id == '59f19f8282100e1594f350b3') { // W56S7 bottom
-      number_of_carriers = 2
-    }
-
-
-    if (this.source_info.room_name == 'W47S49') {
-      number_of_carriers = 3
-    }
-    else if (this.source_info.room_name == 'W48S49') {
-      number_of_carriers = 3
-    }
-    else if (this.source_info.room_name == 'W49S34') {
-      number_of_carriers = 1
-    }
-    else if ((this.source_info.room_name == 'W43S5')) {
-      if (room && room.storage) {
-
-      }
-      else {
-        number_of_carriers = 0
-      }
     }
 
     if (this.store && (this.store.structureType == STRUCTURE_LINK)) {
@@ -660,15 +492,6 @@ export class HarvesterSquad extends Squad {
     const energy_unit = minimum_body ? 150 : 100
     let let_thy_die = (energyAvailable >= 1200) ? false : true
 
-    if (this.source_info.room_name == 'W49S34') {
-      if (this.source_info.id != '59f1c0ce7d0b3d79de5f01d5') {  // Keanium
-        let_thy_die = true
-      }
-    }
-    else if (this.source_info.id == '59f1a01e82100e1594f36174') {
-      let_thy_die = true
-    }
-
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
     const memory: CreepMemory = {
@@ -681,18 +504,6 @@ export class HarvesterSquad extends Squad {
     }
 
     let max_energy = minimum_body ? 900 : 1200
-    // if (this.source_info.id == '59f19fff82100e1594f35dec') {
-    //   max_energy = 600
-    // }
-    // else if (this.source_info.id = '59f19fee82100e1594f35c5b') {  // W49S34 bottom
-    //   max_energy = 1600
-    // }
-    // else if (this.source_info.id = '59f19ff082100e1594f35c8b') {  // W49S49
-    //   max_energy = 1600
-    // }
-    // else if (this.source_info.room_name == 'W51S29') {
-    //   max_energy = 800
-    // }
 
     if (this.source_info.id == '59f1a03882100e1594f3656b') { // W44S7 bottom
       max_energy = 900
