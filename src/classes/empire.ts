@@ -42,7 +42,7 @@ export class Empire {
       claim_to = undefined
     }
 
-    // --- GCL Farm
+    // --- GCL Farms
     const gcl_farm_rooms: {[room_name: string]: {next: string, base: string}} = {
       W49S6: {next: 'W46S9', base: 'W48S6'},
       W46S9: {next: 'W47S8', base: 'W47S9'},
@@ -107,9 +107,9 @@ export class Empire {
             const base_room = Game.rooms[farm_room.base]
             const energy_needed = boost_amount + 2000
 
-            if ((farm_room.room.terminal.store.energy < boost_amount) && base_room && base_room.terminal && (base_room.terminal.store.energy >= energy_needed)) {
+            if ((farm_room.room.terminal.store.energy < energy_needed) && base_room && base_room.terminal && (base_room.terminal.store.energy >= energy_needed)) {
               const transfer_result = base_room.terminal.send(RESOURCE_ENERGY, energy_needed, farm_room.room.name)
-              avoid_unclaim = transfer_result == OK
+              avoid_unclaim = ([OK, ERR_TIRED] as ScreepsReturnCode[]).indexOf(transfer_result) >= 0
 
               const message = `Transfer ${RESOURCE_ENERGY} * ${energy_needed} from ${base_room.name} to ${farm_room.room.name}: ${transfer_result}`
               console.log(message)
@@ -217,34 +217,6 @@ export class Empire {
     if (claim_to) {
       this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 4})
     }
-
-    // const w51s29 = 'W51S29'
-    // const w44s7 = 'W44S7'
-    // const w48s6 = 'W48S6'
-    // const w43s5 = 'W43S5'
-    // const w47s6 = 'W47S6'
-    // const w45s27 = 'W45S27'
-    // // const w39s9 = 'W39S9'
-    // const w47s9 = 'W47S9'
-    // // const w45s3 = 'W45S3'
-    // const w49s6 = 'W49S6'
-    // const w46s3 = 'W46S3'
-    // const e16n37 = 'E16N37'
-    // const w56s7 = 'W56S7'
-    // const w55s23 = 'W55S23'
-    // const w55s13 = 'W55S13'
-    // const w58s4 = 'W58S4'
-
-    // const time = (Game.time % 3)
-
-    // // set_delegate(w56s7, w58s4, {max_rcl: 4})
-
-    // if (time == 2) {
-    // }
-    // else if (time == 0) {
-    // }
-    // else {
-    // }
   }
 
   public say(message: string): void {
