@@ -484,6 +484,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
  * https://screeps.com/a/#!/room/shard1/E22N32
  * bootstrap squad
  * colored text refactoring
+ * ignore excluded squad spawn on colony region
  */
 
 

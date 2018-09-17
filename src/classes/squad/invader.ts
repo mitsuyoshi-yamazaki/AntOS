@@ -12,6 +12,14 @@ interface InvaderSquadMemory extends SquadMemory {
   only_once: boolean
   no_spawn: boolean
   lightweight?: boolean
+  debug?: boolean
+}
+
+interface BoostInfo {
+  resource: ResourceConstant
+  lab: StructureLab
+  amount: number
+  amount_needed: number
 }
 
 export interface InvaderSquadLabs {
@@ -28,11 +36,6 @@ export class InvaderSquad extends Squad {
   private leader: Creep | undefined
   private follower: Creep | undefined
   private charger: Creep | undefined
-  // 24T, 28W, 28H, 20M
-  // XGHO2 * 24 = 720
-  // XLHO2 * 28 = 840
-  // XZH2O * 28 = 840
-  // XZHO2 * 20 = 600
 
   private next_creep: CreepType | null
   private is_lightweight = false
@@ -91,7 +94,12 @@ export class InvaderSquad extends Squad {
       }
     })
 
-    this.next_creep = this.set_next_creep()
+    if (squad_memory && squad_memory.debug && !squad_memory.no_spawn) {
+      this.next_creep = (this.creeps.size < 1) ? CreepType.CHARGER : null
+    }
+    else {
+      this.next_creep = this.set_next_creep()
+    }
   }
 
   private set_next_creep(): CreepType | null {
@@ -200,8 +208,11 @@ export class InvaderSquad extends Squad {
   }
 
   public description(): string {
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+
     const additions = !this.leader ? "" : `, ${this.leader.pos}`
-    return `${super.description()}${additions}`
+    const debug = squad_memory && squad_memory.debug ? ' [DEBUG]' : ''
+    return `${super.description()}${additions}${debug}`
   }
 
   // --- Private ---
@@ -435,6 +446,151 @@ export class InvaderSquad extends Squad {
   }
 
   private runCharger(): void {
-    console.log(`InvaderSquad.runCharger is not implemented yet ${this.name}`)
+    if (!this.charger) {
+      return
+    }
+    const creep = this.charger
+
+    if (!this.labs) {
+      return
+    }
+    if (!this.base_room.terminal) {
+      console.log(`InvaderSquad.runCharger no terminal in room ${this.base_room}`)
+      return
+    }
+    const terminal = this.base_room.terminal
+
+    // 24T, 28W, 28H, 20M
+    // TOUGH      : XGHO2 * 24 = 720
+    // HEAL       : XLHO2 * 28 = 840
+    // DISMANTLE  : XZH2O * 28 = 840
+    // MOVE       : XZHO2 * 20 = 600
+
+    const boost_info = new Map<BodyPartConstant, BoostInfo>()
+
+    boost_info.set(TOUGH, {
+      resource: RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+      lab: this.labs.tough,
+      amount: 720,
+      amount_needed: 720,
+    })
+
+    boost_info.set(HEAL, {
+      resource: RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+      lab: this.labs.heal,
+      amount: 840,
+      amount_needed: 840,
+    })
+
+    boost_info.set(WORK, {
+      resource: RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+      lab: this.labs.dismantle,
+      amount: 840,
+      amount_needed: 840,
+    })
+
+    boost_info.set(MOVE, {
+      resource: RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+      lab: this.labs.move,
+      amount: 600,
+      amount_needed: 600,
+    })
+
+    let target_info: BoostInfo | null = null
+    let finished = true
+
+    boost_info.forEach((info, body_part) => {
+      if (target_info) {
+        return
+      }
+
+      if (!info.lab) {
+        console.log(`InvaderSquad.runCharger unexpectedly found null lab ${body_part}, ${this.name}`)
+        return
+      }
+      if ((info.lab.mineralType == info.resource) && (info.lab.mineralAmount >= info.amount_needed)) {
+        return
+      }
+
+      if (info.lab.mineralType == info.resource) {
+        info.amount_needed -= info.lab.mineralAmount
+      }
+
+      if ((terminal.store[info.resource] || 0) < info.amount_needed) {
+        // @todo: send required resource
+        finished = false
+        return
+      }
+
+      target_info = info
+    })
+
+    if (!target_info) {
+      if (finished) {
+        creep.say(`DONE`)
+      }
+      else {
+        creep.say(`WIP`)
+      }
+      return
+    }
+
+    {
+      const carry = _.sum(creep.carry)
+
+      if ([CreepStatus.HARVEST, CreepStatus.CHARGE].indexOf(creep.memory.status) < 0) {
+        creep.memory.status = CreepStatus.HARVEST
+      }
+
+      if (creep.memory.status == CreepStatus.HARVEST) {
+        // Withdraw from lab
+
+        if (carry == 0) {
+          if ((!target_info!.lab.mineralType)) {
+            creep.memory.status = CreepStatus.CHARGE
+          }
+          else if (target_info!.lab.mineralType == target_info!.resource) {
+            creep.memory.status = CreepStatus.CHARGE
+          }
+          else {
+            if (creep.pos.isNearTo(target_info!.lab)) {
+              creep.withdraw(target_info!.lab, target_info!.lab.mineralType!)
+            }
+            else {
+              creep.moveTo(target_info!.lab)
+            }
+          }
+        }
+        else {
+          if (creep.pos.isNearTo(terminal)) {
+            creep.transferResources(terminal)
+          }
+          else {
+            creep.moveTo(terminal)
+          }
+        }
+      }
+
+      if (creep.memory.status == CreepStatus.CHARGE) {
+        // Charge to lab from terminal
+
+        if (carry == 0) {
+          if (creep.pos.isNearTo(terminal)) {
+            creep.withdraw(terminal, target_info!.resource, target_info!.amount_needed)
+          }
+          else {
+            creep.moveTo(terminal)
+          }
+        }
+        else {
+          if (creep.pos.isNearTo(target_info!.lab)) {
+            creep.transfer(target_info!.lab, target_info!.resource)
+          }
+          else {
+            creep.moveTo(target_info!.lab)
+          }
+        }
+      }
+    }
   }
 }
