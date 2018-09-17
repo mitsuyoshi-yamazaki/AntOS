@@ -128,12 +128,14 @@ export class TempSquad extends Squad {
     const room = Game.rooms[this.target_room_name]
 
     if (room && room.controller && (room.controller.level < 5)) {
-      if (this.need_attacker && (this.attacker.length < 1)) {
-        return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
-      }
+      if (this.need_attacker) {
+        if ((this.attacker.length < 1)) {
+          return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
+        }
 
-      if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
-        return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
+        if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
+          return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
+        }
       }
     }
 
@@ -164,14 +166,16 @@ export class TempSquad extends Squad {
     const room = Game.rooms[this.target_room_name]
 
     if (room && room.controller && (room.controller.level < 5)) {
-      if (this.need_attacker && (this.attacker.length < 1)) {
-        this.addGeneralAttacker(energy_available, spawn_func)
-        return
-        }
+      if (this.need_attacker) {
+        if ((this.attacker.length < 1)) {
+          this.addGeneralAttacker(energy_available, spawn_func)
+          return
+          }
 
-      if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
-        this.addGeneralAttacker(energy_available, spawn_func)
-        return
+        if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
+          this.addGeneralAttacker(energy_available, spawn_func)
+          return
+        }
       }
     }
 
