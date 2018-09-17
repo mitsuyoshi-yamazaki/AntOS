@@ -623,6 +623,13 @@ export class ManualSquad extends Squad {
 
         const storage = this.base_room.storage
         const target_room_name = 'W45S3'
+        const target_room = Game.rooms[target_room_name]
+        if (!target_room) {
+          console.log(`ManualSquad.run no target room ${target_room_name}, ${this.name}`)
+          this.say(`ERR`)
+          return
+        }
+
         const target_pos = new RoomPosition(19, 41, target_room_name)
 
         this.creeps.forEach((creep) => {
@@ -635,11 +642,21 @@ export class ManualSquad extends Squad {
             }
           }
           else {
-            if ((creep.pos.x == target_pos.x) && (creep.pos.y == target_pos.y) && (creep.room.name == target_pos.roomName)) {
-              creep.drop(RESOURCE_ENERGY)
+            if (target_room.storage) {
+              if (creep.pos.isNearTo(target_room.storage)) {
+                creep.transfer(target_room.storage, RESOURCE_ENERGY)
+              }
+              else {
+                creep.moveTo(target_room.storage)
+              }
             }
             else {
-              creep.moveTo(target_pos)
+              if ((creep.pos.x == target_pos.x) && (creep.pos.y == target_pos.y) && (creep.room.name == target_pos.roomName)) {
+                creep.drop(RESOURCE_ENERGY)
+              }
+              else {
+                creep.moveTo(target_pos)
+              }
             }
           }
         })
