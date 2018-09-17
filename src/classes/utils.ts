@@ -1,5 +1,23 @@
 let index = 0
 
+const leveled_colors: {[index: string]: string} = {
+  info: 'white',
+  warn: '#F9E79F',
+  error: '#E74C3C',
+  high: '#64C3F9',
+  almost: '#47CAB0',
+}
+
+type ColorLevel = 'info' | 'warn' | 'error' | 'high' | 'almost'
+export function leveled_color(level: ColorLevel): string {
+  return leveled_colors[level]
+}
+
+export function leveled_colored_text(text: string, level: ColorLevel): string {
+  const color = leveled_color(level)
+  return `<span style='color:${color}'>${text}</span>`
+}
+
 export function UID(seed: string): string {
   index += 1
   return `${seed}${Game.time}${index}`

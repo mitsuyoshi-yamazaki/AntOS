@@ -1,7 +1,7 @@
 import { SquadType } from "./squad/squad"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
-import { UID, room_history_link, room_link } from "./utils"
+import { UID, room_history_link, room_link, leveled_colored_text } from './utils';
 
 export interface AttackerInfo  {
   attacked: boolean
@@ -212,7 +212,8 @@ export function tick(): void {
 
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {
     if ((Game.time % 13) == 3) {
-      console.log(`Room.owned_structures_not_found_error ${structure_type} ${room_link(this.name)}`)
+      const message = `Room.owned_structures_not_found_error ${structure_type} ${room_link(this.name)}`
+      console.log(leveled_colored_text(message, 'warn'))
     }
   }
 
