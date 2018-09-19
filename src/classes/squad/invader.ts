@@ -542,8 +542,14 @@ export class InvaderSquad extends Squad {
   private runChargerCreep(creep: Creep, target_info: BoostInfo, terminal: StructureTerminal): void {
     const carry = _.sum(creep.carry)
 
-    if ((creep.ticksToLive || 0) ) {
-
+    if ((creep.ticksToLive || 0) < 15) {
+      if (carry <= 0) {
+        return
+      }
+      if (creep.transferResources(terminal) == ERR_NOT_IN_RANGE) {
+        creep.moveTo(terminal)
+      }
+      return
     }
 
     let result: ScreepsReturnCode = OK
