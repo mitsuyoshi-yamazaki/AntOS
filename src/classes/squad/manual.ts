@@ -614,6 +614,28 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W45S3': {
+        const target = Game.getObjectById('5b08d1d83bc3bf222fcfce4a') as StructureWall | undefined
+        if (!target) {
+          this.say(`DONE`)
+          return
+        }
+
+        this.creeps.forEach((creep) => {
+          if (creep.moveToRoom('W45S2') == ActionResult.IN_PROGRESS) {
+            return
+          }
+
+          if (creep.pos.isNearTo(target)) {
+            creep.dismantle(target)
+          }
+          else {
+            creep.moveTo(target)
+          }
+        })
+        return
+      }
+
       case 'W46S3': {
         if (!this.base_room || !this.base_room.storage) {
           console.log(`ManualSquad.run no base room ${this.original_room_name}, ${this.name}`)
