@@ -484,6 +484,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
  * bootstrap squad
  * colored text refactoring
  * ignore excluded squad spawn on colony region
+ * attack & ranged heal itself?
  */
 
 
