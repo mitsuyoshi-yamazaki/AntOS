@@ -1,4 +1,9 @@
 
+/**
+ * https://screeps.com/a/#!/room/shard2/W11S52
+ * https://screeps.com/a/#!/room/shard1/E22N32
+ */
+
 type STRUCTURE_SPAIR = 'spair'
 type StructureConstantForRoomLayout = StructureConstant | STRUCTURE_SPAIR
 

@@ -65,10 +65,10 @@ export class InvaderSquad extends Squad {
               break
             }
 
-              const index = target_ids.indexOf(id)
-              if (index >= 0) {
-                target_ids.splice(index, 1)
-              }
+            const index = target_ids.indexOf(id)
+            if (index >= 0) {
+              target_ids.splice(index, 1)
+            }
           }
         }
       }
@@ -452,6 +452,7 @@ export class InvaderSquad extends Squad {
     const creep = this.charger
 
     if (!this.labs) {
+      creep.say(`NO LABs`)
       return
     }
     if (!this.base_room.terminal) {

@@ -8,7 +8,7 @@ import { ActionResult } from "./creep"
 import { AttackerSquad } from "./squad/attacker"
 import { UpgraderSquad } from "./squad/upgrader";
 import { ResearcherSquad, ResearchTarget } from "./squad/researcher";
-import { InvaderSquad } from "./squad/invader";
+import { InvaderSquad, InvaderSquadLabs } from "./squad/invader";
 import { TempSquad } from "./squad/temp";
 import { ChargerSquad } from './squad/charger';
 import { RemoteHarvesterSquad, RemoteHarvesterSquadMemory } from './squad/remote_harvester';
@@ -718,7 +718,32 @@ export class Region {
             break
           }
           case SquadType.INVADER: {
-            const squad = new InvaderSquad(squad_memory.name, this.room, null)
+            let opt_labs: InvaderSquadLabs | null = null
+
+            if (region_memory && region_memory.reaction_output_excludes) {
+              const labs = region_memory.reaction_output_excludes.map((id) => {
+                return Game.getObjectById(id) as StructureLab | undefined
+              }).filter((lab) => {
+                if (!lab) {
+                  return false
+                }
+                if (lab.structureType != STRUCTURE_LAB) {
+                  return false
+                }
+                return true
+              }) as StructureLab[]
+
+              if (labs.length >= 4) {
+                opt_labs = {
+                  move: labs[0],
+                  heal: labs[1],
+                  tough: labs[2],
+                  dismantle: labs[3],
+                }
+              }
+            }
+
+            const squad = new InvaderSquad(squad_memory.name, this.room, opt_labs)
             this.squads.set(squad.name, squad)
             break
           }

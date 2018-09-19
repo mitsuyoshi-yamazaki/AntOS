@@ -481,7 +481,6 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * cancel spawning attacker if the invader is eliminated within 10 ticks
- * https://screeps.com/a/#!/room/shard1/E22N32
  * bootstrap squad
  * colored text refactoring
  * ignore excluded squad spawn on colony region
