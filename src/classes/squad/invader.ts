@@ -538,8 +538,13 @@ export class InvaderSquad extends Squad {
 
     {
       const carry = _.sum(creep.carry)
+      let result: ScreepsReturnCode = OK
 
       if ([CreepStatus.HARVEST, CreepStatus.CHARGE].indexOf(creep.memory.status) < 0) {
+        creep.memory.status = CreepStatus.HARVEST
+      }
+
+      if (target_info!.lab.mineralType && (target_info!.lab.mineralType != target_info!.resource)) {
         creep.memory.status = CreepStatus.HARVEST
       }
 
@@ -555,7 +560,7 @@ export class InvaderSquad extends Squad {
           }
           else {
             if (creep.pos.isNearTo(target_info!.lab)) {
-              creep.withdraw(target_info!.lab, target_info!.lab.mineralType!)
+              result = creep.withdraw(target_info!.lab, target_info!.lab.mineralType!)
             }
             else {
               creep.moveTo(target_info!.lab)
@@ -564,7 +569,7 @@ export class InvaderSquad extends Squad {
         }
         else {
           if (creep.pos.isNearTo(terminal)) {
-            creep.transferResources(terminal)
+            result = creep.transferResources(terminal)
           }
           else {
             creep.moveTo(terminal)
@@ -577,7 +582,7 @@ export class InvaderSquad extends Squad {
 
         if (carry == 0) {
           if (creep.pos.isNearTo(terminal)) {
-            creep.withdraw(terminal, target_info!.resource, target_info!.amount_needed)
+            result = creep.withdraw(terminal, target_info!.resource, target_info!.amount_needed)
           }
           else {
             creep.moveTo(terminal)
@@ -585,12 +590,16 @@ export class InvaderSquad extends Squad {
         }
         else {
           if (creep.pos.isNearTo(target_info!.lab)) {
-            creep.transfer(target_info!.lab, target_info!.resource)
+            result = creep.transfer(target_info!.lab, target_info!.resource)
           }
           else {
             creep.moveTo(target_info!.lab)
           }
         }
+      }
+
+      if (result != OK) {
+        creep.say(`E${result}`)
       }
     }
   }
