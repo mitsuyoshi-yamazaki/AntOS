@@ -536,71 +536,78 @@ export class InvaderSquad extends Squad {
       return
     }
 
-    {
-      const carry = _.sum(creep.carry)
-      let result: ScreepsReturnCode = OK
+    this.runChargerCreep(creep, target_info, terminal)
+  }
 
-      if ([CreepStatus.HARVEST, CreepStatus.CHARGE].indexOf(creep.memory.status) < 0) {
-        creep.memory.status = CreepStatus.HARVEST
-      }
+  private runChargerCreep(creep: Creep, target_info: BoostInfo, terminal: StructureTerminal): void {
+    const carry = _.sum(creep.carry)
 
-      if (target_info!.lab.mineralType && (target_info!.lab.mineralType != target_info!.resource)) {
-        creep.memory.status = CreepStatus.HARVEST
-      }
+    if ((creep.ticksToLive || 0) ) {
 
-      if (creep.memory.status == CreepStatus.HARVEST) {
-        // Withdraw from lab
+    }
 
-        if (carry == 0) {
-          if ((!target_info!.lab.mineralType)) {
-            creep.memory.status = CreepStatus.CHARGE
-          }
-          else if (target_info!.lab.mineralType == target_info!.resource) {
-            creep.memory.status = CreepStatus.CHARGE
-          }
-          else {
-            if (creep.pos.isNearTo(target_info!.lab)) {
-              result = creep.withdraw(target_info!.lab, target_info!.lab.mineralType!)
-            }
-            else {
-              creep.moveTo(target_info!.lab)
-            }
-          }
+    let result: ScreepsReturnCode = OK
+
+    if ([CreepStatus.HARVEST, CreepStatus.CHARGE].indexOf(creep.memory.status) < 0) {
+      creep.memory.status = CreepStatus.HARVEST
+    }
+
+    if (target_info.lab.mineralType && (target_info.lab.mineralType != target_info.resource)) {
+      creep.memory.status = CreepStatus.HARVEST
+    }
+
+    if (creep.memory.status == CreepStatus.HARVEST) {
+      // Withdraw from lab
+
+      if (carry == 0) {
+        if ((!target_info.lab.mineralType)) {
+          creep.memory.status = CreepStatus.CHARGE
+        }
+        else if (target_info.lab.mineralType == target_info.resource) {
+          creep.memory.status = CreepStatus.CHARGE
         }
         else {
-          if (creep.pos.isNearTo(terminal)) {
-            result = creep.transferResources(terminal)
+          if (creep.pos.isNearTo(target_info.lab)) {
+            result = creep.withdraw(target_info.lab, target_info.lab.mineralType!)
           }
           else {
-            creep.moveTo(terminal)
+            creep.moveTo(target_info.lab)
           }
         }
       }
-
-      if (creep.memory.status == CreepStatus.CHARGE) {
-        // Charge to lab from terminal
-
-        if (carry == 0) {
-          if (creep.pos.isNearTo(terminal)) {
-            result = creep.withdraw(terminal, target_info!.resource, target_info!.amount_needed)
-          }
-          else {
-            creep.moveTo(terminal)
-          }
+      else {
+        if (creep.pos.isNearTo(terminal)) {
+          result = creep.transferResources(terminal)
         }
         else {
-          if (creep.pos.isNearTo(target_info!.lab)) {
-            result = creep.transfer(target_info!.lab, target_info!.resource)
-          }
-          else {
-            creep.moveTo(target_info!.lab)
-          }
+          creep.moveTo(terminal)
         }
       }
+    }
 
-      if (result != OK) {
-        creep.say(`E${result}`)
+    if (creep.memory.status == CreepStatus.CHARGE) {
+      // Charge to lab from terminal
+
+      if (carry == 0) {
+        if (creep.pos.isNearTo(terminal)) {
+          result = creep.withdraw(terminal, target_info.resource, target_info.amount_needed)
+        }
+        else {
+          creep.moveTo(terminal)
+        }
       }
+      else {
+        if (creep.pos.isNearTo(target_info.lab)) {
+          result = creep.transfer(target_info.lab, target_info.resource)
+        }
+        else {
+          creep.moveTo(target_info.lab)
+        }
+      }
+    }
+
+    if (result != OK) {
+      creep.say(`E${result}`)
     }
   }
 }

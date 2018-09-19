@@ -3,7 +3,7 @@ import { init as creepInit } from "classes/creep"
 import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
 
-const version = '2.57.8'
+const version = '2.57.9'
 
 export function init(): void {
   Game.version = version
