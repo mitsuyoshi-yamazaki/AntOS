@@ -518,7 +518,16 @@ export class InvaderSquad extends Squad {
       }
 
       if ((terminal.store[info.resource] || 0) < info.amount_needed) {
-        // @todo: send required resource
+        const rooms = [
+          'W43S5',
+          'W44S7',
+          'W47S6',
+          'W48S6',
+          'W51S29',
+        ]
+
+        // @todo: use Room.request_resource()
+
         finished = false
         return
       }

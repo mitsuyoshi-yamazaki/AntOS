@@ -11,13 +11,14 @@ console.log(`Initialize cost_matrixes`)
 declare global {
   interface Game {
     version: string
-    reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}
+    reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
     squad_creeps: {[squad_name: string]: Creep[]}
+
     check_resources: (resource_type: ResourceConstant) => {[room_name: string]: number}
     check_resources_in: (room_name: string) => void
     check_all_resources: () => void
-    check_boost_resources: () => void
     collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
+
     info: (opts?:{sorted?: boolean}) => void
     creep_positions: (squad_name: string) => void
     last_attacked_rooms: (opts?: {last?: number}) => void
@@ -187,37 +188,6 @@ export function tick(): void {
       }
 
       console.log(`${colored_resource_type(resource_type)}: ${amount}`)
-    })
-  }
-
-  Game.check_boost_resources = () => {
-    [
-      RESOURCE_CATALYZED_UTRIUM_ACID,
-      RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
-      RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
-      RESOURCE_CATALYZED_ZYNTHIUM_ACID,
-      RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
-      RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
-    ].forEach((resource_type) => {
-
-      let amount = 0
-
-      for (const room_name of Object.keys(Game.rooms)) {
-        const room = Game.rooms[room_name]
-        if (!room || !room.controller || !room.controller.my) {
-          continue
-        }
-
-        if (room.terminal && room.terminal.my) {
-          amount += room.terminal.store[resource_type] || 0
-        }
-
-        if (room.storage && room.storage.my) {
-          amount += room.storage.store[resource_type] || 0
-        }
-      }
-
-      console.log(`${resource_type}: ${amount}`)
     })
   }
 
