@@ -377,10 +377,10 @@ export function tick(): void {
       const spawn_usage = Math.round((spawn_busy_time / spawn_time) * 100)
       let spawn_log_level: 'info' | 'warn' | 'error'
 
-      if (spawn_usage > 90) {
+      if ((spawn_usage > 90) || (spawn_usage < 5)) {
         spawn_log_level = 'error'
       }
-      else if (spawn_usage > 75) {
+      else if ((spawn_usage > 75) || (spawn_usage < 12)) {
         spawn_log_level = 'warn'
       }
       else {
