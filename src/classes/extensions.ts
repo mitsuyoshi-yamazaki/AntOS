@@ -264,7 +264,11 @@ export function tick(): void {
       break
     }
 
-    return done ? ActionResult.DONE : ActionResult.IN_PROGRESS
+    if (!done) {
+      console.log(`Game.send_resource no ${resource_type} * ${amount} in ${from}`)
+      return ActionResult.IN_PROGRESS
+    }
+    return ActionResult.DONE
   }
 
   Game.info = (opts?:{sorted?: boolean}) => {

@@ -504,6 +504,9 @@ export class InvaderSquad extends Squad {
       if (target_info) {
         return
       }
+      if (!finished) {
+        return
+      }
 
       if (!info.lab) {
         console.log(`InvaderSquad.runCharger unexpectedly found null lab ${body_part}, ${this.name}`)
@@ -526,7 +529,7 @@ export class InvaderSquad extends Squad {
           'W51S29',
         ]
 
-        // @todo: use Room.request_resource()
+        Game.send_resource(rooms, this.base_room.name, info.resource, info.amount_needed)
 
         finished = false
         return

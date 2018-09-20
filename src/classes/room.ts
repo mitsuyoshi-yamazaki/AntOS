@@ -49,7 +49,6 @@ declare global {
     test(from: Structure): void
     place_construction_sites(): void
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
-    request_resource(resource_type: ResourceConstant, amount: number, opts?: {dry_run?: boolean, rooms?: string[]}): void // @todo:
 
     show_weakest_walls(opts?:{max?: number}): void
 
@@ -642,13 +641,6 @@ export function tick(): void {
       return road_positions
     // }
   }
-
-  Room.prototype.request_resource = function(resource_type: ResourceConstant, amount: number, opts?: {dry_run?: boolean, rooms?: string[]}): void {
-    const room = this as Room
-
-    console.log(`Room.request_resource not implemented yet ${room}`)
-  }
-
 
   Room.prototype.show_weakest_walls = function(opts?:{max?: number}): void {
     opts = opts || {}
