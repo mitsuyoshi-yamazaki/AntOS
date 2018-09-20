@@ -152,6 +152,16 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
+      case 'W45S3': {
+        const target_room_name = 'W45S2'
+        const target_room = Game.rooms[target_room_name]
+        if (!target_room || !target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+          return SpawnPriority.NONE
+        }
+
+        return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+      }
+
       case 'W46S3': {
         const target_room_name = 'W45S3'
         const target_room = Game.rooms[target_room_name]
@@ -231,6 +241,10 @@ export class ManualSquad extends Squad {
         return energy_available > 2020
 
       case 'W47S9': {
+        return energy_available > 2500
+      }
+
+      case 'W45S3': {
         return energy_available > 2500
       }
 
@@ -375,6 +389,24 @@ export class ManualSquad extends Squad {
           MOVE, MOVE, MOVE, MOVE, MOVE,
         ]
         this.addGeneralCreep(spawn_func, body, CreepType.WORKER)
+        return
+      }
+
+      case 'W45S3': {
+        // carrier
+        const body: BodyPartConstant[] = [
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+        ]
+        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
       }
 
@@ -615,24 +647,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W45S3': {
-        const target = Game.getObjectById('5b08d05a9812cf66aa9a7401') as StructureWall | undefined
-        if (!target) {
-          this.say(`DONE`)
-          return
-        }
-
-        this.creeps.forEach((creep) => {
-          if (creep.moveToRoom('W45S2') == ActionResult.IN_PROGRESS) {
-            return
-          }
-
-          if (creep.pos.isNearTo(target)) {
-            creep.dismantle(target)
-          }
-          else {
-            creep.moveTo(target)
-          }
-        })
+        this.stealEnergyFrom('W45S3', 'W45S2', 18, 17)
         return
       }
 
