@@ -11,6 +11,7 @@ export interface EmpireMemory {
   farm: {
     room: string | null
     energy_room: string | null
+    boost_compound: string
   } | null
   claim_to?: {
     target_room_name: string,
@@ -52,7 +53,6 @@ export class Empire {
 
     let farm_room: {room: Room, controller: StructureController, next: string, base: string} | null = null
     let next_farm: {target_room_name: string, base_room_name: string} | null = null
-    const boost_resource = RESOURCE_CATALYZED_GHODIUM_ACID
     let send_to_energy_threshold = 200000
 
     for (const room_name in gcl_farm_rooms) {
@@ -73,9 +73,21 @@ export class Empire {
         empire_memory.farm = {
           room: null,
           energy_room: null,
+          boost_compound: RESOURCE_CATALYZED_GHODIUM_ACID,
         }
       }
       empire_memory.farm.room = farm_room.room.name
+
+      const default_compound = RESOURCE_CATALYZED_GHODIUM_ACID
+      const valid_compounds: string[] = [RESOURCE_CATALYZED_GHODIUM_ACID, RESOURCE_GHODIUM_ACID]
+      const is_valid_compound = valid_compounds.indexOf(empire_memory.farm.boost_compound) >= 0
+
+      const boost_resource = is_valid_compound ? (empire_memory.farm.boost_compound as ResourceConstant) : default_compound
+
+      if (!is_valid_compound) {
+        console.log(`EmpireMemory.farm.boost_compound is not valid boost compound ${empire_memory.farm.boost_compound}, ${this.name}`)
+        empire_memory.farm.boost_compound = default_compound
+      }
 
       switch (farm_room.controller.level) {
         case 1: {
