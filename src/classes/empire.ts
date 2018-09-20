@@ -8,8 +8,10 @@ enum State {
 }
 
 export interface EmpireMemory {
-  farm_room: string | null
-  farm_energy_room: string | null
+  farm: {
+    room: string | null
+    energy_room: string | null
+  } | null
   claim_to?: {
     target_room_name: string,
     base_room_name: string,
@@ -24,8 +26,7 @@ export class Empire {
   constructor(readonly name: string) {
     if (!Memory.empires[this.name]) {
       Memory.empires[this.name] = {
-        farm_room: null,
-        farm_energy_room: null,
+        farm: null,
       }
     }
     const empire_memory = Memory.empires[this.name]
@@ -68,7 +69,13 @@ export class Empire {
     }
 
     if (farm_room) {
-      empire_memory.farm_room = farm_room.room.name
+      if (!empire_memory.farm) {
+        empire_memory.farm = {
+          room: null,
+          energy_room: null,
+        }
+      }
+      empire_memory.farm.room = farm_room.room.name
 
       switch (farm_room.controller.level) {
         case 1: {
@@ -149,8 +156,8 @@ export class Empire {
       }
     }
     else {
-      if (empire_memory && empire_memory.farm_room) {
-        const farm_info = gcl_farm_rooms[empire_memory.farm_room]
+      if (empire_memory && empire_memory.farm && empire_memory.farm.room) {
+        const farm_info = gcl_farm_rooms[empire_memory.farm.room]
         const next_farm_info = gcl_farm_rooms[farm_info.next]
 
         next_farm = {
@@ -238,8 +245,8 @@ export class Empire {
     opts = opts || {}
 
     const empire_memory = Memory.empires[this.name]
-    if (!empire_memory) {
-      console.log(`Empire.transfer_farm_energy ${room_name} no empire memory for ${this.name}`)
+    if (!empire_memory || !empire_memory.farm) {
+      console.log(`Empire.transfer_farm_energy ${room_name} no empire memory for ${this.name}, ${empire_memory}`)
       return
     }
 
@@ -247,9 +254,9 @@ export class Empire {
     const notify = false
 
     if (opts.stop) {
-      if (empire_memory.farm_energy_room && (empire_memory.farm_energy_room == room_name)) {
+      if (empire_memory.farm.energy_room && (empire_memory.farm.energy_room == room_name)) {
         Game.transfer_energy(room_name, {stop: true, notify})
-        empire_memory.farm_energy_room = null
+        empire_memory.farm.energy_room = null
 
         if (opts.with_boosts) {
           Game.transfer_resource(resource_type, room_name, {stop: true, notify})
@@ -257,14 +264,14 @@ export class Empire {
       }
     }
     else {
-      if (empire_memory.farm_energy_room && (empire_memory.farm_energy_room != room_name)) {
-        Game.transfer_energy(empire_memory.farm_energy_room, {stop: true, notify})
-        empire_memory.farm_energy_room = null
+      if (empire_memory.farm.energy_room && (empire_memory.farm.energy_room != room_name)) {
+        Game.transfer_energy(empire_memory.farm.energy_room, {stop: true, notify})
+        empire_memory.farm.energy_room = null
       }
 
-      if (!empire_memory.farm_energy_room || (empire_memory.farm_energy_room != room_name)) {
+      if (!empire_memory.farm.energy_room || (empire_memory.farm.energy_room != room_name)) {
         Game.transfer_energy(room_name, {notify})
-        empire_memory.farm_energy_room = room_name
+        empire_memory.farm.energy_room = room_name
 
         if (opts.with_boosts) {
           Game.transfer_resource(resource_type, room_name, {notify})
