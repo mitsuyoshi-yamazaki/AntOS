@@ -4,6 +4,7 @@ import { ErrorMapper } from "utils/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color } from './utils';
 import { EmpireMemory } from './empire'
+import { ActionResult } from "./creep";
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -18,6 +19,7 @@ declare global {
     check_resources_in: (room_name: string) => void
     check_all_resources: () => void
     collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
+    send_resource: (from: string[], to: string, resource_type: ResourceConstant, amount: number) => ActionResult
 
     info: (opts?:{sorted?: boolean}) => void
     creep_positions: (squad_name: string) => void
@@ -233,6 +235,36 @@ export function tick(): void {
     }
 
     console.log(`Collect resource ${resource_type} ${room_name}: ${target_room.terminal.store[resource_type] || 0} + ${sum}${details}`)
+  }
+
+  Game.send_resource = (from: string[], to: string, resource_type: ResourceConstant, amount: number) => {
+    let done = false
+
+    for (const room_name of from) {
+      if (room_name == to) {
+        continue
+      }
+
+      const room = Game.rooms[room_name]
+      if (!room || !room.controller || !room.controller.my) {
+        console.log(`Game.send_resource unexpected room ${room}, ${room_name}`)
+        continue
+      }
+      if (!room.terminal || (room.terminal.cooldown != 0) || ((room.terminal.store[resource_type] || 0) < amount)) {
+        continue
+      }
+
+      const result = room.terminal.send(resource_type, amount, to)
+      console.log(`Game.send_resource ${resource_type} * ${amount} from ${room_link(room_name)} to ${room_link(to)}, result: ${result}`)
+
+      if (result != OK) {
+        continue
+      }
+      done = true
+      break
+    }
+
+    return done ? ActionResult.DONE : ActionResult.IN_PROGRESS
   }
 
   Game.info = (opts?:{sorted?: boolean}) => {
