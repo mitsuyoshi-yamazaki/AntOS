@@ -51,7 +51,7 @@ export class Empire {
 
     let farm_room: {room: Room, controller: StructureController, next: string, base: string} | null = null
     let next_farm: {target_room_name: string, base_room_name: string} | null = null
-    const boost_resource = RESOURCE_GHODIUM_ACID
+    const boost_resource = RESOURCE_CATALYZED_GHODIUM_ACID
     let send_to_energy_threshold = 200000
 
     for (const room_name in gcl_farm_rooms) {

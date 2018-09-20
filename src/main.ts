@@ -480,6 +480,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 
 /**
  * @todo:
+ * show error when spawn usage is too low
  * cancel spawning attacker if the invader is eliminated within 10 ticks
  * bootstrap squad
  * colored text refactoring

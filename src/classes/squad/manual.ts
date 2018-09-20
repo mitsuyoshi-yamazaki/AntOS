@@ -615,7 +615,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W45S3': {
-        const target = Game.getObjectById('5b08d1d83bc3bf222fcfce4a') as StructureWall | undefined
+        const target = Game.getObjectById('5b08d05a9812cf66aa9a7401') as StructureWall | undefined
         if (!target) {
           this.say(`DONE`)
           return
