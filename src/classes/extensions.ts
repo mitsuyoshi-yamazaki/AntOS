@@ -278,7 +278,7 @@ export function tick(): void {
 
     const info = 'info'
     const warn = 'warn'
-    const error = 'error'
+    const error = 'critical'
     const high = 'high'
     const almost = 'almost'
 
@@ -369,7 +369,7 @@ export function tick(): void {
 
       if (room.storage) {
         const storage_amount = Math.round((_.sum(room.storage.store) / room.storage.storeCapacity) * 100)
-        let storage_amount_level: 'info' | 'warn' | 'error' = info
+        let storage_amount_level: 'info' | 'warn' | 'critical' = info
 
         if (storage_amount > 90) {
           storage_amount_level = error
@@ -385,7 +385,7 @@ export function tick(): void {
 
       const energy_amount = !room.storage ? 0 : Math.round(room.storage.store.energy / 1000)  // k energy
       const energy_amount_text = `${energy_amount}`
-      let energy_amount_level: 'error' | 'warn' | 'info' | 'high' | 'almost' = info
+      let energy_amount_level: 'critical' | 'warn' | 'info' | 'high' | 'almost' = info
 
       if (energy_amount < 100) {
         energy_amount_level = error
@@ -762,7 +762,7 @@ export function tick(): void {
 
       if (room && room.controller) {
         if (room.controller.my) {
-          level = 'error'
+          level = 'critical'
         }
         else if (room.controller.reservation && (room.controller.reservation.username == 'Mitsuyoshi')) {
           level = 'warn'

@@ -2,8 +2,9 @@ import { init as extensionInit, tick as extensionTick } from "classes/extensions
 import { init as creepInit } from "classes/creep"
 import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
+import { leveled_colored_text } from "./utils";
 
-const version = '2.57.16'
+const version = '2.57.17'
 
 export function init(): void {
   Game.version = version
@@ -93,17 +94,6 @@ export function tick(): void {
     const error_level = limit
     const warn_level = limit * 0.90
 
-    const colors: {[index: string]: string} = {
-      info: 'white',
-      warn: '#F9EFBF',
-      error: '#F78C6C',
-      critical: '#E74C3C',
-    }
-
-    const colored_text = (text: string, level: 'info' | 'warn' | 'error' | 'critical') => {
-      return `<span style='color:${colors[level]}'>${text}</span>`
-    }
-
     const usage = Memory.cpu_usages.map(u => {
       let level: 'info' | 'warn' | 'error' | 'critical'
 
@@ -120,7 +110,7 @@ export function tick(): void {
         level = info
       }
 
-      return colored_text(`${u}`, level)
+      return leveled_colored_text(`${u}`, level)
     })
 
     // --
@@ -140,7 +130,7 @@ export function tick(): void {
       average_level = info
     }
 
-    const ave = colored_text(`${average}`, average_level)
+    const ave = leveled_colored_text(`${average}`, average_level)
 
     // --
     const bucket = Game.cpu.bucket
@@ -159,7 +149,7 @@ export function tick(): void {
       bucket_level = info
     }
 
-    const b = colored_text(`${bucket}`, bucket_level)
+    const b = leveled_colored_text(`${bucket}`, bucket_level)
 
     console.log(`CPU usage: ${usage}, ave: ${ave}, bucket: ${b} at ${Game.time}`)
   }

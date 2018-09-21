@@ -3,12 +3,13 @@ let index = 0
 const leveled_colors: {[index: string]: string} = {
   info: 'white',
   warn: '#F9E79F',
-  error: '#E74C3C',
+  error: '#F78C6C',
+  critical: '#E74C3C',
   high: '#64C3F9',
   almost: '#47CAB0',
 }
 
-export type ColorLevel = 'info' | 'warn' | 'error' | 'high' | 'almost'
+export type ColorLevel = 'info' | 'warn' | 'error' | 'critical' | 'high' | 'almost'
 export function leveled_color(level: ColorLevel): string {
   return leveled_colors[level]
 }
