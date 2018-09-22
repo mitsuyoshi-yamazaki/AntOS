@@ -874,8 +874,9 @@ export class RemoteHarvesterSquad extends Squad {
           return
         }
 
-        if ((creep.room.name == this.room_name) && (squad_memory.room_contains_construction_sites.indexOf(creep.room.name) < 0)) {
+        const contained = squad_memory.room_contains_construction_sites.indexOf(creep.room.name) >= 0
 
+        if (!contained) {
           const destination_room_name = squad_memory.room_contains_construction_sites[0]
           if (destination_room_name) {
             creep.moveToRoom(destination_room_name)
