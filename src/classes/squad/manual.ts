@@ -245,7 +245,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W45S3': {
-        return energy_available > 2500
+        return energy_available > 1500
       }
 
       case 'W46S3': {
@@ -395,16 +395,16 @@ export class ManualSquad extends Squad {
       case 'W45S3': {
         // carrier
         const body: BodyPartConstant[] = [
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE, // 5
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE, // 10
         ]
         this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
