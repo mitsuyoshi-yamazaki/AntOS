@@ -698,12 +698,10 @@ export class FarmerSquad extends Squad {
       }
       else {
         const destination_room = Game.rooms[this.room_name] as Room | undefined
-        if (creep.room.name != this.room_name) {
-          creep.moveToRoom(this.room_name)
-          return
-        }
-        if (!destination_room) {
-          creep.moveToRoom(this.room_name)
+        if ((creep.room.name != this.room_name) || !destination_room) {
+          if (moveCarrier(this.room_name, creep, null) == ActionResult.IN_PROGRESS) {
+            creep.moveToRoom(this.room_name)
+          }
           return
         }
 
@@ -870,7 +868,21 @@ export class FarmerSquad extends Squad {
 type MovePaths = {[farm_room_name: string]: {[direction: string]: {[room_name: string]: {[x: number]: {[y: number]: DirectionConstant}}}}}
 const carrier_paths: MovePaths = {
   W46S9: {
-    withdraw: {
+    withdraw: { // W46S9
+      W47S9: {
+        49: {
+          18: BOTTOM_LEFT,
+          19: LEFT,
+          20: TOP_LEFT,
+        },
+        48: {19: TOP_LEFT},
+        47: {18: TOP_LEFT},
+        46: {17: TOP_LEFT},
+        45: {16: TOP_LEFT},
+        44: {15: TOP_LEFT},
+        43: {14: TOP_LEFT},
+        42: {13: TOP_LEFT},
+      },
       W46S9: {
         45: {24: LEFT},
         44: {24: BOTTOM_LEFT},
@@ -919,7 +931,45 @@ const carrier_paths: MovePaths = {
         1: {20: LEFT},
       }
     },
-    charge: {
+    charge: { // W46S9
+      W47S9: {
+        37: {12: BOTTOM_RIGHT},
+        38: {
+          11: BOTTOM_LEFT,
+          13: BOTTOM_RIGHT,
+        },
+        39: {
+          10: BOTTOM_RIGHT,
+          14: BOTTOM_RIGHT,
+        },
+        40: {
+          9: BOTTOM_RIGHT,
+          11: BOTTOM_RIGHT,
+          15: BOTTOM_RIGHT,
+        },
+        41: {
+          10: BOTTOM_RIGHT,
+          12: BOTTOM_RIGHT,
+          16: TOP_RIGHT,
+        },
+        42: {
+          11: BOTTOM_RIGHT,
+          13: BOTTOM_RIGHT,
+          15: TOP_RIGHT,
+        },
+        43: {
+          12: BOTTOM_RIGHT,
+          14: BOTTOM_RIGHT,
+        },
+        44: {
+          13: BOTTOM_LEFT,
+          15: BOTTOM_RIGHT,
+        },
+        45: {16: BOTTOM_RIGHT},
+        46: {17: BOTTOM_RIGHT},
+        47: {18: BOTTOM_RIGHT},
+        48: {19: BOTTOM_RIGHT},
+      },
       W46S9: {
         0: {
           19: BOTTOM_RIGHT,
@@ -999,15 +1049,21 @@ function getDirection(farm_room_name: string, carry_direction: 'withdraw' | 'cha
   return direction
 }
 
-function moveCarrier(farm_room_name: string, creep: Creep, destination: RoomPosition): void {
+function moveCarrier(farm_room_name: string, creep: Creep, destination: RoomPosition | null): ActionResult {
   const charge_direction = (creep.carry.energy == 0) ? 'withdraw' : 'charge'
   const direction: DirectionConstant | null = getDirection(farm_room_name, charge_direction, creep.pos)
   if (direction) {
     creep.move(direction)
-    return
+    return ActionResult.DONE
+  }
+
+  if (!destination) {
+    return ActionResult.IN_PROGRESS
   }
 
   creep.say('!')
   creep.moveTo(destination, {maxRooms:2, reusePath: 10})
+
+  return ActionResult.IN_PROGRESS
 }
 
