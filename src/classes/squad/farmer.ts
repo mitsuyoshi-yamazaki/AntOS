@@ -13,6 +13,7 @@ export interface FarmerSquadMemory extends SquadMemory {
   rcl: number,
   spawn_id: string | null,
   lab_id: string | null,
+  second_lab_id?: string,
   storage_position: {x:number, y:number}
   positions: {x:number, y:number}[]
   avoid_positions: {x:number, y:number}[]
@@ -582,10 +583,36 @@ export class FarmerSquad extends Squad {
         }
       }
 
-      const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 1500) < 3)))
+      const dying_tick = 3
+      const dying = ((creep.ticksToLive || 1500) <= dying_tick)
+      const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || dying)
 
       if (needs_renew) {
-        if ((creep.ticksToLive || 1500) > 1490) {
+        if (((creep.ticksToLive || 1500) == dying_tick) && creep.boosted()) {
+          let lab: StructureLab | undefined
+
+          if (this.lab && (this.lab.cooldown == 0)) {
+            lab = this.lab
+          }
+          else {
+            const squad_memory = Memory.squads[this.name] as FarmerSquadMemory
+
+            if (squad_memory && squad_memory.second_lab_id) {
+              let second_lab = Game.getObjectById(squad_memory.second_lab_id) as StructureLab | undefined
+
+              if (second_lab && (second_lab.cooldown == 0)) {
+                lab = second_lab
+              }
+            }
+          }
+
+          if (lab) {
+            const result = (lab as any as {unboostCreep: (c: Creep) => ScreepsReturnCode}).unboostCreep(creep) // @fixme:
+
+            console.log(`FarmerSquad.runUpgrader unboost creep: ${result}, ${this.name}`)
+          }
+        }
+        else if ((creep.ticksToLive || 1500) > 1490) {
           if (!creep.boosted() && this.lab && room.storage && room.controller) {
             console.log(`FarmerSquad.runUpgrader boostCreep ${this.room_name}, ${creep.name}, ${this.name}`)
 
@@ -750,6 +777,13 @@ export class FarmerSquad extends Squad {
       const carry = _.sum(creep.carry)
 
       if (carry == 0) {
+        const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
+
+        if (drop) {
+          creep.pickup(drop)
+          return
+        }
+
         if (room.terminal && (rcl >= 6) && this.lab) {
           if (this.lab.mineralType && (this.lab.mineralType != this.boost_resource_type)) {
             creep.withdraw(this.lab, this.lab.mineralType)
@@ -779,12 +813,6 @@ export class FarmerSquad extends Squad {
           return
         }
 
-        const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
-
-        if (drop) {
-          creep.pickup(drop)
-          return
-        }
 
         creep.say(`NO ENGY`)
       }
