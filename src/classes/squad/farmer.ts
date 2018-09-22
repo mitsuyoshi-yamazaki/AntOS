@@ -692,7 +692,8 @@ export class FarmerSquad extends Squad {
           creep.withdraw(storage, RESOURCE_ENERGY)
         }
         else {
-          creep.moveTo(storage, {maxRooms:2, reusePath: 10})
+          moveCarrier(creep, storage.pos)
+          // creep.moveTo(storage, {maxRooms:2, reusePath: 10})
         }
       }
       else {
@@ -711,7 +712,8 @@ export class FarmerSquad extends Squad {
             creep.transfer(destination_room.storage, RESOURCE_ENERGY)
           }
           else {
-            creep.moveTo(destination_room.storage, {maxRooms:2, reusePath: 10})
+            moveCarrier(creep, destination_room.storage.pos)
+            // creep.moveTo(destination_room.storage, {maxRooms:2, reusePath: 10})
           }
         }
         else {
@@ -743,7 +745,7 @@ export class FarmerSquad extends Squad {
         return
       }
 
-      if (((creep.ticksToLive || 1500) < 1400) && this.spawn && !this.spawn.spawning) { // @fixme: 1400
+      if (((creep.ticksToLive || 1500) < 1400) && this.spawn && !this.spawn.spawning) {
         this.spawn.renewCreep(creep)
       }
 
@@ -863,29 +865,88 @@ export class FarmerSquad extends Squad {
       }
     })
   }
-
-  // --
-  // private find_non_used_position(): {x: number, y: number} {
-  //   for (const pos of this.positions) {
-  //     let used = false
-
-  //     for (const creep of this.upgraders) {
-  //       const memory = creep.memory as FarmerUpgraderMemory
-  //       if (!memory.pos) {
-  //         continue
-  //       }
-  //       if ((memory.pos.x == pos.x) && (memory.pos.y == pos.y)) {
-  //         used = true
-  //         break
-  //       }
-  //     }
-
-  //     if (!used) {
-  //       return pos
-  //     }
-  //   }
-
-  //   console.log(`FarmerSquad.find_empty_position used all positions ${this.name}, ${this.room_name}`)
-  //   return this.positions[0]
-  // }
 }
+
+type MovePaths = {[room_name: string]: {[x: number]: {[y: number]: DirectionConstant}}}
+const carrier_paths_withdraw: MovePaths = {
+}
+
+const carrier_paths_charge: MovePaths = {
+  W46S9: {
+    1: {20: BOTTOM_RIGHT},
+    2: {21: RIGHT},
+    3: {21: RIGHT},
+    4: {21: RIGHT},
+    5: {21: BOTTOM_RIGHT},
+    6: {22: BOTTOM_RIGHT},
+    7: {23: TOP_RIGHT},
+    8: {22: TOP_RIGHT},
+    9: {21: RIGHT},
+    10: {21: RIGHT},
+    11: {21: RIGHT},
+    12: {21: RIGHT},
+    13: {21: RIGHT},
+    14: {21: RIGHT},
+    15: {21: RIGHT},
+    16: {21: RIGHT},
+    17: {21: BOTTOM_RIGHT},
+    18: {22: BOTTOM_RIGHT},
+    19: {23: RIGHT},
+    20: {23: RIGHT},
+    21: {23: RIGHT},
+    22: {23: RIGHT},
+    23: {23: RIGHT},
+    24: {23: RIGHT},
+    25: {23: RIGHT},
+    26: {23: RIGHT},
+    27: {23: RIGHT},
+    28: {23: RIGHT},
+    29: {23: TOP_RIGHT},
+    30: {22: TOP_RIGHT},
+    31: {21: RIGHT},
+    32: {21: RIGHT},
+    33: {21: RIGHT},
+    34: {21: RIGHT},
+    35: {21: RIGHT},
+    36: {21: RIGHT},
+    37: {21: RIGHT},
+    38: {21: TOP_RIGHT},
+    39: {20: TOP_RIGHT},
+    40: {19: BOTTOM_RIGHT},
+    41: {20: BOTTOM_RIGHT},
+    42: {21: BOTTOM_RIGHT},
+    43: {22: BOTTOM_RIGHT},
+    44: {23: BOTTOM_RIGHT},
+  }
+}
+
+function getDirection(carry_direction: 'withdraw' | 'charge', pos: RoomPosition): DirectionConstant | null {
+  const paths = (carry_direction == 'withdraw') ? carrier_paths_withdraw : carrier_paths_charge
+  const room = paths[pos.roomName]
+  if (!room) {
+    return null
+  }
+
+  const x = room[pos.x]
+  if (!x) {
+    return null
+  }
+
+  const direction = x[pos.y]
+  if ((direction == undefined) || (direction == null)) {
+    return null
+  }
+  return direction
+}
+
+function moveCarrier(creep: Creep, destination: RoomPosition): void {
+  const charge_direction = (creep.carry.energy == 0) ? 'withdraw' : 'charge'
+  const direction: DirectionConstant | null = getDirection(charge_direction, creep.pos)
+  if (direction) {
+    creep.move(direction)
+    return
+  }
+
+  creep.moveTo(destination, {maxRooms:2, reusePath: 10})
+}
+
