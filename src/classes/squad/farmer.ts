@@ -779,11 +779,7 @@ export class FarmerSquad extends Squad {
           return
         }
 
-        const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
-          filter: (resource: Resource) => {
-            return resource.resourceType == RESOURCE_ENERGY
-          }
-        })[0]
+        const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
 
         if (drop) {
           creep.pickup(drop)
