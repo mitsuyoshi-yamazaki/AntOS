@@ -895,6 +895,7 @@ const carrier_paths_withdraw: MovePaths = {
     23: {23: LEFT},
     22: {23: LEFT},
     21: {23: LEFT},
+    20: {23: LEFT},
     19: {23: TOP_LEFT},
     18: {22: TOP_LEFT},
     17: {21: LEFT},
@@ -919,6 +920,11 @@ const carrier_paths_withdraw: MovePaths = {
 
 const carrier_paths_charge: MovePaths = {
   W46S9: {
+    0: {
+      19: BOTTOM_RIGHT,
+      20: RIGHT,
+      21: TOP_RIGHT,
+    },
     1: {20: BOTTOM_RIGHT},
     2: {21: RIGHT},
     3: {21: RIGHT},
@@ -993,6 +999,7 @@ function moveCarrier(creep: Creep, destination: RoomPosition): void {
     return
   }
 
+  creep.say('!')
   creep.moveTo(destination, {maxRooms:2, reusePath: 10})
 }
 
