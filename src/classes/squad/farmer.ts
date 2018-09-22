@@ -191,13 +191,18 @@ export class FarmerSquad extends Squad {
     let debug = false
 
     const destination_room = Game.rooms[this.room_name] as Room | undefined
-    if (destination_room) {
-      if (destination_room.controller && (destination_room.controller.level == 8)) {
-        if (debug) {
-          console.log(`FarmerSquad.nextCreep RCL8 ${this.name}`)
-        }
-        return undefined
+    if (!destination_room || !destination_room.controller || !destination_room.controller.my) {
+      if (debug) {
+        console.log(`FarmerSquad.nextCreep no destination room ${destination_room}, ${this.name}`)
       }
+      return undefined
+    }
+
+    if (destination_room.controller && (destination_room.controller.level == 8)) {
+      if (debug) {
+        console.log(`FarmerSquad.nextCreep RCL8 ${this.name}`)
+      }
+      return undefined
     }
 
     // Charger
@@ -205,22 +210,32 @@ export class FarmerSquad extends Squad {
       return CreepType.CHARGER
     }
 
-    const rcl = (destination_room && destination_room.controller) ? destination_room.controller.level : 0
+    const rcl = destination_room.controller.level
 
     // Upgrader
     let need_carriers = false  // @todo: if storage is empty
 
-    if (rcl < 4) {
-      if (destination_room && (!destination_room.storage || (destination_room.storage.store.energy < 10000))) {
+    if (!destination_room.storage) {
+      need_carriers = true
+    }
+    else if (rcl < 4) {
+      if (destination_room.storage.store.energy < 10000) {
         need_carriers = true
       }
     }
-    if (rcl < 6) {
-      if ((rcl >= 4) || (destination_room && !destination_room.storage)) {
+    else if (rcl < 6) {
+      if (rcl == 4) {
         need_carriers = true
       }
+      else if (rcl == 5) {
+        const remaining_progress = destination_room.controller.progressTotal - destination_room.controller.progress
+
+        if (!destination_room.storage || (destination_room.storage.store.energy < (remaining_progress + 10000))) {
+          need_carriers = true
+        }
+      }
     }
-    else if (destination_room && !destination_room.terminal) {
+    else if (!destination_room.terminal) {
       need_carriers = true
     }
 
