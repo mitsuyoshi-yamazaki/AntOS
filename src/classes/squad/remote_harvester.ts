@@ -1083,7 +1083,9 @@ export class RemoteHarvesterSquad extends Squad {
 
       const should_escape = ((creep.room.attacker_info().attacked && !creep.room.is_keeperroom) || (this.is_room_attacked)) && (this.room_name != 'W49S6')
       if (should_escape) {
-        creep.memory.status = CreepStatus.CHARGE
+        if (carry > 0) {
+          creep.memory.status = CreepStatus.CHARGE
+        }
 
         if ((carry == 0) && (creep.room.name == this.base_room.name)) {
           creep.moveTo(25, 25)
