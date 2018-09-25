@@ -10,7 +10,7 @@ export class AttackerSquad extends Squad {
   private destination_room_name: string | undefined
   private attack_unit: BodyPartConstant[] = [ATTACK]
   private energy_unit = 130
-  private fix_part_energy = 320
+  private fix_part_energy = 320 // 2T, RA, 3M
   private max_energy = 1100
   private is_heavy_attacker = false
 
@@ -53,7 +53,7 @@ export class AttackerSquad extends Squad {
       if (this.base_room.attacker_info().hostile_teams.indexOf('Invader') >= 0) {
         attack_needs *= 0.7
       }
-      attack_needs = Math.ceil(attack_needs)
+      attack_needs = Math.min(Math.ceil(attack_needs), 44)  // fix part: 2T, RA, 3M
 
       if (attack_needs > 6) {
         this.attack_unit = [ATTACK, ATTACK]
