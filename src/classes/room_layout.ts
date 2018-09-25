@@ -139,6 +139,7 @@ export class RoomLayout {
   public show(): void {
     this.structures.forEach((positions, mark) => {
       // const flag_color = flag_colors.get(mark) // color text
+      console.log(`${mark}: ${positions.length}`)
 
       positions.forEach((pos) => {
         this.room.visual.text(mark, pos.x, pos.y, {color: '#ffffff'})
