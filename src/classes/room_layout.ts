@@ -62,22 +62,29 @@ type LayoutMark = StructureMark
   | LayoutMarkSpare
   | LayoutMarkRoad
 
-const layouts: {[name: string]: LayoutMark[][]} = {
-  mark01: [
-    ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
-    ['..', '--', 'la', 'la', 'la', '--', 'ex', 'ex', '--', '--', 'ex', 'ex', '--'],
-    ['--', 'la', '--', 'la', 'la', '--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--'],
-    ['--', 'la', 'la', '--', '--', 'to', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex'],
-    ['--', 'la', 'la', '--', 'te', '--', 'sp', '--', 'to', 'ex', 'ex', '--', 'ex'],
-    ['--', '--', '--', 'to', '--', '..', 'li', '..', '--', 'ex', '--', 'ex', '--'],
-    ['--', 'ex', 'ex', '--', 'sp', 'nu', 'st', '--', 'sp', '--', 'ex', 'ex', '--'], // center
-    ['--', 'ex', '--', 'ex', '--', '--', 'to', '..', '--', 'ex', '--', 'ex', '--'],
-    ['ex', '--', 'ex', 'ex', 'to', '--', 'sp', '--', 'ex', 'ex', 'ex', '--', 'ex'],
-    ['ex', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex', 'ex', 'ex', 'ex', 'ex', '--'],
-    ['--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--', 'ex', 'ex', 'ex', '--', '..'],
-    ['--', 'ex', 'ex', '--', '--', 'ex', 'ex', 'ex', '--', 'ex', '--', '..', '..'],
-    ['..', '--', '--', 'ex', 'ex', '--', '--', '--', 'ex', '--', '..', '..', '..'],
-  ],
+interface RoomLayoutAttributes {
+}
+
+const layouts: {[name: string]: {layout: LayoutMark[][], attributes: RoomLayoutAttributes}} = {
+  mark01: {
+    layout: [
+      ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
+      ['..', '--', 'la', 'la', 'la', '--', 'ex', 'ex', '--', '--', 'ex', 'ex', '--'],
+      ['--', 'la', '--', 'la', 'la', '--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--'],
+      ['--', 'la', 'la', '--', '--', 'to', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex'],
+      ['--', 'la', 'la', '--', 'te', '--', 'sp', '--', 'to', 'ex', 'ex', '--', 'ex'],
+      ['--', '--', '--', 'to', '--', '..', 'li', '..', '--', 'ex', '--', 'ex', '--'],
+      ['--', 'ex', 'ex', '--', 'sp', 'nu', 'st', '--', 'sp', '--', 'ex', 'ex', '--'], // center
+      ['--', 'ex', '--', 'ex', '--', '--', 'to', '..', '--', 'ex', '--', 'ex', '--'],
+      ['ex', '--', 'ex', 'ex', 'to', '--', 'sp', '--', 'ex', 'ex', 'ex', '--', 'ex'],
+      ['ex', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex', 'ex', 'ex', 'ex', 'ex', '--'],
+      ['--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--', 'ex', 'ex', 'ex', '--', '..'],
+      ['--', 'ex', 'ex', '--', '--', 'ex', 'ex', 'ex', '--', 'ex', '--', '..', '..'],
+      ['..', '--', '--', 'ex', 'ex', '--', '--', '--', 'ex', '--', '..', '..', '..'],
+    ],
+    attributes: {
+    },
+  },
 }
 
 const flag_colors = new Map<LayoutMark, ColorConstant>(
@@ -135,14 +142,15 @@ export class RoomLayout {
 
   // --- private
   private parse_layout() {
-    const raw_layout = layouts[this.name]
-    if (!raw_layout) {
+    const layout_info = layouts[this.name]
+    if (!layout_info) {
       const message = `RoomLayout name ${this.name} does not exists`
       console.log(message)
       Game.notify(message)
       return
     }
 
+    const raw_layout = layout_info.layout
     let y = this.origin_pos.y
 
     for (const row of raw_layout) {
