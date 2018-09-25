@@ -884,7 +884,7 @@ export class RemoteHarvesterSquad extends Squad {
           }
 
           creep.say(`DONE`)
-          console.log(`RemoteHarvesterSquad.runBuilder done ${this.name}, ${this.room_name}`)
+          console.log(`RemoteHarvesterSquad.runBuilder done ${this.name}, ${room_link(this.room_name)}`)
           creep.memory.squad_name = this.region.worker_squad.name
           done = true
           return
