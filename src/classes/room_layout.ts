@@ -4,14 +4,17 @@
  * https://screeps.com/a/#!/room/shard1/E22N32
  */
 
-type STRUCTURE_SPAIR = 'spair'
-type StructureConstantForRoomLayout = StructureConstant | STRUCTURE_SPAIR
+type STRUCTURE_SPARE= 'spare'
+type StructureConstantForRoomLayout = StructureConstant | STRUCTURE_SPARE
 
 type LayoutMarkCenter    = '00'
 const LAYOUT_MARK_CENTER = '00'
 
-type LayoutMarkSpair     = '..'
-const LAYOUT_MARK_Spair  = '..'
+type LayoutMarkBlank     = '..'
+const LAYOUT_MARK_BLANK  = '..'
+
+type LayoutMarkSpare     = '**'
+const LAYOUT_MARK_SPARE  = '**'
 
 type LayoutMarkRoad      = '--'
 const LAYOUT_MARK_ROAD   = '--'
@@ -34,17 +37,41 @@ const LAYOUT_MARK_TOWER  = 'to'
 type LayoutMarkSpawn     = 'sp'
 const LAYOUT_MARK_SPAWN  = 'sp'
 
+type LayoutMarkExtension     = 'ex'
+const LAYOUT_MARK_EXTENSION  = 'ex'
+
 type StructureMark = LayoutMarkStorage
   | LayoutMarkTerminal
   | LayoutMarkLink
   | LayoutMarkContainer
   | LayoutMarkTower
   | LayoutMarkSpawn
+  | LayoutMarkExtension
 
 type LayoutMark = StructureMark
+  | LayoutMarkBlank
   | LayoutMarkCenter
-  | LayoutMarkSpair
+  | LayoutMarkSpare
   | LayoutMarkRoad
+
+const layouts: {[name: string]: LayoutMark[][]} = {
+  mark01: [
+    ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
+  ],
+}
+
+const flag_colors = new Map<LayoutMark, ColorConstant>(
+  [
+    // [LAYOUT_MARK_BLANK, null],
+    [LAYOUT_MARK_ROAD,      COLOR_BROWN],
+    [LAYOUT_MARK_STORAGE,   COLOR_GREEN],
+    [LAYOUT_MARK_TERMINAL,  COLOR_PURPLE],
+    [LAYOUT_MARK_LINK,      COLOR_ORANGE],
+    [LAYOUT_MARK_TOWER,     COLOR_RED],
+    [LAYOUT_MARK_SPAWN,     COLOR_GREY],
+    [LAYOUT_MARK_EXTENSION, COLOR_WHITE],
+  ]
+)
 
 export interface RoomLayoutOpts {
   allow_partial?: boolean
@@ -52,20 +79,23 @@ export interface RoomLayoutOpts {
 
 export class RoomLayout {
 
-  public is_partial: boolean
+  public is_partial: boolean = false
+  private structures = new Map<LayoutMark, {x:number, y:number}[]>()
 
-  private structures: {[x: number]: {[y: number]: StructureConstant}}
-
-  constructor(readonly room: Room, readonly center: {x: number, y: number}, opts?: RoomLayoutOpts) {
+  constructor(readonly room: Room, readonly origin_pos: {x:number, y:number}, readonly name: string, readonly opts?: RoomLayoutOpts) {
     opts = opts || {}
 
-
-
-    throw new Error()
+    this.parse_layout()
   }
 
   public show(): void {
+    this.structures.forEach((positions, mark) => {
+      // const flag_color = flag_colors.get(mark) // color text
 
+      positions.forEach((pos) => {
+        this.room.visual.text(mark, pos.x, pos.y, {color: '#ffffff'})
+      })
+    })
   }
 
   public place_flags(): void {
@@ -73,6 +103,35 @@ export class RoomLayout {
   }
 
   // --- private
+  private parse_layout() {
+    const raw_layout = layouts[this.name]
+    if (!raw_layout) {
+      const message = `RoomLayout name ${this.name} does not exists`
+      console.log(message)
+      Game.notify(message)
+      return
+    }
+
+    let y = this.origin_pos.y
+
+    for (const row of raw_layout) {
+      let x = this.origin_pos.x
+
+      for (const mark of row) {
+        const flag_color = flag_colors.get(mark)
+
+        if (flag_color) {
+          const positions = this.structures.get(mark) || []
+          positions.push({x, y})
+
+          this.structures.set(mark, positions)
+        }
+        x += 1
+      }
+      y += 1
+    }
+  }
+
   private calc_layout(center: {x: number, y: number}): LayoutMark[][] | null {
     const layout: LayoutMark[][] = [
       ['--', '..', '--', '--', '--', 'to', '--'],
