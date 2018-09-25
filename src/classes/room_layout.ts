@@ -121,7 +121,16 @@ export class RoomLayout {
   }
 
   public place_flags(): void {
+    this.structures.forEach((positions, mark) => {
+      const flag_color = flag_colors.get(mark)
+      if (!flag_color) {
+        return
+      }
 
+      positions.forEach((pos) => {
+        this.room.createFlag(pos.x, pos.y, undefined, flag_color, flag_color)
+      })
+    })
   }
 
   // --- private

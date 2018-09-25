@@ -227,7 +227,7 @@ function trade():void {
 
   buyResource({
     resource_type: RESOURCE_LEMERGIUM,
-    price: 0.03,
+    price: 0.01,
     rooms,
   }, credit_amount)
 
