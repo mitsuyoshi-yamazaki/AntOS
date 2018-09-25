@@ -306,15 +306,15 @@ export class TempSquad extends Squad {
     //   }
     // }
 
+    const target_room = Game.rooms[this.target_room_name]
+
     if (creep.claim(target_room_name, true) == ActionResult.DONE) {
       if (!Memory.rooms[target_room_name]) {
         Memory.rooms[target_room_name] = {
           harvesting_source_ids: [],
         }
       }
-      Memory.rooms[target_room_name].ancestor = this.owner_room_name
 
-      const target_room = Game.rooms[this.target_room_name]
       if (target_room && (target_room.name == creep.room.name)) {
         target_room.find(FIND_HOSTILE_CONSTRUCTION_SITES).forEach((construction_site) => {
           construction_site.remove()
@@ -349,6 +349,9 @@ export class TempSquad extends Squad {
           structure.destroy()
         })
       }
+    }
+    else if (target_room && target_room.memory) {
+      target_room.memory.ancestor = this.owner_room_name
     }
 
     if (((Game.time % 41) == 1) && (creep.room.name == target_room_name) && creep.room.controller) {
