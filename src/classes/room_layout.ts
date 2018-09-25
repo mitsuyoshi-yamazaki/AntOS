@@ -28,6 +28,9 @@ const LAYOUT_MARK_TERMINAL = 'te'
 type LayoutMarkLink      = 'li'
 const LAYOUT_MARK_LINK   = 'li'
 
+type LayoutMarkLab       = 'la'
+const LAYOUT_MARK_LAB    = 'la'
+
 type LayoutMarkContainer = 'co'
 const LAYOUT_MARK_CONATINER = 'co'
 
@@ -37,15 +40,20 @@ const LAYOUT_MARK_TOWER  = 'to'
 type LayoutMarkSpawn     = 'sp'
 const LAYOUT_MARK_SPAWN  = 'sp'
 
+type LayoutMarkNuker     = 'nu'
+const LAYOUT_MARK_NUKER  = 'nu'
+
 type LayoutMarkExtension     = 'ex'
 const LAYOUT_MARK_EXTENSION  = 'ex'
 
 type StructureMark = LayoutMarkStorage
   | LayoutMarkTerminal
   | LayoutMarkLink
+  | LayoutMarkLab
   | LayoutMarkContainer
   | LayoutMarkTower
   | LayoutMarkSpawn
+  | LayoutMarkNuker
   | LayoutMarkExtension
 
 type LayoutMark = StructureMark
@@ -57,6 +65,18 @@ type LayoutMark = StructureMark
 const layouts: {[name: string]: LayoutMark[][]} = {
   mark01: [
     ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
+    ['..', '--', 'la', 'la', 'la', '--', 'ex', 'ex', '--', '--', 'ex', 'ex', '--'],
+    ['--', 'la', '--', 'la', 'la', '--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--'],
+    ['--', 'la', 'la', '--', '--', 'to', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex'],
+    ['--', 'la', 'la', '--', 'te', '--', 'sp', '--', 'to', 'ex', 'ex', '--', 'ex'],
+    ['--', '--', '--', 'to', '--', '..', 'li', '..', '--', 'ex', '--', 'ex', '--'],
+    ['--', 'ex', 'ex', '--', 'sp', 'nu', 'st', '--', 'sp', '--', 'ex', 'ex', '--'], // center
+    ['--', 'ex', '--', 'ex', '--', '--', 'to', '..', '--', 'ex', '--', 'ex', '--'],
+    ['ex', '--', 'ex', 'ex', 'to', '--', 'sp', '--', 'ex', 'ex', 'ex', '--', 'ex'],
+    ['ex', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex', 'ex', 'ex', 'ex', 'ex', '--'],
+    ['--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--', 'ex', 'ex', 'ex', '--', '..'],
+    ['--', 'ex', 'ex', '--', '--', 'ex', 'ex', 'ex', '--', 'ex', '--', '..', '..'],
+    ['..', '--', '--', 'ex', 'ex', '--', '--', '--', 'ex', '--', '..', '..', '..'],
   ],
 }
 
@@ -67,8 +87,10 @@ const flag_colors = new Map<LayoutMark, ColorConstant>(
     [LAYOUT_MARK_STORAGE,   COLOR_GREEN],
     [LAYOUT_MARK_TERMINAL,  COLOR_PURPLE],
     [LAYOUT_MARK_LINK,      COLOR_ORANGE],
+    [LAYOUT_MARK_LAB,       COLOR_BLUE],
     [LAYOUT_MARK_TOWER,     COLOR_RED],
     [LAYOUT_MARK_SPAWN,     COLOR_GREY],
+    [LAYOUT_MARK_NUKER,     COLOR_CYAN],
     [LAYOUT_MARK_EXTENSION, COLOR_WHITE],
   ]
 )

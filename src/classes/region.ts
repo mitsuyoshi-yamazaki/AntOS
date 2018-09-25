@@ -1558,7 +1558,7 @@ export class Region {
           }
           else {
             // @fixme: If
-            const message = `${spawn.name} in ${this.name} assign to ${squad.name}: ${result}, energy: ${this.room.energyAvailable}, [${body}]`
+            const message = `${spawn.name} in ${this.name} assign to ${squad.name}: ${result}, energy: ${this.room.energyAvailable}, (length: ${body.length}) [${body}]`
             console.log(message)
             Game.notify(message)
           }
