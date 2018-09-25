@@ -158,3 +158,40 @@ export function body_part_color(body_part: BodyPartConstant): string {
       return '#FFFFFF'
   }
 }
+
+export function color_2_hex(color: ColorConstant): string {
+  switch (color) {
+    case COLOR_RED:
+      return '#ff0000'
+
+    case COLOR_PURPLE:
+      return '#ff00ff'
+
+    case COLOR_BLUE:
+      return '#0000ff'
+
+    case COLOR_CYAN:
+      return '#00ffff'
+
+    case COLOR_GREEN:
+      return '#00ff00'
+
+    case COLOR_YELLOW:
+      return '#ffff00'
+
+    case COLOR_ORANGE:
+      return '#ffa500'
+
+    case COLOR_BROWN:
+      return '#8b4513'
+
+    case COLOR_GREY:
+      return '#d3d3d3'
+
+    case COLOR_WHITE:
+      return '#ffffff'
+
+    default:
+      return '#ffffff'
+  }
+}
