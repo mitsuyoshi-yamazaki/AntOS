@@ -153,7 +153,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W45S3': {
-        const target_room_name = 'W45S2'
+        const target_room_name = 'W44S3'
         const target_room = Game.rooms[target_room_name]
         if (!target_room || !target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
           return SpawnPriority.NONE
@@ -647,7 +647,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W45S3': {
-        this.stealEnergyFrom('W45S3', 'W45S2', 18, 17)
+        this.stealEnergyFrom('W45S3', 'W44S3', 18, 17)
         return
       }
 
