@@ -7,44 +7,44 @@
 type STRUCTURE_SPARE= 'spare'
 type StructureConstantForRoomLayout = StructureConstant | STRUCTURE_SPARE
 
-type LayoutMarkCenter    = '00'
-const LAYOUT_MARK_CENTER = '00'
+type LayoutMarkCenter    = '0'
+const LAYOUT_MARK_CENTER = '0'
 
-type LayoutMarkBlank     = '..'
-const LAYOUT_MARK_BLANK  = '..'
+type LayoutMarkBlank     = '.'
+const LAYOUT_MARK_BLANK  = '.'
 
-type LayoutMarkSpare     = '**'
-const LAYOUT_MARK_SPARE  = '**'
+type LayoutMarkSpare     = '*'
+const LAYOUT_MARK_SPARE  = '*'
 
-type LayoutMarkRoad      = '--'
-const LAYOUT_MARK_ROAD   = '--'
+type LayoutMarkRoad      = '-'
+const LAYOUT_MARK_ROAD   = '-'
 
-type LayoutMarkStorage   = 'st'
-const LAYOUT_MARK_STORAGE = 'st'
+type LayoutMarkStorage   = 's'
+const LAYOUT_MARK_STORAGE = 's'
 
-type LayoutMarkTerminal  = 'te'
-const LAYOUT_MARK_TERMINAL = 'te'
+type LayoutMarkTerminal  = 't'
+const LAYOUT_MARK_TERMINAL = 't'
 
-type LayoutMarkLink      = 'li'
-const LAYOUT_MARK_LINK   = 'li'
+type LayoutMarkLink      = 'i'
+const LAYOUT_MARK_LINK   = 'i'
 
-type LayoutMarkLab       = 'la'
-const LAYOUT_MARK_LAB    = 'la'
+type LayoutMarkLab       = 'l'
+const LAYOUT_MARK_LAB    = 'l'
 
-type LayoutMarkContainer = 'co'
-const LAYOUT_MARK_CONATINER = 'co'
+type LayoutMarkContainer = 'c'
+const LAYOUT_MARK_CONATINER = 'c'
 
-type LayoutMarkTower     = 'to'
-const LAYOUT_MARK_TOWER  = 'to'
+type LayoutMarkTower     = 'o'
+const LAYOUT_MARK_TOWER  = 'o'
 
-type LayoutMarkSpawn     = 'sp'
-const LAYOUT_MARK_SPAWN  = 'sp'
+type LayoutMarkSpawn     = '6'
+const LAYOUT_MARK_SPAWN  = '6'
 
-type LayoutMarkNuker     = 'nu'
-const LAYOUT_MARK_NUKER  = 'nu'
+type LayoutMarkNuker     = 'n'
+const LAYOUT_MARK_NUKER  = 'n'
 
-type LayoutMarkExtension     = 'ex'
-const LAYOUT_MARK_EXTENSION  = 'ex'
+type LayoutMarkExtension     = 'x'
+const LAYOUT_MARK_EXTENSION  = 'x'
 
 type StructureMark = LayoutMarkStorage
   | LayoutMarkTerminal
@@ -68,38 +68,38 @@ interface RoomLayoutAttributes {
 const layouts: {[name: string]: {layout: LayoutMark[][], attributes: RoomLayoutAttributes}} = {
   mark01: {
     layout: [
-      ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
-      ['..', '--', 'la', 'la', 'la', '--', 'ex', 'ex', '--', '--', 'ex', 'ex', '--'],
-      ['--', 'la', '--', 'la', 'la', '--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--'],
-      ['--', 'la', 'la', '--', '--', 'to', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex'],
-      ['--', 'la', 'la', '--', 'te', '--', 'sp', '--', 'to', 'ex', 'ex', '--', 'ex'],
-      ['--', '--', '--', 'to', '--', '..', 'li', '..', '--', 'ex', '--', 'ex', '--'],
-      ['--', 'ex', 'ex', '--', 'sp', 'nu', 'st', '--', 'sp', '--', 'ex', 'ex', '--'], // center
-      ['--', 'ex', '--', 'ex', '--', '--', 'to', '..', '--', 'ex', '--', 'ex', '--'],
-      ['ex', '--', 'ex', 'ex', 'to', '--', 'sp', '--', 'ex', 'ex', 'ex', '--', 'ex'],
-      ['ex', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex', 'ex', 'ex', 'ex', 'ex', '--'],
-      ['--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--', 'ex', 'ex', 'ex', '--', '..'],
-      ['--', 'ex', 'ex', '--', '--', 'ex', 'ex', 'ex', '--', 'ex', '--', '..', '..'],
-      ['..', '--', '--', 'ex', 'ex', '--', '--', '--', 'ex', '--', '..', '..', '..'],
+      ['.', '.', '-', '-', '-', '-', '-', '-', 'x', 'x', '-', '-', '.'],
+      ['.', '-', 'l', 'l', 'l', '-', 'x', 'x', '-', '-', 'x', 'x', '-'],
+      ['-', 'l', '-', 'l', 'l', '-', 'x', '-', 'x', 'x', '-', 'x', '-'],
+      ['-', 'l', 'l', '-', '-', 'o', '-', 'x', 'x', 'x', 'x', '-', 'x'],
+      ['-', 'l', 'l', '-', 't', '-', '6', '-', 'o', 'x', 'x', '-', 'x'],
+      ['-', '-', '-', 'o', '-', '.', 'i', '.', '-', 'x', '-', 'x', '-'],
+      ['-', 'x', 'x', '-', '6', 'n', 's', '-', '6', '-', 'x', 'x', '-'], // center
+      ['-', 'x', '-', 'x', '-', '-', 'o', '.', '-', 'x', '-', 'x', '-'],
+      ['x', '-', 'x', 'x', 'o', '-', '6', '-', 'x', 'x', 'x', '-', 'x'],
+      ['x', '-', 'x', 'x', 'x', 'x', '-', 'x', 'x', 'x', 'x', 'x', '-'],
+      ['-', 'x', '-', 'x', 'x', '-', 'x', '-', 'x', 'x', 'x', '-', '.'],
+      ['-', 'x', 'x', '-', '-', 'x', 'x', 'x', '-', 'x', '-', '.', '.'],
+      ['.', '-', '-', 'x', 'x', '-', '-', '-', 'x', '-', '.', '.', '.'],
     ],
     attributes: {
     },
   },
   mark02: {
     layout: [
-      ['..', '..', '--', '--', '--', '--', '--', '--', 'ex', 'ex', '--', '--', '..'],
-      ['..', '--', 'la', 'la', 'la', '--', 'ex', 'ex', '--', '--', 'ex', 'ex', '--'],
-      ['--', 'la', '--', 'la', 'la', '--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--'],
-      ['--', 'la', 'la', '--', '--', 'to', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex'],
-      ['--', 'la', 'la', '--', 'te', '--', 'sp', '--', 'to', 'ex', 'ex', '--', 'ex'],
-      ['--', '--', '--', 'to', '--', '..', 'li', '..', '--', 'ex', '--', 'ex', '--'],
-      ['--', 'ex', 'ex', '--', 'sp', 'nu', 'st', '--', 'sp', '--', 'ex', 'ex', '--'], // center
-      ['--', 'ex', '--', 'ex', '--', '--', 'to', '..', '--', 'ex', '--', 'ex', '--'],
-      ['ex', '--', 'ex', 'ex', 'to', '--', 'sp', '--', 'ex', 'ex', 'ex', '--', 'ex'],
-      ['ex', '--', 'ex', 'ex', 'ex', 'ex', '--', 'ex', 'ex', 'ex', 'ex', 'ex', '--'],
-      ['--', 'ex', '--', 'ex', 'ex', '--', 'ex', '--', 'ex', 'ex', 'ex', '--', '..'],
-      ['--', 'ex', 'ex', '--', '--', 'ex', 'ex', 'ex', '--', 'ex', '--', '..', '..'],
-      ['..', '--', '--', 'ex', 'ex', '--', '--', '--', 'ex', '--', '..', '..', '..'],
+      ['.', '.', '-', '-', '-', '-', '-', '-', 'x', 'x', '-', '-', '.'],
+      ['.', '-', 'l', 'l', 'l', '-', 'x', 'x', '-', '-', 'x', 'x', '-'],
+      ['-', 'l', '-', 'l', 'l', '-', 'x', '-', 'x', 'x', '-', 'x', '-'],
+      ['-', 'l', 'l', '-', '-', 'o', '-', 'x', 'x', 'x', 'x', '-', 'x'],
+      ['-', 'l', 'l', '-', 't', '-', '6', '-', 'o', 'x', 'x', '-', 'x'],
+      ['-', '-', '-', 'o', '-', '.', 'i', '.', '-', 'x', '-', 'x', '-'],
+      ['-', 'x', 'x', '-', '6', 'n', 's', '-', '6', '-', 'x', 'x', '-'], // center
+      ['-', 'x', '-', 'x', '-', '-', '-', '.', '-', 'x', '-', 'x', '-'],
+      ['x', '-', 'x', 'x', 'o', '-', '6', '-', 'x', 'x', 'x', '-', 'x'],
+      ['x', '-', 'x', 'x', 'x', 'x', '-', 'x', 'x', 'x', 'x', '-', 'x'],
+      ['-', 'x', '-', 'x', 'x', '-', 'x', '-', 'x', 'x', '-', 'x', '-'],
+      ['-', 'x', 'x', '-', '-', 'x', 'x', 'x', '-', '-', 'x', 'x', '-'],
+      ['.', '-', '-', 'x', 'x', '-', '-', '-', 'x', 'x', '-', '-', '.'],
     ],
     attributes: {
     },
@@ -192,13 +192,13 @@ export class RoomLayout {
 
   private calc_layout(center: {x: number, y: number}): LayoutMark[][] | null {
     const layout: LayoutMark[][] = [
-      ['--', '..', '--', '--', '--', 'to', '--'],
-      ['..', '--', '..', '--', '..', '--', 'to'],
-      ['--', '..', '--', 'st', '--', '..', '--'],
-      ['sp', '--', 'li', '00', 'te', '--', 'sp'],
-      ['--', '..', '--', 'co', '--', '..', '--'],
-      ['to', '--', '..', '--', '..', '--', 'to'],
-      ['--', 'to', '--', 'sp', '--', 'to', '--'],
+      ['-', '.', '-', '-', '-', 'o', '-'],
+      ['.', '-', '.', '-', '.', '-', 'o'],
+      ['-', '.', '-', 's', '-', '.', '-'],
+      ['6', '-', 'i', '0', 't', '-', '6'],
+      ['-', '.', '-', 'c', '-', '.', '-'],
+      ['o', '-', '.', '-', '.', '-', 'o'],
+      ['-', 'o', '-', '6', '-', 'o', '-'],
     ]
 
     const layout_center = this.center_position(layout)
