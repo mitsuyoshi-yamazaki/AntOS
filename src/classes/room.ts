@@ -45,10 +45,12 @@ declare global {
     owned_structures_not_found_error(structure_type: StructureConstant): void
     add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string | null
     remote_layout(x: number, y: number): CostMatrix | null
-    show_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
     test(from: Structure): void
     place_construction_sites(): void
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
+
+    show_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
+    remove_all_flags(): void
 
     show_weakest_walls(opts?:{max?: number}): void
 
@@ -393,6 +395,14 @@ export function tick(): void {
       console.log(e)
       return null
     }
+  }
+
+  Room.prototype.remove_all_flags = function(): void {
+    const room = this as Room
+
+    room.find(FIND_FLAGS).forEach((flag) => {
+      flag.remove()
+    })
   }
 
   Room.prototype.test = function(from: Structure): void {
