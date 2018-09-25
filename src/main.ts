@@ -135,10 +135,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
       const credit = Game.market.credits
       let message: string | undefined
 
-      if (Game.cpu.bucket < 1000) {
-        message = `CPU Bucket ${Game.cpu.bucket}`
-      }
-
       if (credit < 280000) {
         const credit_message = `Credit ${credit}`
         message = message ? (message + credit_message) : credit_message

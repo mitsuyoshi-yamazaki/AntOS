@@ -66,6 +66,9 @@ declare global {
       },
       test?: number[],
     }
+    cpu: {
+      last_bucket: number
+    }
   }
 
   interface CostMatrix {

@@ -2,9 +2,9 @@ import { init as extensionInit, tick as extensionTick } from "classes/extensions
 import { init as creepInit } from "classes/creep"
 import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
-import { leveled_colored_text } from "./utils";
+import { leveled_colored_text } from './utils';
 
-const version = '2.58.1'
+const version = '2.58.2'
 
 export function init(): void {
   Game.version = version
@@ -34,6 +34,12 @@ export function init(): void {
 
   if (!Memory.regions) {
     Memory.regions = {}
+  }
+
+  if (!Memory.cpu) {
+    Memory.cpu = {
+      last_bucket: Game.cpu.bucket
+    }
   }
 
   if (!Memory.debug) {
@@ -81,6 +87,16 @@ export function tick(): void {
   if (Memory.cpu_usages.length > cpu_ticks) {
     Memory.cpu_usages.shift()
   }
+
+  const current_bucket = Game.cpu.bucket
+  const diff = current_bucket - (Memory.cpu.last_bucket || 1000)
+  if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
+    const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
+    console.log(leveled_colored_text(message, 'critical'))
+    Game.notify(message)
+  }
+
+  Memory.cpu.last_bucket = current_bucket
 
   if ((Game.time % cpu_ticks) == 0) {
     const limit = Game.cpu.limit
