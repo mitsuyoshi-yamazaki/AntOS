@@ -135,7 +135,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
       const credit = Game.market.credits
       let message: string | undefined
 
-      if (credit < 280000) {
+      if (credit < 380000) {
         const credit_message = `Credit ${credit}`
         message = message ? (message + credit_message) : credit_message
       }
@@ -379,7 +379,7 @@ function buyOrders(resource_type: ResourceConstant, price: number): Order[] {
 
 // -- Buy
 function buyResource(opt: TradeResourceOptions, credit_amount: number): void {
-  if (credit_amount < 180000) {
+  if (credit_amount < 380000) {
     const message = `main.tradeResource lack of credit ${credit_amount}`
     // console.log(message)
     // Game.notify(message)
