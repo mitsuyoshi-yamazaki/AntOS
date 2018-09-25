@@ -107,7 +107,16 @@ export function tick(): void {
 
       if (amount > 0) {
         const amount_text = (resource_type == RESOURCE_ENERGY) ? `${Math.floor(amount / 1000)}k` : `${amount}`
-        details += `\n- ${room_link(room_name)}: ${amount_text}`
+        let amount_level: 'info' | 'high' | 'almost' = 'info'
+
+        if (amount > 100000) {
+          amount_level = 'almost'
+        }
+        else if (amount > 40000) {
+          amount_level = 'high'
+        }
+
+        details += `\n- ${room_link(room_name)}: ${leveled_colored_text(amount_text, amount_level)}`
         sum += amount
 
         resources[room_name] = amount
