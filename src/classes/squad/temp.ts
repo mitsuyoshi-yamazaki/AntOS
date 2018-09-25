@@ -331,10 +331,17 @@ export class TempSquad extends Squad {
               STRUCTURE_SPAWN,
               STRUCTURE_OBSERVER,
               STRUCTURE_POWER_SPAWN,
+              STRUCTURE_LINK,
             ]
 
             if (structures_to_destroy.indexOf(structure.structureType) >= 0) {
               return true
+            }
+
+            if (structure.structureType == STRUCTURE_LAB) {
+              if (structure.mineralAmount == 0) {
+                return true
+              }
             }
             return false
           }
