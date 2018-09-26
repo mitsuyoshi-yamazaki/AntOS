@@ -1479,7 +1479,9 @@ export function init() {
       // }
     }
 
-    if ((_.sum(this.carry) > this.carry.energy) && this.room.storage) {
+    const carry = _.sum(this.carry)
+
+    if ((carry > this.carry.energy) && this.room.storage) {
       if (this.pos.isNearTo(this.room.storage)) {
         this.transferResources(this.room.storage)
       }
@@ -1489,10 +1491,9 @@ export function init() {
       }
     }
 
-    const carry = _.sum(this.carry)
     let debug_say = false
 
-    // if (this.room.name == 'W58S4') {
+    // if (this.room.name == 'W53S15') {
     //   debug_say = true
     // }
 
@@ -1546,21 +1547,14 @@ export function init() {
         }
       }
       else {
-        if ((this.room.controller && this.room.controller.my && (this.room.controller.level <= 4))) {
-          // To not pickup harvesters drop
-          let drop: Resource | undefined
+        if ((this.room.controller && this.room.controller.my && (!this.room.storage || !this.room.storage.my))) {
           const opt = {
             filter: (resource: Resource) => {
               return resource.resourceType == RESOURCE_ENERGY
             }
           }
 
-          // if (this.room.name == 'W47N2') {
-          //   drop = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES, opt)
-          // }
-          // else {
-            drop = this.pos.findInRange(FIND_DROPPED_RESOURCES, 8, opt)[0] as Resource | undefined
-          // }
+          const drop = this.pos.findInRange(FIND_DROPPED_RESOURCES, 8, opt)[0] as Resource | undefined
 
           if (drop) {
             if (this.pos.isNearTo(drop)) {
@@ -1568,9 +1562,10 @@ export function init() {
             }
             else {
               this.moveTo(drop, move_to_opt)
-              return
             }
+            return
           }
+
           // else {
           //   const container = this.pos.findInRange(FIND_STRUCTURES, 5, {
           //     filter: (structure: AnyStructure) => {

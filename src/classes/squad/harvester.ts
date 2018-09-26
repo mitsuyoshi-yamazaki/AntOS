@@ -28,7 +28,7 @@ export class HarvesterSquad extends Squad {
 
     const is_alive = (this.energy_capacity > 300)
 
-    if (!this.destination && is_alive) {
+    if (!this.destination && is_alive && (this.owner_room_name != 'W53S15')) {
       if (((Game.time + 3) % 7) == 0) {
         console.log(`HarvesterSquad destination not specified ${this.name}`)
       }
@@ -690,6 +690,18 @@ export class HarvesterSquad extends Squad {
         }
 
         if (resource_type) {
+          if (!destination && creep.room.storage && !creep.room.storage.my) {
+            const x = 16  // W53S15
+            const y = 27
+
+            if ((creep.pos.x == x) && (creep.pos.y == y)) {
+              creep.drop(resource_type)
+            }
+            else {
+              creep.moveTo(x, y)
+            }
+            return
+          }
           if (creep.pos.isNearTo(destination)) {
             const transfer_result = creep.transfer(destination, resource_type)
             switch (transfer_result) {
