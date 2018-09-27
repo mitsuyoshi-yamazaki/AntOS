@@ -5,7 +5,7 @@ import { CreepStatus, ActionResult, CreepType } from "classes/creep"
 export interface RemoteMineralHarvesterSquadMemory extends SquadMemory {
   room_name: string
   mineral_id: string
-  keeper_lair_id: string
+  keeper_lair_id?: string
   number_of_carriers?: number
 }
 

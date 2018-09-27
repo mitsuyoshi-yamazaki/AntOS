@@ -2,6 +2,7 @@ import { SquadType } from "./squad/squad"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { UID, room_history_link, room_link, leveled_colored_text } from './utils';
+import { RemoteMineralHarvesterSquadMemory } from "./squad/remote_m_harvester";
 
 export interface AttackerInfo  {
   attacked: boolean
@@ -43,7 +44,8 @@ declare global {
     attacker_info(): AttackerInfo
 
     owned_structures_not_found_error(structure_type: StructureConstant): void
-    add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string | null
+    add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
+    add_remote_mineral_harvester(owner_room_name: string, opts?:{forced?: boolean}): string | null
     remote_layout(x: number, y: number): CostMatrix | null
     test(from: Structure): void
     place_construction_sites(): void
@@ -219,7 +221,7 @@ export function tick(): void {
     }
   }
 
-  Room.prototype.add_remote_harvester = function(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string | null {
+  Room.prototype.add_remote_harvester = function(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null {
     opts = opts || {}
     const dry_run = !(opts.dry_run == false)
     const no_flags_in_base = !(!opts.no_flags_in_base)
@@ -307,12 +309,15 @@ export function tick(): void {
     }
 
     if (!no_memory && !dry_run) {
-      // --- Squad Memory
-      let squad_name = `remote_harvester_${room.name.toLowerCase()}`
+      let result: string[] = []
 
-      while (Memory.squads[squad_name]) {
-        squad_name = `${squad_name}_1`
+      // --- Remote Harvester Squad Memory
+      let harvester_squad_name = `remote_harvester_${room.name.toLowerCase()}`
+
+      while (Memory.squads[harvester_squad_name]) {
+        harvester_squad_name = `${harvester_squad_name}_1`
       }
+      result.push(harvester_squad_name)
 
       const sources: {[index: string]: {container_id?: string}} = {}
 
@@ -321,7 +326,7 @@ export function tick(): void {
       })
 
       const squad_memory: RemoteHarvesterSquadMemory = {
-        name: squad_name,
+        name: harvester_squad_name,
         type: SquadType.REMOET_HARVESTER,
         owner_name: owner_room_name,
         number_of_creeps: 0,
@@ -334,9 +339,15 @@ export function tick(): void {
         builder_max: room.is_keeperroom ? 5 : 3,
       }
 
-      Memory.squads[squad_name] = squad_memory
+      Memory.squads[harvester_squad_name] = squad_memory
 
-      // Region Memory
+      // --- Remote Mineral Harvester Memory
+      const mineral_harvester_name = room.add_remote_mineral_harvester(owner_room_name) // @todo: not tested yet
+      if (mineral_harvester_name) {
+        result.push(mineral_harvester_name)
+      }
+
+      // --- Region Memory
       const region_memory = Memory.regions[owner_room_name]
       if (!room.is_keeperroom) {
         if (region_memory) {
@@ -351,9 +362,57 @@ export function tick(): void {
         }
       }
 
-      return squad_name
+      return result
     }
     return null
+  }
+
+  Room.prototype.add_remote_mineral_harvester = function(owner_room_name: string, opts?:{forced?: boolean}): string | null {
+    opts = opts || {}
+
+    const room = this as Room
+
+    if (!room.is_keeperroom && !opts.forced) {
+      console.log(`Room.add_remote_mineral_harvester ${room.name} is not a source keeper room`)
+      return null
+    }
+
+    const mineral = room.find(FIND_MINERALS)[0]
+    if (!mineral) {
+      console.log(`Room.add_remote_mineral_harvester no mineral found in ${room.name}`)
+      return null
+    }
+
+    const keeper_lair = mineral.pos.findInRange(FIND_HOSTILE_STRUCTURES, 5, {
+      filter: (s: Structure) => s.structureType == STRUCTURE_KEEPER_LAIR
+    })[0]
+    if (!keeper_lair) {
+      console.log(`Room.add_remote_mineral_harvester no keeper lair found in ${room.name} nearby ${mineral.pos}`)
+    }
+
+    let mineral_harvester_name = `remote_m_harvester_${room.name.toLowerCase()}`
+    while (Memory.squads[mineral_harvester_name]) {
+      mineral_harvester_name = `${mineral_harvester_name}_1`
+    }
+
+    const room_distance = Game.map.getRoomLinearDistance(owner_room_name, room.name)
+    const number_of_carriers = (room_distance <= 1) ? 1 : 2
+
+    const memory: RemoteMineralHarvesterSquadMemory = {
+      room_name: room.name,
+      mineral_id: mineral.id,
+      keeper_lair_id: keeper_lair ? keeper_lair.id : undefined,
+      number_of_carriers,
+      name: mineral_harvester_name,
+      type: SquadType.REMOET_M_HARVESTER,
+      owner_name: owner_room_name,
+      stop_spawming: true,
+      number_of_creeps: 0,
+    }
+
+    Memory.squads[mineral_harvester_name] = memory
+
+    return mineral_harvester_name
   }
 
   Room.prototype.remote_layout = function(x: number, y: number): CostMatrix | null {
