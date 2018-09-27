@@ -1209,13 +1209,13 @@ export class RemoteHarvesterSquad extends Squad {
         // }
 
         if (!this.destination) {
-          if (this.base_room.name == 'dummy') {
+          if (this.base_room.name == 'W53S15') {
             // if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
             //   return
             // }
 
-            const x = 10
-            const y = 20
+            const x = 16
+            const y = 27
             const room_position = new RoomPosition(x, y, this.base_room.name)
 
             if ((creep.room.name != this.base_room.name)) {
