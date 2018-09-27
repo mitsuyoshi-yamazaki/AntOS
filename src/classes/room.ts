@@ -234,9 +234,26 @@ export function tick(): void {
       console.log(`Room.add_remote_harvester no destination room ${owner_room_name}, ${room.name}`)
       return null
     }
-    if (!owner_room.storage || !owner_room.storage.my) {
+    if (!owner_room.storage) {
       console.log(`Room.add_remote_harvester no storage in room ${owner_room_name}`)
       return null
+    }
+
+    let destination_position: RoomPosition
+
+    if (owner_room.storage.my) {
+      destination_position = owner_room.storage.pos
+    }
+    else {
+      const storage_flag = owner_room.find(FIND_FLAGS, {filter: f=>(f.color == COLOR_GREEN)})[0]
+
+      if (storage_flag) {
+        destination_position = storage_flag.pos
+      }
+      else {
+        console.log(`Room.add_remote_harvester no my storage nor storage flag in room ${owner_room_name}`)
+        return null
+      }
     }
     if (!room.sources || (room.sources.length == 0)) {
       console.log(`Room.add_remote_harvester no sources in room ${room.name}, ${room.sources}`)
@@ -245,7 +262,7 @@ export function tick(): void {
 
     if (!opts.memory_only) {
       // --- Path
-      const road_positions = room.source_road_positions(owner_room.storage.pos)
+      const road_positions = room.source_road_positions(destination_position)
       if (!road_positions) {
         console.log(`Room.add_remote_harvester no road positions ${room.name}`)
         return null
