@@ -68,7 +68,7 @@ export class RemoteHarvesterSquad extends Squad {
 
     this.is_keeper_room = !(!squad_memory) && !(!squad_memory.need_attacker)
 
-    if ((['dummy'].indexOf(this.base_room.name) >= 0) && this.base_room.controller && (this.base_room.controller.level < 6)) {
+    if ((['W53S15'].indexOf(this.base_room.name) >= 0) && this.base_room.controller && (this.base_room.controller.level < 6)) {
       this.harvester_energy_unit = 1000
       this.harvester_body_unit = [
         CARRY, CARRY,
