@@ -1115,7 +1115,7 @@ export class Region {
           const room = Game.rooms[region_memory.observe_target]
 
           if (room) {
-            room.visual.text(`OBSERVING`, 48, 1, {
+            room.visual.text(`${this.name} is observing`, 48, 1, {
               align: 'right',
               opacity: 1.0,
               font: '12px',
