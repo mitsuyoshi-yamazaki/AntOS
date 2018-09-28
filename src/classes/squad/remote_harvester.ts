@@ -964,6 +964,11 @@ export class RemoteHarvesterSquad extends Squad {
           }
         }
 
+        if ((this.room_name == 'W54S15') && (creep.room.name == 'W55S15')) {
+          creep.moveToRoom(this.room_name)
+          return
+        }
+
         runHarvester(creep, this.room_name, info.target, info.container, info.container, {
           resource_type: RESOURCE_ENERGY,
         })
