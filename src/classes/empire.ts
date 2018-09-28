@@ -234,7 +234,12 @@ export class Empire {
     }
 
     if (claim_to) {
-      this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 4})
+      if (claim_to.target_room_name == 'W53S15') {
+        this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 5})
+      }
+      else {
+        this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 4})
+      }
     }
   }
 
