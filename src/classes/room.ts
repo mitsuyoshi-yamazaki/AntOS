@@ -226,7 +226,7 @@ export function tick(): void {
     const dry_run = !(opts.dry_run == false)
     const no_flags_in_base = !(!opts.no_flags_in_base)
     const no_memory = !(!opts.no_memory)
-    console.log(`Room.add_remote_harvester dry_run: ${dry_run}`)
+    console.log(`Room.add_remote_harvester dry_run: ${dry_run} at ${Game.time}`)
 
     const room = this as Room
     const room_name = room.name
