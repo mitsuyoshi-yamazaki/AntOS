@@ -1278,9 +1278,6 @@ export class RemoteHarvesterSquad extends Squad {
               else if (creep.room.name == 'W46S5') {
                 creep.moveTo(17, 49)
               }
-              else if (creep.room.name == 'W45S4') {
-                creep.moveTo(0, 38)
-              }
               else {
                 if (creep.moveTo(this.destination, move_to_ops) == ERR_NO_PATH) {
                   creep.say(`NO PATH`)
@@ -1300,9 +1297,6 @@ export class RemoteHarvesterSquad extends Squad {
             move_to_ops.maxRooms = 5
             if (creep.room.name == 'W46S5') {
               creep.moveTo(17, 49)
-            }
-            else if (creep.room.name == 'W45S4') {
-              creep.moveTo(0, 38)
             }
             else {
               creep.moveTo(this.destination.room.storage, move_to_ops)

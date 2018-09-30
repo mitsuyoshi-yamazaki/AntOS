@@ -268,12 +268,6 @@ export function init() {
     else if ((destination_room_name == 'W47S6') && (this.room.name == 'W46S5')) {
       this.memory.destination_room_name = 'W46S6'
     }
-    else if ((destination_room_name == 'W45S4') && (this.room.name == 'W46S3')) {
-      this.memory.destination_room_name = 'W46S4'
-    }
-    else if ((destination_room_name == 'W46S3') && (this.room.name == 'W45S4')) {
-      this.memory.destination_room_name = 'W46S4'
-    }
     else if ((destination_room_name == 'W15N36') && (this.room.name == 'E16N37')) {
       this.memory.destination_room_name = 'E16N36'
     }
@@ -349,29 +343,7 @@ export function init() {
       }
     }
 
-    if ((destination_room_name == 'W44S42') && (Number(this.room.name.slice(4,6)) > 43)) {
-      destination_room_name = 'W46S43'  // @fixme: this is waypoint
-    }
-    else if ((destination_room_name == 'W48S39') && (Number(this.room.name.slice(4,6)) > 40)) {
-      destination_room_name = 'W45S40'  // @fixme: this is waypoint
-    }
-    else if ((destination_room_name == 'W45S41') && (Number(this.room.name.slice(4,6)) > 42)) {
-      // destination_room_name = 'W46S42'  // @fixme: this is waypoint
-      destination_room_name = 'W45S45'  // @fixme: this is waypoint
-    }
-    else if (destination_room_name == 'W47S42') {
-      if (Number(this.room.name.slice(4,6)) > 43) {
-        destination_room_name = 'W46S43'  // @fixme: this is waypoint
-      }
-      else if (Number(this.room.name.slice(4,6)) > 44) {
-        destination_room_name = 'W47S44'  // @fixme: this is waypoint
-      }
-    }
-    else if ((destination_room_name == 'W42S48') && (Number(this.room.name.slice(1,3)) > 44)) {
-      // destination_room_name = 'W46S42'  // @fixme: this is waypoint
-      destination_room_name = 'W44S46'  // @fixme: this is waypoint
-    }
-    else if ((destination_room_name == 'W48S12') && (Number(this.room.name.slice(4,6)) > 15) && (Number(this.room.name.slice(1,3)) == 50)) {
+    if ((destination_room_name == 'W48S12') && (Number(this.room.name.slice(4,6)) > 15) && (Number(this.room.name.slice(1,3)) == 50)) {
       destination_room_name = 'W50S15'  // @fixme: this is waypoint
     }
     else if ((destination_room_name == 'W48S6') && (Number(this.room.name.slice(4,6)) > 7) && (Number(this.room.name.slice(1,3)) == 48)) {
@@ -427,22 +399,6 @@ export function init() {
     }
     else if ((this.room.name == 'W47S9') && (Number(destination_room_name.slice(1,3)) >= 49) && (Number(destination_room_name.slice(4,6)) >= 10)) {
       destination_room_name = 'W47S10'
-    }
-
-
-    if ((this.room.name == 'W44S42') && (destination_room_name == 'W45S43')) { // @fixme: temp code
-      this.moveTo(0, 28, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((this.room.name == 'W45S42') && (destination_room_name == 'W45S43')) { // @fixme: temp code
-      this.moveTo(25, 49, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((this.room.name == 'W44S42') && (destination_room_name == 'W44S43')) { // @fixme: temp code
-      this.moveTo(0, 38, {
-        ignoreCreeps: true,
-      })
-      return ActionResult.IN_PROGRESS
     }
 
     const exit = this.room.findExitTo(destination_room_name) as FindConstant
