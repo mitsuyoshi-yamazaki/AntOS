@@ -189,6 +189,13 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
+      case 'W53S15': {
+        if (!this.base_room.storage || this.base_room.storage.my || (_.sum(this.base_room.storage.store) == 0)) {
+          return SpawnPriority.NONE
+        }
+        return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+      }
+
       default:
         return SpawnPriority.NONE
     }
@@ -258,6 +265,10 @@ export class ManualSquad extends Squad {
 
       case 'W56S7': {
         return energy_available >= 2100
+      }
+
+      case 'W53S15': {
+        return energy_available > 1500
       }
 
       default:
@@ -462,6 +473,24 @@ export class ManualSquad extends Squad {
           MOVE, MOVE, MOVE,
         ]
         this.addGeneralCreep(spawn_func, body, CreepType.CLAIMER)
+        return
+      }
+
+      case 'W53S15': {
+        // carrier
+        const body: BodyPartConstant[] = [
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE, // 5
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE,
+          CARRY, CARRY, MOVE, // 10
+        ]
+        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
       }
 
@@ -735,6 +764,41 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W53S15': {
+        if (!this.base_room.storage || this.base_room.storage.my || (_.sum(this.base_room.storage.store) == 0)) {
+          this.say(`DONE`)
+          return
+        }
+        if (!this.base_room.terminal) {
+          this.say(`ERR`)
+          return
+        }
+
+        const storage = this.base_room.storage
+        const terminal = this.base_room.terminal
+
+        this.creeps.forEach((creep) => {
+          const carry = _.sum(creep.carry)
+
+          if (carry == 0) {
+            if (creep.pos.isNearTo(storage.pos)) {
+              creep.withdrawResources(storage)
+            }
+            else {
+              creep.moveTo(storage)
+            }
+          }
+          else {
+            if (creep.pos.isNearTo(terminal.pos)) {
+              creep.transferResources(terminal)
+            }
+            else {
+              creep.moveTo(terminal)
+            }
+          }
+        })
+        return
+      }
 
       default:
         if (this.creeps.size > 0) {
