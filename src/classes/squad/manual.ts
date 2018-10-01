@@ -767,6 +767,9 @@ export class ManualSquad extends Squad {
       case 'W53S15': {
         if (!this.base_room.storage || this.base_room.storage.my || (_.sum(this.base_room.storage.store) == 0)) {
           this.say(`DONE`)
+          if ((Game.time % 1499) == 1) {
+            Game.notify(`${this.original_room_name} no more resources in storage`)
+          }
           return
         }
         if (!this.base_room.terminal) {

@@ -699,7 +699,7 @@ export class Region {
             break
           }
           case SquadType.MANUAL: {
-            if (['W48S6', 'W53S15'].indexOf(this.room.name) >= 0) {
+            if (['W48S6'].indexOf(this.room.name) >= 0) {
               const squad = new ManualSquad(squad_memory.name, this.room.name, this.room)
               this.squads.set(squad.name, squad)
             }
