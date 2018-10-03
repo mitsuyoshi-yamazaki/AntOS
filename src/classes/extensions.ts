@@ -624,6 +624,7 @@ export function tick(): void {
         'W47S6',
         'W48S6',
         'W47S9',
+        'W54S7',
         'W56S7',
         'W55S13',
         'W55S23',

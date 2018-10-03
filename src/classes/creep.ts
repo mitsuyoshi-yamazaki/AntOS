@@ -298,6 +298,12 @@ export function init() {
     else if ((destination_room_name == 'W51S8') && (this.room.name == 'W48S6')) {
       this.memory.destination_room_name = 'W50S6'
     }
+    else if ((destination_room_name == 'W57S5') && (this.room.name == 'W58S4')) {
+      this.memory.destination_room_name = 'W57S4'
+    }
+    else if ((destination_room_name == 'W58S4') && (this.room.name == 'W57S5')) {
+      this.memory.destination_room_name = 'W57S4'
+    }
 
     if (this.room.name == this.memory.destination_room_name) {
       this.memory.destination_room_name = undefined
