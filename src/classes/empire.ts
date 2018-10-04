@@ -241,6 +241,8 @@ export class Empire {
         this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 4})
       }
     }
+
+    this.setDelegate('W55S13', 'W53S15', {max_rcl: 6})
   }
 
   public say(message: string): void {

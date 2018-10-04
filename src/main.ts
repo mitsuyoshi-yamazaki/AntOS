@@ -477,6 +477,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * balancer
+ * claim_toとset_delegateの分離
  * notify portal
  * rotate room layout
  * cancel spawning attacker if the invader is eliminated within 10 ticks
