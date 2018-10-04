@@ -183,11 +183,11 @@ function trade():void {
   //   'W47S6',
   // ].map(room_name => Game.rooms[room_name]).filter(r => !(!r)) as Room[]
 
-  // sellResource({
-  //   resource_type: RESOURCE_HYDROGEN,
-  //   price: 0.155,
-  //   rooms,
-  // })
+  sellResource({
+    resource_type: RESOURCE_HYDROGEN,
+    price: 0.19,
+    rooms,
+  })
 
   // sellResource({
   //   resource_type: RESOURCE_LEMERGIUM,
