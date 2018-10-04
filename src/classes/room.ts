@@ -236,14 +236,14 @@ export function tick(): void {
       console.log(`Room.add_remote_harvester no destination room ${owner_room_name}, ${room.name}`)
       return null
     }
-    if (!owner_room.storage) {
-      console.log(`Room.add_remote_harvester no storage in room ${owner_room_name}`)
-      return null
-    }
+    // if (!owner_room.storage) {
+    //   console.log(`Room.add_remote_harvester no storage in room ${owner_room_name}`)
+    //   return null
+    // }
 
     let destination_position: RoomPosition
 
-    if (owner_room.storage.my) {
+    if (owner_room.storage && owner_room.storage.my) {
       destination_position = owner_room.storage.pos
     }
     else {

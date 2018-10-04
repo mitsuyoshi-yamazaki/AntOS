@@ -234,7 +234,7 @@ export class Empire {
     }
 
     if (claim_to) {
-      if (claim_to.target_room_name == 'W53S15') {
+      if (claim_to.target_room_name == 'W53S5') {
         this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 6})
       }
       else {
