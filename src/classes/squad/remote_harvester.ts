@@ -1066,7 +1066,7 @@ export class RemoteHarvesterSquad extends Squad {
           }
         }
 
-        if (!drop && ((Game.time % 4) == 1)) {
+        if (!drop && ((Game.time % 4) == 1) && !((creep.room.name == this.base_room.name) && !this.destination)) {
           drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 4)[0]
         }
 
