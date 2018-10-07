@@ -620,7 +620,8 @@ export function tick(): void {
         'W43S5',
         'W44S7',
         'W45S27',
-        'W46S3', // send energy to W45S3
+        'W45S3',
+        'W46S3',
         'W47S6',
         'W48S6',
         'W47S9',
