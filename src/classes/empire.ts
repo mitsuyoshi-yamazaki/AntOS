@@ -234,15 +234,8 @@ export class Empire {
     }
 
     if (claim_to) {
-      if (claim_to.target_room_name == 'W53S5') {
-        this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 6})
-      }
-      else {
-        this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 4})
-      }
+      this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 6})
     }
-
-    this.setDelegate('W55S13', 'W53S15', {max_rcl: 6})
   }
 
   public say(message: string): void {
@@ -357,7 +350,7 @@ export class Empire {
 
         base_region.delegated_squads = squads
       }
-      else if ((colony_region.controller.level <= 6) || ((colony_region.room.name == 'W53S15') && (colony_region.controller.level < 7))) {
+      else if ((colony_region.controller.level <= 6)) {
         const squads: Squad[] = colony_region.squads_need_spawn.filter((squad) => {
           return includes_opt.indexOf(squad.type) >= 0
         })
