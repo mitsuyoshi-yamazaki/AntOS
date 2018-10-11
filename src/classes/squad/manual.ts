@@ -803,6 +803,13 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W53S5': {
+        this.creeps.forEach((creep) => {
+          creep.moveTo(9, 48)
+        })
+        return
+      }
+
       default:
         if (this.creeps.size > 0) {
           this.say(`NO SCR`)
