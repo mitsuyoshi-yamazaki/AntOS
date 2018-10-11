@@ -16,6 +16,7 @@ declare global {
     squad_creeps: {[squad_name: string]: Creep[]}
 
     check_resources: (resource_type: ResourceConstant) => {[room_name: string]: number}
+    check_resource_amount: (resource_type: ResourceConstant) => number
     check_resources_in: (room_name: string) => void
     check_all_resources: () => void
     collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
@@ -130,6 +131,27 @@ export function tick(): void {
     console.log(`Resource ${resource_type}: ${sum}${details}${empty_text}`)
 
     return resources
+  }
+
+  Game.check_resource_amount = (resource_type: ResourceConstant) => {
+    let amount = 0
+
+    for (const room_name of Object.keys(Game.rooms)) {
+      const room = Game.rooms[room_name]
+      if (!room || !room.controller || !room.controller.my) {
+        continue
+      }
+
+      if (room.terminal && room.terminal.my) {
+        amount += room.terminal.store[resource_type] || 0
+      }
+
+      if (room.storage && room.storage.my) {
+        amount += room.storage.store[resource_type] || 0
+      }
+    }
+
+    return amount
   }
 
   Game.check_resources_in = (room_name: string) => {
