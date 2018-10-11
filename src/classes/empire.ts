@@ -76,6 +76,21 @@ export class Empire {
           boost_compound: RESOURCE_CATALYZED_GHODIUM_ACID,
         }
       }
+      if (empire_memory.farm.room != farm_room.room.name) {
+        const xgh2o_amount = Game.check_resource_amount(RESOURCE_CATALYZED_GHODIUM_ACID)
+
+        if (xgh2o_amount >= 30000) {
+          empire_memory.farm.boost_compound = RESOURCE_CATALYZED_GHODIUM_ACID
+        }
+        else {
+          empire_memory.farm.boost_compound = RESOURCE_GHODIUM_ACID
+        }
+
+        const boost_compound_message = `Reset farm boost compound to ${empire_memory.farm.boost_compound} (${xgh2o_amount} XGH2O)`
+        console.log(boost_compound_message)
+        Game.notify(boost_compound_message)
+      }
+
       empire_memory.farm.room = farm_room.room.name
 
       const default_compound = RESOURCE_CATALYZED_GHODIUM_ACID
