@@ -185,15 +185,15 @@ function trade():void {
 
   sellResource({
     resource_type: RESOURCE_HYDROGEN,
-    price: 0.19,
+    price: 0.175,
     rooms,
   })
 
-  // sellResource({
-  //   resource_type: RESOURCE_LEMERGIUM,
-  //   price: 0.060,
-  //   rooms,
-  // })
+  sellResource({
+    resource_type: RESOURCE_KEANIUM,
+    price: 0.070,
+    rooms,
+  })
 
   sellResource({
     resource_type: RESOURCE_CATALYST,
