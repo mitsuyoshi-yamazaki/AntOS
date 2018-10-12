@@ -476,6 +476,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 
 /**
  * @todo:
+ * minimum rampart hits
  * balancer
  * claim_toとset_delegateの分離
  * notify portal
