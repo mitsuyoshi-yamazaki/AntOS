@@ -7,12 +7,14 @@ interface InvaderMemory extends CreepMemory {
 }
 
 interface InvaderSquadMemory extends SquadMemory {
+  // add at least 4 lab ids to region_memory.reaction_output_excludes
   target_room_names: string[]
   target_ids: {[room_name: string]: string[]}
-  only_once: boolean
-  no_spawn: boolean
-  lightweight?: boolean
-  debug?: boolean
+  only_once: boolean    // to not spawn next leader / follower pair
+  no_spawn: boolean     // instantiate InvaderSquad but no spawn
+  lightweight?: boolean // no boost
+  message?: string      // leader.say(message)
+  debug?: boolean       // only spawns charger
 }
 
 interface BoostInfo {
@@ -394,6 +396,11 @@ export class InvaderSquad extends Squad {
       return
     }
 
+    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
+    if ((creep.room.name == this.target_room_name) && (squad_memory.message)) {
+      creep.say(squad_memory.message, true)
+    }
+
     if (this.target) {
       if (creep.pos.isNearTo(this.target)) {
         creep.dismantle(this.target)
@@ -408,7 +415,6 @@ export class InvaderSquad extends Squad {
       return
     }
 
-    const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (squad_memory) {
       const index = squad_memory.target_room_names.indexOf(this.target_room_name)
       if (index >= 0) {

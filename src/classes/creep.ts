@@ -307,6 +307,9 @@ export function init() {
     else if ((destination_room_name == 'W53S5') && (this.room.name == 'W54S7')) {
       this.memory.destination_room_name = 'W54S5'
     }
+    else if ((destination_room_name == 'W58S32') && (this.room.name == 'W51S29')) {
+      this.memory.destination_room_name = 'W58S30'
+    }
 
     if (this.room.name == this.memory.destination_room_name) {
       this.memory.destination_room_name = undefined
