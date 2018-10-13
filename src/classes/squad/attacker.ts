@@ -170,7 +170,10 @@ export class AttackerSquad extends Squad {
       const message = `AttackerSquad.addCreep spawn a heavy attacker ${this.base_room.name}, ${teams}, ${this.name} at ${link}  `
 
       console.log(message)
-      Game.notify(message)
+
+      if ((teams.length > 1) || (teams.indexOf('Invader') < 0)) {
+        Game.notify(message)
+      }
     }
   }
 
