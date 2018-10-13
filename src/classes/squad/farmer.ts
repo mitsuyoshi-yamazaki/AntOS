@@ -784,6 +784,11 @@ export class FarmerSquad extends Squad {
           return
         }
 
+        if (room.terminal && (_.sum(room.terminal.store) > (room.terminal.storeCapacity * 0.9))) {
+          creep.withdraw(room.terminal, RESOURCE_ENERGY)
+          return
+        }
+
         if (room.terminal && (rcl >= 6) && this.lab) {
           if (this.lab.mineralType && (this.lab.mineralType != this.boost_resource_type)) {
             creep.withdraw(this.lab, this.lab.mineralType)
@@ -817,6 +822,11 @@ export class FarmerSquad extends Squad {
         creep.say(`NO ENGY`)
       }
       else {
+        if (room.terminal && (_.sum(room.terminal.store) >= room.terminal.storeCapacity) && room.storage) {
+          creep.transferResources(room.storage)
+          return
+        }
+
         if ((carry - creep.carry.energy) > 0) {
           if (((creep.carry[this.boost_resource_type] || 0) > 0) && this.lab && (this.lab.mineralAmount < this.lab.mineralCapacity) && (!this.lab.mineralType || (this.lab.mineralType == this.boost_resource_type))) {
             creep.transfer(this.lab, this.boost_resource_type)
