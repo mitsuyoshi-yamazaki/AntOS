@@ -183,7 +183,11 @@ export class AttackerSquad extends Squad {
         return
       }
 
-      const target = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
+      const target = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+        filter: (c: Creep) => {
+          return Game.isEnemy(c)
+        }
+      })
       if (target) {
         attacker.destroy(target)
         return

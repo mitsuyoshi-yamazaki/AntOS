@@ -1,10 +1,11 @@
+import { ErrorMapper } from "utils/ErrorMapper"
 import { init as extensionInit, tick as extensionTick } from "classes/extensions"
 import { init as creepInit } from "classes/creep"
 import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
 import { leveled_colored_text } from './utils';
 
-const version = '2.60.0'
+const version = '2.60.1'
 
 export function init(): void {
   Game.version = version
@@ -185,6 +186,11 @@ export function tick(): void {
   }
 
   extensionTick()
+
+  ErrorMapper.wrapLoop(() => {
+    Game.populateLOANlist()
+  }, `populateLOANlist`)()
+
   roomTick()
 
   if ((Game.time % 89) == 1) {

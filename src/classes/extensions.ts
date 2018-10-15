@@ -47,6 +47,7 @@ declare global {
 
     LOANlist: string[]
     populateLOANlist(): void
+    isEnemy(creep: Creep): boolean
   }
 
   interface Memory {
@@ -1044,6 +1045,11 @@ export function tick(): void {
 
   Game.populateLOANlist = function(): void {
     populateLOANlist()
+  }
+
+  Game.isEnemy = function(creep: Creep): boolean {
+    // return Game.LOANlist.indexOf(creep.owner.username) < 0
+    return true
   }
 
 

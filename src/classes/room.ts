@@ -180,7 +180,11 @@ export function tick(): void {
       tough: 0,
     }
 
-    attacker_info.hostile_creeps = room.find(FIND_HOSTILE_CREEPS)
+    attacker_info.hostile_creeps = room.find(FIND_HOSTILE_CREEPS, {
+      filter: (creep: Creep) => {
+        return Game.isEnemy(creep)
+      }
+    })
 
     attacker_info.hostile_creeps.forEach((creep: Creep) => {
       if (attacker_info.hostile_teams.indexOf(creep.owner.username) < 0) {

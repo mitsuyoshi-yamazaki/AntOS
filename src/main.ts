@@ -148,11 +148,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
       }
     }, `Notify credit | cpu`)()
   }
-
-  ErrorMapper.wrapLoop(() => {
-    Game.populateLOANlist()
-  }, `populateLOANlist`)()
-
 }, `Main`)
 
 function trade():void {

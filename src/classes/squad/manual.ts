@@ -1058,7 +1058,11 @@ export class ManualSquad extends Squad {
       }
 
       if (creep.room.name != target_room_name) {
-        const hostile_creep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4)[0]
+        const hostile_creep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4, {
+          filter: (creep: Creep) => {
+            return Game.isEnemy(creep)
+          }
+        })[0]
 
         if (hostile_creep) {
           creep.destroy(hostile_creep)
