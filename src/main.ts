@@ -190,7 +190,7 @@ function trade():void {
 
   sellResource({
     resource_type: RESOURCE_KEANIUM,
-    price: 0.070,
+    price: 0.060,
     rooms,
   })
 
