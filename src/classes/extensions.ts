@@ -4,7 +4,8 @@ import { ErrorMapper } from "utils/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color } from './utils';
 import { EmpireMemory } from './empire'
-import { ActionResult } from "./creep";
+import { ActionResult } from "./creep"
+import { populateLOANlist } from "./loanUserList"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -43,6 +44,9 @@ declare global {
     test(energy: number): void
     dump_memory(): void // @todo:
     refresh_room_memory(opts?:{dry_run?: boolean}): void
+
+    LOANlist: string[]
+    populateLOANlist(): void
   }
 
   interface Memory {
@@ -1036,6 +1040,10 @@ export function tick(): void {
 
       console.log(`- ${room_name}`)
     }
+  }
+
+  Game.populateLOANlist = function(): void {
+    populateLOANlist()
   }
 
 

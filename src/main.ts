@@ -2,7 +2,7 @@ import { ErrorMapper } from "utils/ErrorMapper"
 
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"
-import { leveled_colored_text } from './classes/utils';
+import { leveled_colored_text } from './classes/utils'
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -148,6 +148,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
       }
     }, `Notify credit | cpu`)()
   }
+
+  ErrorMapper.wrapLoop(() => {
+    Game.populateLOANlist()
+  }, `populateLOANlist`)()
 
 }, `Main`)
 
