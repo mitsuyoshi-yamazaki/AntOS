@@ -53,7 +53,7 @@ export class Empire {
 
     let farm_room: {room: Room, controller: StructureController, next: string, base: string} | null = null
     let next_farm: {target_room_name: string, base_room_name: string} | null = null
-    let send_to_energy_threshold = 200000
+    const send_to_energy_threshold = 300000
 
     for (const room_name in gcl_farm_rooms) {
       const room = Game.rooms[room_name]
@@ -112,16 +112,12 @@ export class Empire {
 
         case 6: {
           if (farm_room.room.terminal) {
-            send_to_energy_threshold = 200000
-
             this.transfer_farm_energy(farm_room.room.name, {with_boosts: true, boost_resource})
           }
           break
         }
 
         case 7: {
-          send_to_energy_threshold = 200000
-
           const remaining = farm_room.controller.progressTotal - farm_room.controller.progress
           if (remaining < 30000) {
             next_farm = {
