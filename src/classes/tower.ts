@@ -25,7 +25,11 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
 
   const rcl = room.controller ? room.controller.level : 0
 
-  const hits_max = (rcl == 8) ? 1000000 : 114000
+  let hits_max = (rcl == 8) ? 1000000 : 114000
+  if (room.storage && (room.storage.store.energy < 100000)) {
+    hits_max = 114000
+  }
+
   const has_much_energy = !(!room.storage) && (room.storage.store.energy > 500000)
 
   const excluded_walls = !opts.excluded_wall_ids ? [] : opts.excluded_wall_ids
