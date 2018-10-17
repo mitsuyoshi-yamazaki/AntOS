@@ -383,13 +383,13 @@ export class InvaderSquad extends Squad {
       const boost_info = creep.boost_info()
       let lab: StructureLab | undefined
 
-      if (!boost_info[boost_resource_move]) {
+      if (!boost_info[MOVE]) {
         lab = this.labs.move
       }
-      else if (!boost_info[boost_resource_dismantle]) {
+      else if (!boost_info[WORK]) {
         lab = this.labs.dismantle
       }
-      else if (!boost_info[boost_resource_tough]) {
+      else if (!boost_info[TOUGH]) {
         lab = this.labs.tough
       }
 
@@ -467,8 +467,14 @@ export class InvaderSquad extends Squad {
       const boost_info = creep.boost_info()
       let lab: StructureLab | undefined
 
-      if (!boost_info[boost_resource_heal]) {
+      if (!boost_info[MOVE]) {
+        lab = this.labs.move
+      }
+      else if (!boost_info[HEAL]) {
         lab = this.labs.heal
+      }
+      else if (!boost_info[TOUGH]) {
+        lab = this.labs.tough
       }
 
       if (lab) {
