@@ -24,6 +24,11 @@ interface BoostInfo {
   amount_needed: number
 }
 
+const boost_resource_tough      = RESOURCE_CATALYZED_GHODIUM_ALKALIDE
+const boost_resource_move       = RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE
+const boost_resource_dismantle  = RESOURCE_CATALYZED_ZYNTHIUM_ACID
+const boost_resource_heal       = RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE
+
 export interface InvaderSquadLabs {
   move: StructureLab
   heal: StructureLab
@@ -374,6 +379,31 @@ export class InvaderSquad extends Squad {
       return
     }
 
+    if (!this.is_lightweight && this.labs && (creep.room.name == this.base_room.name)) {
+      const boost_info = creep.boost_info()
+      let lab: StructureLab | undefined
+
+      if (!boost_info[boost_resource_move]) {
+        lab = this.labs.move
+      }
+      else if (!boost_info[boost_resource_dismantle]) {
+        lab = this.labs.dismantle
+      }
+      else if (!boost_info[boost_resource_tough]) {
+        lab = this.labs.tough
+      }
+
+      if (lab) {
+        if (creep.pos.isNearTo(lab)) {
+          lab.boostCreep(creep)
+        }
+        else {
+          creep.moveTo(lab)
+        }
+        return
+      }
+    }
+
     const can_move = (creep.fatigue == 0) && this.follower && (this.follower.fatigue == 0) && (creep.pos.getRangeTo(this.follower) <= 1)
     if (can_move) {
       if (creep.moveToRoom(this.target_room_name) == ActionResult.IN_PROGRESS) {
@@ -433,6 +463,25 @@ export class InvaderSquad extends Squad {
     }
     const creep = this.follower
 
+    if (!this.is_lightweight && this.labs && (creep.room.name == this.base_room.name)) {
+      const boost_info = creep.boost_info()
+      let lab: StructureLab | undefined
+
+      if (!boost_info[boost_resource_heal]) {
+        lab = this.labs.heal
+      }
+
+      if (lab) {
+        if (creep.pos.isNearTo(lab)) {
+          lab.boostCreep(creep)
+        }
+        else {
+          creep.moveTo(lab)
+        }
+        return
+      }
+    }
+
     if (!this.leader) {
       creep.heal(creep)
       return
@@ -476,28 +525,28 @@ export class InvaderSquad extends Squad {
     const boost_info = new Map<BodyPartConstant, BoostInfo>()
 
     boost_info.set(TOUGH, {
-      resource: RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+      resource: boost_resource_tough,
       lab: this.labs.tough,
       amount: 720,
       amount_needed: 720,
     })
 
     boost_info.set(HEAL, {
-      resource: RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+      resource: boost_resource_heal,
       lab: this.labs.heal,
       amount: 840,
       amount_needed: 840,
     })
 
     boost_info.set(WORK, {
-      resource: RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+      resource: boost_resource_dismantle,
       lab: this.labs.dismantle,
       amount: 840,
       amount_needed: 840,
     })
 
     boost_info.set(MOVE, {
-      resource: RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+      resource: boost_resource_move,
       lab: this.labs.move,
       amount: 600,
       amount_needed: 600,
