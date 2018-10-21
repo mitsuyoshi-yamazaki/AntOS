@@ -1178,7 +1178,9 @@ export class RemoteHarvesterSquad extends Squad {
         }
 
         if (!this.avoid_cpu_use && (creep.carry.energy > 0)) {
-          if (creep.room.controller && creep.room.controller.my && creep.room.owned_structures) {
+          const is_farm = creep.room.memory && creep.room.memory.is_gcl_farm
+
+          if (!is_farm && creep.room.controller && creep.room.controller.my && creep.room.owned_structures) {
             const extensions: StructureExtension[] = creep.room.owned_structures.get(STRUCTURE_EXTENSION) as StructureExtension[]
             const extension = creep.pos.findInRange(extensions, 1, {
               filter: (structure: StructureExtension) => {

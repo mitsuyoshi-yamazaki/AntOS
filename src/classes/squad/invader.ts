@@ -64,7 +64,7 @@ export class InvaderSquad extends Squad {
       if (target_room) {
         const target_ids = (squad_memory.target_ids || {})[this.target_room_name]
         if (target_ids) {
-          for (const id of target_ids.reverse()) {
+          for (const id of target_ids) {
             const target = Game.getObjectById(id) as Structure | undefined
 
             if (target) {
