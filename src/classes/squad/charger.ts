@@ -121,6 +121,9 @@ export class ChargerSquad extends Squad {
           creep.memory.status = CreepStatus.WAITING_FOR_RENEW
         }
       }
+      else {
+        creep.memory.status = CreepStatus.NONE
+      }
 
       creep.transferLinkToStorage(link, this.creep_position, opt)
 
