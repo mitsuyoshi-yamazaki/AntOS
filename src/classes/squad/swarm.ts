@@ -14,6 +14,8 @@ interface SwarmSquadMemory extends SquadMemory {
 }
 
 export class SwarmSquad extends Squad {
+  private current_target_room_name: string | undefined
+
   private next_creep: CreepType | null
   private attackers: Creep[] = []
   private healers: Creep[] = []
@@ -38,9 +40,18 @@ export class SwarmSquad extends Squad {
     })
 
     this.next_creep = this.setNextCreep()
+
+    const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
+    if (squad_memory) {
+      this.current_target_room_name = squad_memory.target_room_names[0]
+    }
   }
 
   private setNextCreep(): CreepType | null {
+    if (!this.current_target_room_name) {
+      return null
+    }
+
     const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
     if (!squad_memory) {
       return null
@@ -124,8 +135,7 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        ATTACK, ATTACK,
-        MOVE, MOVE,
+        ATTACK, MOVE,
       ]
     }
     else {
@@ -143,8 +153,7 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        MOVE, MOVE,
-        HEAL, HEAL,
+        MOVE, HEAL,
       ]
     }
     else {
@@ -158,10 +167,22 @@ export class SwarmSquad extends Squad {
   }
 
   public run(): void {
-    // @todo:
+    if (!this.current_target_room_name) {
+      this.say(`NO TGT`)
+      return
+    }
+    const current_target = this.current_target_room_name
+
+    this.creeps.forEach((creep) => {
+      if (creep.moveToRoom(current_target) == ActionResult.IN_PROGRESS) {
+        return  // @todo: attack
+      }
+
+
+    })
   }
 
   public description(): string {
-    return `${super.description()}` // @todo:
+    return `${super.description()}, ${this.current_target_room_name}, ${this.next_creep}, A${this.attackers.length}H${this.healers.length}`
   }
 }
