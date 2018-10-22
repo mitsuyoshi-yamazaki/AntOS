@@ -15,6 +15,7 @@ interface SwarmSquadMemory extends SquadMemory {
 
 export class SwarmSquad extends Squad {
   private current_target_room_name: string | undefined
+  private current_target: Structure | undefined
 
   private next_creep: CreepType | null
   private attackers: Creep[] = []
@@ -42,6 +43,14 @@ export class SwarmSquad extends Squad {
     const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
     if (squad_memory) {
       this.current_target_room_name = squad_memory.target_room_names[0]
+
+      if (this.current_target_room_name && squad_memory.target_ids && squad_memory.target_ids[this.current_target_room_name]) {
+        const current_target_id = squad_memory.target_ids[this.current_target_room_name][0]
+
+        if (current_target_id) {
+          this.current_target = Game.getObjectById(current_target_id) as Structure | undefined
+        }
+      }
     }
 
     this.next_creep = this.setNextCreep()
@@ -217,14 +226,23 @@ export class SwarmSquad extends Squad {
       this.say(`NO TGT`)
       return
     }
-    const current_target = this.current_target_room_name
+    const target_room_name = this.current_target_room_name
 
     this.creeps.forEach((creep) => {
-      if (creep.moveToRoom(current_target) == ActionResult.IN_PROGRESS) {
+      if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
         return  // @todo: attack
       }
 
+      switch (creep.memory.type) {
+        case CreepType.ATTACKER:
+          break
 
+        case CreepType.HEALER:
+        break
+
+        default:
+        break
+      }
     })
   }
 
