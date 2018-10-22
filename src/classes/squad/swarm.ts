@@ -218,7 +218,7 @@ export class SwarmSquad extends Squad {
       ]
     }
 
-    this.addGeneralCreep(spawnFunc, body, CreepType.ATTACKER)
+    this.addGeneralCreep(spawnFunc, body, CreepType.HEALER)
   }
 
   public run(): void {
