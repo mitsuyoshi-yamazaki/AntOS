@@ -7,10 +7,10 @@ interface SwarmSquadMemory extends SquadMemory {
   target_ids: {[room_name: string]: string[]}
   max_creeps: number
   no_spawn: boolean
-  messages: string[]
   stop_by: number     // Flag no_spawn when spawned reaches stop_by
   spawned: number     // Increase by addCreep(). Reset by no_spawn
   debug: boolean
+  messages: string[]
 }
 
 export class SwarmSquad extends Squad {

@@ -18,6 +18,7 @@ import { RemoteAttackerSquad } from "./squad/remote_attacker";
 import { FarmerSquad, FarmerSquadMemory } from "./squad/farmer";
 import { room_link, room_history_link } from "./utils";
 import { runTowers, RunTowersOpts } from "./tower";
+import { SwarmSquad } from "./squad/swarm";
 
 export interface RegionMemory {
   destination_container_id?: string | null
@@ -774,6 +775,11 @@ export class Region {
             }
 
             const squad = new InvaderSquad(squad_memory.name, this.room, opt_labs)
+            this.squads.set(squad.name, squad)
+            break
+          }
+          case SquadType.SWARM: {
+            const squad = new SwarmSquad(squad_memory.name, this.room)
             this.squads.set(squad.name, squad)
             break
           }
