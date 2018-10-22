@@ -46,6 +46,7 @@ declare global {
     refresh_room_memory(opts?:{dry_run?: boolean}): void
 
     LOANlist: string[]
+    whitelist: string[]
     populateLOANlist(): void
     isEnemy(creep: Creep): boolean
   }
@@ -1045,10 +1046,19 @@ export function tick(): void {
 
   Game.populateLOANlist = function(): void {
     populateLOANlist()
+
+    const empire_memory = Memory.empires['Mitsuyoshi']
+
+    if (empire_memory && empire_memory.whitelist && !empire_memory.whitelist.use) {
+      Game.whitelist = []
+    }
+    else {
+      Game.whitelist = Game.LOANlist
+    }
   }
 
   Game.isEnemy = function(creep: Creep): boolean {
-    return Game.LOANlist.indexOf(creep.owner.username) < 0
+    return Game.whitelist.indexOf(creep.owner.username) < 0
   }
 
 
