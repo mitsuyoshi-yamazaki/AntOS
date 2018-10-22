@@ -39,25 +39,36 @@ export class SwarmSquad extends Squad {
       }
     })
 
-    this.next_creep = this.setNextCreep()
-
     const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
     if (squad_memory) {
       this.current_target_room_name = squad_memory.target_room_names[0]
     }
+
+    this.next_creep = this.setNextCreep()
   }
 
   private setNextCreep(): CreepType | null {
+    const show_reason = false
+
     if (!this.current_target_room_name) {
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep no target room ${this.name}`)
+      }
       return null
     }
 
     const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
     if (!squad_memory) {
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep no squad memory ${this.name}, ${squad_memory}`)
+      }
       return null
     }
     if (squad_memory.no_spawn) {
       squad_memory.spawned = 0
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep no_spawn room ${this.name}`)
+      }
       return null
     }
     if (squad_memory.stop_by <= squad_memory.spawned) {
@@ -67,14 +78,23 @@ export class SwarmSquad extends Squad {
       console.log(message)
       Game.notify(message)
 
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep stop_by reached ${this.name}`)
+      }
       return null
     }
 
     if (this.healers.length < 2) {
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep minimum healer ${this.name}`)
+      }
       return CreepType.HEALER
     }
 
     if (this.creeps.size >= squad_memory.max_creeps) {
+      if (show_reason) {
+        console.log(`SwarmSquad.setNextCreep max_creeps reached ${this.name}`)
+      }
       return null
     }
 
