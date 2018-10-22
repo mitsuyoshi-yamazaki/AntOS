@@ -156,10 +156,10 @@ export class SwarmSquad extends Squad {
 
       switch (this.next_creep) {
         case CreepType.ATTACKER:
-          return energyAvailable >= 800
+          return energyAvailable >= 160
 
         case CreepType.HEALER:
-          return energyAvailable >= 3000
+          return energyAvailable >= 600
 
         default:
           return false
@@ -168,10 +168,10 @@ export class SwarmSquad extends Squad {
     else {
       switch (this.next_creep) {
         case CreepType.ATTACKER:
-          return energyAvailable >= 160 // @fixme:
+          return energyAvailable >= 1600
 
         case CreepType.HEALER:
-          return energyAvailable >= 600 // @fixme:
+          return energyAvailable >= 4800
 
         default:
           return false
@@ -206,16 +206,20 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
+        ATTACK, ATTACK,
+        MOVE, MOVE,
       ]
     }
     else {
       body = [
-        ATTACK, ATTACK,
-        MOVE, MOVE,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
       ]
     }
 
@@ -227,16 +231,20 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        MOVE, MOVE, MOVE, MOVE, MOVE,
-        HEAL, HEAL, HEAL, HEAL, HEAL,
-        HEAL, HEAL, HEAL, HEAL, HEAL,
+        MOVE, MOVE,
+        HEAL, HEAL,
       ]
     }
     else {
       body = [
-        MOVE, MOVE,
-        HEAL, HEAL,
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
       ]
     }
 
