@@ -107,7 +107,7 @@ export class SwarmSquad extends Squad {
       return null
     }
 
-    if (this.healers.length < this.attackers.length) {
+    if (this.healers.length <= this.attackers.length) {
       return CreepType.HEALER
     }
     return CreepType.ATTACKER
@@ -140,10 +140,10 @@ export class SwarmSquad extends Squad {
 
       switch (this.next_creep) {
         case CreepType.ATTACKER:
-          return energyAvailable >= 80
+          return energyAvailable >= 800
 
         case CreepType.HEALER:
-          return energyAvailable >= 300
+          return energyAvailable >= 3000
 
         default:
           return false
@@ -190,7 +190,10 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        ATTACK, MOVE,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
       ]
     }
     else {
@@ -208,7 +211,10 @@ export class SwarmSquad extends Squad {
 
     if (squad_memory.debug) {
       body = [
-        MOVE, HEAL,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
       ]
     }
     else {
