@@ -53,7 +53,7 @@ export class Empire {
 
     let farm_room: {room: Room, controller: StructureController, next: string, base: string} | null = null
     let next_farm: {target_room_name: string, base_room_name: string} | null = null
-    const send_to_energy_threshold = 300000
+    const send_to_energy_threshold = 200000
 
     for (const room_name in gcl_farm_rooms) {
       const room = Game.rooms[room_name]
