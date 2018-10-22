@@ -13,6 +13,8 @@ interface SwarmSquadMemory extends SquadMemory {
   messages: string[]
 }
 
+const waypoint = new RoomPosition(5, 35, 'W55S8') // @fixme:
+
 export class SwarmSquad extends Squad {
   private current_target_room_name: string | undefined
   private current_target_room: Room | undefined
@@ -259,14 +261,15 @@ export class SwarmSquad extends Squad {
     const target_room_name = this.current_target_room_name
 
     this.creeps.forEach((creep) => {
-      if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
-        return  // @todo: attack
-      }
-
       const should_escape = creep.hits < (creep.hitsMax * 0.7)
-      if (should_escape) {
+
+      if (should_escape || ((creep.room.name == waypoint.roomName) && (creep.hits < creep.hitsMax))) {
         this.escape(creep)
         return
+      }
+
+      if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+        return  // @todo: attack
       }
 
       switch (creep.memory.type) {
@@ -300,9 +303,8 @@ export class SwarmSquad extends Squad {
   }
 
   private escape(creep: Creep): void {
-    const escape_to = 'W55S8' // @fixme:
-
-    creep.moveToRoom(escape_to)
+    creep.moveTo(waypoint)
+    creep.healNearbyCreep()
   }
 
   public description(): string {

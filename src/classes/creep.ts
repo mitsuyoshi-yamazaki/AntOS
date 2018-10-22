@@ -1788,6 +1788,10 @@ export function init() {
   }
 
   Creep.prototype.healNearbyCreep = function(): ActionResult {
+    if (!this.hasActiveBodyPart(HEAL)) {
+      return ActionResult.IN_PROGRESS
+    }
+
     if (this.hits < this.hitsMax) {
       this.heal(this)
       return ActionResult.IN_PROGRESS
