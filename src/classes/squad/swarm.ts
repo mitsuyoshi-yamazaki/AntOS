@@ -125,7 +125,33 @@ export class SwarmSquad extends Squad {
   }
 
   public hasEnoughEnergy(energyAvailable: number, capacity: number): boolean {
-    return false // @todo:
+    const squad_memory = Memory.squads[this.name] as SwarmSquadMemory
+
+    if (squad_memory && squad_memory.debug) {
+
+      switch (this.next_creep) {
+        case CreepType.ATTACKER:
+          return energyAvailable >= 80
+
+        case CreepType.HEALER:
+          return energyAvailable >= 300
+
+        default:
+          return false
+      }
+    }
+    else {
+      switch (this.next_creep) {
+        case CreepType.ATTACKER:
+          return energyAvailable >= 160 // @fixme:
+
+        case CreepType.HEALER:
+          return energyAvailable >= 600 // @fixme:
+
+        default:
+          return false
+      }
+    }
   }
 
   public addCreep(energyAvailable: number, spawnFunc: SpawnFunction): void {
