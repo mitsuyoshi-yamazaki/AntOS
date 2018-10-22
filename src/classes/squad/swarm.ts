@@ -266,11 +266,24 @@ export class SwarmSquad extends Squad {
           if (this.current_target) {
             creep.destroy(this.current_target)
           }
+          else {
+            creep.searchAndDestroy()
+          }
           break
 
-        case CreepType.HEALER:
+        case CreepType.HEALER: {
           creep.healNearbyCreep()
+
+          const heal_target = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
+            filter: (c) => {
+              return c.hits < c.hitsMax
+            }
+          })
+          if (heal_target) {
+            creep.moveTo(heal_target)
+          }
           break
+        }
 
         default:
           break
