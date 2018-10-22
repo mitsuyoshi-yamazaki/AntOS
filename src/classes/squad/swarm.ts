@@ -233,17 +233,33 @@ export class SwarmSquad extends Squad {
         return  // @todo: attack
       }
 
+      const should_escape = creep.hits < (creep.hitsMax * 0.7)
+      if (should_escape) {
+        this.escape(creep)
+        return
+      }
+
       switch (creep.memory.type) {
         case CreepType.ATTACKER:
+          if (this.current_target) {
+            creep.destroy(this.current_target)
+          }
           break
 
         case CreepType.HEALER:
-        break
+          creep.healNearbyCreep()
+          break
 
         default:
-        break
+          break
       }
     })
+  }
+
+  private escape(creep: Creep): void {
+    const escape_to = 'W55S8' // @fixme:
+
+    creep.moveToRoom(escape_to)
   }
 
   public description(): string {
