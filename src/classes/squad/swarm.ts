@@ -15,6 +15,7 @@ interface SwarmSquadMemory extends SquadMemory {
 
 export class SwarmSquad extends Squad {
   private current_target_room_name: string | undefined
+  private current_target_room: Room | undefined
   private current_target: Structure | undefined
 
   private next_creep: CreepType | null
@@ -44,11 +45,26 @@ export class SwarmSquad extends Squad {
     if (squad_memory) {
       this.current_target_room_name = squad_memory.target_room_names[0]
 
-      if (this.current_target_room_name && squad_memory.target_ids && squad_memory.target_ids[this.current_target_room_name]) {
-        const current_target_id = squad_memory.target_ids[this.current_target_room_name][0]
+      if (this.current_target_room_name) {
+        this.current_target_room = Game.rooms[this.current_target_room_name]
 
-        if (current_target_id) {
-          this.current_target = Game.getObjectById(current_target_id) as Structure | undefined
+        if (this.current_target_room) {
+          const target_ids = (squad_memory.target_ids || {})[this.current_target_room_name]
+          if (target_ids) {
+            for (const id of target_ids) {
+              const target = Game.getObjectById(id) as Structure | undefined
+
+              if (target) {
+                this.current_target = target
+                break
+              }
+
+              const index = target_ids.indexOf(id)
+              if (index >= 0) {
+                target_ids.splice(index, 1)
+              }
+            }
+          }
         }
       }
     }
