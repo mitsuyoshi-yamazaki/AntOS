@@ -38,6 +38,7 @@ export interface RegionMemory {
   observe_target?: string | null
   observe_index: number
   excluded_walls?: string[]
+  public_ramparts?: string[]
   repairing_wall_id?: string | null
   wall_max_hits?: number | null
   last_spawn_time: number
@@ -113,6 +114,7 @@ export class Region {
         observe_target: null,
         observe_index: 0,
         excluded_walls: [],
+        public_ramparts: [],
         repairing_wall_id: null,
         wall_max_hits: 20000000,  // 20M
         last_spawn_time: Game.time,
@@ -1007,6 +1009,24 @@ export class Region {
         region_memory.repairing_wall_id = repairing_wall_id
       }
     }, `${this.name}.runTowers`)()
+
+    ErrorMapper.wrapLoop(() => {
+      if (region_memory && region_memory.public_ramparts) {
+        const should_public = this.room.attacker_info().hostile_creeps.length == 0
+
+        region_memory.public_ramparts.forEach((id) => {
+          const rampart = Game.getObjectById(id) as StructureRampart | undefined
+          if (!rampart || (rampart.structureType != STRUCTURE_RAMPART)) {
+            console.log(`${this.name} rampart ${id} is not exists`)
+            return
+          }
+
+          if (rampart.isPublic != should_public) {
+            rampart.setPublic(should_public)
+          }
+        })
+      }
+    }, `${this.name}.public ramparts`)()
 
     this.squads.forEach((squad, _) => {
       ErrorMapper.wrapLoop(() => {

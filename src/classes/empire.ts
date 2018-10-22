@@ -19,6 +19,9 @@ export interface EmpireMemory {
     forced: boolean,
     at_level: number | null,
   }
+  whitelist: {
+    use: boolean
+  }
 }
 
 export class Empire {
@@ -28,6 +31,7 @@ export class Empire {
     if (!Memory.empires[this.name]) {
       Memory.empires[this.name] = {
         farm: null,
+        whitelist: { use: false },
       }
     }
     const empire_memory = Memory.empires[this.name]
