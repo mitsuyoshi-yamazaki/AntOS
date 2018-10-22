@@ -6,6 +6,7 @@ interface SwarmSquadMemory extends SquadMemory {
   target_room_names: string[]
   target_ids: {[room_name: string]: string[]}
   max_creeps: number
+  no_spawn: boolean
   messages: string[]
 }
 

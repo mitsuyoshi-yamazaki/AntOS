@@ -24,7 +24,14 @@ export interface EmpireMemory {
   }
   war: {
     swarm: {
-      targets: string[]
+      targets: {[target_room_name: string]: {
+        base_room: string
+        waypoint: {
+          room_name: string
+          x: number
+          y: number
+        }
+      }}
     }
   }
 }
@@ -38,7 +45,9 @@ export class Empire {
         farm: null,
         whitelist: { use: false },
         war: {
-          swarm: { targets: [] }
+          swarm: {
+            targets: {},
+          }
         },
       }
     }
