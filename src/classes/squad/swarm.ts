@@ -268,6 +268,35 @@ export class SwarmSquad extends Squad {
         return
       }
 
+      if (creep.room.name != this.current_target_room_name) {
+        switch (creep.memory.type) {
+          case CreepType.ATTACKER:
+            const target = creep.pos.findClosestByPath(creep.room.attacker_info().hostile_creeps)
+            if (target) {
+              creep.destroy(target)
+              return
+            }
+            break
+
+          case CreepType.HEALER: {
+            const heal_target = creep.pos.findClosestByPath(FIND_MY_CREEPS, {
+              filter: (c) => {
+                return c.hits < c.hitsMax
+              }
+            })
+            if (heal_target) {
+              creep.moveTo(heal_target)
+              creep.healNearbyCreep()
+              return
+            }
+            break
+          }
+
+          default:
+            break
+        }
+      }
+
       if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
         return  // @todo: attack
       }
