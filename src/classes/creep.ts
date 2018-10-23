@@ -840,7 +840,7 @@ export function init() {
           }
           else if (!is_attacked) {
             if (structure.structureType == STRUCTURE_POWER_SPAWN) {
-              return (structure.energy < structure.energyCapacity)
+              return (structure.energy < (structure.energyCapacity * 0.7))
             }
             else if (structure.structureType == STRUCTURE_TERMINAL) {
               // structure.store.energyを変更する際はtransferLinkToStorageも
@@ -897,7 +897,7 @@ export function init() {
             }
             else if (!is_attacked) {
               if (structure.structureType == STRUCTURE_POWER_SPAWN) {
-                return (structure.energy < structure.energyCapacity)
+                return (structure.energy < (structure.energyCapacity * 0.7))
               }
               else if (structure.structureType == STRUCTURE_TERMINAL) {
                 // structure.store.energyを変更する際はtransferLinkToStorageも
@@ -1227,7 +1227,7 @@ export function init() {
             if (power_spawns) {
               const power_spawn = power_spawns[0]
 
-              if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.power == 0)) {
+              if (power_spawn && (power_spawn.power == 0) && this.pos.isNearTo(power_spawn)) {
                 this.withdraw(this.room.terminal, RESOURCE_POWER)
                 return
               }
@@ -1284,7 +1284,7 @@ export function init() {
           if (power_spawns) {
             const power_spawn = power_spawns[0]
 
-            if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.energy < power_spawn.energyCapacity)) {
+            if (power_spawn && this.pos.isNearTo(power_spawn) && (power_spawn.energy < (power_spawn.energyCapacity * 0.7))) {
               this.transfer(power_spawn, RESOURCE_ENERGY)
               return
             }

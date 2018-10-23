@@ -165,6 +165,12 @@ function trade():void {
     return !(!r)
   })
 
+  const power_rooms: Room[] = ['W55S13'].map((room_name) => {
+    return Game.rooms[room_name]
+  }).filter((r) => {
+    return !(!r)
+  })
+
   for (const name in Game.rooms) {
     const room = Game.rooms[name]
     if (!room || !room.controller || !room.controller.my || !room.terminal) {
@@ -239,7 +245,7 @@ function trade():void {
   buyResource({
     resource_type: RESOURCE_POWER,
     price: 0.1,
-    rooms,
+    rooms: power_rooms,
   }, credit_amount)
 
   buyResource({
