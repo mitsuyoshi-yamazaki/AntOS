@@ -52,6 +52,7 @@ declare global {
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
 
     show_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
+    place_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
     remove_all_flags(): void
 
     show_weakest_walls(opts?:{max?: number}): void
@@ -469,6 +470,20 @@ export function tick(): void {
     try {
       const layout = new RoomLayout(room, origin_pos, name, opts)
       layout.show()
+      return layout
+
+    } catch(e) {
+      console.log(e)
+      return null
+    }
+  }
+
+  Room.prototype.place_layout = function(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null {
+    const room = this as Room
+
+    try {
+      const layout = new RoomLayout(room, origin_pos, name, opts)
+      layout.place_flags()
       return layout
 
     } catch(e) {

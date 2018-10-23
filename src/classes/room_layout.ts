@@ -66,7 +66,11 @@ type LayoutMark = StructureMark
 interface RoomLayoutAttributes {
 }
 
-const layouts: {[name: string]: {layout: LayoutMark[][], attributes: RoomLayoutAttributes}} = {
+const layouts: {[name: string]: {
+  layout: LayoutMark[][]
+  attributes: RoomLayoutAttributes
+  description: string
+}} = {
   mark01: {
     layout: [
       ['.', '.', '-', '-', '-', '-', '-', '-', 'x', 'x', '-', '-', '.'],
@@ -85,6 +89,7 @@ const layouts: {[name: string]: {layout: LayoutMark[][], attributes: RoomLayoutA
     ],
     attributes: {
     },
+    description: "mark01",
   },
   mark02: {
     layout: [
@@ -104,7 +109,20 @@ const layouts: {[name: string]: {layout: LayoutMark[][], attributes: RoomLayoutA
     ],
     attributes: {
     },
+    description: "mark02",
   },
+  mark03: {
+    layout: [
+      ['-', '.', 'x', 'x', '.', '-'],
+      ['x', '-', '.', '.', '-', 'x'],
+      ['x', 'x', '-', '-', '6', 'x'],
+      ['x', 'x', '-', '-', 'o', 'x'],
+      ['x', '-', '.', '.', '-', 'x'],
+      ['-', '.', 'x', 'x', '.', '-'],
+    ],
+    attributes: {},
+    description: "[mark03] Stepping room (RCL3: 14 ext, 1 spawn, 1 tower)",
+  }
 }
 
 const flag_colors = new Map<LayoutMark, ColorConstant>(
