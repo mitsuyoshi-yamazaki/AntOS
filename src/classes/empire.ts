@@ -262,6 +262,13 @@ export class Empire {
         }
       }
 
+      if (claim_to && (room.name == 'W51S37')) {
+        opt.temp_squad_opt = {
+          target_room_name: claim_to.target_room_name,
+          forced: false,
+        }
+      }
+
       ErrorMapper.wrapLoop(() => {
         const region = new Region(controller, opt)
         this.regions.set(region.name, region)
