@@ -174,7 +174,7 @@ export class RoomLayout {
       this.size.width = raw_layout[0].length
     }
 
-    this.origin_pos = this.set_origin_pos()
+    this.origin_pos = this.set_origin_pos(layout_info)  // should be called BEFORE parse_layout()
     this.parse_layout(layout_info)
   }
 
@@ -207,17 +207,32 @@ export class RoomLayout {
   }
 
   // --- private
-  private set_origin_pos(): {x: number, y: number} {
+  private set_origin_pos(layout_info: RawRoomLayout): {x: number, y: number} {
     if (this.opts.origin_pos) {
+      console.log(`RoomLayout.set_origin_pos specified in ops ${this.name} at ${this.room.name}`)
       return this.opts.origin_pos
     }
 
     const spawn = this.room.find(FIND_MY_SPAWNS)[0]
     if (spawn) {
-      const spawn_pos = this.structures.get(LAYOUT_MARK_SPAWN)
 
-      if (spawn_pos && spawn_pos[0]) {
-        return spawn_pos[0]
+      const raw_layout = layout_info.layout
+      let x = 0
+      let y = 0
+
+      for (const row of raw_layout) {
+        x = 0
+        for (const mark of row) {
+          if (mark == LAYOUT_MARK_SPAWN) {
+            console.log(`RoomLayout.set_origin_pos has spawn at ${spawn.pos} ${this.name} at ${this.room.name}`)
+            return {
+              x: spawn.pos.x - x,
+              y: spawn.pos.y - y,
+            }
+          }
+          x += 1
+        }
+        y += 1
       }
     }
 
