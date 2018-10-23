@@ -3,6 +3,7 @@ import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { UID, room_history_link, room_link, leveled_colored_text } from './utils';
 import { RemoteMineralHarvesterSquadMemory } from "./squad/remote_m_harvester";
+import { ErrorMapper } from "utils/ErrorMapper";
 
 export interface AttackerInfo  {
   attacked: boolean
@@ -464,32 +465,28 @@ export function tick(): void {
     return result
   }
 
-  Room.prototype.show_layout = function(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null {
+  Room.prototype.show_layout = function(name: string, opts?: RoomLayoutOpts): RoomLayout | null {
     const room = this as Room
+    let layout: RoomLayout | null = null
 
-    try {
-      const layout = new RoomLayout(room, origin_pos, name, opts)
+    ErrorMapper.wrapLoop(() => {
+      layout = new RoomLayout(room, name, opts)
       layout.show()
-      return layout
+    }, `Room.show_layout`)()
 
-    } catch(e) {
-      console.log(e)
-      return null
-    }
+    return layout
   }
 
-  Room.prototype.place_layout = function(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null {
+  Room.prototype.place_layout = function(name: string, opts?: RoomLayoutOpts): RoomLayout | null {
     const room = this as Room
+    let layout: RoomLayout | null = null
 
-    try {
-      const layout = new RoomLayout(room, origin_pos, name, opts)
+    ErrorMapper.wrapLoop(() => {
+      layout = new RoomLayout(room, name, opts)
       layout.place_flags()
-      return layout
+    }, `Room.place_layout`)()
 
-    } catch(e) {
-      console.log(e)
-      return null
-    }
+    return layout
   }
 
   Room.prototype.remove_all_flags = function(): void {

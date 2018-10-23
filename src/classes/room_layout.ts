@@ -66,11 +66,13 @@ type LayoutMark = StructureMark
 interface RoomLayoutAttributes {
 }
 
-const layouts: {[name: string]: {
+interface RawRoomLayout {
   layout: LayoutMark[][]
   attributes: RoomLayoutAttributes
   description: string
-}} = {
+}
+
+const layouts: {[name: string]: RawRoomLayout} = {
   mark01: {
     layout: [
       ['.', '.', '-', '-', '-', '-', '-', '-', 'x', 'x', '-', '-', '.'],
@@ -142,20 +144,43 @@ const flag_colors = new Map<LayoutMark, ColorConstant>(
 
 export interface RoomLayoutOpts {
   allow_partial?: boolean
+  origin_pos?: {x:number, y:number}
 }
 
 export class RoomLayout {
+  private opts: RoomLayoutOpts
+  private origin_pos: {x: number, y: number}
 
-  public is_partial: boolean = false
+  private size = {width: 0, height: 0}
   private structures = new Map<LayoutMark, {x:number, y:number}[]>()
 
-  constructor(readonly room: Room, readonly origin_pos: {x:number, y:number}, readonly name: string, readonly opts?: RoomLayoutOpts) {
-    opts = opts || {}
+  constructor(readonly room: Room, readonly name: string, opts?: RoomLayoutOpts) {
+    this.opts = opts || {}
 
-    this.parse_layout()
+    const layout_info = layouts[this.name]
+    if (!layout_info) {
+      this.origin_pos = {x: 0, y: 0}
+
+      const message = `RoomLayout name ${this.name} does not exists`
+      console.log(message)
+      Game.notify(message)
+      return
+    }
+
+    const raw_layout = layout_info.layout
+    this.size.height = raw_layout.length
+
+    if (raw_layout[0]) {
+      this.size.width = raw_layout[0].length
+    }
+
+    this.origin_pos = this.set_origin_pos()
+    this.parse_layout(layout_info)
   }
 
   public show(): void {
+    console.log(`RoomLayout ${this.name} (${this.origin_pos.x}, ${this.origin_pos.y})`)
+
     this.structures.forEach((positions, mark) => {
       const flag_color = flag_colors.get(mark)
       const color = color_2_hex(flag_color || COLOR_WHITE)
@@ -182,16 +207,29 @@ export class RoomLayout {
   }
 
   // --- private
-  private parse_layout() {
-    const layout_info = layouts[this.name]
-    if (!layout_info) {
-      const message = `RoomLayout name ${this.name} does not exists`
-      console.log(message)
-      Game.notify(message)
-      return
+  private set_origin_pos(): {x: number, y: number} {
+    if (this.opts.origin_pos) {
+      return this.opts.origin_pos
     }
 
+    const spawn = this.room.find(FIND_MY_SPAWNS)[0]
+    if (spawn) {
+      const spawn_pos = this.structures.get(LAYOUT_MARK_SPAWN)
+
+      if (spawn_pos && spawn_pos[0]) {
+        return spawn_pos[0]
+      }
+    }
+
+    return {
+      x: 25 - Math.floor(this.size.width / 2),
+      y: 25 - Math.floor(this.size.height / 2),
+    }
+  }
+
+  private parse_layout(layout_info: RawRoomLayout) {
     const raw_layout = layout_info.layout
+
     let y = this.origin_pos.y
 
     for (const row of raw_layout) {
