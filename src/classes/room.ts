@@ -52,8 +52,8 @@ declare global {
     place_construction_sites(): void
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
 
-    show_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
-    place_layout(name: string, origin_pos: {x:number, y:number}, opts?: RoomLayoutOpts): RoomLayout | null
+    show_layout(name: string, opts?: RoomLayoutOpts): RoomLayout | null
+    place_layout(name: string, opts?: RoomLayoutOpts): RoomLayout | null
     remove_all_flags(): void
 
     show_weakest_walls(opts?:{max?: number}): void

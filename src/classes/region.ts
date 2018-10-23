@@ -47,6 +47,7 @@ export interface RegionMemory {
   ancestor: string
   region_version: string
   sign: string | null
+  layout_set?: boolean
 }
 
 export interface RegionOpt {
@@ -1132,6 +1133,16 @@ export class Region {
     //     })
     //   }
     // })()
+
+    ErrorMapper.wrapLoop(() => {
+      if ((this.controller.level == 1) && region_memory && !region_memory.layout_set && ((Game.time % 11) == 7)) {
+        const layout = this.room.place_layout('mark02')
+
+        // if (layout) {  // no retry
+          region_memory.layout_set = true
+        // }
+      }
+    }, `${this.name}.setLayout`)()
   }
 
   // --- Private ---
