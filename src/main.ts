@@ -165,6 +165,12 @@ function trade():void {
     return !(!r)
   })
 
+  const u_rooms: Room[] = ['W45S27'].map((room_name) => {
+    return Game.rooms[room_name]
+  }).filter((r) => {
+    return !(!r)
+  })
+
   const power_rooms: Room[] = ['W55S13'].map((room_name) => {
     return Game.rooms[room_name]
   }).filter((r) => {
@@ -226,8 +232,8 @@ function trade():void {
 
   buyResource({
     resource_type: RESOURCE_UTRIUM,
-    price: 0.01,
-    rooms,
+    price: 0.04,
+    rooms: u_rooms,
   }, credit_amount)
 
   buyResource({
