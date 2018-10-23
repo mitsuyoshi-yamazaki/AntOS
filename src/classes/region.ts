@@ -19,6 +19,7 @@ import { FarmerSquad, FarmerSquadMemory } from "./squad/farmer";
 import { room_link, room_history_link } from "./utils";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
+import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 
 export interface RegionMemory {
   destination_container_id?: string | null
@@ -1136,7 +1137,14 @@ export class Region {
 
     ErrorMapper.wrapLoop(() => {
       if ((this.controller.level == 1) && region_memory && !region_memory.layout_set && ((Game.time % 11) == 7)) {
-        const layout = this.room.place_layout('mark02')
+        const empire_memory = Memory.empires['Mitsuyoshi']
+        const opts: RoomLayoutOpts = {}
+
+        if (empire_memory && empire_memory.claim_to && (empire_memory.claim_to.target_room_name == this.room.name) && empire_memory.claim_to.origin_pos) {
+          opts.origin_pos = empire_memory.claim_to.origin_pos
+        }
+
+        const layout = this.room.place_layout('mark02', opts)
 
         // if (layout) {  // no retry
           region_memory.layout_set = true

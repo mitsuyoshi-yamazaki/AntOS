@@ -18,6 +18,7 @@ export interface EmpireMemory {
     base_room_name: string,
     forced: boolean,
     at_level: number | null,
+    origin_pos: {x: number, y: number} | null
   } | null
   whitelist: {
     use: boolean
