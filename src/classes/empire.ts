@@ -19,6 +19,7 @@ export interface EmpireMemory {
     forced: boolean,
     at_level: number | null,
     origin_pos: {x: number, y: number} | null
+    is_step_room: boolean,
   } | null
   whitelist: {
     use: boolean
