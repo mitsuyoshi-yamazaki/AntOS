@@ -644,21 +644,8 @@ export function tick(): void {
       }
     }
     else {
-      const energy_source_regions: string[] = [
-        'W43S5',
-        'W44S7',
-        'W45S27',
-        'W45S3',
-        'W46S3',
-        'W47S6',
-        'W48S6',
-        'W47S9',
-        'W54S7',
-        'W56S7',
-        'W55S13',
-        'W55S23',
-        'W51S29',
-        'W58S4',
+      const energy_source_excluded_regions: string[] = [
+        'E16N37'
       ]
 
       for (const region_name in Memory.regions) {
@@ -666,14 +653,24 @@ export function tick(): void {
           continue
         }
 
+        const room = Game.rooms[region_name]
+
         if (resource_type == RESOURCE_ENERGY) {
-          if (energy_source_regions.indexOf(region_name) < 0) {
+
+          if (room) {
+            if (room.memory && room.memory.is_gcl_farm) {
+              continue
+            }
+            if (room.controller && (room.controller.level < 8)) {
+              continue
+            }
+          }
+          if (energy_source_excluded_regions.indexOf(region_name) >= 0) {
             continue
           }
         }
 
         const region_memory = Memory.regions[region_name]
-        const room = Game.rooms[region_name]
         if (!region_memory || !region_memory.resource_transports || !room || !room.terminal || !room.storage) {
           continue
         }
