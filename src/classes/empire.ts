@@ -13,12 +13,12 @@ export interface EmpireMemory {
     energy_room: string | null
     boost_compound: string
   } | null
-  claim_to?: {
+  claim_to: {
     target_room_name: string,
     base_room_name: string,
     forced: boolean,
     at_level: number | null,
-  }
+  } | null
   whitelist: {
     use: boolean
   }
@@ -43,6 +43,7 @@ export class Empire {
     if (!Memory.empires[this.name]) {
       Memory.empires[this.name] = {
         farm: null,
+        claim_to: null,
         whitelist: { use: false },
         war: {
           swarm: {
@@ -59,10 +60,10 @@ export class Empire {
     const attack_to: string | null = null
 
     // --- Claim
-    let claim_to: {target_room_name: string, base_room_name: string, forced: boolean, at_level: number | null} | undefined = empire_memory ? empire_memory.claim_to : undefined
+    let claim_to: {target_room_name: string, base_room_name: string, forced: boolean, at_level: number | null} | null = empire_memory ? empire_memory.claim_to : null
 
     if (claim_to && claim_to.at_level && (Game.gcl.level < claim_to.at_level)) {
-      claim_to = undefined
+      claim_to = null
     }
 
     // --- GCL Farms
