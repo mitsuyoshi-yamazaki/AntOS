@@ -4,6 +4,7 @@ import { CreepStatus, ActionResult, CreepType } from "classes/creep"
 
 interface HarasserSquadMemory extends SquadMemory {
   target_rooms: string[]
+  target_ids: {[room_name: string]: string[]}
   no_spawn: boolean     // instantiate InvaderSquad but no spawn
 }
 
@@ -53,7 +54,10 @@ export class HarasserSquad extends Squad {
 
   // --
   public get spawnPriority(): SpawnPriority {
-    return SpawnPriority.NONE
+    if (!this.next_creep) {
+      return SpawnPriority.NONE
+    }
+    return SpawnPriority.LOW
   }
 
   public hasEnoughEnergy(energyAvailable: number, capacity: number): boolean {
@@ -65,5 +69,14 @@ export class HarasserSquad extends Squad {
   }
 
   public run(): void {
+    const target_room = 'W58S6' // @fixme:
+
+    this.creeps.forEach(creep => {
+      if (creep.spawning) {
+        return
+      }
+
+      creep.searchAndDestroyTo(target_room, true)
+    })
   }
 }
