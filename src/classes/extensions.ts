@@ -1046,8 +1046,13 @@ export function tick(): void {
 
     const empire_memory = Memory.empires['Mitsuyoshi']
 
-    if (empire_memory && empire_memory.whitelist && !empire_memory.whitelist.use) {
-      Game.whitelist = []
+    if (empire_memory && empire_memory.whitelist) {
+      if (!empire_memory.whitelist.use) {
+        Game.whitelist = []
+      }
+      else if (empire_memory.whitelist.additional_players) {
+        Game.whitelist = Game.LOANlist.concat(empire_memory.whitelist.additional_players)
+      }
     }
     else {
       Game.whitelist = Game.LOANlist

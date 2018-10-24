@@ -23,6 +23,7 @@ export interface EmpireMemory {
   } | null
   whitelist: {
     use: boolean
+    additional_players: string[]
   }
   war: {
     swarm: {
@@ -46,7 +47,10 @@ export class Empire {
       Memory.empires[this.name] = {
         farm: null,
         claim_to: null,
-        whitelist: { use: false },
+        whitelist: {
+          use: false ,
+          additional_players: [],
+        },
         war: {
           swarm: {
             targets: {},
