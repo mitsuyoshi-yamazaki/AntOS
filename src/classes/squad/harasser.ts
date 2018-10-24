@@ -23,7 +23,7 @@ export class HarasserSquad extends Squad {
       return null
     }
 
-    const max = 2 // @fixme:
+    const max = 1 // @fixme:
 
     if (this.creeps.size >= 2) {
       return null
@@ -69,7 +69,8 @@ export class HarasserSquad extends Squad {
   }
 
   public run(): void {
-    const target_room = 'W58S6' // @fixme:
+    const squad_memory = Memory.squads[this.name] as HarasserSquadMemory
+    const target_room = (squad_memory && squad_memory.target_rooms && squad_memory.target_rooms[0]) ? squad_memory.target_rooms[0] : this.base_room.name
 
     this.creeps.forEach(creep => {
       if (creep.spawning) {
