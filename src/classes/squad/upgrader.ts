@@ -49,6 +49,7 @@ export class UpgraderSquad extends Squad {
 
     if (available > 0) {
       max = Math.floor(available / 130000)
+      max = Math.min(max, 2)
     }
 
     if (room_name == 'W51S29') {
@@ -56,12 +57,6 @@ export class UpgraderSquad extends Squad {
     }
     else if (['W54S7', 'W45S3', 'W53S5'].indexOf(room_name) >= 0) {
       max = Math.min(max, 1)
-    }
-    else if (['dummy'].indexOf(room_name) >= 0) {
-      max = Math.min(max, 2)
-    }
-    if (room_name == 'dummy') {
-      max = (room.storage.store.energy > 20000) ? 1 : 0
     }
 
     if (room.controller.level >= 8) {
