@@ -1978,70 +1978,73 @@ export function init() {
       return this.destroy(hostile_creep)
     }
 
-    if (opt.include_non_ownable_structure) {
-      const hostile_structure: AnyStructure = this.pos.findClosestByPath(FIND_STRUCTURES, {
-        filter: (structure) => {
-          if (structure.room.controller && structure.room.controller.my) {
-            return false
-          }
-          if ((structure as AnyOwnedStructure).my) {
-            return false
-          }
+    const include_non_ownable_structure = opt.include_non_ownable_structure || false
 
-          const ignore: StructureConstant[] = [
-            STRUCTURE_CONTROLLER,
-            STRUCTURE_RAMPART,
-            STRUCTURE_WALL,
-            STRUCTURE_KEEPER_LAIR,
-            STRUCTURE_POWER_BANK,
-            STRUCTURE_EXTRACTOR,
-          ]
-          if (ignore.indexOf(structure.structureType) >= 0) {
-            return false
-          }
-          // if (structure.structureType == STRUCTURE_EXTRACTOR) {  // creeps try destroying extractor in the center room
-          //   if (this.room.is_keeperroom) {
-          //     return false
-          //   }
-          // }
-          if ((structure as {my?: boolean}).my) {
-            return false
-          }
-
-          if ((structure.structureType) == STRUCTURE_CONTAINER) {
-            if (structure.room.controller) {
-              if (structure.room.controller.my) {
-                return false
-              }
-              else if (structure.room.controller.owner) {
-                return true
-              }
-              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-                return true
-              }
-            }
-            return false
-          }
-          if ((structure.structureType) == STRUCTURE_ROAD) {
-            if (structure.room.controller) {
-              if (structure.room.controller.my) {
-                return false
-              }
-              else if (structure.room.controller.owner) {
-                return true
-              }
-              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-                return true
-              }
-            }
-            return false
-          }
-          return true
+    const hostile_structure: AnyStructure = this.pos.findClosestByPath(FIND_STRUCTURES, {
+      filter: (structure) => {
+        if (structure.room.controller && structure.room.controller.my) {
+          return false
         }
-      })
-      if (hostile_structure) {
-        return this.destroy(hostile_structure)
+        if ((structure as AnyOwnedStructure).my) {
+          return false
+        }
+
+        const ignore: StructureConstant[] = [
+          STRUCTURE_CONTROLLER,
+          STRUCTURE_RAMPART,
+          STRUCTURE_WALL,
+          STRUCTURE_KEEPER_LAIR,
+          STRUCTURE_POWER_BANK,
+          STRUCTURE_EXTRACTOR,
+        ]
+        if (ignore.indexOf(structure.structureType) >= 0) {
+          return false
+        }
+        // if (structure.structureType == STRUCTURE_EXTRACTOR) {  // creeps try destroying extractor in the center room
+        //   if (this.room.is_keeperroom) {
+        //     return false
+        //   }
+        // }
+        if ((structure as {my?: boolean}).my) {
+          return false
+        }
+
+        if (include_non_ownable_structure) {
+
+        if ((structure.structureType) == STRUCTURE_CONTAINER) {
+          if (structure.room.controller) {
+            if (structure.room.controller.my) {
+              return false
+            }
+            else if (structure.room.controller.owner) {
+              return true
+            }
+            else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+              return true
+            }
+          }
+          return false
+        }
+        if ((structure.structureType) == STRUCTURE_ROAD) {
+          if (structure.room.controller) {
+            if (structure.room.controller.my) {
+              return false
+            }
+            else if (structure.room.controller.owner) {
+              return true
+            }
+            else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+              return true
+            }
+          }
+          return false
+        }
       }
+        return true
+      }
+    })
+    if (hostile_structure) {
+      return this.destroy(hostile_structure)
     }
 
     this.healNearbyCreep()
