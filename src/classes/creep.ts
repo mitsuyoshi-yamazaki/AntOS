@@ -1980,6 +1980,20 @@ export function init() {
 
     const include_non_ownable_structure = opt.include_non_ownable_structure || false
 
+    const ignore: StructureConstant[] = [
+      STRUCTURE_CONTROLLER,
+      STRUCTURE_RAMPART,
+      STRUCTURE_WALL,
+      STRUCTURE_KEEPER_LAIR,
+      STRUCTURE_POWER_BANK,
+      STRUCTURE_EXTRACTOR,
+    ]
+
+    const non_ownable_structures: StructureConstant[] = [
+      STRUCTURE_ROAD,
+      STRUCTURE_CONTAINER,
+    ]
+
     const hostile_structure: AnyStructure = this.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) => {
         if (structure.room.controller && structure.room.controller.my) {
@@ -1989,14 +2003,6 @@ export function init() {
           return false
         }
 
-        const ignore: StructureConstant[] = [
-          STRUCTURE_CONTROLLER,
-          STRUCTURE_RAMPART,
-          STRUCTURE_WALL,
-          STRUCTURE_KEEPER_LAIR,
-          STRUCTURE_POWER_BANK,
-          STRUCTURE_EXTRACTOR,
-        ]
         if (ignore.indexOf(structure.structureType) >= 0) {
           return false
         }
@@ -2009,34 +2015,38 @@ export function init() {
           return false
         }
 
-        if (include_non_ownable_structure) {
-
-          if ((structure.structureType) == STRUCTURE_CONTAINER) {
-            if (structure.room.controller) {
-              if (structure.room.controller.my) {
-                return false
+        if ((non_ownable_structures.indexOf(structure.structureType) >= 0)) {
+          if (include_non_ownable_structure) {
+            if ((structure.structureType) == STRUCTURE_CONTAINER) {
+              if (structure.room.controller) {
+                if (structure.room.controller.my) {
+                  return false
+                }
+                else if (structure.room.controller.owner) {
+                  return true
+                }
+                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                  return true
+                }
               }
-              else if (structure.room.controller.owner) {
-                return true
-              }
-              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-                return true
-              }
+              return false
             }
-            return false
+            if ((structure.structureType) == STRUCTURE_ROAD) {
+              if (structure.room.controller) {
+                if (structure.room.controller.my) {
+                  return false
+                }
+                else if (structure.room.controller.owner) {
+                  return true
+                }
+                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                  return true
+                }
+              }
+              return false
+            }
           }
-          if ((structure.structureType) == STRUCTURE_ROAD) {
-            if (structure.room.controller) {
-              if (structure.room.controller.my) {
-                return false
-              }
-              else if (structure.room.controller.owner) {
-                return true
-              }
-              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-                return true
-              }
-            }
+          else {
             return false
           }
         }
