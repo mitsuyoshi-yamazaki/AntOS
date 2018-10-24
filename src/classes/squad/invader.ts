@@ -687,13 +687,12 @@ export class InvaderSquad extends Squad {
       creep.say(`E${result}`)
       console.log(`InvaderSquad.runChargerCreep [ERROR] ${creep.memory.status}, result: ${result}, ${this.name}`)
 
-      // @todo: try this manually
-      // if (creep.memory.status == CreepStatus.HARVEST) {
-      //   creep.memory.status = CreepStatus.CHARGE
-      // }
-      // else {
-      //   creep.memory.status = CreepStatus.HARVEST
-      // }
+      if (creep.memory.status == CreepStatus.HARVEST) {
+        creep.memory.status = CreepStatus.CHARGE
+      }
+      else {
+        creep.memory.status = CreepStatus.HARVEST
+      }
     }
   }
 }
