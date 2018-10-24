@@ -20,6 +20,7 @@ import { room_link, room_history_link } from "./utils";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
+import { HarasserSquad } from "./squad/harasser";
 
 export interface RegionMemory {
   destination_container_id?: string | null
@@ -785,6 +786,11 @@ export class Region {
           }
           case SquadType.SWARM: {
             const squad = new SwarmSquad(squad_memory.name, this.room)
+            this.squads.set(squad.name, squad)
+            break
+          }
+          case SquadType.HARASSER: {
+            const squad = new HarasserSquad(squad_memory.name, this.room)
             this.squads.set(squad.name, squad)
             break
           }
