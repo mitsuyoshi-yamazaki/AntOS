@@ -43,6 +43,7 @@ declare global {
     owned_structures?: Map<StructureConstant, AnyOwnedStructure[]>
     _attacker_info: AttackerInfo | undefined
     attacker_info(): AttackerInfo
+    connected_rooms(): string[]
 
     owned_structures_not_found_error(structure_type: StructureConstant): void
     add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
@@ -218,6 +219,22 @@ export function tick(): void {
 
     room._attacker_info = attacker_info
     return attacker_info
+  }
+
+  Room.prototype.connected_rooms = function(): string[] {
+    const room = this as Room
+
+    const exits = Game.map.describeExits(room.name)
+    const room_names: string[] = ([TOP, BOTTOM, LEFT, RIGHT]).map(direction => {
+      if (exits[direction]) {
+        return exits[direction]
+      }
+      return null
+    }).filter(room_name => {
+      return !(!room_name)
+    }) as string[]
+
+    return room_names
   }
 
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {

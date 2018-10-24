@@ -127,7 +127,10 @@ export class Region {
         sign: Game.version,
       }
 
-      this.create_squad_memory()
+      ErrorMapper.wrapLoop(() => {
+        this.create_squad_memory()
+        this.set_scouts()
+      }, `Region initialize memory`)()
     }
     const region_memory = Memory.regions[this.name]
 
@@ -1793,6 +1796,15 @@ export class Region {
 
       console.log(`${this.name}, creates ${squad_name}`)
     }
+  }
+
+  private set_scouts(): void {
+    const region_memory = Memory.regions[this.name]
+    if (!region_memory) {
+      return
+    }
+
+    region_memory.room_need_scout = this.room.connected_rooms()
   }
 
   private drawDebugInfo(): void { // @todo: Show debug info for each rooms
