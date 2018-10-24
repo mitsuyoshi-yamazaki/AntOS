@@ -2095,19 +2095,23 @@ export function init() {
     }
 
     let ranged_target: Creep | Structure = target
-    let should_flee = false
+    let next_move: 'stay' | 'chase' | 'flee' = opt.no_move ? 'stay' : 'chase'
     const is_creep = !(!(target as Creep).carry)
 
     if (is_creep) {
       if (!opt.no_move && is_ranged_attacker) {
         const hostile_creep = target as Creep
-        if (this.pos.getRangeTo(hostile_creep) < 3) {
+        const range_to_hostile_creep = this.pos.getRangeTo(hostile_creep)
+        if (range_to_hostile_creep < 3) {
           const filter = function(creep: Creep): boolean {
             return creep.hasActiveBodyPart(ATTACK) || creep.hasActiveBodyPart(RANGED_ATTACK)
           }
           if (hostile_creep.hasActiveBodyPart(ATTACK) || (hostile_creep.pos.findInRange(hostile_creep.room.attacker_info().hostile_creeps, 2, {filter}).length > 1)) {
-            should_flee = true
+            next_move = 'flee'
           }
+        }
+        else if (range_to_hostile_creep == 3) {
+          next_move = 'stay'
         }
       }
     }
@@ -2135,8 +2139,11 @@ export function init() {
     //   console.log(`Creep.destroy action failed ${ranged_attack_result}, ${move_to_result}, ${attack_result}, ${this.name}`)
     // }
 
-    if (!opt.no_move) {
-      if (should_flee) {
+    switch (next_move) {
+      case 'stay':
+        break
+
+      case 'flee': {
         this.say(`FLEE`)  // @fixme
 
         const goal: {pos: RoomPosition, range: number} = {
@@ -2155,15 +2162,14 @@ export function init() {
           this.moveByPath(path.path)
           return ActionResult.IN_PROGRESS // @todo: Check if finished
         }
+        // break  // no need
       }
-      // if (opt.max_room) {
+
+      case 'chase':
         this.moveTo(target, {
           maxRooms: 1
         })
-      // }
-      // else {
-      //   this.moveTo(target)
-      // }
+        break
     }
 
     return ActionResult.IN_PROGRESS // @todo: Check if finished
