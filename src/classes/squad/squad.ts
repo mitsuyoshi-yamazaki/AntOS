@@ -23,6 +23,7 @@ export enum SquadType {
   ATTACKER          = 'attacker',
   INVADER           = 'invader',
   SWARM             = 'swarm',
+  HARASSER          = 'harasser',
   TEMP              = "temp",
   NUKER_CHARGER_SQUAD = "nuker_charger",
   REMOTE_ATTACKER   = 'remote_attacker',
@@ -48,6 +49,45 @@ export interface SquadMemory {
   stop_spawming?: boolean
   no_instantiation?: boolean  // @fixme:
 }
+
+export interface TargetSpecifier {
+  target_room_names: string[]
+  target_ids: {[room_name: string]: string[]}
+}
+
+export function getTargets(info: TargetSpecifier): {room_name: string | null, room: Room | null, structure: Structure | null} {
+  const target: {room_name: string | null, room: Room | null, structure: Structure | null} = {
+    room_name: info.target_room_names[0],
+    room: null,
+    structure: null,
+  }
+
+  if (target.room_name) {
+    target.room = Game.rooms[target.room_name]
+
+    if (target.room) {
+      const target_ids = (info.target_ids || {})[target.room_name]
+      if (target_ids) {
+        for (const id of target_ids) {
+          const structure = Game.getObjectById(id) as Structure | undefined
+
+          if (structure && structure.room && (structure.room.name == target.room_name)) {
+            target.structure = structure
+            break
+          }
+
+          const index = target_ids.indexOf(id)
+          if (index >= 0) {
+            target_ids.splice(index, 1)
+          }
+        }
+      }
+    }
+  }
+
+  return target
+}
+
 
 /**
  * 1 WorkerSquad for each spawn

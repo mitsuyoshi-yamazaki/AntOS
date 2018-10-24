@@ -262,7 +262,7 @@ export class Empire {
         }
       }
 
-      if (claim_to && (room.name == 'W51S37')) {
+      if (claim_to && (room.name == 'W53S43')) {
         opt.temp_squad_opt = {
           target_room_name: claim_to.target_room_name,
           forced: false,

@@ -1,15 +1,13 @@
 import { UID } from "classes/utils"
-import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
+import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, TargetSpecifier } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "classes/creep"
 
 interface InvaderMemory extends CreepMemory {
   pair_id: number
 }
 
-interface InvaderSquadMemory extends SquadMemory {
+interface InvaderSquadMemory extends SquadMemory, TargetSpecifier {
   // add at least 4 lab ids to region_memory.reaction_output_excludes
-  target_room_names: string[]
-  target_ids: {[room_name: string]: string[]}
   only_once: boolean    // to not spawn next leader / follower pair
   no_spawn: boolean     // instantiate InvaderSquad but no spawn
   lightweight?: boolean // no boost
@@ -494,7 +492,7 @@ export class InvaderSquad extends Squad {
     }
     creep.moveTo(this.leader)
 
-    const heal_target = (this.leader.hits < creep.hits) ? this.leader : creep
+    const heal_target = (this.leader.hits <= creep.hits) ? this.leader : creep
 
     if (creep.pos.isNearTo(heal_target)) {
       creep.heal(heal_target)
