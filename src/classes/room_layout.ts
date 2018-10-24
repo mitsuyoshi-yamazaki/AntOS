@@ -115,15 +115,13 @@ const layouts: {[name: string]: RawRoomLayout} = {
   },
   mark03: {
     layout: [
-      ['-', '.', 'x', 'x', '.', '-'],
       ['x', '-', '.', '.', '-', 'x'],
       ['x', 'x', '-', '-', '6', 'x'],
       ['x', 'x', '-', '-', 'o', 'x'],
       ['x', '-', '.', '.', '-', 'x'],
-      ['-', '.', 'x', 'x', '.', '-'],
     ],
     attributes: {},
-    description: "[mark03] Stepping room (RCL3: 14 ext, 1 spawn, 1 tower)",
+    description: "[mark03] Stepping room (RCL3: 10 ext, 1 spawn, 1 tower)",
   }
 }
 
