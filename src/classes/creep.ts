@@ -325,8 +325,14 @@ export function init() {
     else if ((destination_room_name == 'W59S15') && (this.room.name == 'W58S14')) {
       this.memory.destination_room_name = 'W58S15'
     }
-    else if ((destination_room_name == 'W58S9') && (this.room.name == 'W54S7')) {
+    else if ((destination_room_name == 'W59S8') && (this.room.name == 'W54S7')) {
       this.memory.destination_room_name = 'W53S10'
+    }
+    else if ((destination_room_name == 'W59S8') && (this.room.name == 'W53S10')) {
+      this.memory.destination_room_name = 'W58S9'
+    }
+    else if ((destination_room_name == 'W59S8') && (this.room.name == 'W58S9')) {
+      this.memory.destination_room_name = 'W59S9'
     }
 
     if (this.room.name == this.memory.destination_room_name) {
