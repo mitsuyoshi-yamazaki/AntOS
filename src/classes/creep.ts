@@ -2011,35 +2011,35 @@ export function init() {
 
         if (include_non_ownable_structure) {
 
-        if ((structure.structureType) == STRUCTURE_CONTAINER) {
-          if (structure.room.controller) {
-            if (structure.room.controller.my) {
-              return false
+          if ((structure.structureType) == STRUCTURE_CONTAINER) {
+            if (structure.room.controller) {
+              if (structure.room.controller.my) {
+                return false
+              }
+              else if (structure.room.controller.owner) {
+                return true
+              }
+              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                return true
+              }
             }
-            else if (structure.room.controller.owner) {
-              return true
-            }
-            else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-              return true
-            }
+            return false
           }
-          return false
-        }
-        if ((structure.structureType) == STRUCTURE_ROAD) {
-          if (structure.room.controller) {
-            if (structure.room.controller.my) {
-              return false
+          if ((structure.structureType) == STRUCTURE_ROAD) {
+            if (structure.room.controller) {
+              if (structure.room.controller.my) {
+                return false
+              }
+              else if (structure.room.controller.owner) {
+                return true
+              }
+              else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                return true
+              }
             }
-            else if (structure.room.controller.owner) {
-              return true
-            }
-            else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
-              return true
-            }
+            return false
           }
-          return false
         }
-      }
         return true
       }
     })
