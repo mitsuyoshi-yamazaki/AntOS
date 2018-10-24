@@ -984,7 +984,7 @@ export function runHarvester(creep: Creep, room_name: string, source: Source | M
 
   // Build
   if (creep.memory.status == CreepStatus.BUILD) {
-    const target = creep.pos.findInRange(FIND_CONSTRUCTION_SITES, 2)[0] as ConstructionSite
+    const target = creep.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 2)[0] as ConstructionSite
 
     if (target) {
       const result = creep.build(target)
