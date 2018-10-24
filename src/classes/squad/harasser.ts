@@ -5,6 +5,7 @@ import { CreepStatus, ActionResult, CreepType } from "classes/creep"
 interface HarasserSquadMemory extends SquadMemory {
   target_rooms: string[]
   target_ids: {[room_name: string]: string[]}
+  max_creeps?: number
   no_spawn: boolean     // instantiate InvaderSquad but no spawn
 }
 
@@ -18,12 +19,12 @@ export class HarasserSquad extends Squad {
   }
 
   private setNextCreep(): CreepType | null {
-    const squad_memory = Memory.squads[this.name]
+    const squad_memory = Memory.squads[this.name] as HarasserSquadMemory
     if (!squad_memory) {
       return null
     }
 
-    const max = 1 // @fixme:
+    const max = squad_memory.max_creeps || 1
 
     if (this.creeps.size >= 2) {
       return null
