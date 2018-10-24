@@ -314,7 +314,7 @@ export function init() {
       this.memory.destination_room_name = 'W51S43'
     }
     else if ((destination_room_name == 'W59S14') && (this.room.name == 'W53S15')) {
-      this.memory.destination_room_name = 'W56S14'
+      this.memory.destination_room_name = 'W55S14'
     }
     else if ((destination_room_name == 'W59S15') && (this.room.name == 'W53S15')) {
       this.memory.destination_room_name = 'W55S14'
