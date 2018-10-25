@@ -20,13 +20,13 @@ export class HarasserSquad extends Squad {
 
   private setNextCreep(): CreepType | null {
     const squad_memory = Memory.squads[this.name] as HarasserSquadMemory
-    if (!squad_memory) {
+    if (!squad_memory) {  // @fixme: no_spawn
       return null
     }
 
     const max = squad_memory.max_creeps || 1
 
-    if (this.creeps.size >= 2) {
+    if (this.creeps.size >= max) {
       return null
     }
 
