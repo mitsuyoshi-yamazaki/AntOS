@@ -469,7 +469,7 @@ export class InvaderSquad extends Squad {
         squad_memory.target_room_names.splice(index, 1)
       }
 
-      delete squad_memory.target_ids[this.target_room_name]
+      // delete squad_memory.target_ids[this.target_room_name]
     }
 
     creep.say(`DONE`)
