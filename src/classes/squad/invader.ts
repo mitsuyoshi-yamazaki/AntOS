@@ -13,6 +13,7 @@ interface InvaderSquadMemory extends SquadMemory, TargetSpecifier {
   lightweight?: boolean // no boost
   message?: string      // leader.say(message)
   debug?: boolean       // only spawns charger
+  manual_targets_only?: boolean // if target_ids[room_name].length == 0 then next room
 }
 
 interface BoostInfo {
@@ -36,6 +37,7 @@ export interface InvaderSquadLabs {
 
 export class InvaderSquad extends Squad {
   private target_room_name: string | undefined
+  private target_room: Room | undefined
   private target: Structure | undefined
 
   private leader: Creep | undefined
@@ -58,23 +60,37 @@ export class InvaderSquad extends Squad {
       const target_room_names = squad_memory.target_room_names || []
       this.target_room_name = target_room_names[0]
 
-      const target_room = Game.rooms[this.target_room_name] as Room | undefined
-      if (target_room) {
-        const target_ids = (squad_memory.target_ids || {})[this.target_room_name]
-        if (target_ids) {
-          for (const id of target_ids) {
-            const target = Game.getObjectById(id) as Structure | undefined
+      if (this.target_room_name) {
+        this.target_room = Game.rooms[this.target_room_name] as Room | undefined
+        if (this.target_room) {
+          const target_ids = (squad_memory.target_ids || {})[this.target_room_name]
+          if (target_ids) {
+            for (const id of target_ids) {
+              const target = Game.getObjectById(id) as Structure | undefined
 
-            if (target) {
-              this.target = target
-              break
-            }
+              if (target) {
+                this.target = target
+                break
+              }
 
-            const index = target_ids.indexOf(id)
-            if (index >= 0) {
-              target_ids.splice(index, 1)
+              const index = target_ids.indexOf(id)
+              if (index >= 0) {
+                target_ids.splice(index, 1)
+              }
             }
           }
+
+          if (!this.target && squad_memory.manual_targets_only) {
+            const index = squad_memory.target_room_names.indexOf(this.target_room_name)
+            if (index >= 0) {
+              squad_memory.target_room_names.splice(index, 1)
+            }
+          }
+        }
+      }
+      else {
+        if (squad_memory.manual_targets_only) {
+          squad_memory.no_spawn = true
         }
       }
     }
@@ -110,6 +126,10 @@ export class InvaderSquad extends Squad {
   private set_next_creep(): CreepType | null {
     const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (!squad_memory || squad_memory.no_spawn) {
+      return null
+    }
+
+    if (this.target_room && this.target_room.controller && this.target_room.controller.safeMode) {
       return null
     }
 
