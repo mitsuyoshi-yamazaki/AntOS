@@ -28,7 +28,7 @@ export class HarvesterSquad extends Squad {
 
     const is_alive = (this.energy_capacity > 300)
 
-    if (!this.destination && is_alive && (this.owner_room_name != 'W53S15')) {
+    if (!this.destination && (this.energy_capacity >= 550) && is_alive && (this.owner_room_name != 'W53S15')) {
       if (((Game.time + 3) % 7) == 0) {
         console.log(`HarvesterSquad destination not specified ${this.name}`)
       }
@@ -354,7 +354,7 @@ export class HarvesterSquad extends Squad {
 
     const room = Game.rooms[this.source_info.room_name]
 
-    if (this.energy_capacity < 550) {
+    if (this.energy_capacity < 250) {
       return SpawnPriority.NONE
     }
 
@@ -377,6 +377,10 @@ export class HarvesterSquad extends Squad {
         return SpawnPriority.NONE
       }
       return SpawnPriority.HIGH
+    }
+
+    if (!room.storage || !room.storage.my) {
+      return SpawnPriority.NONE
     }
 
     let number_of_carriers = 1
@@ -416,6 +420,14 @@ export class HarvesterSquad extends Squad {
         const energy_unit = 250
         const energyNeeded = (Math.floor((capacity - 150) / energy_unit) * energy_unit)
         return energyAvailable >= energyNeeded
+      }
+
+      if (this.energy_capacity < 550) {
+        if (this.energy_capacity <= 250) {
+          return energyAvailable >= 250
+        }
+        const energy_needed = Math.min((Math.floor(capacity / 100) * 100), 550)
+        return energyAvailable >= energy_needed
       }
 
       // harvester
@@ -485,11 +497,27 @@ export class HarvesterSquad extends Squad {
     else {
       if (energyAvailable >= (energy_unit * 2)) {  // (energy_unit * 2) is the maximum
         body = body.concat(body_unit)
-        // console.log(`FUGA ${energyAvailable} ${this.owner_room_name}`)
       }
-      // console.log(`HOGE ${energyAvailable} ${this.owner_room_name}`)
     }
-    // console.log(`PAKE ${energyAvailable} ${this.owner_room_name}`)
+
+    if (this.energy_capacity < 550) {
+      if (this.energy_capacity <= 250) {
+        body = [WORK, WORK, MOVE]
+      }
+      else {
+        energyAvailable = Math.min(energyAvailable, this.energy_capacity)
+        energyAvailable -= 100
+        body = []
+
+        while (energyAvailable >= 100) {
+          body.push(WORK)
+          energyAvailable -= 100
+        }
+
+        body.push(MOVE)
+        body.push(MOVE)
+      }
+    }
 
     const result = spawnFunc(body, name, {
       memory: memory

@@ -1520,20 +1520,23 @@ export function init() {
         if ((this.room.controller && this.room.controller.my && (!this.room.storage || !this.room.storage.my))) {
           const opt = {
             filter: (resource: Resource) => {
-              return resource.resourceType == RESOURCE_ENERGY
+              return (resource.resourceType == RESOURCE_ENERGY) && (resource.amount > 30)
             }
           }
 
-          const drop = this.pos.findInRange(FIND_DROPPED_RESOURCES, 8, opt)[0] as Resource | undefined
+          const drop = this.pos.findClosestByPath(FIND_DROPPED_RESOURCES, opt) as Resource | undefined  // , 8
 
           if (drop) {
-            if (this.pos.isNearTo(drop)) {
+            const range = this.pos.getRangeTo(drop)
+
+            if (range <= 1) {
               this.pickup(drop)
+              return
             }
-            else {
+            else if (range < 20) {
               this.moveTo(drop, move_to_opt)
+              return
             }
-            return
           }
 
           // else {
