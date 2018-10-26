@@ -30,7 +30,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
     hits_max = 114000
   }
 
-  const has_much_energy = !(!room.storage) && (room.storage.store.energy > 500000)
+  const has_much_energy = !(!room.storage) && (room.storage.store.energy > 300000)
 
   const excluded_walls = !opts.excluded_wall_ids ? [] : opts.excluded_wall_ids
   const repairing_wall = !opts.repairing_wall_id ? undefined : Game.getObjectById(opts.repairing_wall_id) as StructureWall | StructureRampart | undefined
