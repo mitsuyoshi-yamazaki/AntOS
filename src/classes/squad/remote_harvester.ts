@@ -1094,6 +1094,7 @@ export class RemoteHarvesterSquad extends Squad {
 
         if ((carry == 0) && (creep.room.name == this.base_room.name)) {
           creep.moveTo(25, 25)
+          creep.say(`RUN`)
           return
         }
       }

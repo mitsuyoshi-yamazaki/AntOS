@@ -185,7 +185,24 @@ export function tick(): void {
 
     attacker_info.hostile_creeps = room.find(FIND_HOSTILE_CREEPS, {
       filter: (creep: Creep) => {
-        return Game.isEnemy(creep)
+        if (!Game.isEnemy(creep)) {
+          return false
+        }
+
+        if (creep.pos.x == 0) {
+          return false
+        }
+        if (creep.pos.x == 49) {
+          return false
+        }
+        if (creep.pos.y == 0) {
+          return false
+        }
+        if (creep.pos.y == 49) {
+          return false
+        }
+
+        return true
       }
     })
 
