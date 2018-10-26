@@ -16,6 +16,7 @@ interface ManualMemory extends CreepMemory {
 interface ManualSquadMemory extends SquadMemory {
   claimer_last_spawned?: number
   dismantle_room_name?: string
+  creeps_max?: number
 }
 
 type MineralContainer = StructureTerminal | StructureStorage | StructureContainer
@@ -208,7 +209,8 @@ export class ManualSquad extends Squad {
           return SpawnPriority.NONE
         }
 
-        const max = 10
+        const squad_memory = Memory.squads[this.name] as ManualSquadMemory
+        const max = (squad_memory && squad_memory.creeps_max) ? squad_memory.creeps_max : 10
 
         return this.creeps.size < max ? SpawnPriority.LOW : SpawnPriority.NONE
       }
@@ -498,7 +500,7 @@ export class ManualSquad extends Squad {
           CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
           CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
         ]
-        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
+        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER, {let_thy_live: true})
         this.spawning = true
         return
       }
@@ -779,6 +781,7 @@ export class ManualSquad extends Squad {
           if (creep.spawning) {
             return
           }
+          creep.memory.let_thy_die = false
 
           const carry = _.sum(creep.carry)
 
@@ -792,14 +795,12 @@ export class ManualSquad extends Squad {
                 }
                 else {
                   if ((creep.room.spawns.length > 0)) {
-                    creep.goToRenew(creep.room.spawns[0])
+                    creep.goToRenew(creep.room.spawns[2] || creep.room.spawns[0])
                     return
                   }
                   else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
                     creep.memory.status = CreepStatus.NONE
                   }
-
-
                 }
 
               }
@@ -811,7 +812,11 @@ export class ManualSquad extends Squad {
 
             if (target_room && target_room.terminal) {
               if (creep.pos.isNearTo(target_room.terminal)) {
-                creep.withdrawResources(target_room.terminal)
+                creep.withdrawResources(target_room.terminal, {exclude: [
+                  RESOURCE_ENERGY,
+                  RESOURCE_HYDROGEN,
+                  RESOURCE_OXYGEN,
+                ]})
               }
               else {
                 creep.moveTo(target_room.terminal)
