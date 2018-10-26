@@ -783,6 +783,28 @@ export class ManualSquad extends Squad {
           const carry = _.sum(creep.carry)
 
           if (carry == 0) {
+            if (creep.pos.roomName == this.original_room_name) {
+              const needs_renew = ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 1300)))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
+
+              if (needs_renew) {
+                if ((creep.ticksToLive || 0) > 1400) {
+                  creep.memory.status = CreepStatus.NONE
+                }
+                else {
+                  if ((creep.room.spawns.length > 0)) {
+                    creep.goToRenew(creep.room.spawns[0])
+                    return
+                  }
+                  else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
+                    creep.memory.status = CreepStatus.NONE
+                  }
+
+
+                }
+
+              }
+            }
+
             if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
               return
             }
