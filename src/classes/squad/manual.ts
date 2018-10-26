@@ -28,6 +28,7 @@ export class ManualSquad extends Squad {
   private workers: Creep[] = []
   private target_id?: string
   private desc?: string
+  private spawning = false
 
   constructor(readonly name: string, readonly original_room_name: string, readonly base_room: Room) {
     super(name)
@@ -186,7 +187,30 @@ export class ManualSquad extends Squad {
       }
 
       case 'W56S7': {
-        return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+        const target_room_name = 'W58S8'
+        const target_room = Game.rooms[target_room_name]
+        if (!target_room) {
+          return SpawnPriority.NONE
+        }
+        if (!target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+          return SpawnPriority.NONE
+        }
+
+        if (this.spawning) {
+          return SpawnPriority.NONE
+        }
+
+        const is_spawning = Array.from(this.creeps.values()).filter(creep => {
+          return creep.spawning
+        }).length > 0
+
+        if (is_spawning) {
+          return SpawnPriority.NONE
+        }
+
+        const max = 10
+
+        return this.creeps.size < max ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
       case 'W53S15': {
@@ -264,7 +288,7 @@ export class ManualSquad extends Squad {
       }
 
       case 'W56S7': {
-        return energy_available >= 2100
+        return energy_available >= 2500
       }
 
       case 'W53S15': {
@@ -468,11 +492,14 @@ export class ManualSquad extends Squad {
 
       case 'W56S7': {
         const body: BodyPartConstant[] = [
-          MOVE, MOVE, MOVE,
-          CLAIM, CLAIM, CLAIM,
-          MOVE, MOVE, MOVE,
+          CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+          CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+          CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+          CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+          CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
         ]
-        this.addGeneralCreep(spawn_func, body, CreepType.CLAIMER)
+        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
+        this.spawning = true
         return
       }
 
@@ -736,23 +763,56 @@ export class ManualSquad extends Squad {
       }
 
       case 'W56S7': {
-        const target_room_name = 'W58S4'
+        const target_room_name = 'W58S8'
+        const target_room = Game.rooms[target_room_name]
+
+        if (!this.base_room.storage) {
+          this.say(`ERR`)
+
+          Game.notify(`NO TERMINAL in ${this.original_room_name}`)
+          return
+        }
+
+        const destination = this.base_room.storage
 
         this.creeps.forEach((creep) => {
-          if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+          if (creep.spawning) {
             return
           }
 
-          if (!creep.room.controller) {
-            creep.say(`ERR`)
-            return
-          }
+          const carry = _.sum(creep.carry)
 
-          if (creep.reserveController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(creep.room.controller)
+          if (carry == 0) {
+            if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+              return
+            }
+
+            if (target_room && target_room.terminal) {
+              if (creep.pos.isNearTo(target_room.terminal)) {
+                creep.withdrawResources(target_room.terminal)
+              }
+              else {
+                creep.moveTo(target_room.terminal)
+              }
+            }
+            else {
+              console.log(`ManualSquad.run ${this.original_room_name} no target`)
+              creep.say(`NO TGT`)
+            }
+          }
+          else {
+            if (creep.moveToRoom(this.original_room_name) == ActionResult.IN_PROGRESS) {
+              return
+            }
+
+            if (creep.pos.isNearTo(destination)) {
+              creep.transferResources(destination)
+            }
+            else {
+              creep.moveTo(destination)
+            }
           }
         })
-
         return
       }
 
