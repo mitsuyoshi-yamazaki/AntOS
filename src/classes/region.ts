@@ -734,7 +734,7 @@ export class Region {
             break
           }
           case SquadType.SCOUT: {
-            if ((rooms_need_scout.length > 0) && ScoutSquad.need_instantiation(squad_memory, this.controller)) {
+            if ((this.controller.level >= 3) && (rooms_need_scout.length > 0) && ScoutSquad.need_instantiation(squad_memory, this.controller)) {
               const squad = new ScoutSquad(squad_memory.name, rooms_need_scout)
               this.squads.set(squad.name, squad)
             }
