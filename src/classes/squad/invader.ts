@@ -507,9 +507,30 @@ export class InvaderSquad extends Squad {
     }
 
     if (!this.leader) {
+      if (this.target_room_name && (creep.pos.roomName == this.target_room_name)) {
+        const nearest_creep = creep.pos.findClosestByPath(FIND_MY_CREEPS)
+
+        if (nearest_creep) {
+          creep.moveTo(nearest_creep)
+
+          const heal_target = ((nearest_creep.hitsMax - nearest_creep.hits) <= (creep.hitsMax - creep.hits)) ? nearest_creep : creep
+
+          if (creep.pos.isNearTo(heal_target)) {
+            creep.heal(heal_target)
+          }
+          else {
+            if (creep.rangedHeal(heal_target) == ERR_NOT_IN_RANGE) {
+              creep.heal(creep)
+            }
+          }
+          return
+        }
+      }
+
       creep.heal(creep)
       return
     }
+
     creep.moveTo(this.leader)
 
     const heal_target = (this.leader.hits <= creep.hits) ? this.leader : creep
