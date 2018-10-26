@@ -302,6 +302,8 @@ export function tick(): void {
       return null
     }
 
+    console.log(`destination_position: ${destination_position}`)
+
     if (!opts.memory_only) {
       // --- Path
       const road_positions = room.source_road_positions(destination_position)
