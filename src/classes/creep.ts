@@ -340,6 +340,18 @@ export function init() {
     else if ((destination_room_name == 'W59S13') && (this.room.name == 'W55S13')) {
       this.memory.destination_room_name = 'W58S13'
     }
+    else if ((destination_room_name == 'W58S17') && (this.room.name == 'W53S15')) {
+      this.memory.destination_room_name = 'W56S15'
+    }
+    else if ((destination_room_name == 'W58S17') && (this.room.name == 'W56S15')) {
+      this.memory.destination_room_name = 'W56S16'
+    }
+    else if ((destination_room_name == 'W53S15') && (this.room.name == 'W58S17')) {
+      this.memory.destination_room_name = 'W56S16'
+    }
+    else if ((destination_room_name == 'W53S15') && (this.room.name == 'W56S16')) {
+      this.memory.destination_room_name = 'W56S15'
+    }
 
     if (this.room.name == this.memory.destination_room_name) {
       this.memory.destination_room_name = undefined

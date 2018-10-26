@@ -194,8 +194,14 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
+      case 'W53S15':
       case 'W56S7': {
-        const target_room_name = 'W58S8'
+        const squad_memory = Memory.squads[this.name] as ManualSquadMemory
+        if (!squad_memory || !squad_memory.target_room_name) {
+          return SpawnPriority.NONE
+        }
+
+        const target_room_name = squad_memory.target_room_name
         const target_room = Game.rooms[target_room_name]
         if (!target_room) {
           return SpawnPriority.NONE
@@ -216,17 +222,9 @@ export class ManualSquad extends Squad {
           return SpawnPriority.NONE
         }
 
-        const squad_memory = Memory.squads[this.name] as ManualSquadMemory
-        const max = (squad_memory && squad_memory.creeps_max) ? squad_memory.creeps_max : 10
+        const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 1
 
         return this.creeps.size < max ? SpawnPriority.LOW : SpawnPriority.NONE
-      }
-
-      case 'W53S15': {
-        if (!this.base_room.storage || this.base_room.storage.my || (_.sum(this.base_room.storage.store) == 0)) {
-          return SpawnPriority.NONE
-        }
-        return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
       default:
@@ -296,12 +294,9 @@ export class ManualSquad extends Squad {
         return energy_available >= 1500
       }
 
+      case 'W53S15':
       case 'W56S7': {
         return energy_available >= 2500
-      }
-
-      case 'W53S15': {
-        return energy_available > 1500
       }
 
       default:
@@ -499,6 +494,7 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W53S15':
       case 'W56S7': {
         const body: BodyPartConstant[] = [
           CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
@@ -509,24 +505,6 @@ export class ManualSquad extends Squad {
         ]
         this.addGeneralCreep(spawn_func, body, CreepType.CARRIER, {let_thy_live: true})
         this.spawning = true
-        return
-      }
-
-      case 'W53S15': {
-        // carrier
-        const body: BodyPartConstant[] = [
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE, // 5
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE,
-          CARRY, CARRY, MOVE, // 10
-        ]
-        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
       }
 
@@ -771,8 +749,14 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W53S15':
       case 'W56S7': {
-        const target_room_name = 'W58S8'
+        if (!squad_memory || !squad_memory.target_room_name) {
+          this.say(`ERR`)
+          return
+        }
+
+        const target_room_name = squad_memory.target_room_name
         const target_room = Game.rooms[target_room_name]
 
         if (!this.base_room.storage) {
@@ -781,6 +765,9 @@ export class ManualSquad extends Squad {
           Game.notify(`NO TERMINAL in ${this.original_room_name}`)
           return
         }
+
+        const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 0
+        const should_work = (max > 0)
 
         const destination = this.base_room.storage
 
@@ -819,7 +806,9 @@ export class ManualSquad extends Squad {
 
             if (target_room && target_room.terminal) {
               if (creep.pos.isNearTo(target_room.terminal)) {
-                creep.withdrawResources(target_room.terminal, {exclude: [ RESOURCE_ENERGY ]})
+                if (should_work) {
+                  creep.withdrawResources(target_room.terminal, {exclude: [ RESOURCE_ENERGY ]})
+                }
               }
               else {
                 creep.moveTo(target_room.terminal)
@@ -850,45 +839,6 @@ export class ManualSquad extends Squad {
         this.creeps.forEach((creep) => {
           creep.dismantleObjects('W54S8', {include_wall: true})
 
-        })
-        return
-      }
-
-      case 'W53S15': {
-        if (!this.base_room.storage || this.base_room.storage.my || (_.sum(this.base_room.storage.store) == 0)) {
-          this.say(`DONE`)
-          if ((Game.time % 1499) == 1) {
-            Game.notify(`${this.original_room_name} no more resources in storage`)
-          }
-          return
-        }
-        if (!this.base_room.terminal) {
-          this.say(`ERR`)
-          return
-        }
-
-        const storage = this.base_room.storage
-        const terminal = this.base_room.terminal
-
-        this.creeps.forEach((creep) => {
-          const carry = _.sum(creep.carry)
-
-          if (carry == 0) {
-            if (creep.pos.isNearTo(storage.pos)) {
-              creep.withdrawResources(storage)
-            }
-            else {
-              creep.moveTo(storage)
-            }
-          }
-          else {
-            if (creep.pos.isNearTo(terminal.pos)) {
-              creep.transferResources(terminal)
-            }
-            else {
-              creep.moveTo(terminal)
-            }
-          }
         })
         return
       }

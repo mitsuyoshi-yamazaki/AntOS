@@ -729,13 +729,8 @@ export class Region {
             break
           }
           case SquadType.MANUAL: {
-            if (['W48S6', 'W56S7'].indexOf(this.room.name) >= 0) {
-              const squad = new ManualSquad(squad_memory.name, this.room.name, this.room)
-              this.squads.set(squad.name, squad)
-            }
-            else {
-              this.no_instantiations.push(`    - ${squad_memory.name}`)
-            }
+            const squad = new ManualSquad(squad_memory.name, this.room.name, this.room)
+            this.squads.set(squad.name, squad)
             break
           }
           case SquadType.SCOUT: {
