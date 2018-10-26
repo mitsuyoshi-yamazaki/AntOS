@@ -1143,7 +1143,7 @@ export class Region {
       if ((this.controller.level == 1) && region_memory && !region_memory.layout_set && ((Game.time % 11) == 7)) {
         const empire_memory = Memory.empires['Mitsuyoshi']
         const opts: RoomLayoutOpts = {}
-        let layout_version = 'mark02'
+        let layout_version = 'mark04'
 
         if (empire_memory && empire_memory.claim_to) {
           if ((empire_memory.claim_to.target_room_name == this.room.name) && empire_memory.claim_to.origin_pos) {
