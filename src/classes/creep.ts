@@ -635,46 +635,6 @@ export function init() {
       this.moveTo(36, 0, opt)
       return ActionResult.IN_PROGRESS
     }
-    else if ((destination_room_name == 'W48N11') && (this.room.name == 'W50N9')) { // @fixme: temp code
-      this.moveTo(49, 10, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((destination_room_name == 'W48N12') && (this.room.name == 'W48N11')) {
-      this.moveTo(30, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((destination_room_name == 'W47N2') && (this.room.name == 'W47N5')) {
-      if (this.pos.x > 41) {
-        this.move(BOTTOM_LEFT)  // wtf
-        return ActionResult.IN_PROGRESS
-      }
-      this.moveTo(41, 49, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((['W47N5', 'W46N5'].indexOf(destination_room_name) >= 0) && (this.room.name == 'W47N4')) {
-      if (this.pos.y > 30) {
-        this.moveTo(30, 30, opt)
-        return ActionResult.IN_PROGRESS
-      }
-      else if (this.pos.y > 24) {
-        this.moveTo(31, 24, opt)
-        return ActionResult.IN_PROGRESS
-      }
-      this.moveTo(41, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((['W46N5', 'W46N4'].indexOf(destination_room_name) >= 0) && (this.room.name == 'W47N3') && (exit == RIGHT)) {
-      this.moveTo(33, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((['W46N5', 'W46N4'].indexOf(destination_room_name) >= 0) && (this.room.name == 'W47N2')) {
-      this.moveTo(17, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
-    else if ((destination_room_name == 'W47N5') && (this.room.name == 'W46N4')) {
-      this.moveTo(17, 0, opt)
-      return ActionResult.IN_PROGRESS
-    }
     else if ((destination_room_name == 'W45S6') && (this.room.name == 'W44S7')) {
       this.moveTo(0, 19, opt)
       return ActionResult.IN_PROGRESS
