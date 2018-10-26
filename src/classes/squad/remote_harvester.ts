@@ -80,6 +80,15 @@ export class RemoteHarvesterSquad extends Squad {
       ]
     }
 
+    if (this.harvester_energy_unit > capacity) {
+      this.harvester_energy_unit = 300
+      this.harvester_body_unit = [
+        MOVE,
+        CARRY,
+        WORK, WORK,
+      ]
+    }
+
     if (room && room.storage && room.controller && room.controller.my && (room.controller.level >= 4)) {
       this.destination = room.storage
     }
@@ -1217,13 +1226,13 @@ export class RemoteHarvesterSquad extends Squad {
         // }
 
         if (!this.destination) {
-          if (this.base_room.name == 'W57S4') {
-            // if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
-            //   return
-            // }
+          if (this.base_room.name == 'E17S4') {
+            if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
+              return
+            }
 
-            const x = 39
-            const y = 40
+            const x = 36
+            const y = 15
             const room_position = new RoomPosition(x, y, this.base_room.name)
 
             if ((creep.room.name != this.base_room.name)) {

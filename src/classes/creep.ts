@@ -1533,7 +1533,7 @@ export function init() {
               this.pickup(drop)
               return
             }
-            else if (range < 20) {
+            else {
               this.moveTo(drop, move_to_opt)
               return
             }

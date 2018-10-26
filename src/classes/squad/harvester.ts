@@ -380,7 +380,9 @@ export class HarvesterSquad extends Squad {
     }
 
     if (!room.storage || !room.storage.my) {
-      return SpawnPriority.NONE
+      if (this.owner_room_name != 'E17S4') {
+        return SpawnPriority.NONE
+      }
     }
 
     let number_of_carriers = 1
@@ -730,6 +732,22 @@ export class HarvesterSquad extends Squad {
           if (!destination && creep.room.storage && !creep.room.storage.my) {
             const x = 16  // W53S15
             const y = 27
+
+            if ((creep.pos.x == x) && (creep.pos.y == y)) {
+              creep.drop(resource_type)
+            }
+            else {
+              creep.moveTo(x, y)
+            }
+            return
+          }
+          if (!destination && (this.owner_room_name == 'E17S4')) {
+            if (creep.moveToRoom(this.owner_room_name) == ActionResult.IN_PROGRESS) {
+              return
+            }
+
+            const x = 36
+            const y = 15
 
             if ((creep.pos.x == x) && (creep.pos.y == y)) {
               creep.drop(resource_type)
