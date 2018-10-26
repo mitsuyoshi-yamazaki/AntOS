@@ -13,10 +13,17 @@ interface ManualMemory extends CreepMemory {
   history?: string[]
 }
 
+enum ManualSquadTask {
+  STEAL     = 'steal',     // target_room_name
+  DISMANTLE = 'dismantle', // target_room_name
+}
+
 interface ManualSquadMemory extends SquadMemory {
   claimer_last_spawned?: number
   dismantle_room_name?: string
   creeps_max?: number
+  target_room_name?: string
+  task?: string
 }
 
 type MineralContainer = StructureTerminal | StructureStorage | StructureContainer
@@ -812,11 +819,7 @@ export class ManualSquad extends Squad {
 
             if (target_room && target_room.terminal) {
               if (creep.pos.isNearTo(target_room.terminal)) {
-                creep.withdrawResources(target_room.terminal, {exclude: [
-                  RESOURCE_ENERGY,
-                  RESOURCE_HYDROGEN,
-                  RESOURCE_OXYGEN,
-                ]})
+                creep.withdrawResources(target_room.terminal, {exclude: [ RESOURCE_ENERGY ]})
               }
               else {
                 creep.moveTo(target_room.terminal)
