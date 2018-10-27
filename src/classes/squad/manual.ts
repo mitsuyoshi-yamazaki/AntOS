@@ -202,6 +202,10 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
+      // Memory contents:
+      // - target_room_name
+      // - creeps_max (set 0 to stop spawning but run creeps)
+      case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
         const squad_memory = Memory.squads[this.name] as ManualSquadMemory
@@ -306,6 +310,7 @@ export class ManualSquad extends Squad {
         return energy_available >= 1500
       }
 
+      case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
         return energy_available >= 2500
@@ -548,6 +553,7 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
         const body: BodyPartConstant[] = [
@@ -824,6 +830,7 @@ export class ManualSquad extends Squad {
         return
       }
 
+      case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
         if (!squad_memory || !squad_memory.target_room_name) {
