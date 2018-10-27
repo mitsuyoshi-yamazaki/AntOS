@@ -205,6 +205,7 @@ export class ManualSquad extends Squad {
       // Memory contents:
       // - target_room_name
       // - creeps_max (set 0 to stop spawning but run creeps)
+      // - need observing
       case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
@@ -234,7 +235,7 @@ export class ManualSquad extends Squad {
           return SpawnPriority.NONE
         }
 
-        const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 1
+        const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 0
 
         return this.creeps.size < max ? SpawnPriority.LOW : SpawnPriority.NONE
       }
