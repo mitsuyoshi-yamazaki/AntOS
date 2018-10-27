@@ -441,7 +441,7 @@ export class RemoteHarvesterSquad extends Squad {
         energy_unit = this.harvester_energy_unit
 
         const room = Game.rooms[this.room_name]
-        const energy_max = (room && (room.is_keeperroom || room.is_centerroom)) ? (energy_unit * 2) : energy_unit
+        const energy_max = ((this.harvester_energy_unit < 500) || (room && (room.is_keeperroom || room.is_centerroom))) ? (energy_unit * 2) : energy_unit
 
         max = energy_max
         break
@@ -471,6 +471,7 @@ export class RemoteHarvesterSquad extends Squad {
     capacity = Math.min((capacity - 50), max)
 
     const energy_needed = (Math.floor(capacity / energy_unit) * energy_unit)
+
     return energy_available >= energy_needed
   }
 
@@ -578,7 +579,7 @@ export class RemoteHarvesterSquad extends Squad {
       debug: this.debug,
     }
 
-    const energy_max = (room && (room.is_keeperroom || room.is_centerroom)) ? (energy_unit * 2) : energy_unit
+    const energy_max = ((this.harvester_energy_unit < 500) || (room && (room.is_keeperroom || room.is_centerroom))) ? (energy_unit * 2) : energy_unit
 
     energy_available = Math.min(energy_available, energy_max)
     while (energy_available >= energy_unit) {
@@ -926,6 +927,7 @@ export class RemoteHarvesterSquad extends Squad {
               flag.remove()
             }
             else {
+              flag.remove()
               console.log(`RemoteHarvesterSquad.runBuilder creating construction site failed: ${result} at ${flag.pos} in ${room_link(this.room_name)}, ${this.name}`)
             }
           }

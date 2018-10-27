@@ -1759,6 +1759,7 @@ export class Region {
       type: SquadType.MANUAL,
       owner_name: this.name,
       number_of_creeps: 0,
+      stop_spawming: true,
     }
     new_squads[manual_name] = manual_memory
 

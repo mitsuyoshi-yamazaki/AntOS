@@ -23,6 +23,7 @@ interface ManualSquadMemory extends SquadMemory {
   dismantle_room_name?: string
   creeps_max?: number
   target_room_name?: string
+  target_room_names?: string[]
   task?: string
 }
 
@@ -61,13 +62,20 @@ export class ManualSquad extends Squad {
   }
 
   public get spawnPriority(): SpawnPriority {
-    const memory = Memory.squads[this.name] as ManualSquadMemory
+    const squad_memory = Memory.squads[this.name] as ManualSquadMemory
 
-    if (memory.stop_spawming) {
+    if (squad_memory.stop_spawming) {
       return SpawnPriority.NONE
     }
 
     switch (this.original_room_name) {
+      case 'E17S4': {
+        if (!squad_memory || !squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
+          return SpawnPriority.NONE
+        }
+        return this.creeps.size < squad_memory.target_room_names.length ? SpawnPriority.NORMAL : SpawnPriority.NONE
+      }
+
       case 'W51S29': {
         const room = Game.rooms[this.original_room_name]
         if (!room || !room.storage || (room.storage.store.energy < 200000)) {
@@ -242,6 +250,10 @@ export class ManualSquad extends Squad {
 
   public hasEnoughEnergy(energy_available: number, capacity: number): boolean {
     switch (this.original_room_name) {
+      case 'E17S4': {
+        return energy_available >= 200
+      }
+
       case 'W49S34':
         if (this.attackers.length == 0) {
           return energy_available >= 1240
@@ -306,6 +318,48 @@ export class ManualSquad extends Squad {
 
   public addCreep(energy_available: number, spawn_func: SpawnFunction): void {
     switch (this.original_room_name) {
+      case 'E17S4': {
+        const squad_memory = Memory.squads[this.name] as ManualSquadMemory
+        if (!squad_memory || !squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
+          return
+        }
+
+        const rooms = squad_memory.target_room_names.concat()
+
+        this.creeps.forEach(creep => {
+          const memory = creep.memory as ManualMemory
+
+          if (memory.target_room) {
+            const index = rooms.indexOf(memory.target_room)
+
+            rooms.splice(index, 1)
+          }
+        })
+
+        const target_room = rooms[0] || 'E17S4'
+
+        const memory: ManualMemory = {
+          squad_name: this.name,
+          status: CreepStatus.NONE,
+          birth_time: Game.time,
+          type: CreepType.RANGED_ATTACKER,
+          should_notify_attack: false,
+          let_thy_die: true,
+          target_room,
+        }
+
+        // const body: BodyPartConstant[] = (target_room == 'E18S4') ? [
+        //   TOUGH,
+        //   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+        //   MOVE, MOVE, MOVE, MOVE,
+        // ] : [ RANGED_ATTACK, MOVE, ]
+
+        const body: BodyPartConstant[] = [ RANGED_ATTACK, MOVE, ]
+
+        this.addGeneralCreep(spawn_func, body, CreepType.RANGED_ATTACKER, {memory})
+        return
+      }
+
       case 'W49S34': {
         const attacker_body: BodyPartConstant[] = [
           TOUGH, MOVE, TOUGH, MOVE,
@@ -523,6 +577,27 @@ export class ManualSquad extends Squad {
     }
 
     switch (this.original_room_name) {
+
+      case 'E17S4': {
+        this.creeps.forEach(creep => {
+          if (creep.spawning) {
+            return
+          }
+
+          const memory = creep.memory as ManualMemory
+
+          if (!memory.target_room) {
+            memory.target_room = this.base_room.name
+          }
+
+          creep.searchAndDestroyTo(memory.target_room, true)
+
+          if ((creep.room.name == memory.target_room) && (creep.room.attacker_info().hostile_creeps.length == 0)) {
+            creep.moveTo(25, 25)
+          }
+        })
+        return
+      }
 
       case 'W51S29': {
         const lab_id = '5b258a00a84f8b52880bff57'
