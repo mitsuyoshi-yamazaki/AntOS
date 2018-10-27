@@ -405,6 +405,26 @@ export function tick(): void {
         }
       }
 
+      // Terminal
+      let terminal_amount_text: string
+
+      if (room.terminal) {
+        const terminal_amount = Math.round((_.sum(room.terminal.store) / room.terminal.storeCapacity) * 100)
+        let terminal_amount_level: 'info' | 'warn' | 'critical' = info
+
+        if (terminal_amount > 90) {
+          terminal_amount_level = error
+        } else if (terminal_amount > 80) {
+          terminal_amount_level = warn
+        }
+
+        terminal_amount_text = leveled_colored_text(`${terminal_amount}`, terminal_amount_level) + '%'
+      }
+      else {
+        terminal_amount_text = ""
+      }
+
+      // Storage
       let storage_amount_text: string
 
       if (room.storage) {
@@ -484,7 +504,7 @@ export function tick(): void {
         heavyly_attacked = `heavyly attacked ${room_history_link(room_name, ticks, {text})}${teams}`
       }
 
-      const message = `  - ${room_link(room_name)}\tRCL:<b>${rcl_text}</b>  <b>${progress}</b>\t${reaction_output}${number_of_reactions}\t${spawn}\tStorage: ${storage_amount_text}\t${storage_capacity}\t${heavyly_attacked}`
+      const message = `  - ${room_link(room_name)}\tRCL:<b>${rcl_text}</b>  <b>${progress}</b>\t${reaction_output}${number_of_reactions}\t${spawn}\t Terminal: ${terminal_amount_text}\tStorage: ${storage_amount_text}\t${storage_capacity}\t${heavyly_attacked}`
 
       if (room.memory && room.memory.is_gcl_farm) {
         gcl_farm_info.push(message)
