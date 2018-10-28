@@ -487,6 +487,8 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 
 /**
  * @todo:
+ * SK rooms in RCL5
+ * W51S29, W58S4
  * 500k tower minimum storage fill if rcl < 8
  * minimum rampart hits
  * balancer

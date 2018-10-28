@@ -1529,7 +1529,7 @@ export function init() {
         }
       }
       else {
-        if ((this.room.controller && this.room.controller.my && (!this.room.storage || !this.room.storage.my))) {
+        if ((this.room.controller && this.room.controller.my && (!this.room.storage || !this.room.storage.my || (this.room.name == 'E17S4')))) {
           const opt = {
             filter: (resource: Resource) => {
               return (resource.resourceType == RESOURCE_ENERGY) && (resource.amount > 30)
