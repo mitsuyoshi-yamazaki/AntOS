@@ -200,6 +200,15 @@ function trade():void {
     rooms,
   })
 
+  const w54s7 = Game.rooms['W54S7']
+  if (w54s7 && w54s7.storage && ((w54s7.storage.store[RESOURCE_HYDROGEN] || 0) > 300000)) {
+    sellResource({
+      resource_type: RESOURCE_HYDROGEN,
+      price: 0.100,
+      rooms: [w54s7],
+    })
+  }
+
   sellResource({
     resource_type: RESOURCE_KEANIUM,
     price: 0.060,
