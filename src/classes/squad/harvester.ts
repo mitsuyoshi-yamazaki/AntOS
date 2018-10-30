@@ -134,6 +134,9 @@ export class HarvesterSquad extends Squad {
     else if (this.source_info.id == '59f1c0cc7d0b3d79de5eff32') { // W57S4 Hydrogen
       this.resource_type = RESOURCE_HYDROGEN
     }
+    else if (this.source_info.id == '59f1c0cd7d0b3d79de5effec') { // W55S47 Lemergium
+      this.resource_type = RESOURCE_LEMERGIUM
+    }
     else {
       this.resource_type = RESOURCE_ENERGY
     }

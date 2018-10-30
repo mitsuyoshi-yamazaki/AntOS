@@ -378,6 +378,13 @@ export class Region {
         break
       }
 
+      case 'W55S47': {
+        harvester_targets = [
+          { id: '59f1c0cd7d0b3d79de5effec', room_name: 'W55S47' },  // Lemergium
+        ]
+        break
+      }
+
       default:
         // console.log(`Region.initialize unexpected region name, ${this.name}`)
         break
