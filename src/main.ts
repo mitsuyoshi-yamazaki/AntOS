@@ -209,6 +209,15 @@ function trade():void {
     })
   }
 
+  const w53s15 = Game.rooms['W53S15']
+  if (w53s15 && w53s15.storage && ((w53s15.storage.store[RESOURCE_KEANIUM] || 0) > 0) && (_.sum(w53s15.storage.store) > (w53s15.storage.storeCapacity * 0.95))) {
+    sellResource({
+      resource_type: RESOURCE_KEANIUM,
+      price: 0.02,
+      rooms: [w53s15],
+    })
+  }
+
   sellResource({
     resource_type: RESOURCE_KEANIUM,
     price: 0.060,
