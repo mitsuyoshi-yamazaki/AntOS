@@ -1586,6 +1586,7 @@ export function init() {
           if (source) {
             if (this.pos.isNearTo(source)) {
               this.withdraw(source, RESOURCE_ENERGY)
+              return
             }
             else {
               if (carry > (this.carryCapacity * 0.7)) {

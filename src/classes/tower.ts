@@ -77,7 +77,7 @@ export function runTowers(towers: StructureTower[], room: Room, opts?: RunTowers
       return -1
     })
 
-    if (walls[0].hits < wall_max_hits) {
+    if (walls[0] && (walls[0].hits < wall_max_hits)) {
       damaged_wall = walls[0]
     }
   }
