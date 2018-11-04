@@ -1456,7 +1456,7 @@ export class Region {
     if (this.room.attacker_info().heal == 0) {
       return
     }
-    console.log(`DETECT Healer-Attackers!!! ${room_link(this.room.name)}`)
+    console.log(`DETECT Healer-Attackers!!! ${room_link(this.room.name)}, history: ${room_history_link(this.room.name, Game.time)}`)
 
     const important_structures: StructureConstant[] = [
       STRUCTURE_SPAWN,
