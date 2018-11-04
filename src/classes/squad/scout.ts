@@ -121,7 +121,7 @@ export class ScoutSquad extends Squad {
       }
 
       if (creep.room.controller && (creep.moveTo(creep.room.controller, opt) == OK)) {
-        const emoji = ['😆', '😄', '😐', '😴', '🤔', '🙃', '😃', '😑']
+        const emoji = ['😆', '😄', '😐', '😴', '🤔', '🙃', '😃', '😑', '😖', '😝']
         const index = (Number(creep.room.name.slice(1,3)) + Number(creep.room.name.slice(4,6))) % emoji.length
         const sign = emoji[index]
 
