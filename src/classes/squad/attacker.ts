@@ -196,6 +196,10 @@ export class AttackerSquad extends Squad {
       if (!this.destination_room_name) {
         if (attacker.moveToRoom(this.base_room.name) == ActionResult.DONE) {
           switch (attacker.room.name) {
+            case 'W38S6':
+              attacker.moveTo(7, 28)
+              break
+
             case 'W51S29':
               attacker.moveTo(9, 30)
               break
