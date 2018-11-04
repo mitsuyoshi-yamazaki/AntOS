@@ -76,6 +76,13 @@ export class ManualSquad extends Squad {
         return this.creeps.size < squad_memory.target_room_names.length ? SpawnPriority.NORMAL : SpawnPriority.NONE
       }
 
+      case 'W38S6': {
+        if (!this.base_room.terminal || this.base_room.terminal.my) {
+          return SpawnPriority.NONE
+        }
+        return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+      }
+
       case 'W51S29': {
         const room = Game.rooms[this.original_room_name]
         if (!room || !room.storage || (room.storage.store.energy < 200000)) {
@@ -259,6 +266,10 @@ export class ManualSquad extends Squad {
         return energy_available >= 200
       }
 
+      case 'W38S6': {
+        return energy_available >= 1400
+      }
+
       case 'W49S34':
         if (this.attackers.length == 0) {
           return energy_available >= 1240
@@ -363,6 +374,20 @@ export class ManualSquad extends Squad {
         const body: BodyPartConstant[] = [ RANGED_ATTACK, MOVE, ]
 
         this.addGeneralCreep(spawn_func, body, CreepType.RANGED_ATTACKER, {memory})
+        return
+      }
+
+      case 'W38S6': {
+        const body: BodyPartConstant[] = [
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY, CARRY,
+          CARRY, CARRY, CARRY, CARRY,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE,
+        ]
+
+        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
       }
 
@@ -601,6 +626,45 @@ export class ManualSquad extends Squad {
 
           if ((creep.room.name == memory.target_room) && (creep.room.attacker_info().hostile_creeps.length == 0)) {
             creep.moveTo(25, 25)
+          }
+        })
+        return
+      }
+
+      case 'W38S6': {
+        if (!this.base_room.terminal || this.base_room.terminal.my) {
+          this.say(`DONE`)
+          return
+        }
+        const terminal = this.base_room.terminal
+
+        if (!this.base_room.storage) {
+          this.say(`ERR`)
+          console.log(`ManualSquad.run no storage ${this.original_room_name}`)
+          return
+        }
+        const storage = this.base_room.storage
+
+        this.creeps.forEach(creep => {
+          if (creep.spawning) {
+            return
+          }
+
+          if (_.sum(creep.carry) > 0) {
+            if (creep.pos.isNearTo(storage)) {
+              creep.transferResources(storage)
+            }
+            else {
+              creep.moveTo(storage)
+            }
+          }
+          else {
+            if (creep.pos.isNearTo(terminal)) {
+              creep.withdrawResources(terminal)
+            }
+            else {
+              creep.moveTo(terminal)
+            }
           }
         })
         return
