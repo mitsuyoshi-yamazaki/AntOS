@@ -394,10 +394,17 @@ export function tick(): void {
       if (!room.is_keeperroom) {
         if (region_memory) {
           if (!region_memory.rooms_need_to_be_defended) {
-            Memory.regions[owner_room_name].rooms_need_to_be_defended = []
+            region_memory.rooms_need_to_be_defended = []
           }
+          region_memory.rooms_need_to_be_defended!.push(room_name)
 
-          Memory.regions[owner_room_name].rooms_need_to_be_defended!.push(room_name)
+          if (region_memory.room_need_scout) {
+            const scout_index = region_memory.room_need_scout.indexOf(room_name)
+
+            if (scout_index >= 0) {
+              region_memory.room_need_scout.splice(scout_index, 1)
+            }
+          }
         }
         else {
           console.log(`Room.add_remote_harvester region memory ${owner_room_name} does not exist`)
