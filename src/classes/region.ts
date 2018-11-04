@@ -393,8 +393,9 @@ export class Region {
     // -- harvester
     const time = (Game.time % 997)
     const check_harvester = (time == 23) || (time == 24)
+    const force_check_harvester = false//this.room.name == 'W38S6'
 
-    if (check_harvester && (this.controller.level == 4) && (this.room.energyCapacityAvailable >= 1200)) {
+    if (force_check_harvester || (check_harvester && (this.controller.level == 4) && (this.room.energyCapacityAvailable >= 1200))) {
       // Add harvester targets
       const harvester_target_ids = harvester_targets.map((target) => {
         return target.id
