@@ -262,7 +262,7 @@ export class RemoteHarvesterSquad extends Squad {
     }
 
     if (Game.cpu.bucket < 6000) {
-      this.avoid_cpu_use = true
+      // this.avoid_cpu_use = true
       // if (this.name == 'remote_harvester74144126') {
       //   console.log(`avoid_cpu_use`)
       // }
