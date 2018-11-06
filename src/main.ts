@@ -216,6 +216,7 @@ function trade():void {
         resource_type: RESOURCE_OXYGEN,
         price: 0.05,
         rooms: [w53s15],
+        storage_min_amount: 20000,
       })
     }
     if ((w53s15.storage.store[RESOURCE_KEANIUM] || 0) > 0) {
@@ -223,6 +224,7 @@ function trade():void {
         resource_type: RESOURCE_KEANIUM,
         price: 0.02,
         rooms: [w53s15],
+        storage_min_amount: 20000,
       })
     }
   }
@@ -234,6 +236,7 @@ function trade():void {
         resource_type: RESOURCE_HYDROGEN,
         price: 0.100,
         rooms: [w53s15],
+        storage_min_amount: 50000,
       })
     }
     if ((w47s6.storage.store[RESOURCE_LEMERGIUM] || 0) > 0) {
@@ -241,6 +244,7 @@ function trade():void {
         resource_type: RESOURCE_LEMERGIUM,
         price: 0.02,
         rooms: [w53s15],
+        storage_min_amount: 20000,
       })
     }
   }
@@ -332,6 +336,7 @@ interface TradeResourceOptions {
   resource_type: ResourceConstant,
   price: number,
   rooms: Room[],
+  storage_min_amount?: number,
 }
 
 // Sell
@@ -343,7 +348,7 @@ function sellResource(opt: TradeResourceOptions): void {
   // console.log(`${opt.resource_type} sellResource ${orders.map(o=>[o.price, o.amount])}`)
 
   if (order) {
-    const trader: Room | undefined = sellerRoom(opt.rooms, opt.resource_type, order.amount)
+    const trader: Room | undefined = sellerRoom(opt.rooms, opt.resource_type, order.amount, opt)
     let message: string
 
     if (trader && trader.terminal) {
@@ -383,14 +388,17 @@ function sellResource(opt: TradeResourceOptions): void {
   }
 }
 
-function sellerRoom(rooms: Room[], resource_type: ResourceConstant, order_amount: number): Room | undefined {
+function sellerRoom(rooms: Room[], resource_type: ResourceConstant, order_amount: number, opts?: {storage_min_amount?: number}): Room | undefined {
+  opts = opts || {}
+  const min = opts.storage_min_amount || 40000
+
   return rooms.filter((room) => {
     if (!room || !room.terminal || !room.storage) {
       return false
     }
 
     const storage_amount = (room.storage.store[resource_type] || 0)
-    if (storage_amount < 40000) {
+    if (storage_amount < min) {
       return false
     }
 
