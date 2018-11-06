@@ -227,6 +227,24 @@ function trade():void {
     }
   }
 
+  const w47s6 = Game.rooms['W47S6']
+  if (w47s6 && w47s6.storage && (_.sum(w47s6.storage.store) > (w47s6.storage.storeCapacity * 0.95))) {
+    if ((w47s6.storage.store[RESOURCE_HYDROGEN] || 0) > 0) {
+      sellResource({
+        resource_type: RESOURCE_HYDROGEN,
+        price: 0.100,
+        rooms: [w53s15],
+      })
+    }
+    if ((w47s6.storage.store[RESOURCE_LEMERGIUM] || 0) > 0) {
+      sellResource({
+        resource_type: RESOURCE_LEMERGIUM,
+        price: 0.02,
+        rooms: [w53s15],
+      })
+    }
+  }
+
   sellResource({
     resource_type: RESOURCE_KEANIUM,
     price: 0.060,
