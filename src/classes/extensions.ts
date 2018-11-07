@@ -665,7 +665,8 @@ export function tick(): void {
     }
     else {
       const energy_source_excluded_regions: string[] = [
-        'E16N37'
+        'E16N37',
+        'W55S47',
       ]
 
       for (const region_name in Memory.regions) {
