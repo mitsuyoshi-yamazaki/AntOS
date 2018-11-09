@@ -541,8 +541,8 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * auto mineral harvester
+ * general ranged attacker
  * W51S29, W58S4 -> E16N37: dismantle wall, reserve, claim multiple rooms, send resources
- * rotate harasser target rooms
  * 500k tower minimum storage fill if rcl < 8
  * minimum rampart hits
  * balancer
