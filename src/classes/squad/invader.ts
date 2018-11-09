@@ -137,6 +137,10 @@ export class InvaderSquad extends Squad {
       return CreepType.CHARGER
     }
 
+    if (!this.target_room_name) {
+      return null
+    }
+
     if (!this.leader) {
       if (this.follower) {
         return null
