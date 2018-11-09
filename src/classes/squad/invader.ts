@@ -463,7 +463,13 @@ export class InvaderSquad extends Squad {
       return
     }
 
-    if (creep.dismantleObjects(this.target_room_name) == ActionResult.IN_PROGRESS) {
+    const excludes: StructureConstant[] = [
+      STRUCTURE_RAMPART,
+      STRUCTURE_LINK,
+      STRUCTURE_EXTRACTOR,
+    ]
+
+    if (creep.dismantleObjects(this.target_room_name, {excludes}) == ActionResult.IN_PROGRESS) {
       return
     }
 

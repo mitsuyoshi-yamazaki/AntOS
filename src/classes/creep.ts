@@ -87,7 +87,7 @@ declare global {
     transferResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
     withdrawResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
     dropResources(opt?: CreepTransferOption): ScreepsReturnCode
-    dismantleObjects(target_room_name: string, opts?:{include_wall?: boolean}): ActionResult
+    dismantleObjects(target_room_name: string, opts?:{include_wall?: boolean, excludes?: StructureConstant[]}): ActionResult
     transferLinkToStorage(link: StructureLink | undefined, pos: {x: number, y: number}, opt?: CreepTransferLinkToStorageOption): void
 
     // Worker tasks
@@ -1058,7 +1058,7 @@ export function init() {
     return return_code
   }
 
-  Creep.prototype.dismantleObjects = function(target_room_name: string, opts?:{include_wall?: boolean}): ActionResult {
+  Creep.prototype.dismantleObjects = function(target_room_name: string, opts?:{include_wall?: boolean, excludes?: StructureConstant[]}): ActionResult {
     opts = opts || {}
 
     if (this.moveToRoom(target_room_name) != ActionResult.DONE) {
@@ -1098,11 +1098,16 @@ export function init() {
       target = this.pos.findClosestByPath(FIND_HOSTILE_SPAWNS)
     }
     if (!target) {
-      const excludes: StructureConstant[] = [
+      let excludes: StructureConstant[] = [
         STRUCTURE_CONTROLLER,
         STRUCTURE_KEEPER_LAIR,
         STRUCTURE_POWER_BANK,
       ]
+
+      if (opts.excludes) {
+        excludes = excludes.concat(opts.excludes)
+      }
+
       target = this.pos.findClosestByPath(hostile_structures.filter(s=>(excludes.indexOf(s.structureType) < 0)))
     }
     if (!target && opts.include_wall) {
