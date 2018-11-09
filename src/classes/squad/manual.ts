@@ -197,16 +197,18 @@ export class ManualSquad extends Squad {
       }
 
       case 'E16N37': {
-        const target_room_name = 'E15N37'
-        const room = Game.rooms[target_room_name]
-        if (!room) {
-          return SpawnPriority.NONE
-        }
-        if ((!room.storage || (_.sum(room.storage.store) == 0)) && (!room.terminal || (_.sum(room.terminal.store) == 0))) {
-          return SpawnPriority.NONE
-        }
+        return SpawnPriority.NONE
 
-        return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
+        // const target_room_name = 'E15N37'
+        // const room = Game.rooms[target_room_name]
+        // if (!room) {
+        //   return SpawnPriority.NONE
+        // }
+        // if ((!room.storage || (_.sum(room.storage.store) == 0)) && (!room.terminal || (_.sum(room.terminal.store) == 0))) {
+        //   return SpawnPriority.NONE
+        // }
+
+        // return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
       // Memory contents:
@@ -890,8 +892,9 @@ export class ManualSquad extends Squad {
       }
 
       case 'E16N37': {
-        const target_room_name = 'E15N37'
-        this.stealEnergyFrom(this.original_room_name, target_room_name, 14, 29, {ticks_to_return: 120, worker_squad_name: 'worker_e16n37'})
+        this.creeps.forEach(creep=> {
+          creep.dismantleObjects('E17N34')
+        })
         return
       }
 
