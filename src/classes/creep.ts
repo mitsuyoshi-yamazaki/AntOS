@@ -122,6 +122,11 @@ declare global {
 }
 
 export function init() {
+  Creep.prototype.say = function(message: string, toPublic?: boolean): 0 | -1 | -4 {
+    console.log(`${this.name} saying "${message}"`)
+    return OK
+  }
+
   Creep.prototype.initialize = function() {
     if ((this.memory.status == null) || (this.memory.status == undefined)) {
       this.memory.status = CreepStatus.NONE
