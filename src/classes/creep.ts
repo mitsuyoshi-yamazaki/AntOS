@@ -101,6 +101,9 @@ declare global {
 
     // Controller tasks
     claim(target_room_name: string, should_claim?: boolean): ActionResult
+
+    // Replacing methods
+    // _say(message: string, toPublic?: boolean): 0 | -1 | -4
   }
 
   interface CreepMemory {
@@ -122,13 +125,17 @@ declare global {
 }
 
 export function init() {
-  const _say = Creep.prototype.say
+  // Creep.prototype._say = Creep.prototype.say
 
-  Creep.prototype.say = function(message: string, toPublic?: boolean): 0 | -1 | -4 {
-    console.log(`${this.name} saying "${message}"`)
-    // return _say(message, toPublic) // not working
-    return OK
-  }
+  // Creep.prototype.say = function(message: string, toPublic?: boolean): 0 | -1 | -4 {
+
+  //   if (Game.time % 10 == 0) {
+  //     console.log(`${this.name} saying "${message}"`)
+  //   }
+
+  //   // return this._say(message, toPublic)  // WARNING: recursive call
+  //   return OK
+  // }
 
   Creep.prototype.initialize = function() {
     if ((this.memory.status == null) || (this.memory.status == undefined)) {
