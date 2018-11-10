@@ -25,6 +25,7 @@ declare global {
 
     info: (opts?:{sorted?: boolean}) => void
     creep_positions: (squad_name: string) => void
+    squad_info: (squad_type: SquadType) => void
     last_attacked_rooms: (opts?: {last?: number}) => void
 
     get_costmatrix: (room_name: string) => CostMatrix | undefined
@@ -787,6 +788,21 @@ export function tick(): void {
         console.log(`Creep ${creep.name} ${creep.memory.type} at ${creep.pos} ${room_link(creep.pos.roomName)}${spawning}`)
       }
     }, `Game.creep_positions`)()
+  }
+
+  Game.squad_info = (squad_type: SquadType) => {
+    console.log(`${squad_type} squad info:`)
+
+    for (const squad_name in Memory.squads) {
+      const squad_memory = Memory.squads[squad_name]
+      if (squad_memory.type != squad_type) {
+        continue
+      }
+
+      const detail = squad_memory.stop_spawming || squad_memory.no_instantiation ? 'stop spawning' : `${squad_memory.name}, creeps: ${squad_memory.number_of_creeps}`
+
+      console.log(`- [${squad_memory.owner_name}] ${detail}`)
+    }
   }
 
   Game.last_attacked_rooms = (opts?: {last?: number}) => {
