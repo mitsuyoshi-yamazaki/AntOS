@@ -544,6 +544,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
  * little sub layout that only conatins extensions
  * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
  * W51S29, W58S4 -> E16N37: claim multiple rooms, send resources
+ * show invading info in Game.info()
  * findxxx() costs CPU?
  * 500k tower minimum storage fill if rcl < 8
  * minimum rampart hits

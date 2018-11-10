@@ -26,7 +26,9 @@ interface ManualSquadMemory extends SquadMemory {
   creeps_max?: number
   target_room_name?: string
   target_room_names?: string[]
+  target_index?: number
   task?: string
+  message?: string
 }
 
 type MineralContainer = StructureTerminal | StructureStorage | StructureContainer
@@ -189,10 +191,11 @@ export class ManualSquad extends Squad {
     if (squad_memory.task) {
       switch (squad_memory.task) {
         case ManualSquadTask.RESERVE: {
-          if (!squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
-            return false
-          }
           return energy_available >= 1300
+        }
+
+        case ManualSquadTask.SCOUT: {
+          return energy_available >= 50
         }
 
         default:
@@ -238,51 +241,12 @@ export class ManualSquad extends Squad {
     if (squad_memory.task) {
       switch (squad_memory.task) {
         case ManualSquadTask.RESERVE: {
-          if (this.spawning) {
-            return
-          }
-          this.spawning = true
+          this.addReserveTaskReserver(energy_available, spawn_func, squad_memory)
+          return
+        }
 
-          if (!squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
-            return
-          }
-
-          const targets = ([] as string[]).concat(squad_memory.target_room_names)
-          const claimings = Array.from(this.creeps.values()).map(creep=>{
-            const manual_memory = creep.memory as ManualMemory
-            if (manual_memory.target_id) {
-              return manual_memory.target_id
-            }
-            return ''
-          })
-
-          const target_room_name: string | undefined = targets.filter(room_name=>{
-            return claimings.indexOf(room_name) < 0
-          })[0]
-
-          if (!target_room_name) {
-            console.log(`ManualSquad.addCreep error target_room_name ${this.name}`)
-            return
-          }
-
-          let body: BodyPartConstant[] = [
-            CLAIM, CLAIM, MOVE, MOVE,
-          ]
-
-          const name = this.generateNewName()
-          const memory: ManualMemory = {
-            squad_name: this.name,
-            status: CreepStatus.NONE,
-            birth_time: Game.time,
-            type: CreepType.CLAIMER,
-            should_notify_attack: false,
-            let_thy_die: true,
-            target_id: target_room_name,
-          }
-
-          const result = spawn_func(body, name, {
-            memory: memory
-          })
+        case ManualSquadTask.SCOUT: {
+          this.addGeneralCreep(spawn_func, [MOVE], CreepType.SCOUT)
           return
         }
 
@@ -409,19 +373,23 @@ export class ManualSquad extends Squad {
   public run(): void {
     const squad_memory = Memory.squads[this.name] as ManualSquadMemory
 
+    if (squad_memory.message) {
+      const speak = squad_memory.message
+
+      this.creeps.forEach(creep=>{
+        creep.say(speak, true)
+      })
+    }
+
     if (squad_memory.task) {
       switch (squad_memory.task) {
         case ManualSquadTask.RESERVE: {
-          this.creeps.forEach((creep) => {
-            const creep_memory = creep.memory as ManualMemory
-            if (!creep_memory || !creep_memory.target_id) {
-              console.log(`ManualSquad.run ${this.original_room_name} error no target room name ${creep.name} ${creep.pos}`)
-              return
-            }
+          this.runReserveTask(squad_memory)
+          return
+        }
 
-            const room_name = creep_memory.target_id
-            creep.claim(room_name)
-          })
+        case ManualSquadTask.SCOUT: {
+          this.runScoutTask(squad_memory)
           return
         }
 
@@ -628,6 +596,91 @@ export class ManualSquad extends Squad {
 
 
   // --- Private ---
+  public addReserveTaskReserver(energy_available: number, spawn_func: SpawnFunction, squad_memory: ManualSquadMemory): void {
+    if (this.spawning) {
+      return
+    }
+    this.spawning = true
+
+    if (!squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
+      return
+    }
+
+    const targets = ([] as string[]).concat(squad_memory.target_room_names)
+    const claimings = Array.from(this.creeps.values()).map(creep=>{
+      const manual_memory = creep.memory as ManualMemory
+      if (manual_memory.target_id) {
+        return manual_memory.target_id
+      }
+      return ''
+    })
+
+    const target_room_name: string | undefined = targets.filter(room_name=>{
+      return claimings.indexOf(room_name) < 0
+    })[0]
+
+    if (!target_room_name) {
+      console.log(`ManualSquad.addCreep error target_room_name ${this.name}`)
+      return
+    }
+
+    let body: BodyPartConstant[] = [
+      CLAIM, CLAIM, MOVE, MOVE,
+    ]
+
+    const name = this.generateNewName()
+    const memory: ManualMemory = {
+      squad_name: this.name,
+      status: CreepStatus.NONE,
+      birth_time: Game.time,
+      type: CreepType.CLAIMER,
+      should_notify_attack: false,
+      let_thy_die: true,
+      target_id: target_room_name,
+    }
+
+    const result = spawn_func(body, name, {
+      memory: memory
+    })
+  }
+
+  // ---
+  private runReserveTask(squad_memory: ManualSquadMemory): void {
+    this.creeps.forEach((creep) => {
+      if (creep.spawning) {
+        return
+      }
+
+      const creep_memory = creep.memory as ManualMemory
+      if (!creep_memory || !creep_memory.target_id) {
+        console.log(`ManualSquad.runReserveTask ${this.original_room_name} error no target room name ${creep.name} ${creep.pos}`)
+        return
+      }
+
+      const room_name = creep_memory.target_id
+      creep.claim(room_name)
+    })
+  }
+
+  private runScoutTask(squad_memory: ManualSquadMemory): void {
+    if (!squad_memory.target_room_names || !squad_memory.target_room_names.length) {
+      this.say(`ERR`)
+      console.log(`ManualSquad.runScoutTask no target room names ${this.name}`)
+      return
+    }
+
+    const target_room_name = squad_memory.target_room_names[0]  // todo: rotate targets
+
+    this.creeps.forEach(creep=> {
+      if (creep.spawning) {
+        return
+      }
+
+      creep.moveToRoom(target_room_name)
+    })
+  }
+
+  // ---
   private renewIfNeeded(): void {
     this.creeps.forEach((creep) => {
       const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 350) && (creep.carry.energy > (creep.carryCapacity * 0.8))))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
