@@ -137,6 +137,14 @@ export function init() {
   //   return OK
   // }
 
+  // Creep.prototype.moveTo = function(x: number, y: number, opts?: MoveToOpts): 0 | -1 | -2 | -4 | -7 | -11 | -12 {
+  //   return OK
+  // }
+
+  // Creep.prototype.moveTo = function(target: RoomPosition|{pos: RoomPosition}, opts?: MoveToOpts): 0 | -1 | -2 | -4 | -7 | -11 | -12 {
+  //   return OK
+  // }
+
   Creep.prototype.initialize = function() {
     if ((this.memory.status == null) || (this.memory.status == undefined)) {
       this.memory.status = CreepStatus.NONE
