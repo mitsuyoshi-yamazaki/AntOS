@@ -44,6 +44,8 @@ declare global {
     _attacker_info: AttackerInfo | undefined
     attacker_info(): AttackerInfo
     connected_rooms(): string[]
+    _sector: string | undefined
+    sector(): string
 
     owned_structures_not_found_error(structure_type: StructureConstant): void
     add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
@@ -252,6 +254,33 @@ export function tick(): void {
     }) as string[]
 
     return room_names
+  }
+
+  Room.prototype.sector = function(): string {
+    const room = this as Room
+
+    if (room._sector) {
+      return room._sector
+    }
+
+    const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room.name)
+    if (!parsed || (parsed.length < 5)) {
+      const message = `Room.sector failed to parse room name ${parsed}, ${room.name}`
+      console.log(message)
+      Game.notify(message)
+      return 'W0S0'
+    }
+
+    const h_direction = parsed[1] as string
+    const h_position = Number(parsed[2])
+    const v_direction = parsed[3] as string
+    const v_position = Number(parsed[4])
+
+    const h = (Math.floor(h_position / 10) * 10) + 5
+    const v = (Math.floor(v_position / 10) * 10) + 5
+
+    room._sector = `${h_direction}${h}${v_direction}${v}`
+    return room._sector
   }
 
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {
