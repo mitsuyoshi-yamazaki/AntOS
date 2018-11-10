@@ -122,8 +122,11 @@ declare global {
 }
 
 export function init() {
+  const _say = Creep.prototype.say
+
   Creep.prototype.say = function(message: string, toPublic?: boolean): 0 | -1 | -4 {
     console.log(`${this.name} saying "${message}"`)
+    // return _say(message, toPublic) // not working
     return OK
   }
 
