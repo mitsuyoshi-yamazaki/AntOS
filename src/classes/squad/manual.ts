@@ -17,6 +17,7 @@ enum ManualSquadTask {
   RESERVE   = 'reserve',   // target_room_names
   STEAL     = 'steal',     // target_room_name
   DISMANTLE = 'dismantle', // target_room_name
+  SCOUT     = 'scout',     // target_room_names
 }
 
 interface ManualSquadMemory extends SquadMemory {
@@ -32,30 +33,12 @@ type MineralContainer = StructureTerminal | StructureStorage | StructureContaine
 type MineralStore = MineralContainer | StructurePowerSpawn
 
 export class ManualSquad extends Squad {
-  private any_creep: Creep | undefined
-
-  private attackers: Creep[] = []
-  private workers: Creep[] = []
   private target_id?: string
   private desc?: string
   private spawning = false
 
   constructor(readonly name: string, readonly original_room_name: string, readonly base_room: Room) {
     super(name)
-
-    this.any_creep = Array.from(this.creeps.values())[0]
-
-    this.creeps.forEach((creep) => {
-      switch (creep.memory.type) {
-        case CreepType.ATTACKER:
-          this.attackers.push(creep)
-          break
-
-        case CreepType.WORKER:
-          this.workers.push(creep)
-          break
-      }
-    })
   }
 
   public get type(): SquadType {
@@ -303,29 +286,8 @@ export class ManualSquad extends Squad {
         return energy_available >= 1400
       }
 
-      case 'W49S34':
-        if (this.attackers.length == 0) {
-          return energy_available >= 1240
-        }
-        else if ((this.attackers.length < 2) && !this.attackers[0].spawning && ((this.attackers[0].ticksToLive || 1000) < 550)) {
-          return energy_available >= 1240
-        }
-        return energy_available >= 2250 // worker
-
-      case 'W49S48':
-        return energy_available >= 150
-
-      case 'W48S47':
-        return energy_available >= 300
-
-      case 'W49S47':
-        return energy_available >= 200
-
       case 'W51S29':
         return energy_available >= 1150
-
-      case 'W49S26':
-        return energy_available >= 1600
 
       case 'W44S7':
         // if (this.target_id == 'W38S5') {
@@ -481,59 +443,8 @@ export class ManualSquad extends Squad {
         return
       }
 
-      case 'W49S34': {
-        const attacker_body: BodyPartConstant[] = [
-          TOUGH, MOVE, TOUGH, MOVE,
-          ATTACK, MOVE, ATTACK, MOVE,
-          ATTACK, MOVE, ATTACK, MOVE,
-          MOVE, MOVE, HEAL, HEAL
-        ]
-        if (this.attackers.length == 0) {
-          this.addGeneralCreep(spawn_func, attacker_body, CreepType.ATTACKER)
-          return
-        }
-        else if ((this.attackers.length < 2) && !this.attackers[0].spawning && ((this.attackers[0].ticksToLive || 1000) < 550)) {
-          this.addGeneralCreep(spawn_func, attacker_body, CreepType.ATTACKER)
-          return
-        }
-        const worker_body: BodyPartConstant[] = [
-          WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-          WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-          WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-        ]
-        this.addGeneralCreep(spawn_func, worker_body, CreepType.WORKER)
-        return
-      }
-
-      case 'W49S48':
-        this.addCarrier(energy_available, spawn_func)
-        return
-
-      case 'W48S47':
-        this.addGeneralCreep(spawn_func, [MOVE, MOVE, CARRY, CARRY, CARRY, MOVE], CreepType.CARRIER)
-        return
-
-      case 'W49S47':
-        this.addGeneralCreep(spawn_func, [MOVE, MOVE, CARRY, CARRY], CreepType.CARRIER)
-        return
-
       case 'W51S29': {
         this.addUpgrader(energy_available, spawn_func, CreepType.WORKER, {max_energy: 1150})
-        return
-      }
-
-      case 'W49S26': {
-        const body: BodyPartConstant[] = [
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          MOVE,
-        ]
-        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
         return
       }
 
@@ -839,61 +750,6 @@ export class ManualSquad extends Squad {
             creep.say(`${Math.floor(target.hits / 1000)}k`)
           }
         })
-        return
-      }
-
-    case 'W49S26':{
-      // const base_room_name = this.original_room_name
-      // const target_room_name = 'W49S27'
-
-      // this.creeps.forEach((creep) => {
-      //   if ((creep.room.name == 'W51S29') && (creep.carry.energy  == 0)) {
-      //     const room = Game.rooms['W51S29']
-
-      //     if (creep.withdraw(room.terminal!, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-      //       creep.moveTo(room.terminal!)
-      //       return
-      //     }
-      //     return
-      //   }
-      // })
-
-      // if (this.stealEnergyFrom(base_room_name, target_room_name, 7, 38, false) == ActionResult.IN_PROGRESS) {
-      //   return
-      // }
-      const next_squad_name = 'manual4919'
-      this.creeps.forEach((creep) => {
-        creep.memory.squad_name = next_squad_name
-      })
-      return
-    }
-      case 'W48S19': {
-        const worker_squad_name = 'worker71825555'
-        if (this.dismantle('W49S19') == ActionResult.IN_PROGRESS) {
-          return
-        }
-        this.creeps.forEach((creep) => {
-          creep.memory.squad_name = worker_squad_name
-        })
-        return
-      }
-
-      case 'W48S12':{
-        this.dismantle('W42S4')
-        return
-      }
-
-      case 'W49S19': {
-        this.creeps.forEach((creep) => {
-          creep.memory.let_thy_die = false
-        })
-
-        const base_room_name = this.original_room_name
-        const target_room_name = 'W49S18'
-
-        this.stealEnergyFrom(this.original_room_name, target_room_name, 20, 33, {should_die: true})
-
-        this.renewIfNeeded()
         return
       }
 

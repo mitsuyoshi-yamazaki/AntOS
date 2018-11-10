@@ -204,7 +204,7 @@ function trade():void {
   if (w54s7 && w54s7.storage && ((w54s7.storage.store[RESOURCE_HYDROGEN] || 0) > 300000)) {
     sellResource({
       resource_type: RESOURCE_HYDROGEN,
-      price: 0.100,
+      price: 0.140,
       rooms: [w54s7],
     })
   }
@@ -222,7 +222,7 @@ function trade():void {
     if ((w53s15.storage.store[RESOURCE_KEANIUM] || 0) > 0) {
       sellResource({
         resource_type: RESOURCE_KEANIUM,
-        price: 0.02,
+        price: 0.03,
         rooms: [w53s15],
         storage_min_amount: 20000,
       })

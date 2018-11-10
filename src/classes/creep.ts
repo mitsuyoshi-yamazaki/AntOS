@@ -213,7 +213,7 @@ export function init() {
       return ActionResult.DONE
     }
 
-    const use_new_method = false
+    const use_new_method = false//this.room.sector() == 'W55S15'
     if (use_new_method) {
       return this._moveToRoom(destination_room_name)
     }
