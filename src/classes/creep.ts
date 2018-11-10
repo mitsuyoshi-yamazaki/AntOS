@@ -181,7 +181,9 @@ export function init() {
 
   // --- General tasks ---
   Creep.prototype._moveToRoom = function(destination_room_name: string): ActionResult {
-    return ActionResult.IN_PROGRESS // @todo:
+    this.say(`DEBUGGING`)
+
+    return ActionResult.IN_PROGRESS
   }
 
   Creep.prototype.moveToRoom = function(destination_room_name: string): ActionResult {
