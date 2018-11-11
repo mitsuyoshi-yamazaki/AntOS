@@ -743,7 +743,7 @@ export class HarvesterSquad extends Squad {
               creep.drop(resource_type)
             }
             else {
-              creep.moveTo(x, y)
+              creep.moveTo(new RoomPosition(x, y, creep.room.name))
             }
             return
           }
@@ -759,7 +759,7 @@ export class HarvesterSquad extends Squad {
               creep.drop(resource_type)
             }
             else {
-              creep.moveTo(x, y)
+              creep.moveTo(new RoomPosition(x, y, creep.room.name))
             }
             return
           }

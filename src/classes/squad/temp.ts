@@ -245,7 +245,7 @@ export class TempSquad extends Squad {
       }
     }
     else {
-      creep.moveTo(25, 25)
+      creep.moveTo(new RoomPosition(25, 25, creep.room.name), {maxRooms: 1, reusePath: 20})
     }
   }
 

@@ -569,13 +569,6 @@ export class ManualSquad extends Squad {
         return
       }
 
-      case 'W53S5': {
-        this.creeps.forEach((creep) => {
-          creep.moveTo(9, 48)
-        })
-        return
-      }
-
       default:
         if (this.creeps.size > 0) {
           this.say(`NO SCR`)
@@ -892,7 +885,7 @@ export class ManualSquad extends Squad {
           return
         }
 
-        creep.moveTo(x, y)
+        creep.moveTo(new RoomPosition(x, y, creep.room.name))
         if ((creep.pos.x == x) && (creep.pos.y == y)) {
           creep.drop(RESOURCE_ENERGY)
           creep.memory.status = CreepStatus.HARVEST

@@ -377,7 +377,7 @@ export abstract class Squad {
     }
     else {
       creep.say(`FLEE`)
-      creep.moveTo(25, 25, {maxRooms: 1, reusePath: 20})
+      creep.moveTo(new RoomPosition(25, 25, creep.room.name), {maxRooms: 1, reusePath: 20})
     }
 
     return ActionResult.IN_PROGRESS

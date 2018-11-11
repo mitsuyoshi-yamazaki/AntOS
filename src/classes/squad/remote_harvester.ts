@@ -667,42 +667,34 @@ export class RemoteHarvesterSquad extends Squad {
     if (!this.scout) {
       return
     }
-    if (this.scout.spawning) {
+    const creep = this.scout
+
+    if (creep.spawning) {
       return
     }
 
     const squad_memory = Memory.squads[this.name] as RemoteHarvesterSquadMemory
 
-    if (((Game.time % 19) == 3) && (this.scout.room.name != this.base_room.name) && (squad_memory.room_contains_construction_sites.indexOf(this.scout.room.name) < 0) && (!this.scout.room.memory.is_gcl_farm)) {
-      let has_construction_site = this.scout.room.find(FIND_MY_CONSTRUCTION_SITES, {
+    if (((Game.time % 19) == 3) && (creep.room.name != this.base_room.name) && (squad_memory.room_contains_construction_sites.indexOf(creep.room.name) < 0) && (!creep.room.memory.is_gcl_farm)) {
+      let has_construction_site = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {
         filter: construction_site_filter
       }).length > 0
 
       if (!has_construction_site) {
-        // has_construction_site = this.scout.room.find(FIND_FLAGS).length > 0
+        // has_construction_site = creep.room.find(FIND_FLAGS).length > 0
         // @todo: flag -> construction_site
       }
 
       if (has_construction_site) {
-        (Memory.squads[this.name] as RemoteHarvesterSquadMemory).room_contains_construction_sites.push(this.scout.room.name)
+        (Memory.squads[this.name] as RemoteHarvesterSquadMemory).room_contains_construction_sites.push(creep.room.name)
       }
     }
 
-    if (this.scout.moveToRoom(this.room_name) == ActionResult.IN_PROGRESS) {
+    if (creep.moveToRoom(this.room_name) == ActionResult.IN_PROGRESS) {
       return
     }
-    const room = this.scout.room
 
-    // if (room.controller && (this.scout.moveTo(room.controller) == OK)) {
-    //   const emoji = ['😆', '😄', '😐', '😴', '🤔', '🙃', '😃']
-    //   const index = (Number(room.name.slice(1,3)) + Number(room.name.slice(4,6))) % emoji.length
-    //   const sign = emoji[index]
-    //   this.scout.signController(room.controller, sign)
-
-    //   return
-    // }
-
-    this.scout.moveTo(25, 25)
+    creep.moveTo(new RoomPosition(25, 25, creep.room.name))
   }
 
   private runKeeper(): void {
@@ -860,7 +852,7 @@ export class RemoteHarvesterSquad extends Squad {
               const result = creep.moveTo(source, move_to_ops)
               if (result != OK) {
                 creep.say(`E${result}`)
-                creep.moveTo(25, 25)
+                creep.moveTo(new RoomPosition(25, 25, creep.room.name))
               }
             }
             return
@@ -1104,7 +1096,7 @@ export class RemoteHarvesterSquad extends Squad {
         }
 
         if ((carry == 0) && (creep.room.name == this.base_room.name)) {
-          creep.moveTo(25, 25)
+          creep.moveTo(new RoomPosition(25, 25, creep.room.name))
           creep.say(`RUN`)
           return
         }
@@ -1290,7 +1282,7 @@ export class RemoteHarvesterSquad extends Squad {
                 return
               }
               else if (creep.room.name == 'W46S5') {
-                creep.moveTo(17, 49)
+                creep.moveTo(new RoomPosition(17, 49, creep.room.name))
               }
               else {
                 if (creep.moveTo(this.destination, move_to_ops) == ERR_NO_PATH) {
@@ -1310,7 +1302,7 @@ export class RemoteHarvesterSquad extends Squad {
 
             move_to_ops.maxRooms = 5
             if (creep.room.name == 'W46S5') {
-              creep.moveTo(17, 49)
+              creep.moveTo(new RoomPosition(17, 49, creep.room.name))
             }
             else {
               creep.moveTo(this.destination.room.storage, move_to_ops)

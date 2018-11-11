@@ -193,7 +193,7 @@ export class WorkerSquad extends Squad {
           creep.say(`wRUN`)
           continue
         }
-        creep.moveTo(25, 25)
+        creep.moveTo(new RoomPosition(25, 25, creep.room.name), {maxRooms: 1, reusePath: 20})
         continue
       }
 

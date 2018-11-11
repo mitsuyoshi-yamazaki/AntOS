@@ -535,31 +535,28 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 }
 
 /**
- * @fixme:
- */
-
-/**
  * @todo:
- * auto mineral harvester
- * little sub layout that only conatins extensions
- * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
- * W51S29, W58S4 -> E16N37: claim multiple rooms, send resources
- * show invading info in Game.info()
- * findxxx() costs CPU?
- * 500k tower minimum storage fill if rcl < 8
- * minimum rampart hits
- * balancer
- * notify portal
- * rotate room layout
- * cancel spawning attacker if the invader is eliminated within 10 ticks
- * bootstrap squad
- * ignore excluded squad spawn on colony region
- * attack & ranged heal itself?
+ * Strategy:
+   * W51S29, W58S4 -> E16N37: claim multiple rooms, send resources
+ * CPU Clinic:
+   * findxxx() costs CPU?
+   * balancer
+ * Automation:
+   * auto mineral harvester
+ * Claim & Layout:
+   * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
+   * rotate room layout
+   * little sub layout that only conatins extensions
+ * Others:
+   * what's remote_attacker?
+   * show invading info in Game.info()
+   * 500k tower minimum storage fill if rcl < 8
+   * minimum rampart hits
+   * notify portal
+   * cancel spawning attacker if the invader is eliminated within 10 ticks
+   * ignore excluded squad spawn on colony region
+   * attack & ranged heal itself?
  */
-
- /**
-  * Memory.squads.invader_w51s29.target_ids.W58S38 = Game.rooms.W58S38.find(FIND_STRUCTURES, {filter: s => s.structureType == STRUCTURE_EXTENSION}).map(e=>e.id)
-  */
 
 /**
  * 2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97 101 103 107 109 113 127 131 137 139 149 151 157 163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251 257 263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359 367 373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463 467 479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593 599 601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701 709 719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827 829 839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953 967 971 977 983 991 997
