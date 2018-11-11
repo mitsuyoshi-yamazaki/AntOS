@@ -22,6 +22,13 @@ import { SwarmSquad } from "./squad/swarm";
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { HarasserSquad } from "./squad/harasser";
 
+enum RegionStatus {
+  NORMAL              = 'normal',             // normal
+  WAYPOINT            = 'waypoint',           // waypoint room, not permanent
+  NOT_OWNED           = 'not_owned',          // the controller is not mine but RegionMemory remains
+  ABOUT_TO_UNCLAIM    = 'about_to_unclaim',   // unclaim near future
+}
+
 export interface RegionMemory {
   destination_container_id?: string | null
   upgrader_additional_source_ids?: string[]
@@ -1395,9 +1402,6 @@ export class Region {
       const capacity = receiver_room.terminal.storeCapacity - _.sum(receiver_room.terminal.store) - 10000
 
       for (const resource_type of Object.keys(terminal.store)) {
-        if (resource_type == RESOURCE_ENERGY) {
-          continue
-        }
         if (excludes && (excludes.indexOf(resource_type) >= 0)) {
           continue
         }

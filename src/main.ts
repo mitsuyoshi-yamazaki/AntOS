@@ -577,6 +577,11 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
    * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
    * rotate room layout
    * little sub layout that only conatins extensions
+ * Unclaim:
+   * retrieve resources from lab
+   * send all resources (Region.sendResourcesTo())
+   * remove squad memories
+   * remove region memory
  * Others:
    * what's remote_attacker?
    * show invading info in Game.info()
