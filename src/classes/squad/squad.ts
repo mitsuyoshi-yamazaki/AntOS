@@ -255,39 +255,6 @@ export abstract class Squad {
     })
   }
 
-  public hasEnoughEnergyForLightWeightHarvester(energy_available: number, capacity: number): boolean {
-    const energy_unit = 450
-
-    const energy_needed = Math.min(Math.floor(capacity / energy_unit) * energy_unit, 2250)
-    return energy_available >= energy_needed
-  }
-
-  public addLightWeightHarvester(energy_available: number, spawn_func: SpawnFunction): void {
-    const body_unit: BodyPartConstant[] = [WORK, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE]
-    const energy_unit = 450
-    energy_available = Math.min(energy_available, 2250)
-
-    const name = this.generateNewName()
-    let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
-      squad_name: this.name,
-      status: CreepStatus.NONE,
-      birth_time: Game.time,
-      type: CreepType.HARVESTER,
-      should_notify_attack: false,
-      let_thy_die: true,
-    }
-
-    while (energy_available >= energy_unit) {
-      body = body.concat(body_unit)
-      energy_available -= energy_unit
-    }
-
-    const result = spawn_func(body, name, {
-      memory: memory
-    })
-  }
-
   public hasEnoughEnergyForRangedAttacker(energy_available: number, capacity: number): boolean {
     return energy_available >= 4000
   }
