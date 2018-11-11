@@ -32,11 +32,18 @@ export function migrate(name: string):void {
     name,
     status: result,
   })
+
+  console.log(`Result:\n${list().map(s=> s + '\n')}`)
 }
 
 export function list(): string[] {
   const results: string[] = []
-  return results
+
+  for (const migration of Memory.migrations.list) {
+    results.push(`- [${migration.status}]:\t ${migration.name}`)
+  }
+
+  return results.reverse()
 }
 
 const migrations: {[name: string]: () => MigrationResult} = {
