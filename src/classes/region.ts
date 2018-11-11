@@ -30,6 +30,7 @@ enum RegionStatus {
 }
 
 export interface RegionMemory {
+  status: RegionStatus,
   destination_container_id?: string | null
   upgrader_additional_source_ids?: string[]
   additional_source_link_ids?: string[]
@@ -112,6 +113,7 @@ export class Region {
       const ancestor = (!(!room_memory) && !(!room_memory.ancestor)) ? room_memory.ancestor : 'origin'
 
       Memory.regions[this.name] = {
+        status: RegionStatus.NORMAL,  // @todo: if it's waypoint, set RegionStatus.WAYPOINT
         reaction_outputs: [],
         resource_transports: {},
         destination_container_id: null,

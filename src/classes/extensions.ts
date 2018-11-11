@@ -6,6 +6,7 @@ import { room_history_link, room_link, colored_resource_type, profile_link, colo
 import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
+import { migrate } from "./migration";
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -46,10 +47,14 @@ declare global {
     dump_memory(): void // @todo:
     refresh_room_memory(opts?:{dry_run?: boolean}): void
 
+    // Alliance
     LOANlist: string[]
     whitelist: string[]
     populateLOANlist(): void
     isEnemy(creep: Creep): boolean
+
+    // Migration
+    migrate(name: string): void
   }
 
   interface Memory {
@@ -62,6 +67,9 @@ declare global {
     regions: {[index: string]: RegionMemory}
     cpu_usages: number[]
     trading: {stop: boolean}
+    migrations: {
+      list: {[name: string]: 'prepared' | 'done' | 'failed'}
+    }
     debug: {
       show_visuals: string | null,
       show_path: boolean,
@@ -1100,6 +1108,9 @@ export function tick(): void {
     return Game.whitelist.indexOf(creep.owner.username) < 0
   }
 
+  Game.migrate = function(name: string): void {
+    migrate(name)
+  }
 
   // --- CostMatrix
   PathFinder.CostMatrix.prototype.add_terrain = function(room: Room): void {

@@ -5,7 +5,7 @@ import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
 import { leveled_colored_text } from './utils';
 
-const version = '2.66.3'
+const version = '2.67.0'
 
 export function init(): void {
   Game.version = version
@@ -40,6 +40,12 @@ export function init(): void {
   if (!Memory.cpu) {
     Memory.cpu = {
       last_bucket: Game.cpu.bucket
+    }
+  }
+
+  if (!Memory.migrations) {
+    Memory.migrations = {
+      list: {},
     }
   }
 
