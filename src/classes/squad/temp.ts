@@ -21,7 +21,7 @@ export class TempSquad extends Squad {
     return (Memory.squads[this.name] as TempSquadMemory).arrived == this.target_room_name
   }
 
-  constructor(readonly name: string, readonly room_name: string, readonly target_room_name: string, readonly need_attacker: boolean) {
+  constructor(readonly name: string, readonly room_name: string, readonly target_room_name: string, readonly need_attacker: boolean, readonly layout: {name: string, pos: {x: number, y: number}} | undefined) {
     super(name)
 
     this.creeps.forEach((creep, _) => {
@@ -315,6 +315,7 @@ export class TempSquad extends Squad {
         }
       }
 
+      // destroy others structures
       if (target_room && (target_room.name == creep.room.name)) {
         target_room.find(FIND_HOSTILE_CONSTRUCTION_SITES).forEach((construction_site) => {
           construction_site.remove()
@@ -348,6 +349,11 @@ export class TempSquad extends Squad {
         }).forEach((structure) => {
           structure.destroy()
         })
+      }
+
+      // place flags
+      if (this.layout) {
+        const layout = target_room.place_layout(this.layout.name, {origin_pos: this.layout.pos})
       }
     }
     else if (target_room && target_room.memory) {

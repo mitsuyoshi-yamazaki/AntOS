@@ -19,7 +19,6 @@ import { FarmerSquad, FarmerSquadMemory } from "./squad/farmer";
 import { room_link, room_history_link } from "./utils";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
-import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { HarasserSquad } from "./squad/harasser";
 
 export enum RegionStatus {
@@ -58,13 +57,17 @@ export interface RegionMemory {
   ancestor: string
   region_version: string
   sign: string | null
-  layout_set?: boolean
+  // layout_set?: boolean
 }
 
 export interface RegionOpt {
   produce_attacker: boolean,
   attack_to: string | null,
-  temp_squad_opt?: {target_room_name: string, forced?: boolean}
+  temp_squad_opt?: {
+    target_room_name: string,
+    forced?: boolean,
+    layout?: {name: string, pos: {x: number, y: number}},
+  }
   send_to_energy_threshold: number,
   should_send_resources: boolean,
 }
@@ -823,13 +826,14 @@ export class Region {
           }
           case SquadType.TEMP: {
             if (region_opt.temp_squad_opt) {
-              // Creating squad costs CPU
+              const temp_opts = region_opt.temp_squad_opt
+
               const temp_squad_target_room = Game.rooms[region_opt.temp_squad_opt.target_room_name]
               const not_my_room = (!temp_squad_target_room || !temp_squad_target_room.controller || !temp_squad_target_room.controller.my)
               const owned = !(!region_opt.temp_squad_opt.forced) && temp_squad_target_room && (temp_squad_target_room.controller && (temp_squad_target_room.controller.level >= 5))
 
               if (not_my_room || !owned) {
-                const squad = new TempSquad(squad_memory.name, this.room.name, region_opt.temp_squad_opt.target_room_name, !(!region_opt.temp_squad_opt.forced))
+                const squad = new TempSquad(squad_memory.name, this.room.name, temp_opts.target_room_name, !(!temp_opts.forced), temp_opts.layout)
                 this.squads.set(squad.name, squad)
               }
               else {
@@ -1170,30 +1174,6 @@ export class Region {
     //     })
     //   }
     // })()
-
-    ErrorMapper.wrapLoop(() => {
-      if ((this.controller.level == 1) && region_memory && !region_memory.layout_set && ((Game.time % 11) == 7)) {
-        const empire_memory = Memory.empires['Mitsuyoshi']
-        const opts: RoomLayoutOpts = {}
-        let layout_version = 'mark05'
-
-        if (empire_memory && empire_memory.claim_to) {
-          if ((empire_memory.claim_to.target_room_name == this.room.name) && empire_memory.claim_to.origin_pos) {
-            opts.origin_pos = empire_memory.claim_to.origin_pos
-          }
-
-          if (empire_memory.claim_to.is_step_room) {
-            layout_version = 'mark03'
-          }
-        }
-
-        const layout = this.room.place_layout(layout_version, opts)
-
-        // if (layout) {  // no retry
-          region_memory.layout_set = true
-        // }
-      }
-    }, `${this.name}.setLayout`)()
   }
 
   // --- Private ---

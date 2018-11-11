@@ -14,22 +14,15 @@ export interface EmpireMemory {
     boost_compound: string
   } | null
   next_rooms: {
-    target_room_name: string,
-    base_room_name: string,
-    forced: boolean,
-    origin_pos: {x: number, y: number} | null
+    target_room_name: string
+    base_room_name: string
+    forced: boolean
+    delegate_until: number
+    layout: {name: string, pos: {x: number, y: number}}
     step_rooms: {
       // @todo:
     }[]
   }[]
-  claim_to: {
-    target_room_name: string,
-    base_room_name: string,
-    forced: boolean,
-    at_level: number | null,
-    origin_pos: {x: number, y: number} | null
-    is_step_room: boolean,
-  } | null
   whitelist: {
     use: boolean
     additional_players: string[]
@@ -56,7 +49,6 @@ export class Empire {
       Memory.empires[this.name] = {
         farm: null,
         next_rooms: [],
-        claim_to: null,
         whitelist: {
           use: false ,
           additional_players: [],
@@ -70,16 +62,40 @@ export class Empire {
     }
     const empire_memory = Memory.empires[this.name]
 
+    // --- Owned Rooms
+    const owned_controllers: StructureController[] = []
+
+    for (const room_name in Game.rooms) {
+      const room = Game.rooms[room_name]
+      if (!room || !room.controller || !room.controller.my) {
+        continue
+      }
+      owned_controllers.push(room.controller)
+    }
+
     // --- Attack
     const attacker_room_names: string[] = [
     ]
     const attack_to: string | null = null
 
     // --- Claim
-    let claim_to: {target_room_name: string, base_room_name: string, forced: boolean, at_level: number | null} | null = empire_memory ? empire_memory.claim_to : null
+    const number_of_gcl_farms = 1
+    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - owned_controllers.length, 0)
 
-    if (claim_to && claim_to.at_level && (Game.gcl.level < claim_to.at_level)) {
-      claim_to = null
+    const claim_to: {[base_room_name: string]: {
+      target_room_name: string,
+      forced: boolean,
+      delegate_until: number,
+      layout: {name: string, pos: {x: number, y: number}},
+    }} = {}
+
+    for (const next_room of empire_memory.next_rooms) {
+      if (number_of_claimable_rooms <= 0) {
+        break
+      }
+      claim_to[next_room.base_room_name] = next_room
+
+      number_of_claimable_rooms -= 1
     }
 
     // --- GCL Farms
@@ -228,13 +244,6 @@ export class Empire {
       }
     }
 
-    // @todo:
-    // transfer upgrader to next farm squad
-    // next_farm = {
-    //   target_room_name: 'W49S6',
-    //   base_room_name: 'W48S6',
-    // }
-
     // ---
     const test_send_resources = Memory.debug.test_send_resources
     const should_send_resources = test_send_resources || ((Game.time % 67) == 1)
@@ -244,18 +253,13 @@ export class Empire {
     }
 
     // --- Regions
-    for (const room_name in Game.rooms) {
-      const room = Game.rooms[room_name]
-      if (!room || !room.controller || !room.controller.my) {
-        continue
-      }
-
-      const room_memory = Memory.rooms[room_name]
+    for (const controller of owned_controllers) {
+      const room = controller.room
+      const room_memory = Memory.rooms[room.name]
       if (room_memory && room_memory.is_gcl_farm) {
         continue
       }
 
-      const controller = room.controller
       const opt: RegionOpt = {
         produce_attacker: (attacker_room_names.indexOf(room.name) >= 0),
         attack_to,
@@ -269,18 +273,8 @@ export class Empire {
           forced: false,
         }
       }
-      else if (claim_to && (claim_to.base_room_name == room.name)) {
-        opt.temp_squad_opt = {
-          target_room_name: claim_to.target_room_name,
-          forced: claim_to.forced,
-        }
-      }
-
-      if (claim_to && (room.name == 'W53S43')) {
-        opt.temp_squad_opt = {
-          target_room_name: claim_to.target_room_name,
-          forced: false,
-        }
+      else if (claim_to[room.name]) {
+        opt.temp_squad_opt = claim_to[room.name]
       }
 
       ErrorMapper.wrapLoop(() => {
@@ -289,8 +283,10 @@ export class Empire {
       }, `${room.name}.init`)()
     }
 
-    if (claim_to) {
-      this.setDelegate(claim_to.base_room_name, claim_to.target_room_name, {max_rcl: 6})
+    for (const room_name in claim_to) {
+      const info = claim_to[room_name]
+
+      this.setDelegate(room_name, info.target_room_name, {max_rcl: info.delegate_until})
     }
   }
 
