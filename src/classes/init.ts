@@ -5,7 +5,7 @@ import { init as spawnInit } from "classes/spawn"
 import { tick as roomTick } from "classes/room"
 import { leveled_colored_text } from './utils';
 
-const version = '2.65.9'
+const version = '2.65.10'
 
 export function init(): void {
   Game.version = version
@@ -94,7 +94,7 @@ export function tick(): void {
   if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
     const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
     console.log(leveled_colored_text(message, 'critical'))
-    Game.notify(message)
+    // Game.notify(message)
   }
 
   Memory.cpu.last_bucket = current_bucket
