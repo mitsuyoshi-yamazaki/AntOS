@@ -125,6 +125,8 @@ export class Region {
         wall_max_hits: 20000000,  // 20M
         last_spawn_time: Game.time,
         last_heavy_attacker: null,
+        send_resources_to: [],
+        send_resources_to_excludes: [],
         ancestor,
         region_version: Game.version,
         sign: Game.version,
@@ -1373,7 +1375,7 @@ export class Region {
     const terminal = this.room.terminal
 
     const region_memory = Memory.regions[this.name]
-    if (!region_memory || !region_memory.send_resources_to) {
+    if (!region_memory || !region_memory.send_resources_to || (region_memory.send_resources_to.length == 0)) {
       return
     }
 
