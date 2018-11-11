@@ -3,7 +3,7 @@ enum MigrationResult {
   FAILED    = 'failed',
 }
 
-export function migrate(name: string) {
+export function migrate(name: string):void {
   if (!name || !migrations[name]) {
     console.log(`Migration.migrate missing name "${name}"`)
     return
@@ -22,7 +22,7 @@ export function migrate(name: string) {
     break
   }
 
-  if (index) {
+  if (index != undefined) {
     Memory.migrations.list.splice(index, 1)
   }
 
@@ -32,6 +32,11 @@ export function migrate(name: string) {
     name,
     status: result,
   })
+}
+
+export function list(): string[] {
+  const results: string[] = []
+  return results
 }
 
 const migrations: {[name: string]: () => MigrationResult} = {
