@@ -16,16 +16,15 @@ interface ManualMemory extends CreepMemory {
 enum ManualSquadTask {
   RESERVE   = 'reserve',   // target_room_names
   STEAL     = 'steal',     // target_room_name
-  DISMANTLE = 'dismantle', // target_room_name
+  DISMANTLE = 'dismantle', // target_room_name, target_ids
   SCOUT     = 'scout',     // target_room_names
 }
 
 interface ManualSquadMemory extends SquadMemory {
-  claimer_last_spawned?: number
-  dismantle_room_name?: string
   creeps_max?: number
   target_room_name?: string
   target_room_names?: string[]
+  target_ids?: string[]
   target_index?: number
   task?: string
   message?: string
@@ -65,6 +64,13 @@ export class ManualSquad extends Squad {
 
         case ManualSquadTask.SCOUT: {
           if (!squad_memory.target_room_names || (squad_memory.target_room_names.length == 0)) {
+            return SpawnPriority.NONE
+          }
+          return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+        }
+
+        case ManualSquadTask.DISMANTLE: {
+          if (!squad_memory.target_room_name || !squad_memory.target_ids || (squad_memory.target_ids.length == 0)) {
             return SpawnPriority.NONE
           }
           return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
@@ -198,6 +204,10 @@ export class ManualSquad extends Squad {
           return energy_available >= 50
         }
 
+        case ManualSquadTask.DISMANTLE: {
+          return energy_available >= 2000
+        }
+
         default:
           break
       }
@@ -247,6 +257,21 @@ export class ManualSquad extends Squad {
 
         case ManualSquadTask.SCOUT: {
           this.addGeneralCreep(spawn_func, [MOVE], CreepType.SCOUT)
+          return
+        }
+
+        case ManualSquadTask.DISMANTLE: {
+          const body: BodyPartConstant[] = [
+            MOVE, MOVE, MOVE, MOVE, MOVE,
+            MOVE, MOVE, MOVE, MOVE, MOVE,
+            MOVE, MOVE, MOVE, MOVE, MOVE,
+            WORK, WORK, WORK, WORK, WORK,
+            WORK, WORK, WORK, WORK, WORK,
+            WORK, WORK, WORK, WORK, WORK,
+            WORK, WORK, WORK, WORK, WORK,
+            MOVE, MOVE, MOVE, MOVE, MOVE,
+          ]
+          this.addGeneralCreep(spawn_func, body, CreepType.WORKER)
           return
         }
 
@@ -390,6 +415,11 @@ export class ManualSquad extends Squad {
 
         case ManualSquadTask.SCOUT: {
           this.runScoutTask(squad_memory)
+          return
+        }
+
+        case ManualSquadTask.DISMANTLE: {
+          this.runDismantleTask(squad_memory)
           return
         }
 
@@ -670,6 +700,56 @@ export class ManualSquad extends Squad {
       }
 
       creep.moveToRoom(target_room_name)
+    })
+  }
+
+  private runDismantleTask(squad_memory: ManualSquadMemory): void {
+    if (!squad_memory.target_room_name || !squad_memory.target_ids) {
+      this.say(`ERR`)
+      return
+    }
+
+    const target_room_name = squad_memory.target_room_name
+    const target_room = Game.rooms[target_room_name]
+
+    const target_ids = squad_memory.target_ids
+    let target: Structure | undefined
+
+    if (target_room && target_ids) {
+      for (const id of target_ids) {
+        target = Game.getObjectById(id) as Structure | undefined
+
+        if (target) {
+          break
+        }
+
+        const index = target_ids.indexOf(id)
+        if (index >= 0) {
+          target_ids.splice(index, 1)
+        }
+      }
+    }
+
+    this.creeps.forEach(creep=> {
+      if (creep.spawning) {
+        return
+      }
+
+      if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+        return
+      }
+
+      if (!target) {
+        creep.say(`DONE`)
+        return
+      }
+
+      if (creep.pos.isNearTo(target)) {
+        creep.dismantle(target)
+      }
+      else {
+        creep.moveTo(target)
+      }
     })
   }
 
