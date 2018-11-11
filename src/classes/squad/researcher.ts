@@ -25,7 +25,7 @@ export class ResearcherSquad extends Squad {
     return controller.level >= 6
   }
 
-  constructor(readonly name: string, readonly room_name: string, readonly input_targets: ResearchTarget[], readonly output_targets: ResearchTarget[], readonly boosts: {[id: string]: ResourceConstant}) {
+  constructor(readonly name: string, readonly room_name: string, readonly input_targets: ResearchTarget[], readonly output_targets: ResearchTarget[], readonly opts: {stop?: boolean}) {
     super(name)
 
     const room = Game.rooms[this.room_name]
@@ -143,7 +143,6 @@ export class ResearcherSquad extends Squad {
         return
       }
 
-
       if (creep.room.name != this.room_name) {
         creep.moveToRoom(this.room_name)
         return
@@ -171,7 +170,12 @@ export class ResearcherSquad extends Squad {
         creep.memory.status = CreepStatus.HARVEST
       }
 
-      this.chargeLabs(creep)
+      if (this.opts.stop) {
+        this.retrieveFromLabs(creep)
+      }
+      else {
+        this.chargeLabs(creep)
+      }
     })
   }
 
@@ -403,6 +407,68 @@ export class ResearcherSquad extends Squad {
 
       // console.log(`ResearchSquad.chargeLabs nothing to do ${this.name}, inputs: ${this.input_targets.map(t=>t.resource_type)}, outputs: ${this.output_targets.map(t=>t.resource_type)}`)
       // creep.say(`😴`)
+    }
+  }
+
+  private retrieveFromLabs(creep: Creep): void {
+    if (_.sum(creep.carry) > 0) {
+      if (creep.moveToRoom(this.room_name) == ActionResult.IN_PROGRESS) {
+        return
+      }
+
+      let target: StructureTerminal | StructureStorage | undefined
+      target = creep.room.terminal
+      if (!target) {
+        target = creep.room.storage
+      }
+
+      if (!target) {
+        return
+      }
+
+      if (creep.pos.isNearTo(target)) {
+        creep.transferResources(target)
+      }
+      else {
+        creep.moveTo(target)
+      }
+    }
+    else {
+      const labs: StructureLab[] = []
+
+      let targets: ResearchTarget[] = []
+      targets = targets.concat(this.input_targets)
+      targets = targets.concat(this.output_targets)
+
+      this.input_targets.forEach(target => {
+        const lab = Game.getObjectById(target.id) as StructureLab | undefined
+        if (!lab) {
+          return
+        }
+        if (lab.mineralAmount == 0) {
+          return
+        }
+        labs.push(lab)
+      })
+
+      if (labs.length == 0) {
+        creep.say(`DONE`)
+        return
+      }
+
+      const target = creep.pos.findClosestByPath(labs)
+
+      if (!target || !target.mineralType) {
+        creep.say(`ERR`)
+        return
+      }
+
+      if (creep.pos.isNearTo(target)) {
+        creep.withdraw(target, target.mineralType)
+      }
+      else {
+        creep.moveTo(target)
+      }
     }
   }
 }

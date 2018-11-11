@@ -712,7 +712,11 @@ export class Region {
           }
           case SquadType.RESEARCHER: {
             if (ResearcherSquad.need_instantiation(squad_memory, this.controller)) {
-              const squad = new ResearcherSquad(squad_memory.name, this.room.name, research_input_targets, research_output_targets, {})
+              const opts = {
+                stop: region_memory.status == RegionStatus.ABOUT_TO_UNCLAIM,
+              }
+
+              const squad = new ResearcherSquad(squad_memory.name, this.room.name, research_input_targets, research_output_targets, opts)
               this.squads.set(squad.name, squad)
             }
             else {
