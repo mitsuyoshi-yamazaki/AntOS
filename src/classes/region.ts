@@ -22,7 +22,7 @@ import { SwarmSquad } from "./squad/swarm";
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { HarasserSquad } from "./squad/harasser";
 
-enum RegionStatus {
+export enum RegionStatus {
   NORMAL              = 'normal',             // normal
   WAYPOINT            = 'waypoint',           // waypoint room, not permanent
   NOT_OWNED           = 'not_owned',          // the controller is not mine but RegionMemory remains

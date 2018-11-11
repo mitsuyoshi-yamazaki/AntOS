@@ -1,4 +1,5 @@
 import { leveled_colored_text, ColorLevel } from "./utils";
+import { RegionStatus } from "./region";
 
 
 export enum MigrationResult {
@@ -31,7 +32,9 @@ export function migrate(name: string): MigrationResult {
     status = 'rerun'
   }
 
-  console.log(`Migration ${status} ${name}`)
+  const boundary = leveled_colored_text('----------', 'warn')
+
+  console.log(`Migration ${status} ${name}\n\n${boundary}`)
   const result = migrations[name]()
 
   Memory.migrations.list.push({
@@ -40,7 +43,7 @@ export function migrate(name: string): MigrationResult {
   })
 
   const color_level: ColorLevel = (result == MigrationResult.DONE) ? 'almost' : 'critical'
-  console.log(`Migration ${name} ${leveled_colored_text(result, color_level)}`)
+  console.log(`\n\n${boundary}\nMigration ${name} ${leveled_colored_text(result, color_level)}`)
 
   console.log(`List:\n${list().map(s=> s + '\n')}`)
 
@@ -64,11 +67,27 @@ const migrations: {[name: string]: () => MigrationResult} = {
 
 function add_status_to_region_memory(): MigrationResult {
 
-  // for (const region_name of Object.keys(Memory.regions)) {
-  //   const region_memory = Memory.regions[region_name]
+  for (const region_name of Object.keys(Memory.regions)) {
+    const region_memory = Memory.regions[region_name]
 
+    const room = Game.rooms[region_name]
+    if (!room) {
+      console.log(`- [${region_name}]:\t${leveled_colored_text('room not found', 'error')}`)
+      continue
+    }
 
-  // }
+    if (!room.controller || !room.controller.my) {
+      console.log(`- [${region_name}]:\t${leveled_colored_text('room not owned', 'error')}`)
+      continue
+    }
 
-  return MigrationResult.FAILED
+    if (region_memory.status == undefined) {
+      region_memory.status = RegionStatus.NORMAL
+      console.log(`- [${region_name}]:\t${leveled_colored_text('set "normal" status', 'info')}`)
+      continue
+    }
+    console.log(`- [${region_name}]:\t${leveled_colored_text('nothing to do', 'info')} (${region_memory.status})`)
+  }
+
+  return MigrationResult.DONE
 }
