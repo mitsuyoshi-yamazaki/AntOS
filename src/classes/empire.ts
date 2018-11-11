@@ -70,6 +70,11 @@ export class Empire {
       if (!room || !room.controller || !room.controller.my) {
         continue
       }
+
+      if (room.memory && room.memory.is_gcl_farm) {
+        continue
+      }
+
       owned_controllers.push(room.controller)
     }
 
@@ -90,7 +95,7 @@ export class Empire {
     }} = {}
 
     if ((Game.time % 10) == 1) {
-      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
+      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}, ${Game.gcl.level - number_of_gcl_farms - owned_controllers.length}, ${owned_controllers.length}`)
     }
 
     for (const next_room of empire_memory.next_rooms) {
@@ -259,10 +264,6 @@ export class Empire {
     // --- Regions
     for (const controller of owned_controllers) {
       const room = controller.room
-      const room_memory = Memory.rooms[room.name]
-      if (room_memory && room_memory.is_gcl_farm) {
-        continue
-      }
 
       const opt: RegionOpt = {
         produce_attacker: (attacker_room_names.indexOf(room.name) >= 0),

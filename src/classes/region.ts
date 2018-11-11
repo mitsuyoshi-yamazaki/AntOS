@@ -1316,7 +1316,7 @@ export class Region {
 
         if (to_room && (!to_room.terminal || ((_.sum(to_room.terminal.store) > (to_room.terminal.storeCapacity - capacity))))) {
           const message = `Terminal ${to_room.name} is full ${this.room.name} ${resource_type}`
-          console.log(message)
+          // console.log(message)
 
           if (resource_type != RESOURCE_ENERGY) {
             // Game.notify(message)
@@ -1326,7 +1326,7 @@ export class Region {
 
         if (to_room && (!to_room.storage || ((_.sum(to_room.storage.store) > (to_room.storage.storeCapacity - (capacity * 3)))))) {
           const message = `Storage ${to_room.name} is full ${this.room.name} ${resource_type}`
-          console.log(message)
+          // console.log(message)
 
           if (resource_type != RESOURCE_ENERGY) {
             // Game.notify(message)
