@@ -58,6 +58,9 @@ declare global {
       migrate: (name: string, opts?:{dry_run?: boolean}) => Migration.MigrationResult
       list: () => string[]
     }
+
+    // Claim
+    claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void
   }
 
   interface Memory {
@@ -1112,6 +1115,29 @@ export function tick(): void {
   }
 
   Game.migration = Migration
+
+  Game.claim_next_room = function(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void {
+    opts = opts || {}
+
+    const empire_memory = Memory.empires['Mitsuyoshi']
+    if (!empire_memory) {
+      console.log(`Game.claim_next_room no empire memory`)
+      return
+    }
+
+    empire_memory.next_rooms.push({
+      target_room_name: target_room,
+      base_room_name: base_room,
+      forced: true,
+      delegate_until: opts.delegate_until || 6,
+      layout: {
+        name: opts.layout_name || 'mark05',
+        pos: layout_pos,
+      },
+      step_rooms: [],
+    })
+  }
+
 
   // --- CostMatrix
   PathFinder.CostMatrix.prototype.add_terrain = function(room: Room): void {

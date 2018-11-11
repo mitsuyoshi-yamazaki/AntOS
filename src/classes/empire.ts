@@ -89,6 +89,10 @@ export class Empire {
       layout: {name: string, pos: {x: number, y: number}},
     }} = {}
 
+    if ((Game.time % 10) == 1) {
+      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
+    }
+
     for (const next_room of empire_memory.next_rooms) {
       if (number_of_claimable_rooms <= 0) {
         break
