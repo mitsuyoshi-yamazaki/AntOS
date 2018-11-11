@@ -124,6 +124,8 @@ declare global {
   }
 }
 
+export let move_called = 0
+
 export function init() {
   // Creep.prototype._say = Creep.prototype.say
 
@@ -142,6 +144,12 @@ export function init() {
   // }
 
   // Creep.prototype.moveTo = function(target: RoomPosition|{pos: RoomPosition}, opts?: MoveToOpts): 0 | -1 | -2 | -4 | -7 | -11 | -12 {
+  //   return OK
+  // }
+
+  move_called = 0
+  // Creep.prototype.move = function(direction: DirectionConstant): CreepMoveReturnCode {
+  //   move_called += 1
   //   return OK
   // }
 

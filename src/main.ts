@@ -3,6 +3,7 @@ import { ErrorMapper } from "utils/ErrorMapper"
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"
 import { leveled_colored_text } from './classes/utils'
+import { move_called } from "classes/creep";
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -119,17 +120,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }, `Show costmatrix ${room_name}`)()
   }
 
-  const all_cpu = Math.ceil(Game.cpu.getUsed())
-  Memory.cpu_usages.push(all_cpu)
-
-  if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
-    Memory.debug.cpu.show_usage = false
-  }
-
-  // console.log(`HOGE ${before_cpu} : ${after_cpu1} : ${after_cpu2} , all: ${all_cpu}`)
-
-  // console.log(`HOGE ${sellOrders(RESOURCE_HYDROGEN, 0.16).map(o=>[o.price])}`)
-
   if ((Game.time % 47) == 13) {
     ErrorMapper.wrapLoop(() => {
       const credit = Game.market.credits
@@ -147,6 +137,15 @@ export const loop = ErrorMapper.wrapLoop(() => {
         Game.notify(message)
       }
     }, `Notify credit | cpu`)()
+  }
+
+  // console.log(`move()/Creeps: ${move_called}/${Object.keys(Game.creeps).length}`)
+
+  const all_cpu = Math.ceil(Game.cpu.getUsed())
+  Memory.cpu_usages.push(all_cpu)
+
+  if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
+    Memory.debug.cpu.show_usage = false
   }
 }, `Main`)
 
@@ -533,6 +532,35 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
     return 0
   })
 }
+
+/**
+ * normal CPU: 220~230
+ * without move() call: 170~180 -> move() consumes 50 CPU
+ *
+[2:08:38 PM][shard2]Initializer.init() v2.66.2 at 10921743
+[2:08:38 PM][shard2]move()/Creeps: 215/558
+[2:08:41 PM][shard2]move()/Creeps: 230/558
+[2:08:44 PM][shard2]move()/Creeps: 233/558
+[2:08:47 PM][shard2]move()/Creeps: 251/558
+[2:08:51 PM][shard2]W43S7 is attacked!! W44S7 (W43S7)
+[2:08:51 PM][shard2]W44S3 is attacked!! W45S3 (W44S3)
+[2:08:51 PM][shard2]move()/Creeps: 242/558
+[2:08:55 PM][shard2]move()/Creeps: 237/558
+[2:08:57 PM][shard2]move()/Creeps: 246/558
+[2:09:00 PM][shard2]move()/Creeps: 242/559
+[2:09:04 PM][shard2]Main creeps GC at 10921751
+[2:09:04 PM][shard2]move()/Creeps: 250/559
+[2:09:07 PM][shard2]move()/Creeps: 249/560
+[2:09:11 PM][shard2]move()/Creeps: 256/560
+[2:09:14 PM][shard2]move()/Creeps: 255/560
+[2:09:17 PM][shard2]move()/Creeps: 259/561
+[2:09:21 PM][shard2]move()/Creeps: 256/561
+[2:09:24 PM][shard2]move()/Creeps: 273/562
+[2:09:27 PM][shard2]move()/Creeps: 264/562
+[2:09:30 PM][shard2]move()/Creeps: 266/562
+
+ *
+ */
 
 /**
  * @todo:
