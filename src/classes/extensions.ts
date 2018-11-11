@@ -55,7 +55,7 @@ declare global {
 
     // Migration
     migration: {
-      migrate: (name: string) => void
+      migrate: (name: string) => Migration.MigrationResult
       list: () => string[]
     }
   }

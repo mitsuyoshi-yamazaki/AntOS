@@ -1,15 +1,15 @@
 import { leveled_colored_text, ColorLevel } from "./utils";
 
 
-enum MigrationResult {
+export enum MigrationResult {
   DONE      = 'done',
   FAILED    = 'failed',
 }
 
-export function migrate(name: string):void {
+export function migrate(name: string): MigrationResult {
   if (!name || !migrations[name]) {
     console.log(`Migration.migrate missing name "${name}"`)
-    return
+    return MigrationResult.FAILED
   }
 
   let index: number | undefined
@@ -43,6 +43,8 @@ export function migrate(name: string):void {
   console.log(`Migration ${name} ${leveled_colored_text(result, color_level)}`)
 
   console.log(`List:\n${list().map(s=> s + '\n')}`)
+
+  return result
 }
 
 export function list(): string[] {
