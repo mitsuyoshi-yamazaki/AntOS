@@ -440,7 +440,7 @@ export class ResearcherSquad extends Squad {
       targets = targets.concat(this.input_targets)
       targets = targets.concat(this.output_targets)
 
-      this.input_targets.forEach(target => {
+      targets.forEach(target => {
         const lab = Game.getObjectById(target.id) as StructureLab | undefined
         if (!lab) {
           return
