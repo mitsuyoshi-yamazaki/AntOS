@@ -95,7 +95,7 @@ export class Empire {
     }} = {}
 
     if ((Game.time % 10) == 1) {
-      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}, ${Game.gcl.level - number_of_gcl_farms - owned_controllers.length}, ${owned_controllers.length}`)
+      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
     }
 
     for (const next_room of empire_memory.next_rooms) {

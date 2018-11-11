@@ -581,7 +581,6 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
    * little sub layout that only conatins extensions
  * Unclaim:
    * send all resources (Region.sendResourcesTo())
-   * remove squad memories
    * remove region memory
  * Others:
    * ManualSquadTask.scout signController
