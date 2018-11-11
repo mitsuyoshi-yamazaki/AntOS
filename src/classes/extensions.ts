@@ -55,7 +55,7 @@ declare global {
 
     // Migration
     migration: {
-      migrate: (name: string) => Migration.MigrationResult
+      migrate: (name: string, opts?:{dry_run?: boolean}) => Migration.MigrationResult
       list: () => string[]
     }
   }

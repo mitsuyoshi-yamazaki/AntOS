@@ -7,7 +7,10 @@ export enum MigrationResult {
   FAILED    = 'failed',
 }
 
-export function migrate(name: string): MigrationResult {
+export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResult {
+  opts = opts || {}
+  const dry_run = !(opts.dry_run == false)
+
   if (!name || !migrations[name]) {
     console.log(`Migration.migrate missing name "${name}"`)
     return MigrationResult.FAILED
@@ -33,9 +36,10 @@ export function migrate(name: string): MigrationResult {
   }
 
   const boundary = leveled_colored_text('----------', 'warn')
+  const dry_run_desc = dry_run ? `(${leveled_colored_text('DRY_RUN', 'critical')})` : ''
 
-  console.log(`Migration ${status} ${name}\n\n${boundary}`)
-  const result = migrations[name]()
+  console.log(`Migration ${dry_run_desc} ${status} ${name}\n\n${boundary}`)
+  const result = migrations[name](opts)
 
   Memory.migrations.list.push({
     name,
@@ -45,7 +49,7 @@ export function migrate(name: string): MigrationResult {
   const color_level: ColorLevel = (result == MigrationResult.DONE) ? 'almost' : 'critical'
   console.log(`\n\n${boundary}\nMigration ${name} ${leveled_colored_text(result, color_level)}`)
 
-  console.log(`List:\n${list().map(s=> s + '\n')}`)
+  console.log(`\nList:\n${list().map(s=> s + '\n')}`)
 
   return result
 }
@@ -61,11 +65,26 @@ export function list(): string[] {
 }
 
 // ---- Migrations
-const migrations: {[name: string]: () => MigrationResult} = {
+const migrations: {[name: string]: (opts?:{dry_run?: boolean}) => MigrationResult} = {
+  remove_unused_region_memory,
   add_status_to_region_memory,
 }
 
-function add_status_to_region_memory(): MigrationResult {
+function remove_unused_region_memory(opts?:{dry_run?: boolean}): MigrationResult {
+  opts = opts || {}
+  const dry_run = !(opts.dry_run == false)
+
+  for (const region_name of Object.keys(Memory.regions)) {
+    const region_memory = Memory.regions[region_name]
+
+  }
+
+  return MigrationResult.FAILED
+}
+
+function add_status_to_region_memory(opts?:{dry_run?: boolean}): MigrationResult {
+  opts = opts || {}
+  const dry_run = !(opts.dry_run == false)
 
   for (const region_name of Object.keys(Memory.regions)) {
     const region_memory = Memory.regions[region_name]
@@ -82,7 +101,9 @@ function add_status_to_region_memory(): MigrationResult {
     }
 
     if (region_memory.status == undefined) {
-      region_memory.status = RegionStatus.NORMAL
+      if (!dry_run) {
+        region_memory.status = RegionStatus.NORMAL
+      }
       console.log(`- [${region_name}]:\t${leveled_colored_text('set "normal" status', 'info')}`)
       continue
     }
