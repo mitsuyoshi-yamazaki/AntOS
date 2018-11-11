@@ -1,3 +1,6 @@
+import { leveled_colored_text, ColorLevel } from "./utils";
+
+
 enum MigrationResult {
   DONE      = 'done',
   FAILED    = 'failed',
@@ -10,6 +13,7 @@ export function migrate(name: string):void {
   }
 
   let index: number | undefined
+  let status: string = 'run'
 
   for (const i in Memory.migrations.list) {
     const migration = Memory.migrations.list[i]
@@ -24,8 +28,10 @@ export function migrate(name: string):void {
 
   if (index != undefined) {
     Memory.migrations.list.splice(index, 1)
+    status = 'rerun'
   }
 
+  console.log(`Migration ${status} ${name}`)
   const result = migrations[name]()
 
   Memory.migrations.list.push({
@@ -33,7 +39,10 @@ export function migrate(name: string):void {
     status: result,
   })
 
-  console.log(`Result:\n${list().map(s=> s + '\n')}`)
+  const color_level: ColorLevel = (result == MigrationResult.DONE) ? 'almost' : 'critical'
+  console.log(`Migration ${name} ${leveled_colored_text(result, color_level)}`)
+
+  console.log(`List:\n${list().map(s=> s + '\n')}`)
 }
 
 export function list(): string[] {
@@ -46,12 +55,18 @@ export function list(): string[] {
   return results.reverse()
 }
 
+// ---- Migrations
 const migrations: {[name: string]: () => MigrationResult} = {
   add_status_to_region_memory,
 }
 
 function add_status_to_region_memory(): MigrationResult {
-  console.log(`Migration.add_status_to_region_memory`)
+
+  // for (const region_name of Object.keys(Memory.regions)) {
+  //   const region_memory = Memory.regions[region_name]
+
+
+  // }
 
   return MigrationResult.FAILED
 }
