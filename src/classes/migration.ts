@@ -1,8 +1,9 @@
-import { leveled_colored_text, ColorLevel } from "./utils";
+import { leveled_colored_text, ColorLevel, room_link } from "./utils";
 import { RegionStatus } from "./region";
 
 
 export enum MigrationResult {
+  PREPARED  = 'prepared',
   DONE      = 'done',
   FAILED    = 'failed',
 }
@@ -12,7 +13,7 @@ export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResul
   const dry_run = !(opts.dry_run == false)
 
   if (!name || !migrations[name]) {
-    console.log(`Migration.migrate missing name "${name}"`)
+    console.log(`\nMigration.migrate missing name "${name}"`)
     return MigrationResult.FAILED
   }
 
@@ -38,7 +39,7 @@ export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResul
   const boundary = leveled_colored_text('----------', 'warn')
   const dry_run_desc = dry_run ? `(${leveled_colored_text('DRY_RUN', 'critical')})` : ''
 
-  console.log(`Migration ${dry_run_desc} ${status} ${name}\n\n${boundary}`)
+  console.log(`\nMigration ${dry_run_desc} ${status} ${name}\n\n${boundary}`)
   const result = migrations[name](opts)
 
   Memory.migrations.list.push({
@@ -49,7 +50,7 @@ export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResul
   const color_level: ColorLevel = (result == MigrationResult.DONE) ? 'almost' : 'critical'
   console.log(`\n\n${boundary}\nMigration ${name} ${leveled_colored_text(result, color_level)}`)
 
-  console.log(`\nList:\n${list().map(s=> s + '\n')}`)
+  console.log(`\nList:${list().map(s=> '\n' + s)}\n`)
 
   return result
 }
@@ -74,12 +75,39 @@ function remove_unused_region_memory(opts?:{dry_run?: boolean}): MigrationResult
   opts = opts || {}
   const dry_run = !(opts.dry_run == false)
 
-  for (const region_name of Object.keys(Memory.regions)) {
-    const region_memory = Memory.regions[region_name]
+  let number_of_regions = 0
+  let number_of_missing_regions = 0
 
+  for (const region_name of Object.keys(Memory.regions)) {
+    const room = Game.rooms[region_name]
+    if (room) {
+      if (room.controller && room.controller.my) {
+        console.log(`- [${room_link(region_name)}]:\t${leveled_colored_text('ok', 'info')}`)
+        number_of_regions += 1
+        continue
+      }
+      else {
+        // has room but no controller
+        console.log(`- [${room_link(region_name)}]:\t${leveled_colored_text('not owned', 'error')}`)
+      }
+    }
+    else {
+      // room not visible
+      console.log(`- [${room_link(region_name)}]:\t${leveled_colored_text('room not visible', 'error')}`)
+    }
+
+    number_of_missing_regions += 1
+    if (!dry_run) {
+      delete Memory.regions[region_name]
+    }
   }
 
-  return MigrationResult.FAILED
+  console.log(`\nAvailable region: ${number_of_regions},\tUnavailable regions: ${number_of_missing_regions}`)
+
+  if (dry_run) {
+    return MigrationResult.PREPARED
+  }
+  return MigrationResult.DONE
 }
 
 function add_status_to_region_memory(opts?:{dry_run?: boolean}): MigrationResult {
@@ -110,5 +138,8 @@ function add_status_to_region_memory(opts?:{dry_run?: boolean}): MigrationResult
     console.log(`- [${region_name}]:\t${leveled_colored_text('nothing to do', 'info')} (${region_memory.status})`)
   }
 
+  if (dry_run) {
+    return MigrationResult.PREPARED
+  }
   return MigrationResult.DONE
 }
