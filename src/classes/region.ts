@@ -1105,7 +1105,7 @@ export class Region {
           if (c.moveToRoom(room_name) == ActionResult.IN_PROGRESS) {
             return
           }
-          c.moveTo(26, 11)
+          c.moveTo(new RoomPosition(25, 25, c.room.name), {maxRooms: 1})
         })
       }
     }, `${this.name}.findNuke`)()

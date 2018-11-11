@@ -543,6 +543,8 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
    * balancer
  * Automation:
    * auto mineral harvester
+ * Problem Solver
+   * allow code to store info that they think important: emergence robo speak
  * Claim & Layout:
    * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
    * rotate room layout
