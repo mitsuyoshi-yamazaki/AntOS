@@ -116,6 +116,7 @@ export class Region {
         charger_position: null,
         room_need_scout: [],
         rooms_need_to_be_defended: [],
+        attacker_waiting_pos: {x:25, y:25},
         observe_target: null,
         observe_index: 0,
         excluded_walls: [],
