@@ -68,7 +68,7 @@ declare global {
     cpu_usages: number[]
     trading: {stop: boolean}
     migrations: {
-      list: {[name: string]: 'prepared' | 'done' | 'failed'}
+      list: {name: string, status: 'prepared' | 'done' | 'failed'}[]
     }
     debug: {
       show_visuals: string | null,
