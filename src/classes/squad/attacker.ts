@@ -195,75 +195,17 @@ export class AttackerSquad extends Squad {
 
       if (!this.destination_room_name) {
         if (attacker.moveToRoom(this.base_room.name) == ActionResult.DONE) {
-          switch (attacker.room.name) {
-            case 'W38S6':
-              attacker.moveTo(7, 28)
-              break
 
-            case 'W51S29':
-              attacker.moveTo(9, 30)
-              break
+          const region_memory = Memory.regions[this.base_room.name]
+          let x = 25, y = 25
 
-            case 'W44S7':
-              attacker.moveTo(26, 37)
-              break
+          if (region_memory && region_memory.attacker_waiting_pos) {  // @todo: set this attribute using LAYOUT_MARK_ATTACKER
+            x = region_memory.attacker_waiting_pos.x
+            y = region_memory.attacker_waiting_pos.y
+          }
 
-            case 'W48S6':
-              attacker.moveTo(24, 28)
-              break
-
-            case 'W43S5':
-              attacker.moveTo(19, 20)
-              break
-
-            case 'W47S6':
-              attacker.moveTo(25, 25)
-              break
-
-            case 'W45S27':
-              attacker.moveTo(18, 28)
-              break
-
-            case 'W45S3':
-              attacker.moveTo(30, 33)
-              break
-
-            case 'W47S9':
-              attacker.moveTo(42, 6)
-              break
-
-            case 'W46S3':
-              attacker.moveTo(37, 47)
-              break
-
-            case 'E16N37':
-              attacker.moveTo(13, 29)
-              break
-
-            case 'W56S7':
-              attacker.moveTo(8, 3)
-              break
-
-            case 'W55S23':
-              attacker.moveTo(10, 47)
-              break
-
-            case 'W54S7':
-              attacker.moveTo(38, 22)
-              break
-
-            case 'W53S5':
-              attacker.moveTo(4, 19)
-              break
-
-            case 'W55S47':
-              attacker.moveTo(31, 20)
-              break
-
-            default:
-              attacker.moveTo(25, 25)
-              // console.log(`Attacker unexpected waiting room ${attacker.room}, ${attacker.name}, ${this.name}`)
-              break
+          if ((attacker.pos.x != x) || (attacker.pos.y != y)) {
+            attacker.moveTo(new RoomPosition(x, y, this.base_room.name))
           }
         }
         return

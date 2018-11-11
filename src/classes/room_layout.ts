@@ -47,6 +47,9 @@ const LAYOUT_MARK_NUKER  = 'n'
 type LayoutMarkExtension     = 'x'
 const LAYOUT_MARK_EXTENSION  = 'x'
 
+type LayoutMarkAttacker     = 'a' // RegionMemory.attacker_waiting_pos
+const LAYOUT_MARK_ATTACKER  = 'a'
+
 type StructureMark = LayoutMarkStorage
   | LayoutMarkTerminal
   | LayoutMarkLink
@@ -62,6 +65,7 @@ type LayoutMark = StructureMark
   | LayoutMarkCenter
   | LayoutMarkSpare
   | LayoutMarkRoad
+  | LayoutMarkAttacker
 
 interface RoomLayoutAttributes {
 }

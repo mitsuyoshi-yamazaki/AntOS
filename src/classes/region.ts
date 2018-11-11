@@ -38,6 +38,7 @@ export interface RegionMemory {
   charger_position?: {x: number, y: number} | null
   room_need_scout?: string[]
   rooms_need_to_be_defended?: string[]
+  attacker_waiting_pos?: {x:number, y:number}
   observe_target?: string | null
   observe_index: number
   excluded_walls?: string[]
