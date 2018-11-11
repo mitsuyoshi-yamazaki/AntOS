@@ -7,22 +7,25 @@ enum State {
   EXPAND = "expand"
 }
 
+interface OnboardingInfo {
+  target_room_name: string
+  base_room_name: string
+  forced: boolean
+  delegate_until: number
+  layout: {name: string, pos: {x: number, y: number}}
+  step_rooms: {
+    // @todo:
+  }[]
+}
+
 export interface EmpireMemory {
   farm: {
     room: string | null
     energy_room: string | null
     boost_compound: string
   } | null
-  next_rooms: {
-    target_room_name: string
-    base_room_name: string
-    forced: boolean
-    delegate_until: number
-    layout: {name: string, pos: {x: number, y: number}}
-    step_rooms: {
-      // @todo:
-    }[]
-  }[]
+  next_rooms: OnboardingInfo[]
+  onboarding_rooms: {[base_room_name: string]: OnboardingInfo}
   whitelist: {
     use: boolean
     additional_players: string[]
@@ -49,6 +52,7 @@ export class Empire {
       Memory.empires[this.name] = {
         farm: null,
         next_rooms: [],
+        onboarding_rooms: {},
         whitelist: {
           use: false ,
           additional_players: [],
@@ -85,14 +89,7 @@ export class Empire {
 
     // --- Claim
     const number_of_gcl_farms = 1
-    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - owned_controllers.length, 0)
-
-    const claim_to: {[base_room_name: string]: {
-      target_room_name: string,
-      forced: boolean,
-      delegate_until: number,
-      layout: {name: string, pos: {x: number, y: number}},
-    }} = {}
+    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - Object.keys(empire_memory.onboarding_rooms).length - owned_controllers.length, 0)
 
     if ((Game.time % 10) == 1) {
       console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
@@ -102,9 +99,16 @@ export class Empire {
       if (number_of_claimable_rooms <= 0) {
         break
       }
-      claim_to[next_room.base_room_name] = next_room
 
-      number_of_claimable_rooms -= 1
+      empire_memory.onboarding_rooms[next_room.base_room_name] = next_room
+      console.log(`Empire set next room: ${next_room.base_room_name}`)
+
+      const index = empire_memory.next_rooms.indexOf(next_room)
+
+      if (index >= 0) {
+        empire_memory.next_rooms.splice(index, 0)
+        number_of_claimable_rooms -= 1
+      }
     }
 
     // --- GCL Farms
@@ -278,8 +282,8 @@ export class Empire {
           forced: false,
         }
       }
-      else if (claim_to[room.name]) {
-        opt.temp_squad_opt = claim_to[room.name]
+      else if (empire_memory.onboarding_rooms[room.name]) {
+        opt.temp_squad_opt = empire_memory.onboarding_rooms[room.name]
       }
 
       ErrorMapper.wrapLoop(() => {
@@ -288,8 +292,8 @@ export class Empire {
       }, `${room.name}.init`)()
     }
 
-    for (const room_name in claim_to) {
-      const info = claim_to[room_name]
+    for (const room_name in empire_memory.onboarding_rooms) {
+      const info = empire_memory.onboarding_rooms[room_name]
 
       this.setDelegate(room_name, info.target_room_name, {max_rcl: info.delegate_until})
     }
