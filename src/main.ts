@@ -573,16 +573,18 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
    * auto mineral harvester
  * Problem Solver
    * allow code to store info that they think important: emergence robo speak
+ * GCL farm:
+   * new layout for more upgraders
  * Claim & Layout:
    * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
    * rotate room layout
    * little sub layout that only conatins extensions
  * Unclaim:
-   * retrieve resources from lab
    * send all resources (Region.sendResourcesTo())
    * remove squad memories
    * remove region memory
  * Others:
+   * ManualSquadTask.scout signController
    * what's remote_attacker?
    * show invading info in Game.info()
    * 500k tower minimum storage fill if rcl < 8

@@ -13,6 +13,15 @@ export interface EmpireMemory {
     energy_room: string | null
     boost_compound: string
   } | null
+  next_rooms: {
+    target_room_name: string,
+    base_room_name: string,
+    forced: boolean,
+    origin_pos: {x: number, y: number} | null
+    step_rooms: {
+      // @todo:
+    }[]
+  }[]
   claim_to: {
     target_room_name: string,
     base_room_name: string,
@@ -46,6 +55,7 @@ export class Empire {
     if (!Memory.empires[this.name]) {
       Memory.empires[this.name] = {
         farm: null,
+        next_rooms: [],
         claim_to: null,
         whitelist: {
           use: false ,
