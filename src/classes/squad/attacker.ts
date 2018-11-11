@@ -178,23 +178,23 @@ export class AttackerSquad extends Squad {
   }
 
   public run(): void {
-    this.creeps.forEach((attacker) => {
-      if (attacker.spawning) {
+    this.creeps.forEach((creep) => {
+      if (creep.spawning) {
         return
       }
 
-      const target = attacker.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
+      const target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
         filter: (c: Creep) => {
           return Game.isEnemy(c)
         }
       })
       if (target) {
-        attacker.destroy(target)
+        creep.destroy(target)
         return
       }
 
       if (!this.destination_room_name) {
-        if (attacker.moveToRoom(this.base_room.name) == ActionResult.DONE) {
+        if (creep.moveToRoom(this.base_room.name) == ActionResult.DONE) {
 
           const region_memory = Memory.regions[this.base_room.name]
           let x = 25, y = 25
@@ -204,17 +204,17 @@ export class AttackerSquad extends Squad {
             y = region_memory.attacker_waiting_pos.y
           }
 
-          if ((attacker.pos.x != x) || (attacker.pos.y != y)) {
-            attacker.moveTo(new RoomPosition(x, y, this.base_room.name))
+          if ((creep.pos.x != x) || (creep.pos.y != y)) {
+            creep.moveTo(new RoomPosition(x, y, this.base_room.name))
           }
         }
         return
       }
 
-      attacker.searchAndDestroy()
+      creep.searchAndDestroy()
 
-      if (attacker.moveToRoom(this.destination_room_name) != ActionResult.DONE) {
-        attacker.say(this.destination_room_name)
+      if (creep.moveToRoom(this.destination_room_name) != ActionResult.DONE) {
+        creep.say(this.destination_room_name)
         return
       }
     })
