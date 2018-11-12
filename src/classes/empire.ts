@@ -68,6 +68,7 @@ export class Empire {
 
     // --- Owned Rooms
     const owned_controllers: StructureController[] = []
+    const owned_room_names: string[] = []
 
     for (const room_name in Game.rooms) {
       const room = Game.rooms[room_name]
@@ -79,6 +80,7 @@ export class Empire {
         continue
       }
 
+      owned_room_names.push(room.name)
       owned_controllers.push(room.controller)
     }
 
@@ -89,7 +91,12 @@ export class Empire {
 
     // --- Claim
     const number_of_gcl_farms = 1
-    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - Object.keys(empire_memory.onboarding_rooms).length - owned_controllers.length, 0)
+    const non_owned_onboarding_rooms = Object.keys(empire_memory.onboarding_rooms).filter(room_name=> {
+      const info = empire_memory.onboarding_rooms[room_name]
+      return owned_room_names.indexOf(info.target_room_name) < 0
+    })
+
+    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - non_owned_onboarding_rooms.length - owned_controllers.length, 0)
 
     if ((Game.time % 10) == 1) {
       console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
@@ -100,14 +107,16 @@ export class Empire {
         break
       }
 
-      empire_memory.onboarding_rooms[next_room.base_room_name] = next_room
-      console.log(`Empire set next room: ${next_room.base_room_name}`)
-
       const index = empire_memory.next_rooms.indexOf(next_room)
 
       if (index >= 0) {
+        // @todo: debug here
+        empire_memory.onboarding_rooms[next_room.base_room_name] = next_room
+        console.log(`Empire set next room: ${next_room.base_room_name}`)
+
         empire_memory.next_rooms.splice(index, 0)
         number_of_claimable_rooms -= 1
+        break
       }
     }
 
