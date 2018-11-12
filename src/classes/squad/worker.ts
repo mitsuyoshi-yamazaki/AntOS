@@ -37,22 +37,9 @@ export class WorkerSquad extends Squad {
     if (squad_memory.number_of_workers) {
       this.number_of_workers = squad_memory.number_of_workers
     }
-    else if (room_name == 'W51S29') {
-      this.number_of_workers = 3
-    }
-    else if (room_name == 'W48S6') {
-      this.number_of_workers = 2
-    }
-    else if (room_name == 'W43S5') {
-      this.number_of_workers = 3
-    }
     else {
       this.number_of_workers = 8
     }
-
-    // if ((room_name == 'W49S6') && this.room.controller && (this.room.controller.level >= 4)) {
-    //   this.number_of_workers = 3
-    // }
   }
 
   public get type(): SquadType {
