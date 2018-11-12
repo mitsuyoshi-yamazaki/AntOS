@@ -299,16 +299,11 @@ export class TempSquad extends Squad {
       Game.notify(message)
     }
 
-    // if (creep.room.name == 'W56S7') {
-    //   const farmer_room = Game.rooms['W49S6']
-    //   if (farmer_room && farmer_room.controller && farmer_room.controller.my) {
-    //     farmer_room.controller.unclaim()
-    //   }
-    // }
-
     const target_room = Game.rooms[this.target_room_name]
 
-    if (creep.claim(target_room_name, true) == ActionResult.DONE) {
+    if (!creep.memory.stop && (creep.claim(target_room_name, true) == ActionResult.DONE)) {
+      creep.memory.stop = true
+
       if (!Memory.rooms[target_room_name]) {
         Memory.rooms[target_room_name] = {
           harvesting_source_ids: [],
