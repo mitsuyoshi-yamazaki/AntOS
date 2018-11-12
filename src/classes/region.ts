@@ -1828,24 +1828,13 @@ export class Region {
     const room_memory = Memory.rooms[this.room.name]
 
     const ancestor = region_memory.ancestor || 'unknown'
-    let pos: {x: number, y: number} = {x: 1, y: 1}
-
-    switch(this.room.name) {
-
-      case 'W44S7':
-        pos = {x: 25, y: 1}
-        break
-
-      case 'W43S5':
-        pos = {x: 25, y: 25}
-        break
-
-      default:
-        break
-    }
+    let pos: {x: number, y: number}
 
     if (room_memory && room_memory.description_position) {
       pos = room_memory.description_position
+    }
+    else {
+      pos = {x: 1, y: 1}
     }
 
     let lines: string[] = [
