@@ -13,6 +13,7 @@ console.log(`Initialize cost_matrixes`)
 
 declare global {
   interface Game {
+    user: {name: 'Mitsuyoshi'}
     version: string
     reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
     squad_creeps: {[squad_name: string]: Creep[]}
@@ -104,6 +105,10 @@ export function init() {
 }
 
 export function tick(): void {
+  Game.user = {
+    name: 'Mitsuyoshi',
+  }
+
   Game.check_resources = (resource_type: ResourceConstant) => {
     let resources: {[room_name: string]: number} = {}
 

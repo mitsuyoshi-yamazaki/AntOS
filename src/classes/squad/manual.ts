@@ -28,6 +28,7 @@ interface ManualSquadMemory extends SquadMemory {
   target_index?: number
   task?: string
   message?: string
+  sign?: string
 }
 
 type MineralContainer = StructureTerminal | StructureStorage | StructureContainer
@@ -699,7 +700,25 @@ export class ManualSquad extends Squad {
         return
       }
 
-      creep.moveToRoom(target_room_name)
+      if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+        return
+      }
+
+      const controller = creep.room.controller
+
+      if (squad_memory.sign && controller && controller.sign && (controller.sign.username != Game.user.name)) {
+        if (creep.pos.isNearTo(controller)) {
+          if (creep.signController(controller, squad_memory.sign) == OK) {
+            const x = (creep.pos.x - controller.pos.x) + creep.pos.x
+            const y = (creep.pos.y - controller.pos.y) + creep.pos.y
+
+            creep.moveTo(new RoomPosition(x, y, creep.room.name))
+          }
+        }
+        else {
+          creep.moveTo(controller)
+        }
+      }
     })
   }
 
