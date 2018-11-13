@@ -362,6 +362,7 @@ export function tick(): void {
 
       // --- Place flags
       const time = Game.time
+      let construction_site_placed = false
 
       road_positions.forEach((pos) => {
         const r = Game.rooms[pos.roomName]
@@ -370,6 +371,12 @@ export function tick(): void {
         }
         if (no_flags_in_base && (pos.roomName == owner_room_name)) {
           return
+        }
+
+        if (!construction_site_placed && (pos.roomName == room.name)) {
+          if (room.createConstructionSite(pos, STRUCTURE_ROAD) == OK) {
+            construction_site_placed = true
+          }
         }
 
         const name = UID(`Flag${time}`)
