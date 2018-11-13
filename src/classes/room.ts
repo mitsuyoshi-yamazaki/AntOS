@@ -404,6 +404,7 @@ export function tick(): void {
       })
 
       const carrier_max = Object.keys(sources).length + 1 // not supported for further than 1 room
+      const room_contains_construction_sites = opts.memory_only ? [] : [room.name]
 
       const squad_memory: RemoteHarvesterSquadMemory = {
         name: harvester_squad_name,
@@ -413,7 +414,7 @@ export function tick(): void {
         stop_spawming: true,
         room_name: room.name,
         sources,
-        room_contains_construction_sites: [],
+        room_contains_construction_sites,
         carrier_max,
         need_attacker: room.is_keeperroom,
         builder_max: room.is_keeperroom ? 5 : 3,
