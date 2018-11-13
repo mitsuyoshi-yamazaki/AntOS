@@ -29,7 +29,7 @@ export class HarvesterSquad extends Squad {
     const is_alive = (this.energy_capacity > 300)
 
     if (!this.destination && (this.energy_capacity >= 550) && is_alive) {
-      if (((Game.time + 3) % 7) == 0) {
+      if ((Game.time % 31) == 1) {
         console.log(`HarvesterSquad destination not specified ${this.name}`)
       }
     }
