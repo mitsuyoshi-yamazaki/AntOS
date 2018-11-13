@@ -1,7 +1,7 @@
 import { SquadType } from "./squad/squad"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
-import { UID, room_history_link, room_link, leveled_colored_text } from './utils';
+import { UID, room_history_link, room_link, leveled_colored_text, getSectorName } from './utils';
 import { RemoteMineralHarvesterSquadMemory } from "./squad/remote_m_harvester";
 import { ErrorMapper } from "utils/ErrorMapper";
 
@@ -264,23 +264,16 @@ export function tick(): void {
       return room._sector
     }
 
-    const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room.name)
-    if (!parsed || (parsed.length < 5)) {
-      const message = `Room.sector failed to parse room name ${parsed}, ${room.name}`
+    const sector_name = getSectorName(room.name)
+
+    if (!sector_name) {
+      const message = `Room.sector failed to parse room name ${room.name}`
       console.log(message)
       Game.notify(message)
       return 'W0S0'
     }
 
-    const h_direction = parsed[1] as string
-    const h_position = Number(parsed[2])
-    const v_direction = parsed[3] as string
-    const v_position = Number(parsed[4])
-
-    const h = (Math.floor(h_position / 10) * 10) + 5
-    const v = (Math.floor(v_position / 10) * 10) + 5
-
-    room._sector = `${h_direction}${h}${v_direction}${v}`
+    room._sector = sector_name
     return room._sector
   }
 

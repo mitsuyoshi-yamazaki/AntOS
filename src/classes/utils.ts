@@ -1,4 +1,20 @@
-let index = 0
+export function getSectorName(room_name: string): string | null {
+
+  const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room_name)
+  if (!parsed || (parsed.length < 5)) {
+    return null
+  }
+
+  const h_direction = parsed[1] as string
+  const h_position = Number(parsed[2])
+  const v_direction = parsed[3] as string
+  const v_position = Number(parsed[4])
+
+  const h = (Math.floor(h_position / 10) * 10) + 5
+  const v = (Math.floor(v_position / 10) * 10) + 5
+
+  return `${h_direction}${h}${v_direction}${v}`
+}
 
 const leveled_colors: {[index: string]: string} = {
   info: 'white',
@@ -19,6 +35,7 @@ export function leveled_colored_text(text: string, level: ColorLevel): string {
   return `<span style='color:${color}'>${text}</span>`
 }
 
+let index = 0
 export function UID(seed: string): string {
   index += 1
   return `${seed}${Game.time}${index}`

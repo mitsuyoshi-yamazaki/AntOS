@@ -68,7 +68,9 @@ declare global {
     last_tick: number
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}
-    temp_squads: SquadMemory[]
+    sectors: {[name: string]: {
+      regions: string[]
+    }}
     debug_last_tick: any
     versions: string[]
     regions: {[index: string]: RegionMemory}
