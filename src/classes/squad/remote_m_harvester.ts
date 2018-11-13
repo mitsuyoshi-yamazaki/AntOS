@@ -16,8 +16,8 @@ export class RemoteMineralHarvesterSquad extends Squad {
   private keeper_lair: StructureKeeperLair | undefined
   readonly room_name: string
 
-  constructor(readonly name: string, readonly destination: StructureStorage) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly destination: StructureStorage) {
+    super(name, base_room)
 
     const squad_memory = Memory.squads[this.name] as RemoteMineralHarvesterSquadMemory
 

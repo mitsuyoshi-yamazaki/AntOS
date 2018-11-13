@@ -11,8 +11,8 @@ export class NukerChargerSquad extends Squad {
 
   private reason: string = ''
 
-  constructor(readonly name: string, readonly room: Room) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room) {
+    super(name, base_room)
 
     const squad_memory = Memory.squads[this.name] as NukerChargerSquadMemory
 
@@ -20,7 +20,7 @@ export class NukerChargerSquad extends Squad {
       this.nuker = Game.getObjectById(squad_memory.nuker_id) as StructureNuker | undefined
     }
     else if ((Game.time % 29) == 5) {
-      console.log(`NukerChargerSquad undefined nuker id ${this.name}, ${room_link(this.room.name)}`)
+      console.log(`NukerChargerSquad undefined nuker id ${this.name}, ${room_link(this.base_room.name)}`)
     }
   }
 
@@ -38,12 +38,12 @@ export class NukerChargerSquad extends Squad {
 
   // --
   public get spawnPriority(): SpawnPriority {
-    if (!this.room.terminal || !this.room.storage || !this.nuker) {
+    if (!this.base_room.terminal || !this.base_room.storage || !this.nuker) {
       this.reason = `missing structures`
       return SpawnPriority.NONE
     }
 
-    if (this.room.storage.store.energy < 400000) {
+    if (this.base_room.storage.store.energy < 400000) {
       this.reason = `lack of energy`
       return SpawnPriority.NONE
     }
@@ -55,7 +55,7 @@ export class NukerChargerSquad extends Squad {
 
     const ghodium_needs = this.nuker.ghodiumCapacity - this.nuker.ghodium
     if (ghodium_needs > 0) {
-      const ghodium = (this.room.terminal.store[RESOURCE_GHODIUM] || 0) + (this.room.storage.store[RESOURCE_GHODIUM] || 0)
+      const ghodium = (this.base_room.terminal.store[RESOURCE_GHODIUM] || 0) + (this.base_room.storage.store[RESOURCE_GHODIUM] || 0)
 
       if (ghodium_needs > ghodium) {
         this.reason = `lack of Ghodium`
@@ -83,15 +83,15 @@ export class NukerChargerSquad extends Squad {
   }
 
   public run(): void {
-    if (!this.room.terminal || !this.room.storage || !this.nuker) {
+    if (!this.base_room.terminal || !this.base_room.storage || !this.nuker) {
       if ((Game.time % 43) == 3) {
-        console.log(`NukerChargerSquad.run ${this.room.name} no storage, terminal nor nuker`)
+        console.log(`NukerChargerSquad.run ${this.base_room.name} no storage, terminal nor nuker`)
       }
       return
     }
 
-    const terminal = this.room.terminal
-    const storage = this.room.storage
+    const terminal = this.base_room.terminal
+    const storage = this.base_room.storage
     const nuker = this.nuker
 
     const opt: MoveToOpts = {

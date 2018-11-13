@@ -43,7 +43,7 @@ export class FarmerSquad extends Squad {
   private boost_resource_type: ResourceConstant = RESOURCE_CATALYZED_GHODIUM_ACID
 
   constructor(readonly name: string, readonly base_room: Room, readonly room_name: string) {
-    super(name)
+    super(name, base_room)
 
     let error_message: string | null = null
 

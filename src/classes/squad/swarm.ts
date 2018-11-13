@@ -25,7 +25,7 @@ export class SwarmSquad extends Squad {
   private healers: Creep[] = []
 
   constructor(readonly name: string, readonly base_room: Room) {
-    super(name)
+    super(name, base_room)
 
     this.creeps.forEach((creep) => {
       switch (creep.memory.type) {

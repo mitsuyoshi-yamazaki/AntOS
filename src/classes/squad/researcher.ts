@@ -10,6 +10,7 @@ export interface ResearchTarget {
 // @todo: merge to worker
 export class ResearcherSquad extends Squad {
   private needs_research: boolean
+  private room_name: string
 
   public static need_instantiation(memory: SquadMemory, controller: StructureController): boolean {
     const squad_creeps = Game.squad_creeps[memory.name]
@@ -25,8 +26,10 @@ export class ResearcherSquad extends Squad {
     return controller.level >= 6
   }
 
-  constructor(readonly name: string, readonly room_name: string, readonly input_targets: ResearchTarget[], readonly output_targets: ResearchTarget[], readonly opts: {stop?: boolean}) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly input_targets: ResearchTarget[], readonly output_targets: ResearchTarget[], readonly opts: {stop?: boolean}) {
+    super(name, base_room)
+
+    this.room_name = this.base_room.name
 
     const room = Game.rooms[this.room_name]
 

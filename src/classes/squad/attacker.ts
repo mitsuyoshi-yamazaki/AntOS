@@ -15,7 +15,7 @@ export class AttackerSquad extends Squad {
   private is_heavy_attacker = false
 
   constructor(readonly name: string, readonly rooms_to_defend: string[], readonly base_room: Room, readonly energy_capacity: number) {
-    super(name)
+    super(name, base_room)
 
     const memory = (Memory.squads[this.name] as AttackerSquadMemory)
     let base_room_attacked = false

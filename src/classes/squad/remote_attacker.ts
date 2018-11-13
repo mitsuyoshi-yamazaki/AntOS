@@ -23,7 +23,7 @@ export class RemoteAttackerSquad extends Squad {
   private carrier: Creep | undefined
 
   constructor(readonly name: string, readonly base_room: Room, readonly target_room: string) {
-    super(name)
+    super(name, base_room)
 
     if (this.base_room.name == 'W47N2') {
       // this.boost_lab_ids.set(RESOURCE_CATALYZED_UTRIUM_ACID, '5b378bd089b8230740d3f5dd')

@@ -48,7 +48,7 @@ export class InvaderSquad extends Squad {
   private is_lightweight = false
 
   constructor(readonly name: string, readonly base_room: Room, readonly labs: InvaderSquadLabs | null) {
-    super(name)
+    super(name, base_room)
 
     const squad_memory = (Memory.squads[this.name] as InvaderSquadMemory)
     if (squad_memory) {

@@ -16,7 +16,7 @@ export class HarasserSquad extends Squad {
   private target_room: Room | undefined
 
   constructor(readonly name: string, readonly base_room: Room) {
-    super(name)
+    super(name, base_room)
 
     const squad_memory = Memory.squads[this.name] as HarasserSquadMemory
 

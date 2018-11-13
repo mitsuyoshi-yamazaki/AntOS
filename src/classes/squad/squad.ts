@@ -114,7 +114,7 @@ export abstract class Squad {
   // }
 
   // Methods
-  constructor(readonly name: string) {
+  constructor(readonly name: string, readonly base_room: Room) {
     const squad_creeps: Creep[] = Game.squad_creeps[this.name] || []
 
     squad_creeps.forEach((creep) => {
@@ -128,11 +128,6 @@ export abstract class Squad {
     if (squad_memory) {
       squad_memory.number_of_creeps = this.creeps.size
     }
-  }
-
-  public get owner_room_name(): string {
-    const squad_memory = Memory.squads[this.name]
-    return squad_memory.owner_name
   }
 
   public static need_instantiation(memory: SquadMemory, controller: StructureController): boolean {

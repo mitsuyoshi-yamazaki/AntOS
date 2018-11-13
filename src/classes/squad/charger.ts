@@ -28,8 +28,8 @@ export class ChargerSquad extends Squad {
     return creeps_size < 1 ? SpawnPriority.HIGH : SpawnPriority.NONE
   }
 
-  constructor(readonly name: string, readonly room: Room, readonly link: StructureLink | undefined, readonly support_links: StructureLink[], readonly creep_position: {x: number, y: number}, opts?: {additional_links?: StructureLink[]}) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly link: StructureLink | undefined, readonly support_links: StructureLink[], readonly creep_position: {x: number, y: number}, opts?: {additional_links?: StructureLink[]}) {
+    super(name, base_room)
 
     opts = opts || {}
 
@@ -37,17 +37,17 @@ export class ChargerSquad extends Squad {
       this.additional_links = opts.additional_links
     }
 
-    if (!room.controller || !room.controller.my) {
-      const message = `ChargerSquad no controller for ${room.name} ${this.name}`
+    if (!this.base_room.controller || !this.base_room.controller.my) {
+      const message = `ChargerSquad no controller for ${this.base_room.name} ${this.name}`
       console.log(message)
       Game.notify(message)
 
       this.number_of_carries = 4
     }
-    else if (room.controller.level == 8) {
+    else if (this.base_room.controller.level == 8) {
       this.number_of_carries = 8
     }
-    else if (room.controller.level >= 7) {
+    else if (this.base_room.controller.level >= 7) {
       this.number_of_carries = 6
     }
     else {

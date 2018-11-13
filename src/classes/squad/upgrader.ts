@@ -21,28 +21,21 @@ export class UpgraderSquad extends Squad {
       return false
     }
 
-    return this.priority(memory.owner_name, 0) != SpawnPriority.NONE
+    return this.priority(controller, 0) != SpawnPriority.NONE
   }
 
-  private static priority(room_name: string, creeps_size: number): SpawnPriority {
-    if (['dummy'].indexOf(room_name) >= 0) {
+  private static priority(controller: StructureController, creeps_size: number): SpawnPriority {
+    const room = controller.room
+
+    if (['dummy'].indexOf(room.name) >= 0) {
       return SpawnPriority.NONE
     }
 
     let max = 0
-    const room = Game.rooms[room_name]
 
-    // if ((room_name == 'W45S3') && room.controller && room.controller.my && (room.controller.level < 6)) {
-    //   return (creeps_size < 1) ? SpawnPriority.LOW : SpawnPriority.NONE
-    // }
-
-    if (!room || !room.controller || !room.controller.my || !room.storage || !room.storage.my) {
+    if (!controller.my || !room.storage || !room.storage.my) {
       return SpawnPriority.NONE
     }
-
-    // if (room.controller.level == 8) {
-    //   return SpawnPriority.NONE
-    // }
 
     const energy = room.storage.store.energy
     let available = (energy - 200000)
@@ -52,30 +45,28 @@ export class UpgraderSquad extends Squad {
       max = Math.min(max, 2)
     }
 
-    if (room_name == 'W51S29') {
+    if (room.name == 'W51S29') {
       max = (room.storage.store.energy > 400000) ? 1 : 0
     }
-    else if (['W54S7', 'W45S3', 'W53S5'].indexOf(room_name) >= 0) {
+    else if (['W54S7', 'W45S3', 'W53S5'].indexOf(room.name) >= 0) {
       max = Math.min(max, 1)
     }
 
-    if (room.controller.level >= 8) {
+    if (controller.level >= 8) {
       max = 1
     }
 
     return (creeps_size < max) ? SpawnPriority.LOW : SpawnPriority.NONE
   }
 
-  constructor(readonly name: string, readonly room_name: string, readonly additional_source_ids: string[]) {
-    super(name)
+  constructor(readonly name: string, readonly controller: StructureController, readonly additional_source_ids: string[]) {
+    super(name, controller.room)
 
-    const room = Game.rooms[this.room_name]
-
-    if (room && room.controller && room.controller.my) {
-      if (room.controller.level == 8) {
+    if (this.base_room.controller && this.base_room.controller.my) {
+      if (this.base_room.controller.level == 8) {
         this.max_energy = 2000
       }
-      else if (room.controller.level >= 7) {
+      else if (this.base_room.controller.level >= 7) {
         this.max_energy = 4500
       }
     }
@@ -99,12 +90,10 @@ export class UpgraderSquad extends Squad {
 
   // --
   public get spawnPriority(): SpawnPriority {
-    return UpgraderSquad.priority(this.room_name, this.creeps.size)
+    return UpgraderSquad.priority(this.controller, this.creeps.size)
   }
 
   public hasEnoughEnergy(energyAvailable: number, capacity: number): boolean {
-    const room = Game.rooms[this.room_name]
-
     if (this.max_energy) {
       return this.hasEnoughEnergyForUpgrader(energyAvailable, capacity, this.max_energy)
     }
@@ -118,9 +107,8 @@ export class UpgraderSquad extends Squad {
     // 8 units, 2C, 16W, 9M
 
     const type = CreepType.WORKER
-    const room = Game.rooms[this.room_name]
 
-    if (room && room.controller && (room.controller.level >= 8)) {
+    if ((this.controller.level >= 8)) {
       // max 15 WORKs
 
       const body: BodyPartConstant[] = [
@@ -147,29 +135,29 @@ export class UpgraderSquad extends Squad {
   public run(): void {
     const squad_memory = Memory.squads[this.name] as UpgraderSquadMemory
     const source_ids = (squad_memory.source_link_ids || []).concat(this.additional_source_ids)
-    const room = Game.rooms[this.room_name]
-    const is_rcl8 = !(!room) && room.controller && room.controller.my && (room.controller.level == 8)
+    const is_rcl8 = this.controller.my && (this.controller.level == 8)
+    const room_name = this.controller.room.name
 
     let lab: StructureLab | undefined
-    let no_lab = ['dummy'].indexOf(this.room_name) >= 0
+    let no_lab = ['dummy'].indexOf(room_name) >= 0
 
     this.creeps.forEach((creep) => {
       if (creep.spawning) {
         return
       }
 
-      if (creep.room.name != this.room_name) {
+      if (creep.room.name != room_name) {
         creep.drop(RESOURCE_ENERGY)
-        creep.moveToRoom(this.room_name)
+        creep.moveToRoom(room_name)
         return
       }
 
       const should_boost = !creep.boosted() && ((creep.ticksToLive || 0) > 1450) && !creep.memory.stop
-      if (should_boost && room && room.owned_structures && !is_rcl8) {
+      if (should_boost && this.controller.room.owned_structures && !is_rcl8) {
         const boost_compounds: ResourceConstant[] = [RESOURCE_GHODIUM_ACID, RESOURCE_CATALYZED_GHODIUM_ACID]
 
         if (!lab && !no_lab) {
-          const labs = room.owned_structures.get(STRUCTURE_LAB) as StructureLab[]
+          const labs = this.controller.room.owned_structures.get(STRUCTURE_LAB) as StructureLab[]
 
           if (labs) { // why?
             lab = labs.filter((l) => {

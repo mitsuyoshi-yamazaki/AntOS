@@ -24,8 +24,8 @@ export class ScoutSquad extends Squad {
     return true
   }
 
-  constructor(readonly name: string, readonly room_names: string[]) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly room_names: string[]) {
+    super(name, base_room)
 
     this.creeps.forEach((creep) => {
       const memory = creep.memory as ScoutCreepMemory

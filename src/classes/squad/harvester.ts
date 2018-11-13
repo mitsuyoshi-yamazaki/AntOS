@@ -21,14 +21,14 @@ export class HarvesterSquad extends Squad {
 
   private needs_harvester: boolean
 
-  constructor(readonly name: string, readonly source_info: {id: string, room_name: string}, readonly destination: StructureContainer | StructureTerminal | StructureStorage | StructureLink | StructureSpawn, readonly energy_capacity: number, readonly region: Region) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly source_info: {id: string, room_name: string}, readonly destination: StructureContainer | StructureTerminal | StructureStorage | StructureLink | StructureSpawn, readonly energy_capacity: number, readonly region: Region) {
+    super(name, base_room)
 
     this.destination_storage = this.destination as StructureStorage // @fixme:
 
     const is_alive = (this.energy_capacity > 300)
 
-    if (!this.destination && (this.energy_capacity >= 550) && is_alive && (this.owner_room_name != 'W53S15')) {
+    if (!this.destination && (this.energy_capacity >= 550) && is_alive) {
       if (((Game.time + 3) % 7) == 0) {
         console.log(`HarvesterSquad destination not specified ${this.name}`)
       }
@@ -383,12 +383,6 @@ export class HarvesterSquad extends Squad {
         return SpawnPriority.NONE
       }
       return SpawnPriority.HIGH
-    }
-
-    if (!room.storage || !room.storage.my) {
-      if (this.owner_room_name != 'E17S4') {
-        return SpawnPriority.NONE
-      }
     }
 
     let number_of_carriers = 1
@@ -747,8 +741,8 @@ export class HarvesterSquad extends Squad {
             }
             return
           }
-          if (!destination && (this.owner_room_name == 'E17S4')) {
-            if (creep.moveToRoom(this.owner_room_name) == ActionResult.IN_PROGRESS) {
+          if (!destination && (this.base_room.name == 'dummy')) {
+            if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
               return
             }
 

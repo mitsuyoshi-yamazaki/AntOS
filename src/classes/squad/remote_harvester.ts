@@ -61,7 +61,7 @@ export class RemoteHarvesterSquad extends Squad {
   private avoid_cpu_use = false
 
   constructor(readonly name: string, readonly base_room: Room, readonly room_name: string, readonly source_ids: string[], readonly destination: HarvesterDestination, readonly capacity: number, readonly region: Region) {
-    super(name)
+    super(name, base_room)
 
     const room = Game.rooms[this.room_name] as Room | undefined
     const squad_memory = Memory.squads[this.name] as RemoteHarvesterSquadMemory

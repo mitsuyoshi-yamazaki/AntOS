@@ -664,7 +664,7 @@ export class Region {
           }
           case SquadType.UPGRADER: {
             if (UpgraderSquad.need_instantiation(squad_memory, this.controller)) {
-              const squad = new UpgraderSquad(squad_memory.name, this.room.name, region_memory.upgrader_additional_source_ids || [])
+              const squad = new UpgraderSquad(squad_memory.name, this.controller, region_memory.upgrader_additional_source_ids || [])
               this.squads.set(squad.name, squad)
             }
             else {
@@ -719,7 +719,7 @@ export class Region {
                 stop: region_memory.status == RegionStatus.ABOUT_TO_UNCLAIM,
               }
 
-              const squad = new ResearcherSquad(squad_memory.name, this.room.name, research_input_targets, research_output_targets, opts)
+              const squad = new ResearcherSquad(squad_memory.name, this.room, research_input_targets, research_output_targets, opts)
               this.squads.set(squad.name, squad)
             }
             else {
@@ -739,7 +739,7 @@ export class Region {
             //   break
             // }
 
-            const squad = new HarvesterSquad(squad_memory.name, source_info, harvester_destination, energy_capacity, this)
+            const squad = new HarvesterSquad(squad_memory.name, this.room, source_info, harvester_destination, energy_capacity, this)
             this.squads.set(squad.name, squad)
             break
           }
@@ -759,18 +759,18 @@ export class Region {
               break
             }
 
-            const squad = new RemoteMineralHarvesterSquad(squad_memory.name, this.room.storage)
+            const squad = new RemoteMineralHarvesterSquad(squad_memory.name, this.room, this.room.storage)
             this.squads.set(squad.name, squad)
             break
           }
           case SquadType.MANUAL: {
-            const squad = new ManualSquad(squad_memory.name, this.room.name, this.room)
+            const squad = new ManualSquad(squad_memory.name, this.room)
             this.squads.set(squad.name, squad)
             break
           }
           case SquadType.SCOUT: {
             if ((this.controller.level >= 3) && (rooms_need_scout.length > 0) && ScoutSquad.need_instantiation(squad_memory, this.controller)) {
-              const squad = new ScoutSquad(squad_memory.name, rooms_need_scout)
+              const squad = new ScoutSquad(squad_memory.name, this.room, rooms_need_scout)
               this.squads.set(squad.name, squad)
             }
             else {
@@ -833,7 +833,7 @@ export class Region {
               const owned = !(!region_opt.temp_squad_opt.forced) && temp_squad_target_room && (temp_squad_target_room.controller && (temp_squad_target_room.controller.level >= 5))
 
               if (not_my_room || !owned) {
-                const squad = new TempSquad(squad_memory.name, this.room.name, temp_opts.target_room_name, !(!temp_opts.forced), temp_opts.layout)
+                const squad = new TempSquad(squad_memory.name, this.room, temp_opts.target_room_name, !(!temp_opts.forced), temp_opts.layout)
                 this.squads.set(squad.name, squad)
               }
               else {
@@ -931,7 +931,7 @@ export class Region {
       Memory.rooms[target.room_name].harvesting_source_ids.push(target.id)
 
       const name = HarvesterSquad.generateNewName()
-      const squad = new HarvesterSquad(name, target, harvester_destination, energy_capacity, this)
+      const squad = new HarvesterSquad(name, this.room, target, harvester_destination, energy_capacity, this)
 
       this.squads.set(squad.name, squad)
 

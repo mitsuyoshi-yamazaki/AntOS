@@ -39,8 +39,8 @@ export class ManualSquad extends Squad {
   private desc?: string
   private spawning = false
 
-  constructor(readonly name: string, readonly original_room_name: string, readonly base_room: Room) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room) {
+    super(name, base_room)
   }
 
   public get type(): SquadType {
@@ -82,7 +82,7 @@ export class ManualSquad extends Squad {
       }
     }
 
-    switch (this.original_room_name) {
+    switch (this.base_room.name) {
       case 'W48S6': {
         const target_room_name = 'W49S6'
         const room = Game.rooms[target_room_name]
@@ -214,7 +214,7 @@ export class ManualSquad extends Squad {
       }
     }
 
-    switch (this.original_room_name) {
+    switch (this.base_room.name) {
       case 'W48S6': {
         return energy_available > 2020
       }
@@ -281,7 +281,7 @@ export class ManualSquad extends Squad {
       }
     }
 
-    switch (this.original_room_name) {
+    switch (this.base_room.name) {
       case 'W48S6': {
         const body: BodyPartConstant[] = [
           TOUGH, TOUGH,
@@ -429,7 +429,7 @@ export class ManualSquad extends Squad {
       }
     }
 
-    switch (this.original_room_name) {
+    switch (this.base_room.name) {
       case 'W48S6': {
         const target_room_name = 'W49S6'
 
@@ -451,7 +451,7 @@ export class ManualSquad extends Squad {
 
       case 'W46S3': {
         if (!this.base_room || !this.base_room.storage) {
-          console.log(`ManualSquad.run no base room ${this.original_room_name}, ${this.name}`)
+          console.log(`ManualSquad.run no base room ${this.base_room.name}, ${this.name}`)
           this.say(`NO SRC`)
           return
         }
@@ -519,7 +519,7 @@ export class ManualSquad extends Squad {
         if (!this.base_room.storage) {
           this.say(`ERR`)
 
-          Game.notify(`NO TERMINAL in ${this.original_room_name}`)
+          Game.notify(`NO TERMINAL in ${this.base_room.name}`)
           return
         }
 
@@ -537,7 +537,7 @@ export class ManualSquad extends Squad {
           const carry = _.sum(creep.carry)
 
           if (carry == 0) {
-            if (creep.pos.roomName == this.original_room_name) {
+            if (creep.pos.roomName == this.base_room.name) {
               const needs_renew = ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 1300)))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
 
               if (needs_renew) {
@@ -572,12 +572,12 @@ export class ManualSquad extends Squad {
               }
             }
             else {
-              console.log(`ManualSquad.run ${this.original_room_name} no target`)
+              console.log(`ManualSquad.run ${this.base_room.name} no target`)
               creep.say(`NO TGT`)
             }
           }
           else {
-            if (creep.moveToRoom(this.original_room_name) == ActionResult.IN_PROGRESS) {
+            if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
               return
             }
 
@@ -603,7 +603,7 @@ export class ManualSquad extends Squad {
       default:
         if (this.creeps.size > 0) {
           this.say(`NO SCR`)
-          console.log(`ManualSquad.run error no script for ${this.original_room_name}`)
+          console.log(`ManualSquad.run error no script for ${this.base_room.name}`)
         }
         return
     }
@@ -677,7 +677,7 @@ export class ManualSquad extends Squad {
 
       const creep_memory = creep.memory as ManualMemory
       if (!creep_memory || !creep_memory.target_id) {
-        console.log(`ManualSquad.runReserveTask ${this.original_room_name} error no target room name ${creep.name} ${creep.pos}`)
+        console.log(`ManualSquad.runReserveTask ${this.base_room.name} error no target room name ${creep.name} ${creep.pos}`)
         return
       }
 

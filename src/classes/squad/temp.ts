@@ -21,8 +21,8 @@ export class TempSquad extends Squad {
     return (Memory.squads[this.name] as TempSquadMemory).arrived == this.target_room_name
   }
 
-  constructor(readonly name: string, readonly room_name: string, readonly target_room_name: string, readonly need_attacker: boolean, readonly layout: {name: string, pos: {x: number, y: number}} | undefined) {
-    super(name)
+  constructor(readonly name: string, readonly base_room: Room, readonly target_room_name: string, readonly need_attacker: boolean, readonly layout: {name: string, pos: {x: number, y: number}} | undefined) {
+    super(name, base_room)
 
     this.creeps.forEach((creep, _) => {
       switch (creep.memory.type) {
@@ -352,7 +352,7 @@ export class TempSquad extends Squad {
       }
     }
     else if (target_room && target_room.memory) {
-      target_room.memory.ancestor = this.owner_room_name
+      target_room.memory.ancestor = this.base_room.name
     }
 
     if (((Game.time % 41) == 1) && (creep.room.name == target_room_name) && creep.room.controller) {

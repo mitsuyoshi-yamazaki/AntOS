@@ -18,7 +18,7 @@ export class WorkerSquad extends Squad {
   private additional_container_ids: string[] | undefined
 
   constructor(readonly name: string, readonly room: Room, readonly opt?: {source?: StructureContainer | undefined, additional_container_ids?: string[]}) {
-    super(name)
+    super(name, room)
 
     opt = opt || {}
     if (opt.source) {
@@ -90,7 +90,7 @@ export class WorkerSquad extends Squad {
     let let_thy_die = true
 
     const rcl = (!(!this.room.controller)) ? this.room.controller.level : 1
-    let max = 1000//(this.owner_room_name == 'W47S9') ? 2000 : 1000
+    let max = 1000
 
     if (rcl >= 6) {
       if (this.room.construction_sites && (this.room.construction_sites.length > 0)) {
