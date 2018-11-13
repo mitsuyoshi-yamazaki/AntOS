@@ -70,8 +70,8 @@ declare global {
     claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void
 
     // Storage balancing
-    _balance_storage(sector_memory: SectorMemory): void
-    balance_storage(opts?: {sector_name?: string}): void
+    _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean}): void
+    balance_storage(opts?: {dry_run?: boolean, sector_name?: string}): void
   }
 
   interface Memory {
@@ -1197,7 +1197,7 @@ export function tick(): void {
   }
 
 
-  Game.balance_storage = function(opts?: {sector_name?: string}): void {
+  Game.balance_storage = function(opts?: {dry_run?: boolean, sector_name?: string}): void {
     opts = opts || {}
 
     for (const sector_name in Memory.sectors) {
@@ -1209,12 +1209,16 @@ export function tick(): void {
       if (!sector_memory) {
         continue
       }
-      Game._balance_storage(sector_memory)
+      Game._balance_storage(sector_memory, opts)
     }
   }
 
-  Game._balance_storage = function(sector_memory: SectorMemory): void {
-    console.log(`\nBalancing storage in sector ${sector_memory.name}`)
+  Game._balance_storage = function(sector_memory: SectorMemory, opts?: {dry_run?: boolean}): void {
+    opts = opts || {}
+    const dry_run = !(opts.dry_run == false)
+    const dry_run_description = dry_run ? ' (DRY RUN)' : ''
+
+    console.log(`\nBalancing storage in sector ${sector_memory.name}${dry_run_description}`)
 
     const rooms = sector_memory.regions.map(region_name => {
       return Game.rooms[region_name]
@@ -1244,9 +1248,6 @@ export function tick(): void {
 
     const resource_to_send = (storage: StructureStorage) => {
       return Object.keys(storage.store).filter(resource_type => (resource_type != RESOURCE_ENERGY)).sort((lhs, rhs) => {
-        // const l_amount = (storage as StructureStorage).store[lhs] || 0
-        // const r_amount = (storage as StructureStorage).store[rhs] || 0
-
         const l_amount = storage.store[lhs as ResourceConstant] || 0
         const r_amount = storage.store[rhs as ResourceConstant] || 0
         if (l_amount < r_amount) return 1
@@ -1262,7 +1263,7 @@ export function tick(): void {
         return
       }
 
-      const full_storage = _.sum(room.storage.store) > (room.storage.storeCapacity * 0.8)
+      const full_storage = _.sum(room.storage.store) > (room.storage.storeCapacity * 0.9)
       if (!full_storage) {
         return
       }
@@ -1281,16 +1282,22 @@ export function tick(): void {
 
       const amount = 10000
       const destination_room_name = target_room_names[room_index % target_room_names.length]
-      const result = room.terminal.send(resource_type as ResourceConstant, amount, destination_room_name)
 
-      switch (result) {
-        case OK:
-          console.log(`- [${room_link(room.name)}] sent ${amount} * ${resource_type} to ${destination_room_name}`)
-          break
+      if (dry_run) {
+        console.log(`- [${room_link(room.name)}] WILL send ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+      }
+      else {
+        const result = room.terminal.send(resource_type as ResourceConstant, amount, destination_room_name)
 
-        default:
-          console.log(`- [${room_link(room.name)}] failed to sent ${amount} * ${resource_type} to ${destination_room_name}`)
-          break
+        switch (result) {
+          case OK:
+            console.log(`- [${room_link(room.name)}] sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            break
+
+          default:
+            console.log(`- [${room_link(room.name)}] failed to sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            break
+        }
       }
     })
 
