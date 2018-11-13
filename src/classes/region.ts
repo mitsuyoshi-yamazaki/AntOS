@@ -435,7 +435,7 @@ export class Region {
     }
 
     // -- remote harvester
-    if (((Game.time % 1511) == 1) && (this.controller.level == 5)) {
+    if (((Game.time % 1511) == 1) && (this.controller.level == 5) && (Game.cpu.bucket > 9000)) {
       const connected_rooms = this.room.connected_rooms()
       const target_room: Room = connected_rooms.map(room_name => Game.rooms[room_name]).filter(room => {
         if (!room || room.is_keeperroom) {
