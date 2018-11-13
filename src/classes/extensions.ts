@@ -2,7 +2,7 @@ import { SquadMemory, SquadType } from "./squad/squad"
 import { RegionMemory } from "./region"
 import { ErrorMapper } from "utils/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
-import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color } from './utils';
+import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color, getSectorName } from './utils';
 import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
@@ -14,6 +14,7 @@ console.log(`Initialize cost_matrixes`)
 declare global {
   interface Game {
     user: {name: 'Mitsuyoshi'}
+    empire: {name: string}
     version: string
     reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
     squad_creeps: {[squad_name: string]: Creep[]}
@@ -25,7 +26,7 @@ declare global {
     collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
     send_resource: (from: string[], to: string, resource_type: ResourceConstant, amount: number) => ActionResult
 
-    info: (opts?:{sorted?: boolean}) => void
+    info: (target_name?: string) => void
     creep_positions: (squad_name: string) => void
     squad_info: (squad_type: SquadType) => void
     last_attacked_rooms: (opts?: {last?: number}) => void
@@ -109,6 +110,10 @@ export function init() {
 export function tick(): void {
   Game.user = {
     name: 'Mitsuyoshi',
+  }
+
+  Game.empire = {
+    name: Game.user.name,
   }
 
   Game.check_resources = (resource_type: ResourceConstant) => {
@@ -333,8 +338,37 @@ export function tick(): void {
     return ActionResult.DONE
   }
 
-  Game.info = (opts?:{sorted?: boolean}) => {
-    opts = opts || {}
+  Game.info = (target_name?: string) => {
+    type TargetType = 'empire' | 'sector' | 'room'
+    let target: {type: TargetType, name: string}
+
+    if (target_name) {
+      const sector_name = getSectorName(target_name)
+
+      if (!sector_name) {
+        console.log(`Game.info wrong target name "${target_name}"`)
+        return
+      }
+
+      if (sector_name == target_name) {
+        target = {
+          type: 'sector',
+          name: sector_name,
+        }
+      }
+      else {
+        target = {
+          type: 'room',
+          name: target_name,
+        }
+      }
+    }
+    else {
+      target = {
+        type: 'empire',
+        name: Game.empire.name,
+      }
+    }
 
     let gcl_farm_info: string[] = []
 
@@ -366,18 +400,28 @@ export function tick(): void {
       if (!room || !room.controller || !room.controller.my) {
         continue
       }
+
+      switch (target.type) {
+        case 'empire':
+          break
+
+        case 'sector':
+          if (getSectorName(room_name) != target.name) {
+            continue
+          }
+          break
+
+        case 'room':
+          if (room_name != target.name) {
+            continue
+          }
+          break
+      }
+
       rooms.push(room)
     }
 
-    if (opts.sorted) {
-      rooms = rooms.sort((lhs, rhs) => {
-        if (lhs.controller!.level > rhs.controller!.level) return 1
-        if (lhs.controller!.level < rhs.controller!.level) return -1
-        return 0
-      })
-    }
-
-    console.log(`- Base:`)
+    console.log(`- Regions:`)
 
     rooms.forEach((room) => {
 
