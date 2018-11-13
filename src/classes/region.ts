@@ -434,6 +434,45 @@ export class Region {
       // console.log(`${this.name}: ${fuga.map(t=>[t.id, t.room_name])}`)
     }
 
+    // -- remote harvester
+    if (((Game.time % 1511) == 1) && (this.controller.level == 5)) {
+      const connected_rooms = this.room.connected_rooms()
+      const target_room: Room = connected_rooms.map(room_name => Game.rooms[room_name]).filter(room => {
+        if (!room || room.is_keeperroom) {
+          return false
+        }
+
+        const remote_harvester_name = room.remote_harvester_squad_name()
+        if (Memory.squads[remote_harvester_name]) {
+          return false
+        }
+
+        return true
+      })[0]
+
+      if (target_room) {
+        const remote_harvester_squad_names = target_room.add_remote_harvester(this.room.name, {dry_run:false})
+
+        if (remote_harvester_squad_names && remote_harvester_squad_names[0]) {
+          const squad_memory = Memory.squads[remote_harvester_squad_names[0]]
+
+          if (squad_memory) {
+            squad_memory.stop_spawming = false
+          }
+          else {
+            const message = `Region create remote harvester failed for room ${room_history_link(target_room.name, Game.time)}, no squad memory found, region ${this.name}`
+            console.log(message)
+            Game.notify(message)
+          }
+        }
+        else {
+          const message = `Region create remote harvester failed for room ${room_history_link(target_room.name, Game.time)}, region ${this.name}`
+          console.log(message)
+          Game.notify(message)
+        }
+      }
+    }
+
     // -- researcher
     if (region_memory.input_lab_ids && region_memory.input_lab_ids.lhs && region_memory.input_lab_ids.rhs) {
       input_lab_ids = {

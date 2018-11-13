@@ -46,6 +46,7 @@ declare global {
     connected_rooms(): string[]
     _sector: string | undefined
     sector(): string
+    remote_harvester_squad_name(): string
 
     owned_structures_not_found_error(structure_type: StructureConstant): void
     add_remote_harvester(owner_room_name: string, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
@@ -283,6 +284,11 @@ export function tick(): void {
     return room._sector
   }
 
+  Room.prototype.remote_harvester_squad_name = function(): string {
+    const room = this as Room
+    return `remote_harvester_${room.name.toLowerCase()}`
+  }
+
   Room.prototype.owned_structures_not_found_error = function(structure_type: StructureConstant): void {
     if ((Game.time % 13) == 3) {
       const message = `Room.owned_structures_not_found_error ${structure_type} ${room_link(this.name)}`
@@ -390,7 +396,7 @@ export function tick(): void {
       let result: string[] = []
 
       // --- Remote Harvester Squad Memory
-      let harvester_squad_name = `remote_harvester_${room.name.toLowerCase()}`
+      let harvester_squad_name = room.remote_harvester_squad_name()
 
       while (Memory.squads[harvester_squad_name]) {
         harvester_squad_name = `${harvester_squad_name}_1`
