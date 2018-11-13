@@ -48,7 +48,7 @@ declare global {
     sector(): string
 
     owned_structures_not_found_error(structure_type: StructureConstant): void
-    add_remote_harvester(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
+    add_remote_harvester(owner_room_name: string, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
     add_remote_mineral_harvester(owner_room_name: string, opts?:{forced?: boolean}): string | null
     remote_layout(x: number, y: number): CostMatrix | null
     test(from: Structure): void
@@ -290,7 +290,7 @@ export function tick(): void {
     }
   }
 
-  Room.prototype.add_remote_harvester = function(owner_room_name: string, carrier_max: number, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null {
+  Room.prototype.add_remote_harvester = function(owner_room_name: string, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null {
     opts = opts || {}
     const dry_run = !(opts.dry_run == false)
     const no_flags_in_base = !(!opts.no_flags_in_base)
@@ -395,6 +395,8 @@ export function tick(): void {
       room.find(FIND_SOURCES).forEach((source) => {
         sources[source.id] = {}
       })
+
+      const carrier_max = Object.keys(sources).length + 1 // not supported for further than 1 room
 
       const squad_memory: RemoteHarvesterSquadMemory = {
         name: harvester_squad_name,

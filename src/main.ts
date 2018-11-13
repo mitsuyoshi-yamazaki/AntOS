@@ -565,33 +565,34 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * Strategy:
-   * W51S29, W58S4 -> E16N37: claim multiple rooms, send resources
+   * W51S29 -> E16N37: claim multiple rooms, send resources
  * CPU Clinic:
    * findxxx() costs CPU?
    * balancer
  * Automation:
+   * auto remote harvester
    * auto mineral harvester
  * Problem Solver
    * allow code to store info that they think important: emergence robo speak
  * GCL farm:
    * new layout for more upgraders
  * Claim & Layout:
-   * dispatch createRoom('name',parent) (it creates Memory.claiming[WxxSyy])
+   * check layout logic when claiming a new room
    * rotate room layout
    * little sub layout that only conatins extensions
  * Unclaim:
-   * send all resources (Region.sendResourcesTo())
-   * remove region memory
+   * make it semi-automated
+     * send all resources (Region.sendResourcesTo())
+     * remove region memory // can be manual
  * Others:
-   * ManualSquadTask.scout signController
    * what's remote_attacker?
    * show invading info in Game.info()
    * 500k tower minimum storage fill if rcl < 8
    * minimum rampart hits
    * notify portal
-   * cancel spawning attacker if the invader is eliminated within 10 ticks
    * ignore excluded squad spawn on colony region
    * attack & ranged heal itself?
+   * cancel spawning attacker if the invader is eliminated within 10 ticks
  */
 
 /**
