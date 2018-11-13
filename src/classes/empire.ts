@@ -2,6 +2,7 @@
 import { ErrorMapper } from "utils/ErrorMapper"
 import { Region, RegionOpt } from "./region"
 import { Squad, SpawnPriority, SquadType } from "./squad/squad";
+import { getSectorName } from "./utils";
 
 enum State {
   EXPAND = "expand"
@@ -82,6 +83,26 @@ export class Empire {
 
       owned_room_names.push(room.name)
       owned_controllers.push(room.controller)
+    }
+
+    if ((Game.time % 107) == 3) {
+      owned_room_names.forEach(room_name => {
+        const sector_name = getSectorName(room_name)
+        if (!sector_name) {
+          return
+        }
+
+        if (!Memory.sectors[sector_name]) {
+          Memory.sectors[sector_name] = {
+            regions: [],
+          }
+        }
+
+        const sector_memory = Memory.sectors[sector_name]
+        if (sector_memory.regions.indexOf(room_name) < 0) {
+          sector_memory.regions.push(room_name)
+        }
+      })
     }
 
     // --- Attack
