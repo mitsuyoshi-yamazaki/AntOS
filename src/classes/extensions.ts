@@ -421,7 +421,7 @@ export function tick(): void {
       rooms.push(room)
     }
 
-    console.log(`- Regions:`)
+    console.log(`- Regions in ${target.type} ${target.name}`)
 
     rooms.forEach((room) => {
 
