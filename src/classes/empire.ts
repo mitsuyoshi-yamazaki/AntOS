@@ -94,6 +94,7 @@ export class Empire {
 
         if (!Memory.sectors[sector_name]) {
           Memory.sectors[sector_name] = {
+            name: sector_name,
             regions: [],
           }
         }

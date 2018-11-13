@@ -11,6 +11,11 @@ import * as Migration from "./migration";
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
 
+export interface SectorMemory {
+  name: string
+  regions: string[]
+}
+
 declare global {
   interface Game {
     user: {name: 'Mitsuyoshi'}
@@ -63,15 +68,17 @@ declare global {
 
     // Claim
     claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void
+
+    // Storage balancing
+    _balance_storage(sector_memory: SectorMemory): void
+    balance_storage(opts?: {sector_name?: string}): void
   }
 
   interface Memory {
     last_tick: number
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}
-    sectors: {[name: string]: {
-      regions: string[]
-    }}
+    sectors: {[name: string]: SectorMemory}
     debug_last_tick: any
     versions: string[]
     regions: {[index: string]: RegionMemory}
@@ -1187,6 +1194,107 @@ export function tick(): void {
       },
       step_rooms: [],
     })
+  }
+
+
+  Game.balance_storage = function(opts?: {sector_name?: string}): void {
+    opts = opts || {}
+
+    for (const sector_name in Memory.sectors) {
+      if (opts.sector_name && (opts.sector_name != sector_name)) {
+        continue
+      }
+
+      const sector_memory = Memory.sectors[sector_name]
+      if (!sector_memory) {
+        continue
+      }
+      Game._balance_storage(sector_memory)
+    }
+  }
+
+  Game._balance_storage = function(sector_memory: SectorMemory): void {
+    console.log(`\nBalancing storage in sector ${sector_memory.name}`)
+
+    const rooms = sector_memory.regions.map(region_name => {
+      return Game.rooms[region_name]
+    }).filter(room => {
+      if (!room || !room.storage || !room.terminal) {
+        return false
+      }
+      return true
+    })
+
+    let room_index = 0
+    const empty_room_names: string[] = rooms.filter(room => {
+      if (!room.terminal || !room.storage) {
+        return false
+      }
+
+      const terminal_empty = _.sum(room.terminal.store) < (room.terminal.storeCapacity * 0.8)
+      const storage_empty = _.sum(room.storage.store) < (room.storage.storeCapacity * 0.8)
+
+      return terminal_empty && storage_empty
+    }).map(room => room.name)
+
+    if (empty_room_names.length == 0) {
+      console.log(`No empty rooms`)
+      console.log(`------------\n\n`)
+    }
+
+    const resource_to_send = (storage: StructureStorage) => {
+      return Object.keys(storage.store).filter(resource_type => (resource_type != RESOURCE_ENERGY)).sort((lhs, rhs) => {
+        // const l_amount = (storage as StructureStorage).store[lhs] || 0
+        // const r_amount = (storage as StructureStorage).store[rhs] || 0
+
+        const l_amount = storage.store[lhs as ResourceConstant] || 0
+        const r_amount = storage.store[rhs as ResourceConstant] || 0
+        if (l_amount < r_amount) return 1
+        return -1
+      })[0]
+    }
+
+    rooms.forEach(room => {
+      if (!room.terminal || !room.storage) {
+        return
+      }
+      if (room.terminal.cooldown > 0) {
+        return
+      }
+
+      const full_storage = _.sum(room.storage.store) > (room.storage.storeCapacity * 0.8)
+      if (!full_storage) {
+        return
+      }
+
+      const resource_type = resource_to_send(room.storage)
+      if (!resource_type) {
+        console.log(`- [${room_link(room.name)}] cannot determine resource type`)
+        return
+      }
+
+      const target_room_names = empty_room_names.filter(room_name => room_name != room.name)
+      if (target_room_names.length == 0) {
+        console.log(`- [${room_link(room.name)}] no rooms to send resources`)
+        return
+      }
+
+      const amount = 10000
+      const destination_room_name = target_room_names[room_index % target_room_names.length]
+      const result = room.terminal.send(resource_type as ResourceConstant, amount, destination_room_name)
+
+      switch (result) {
+        case OK:
+          console.log(`- [${room_link(room.name)}] sent ${amount} * ${resource_type} to ${destination_room_name}`)
+          break
+
+        default:
+          console.log(`- [${room_link(room.name)}] failed to sent ${amount} * ${resource_type} to ${destination_room_name}`)
+          break
+      }
+    })
+
+    console.log(`------------\n\n`)
   }
 
 
