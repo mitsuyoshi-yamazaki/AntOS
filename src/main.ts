@@ -21,7 +21,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }, `Initializer.tick`)()
 
   ErrorMapper.wrapLoop(() => {
-    const empire = new Empire("Mitsuyoshi")
+    const empire = new Empire(Game.user.name)
 
     empire.run()
   }, `empire.run`)()

@@ -2081,7 +2081,7 @@ export function init() {
                 else if (structure.room.controller.owner) {
                   return true
                 }
-                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != Game.user.name)) {
                   return true
                 }
               }
@@ -2095,7 +2095,7 @@ export function init() {
                 else if (structure.room.controller.owner) {
                   return true
                 }
-                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != 'Mitsuyoshi')) {
+                else if (structure.room.controller.reservation && (structure.room.controller.reservation.username != Game.user.name)) {
                   return true
                 }
               }
@@ -2256,7 +2256,7 @@ export function init() {
       }
     }
     else if (should_claim) {
-      if (target.reservation && (target.reservation.ticksToEnd > 0) && (target.reservation.username != 'Mitsuyoshi')) {
+      if (target.reservation && (target.reservation.ticksToEnd > 0) && (target.reservation.username != Game.user.name)) {
         action = 'attackController'
         result = this.attackController(target)
 

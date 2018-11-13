@@ -859,7 +859,7 @@ export function tick(): void {
         if (room.controller.my) {
           level = 'critical'
         }
-        else if (room.controller.reservation && (room.controller.reservation.username == 'Mitsuyoshi')) {
+        else if (room.controller.reservation && (room.controller.reservation.username == Game.user.name)) {
           level = 'warn'
         }
       }
@@ -1100,7 +1100,7 @@ export function tick(): void {
   Game.populateLOANlist = function(): void {
     populateLOANlist()
 
-    const empire_memory = Memory.empires['Mitsuyoshi']
+    const empire_memory = Memory.empires[Game.user.name]
 
     if (empire_memory && empire_memory.whitelist) {
       if (!empire_memory.whitelist.use) {
@@ -1124,7 +1124,7 @@ export function tick(): void {
   Game.claim_next_room = function(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void {
     opts = opts || {}
 
-    const empire_memory = Memory.empires['Mitsuyoshi']
+    const empire_memory = Memory.empires[Game.user.name]
     if (!empire_memory) {
       console.log(`Game.claim_next_room no empire memory`)
       return

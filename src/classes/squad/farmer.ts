@@ -177,7 +177,7 @@ export class FarmerSquad extends Squad {
 
     this.next_creep = this.nextCreep()
 
-    const empire_memory = Memory.empires['Mitsuyoshi']
+    const empire_memory = Memory.empires[Game.user.name]
     if (empire_memory && empire_memory.farm && empire_memory.farm.boost_compound) {
       this.boost_resource_type = empire_memory.farm.boost_compound as ResourceConstant
     }
