@@ -1324,7 +1324,8 @@ export function init() {
 
         const target = this.find_charge_target()
         if (target) {
-          if (this.transfer(target, RESOURCE_ENERGY) == OK) {
+          const result = this.transfer(target, RESOURCE_ENERGY)
+          if (result == OK) {
             return
           }
         }
@@ -1351,7 +1352,12 @@ export function init() {
           }
         }
 
-        this.transfer(storage, RESOURCE_ENERGY)
+        const result = this.transfer(storage, RESOURCE_ENERGY)
+        if (result == ERR_FULL) {
+          if (this.room.terminal) {
+            this.transfer(this.room.terminal, RESOURCE_ENERGY)
+          }
+        }
       }
       else {
         if (this.room.owned_structures) {
