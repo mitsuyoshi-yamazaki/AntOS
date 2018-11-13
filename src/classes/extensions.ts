@@ -1218,7 +1218,7 @@ export function tick(): void {
     const dry_run = !(opts.dry_run == false)
     const dry_run_description = dry_run ? ' (DRY RUN)' : ''
 
-    console.log(`\nBalancing storage in sector ${sector_memory.name}${dry_run_description}`)
+    console.log(`\nBalancing storage in sector (${sector_memory.regions.length} rooms) ${sector_memory.name}${dry_run_description}`)
 
     const rooms = sector_memory.regions.map(region_name => {
       return Game.rooms[region_name]
@@ -1244,6 +1244,7 @@ export function tick(): void {
     if (empty_room_names.length == 0) {
       console.log(`No empty rooms`)
       console.log(`------------\n\n`)
+      return
     }
 
     const resource_to_send = (storage: StructureStorage) => {
@@ -1255,6 +1256,7 @@ export function tick(): void {
       })[0]
     }
 
+    let nothing_to_do = true
     rooms.forEach(room => {
       if (!room.terminal || !room.storage) {
         return
@@ -1267,6 +1269,8 @@ export function tick(): void {
       if (!full_storage) {
         return
       }
+
+      nothing_to_do = false
 
       const resource_type = resource_to_send(room.storage)
       if (!resource_type) {
@@ -1301,6 +1305,9 @@ export function tick(): void {
       }
     })
 
+    if (nothing_to_do) {
+      console.log(`Nothing to do`)
+    }
     console.log(`------------\n\n`)
   }
 
