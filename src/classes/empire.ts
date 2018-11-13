@@ -342,6 +342,12 @@ export class Empire {
         region.run()
       }, `${region.name}.run`)()
     })
+
+    if ((Game.time % 103) == 5) {
+      ErrorMapper.wrapLoop(() => {
+        Game.balance_storage({dry_run: false})
+      }, `${this.name} balancing storage`)()
+    }
   }
 
   // --- Private
