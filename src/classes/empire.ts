@@ -343,9 +343,9 @@ export class Empire {
       }, `${region.name}.run`)()
     })
 
-    if ((Game.time % 103) == 5) {
+    if ((Game.time % 347) == 5) {
       ErrorMapper.wrapLoop(() => {
-        Game.balance_storage({dry_run: false})
+        Game.balance_storage({dry_run: false, no_logs: true})
       }, `${this.name} balancing storage`)()
     }
   }
