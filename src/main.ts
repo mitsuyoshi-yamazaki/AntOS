@@ -199,54 +199,54 @@ function trade():void {
     rooms,
   })
 
-  const w54s7 = Game.rooms['W54S7']
-  if (w54s7 && w54s7.storage && ((w54s7.storage.store[RESOURCE_HYDROGEN] || 0) > 300000)) {
-    sellResource({
-      resource_type: RESOURCE_HYDROGEN,
-      price: 0.140,
-      rooms: [w54s7],
-    })
-  }
+  // const w54s7 = Game.rooms['W54S7']
+  // if (w54s7 && w54s7.storage && ((w54s7.storage.store[RESOURCE_HYDROGEN] || 0) > 300000)) {
+  //   sellResource({
+  //     resource_type: RESOURCE_HYDROGEN,
+  //     price: 0.140,
+  //     rooms: [w54s7],
+  //   })
+  // }
 
-  const w53s15 = Game.rooms['W53S15']
-  if (w53s15 && w53s15.storage && (_.sum(w53s15.storage.store) > (w53s15.storage.storeCapacity * 0.95))) {
-    if ((w53s15.storage.store[RESOURCE_OXYGEN] || 0) > 0) {
-      sellResource({
-        resource_type: RESOURCE_OXYGEN,
-        price: 0.05,
-        rooms: [w53s15],
-        storage_min_amount: 20000,
-      })
-    }
-    if ((w53s15.storage.store[RESOURCE_KEANIUM] || 0) > 0) {
-      sellResource({
-        resource_type: RESOURCE_KEANIUM,
-        price: 0.03,
-        rooms: [w53s15],
-        storage_min_amount: 20000,
-      })
-    }
-  }
+  // const w53s15 = Game.rooms['W53S15']
+  // if (w53s15 && w53s15.storage && (_.sum(w53s15.storage.store) > (w53s15.storage.storeCapacity * 0.95))) {
+  //   if ((w53s15.storage.store[RESOURCE_OXYGEN] || 0) > 0) {
+  //     sellResource({
+  //       resource_type: RESOURCE_OXYGEN,
+  //       price: 0.05,
+  //       rooms: [w53s15],
+  //       storage_min_amount: 20000,
+  //     })
+  //   }
+  //   if ((w53s15.storage.store[RESOURCE_KEANIUM] || 0) > 0) {
+  //     sellResource({
+  //       resource_type: RESOURCE_KEANIUM,
+  //       price: 0.03,
+  //       rooms: [w53s15],
+  //       storage_min_amount: 20000,
+  //     })
+  //   }
+  // }
 
-  const w47s6 = Game.rooms['W47S6']
-  if (w47s6 && w47s6.storage && (_.sum(w47s6.storage.store) > (w47s6.storage.storeCapacity * 0.95))) {
-    if ((w47s6.storage.store[RESOURCE_HYDROGEN] || 0) > 0) {
-      sellResource({
-        resource_type: RESOURCE_HYDROGEN,
-        price: 0.100,
-        rooms: [w53s15],
-        storage_min_amount: 50000,
-      })
-    }
-    if ((w47s6.storage.store[RESOURCE_LEMERGIUM] || 0) > 0) {
-      sellResource({
-        resource_type: RESOURCE_LEMERGIUM,
-        price: 0.02,
-        rooms: [w53s15],
-        storage_min_amount: 20000,
-      })
-    }
-  }
+  // const w47s6 = Game.rooms['W47S6']
+  // if (w47s6 && w47s6.storage && (_.sum(w47s6.storage.store) > (w47s6.storage.storeCapacity * 0.95))) {
+  //   if ((w47s6.storage.store[RESOURCE_HYDROGEN] || 0) > 0) {
+  //     sellResource({
+  //       resource_type: RESOURCE_HYDROGEN,
+  //       price: 0.100,
+  //       rooms: [w53s15],
+  //       storage_min_amount: 50000,
+  //     })
+  //   }
+  //   if ((w47s6.storage.store[RESOURCE_LEMERGIUM] || 0) > 0) {
+  //     sellResource({
+  //       resource_type: RESOURCE_LEMERGIUM,
+  //       price: 0.02,
+  //       rooms: [w53s15],
+  //       storage_min_amount: 20000,
+  //     })
+  //   }
+  // }
 
   sellResource({
     resource_type: RESOURCE_KEANIUM,
