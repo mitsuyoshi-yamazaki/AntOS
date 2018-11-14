@@ -70,8 +70,8 @@ declare global {
     claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void
 
     // Storage balancing
-    _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean}): void
-    balance_storage(opts?: {dry_run?: boolean, sector_name?: string}): void
+    _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean, no_logs?: boolean}): 'done' | 'nothing'
+    balance_storage(opts?: {dry_run?: boolean, no_logs?: boolean, sector_name?: string}): void
   }
 
   interface Memory {
@@ -1197,8 +1197,9 @@ export function tick(): void {
   }
 
 
-  Game.balance_storage = function(opts?: {dry_run?: boolean, sector_name?: string}): void {
+  Game.balance_storage = function(opts?: {dry_run?: boolean, no_logs?: boolean, sector_name?: string}): void {
     opts = opts || {}
+    let nothing_to_do = true
 
     for (const sector_name in Memory.sectors) {
       if (opts.sector_name && (opts.sector_name != sector_name)) {
@@ -1209,16 +1210,29 @@ export function tick(): void {
       if (!sector_memory) {
         continue
       }
-      Game._balance_storage(sector_memory, opts)
+      const result = Game._balance_storage(sector_memory, opts)
+      if (result == 'done') {
+        nothing_to_do = false
+      }
     }
+
+    const description = nothing_to_do ? 'DONE' : 'IN PROGRESS'
+    console.log(`Balancing storage: ${description}`)
   }
 
-  Game._balance_storage = function(sector_memory: SectorMemory, opts?: {dry_run?: boolean}): void {
+  Game._balance_storage = function(sector_memory: SectorMemory, opts?: {dry_run?: boolean, no_logs?: boolean}): 'done' | 'nothing' {
     opts = opts || {}
     const dry_run = !(opts.dry_run == false)
     const dry_run_description = dry_run ? ' (DRY RUN)' : ''
+    let show_logs = !(opts.no_logs == true)
 
-    console.log(`\nBalancing storage in sector (${sector_memory.regions.length} rooms) ${sector_memory.name}${dry_run_description}`)
+    if ((opts.no_logs !== true) && dry_run) {
+      show_logs = true
+    }
+
+    if (show_logs) {
+      console.log(`\nBalancing storage in sector (${sector_memory.regions.length} rooms) ${sector_memory.name}${dry_run_description}`)
+    }
 
     const rooms = sector_memory.regions.map(region_name => {
       return Game.rooms[region_name]
@@ -1242,9 +1256,11 @@ export function tick(): void {
     }).map(room => room.name)
 
     if (empty_room_names.length == 0) {
-      console.log(`No empty rooms`)
-      console.log(`------------\n\n`)
-      return
+      if (show_logs) {
+        console.log(leveled_colored_text('No empty rooms', 'warn'))
+        console.log(`------------\n\n`)
+      }
+      return 'done'
     }
 
     const resource_to_send = (storage: StructureStorage) => {
@@ -1274,13 +1290,17 @@ export function tick(): void {
 
       const resource_type = resource_to_send(room.storage)
       if (!resource_type) {
-        console.log(`- [${room_link(room.name)}] cannot determine resource type`)
+        if (show_logs) {
+          console.log(`- [${room_link(room.name)}] cannot determine resource type`)
+        }
         return
       }
 
       const target_room_names = empty_room_names.filter(room_name => room_name != room.name)
       if (target_room_names.length == 0) {
-        console.log(`- [${room_link(room.name)}] no rooms to send resources`)
+        if (show_logs) {
+          console.log(`- [${room_link(room.name)}] no rooms to send resources`)
+        }
         return
       }
 
@@ -1288,27 +1308,39 @@ export function tick(): void {
       const destination_room_name = target_room_names[room_index % target_room_names.length]
 
       if (dry_run) {
-        console.log(`- [${room_link(room.name)}] WILL send ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+        if (show_logs) {
+          console.log(`- [${room_link(room.name)}] WILL send ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+        }
       }
       else {
         const result = room.terminal.send(resource_type as ResourceConstant, amount, destination_room_name)
 
         switch (result) {
           case OK:
-            console.log(`- [${room_link(room.name)}] sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            if (show_logs) {
+              console.log(`- [${room_link(room.name)}] sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            }
             break
 
           default:
-            console.log(`- [${room_link(room.name)}] failed to sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            if (show_logs) {
+              console.log(`- [${room_link(room.name)}] failed to sent ${amount} * ${resource_type} to ${room_link(destination_room_name)}`)
+            }
             break
         }
       }
     })
 
     if (nothing_to_do) {
-      console.log(`Nothing to do`)
+      if (show_logs) {
+        console.log(`Nothing to do`)
+      }
     }
-    console.log(`------------\n\n`)
+    if (show_logs) {
+      console.log(`------------\n\n`)
+    }
+
+    return nothing_to_do ? 'nothing' : 'done'
   }
 
 
