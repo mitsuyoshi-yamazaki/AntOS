@@ -15,7 +15,7 @@ interface ManualMemory extends CreepMemory {
 
 enum ManualSquadTask {
   RESERVE   = 'reserve',   // target_room_names
-  STEAL     = 'steal',     // target_room_name
+  STEAL     = 'steal',     // target_room_name, creeps_max, need observing // ONLY works for terminal
   DISMANTLE = 'dismantle', // target_room_name, target_ids
   SCOUT     = 'scout',     // target_room_names
 }
@@ -75,6 +75,38 @@ export class ManualSquad extends Squad {
             return SpawnPriority.NONE
           }
           return this.creeps.size < 1 ? SpawnPriority.LOW : SpawnPriority.NONE
+        }
+
+        case ManualSquadTask.STEAL: {
+          const squad_memory = Memory.squads[this.name] as ManualSquadMemory
+          if (!squad_memory || !squad_memory.target_room_name) {
+            return SpawnPriority.NONE
+          }
+
+          const target_room_name = squad_memory.target_room_name
+          const target_room = Game.rooms[target_room_name]
+          if (!target_room) {
+            return SpawnPriority.NONE
+          }
+          if (!target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+            return SpawnPriority.NONE
+          }
+
+          if (this.spawning) {
+            return SpawnPriority.NONE
+          }
+
+          const is_spawning = Array.from(this.creeps.values()).filter(creep => {
+            return creep.spawning
+          }).length > 0
+
+          if (is_spawning) {
+            return SpawnPriority.NONE
+          }
+
+          const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 0
+
+          return this.creeps.size < max ? SpawnPriority.LOW : SpawnPriority.NONE
         }
 
         default:
@@ -194,6 +226,10 @@ export class ManualSquad extends Squad {
           return energy_available >= 2000
         }
 
+        case ManualSquadTask.STEAL: {
+          return energy_available >= 1500
+        }
+
         default:
           break
       }
@@ -254,6 +290,17 @@ export class ManualSquad extends Squad {
             MOVE, MOVE, MOVE, MOVE, MOVE,
           ]
           this.addGeneralCreep(spawn_func, body, CreepType.WORKER)
+          return
+        }
+
+        case ManualSquadTask.STEAL: {
+          const body: BodyPartConstant[] = [
+            CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+            CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+            CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+          ]
+          this.addGeneralCreep(spawn_func, body, CreepType.CARRIER, {let_thy_live: true})
+          this.spawning = true
           return
         }
 
@@ -390,6 +437,11 @@ export class ManualSquad extends Squad {
           return
         }
 
+        case ManualSquadTask.STEAL: {
+          this.runStealTask(squad_memory)
+          return
+        }
+
         default:
           break
       }
@@ -467,88 +519,7 @@ export class ManualSquad extends Squad {
       case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
-        if (!squad_memory || !squad_memory.target_room_name) {
-          this.say(`ERR`)
-          return
-        }
-
-        const target_room_name = squad_memory.target_room_name
-        const target_room = Game.rooms[target_room_name]
-
-        if (!this.base_room.storage) {
-          this.say(`ERR`)
-
-          Game.notify(`NO TERMINAL in ${this.base_room.name}`)
-          return
-        }
-
-        const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 0
-        const should_work = (max > 0)
-
-        const destination = this.base_room.storage
-
-        this.creeps.forEach((creep) => {
-          if (creep.spawning) {
-            return
-          }
-          creep.memory.let_thy_die = false
-
-          const carry = _.sum(creep.carry)
-
-          if (carry == 0) {
-            if (creep.pos.roomName == this.base_room.name) {
-              const needs_renew = ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 1300)))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
-
-              if (needs_renew) {
-                if ((creep.ticksToLive || 0) > 1400) {
-                  creep.memory.status = CreepStatus.NONE
-                }
-                else {
-                  if ((creep.room.spawns.length > 0)) {
-                    creep.goToRenew(creep.room.spawns[2] || creep.room.spawns[0])
-                    return
-                  }
-                  else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
-                    creep.memory.status = CreepStatus.NONE
-                  }
-                }
-
-              }
-            }
-
-            if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
-              return
-            }
-
-            if (target_room && target_room.terminal) {
-              if (creep.pos.isNearTo(target_room.terminal)) {
-                if (should_work) {
-                  creep.withdrawResources(target_room.terminal, {exclude: [ RESOURCE_ENERGY ]})
-                }
-              }
-              else {
-                creep.moveTo(target_room.terminal)
-              }
-            }
-            else {
-              console.log(`ManualSquad.run ${this.base_room.name} no target`)
-              creep.say(`NO TGT`)
-            }
-          }
-          else {
-            if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
-              return
-            }
-
-            if (creep.pos.isNearTo(destination)) {
-              creep.transferResources(destination)
-            }
-            else {
-              creep.moveTo(destination)
-            }
-          }
-        })
-        return
+        this.runStealTask(squad_memory)
       }
 
       case 'W54S7': {
@@ -729,6 +700,91 @@ export class ManualSquad extends Squad {
         creep.moveTo(target)
       }
     })
+  }
+
+  private runStealTask(squad_memory: ManualSquadMemory): void {
+    if (!squad_memory || !squad_memory.target_room_name) {
+      this.say(`ERR`)
+      return
+    }
+
+    const target_room_name = squad_memory.target_room_name
+    const target_room = Game.rooms[target_room_name]
+
+    if (!this.base_room.storage) {
+      this.say(`ERR`)
+
+      Game.notify(`NO TERMINAL in ${this.base_room.name}`)
+      return
+    }
+
+    const max = !(!squad_memory.creeps_max) ? squad_memory.creeps_max : 0
+    const should_work = (max > 0)
+
+    const destination = this.base_room.storage
+
+    this.creeps.forEach((creep) => {
+      if (creep.spawning) {
+        return
+      }
+      creep.memory.let_thy_die = false
+
+      const carry = _.sum(creep.carry)
+
+      if (carry == 0) {
+        if (creep.pos.roomName == this.base_room.name) {
+          const needs_renew = ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 1300)))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
+
+          if (needs_renew) {
+            if ((creep.ticksToLive || 0) > 1400) {
+              creep.memory.status = CreepStatus.NONE
+            }
+            else {
+              if ((creep.room.spawns.length > 0)) {
+                creep.goToRenew(creep.room.spawns[2] || creep.room.spawns[0])
+                return
+              }
+              else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
+                creep.memory.status = CreepStatus.NONE
+              }
+            }
+
+          }
+        }
+
+        if (creep.moveToRoom(target_room_name) == ActionResult.IN_PROGRESS) {
+          return
+        }
+
+        if (target_room && target_room.terminal) {
+          if (creep.pos.isNearTo(target_room.terminal)) {
+            if (should_work) {
+              creep.withdrawResources(target_room.terminal, {exclude: [ RESOURCE_ENERGY ]})
+            }
+          }
+          else {
+            creep.moveTo(target_room.terminal)
+          }
+        }
+        else {
+          console.log(`ManualSquad.run ${this.base_room.name} no target`)
+          creep.say(`NO TGT`)
+        }
+      }
+      else {
+        if (creep.moveToRoom(this.base_room.name) == ActionResult.IN_PROGRESS) {
+          return
+        }
+
+        if (creep.pos.isNearTo(destination)) {
+          creep.transferResources(destination)
+        }
+        else {
+          creep.moveTo(destination)
+        }
+      }
+    })
+    return
   }
 
   // ---
