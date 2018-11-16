@@ -126,21 +126,6 @@ export class ManualSquad extends Squad {
         return this.creeps.size < 3 ? SpawnPriority.LOW : SpawnPriority.NONE
       }
 
-      case 'E16N37': {
-        return SpawnPriority.NONE
-
-        // const target_room_name = 'E15N37'
-        // const room = Game.rooms[target_room_name]
-        // if (!room) {
-        //   return SpawnPriority.NONE
-        // }
-        // if ((!room.storage || (_.sum(room.storage.store) == 0)) && (!room.terminal || (_.sum(room.terminal.store) == 0))) {
-        //   return SpawnPriority.NONE
-        // }
-
-        // return this.creeps.size < 4 ? SpawnPriority.LOW : SpawnPriority.NONE
-      }
-
       // Memory contents:
       // - target_room_name
       // - creeps_max (set 0 to stop spawning but run creeps)
@@ -229,10 +214,6 @@ export class ManualSquad extends Squad {
 
       case 'W46S3': {
         return energy_available >= 850
-      }
-
-      case 'E16N37': {
-        return energy_available >= 1500
       }
 
       case 'W55S13':
@@ -361,21 +342,6 @@ export class ManualSquad extends Squad {
         return
       }
 
-      case 'E16N37': {
-        const body: BodyPartConstant[] = [
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-          // MOVE, MOVE, MOVE, MOVE, MOVE,
-          // MOVE, MOVE, MOVE, MOVE, MOVE,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          CARRY, CARRY, CARRY, CARRY, CARRY,
-          MOVE, MOVE, MOVE, MOVE, MOVE,
-        ]
-        this.addGeneralCreep(spawn_func, body, CreepType.CARRIER)
-        return
-      }
-
       case 'W55S13':
       case 'W53S15':
       case 'W56S7': {
@@ -494,13 +460,6 @@ export class ManualSquad extends Squad {
               }
             }
           }
-        })
-        return
-      }
-
-      case 'E16N37': {
-        this.creeps.forEach(creep=> {
-          creep.dismantleObjects('E17N34')
         })
         return
       }
