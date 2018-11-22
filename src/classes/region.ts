@@ -408,6 +408,20 @@ export class Region {
         break
       }
 
+      case 'E13N36': {
+        harvester_targets = [
+          { id: '59f1c0dd7d0b3d79de5f16ae', room_name: 'E13N36' },  // Oxygen
+        ]
+        break
+      }
+
+      case 'W48S12': {
+        harvester_targets = [
+          { id: '59f1c0ce7d0b3d79de5f022d', room_name: 'W48S12' },  // Hydrogen
+        ]
+        break
+      }
+
       default:
         // console.log(`Region.initialize unexpected region name, ${this.name}`)
         break
