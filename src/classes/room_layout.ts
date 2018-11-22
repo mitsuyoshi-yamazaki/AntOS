@@ -284,7 +284,33 @@ export class RoomLayout {
     }
   }
 
+  // rotation
   private parse_layout(layout_info: RawRoomLayout) {
+    const raw_layout = layout_info.layout
+
+    let y = this.origin_pos.y + raw_layout.length
+
+    for (const row of raw_layout) {
+      let x = this.origin_pos.x
+
+      for (const mark of row) {
+        const flag_color = flag_colors.get(mark)
+
+        if (flag_color) {
+          const positions = this.structures.get(mark) || []
+          positions.push({x, y})
+
+          this.structures.set(mark, positions)
+        }
+        x += 1
+      }
+      y -= 1
+    }
+  }
+
+
+  // original
+  private _parse_layout(layout_info: RawRoomLayout) {
     const raw_layout = layout_info.layout
 
     let y = this.origin_pos.y
