@@ -565,7 +565,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * Strategy:
-   * W51S29 -> E16N37: claim multiple rooms, send resources
+   * Sell raw minerals from rooms those have no enough space in the storage
    * Start power processing in E15N35 sector
  * CPU Clinic:
    * findxxx() costs CPU?
