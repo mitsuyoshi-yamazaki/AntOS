@@ -1256,6 +1256,10 @@ export function init() {
             amount_min *= multiply
             amount_max = amount_min + 2000
           }
+          else if (resources_should_store_in_storage.indexOf(resource_type) >= 0) {
+            amount_min = 0
+            amount_max = 0
+          }
 
           const amount = (this.room.terminal.store[resource_type] || 0)
           if ((amount < amount_min) && ((storage.store[resource_type] || 0) > 0)) {
@@ -1386,14 +1390,21 @@ export function init() {
           }
         }
 
-        if (this.room.terminal && this.carrying_resources()[0]) {
-          const amount = this.room.terminal.store[this.carrying_resources()[0]] || 0
+        const carrying_resource_type = this.carrying_resources()[0]
 
-          if (amount < 10000) {
-            this.transferResources(this.room.terminal)
+        if (this.room.terminal && carrying_resource_type) {
+          if (resources_should_store_in_storage.indexOf(carrying_resource_type) >= 0) {
+            this.transferResources(storage)
           }
           else {
-            this.transferResources(storage)
+            const amount = this.room.terminal.store[this.carrying_resources()[0]] || 0
+
+            if (amount < 10000) {
+              this.transferResources(this.room.terminal)
+            }
+            else {
+              this.transferResources(storage)
+            }
           }
         }
         else {
@@ -2327,3 +2338,22 @@ export function init() {
     return ActionResult.IN_PROGRESS
   }
 }
+
+const resources_should_store_in_storage: ResourceConstant[] = [
+  RESOURCE_UTRIUM_HYDRIDE,
+  RESOURCE_UTRIUM_OXIDE,
+  RESOURCE_UTRIUM_ACID,
+  RESOURCE_UTRIUM_ALKALIDE,
+  RESOURCE_KEANIUM_HYDRIDE,
+  RESOURCE_KEANIUM_OXIDE,
+  RESOURCE_KEANIUM_ACID,
+  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_LEMERGIUM_HYDRIDE,
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_LEMERGIUM_ACID,
+  RESOURCE_LEMERGIUM_ALKALIDE,
+  RESOURCE_ZYNTHIUM_HYDRIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_ACID,
+  RESOURCE_ZYNTHIUM_ALKALIDE,
+]

@@ -565,11 +565,13 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 /**
  * @todo:
  * Strategy:
-   * Sell raw minerals from rooms those have no enough space in the storage
    * Start power processing in E15N35 sector
  * CPU Clinic:
    * findxxx() costs CPU?
    * balancer
+ * Storage Balancing:
+   * Not store tire1 & 2 compounds in terminal except it's reaction_outputs
+   * Sell raw minerals from rooms those have no enough space in the storage
  * Automation:
    * auto remote harvester
    * auto mineral harvester
