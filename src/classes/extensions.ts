@@ -1368,6 +1368,11 @@ export function tick(): void {
       console.log(`\nSell resource in ${terminal.room.name} ${dry_run_description}`)
     }
 
+    if (terminal.cooldown > 0) {
+      console.log(`Error terminal cooldown`)
+      return
+    }
+
     const storage = terminal.room.storage
     if (!storage) {
       if (show_logs) {
@@ -1380,7 +1385,48 @@ export function tick(): void {
       return
     }
 
-    // @todo:
+    const resource_to_sell = Object.keys(storage.store).filter(resource_type => {
+      if (sellable_resources.indexOf(resource_type as ResourceConstant) < 0) {
+        return false
+      }
+      return true
+    }).sort((lhs, rhs) => {
+      const l_amount = storage.store[lhs as ResourceConstant] || 0
+      const r_amount = storage.store[rhs as ResourceConstant] || 0
+      if (l_amount < r_amount) return 1
+      return -1
+    })[0] as ResourceConstant | undefined
+
+    if (!resource_to_sell) {
+      if (show_logs) {
+        console.log(`Error no sellable resources`)
+      }
+      return
+    }
+
+    const terminal_amount = terminal.store[resource_to_sell] || 0
+    if (terminal_amount < 10000) {
+      if (show_logs) {
+        console.log(`Error resource ${resource_to_sell} not enough in terminal (${terminal_amount})`)
+      }
+      return
+    }
+
+    const order = Game.buyOrders(resource_to_sell, null)[0]
+    if (!order) {
+      if (show_logs) {
+        console.log(`Error no buy order for ${resource_to_sell}`)
+      }
+      return
+    }
+
+    if (!dry_run) {
+      Game.market.deal(order.id, terminal_amount, terminal.room.name)
+    }
+    if (show_logs) {
+      const amount = terminal_amount > order.amount ? terminal_amount : order.amount
+      console.log(`Sell ${terminal_amount} of ${resource_to_sell} in ${terminal.room.name} (order id: ${order.id}, price: ${order.price}, estimated return: ${order.price * amount}, remaining: ${order.remainingAmount})`)
+    }
   }
 
   Game._fetchOrders = function(): void {
@@ -1573,3 +1619,12 @@ export function tick(): void {
     }
   }
 }
+
+const sellable_resources: ResourceConstant[] = [
+  RESOURCE_HYDROGEN,
+  RESOURCE_OXYGEN,
+  RESOURCE_UTRIUM,
+  RESOURCE_LEMERGIUM,
+  RESOURCE_ZYNTHIUM,
+  RESOURCE_KEANIUM,
+]

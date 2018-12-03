@@ -346,12 +346,12 @@ export class Empire {
       ErrorMapper.wrapLoop(() => {
         // Game.balance_storage({dry_run: false, no_logs: true})
 
-        this.owned_controllers.forEach(controller => {
-          if (!controller.room.terminal) {
-            return
-          }
-          Game.sell_excess_resources(controller.room.terminal)
-        })
+        // this.owned_controllers.forEach(controller => {
+        //   if (!controller.room.terminal) {
+        //     return
+        //   }
+        //   Game.sell_excess_resources(controller.room.terminal)
+        // })
 
       }, `${this.name} balancing storage`)()
     }
