@@ -422,6 +422,13 @@ export class Region {
         break
       }
 
+      case 'E13N34': {
+        harvester_targets = [
+          { id: '59f1c0dd7d0b3d79de5f16b0', room_name: 'E13N34' },  // Zynthium
+        ]
+        break
+      }
+
       default:
         // console.log(`Region.initialize unexpected region name, ${this.name}`)
         break
