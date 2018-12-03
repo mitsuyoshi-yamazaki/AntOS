@@ -1365,7 +1365,7 @@ export function tick(): void {
     }
 
     if (show_logs) {
-      console.log(`\nSell resource in ${terminal.room.name} ${dry_run_description}`)
+      console.log(`---\nSell resource in ${room_link(terminal.room.name)} ${dry_run_description}`)
     }
 
     if (terminal.cooldown > 0) {
@@ -1382,6 +1382,9 @@ export function tick(): void {
     }
 
     if (_.sum(storage.store) < (storage.storeCapacity * 0.9)) {
+      if (show_logs) {
+        console.log(`Not needed`)
+      }
       return
     }
 
