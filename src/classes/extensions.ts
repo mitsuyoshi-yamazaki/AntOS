@@ -24,6 +24,13 @@ declare global {
     reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
     squad_creeps: {[squad_name: string]: Creep[]}
 
+    // Market
+    _fetchOrders(): void
+    _buyOrders: Order[]
+    _sellOrders: Order[]
+    buyOrders(resource_type: ResourceConstant, price: number | null): Order[]
+    sellOrders(resource_type: ResourceConstant, price: number | null): Order[]
+
     check_resources: (resource_type: ResourceConstant) => {[room_name: string]: number}
     check_resource_amount: (resource_type: ResourceConstant) => number
     check_resources_in: (room_name: string) => void
@@ -72,6 +79,8 @@ declare global {
     // Storage balancing
     _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean, no_logs?: boolean}): 'done' | 'nothing'
     balance_storage(opts?: {dry_run?: boolean, no_logs?: boolean, sector_name?: string}): void
+
+    sell_excess_resources(terminal: StructureTerminal, opts?: {dry_run?: boolean, no_logs?: boolean}): void
   }
 
   interface Memory {
@@ -1343,6 +1352,106 @@ export function tick(): void {
     }
 
     return nothing_to_do ? 'nothing' : 'done'
+  }
+
+  Game.sell_excess_resources = function(terminal: StructureTerminal, opts?: {dry_run?: boolean, no_logs?: boolean}): void {
+    opts = opts || {}
+    const dry_run = !(opts.dry_run == false)
+    const dry_run_description = dry_run ? ' (DRY RUN)' : ''
+    let show_logs = !(opts.no_logs == true)
+
+    if ((opts.no_logs !== true) && dry_run) {
+      show_logs = true
+    }
+
+    if (show_logs) {
+      console.log(`\nSell resource in ${terminal.room.name} ${dry_run_description}`)
+    }
+
+    const storage = terminal.room.storage
+    if (!storage) {
+      if (show_logs) {
+        console.log(`No storage in ${terminal.room.name}`)
+      }
+      return
+    }
+
+    if (_.sum(storage.store) < (storage.storeCapacity * 0.9)) {
+      return
+    }
+
+    // @todo:
+  }
+
+  Game._fetchOrders = function(): void {
+    const orders = Game.market.getAllOrders((order) => {
+      if (order.amount < 100) {
+        return false
+      }
+      return true
+    })
+
+    Game._buyOrders = orders.filter((order) => {
+      if (order.type != ORDER_BUY) {
+        return false
+      }
+      return true
+    }).sort(function(lhs, rhs){ // highest to lowest
+      if( lhs.price > rhs.price ) return -1
+      if( lhs.price < rhs.price ) return 1
+      if( lhs.amount > rhs.amount ) return -1
+      if( lhs.amount < rhs.amount ) return 1
+      return 0
+    })
+
+    Game._sellOrders = orders.filter((order) => {
+      if (order.type != ORDER_SELL) {
+        return false
+      }
+      return true
+    }).sort(function(lhs, rhs){
+      if( lhs.price < rhs.price ) return -1
+      if( lhs.price > rhs.price ) return 1
+      if( lhs.amount > rhs.amount ) return -1
+      if( lhs.amount < rhs.amount ) return 1
+      return 0
+    })
+  }
+
+  Game.buyOrders = function(resource_type: ResourceConstant, price: number | null): Order[] {
+    if (!Game._buyOrders) {
+      Game._fetchOrders()
+    }
+
+    const buy_orders: Order[] = Game._buyOrders || []
+
+    return buy_orders.filter((order) => {
+      if (order.resourceType != resource_type) {
+        return false
+      }
+      if (price && (order.price < price)) {
+          return false
+      }
+      return true
+    })
+  }
+
+  Game.sellOrders = function(resource_type: ResourceConstant, price: number | null): Order[] {
+    if (!Game._sellOrders) {
+      Game._fetchOrders()
+    }
+
+    const sell_orders: Order[] = Game._sellOrders || []
+
+    return sell_orders.filter((order) => {
+      if (order.resourceType != resource_type) {
+        return false
+      }
+      if (price && (order.price > price)) {
+          return false
+      }
+      return true
+    })
   }
 
 

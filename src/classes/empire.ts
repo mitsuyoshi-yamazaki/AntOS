@@ -47,6 +47,8 @@ export interface EmpireMemory {
 
 export class Empire {
   private regions = new Map<string, Region>()
+  private owned_controllers: StructureController[] = []
+  private owned_room_names: string[] = []
 
   constructor(readonly name: string) {
     if (!Memory.empires[this.name]) {
@@ -68,9 +70,6 @@ export class Empire {
     const empire_memory = Memory.empires[this.name]
 
     // --- Owned Rooms
-    const owned_controllers: StructureController[] = []
-    const owned_room_names: string[] = []
-
     for (const room_name in Game.rooms) {
       const room = Game.rooms[room_name]
       if (!room || !room.controller || !room.controller.my) {
@@ -81,12 +80,12 @@ export class Empire {
         continue
       }
 
-      owned_room_names.push(room.name)
-      owned_controllers.push(room.controller)
+      this.owned_room_names.push(room.name)
+      this.owned_controllers.push(room.controller)
     }
 
     if ((Game.time % 107) == 3) {
-      owned_room_names.forEach(room_name => {
+      this.owned_room_names.forEach(room_name => {
         const sector_name = getSectorName(room_name)
         if (!sector_name) {
           return
@@ -115,10 +114,10 @@ export class Empire {
     const number_of_gcl_farms = 1
     const non_owned_onboarding_rooms = Object.keys(empire_memory.onboarding_rooms).filter(room_name=> {
       const info = empire_memory.onboarding_rooms[room_name]
-      return owned_room_names.indexOf(info.target_room_name) < 0
+      return this.owned_room_names.indexOf(info.target_room_name) < 0
     })
 
-    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - non_owned_onboarding_rooms.length - owned_controllers.length, 0)
+    let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - non_owned_onboarding_rooms.length - this.owned_controllers.length, 0)
 
     if ((Game.time % 29) == 1) {
       console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
@@ -297,7 +296,7 @@ export class Empire {
     }
 
     // --- Regions
-    for (const controller of owned_controllers) {
+    for (const controller of this.owned_controllers) {
       const room = controller.room
 
       const opt: RegionOpt = {
@@ -345,7 +344,15 @@ export class Empire {
 
     if ((Game.time % 347) == 5) {
       ErrorMapper.wrapLoop(() => {
-        Game.balance_storage({dry_run: false, no_logs: true})
+        // Game.balance_storage({dry_run: false, no_logs: true})
+
+        this.owned_controllers.forEach(controller => {
+          if (!controller.room.terminal) {
+            return
+          }
+          Game.sell_excess_resources(controller.room.terminal)
+        })
+
       }, `${this.name} balancing storage`)()
     }
   }

@@ -72,7 +72,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     Memory.debug.test_send_resources = false
   }
 
-  if ((Game.time % 197) == 5) {
+  if ((Game.time % 197) == 100) {
     ErrorMapper.wrapLoop(() => {
       // if ((Game.time % 7) == 0) {  // @fixme:
         trade()
@@ -417,27 +417,7 @@ function sellerRoom(rooms: Room[], resource_type: ResourceConstant, order_amount
 }
 
 function buyOrders(resource_type: ResourceConstant, price: number): Order[] {
-  return Game.market.getAllOrders((order) => {
-    if (order.type != ORDER_BUY) {
-      return false
-    }
-    if (order.resourceType != resource_type) {
-      return false
-    }
-    if (order.price < price) {
-        return false
-    }
-    if (order.amount < 100) {
-      return false
-    }
-    return true
-  }).sort(function(lhs, rhs){ // highest to lowest
-    if( lhs.price > rhs.price ) return -1
-    if( lhs.price < rhs.price ) return 1
-    if( lhs.amount > rhs.amount ) return -1
-    if( lhs.amount < rhs.amount ) return 1
-    return 0
-  })
+  return Game.buyOrders(resource_type, price)
 }
 
 // -- Buy
@@ -510,27 +490,7 @@ function buyerRoom(rooms: Room[], order_amount: number): Room | undefined {
 
 
 function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
-  return Game.market.getAllOrders((order) => {
-    if (order.type != ORDER_SELL) {
-      return false
-    }
-    if (order.resourceType != resource_type) {
-      return false
-    }
-    if (order.price > price) {
-        return false
-    }
-    if (order.amount < 100) {
-      return false
-    }
-    return true
-  }).sort(function(lhs, rhs){
-    if( lhs.price < rhs.price ) return -1
-    if( lhs.price > rhs.price ) return 1
-    if( lhs.amount > rhs.amount ) return -1
-    if( lhs.amount < rhs.amount ) return 1
-    return 0
-  })
+  return Game.sellOrders(resource_type, price)
 }
 
 /**
