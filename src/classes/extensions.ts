@@ -1632,4 +1632,5 @@ const sellable_resources: ResourceConstant[] = [
   RESOURCE_KEANIUM,
 
   RESOURCE_UTRIUM_LEMERGITE,  // @fixme:
+  RESOURCE_HYDROXIDE, // @fixme:
 ]
