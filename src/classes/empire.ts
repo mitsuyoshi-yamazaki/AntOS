@@ -347,6 +347,8 @@ export class Empire {
       ErrorMapper.wrapLoop(() => {
         // Game.balance_storage({dry_run: false, no_logs: true})
 
+        console.log(`Game.sell_excess_resources at ${Game.time}`)
+
         this.owned_controllers.forEach(controller => {
           if (!controller.room.terminal) {
             return
