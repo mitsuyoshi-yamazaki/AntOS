@@ -1040,7 +1040,7 @@ export function runHarvester(creep: Creep, room_name: string, source: Source | M
 
     if (target) {
       const result = creep.build(target)
-      if (result != OK) {
+      if ((result != OK) && ((Game.time % 41) == 3)) {
         console.log(`HarvesterSquad.harvest build failed ${result}, ${creep.name}, ${creep.pos}, ${room_link(room_name)}`)
         return
       }
