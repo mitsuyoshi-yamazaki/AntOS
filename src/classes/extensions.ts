@@ -739,6 +739,8 @@ export function tick(): void {
     else {
       const energy_source_excluded_regions: string[] = [
         'E16N37',
+        'E13N34',
+        'E13N36',
         'W55S47',
       ]
 
