@@ -1412,6 +1412,22 @@ export function tick(): void {
       if (show_logs) {
         console.log(`Error resource ${resource_to_sell} not enough in terminal (${terminal_amount})`)
       }
+
+      const energy_amount = terminal.store.energy
+
+      if (!dry_run && (energy_amount > 100000)) {
+        const target_room_name = 'W38S6'  // @fixme:
+        const result = terminal.send(RESOURCE_ENERGY, 50000, target_room_name)
+
+        if (show_logs) {
+          if (result == OK) {
+            console.log(`Send energy to ${target_room_name}`)
+          }
+          else {
+            console.log(`Error sending energy to ${target_room_name} failed with ${result}`)
+          }
+        }
+      }
       return
     }
 
