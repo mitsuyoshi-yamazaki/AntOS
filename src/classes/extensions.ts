@@ -1655,9 +1655,9 @@ export function tick(): void {
 const sellable_resources: ResourceConstant[] = [
   RESOURCE_HYDROGEN,
   RESOURCE_OXYGEN,
-  RESOURCE_UTRIUM,
+  // RESOURCE_UTRIUM,
   RESOURCE_LEMERGIUM,
-  RESOURCE_ZYNTHIUM,
+  // RESOURCE_ZYNTHIUM,
   RESOURCE_KEANIUM,
 
   RESOURCE_UTRIUM_LEMERGITE,  // @fixme:
