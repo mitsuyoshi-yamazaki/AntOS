@@ -1726,8 +1726,15 @@ export function init() {
         if (debug_say) {
           this.say(`${target.pos.x},${target.pos.y}`) // @fixme: targetを保存すれば良さそう
         }
-        this.transfer(target, RESOURCE_ENERGY)
-        this.moveTo(target, move_to_opt)
+        if (this.pos.isNearTo(target)) {
+          const transfer_result = this.transfer(target, RESOURCE_ENERGY)
+          if (transfer_result != OK) {
+            this.say(`E${transfer_result}`)
+          }
+        }
+        else {
+          this.moveTo(target, move_to_opt)
+        }
         return
       }
     }
