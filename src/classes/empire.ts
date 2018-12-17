@@ -13,7 +13,7 @@ interface OnboardingInfo {
   base_room_name: string
   forced: boolean
   delegate_until: number
-  layout: {name: string, pos: {x: number, y: number}}
+  layout?: {name: string, pos: {x: number, y: number}}
   step_rooms: {
     // @todo:
   }[]

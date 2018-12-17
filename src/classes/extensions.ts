@@ -74,7 +74,7 @@ declare global {
     }
 
     // Claim
-    claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void
+    claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number} | null, opts?:{layout_name?: string, delegate_until?: number}): void
 
     // Storage balancing
     _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean, no_logs?: boolean}): 'done' | 'nothing'
@@ -1187,7 +1187,7 @@ export function tick(): void {
 
   Game.migration = Migration
 
-  Game.claim_next_room = function(base_room: string, target_room: string, layout_pos: {x: number, y: number}, opts?:{layout_name?: string, delegate_until?: number}): void {
+  Game.claim_next_room = function(base_room: string, target_room: string, layout_pos: {x: number, y: number} | null, opts?:{layout_name?: string, delegate_until?: number}): void {
     opts = opts || {}
 
     const empire_memory = Memory.empires[Game.user.name]
@@ -1196,17 +1196,28 @@ export function tick(): void {
       return
     }
 
-    empire_memory.next_rooms.push({
-      target_room_name: target_room,
-      base_room_name: base_room,
-      forced: true,
-      delegate_until: opts.delegate_until || 6,
-      layout: {
-        name: opts.layout_name || 'mark05',
-        pos: layout_pos,
-      },
-      step_rooms: [],
-    })
+    if (layout_pos) {
+      empire_memory.next_rooms.push({
+        target_room_name: target_room,
+        base_room_name: base_room,
+        forced: true,
+        delegate_until: opts.delegate_until || 6,
+        layout: {
+          name: opts.layout_name || 'mark05',
+          pos: layout_pos,
+        },
+        step_rooms: [],
+      })
+    }
+    else {
+      empire_memory.next_rooms.push({
+        target_room_name: target_room,
+        base_room_name: base_room,
+        forced: true,
+        delegate_until: opts.delegate_until || 6,
+        step_rooms: [],
+      })
+    }
   }
 
 
