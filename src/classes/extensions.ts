@@ -407,8 +407,6 @@ export function tick(): void {
 
     const gcl_progress_text = leveled_colored_text(`${gcl_progress_percentage}`, gcl_label)
 
-    console.log(`v${Game.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%`)
-
     let rooms: Room[] = []
 
     for (const room_name of Object.keys(Game.rooms)) {
@@ -436,6 +434,10 @@ export function tick(): void {
 
       rooms.push(room)
     }
+
+    const room_desc = target.type == 'empire' ? ` claimed rooms ${rooms.length}/${Game.gcl.level}` : ''
+
+    console.log(`v${Game.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%${room_desc}`)
 
     console.log(`- Regions in ${target.type} ${target.name}`)
 
