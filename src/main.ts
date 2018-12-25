@@ -473,6 +473,7 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
  * Strategy:
    * Start power processing in E15N35 sector
  * CPU Clinic:
+   * cache carrier path for remote harvester
    * findxxx() costs CPU?
    * balancer
  * Storage Balancing:
