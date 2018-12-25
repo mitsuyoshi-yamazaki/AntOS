@@ -2,7 +2,7 @@
 import { ErrorMapper } from "utils/ErrorMapper"
 import { Region, RegionOpt } from "./region"
 import { Squad, SpawnPriority, SquadType } from "./squad/squad";
-import { getSectorName } from "./utils";
+import { getSectorName, room_link } from "./utils";
 
 enum State {
   EXPAND = "expand"
@@ -133,7 +133,7 @@ export class Empire {
       if (index >= 0) {
         // @todo: debug here
         empire_memory.onboarding_rooms[next_room.base_room_name] = next_room
-        console.log(`Empire set next room: ${next_room.base_room_name}`)
+        console.log(`Empire set next room: ${room_link(next_room.target_room_name)}`)
 
         empire_memory.next_rooms.splice(index, 0)
         number_of_claimable_rooms -= 1
