@@ -1450,17 +1450,17 @@ export function tick(): void {
         console.log(`Error no buy order for ${resource_to_sell}`)
       }
 
-      const ally_room_name = 'W52S25'
-      const result = terminal.send(resource_to_sell, 10000, ally_room_name)
+      // const ally_room_name = ''
+      // const result = terminal.send(resource_to_sell, 10000, ally_room_name)
 
-      if (show_logs) {
-        if (result == OK) {
-          console.log(`Send ${resource_to_sell} to ${ally_room_name}`)
-        }
-        else {
-          console.log(`Error sending ${resource_to_sell} to ${ally_room_name} failed with ${result}`)
-        }
-      }
+      // if (show_logs) {
+      //   if (result == OK) {
+      //     console.log(`Send ${resource_to_sell} to ${ally_room_name}`)
+      //   }
+      //   else {
+      //     console.log(`Error sending ${resource_to_sell} to ${ally_room_name} failed with ${result}`)
+      //   }
+      // }
 
       return
     }
