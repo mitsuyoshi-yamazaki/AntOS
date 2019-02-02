@@ -1706,7 +1706,7 @@ export class Region {
             // @fixme: If
             const message = `${spawn.name} in ${this.name} assign to ${squad.name}: ${result}, energy: ${this.room.energyAvailable}, (length: ${body.length}) [${body}]`
             console.log(message)
-            Game.notify(message)
+            // Game.notify(message)
           }
           return result
         })
@@ -1732,13 +1732,9 @@ export class Region {
         return
       }
 
-      let duration = 600
+      let duration = 1400 // FIXME:
       if ((this.controller.level < 7)) {
         duration = 700
-      }
-
-      if (this.room.name == 'W51S29') {
-        duration = 770
       }
 
       if (!region_memory.last_spawn_time) {
