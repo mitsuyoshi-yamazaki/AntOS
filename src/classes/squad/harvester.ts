@@ -367,6 +367,10 @@ export class HarvesterSquad extends Squad {
       return SpawnPriority.NONE
     }
 
+    if (this.resource_type != RESOURCE_ENERGY) {
+      squad_memory.stop_spawming = true
+    }
+
     const room = Game.rooms[this.source_info.room_name]
 
     if (this.energy_capacity < 250) {
