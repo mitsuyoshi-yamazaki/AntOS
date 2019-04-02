@@ -120,7 +120,7 @@ export class Empire {
     let number_of_claimable_rooms = Math.max(Game.gcl.level - number_of_gcl_farms - non_owned_onboarding_rooms.length - this.owned_controllers.length, 0)
 
     if ((Game.time % 29) == 1) {
-      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
+//      console.log(`number_of_claimable_rooms: ${number_of_claimable_rooms}`)
     }
 
     for (const next_room of empire_memory.next_rooms) {

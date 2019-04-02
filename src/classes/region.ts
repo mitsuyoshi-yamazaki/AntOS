@@ -1043,7 +1043,7 @@ export class Region {
             case ERR_TIRED:
               break
 
-            case ERR_GCL_NOT_ENOUGH:
+            case ERR_RCL_NOT_ENOUGH:
               break // @fixme:
 
             default:
