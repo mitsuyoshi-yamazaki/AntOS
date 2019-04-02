@@ -1273,7 +1273,7 @@ export class Region {
           }
         }
       }
-      else {
+      else if (result != ERR_RCL_NOT_ENOUGH) {
         console.log(`Region.runObserver failed with ${result}, ${this.name}, observing ${region_memory.observe_target}, ${region_memory.observe_target == null}`)
       }
       return
@@ -1308,7 +1308,7 @@ export class Region {
     const result = observer.observeRoom(target_room_name)
     if (result == OK) {
     }
-    else {
+    else if (result != ERR_RCL_NOT_ENOUGH) {
       console.log(`Region.runObserver 2 failed with ${result}, ${this.name}, observing ${target_room_name}`)
     }
   }
