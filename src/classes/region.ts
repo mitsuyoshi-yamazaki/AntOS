@@ -1043,6 +1043,9 @@ export class Region {
             case ERR_TIRED:
               break
 
+            case ERR_GCL_NOT_ENOUGH:
+              break // @fixme:
+
             default:
               if ((Game.time % 23) == 11) {
                 console.log(`Lab.runReaction failed with ${reaction_result}, ${this.name}, ${output_lab.pos} in ${room_link(output_lab.room.name)}`)
