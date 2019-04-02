@@ -47,10 +47,9 @@ export interface EmpireMemory {
 
 export class Empire {
   private regions = new Map<string, Region>()
-  private owned_controllers: StructureController[] = []
   private owned_room_names: string[] = []
 
-  constructor(readonly name: string) {
+  constructor(readonly name: string, readonly owned_controllers: StructureController[]) {
     if (!Memory.empires[this.name]) {
       Memory.empires[this.name] = {
         farm: null,
@@ -69,20 +68,9 @@ export class Empire {
     }
     const empire_memory = Memory.empires[this.name]
 
-    // --- Owned Rooms
-    for (const room_name in Game.rooms) {
-      const room = Game.rooms[room_name]
-      if (!room || !room.controller || !room.controller.my) {
-        continue
-      }
-
-      if (room.memory && room.memory.is_gcl_farm) {
-        continue
-      }
-
-      this.owned_room_names.push(room.name)
-      this.owned_controllers.push(room.controller)
-    }
+    owned_controllers.forEach(controller => {
+      this.owned_room_names.push(controller.room.name)
+    })
 
     if ((Game.time % 107) == 3) {
       this.owned_room_names.forEach(room_name => {

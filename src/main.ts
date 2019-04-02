@@ -21,7 +21,22 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }, `Initializer.tick`)()
 
   ErrorMapper.wrapLoop(() => {
-    const empire = new Empire(Game.user.name)
+    const owned_controllers: StructureController[] = []
+
+    for (const room_name in Game.rooms) {
+      const room = Game.rooms[room_name]
+      if (!room || !room.controller || !room.controller.my) {
+        continue
+      }
+
+      if (room.memory && room.memory.is_gcl_farm) {
+        continue
+      }
+
+      owned_controllers.push(room.controller)
+    }
+
+    const empire = new Empire(Game.user.name, owned_controllers)
 
     empire.run()
   }, `empire.run`)()
