@@ -5,5 +5,13 @@
     ],
     "jsRules": {},
     "rules": {},
-    "rulesDirectory": []
+    "rulesDirectory": [],
+    "linterOptions": {
+        "exclude": [
+            "src/classes/*.ts",
+            "src/classes/squad/*.ts",
+            "src/*.ts",
+            "src/utils/*.ts"
+        ]
+    }
 }
