@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/lodash": "^3.10.1",
     "@types/screeps": "^2.2.1",
+    "eslint": "^5.16.0",
     "rollup": "^0.57.1",
     "rollup-plugin-clean": "^1.0.0",
     "rollup-plugin-commonjs": "^9.1.0",
