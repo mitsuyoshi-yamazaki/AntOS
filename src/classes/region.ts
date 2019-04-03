@@ -1413,11 +1413,12 @@ export class Region {
 
         if (from_room_ready && to_room_ready) {
           const result = this.room.terminal.send(resource_type, amount_send, room_name)
-          console.log(`Send ${resource_type} from ${this.room.name} to ${room_name}, result:${result}`)
 
           if (result == OK) {
             return
           }
+          console.log(`Send ${resource_type} from ${this.room.name} to ${room_name}, result:${result}`)
+
         }
       }
     }
