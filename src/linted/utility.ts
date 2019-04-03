@@ -1,6 +1,8 @@
 export function log(obj: any): void {
-  console.log(obj)
+  console.log(obj)  // tslint:disable-line: no-console
 }
+
+/* tslint:disable */
 
 export function getSectorName(room_name: string): string | null {
 

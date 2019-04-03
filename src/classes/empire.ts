@@ -2,7 +2,7 @@
 import { ErrorMapper } from "utils/ErrorMapper"
 import { Region, RegionOpt } from "./region"
 import { Squad, SpawnPriority, SquadType } from "./squad/squad";
-import { getSectorName, room_link } from "./utils";
+import { getSectorName, room_link } from "../linted/utility";
 
 enum State {
   EXPAND = "expand"

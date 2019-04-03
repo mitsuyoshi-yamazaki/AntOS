@@ -1,4 +1,4 @@
-import { UID } from "classes/utils"
+import { UID } from "../../linted/utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "classes/creep"
 
@@ -192,7 +192,7 @@ export class UpgraderSquad extends Squad {
         }
       }
 
-      creep.upgrade((structure) => {
+      creep.upgrade((structure: AnyStructure) => {
         // If source is storage and it contains less energy, wait for charge
         if (structure.structureType == STRUCTURE_STORAGE) {
           return true

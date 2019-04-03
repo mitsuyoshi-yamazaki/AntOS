@@ -1,4 +1,4 @@
-import { color_2_hex } from './utils';
+import { color_2_hex } from '../linted/utility';
 
 /**
  * https://screeps.com/a/#!/room/shard2/W11S52

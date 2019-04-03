@@ -1,4 +1,4 @@
-import { UID } from "classes/utils"
+import { UID } from "../../linted/utility"
 import { CreepStatus, CreepType, ActionResult } from "classes/creep"
 
 export enum SpawnPriority {

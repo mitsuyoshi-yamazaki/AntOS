@@ -2,7 +2,7 @@ import { ErrorMapper } from "utils/ErrorMapper"
 
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"
-import { leveled_colored_text } from './classes/utils'
+import { leveled_colored_text } from './linted/utility'
 import { move_called } from "classes/creep";
 
 Initializer.init()
