@@ -1,6 +1,6 @@
 {
   "editor.tabSize": 2,
-  "editor.renderWhitespace": true,
+  "editor.renderWhitespace": "none",
   "files.encoding": "utf8",
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
@@ -14,5 +14,7 @@
   "typescript.tsdk": "./node_modules/typescript/lib",
   "workbench.colorCustomizations": {
         "activityBar.background": "#a71554"
-    }
+    },
+    "tslint.configFile": "tslint.json",
+    "tslint.alwaysShowRuleFailuresAsWarnings": false
 }
