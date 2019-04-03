@@ -455,35 +455,6 @@ function sellOrders(resource_type: ResourceConstant, price: number): Order[] {
 }
 
 /**
- * normal CPU: 220~230
- * without move() call: 170~180 -> move() consumes 50 CPU
- *
-[2:08:38 PM][shard2]Initializer.init() v2.66.2 at 10921743
-[2:08:38 PM][shard2]move()/Creeps: 215/558
-[2:08:41 PM][shard2]move()/Creeps: 230/558
-[2:08:44 PM][shard2]move()/Creeps: 233/558
-[2:08:47 PM][shard2]move()/Creeps: 251/558
-[2:08:51 PM][shard2]W43S7 is attacked!! W44S7 (W43S7)
-[2:08:51 PM][shard2]W44S3 is attacked!! W45S3 (W44S3)
-[2:08:51 PM][shard2]move()/Creeps: 242/558
-[2:08:55 PM][shard2]move()/Creeps: 237/558
-[2:08:57 PM][shard2]move()/Creeps: 246/558
-[2:09:00 PM][shard2]move()/Creeps: 242/559
-[2:09:04 PM][shard2]Main creeps GC at 10921751
-[2:09:04 PM][shard2]move()/Creeps: 250/559
-[2:09:07 PM][shard2]move()/Creeps: 249/560
-[2:09:11 PM][shard2]move()/Creeps: 256/560
-[2:09:14 PM][shard2]move()/Creeps: 255/560
-[2:09:17 PM][shard2]move()/Creeps: 259/561
-[2:09:21 PM][shard2]move()/Creeps: 256/561
-[2:09:24 PM][shard2]move()/Creeps: 273/562
-[2:09:27 PM][shard2]move()/Creeps: 264/562
-[2:09:30 PM][shard2]move()/Creeps: 266/562
-
- *
- */
-
-/**
  * @todo:
  * Strategy:
    * Start power processing in E15N35 sector
