@@ -1,3 +1,7 @@
+export function log(obj: any): void {
+  console.log(obj)
+}
+
 export function getSectorName(room_name: string): string | null {
 
   const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(room_name)

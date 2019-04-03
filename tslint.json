@@ -5,6 +5,7 @@
     ],
     "jsRules": {},
     "rules": {
+        "semicolon": false
     },
     "rulesDirectory": [],
     "linterOptions": {
