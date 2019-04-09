@@ -1,5 +1,5 @@
-import { ScopeInterface } from "classes/scope";
 import { log } from "linted/utility";
+import { ScopeInterface } from "./scope";
 
 export class ProblemSolver implements ScopeInterface {
   constructor(name: string, ownedControllers: StructureController[]) {
