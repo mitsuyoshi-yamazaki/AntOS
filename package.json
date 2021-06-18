@@ -20,16 +20,18 @@
   "devDependencies": {
     "@types/lodash": "^3.10.1",
     "@types/screeps": "^2.2.1",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
+    "@typescript-eslint/eslint-plugin": "^4.27.0",
+    "@typescript-eslint/parser": "^4.27.0",
+    "eslint": "^7.28.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4",
     "rollup": "^0.57.1",
     "rollup-plugin-clean": "^1.0.0",
     "rollup-plugin-commonjs": "^9.1.0",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-screeps": "^0.1.2",
     "rollup-plugin-typescript2": "^0.12.0",
-    "typescript": "^2.8.1",
-    "eslint": "^7.24.0"
+    "typescript": "^2.8.1"
   },
   "dependencies": {
     "creep-tasks": "^1.1.1",
