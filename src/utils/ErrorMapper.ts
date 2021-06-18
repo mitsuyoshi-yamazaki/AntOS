@@ -1,3 +1,4 @@
+/* eslint-disable */
 // It's from https://github.com/screepers/screeps-typescript-starter
 // https://github.com/screepers/screeps-typescript-starter/blob/master/LICENSE
 

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { ErrorMapper } from "utils/ErrorMapper"
 
 import { Empire } from "classes/empire"
