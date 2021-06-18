@@ -397,8 +397,8 @@ export class Empire {
 
       if (!base_region || !colony_region || !colony_region.controller.my) {
         if ((Game.time % 29) == 13) {
-          const message = `Empire.set_delegate ERROR ${base_region_name} or ${colony_region_name} not found`
-          console.log(message)
+          // const message = `Empire.set_delegate ERROR ${base_region_name} or ${colony_region_name} not found`
+          // console.log(message)
           // Game.notify(message)
         }
         return

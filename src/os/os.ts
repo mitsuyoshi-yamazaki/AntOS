@@ -8,6 +8,5 @@ export class OperatingSystem {
   }
 
   public run(): void {
-    console.log("OS running")
   }
 }

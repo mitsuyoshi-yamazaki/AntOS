@@ -63,7 +63,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
         // creep.memory.let_thy_die = true
         // creep.memory.squad_name = 'worker771957135'  // W48N11
       }
-      console.log(`Main creeps GC at ${Game.time}`)
+      // console.log(`Main creeps GC at ${Game.time}`)
     }, `Creeps.gc`)()
   }
 
@@ -206,23 +206,23 @@ function trade():void {
     rooms.push(room)
   }
 
-  sellResource({
-    resource_type: RESOURCE_HYDROGEN,
-    price: 0.200,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_HYDROGEN,
+  //   price: 0.200,
+  //   rooms,
+  // })
 
-  sellResource({
-    resource_type: RESOURCE_KEANIUM,
-    price: 0.060,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_KEANIUM,
+  //   price: 0.060,
+  //   rooms,
+  // })
 
-  sellResource({
-    resource_type: RESOURCE_CATALYST,
-    price: 0.250,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_CATALYST,
+  //   price: 0.250,
+  //   rooms,
+  // })
 
   // sellResource({
   //   resource_type: RESOURCE_UTRIUM,
@@ -236,17 +236,17 @@ function trade():void {
   //   rooms,
   // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_ZYNTHIUM,
-    price: 0.01,
-    rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_ZYNTHIUM,
+  //   price: 0.01,
+  //   rooms,
+  // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_UTRIUM,
-    price: 0.04,
-    rooms: u_rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_UTRIUM,
+  //   price: 0.04,
+  //   rooms: u_rooms,
+  // }, credit_amount)
 
   // buyResource({
   //   resource_type: RESOURCE_LEMERGIUM,
@@ -254,17 +254,17 @@ function trade():void {
   //   rooms,
   // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_CATALYST,
-    price: 0.03,
-    rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_CATALYST,
+  //   price: 0.03,
+  //   rooms,
+  // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_POWER,
-    price: 0.1,
-    rooms: power_rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_POWER,
+  //   price: 0.1,
+  //   rooms: power_rooms,
+  // }, credit_amount)
 
   // buyResource({
   //   resource_type: RESOURCE_OXYGEN,

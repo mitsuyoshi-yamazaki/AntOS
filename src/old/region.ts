@@ -1351,14 +1351,14 @@ export class Region {
 
       const to_room = Game.rooms[room_name]
       if (!to_room || !to_room.controller || !to_room.controller.my) {
-        const message = `Region.sendResources no destination room ${room_name}, ${this.room.name}`
-        console.log(message)
-        Game.notify(message)
+        // const message = `Region.sendResources no destination room ${room_name}, ${this.room.name}`
+        // console.log(message)
+        // Game.notify(message)
         continue
       }
 
       if (!to_room.terminal) {
-        console.log(`Region.sendResources no terminal in destination room ${room_name}, ${this.room.name}`)
+        // console.log(`Region.sendResources no terminal in destination room ${room_name}, ${this.room.name}`)
         continue
       }
 
