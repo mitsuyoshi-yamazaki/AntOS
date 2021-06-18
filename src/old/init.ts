@@ -5,7 +5,7 @@ import { init as spawnInit } from "old/spawn"
 import { tick as roomTick } from "old/room"
 import { leveled_colored_text } from '../linted/utility';
 
-const version = '4.0.1'
+const version = '4.0.2'
 
 export function init(): void {
   Game.version = version

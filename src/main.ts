@@ -4,6 +4,7 @@ import { ErrorMapper } from "utils/ErrorMapper"
 import { Empire } from "old/empire"
 import * as Initializer from "old/init"
 import { leveled_colored_text } from './linted/utility'
+import { OperatingSystem } from "os/os"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -162,6 +163,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
   if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
     Memory.debug.cpu.show_usage = false
   }
+
+  new OperatingSystem({}).run()
 }, `Main`)
 
 function trade():void {
