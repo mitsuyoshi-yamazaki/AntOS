@@ -4,7 +4,6 @@ import { ErrorMapper } from "utils/ErrorMapper"
 import { Empire } from "classes/empire"
 import * as Initializer from "classes/init"
 import { leveled_colored_text } from './linted/utility'
-import { ProblemSolver } from './experimental/problemsolver'
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -38,10 +37,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
 
     const empire = new Empire(Game.user.name, owned_controllers)
-    const problemSolver = new ProblemSolver('Experimental', [])
 
     empire.run()
-    problemSolver.run()
   }, `empire.run`)()
 
   if ((Game.time % 29) == 3) {

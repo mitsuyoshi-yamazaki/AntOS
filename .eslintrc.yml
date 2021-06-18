@@ -12,8 +12,8 @@ plugins:
   - '@typescript-eslint'
 ignorePatterns:
   - src/classes/**/*
-  - src/experimental/**/*
   - src/linted/**/*
+  - rollup.config.js
 rules:
   indent:
     - warn
