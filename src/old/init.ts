@@ -1,8 +1,8 @@
 import { ErrorMapper } from "utils/ErrorMapper"
-import { init as extensionInit, tick as extensionTick } from "classes/extensions"
-import { init as creepInit } from "classes/creep"
-import { init as spawnInit } from "classes/spawn"
-import { tick as roomTick } from "classes/room"
+import { init as extensionInit, tick as extensionTick } from "old/extensions"
+import { init as creepInit } from "old/creep"
+import { init as spawnInit } from "old/spawn"
+import { tick as roomTick } from "old/room"
 import { leveled_colored_text } from '../linted/utility';
 
 const version = '4.0.1'

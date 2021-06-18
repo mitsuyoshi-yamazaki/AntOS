@@ -1,6 +1,6 @@
 import { UID } from "../../linted/utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepTransferLinkToStorageOption, CreepType } from "classes/creep"
+import { CreepStatus, ActionResult, CreepTransferLinkToStorageOption, CreepType } from "old/creep"
 
 export class ChargerSquad extends Squad {
   private number_of_carries: number

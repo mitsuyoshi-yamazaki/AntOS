@@ -1,8 +1,8 @@
 /* eslint-disable */
 import { ErrorMapper } from "utils/ErrorMapper"
 
-import { Empire } from "classes/empire"
-import * as Initializer from "classes/init"
+import { Empire } from "old/empire"
+import * as Initializer from "old/init"
 import { leveled_colored_text } from './linted/utility'
 
 Initializer.init()

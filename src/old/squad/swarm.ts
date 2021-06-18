@@ -1,6 +1,6 @@
 import { UID } from "../../linted/utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepType } from "classes/creep"
+import { CreepStatus, ActionResult, CreepType } from "old/creep"
 
 interface SwarmSquadMemory extends SquadMemory {
   target_room_names: string[]

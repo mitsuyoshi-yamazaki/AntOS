@@ -1,6 +1,6 @@
 import { UID } from "../../linted/utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, TargetSpecifier } from "./squad"
-import { CreepStatus, ActionResult, CreepType } from "classes/creep"
+import { CreepStatus, ActionResult, CreepType } from "old/creep"
 
 interface InvaderMemory extends CreepMemory {
   pair_id: number
