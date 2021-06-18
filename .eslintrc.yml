@@ -10,3 +10,6 @@ parserOptions:
 plugins:
   - '@typescript-eslint'
 rules: {}
+ignorePatterns:
+  - rollup.config.js
+  - src/**.*
