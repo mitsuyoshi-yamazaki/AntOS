@@ -16,7 +16,7 @@ import { RemoteMineralHarvesterSquad, RemoteMineralHarvesterSquadMemory } from "
 import { NukerChargerSquad, NukerChargerSquadMemory } from "./squad/nuker_charger";
 import { RemoteAttackerSquad } from "./squad/remote_attacker";
 import { FarmerSquad, FarmerSquadMemory } from "./squad/farmer";
-import { room_link, room_history_link } from "../linted/utility";
+import { room_link, room_history_link } from "../utility";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";

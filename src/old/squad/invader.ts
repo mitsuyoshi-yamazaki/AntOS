@@ -1,4 +1,4 @@
-import { UID } from "../../linted/utility"
+import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, TargetSpecifier } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "old/creep"
 

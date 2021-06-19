@@ -1,4 +1,4 @@
-import { UID, room_link } from "../../linted/utility"
+import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "old/creep"
 import { runTowers } from "../tower";

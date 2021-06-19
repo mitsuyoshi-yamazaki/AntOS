@@ -1,4 +1,4 @@
-import { UID } from "../../linted/utility"
+import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType, WorkerSource } from "old/creep"
 import { isNewLine } from "../../../node_modules/@types/acorn/index";

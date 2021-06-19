@@ -1,8 +1,8 @@
 
-import { ErrorMapper } from "utils/ErrorMapper"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { Region, RegionOpt } from "./region"
 import { Squad, SpawnPriority, SquadType } from "./squad/squad";
-import { getSectorName, room_link } from "../linted/utility";
+import { getSectorName, room_link } from "../utility";
 
 enum State {
   EXPAND = "expand"
@@ -279,9 +279,9 @@ export class Empire {
     const test_send_resources = Memory.debug.test_send_resources
     const should_send_resources = test_send_resources || ((Game.time % 67) == 1)
 
-    if (should_send_resources) {
-      console.log(`Send resource at ${Game.time}`)
-    }
+    // if (should_send_resources) {
+    //   console.log(`Send resource at ${Game.time}`)
+    // }
 
     // --- Regions
     for (const controller of this.owned_controllers) {

@@ -12,7 +12,7 @@ plugins:
   - '@typescript-eslint'
 ignorePatterns:
   - src/old/**/*
-  - src/linted/**/*
+  - src/error_mapper/**/*
   - rollup.config.js
 rules:
   indent:

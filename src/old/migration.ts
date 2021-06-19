@@ -1,4 +1,4 @@
-import { leveled_colored_text, ColorLevel, room_link } from "../linted/utility";
+import { leveled_colored_text, ColorLevel, room_link } from "../utility";
 import { RegionStatus } from "./region";
 
 

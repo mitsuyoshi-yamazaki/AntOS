@@ -1,11 +1,11 @@
-import { ErrorMapper } from "utils/ErrorMapper"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { init as extensionInit, tick as extensionTick } from "old/extensions"
 import { init as creepInit } from "old/creep"
 import { init as spawnInit } from "old/spawn"
 import { tick as roomTick } from "old/room"
-import { leveled_colored_text } from '../linted/utility';
+import { leveled_colored_text } from '../utility';
 
-const version = '4.0.2'
+const version = '4.0.3'
 
 export function init(): void {
   Game.version = version

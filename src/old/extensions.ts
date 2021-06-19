@@ -2,7 +2,7 @@ import { SquadMemory, SquadType } from "./squad/squad"
 import { RegionMemory } from "./region"
 import { ErrorMapper } from "utils/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
-import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color, getSectorName } from '../linted/utility';
+import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color, getSectorName } from '../utility';
 import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"

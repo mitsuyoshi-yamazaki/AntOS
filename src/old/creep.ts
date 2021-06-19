@@ -1,4 +1,4 @@
-import { StructureFilter, room_link } from "../linted/utility"
+import { StructureFilter, room_link } from "../utility"
 import { Squad } from "old/squad/squad"
 import { ChargeTarget } from "./room";
 

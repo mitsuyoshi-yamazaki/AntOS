@@ -1,9 +1,9 @@
 /* eslint-disable */
-import { ErrorMapper } from "utils/ErrorMapper"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 import { Empire } from "old/empire"
 import * as Initializer from "old/init"
-import { leveled_colored_text } from './linted/utility'
+import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
 
 Initializer.init()
@@ -88,13 +88,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
     Memory.debug.test_send_resources = false
   }
 
-  if ((Game.time % 197) == 100) {
-    ErrorMapper.wrapLoop(() => {
-      // if ((Game.time % 7) == 0) {  // @fixme:
-        trade()
-        console.log(`Main.trade at ${Game.time}`)
-    }, `Trade`)()
-  }
+  // if ((Game.time % 197) == 100) {
+  //   ErrorMapper.wrapLoop(() => {
+  //     // if ((Game.time % 7) == 0) {  // @fixme:
+  //       trade()
+  //       console.log(`Main.trade at ${Game.time}`)
+  //   }, `Trade`)()
+  // }
 
   // ErrorMapper.wrapLoop(() => {
   //   for (const creep_name in Game.creeps) {

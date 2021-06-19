@@ -1,4 +1,4 @@
-import { UID, room_link } from "../../linted/utility"
+import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, SquadStatus } from "./squad"
 import { CreepStatus, ActionResult, CreepType, CreepSearchAndDestroyOption } from "old/creep"
 import { runHarvester } from "./harvester"
