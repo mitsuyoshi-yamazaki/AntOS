@@ -3,13 +3,12 @@ import { Process, ProcessId } from "./process"
 export interface SystemInformation {
 }
 
-const startupProcesses = {
-
-}
-
 /**
- * - 状態の永続化
- *   - [ ] Processは永続化したい情報をOSへ渡す
+ * - tickで途切れるインスタンスのライフサイクルがあたかも途切れていないかのように実装できるようにする
+ *   - 状態の永続化
+ *     - [ ] Processは永続化したい情報をOSへ渡す
+ * - イベントの検出と通知
+ *   - 子プロセスには一部のGame APIの呼び出しを制限する
  * - プロセスの親子関係
  *   - 親の情報をstoreすれば良いようにする
  */
@@ -24,6 +23,13 @@ export class OperatingSystem {
   }
 
   // ---- Process ---- //
+  public createChildProcess<T extends Process>(parent: Process, maker: (processId: ProcessId) => T): T {
+    const processId = this.getNewProcessId()
+    const process = maker(processId)
+    this.processes.set(processId, process)
+    return process
+  }
+
   public addProcess<T extends Process>(maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
@@ -55,21 +61,10 @@ export class OperatingSystem {
   // ---- Private ---- //
   private wakeUp(): void {
     this.restoreProcesses()
-    this.launchStartupProcesses()
   }
 
   private restoreProcesses(): void {
     // TODO:
-  }
-
-  private launchStartupProcesses(): void {
-
-  }
-
-  private launchRootProcess(): void {
-    const rootProcess = this.addProcess(processId => {
-
-    })
   }
 
   private getNewProcessId(): ProcessId {
