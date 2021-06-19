@@ -3,7 +3,7 @@ import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { UID, room_history_link, room_link, leveled_colored_text, getSectorName } from '../utility';
 import { RemoteMineralHarvesterSquadMemory } from "./squad/remote_m_harvester";
-import { ErrorMapper } from "utils/ErrorMapper";
+import { ErrorMapper } from "../error_mapper/ErrorMapper";
 
 export interface AttackerInfo  {
   attacked: boolean

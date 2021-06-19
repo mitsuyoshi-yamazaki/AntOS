@@ -26,7 +26,7 @@ export interface Process {
   parentProcessId: ProcessId
   priority: PriorityInformation
 
-  run(requirement: ProcessRequirement): ProcessResult
+  // run(requirement: ProcessRequirement): ProcessResult  // TODO: イベントドリブンなら不要では
 
   // ---- Persistent Store ---- //
   encode(): ProcessState

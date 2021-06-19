@@ -1,4 +1,4 @@
-import { ErrorMapper } from "utils/ErrorMapper"
+import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { Squad, SquadType, SquadMemory, SpawnPriority } from "old/squad/squad"
 import { WorkerSquad } from "old/squad/worker"
 import { ManualSquad } from "old/squad/manual"

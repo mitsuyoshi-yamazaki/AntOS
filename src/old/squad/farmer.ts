@@ -2,7 +2,7 @@ import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "old/creep"
 import { runTowers } from "../tower";
-import { ErrorMapper } from "../../utils/ErrorMapper";
+import { ErrorMapper } from "../../error_mapper/ErrorMapper";
 
 interface FarmerUpgraderMemory extends CreepMemory {
   // pos: {x: number, y: number}

@@ -1,6 +1,8 @@
+import { OSMemory } from "../os/os"
+
 import { SquadMemory, SquadType } from "./squad/squad"
 import { RegionMemory } from "./region"
-import { ErrorMapper } from "utils/ErrorMapper"
+import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { RemoteHarvesterSquadMemory } from './squad/remote_harvester'
 import { room_history_link, room_link, colored_resource_type, profile_link, colored_body_part, leveled_colored_text, ColorLevel, leveled_color, getSectorName } from '../utility';
 import { EmpireMemory } from './empire'
@@ -85,6 +87,8 @@ declare global {
 
   interface Memory {
     last_tick: number
+    os: OSMemory
+
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}
     sectors: {[name: string]: SectorMemory}

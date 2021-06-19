@@ -164,7 +164,9 @@ export const loop = ErrorMapper.wrapLoop(() => {
     Memory.debug.cpu.show_usage = false
   }
 
-  new OperatingSystem({}).run()
+  /* eslint-enable */
+  OperatingSystem.os.run()
+  /* eslint-disable */
 }, `Main`)
 
 function trade():void {

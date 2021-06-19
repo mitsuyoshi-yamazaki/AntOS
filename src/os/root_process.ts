@@ -7,8 +7,10 @@ import {
   ProcessState,
 } from "./process"
 
+/**
+ * - RootProcessは状態をもたずに起動できる
+ */
 export class RootProcess implements Process {
-  private t: number
 
   public readonly processId = rootProcessId
   public readonly parentProcessId = rootProcessParentId
@@ -17,15 +19,10 @@ export class RootProcess implements Process {
     return {} // TODO: highestにする
   }
 
-  public constructor(t: number) {
-    this.t = t
+  public constructor() {
   }
 
   public run(requirement: ProcessRequirement): ProcessResult {
-    if (this.t % 4 === 0) {
-      console.log(`Root Process ${this.t}`)
-    }
-    this.t += 1
     return {}
   }
 
@@ -34,9 +31,7 @@ export class RootProcess implements Process {
     return {
       processType: "root",
       processId: this.processId,
-      state: {
-        t: this.t
-      },
+      state: {},
       childStates: [] // TODO:
     }
   }

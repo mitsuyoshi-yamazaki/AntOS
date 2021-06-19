@@ -1,6 +1,12 @@
-import { Process, ProcessId } from "./process"
+import { ErrorMapper } from "../error_mapper/ErrorMapper"
+import { Process, ProcessId, ProcessState } from "./process"
+import { RootProcess } from "./root_process"
 
 export interface SystemInformation {
+}
+
+export interface OSMemory {
+  procesStates: string
 }
 
 /**
@@ -13,13 +19,15 @@ export interface SystemInformation {
  *   - 親の情報をstoreすれば良いようにする
  */
 export class OperatingSystem {
+  static readonly os = new OperatingSystem()
+
   private processIndex = 0
   private readonly processes = new Map<ProcessId, Process>()
 
-  public constructor(
-    public readonly systemInformation: SystemInformation,
-  ) {
-    this.wakeUp()
+  private constructor() {
+    ErrorMapper.wrapLoop(() => {
+      this.restoreProcesses()
+    }, "OperatingSystem()")
   }
 
   // ---- Process ---- //
@@ -55,16 +63,25 @@ export class OperatingSystem {
 
   // ---- Run ---- //
   public run(): void {
-    // TODO:
+    ErrorMapper.wrapLoop(() => {
+      // TODO:
+
+
+      this.storeProcesses()
+    }, "OperatingSystem.run()")
   }
 
   // ---- Private ---- //
-  private wakeUp(): void {
-    this.restoreProcesses()
+  private restoreProcesses(): void {
+    // const processStates = JSON.parse(Memory.os.procesStates) as ProcessState | null // TODO: Memory.os is undefined  // TODO: Error handling
+    const rootProcess = new RootProcess()
+    this.processes.set(rootProcess.processId, rootProcess)
+
+    // TODO: Child Process
   }
 
-  private restoreProcesses(): void {
-    // TODO:
+  private storeProcesses(): void {
+
   }
 
   private getNewProcessId(): ProcessId {

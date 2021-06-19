@@ -2,8 +2,7 @@ import {
   Process,
   ProcessId,
   PriorityInformation,
-  ProcessRequirement,
-  ProcessResult,
+  ProcessState,
 } from "../../os/process"
 
 export class LoggerProcess implements Process {
@@ -11,11 +10,27 @@ export class LoggerProcess implements Process {
     return {}
   }
 
-  public constructor(public readonly parentProcessId: ProcessId) {
-
+  public constructor(
+    public readonly processId: ProcessId,
+    public readonly parentProcessId: ProcessId
+  ) {
   }
 
-  public run(requirement: ProcessRequirement): ProcessResult {
-    return {}
+  public encode(): ProcessState {
+    return {
+      processType: "logger",
+      processId: this.processId,
+      state: {},
+      childStates: [] // TODO:
+    }
+  }
+
+  public decodeChildProcesses(childStates: ProcessState[]): Process[] {
+    return [] // TODO:
+  }
+
+  // ---- API ---- //
+  public log(): void {
+
   }
 }

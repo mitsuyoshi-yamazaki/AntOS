@@ -2337,7 +2337,7 @@ export function init() {
         if ((result == ERR_INVALID_TARGET) && (action == 'claimController')) {
         }
         else {
-          console.log(`Creep.claim ${action} Unexpected return code ${result}, ${this.name}`)
+          console.log(`Creep.claim ${action} Unexpected return code ${result}, ${this.name} at ${room_link(this.room.name)}`)
         }
         break
     }
