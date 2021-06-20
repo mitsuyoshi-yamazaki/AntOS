@@ -45,13 +45,46 @@ export class ScoutCreepProcess implements StatefulProcess, Procedural, MessageOb
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    console.log(`ScoutCreepProcess running with creep id: ${this.creepId} at ${Game.time}`)
+    // console.log(`ScoutCreepProcess running with creep id: ${this.creepId} at ${Game.time}`)
     const creep = Game.getObjectById(this.creepId) as Creep
     if (!(creep instanceof Creep)) {
       console.log(`ScoutCreepProcess invalid creep ID ${this.creepId}`)
       return
     }
-    creep.say("I'm scout")
+
+    if (this.routes.length === 0) {
+      creep.say("done")
+      return
+    }
+    const currentRoomName = creep.room.name
+    if (this.routes[0] === currentRoomName) {
+      this.routes.splice(0, 1)
+      if (this.routes.length === 0) {
+        creep.say("done")
+        return
+      }
+    }
+    if (creep.room.controller != null && creep.room.controller.sign?.username !== "Mitsuyoshi") {
+      this.sign(creep, creep.room.controller)
+    } else {
+      creep.moveToRoom(this.routes[0])
+      creep.say(`go to ${this.routes[0]}`)
+    }
+  }
+
+  private sign(creep: Creep, controller: StructureController): void {
+    const sign = () => {
+      const emoji = ["😆", "😄", "😐", "😴", "🤔", "🙃", "😃", "😑", "😖", "😝"]
+      const index = (Number(creep.room.name.slice(1, 3)) + Number(creep.room.name.slice(4, 6))) % emoji.length
+      return emoji[index]
+    }
+    const result = creep.signController(controller, sign())
+    if (result === ERR_NOT_IN_RANGE) {
+      creep.say("🏃‍♂️")
+      creep.moveTo(controller)
+    } else if (result < 0) {
+      console.log(`sign controller error: ${result}`)
+    }
   }
 
   // ---- MessageObserver ---- //
