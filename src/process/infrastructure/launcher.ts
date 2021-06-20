@@ -1,5 +1,5 @@
 import { OperatingSystem } from "os/os"
-import { ScoutCreepProcess } from "process/creep/scout_creep"
+import { ScoutCreepProcess } from "process/test/scout_creep"
 import {
   Process,
   ProcessId,
