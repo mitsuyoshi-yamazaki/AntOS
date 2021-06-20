@@ -14,15 +14,6 @@ export class ScoutCreepProcess implements StatefulProcess, Procedural {
   }
 
   // ---- StatefulProcess ---- //
-  public setup(): void {
-
-  }
-
-  public teardown(): void {
-
-  }
-
-  // ---- Persistent Store ---- //
   public static parseState(rawState: unknown): { creepId: string } | null {
     const state = rawState as { c?: string }
     if (typeof state.c !== "string") {
@@ -41,6 +32,12 @@ export class ScoutCreepProcess implements StatefulProcess, Procedural {
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    console.log(`ScoutCreepProcess running with creep id: ${this.creepId}`)
+    console.log(`ScoutCreepProcess running with creep id: ${this.creepId} at ${Game.time}`)
+    const creep = Game.getObjectById(this.creepId) as Creep
+    if (!(creep instanceof Creep)) {
+      console.log(`ScoutCreepProcess invalid creep ID ${this.creepId}`)
+      return
+    }
+    creep.say("I'm scout")
   }
 }

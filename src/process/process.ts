@@ -20,17 +20,14 @@ export interface Process {
 }
 
 export interface StatefulProcess extends Process {
-  setup(): void
-  teardown(): void
-
-  // ---- Persistent Store ---- //
+  // !!!! UPDATE isStatefulProcess() !!!! //
   shouldStore: true
   encode(): unknown
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isStatefulProcess(arg: any): arg is StatefulProcess {
-  return arg.encode !== undefined && arg.decodeChildProcesses !== undefined
+  return arg.shouldStore === true && arg.encode !== undefined
 }
 
 // ---- Type of Execution ---- //

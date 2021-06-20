@@ -1,6 +1,6 @@
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { isProcedural, isStatefulProcess, Procedural, Process, ProcessId } from "../process/process"
-import { RootProcess } from "../process/infrastructure/root"
+import { maxInfrastructureProcessId, RootProcess } from "../process/infrastructure/root"
 import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {
@@ -21,9 +21,8 @@ export interface OSMemory {
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
- * - tickで途切れるインスタンスのライフサイクルがあたかも途切れていないかのように実装できるようにする
+ * - デプロイ時に途切れるインスタンスのライフサイクルの
  *   - 状態の永続化
- *     - [ ] Processは永続化したい情報をOSへ渡す
  * - CPU, メモリの使用状況に応じてプロセスの実行密度を変更する
  * - イベントの検出と通知
  *   - 子プロセスには一部のGame APIの呼び出しを制限する
@@ -34,6 +33,7 @@ export interface OSMemory {
 export class OperatingSystem {
   static readonly os = new OperatingSystem()
 
+  private launchTime = Game.time
   private processIndex = 0
   private readonly processes = new Map<ProcessId, Process>()
   private rootProcess = new RootProcess()
@@ -59,6 +59,7 @@ export class OperatingSystem {
     const processId = this.getNewProcessId()
     const process = maker(processId)
     this.processes.set(processId, process)
+    console.log(`Launch process ${process.constructor.name}, ID: ${processId}`)
     return process
   }
 
@@ -75,7 +76,17 @@ export class OperatingSystem {
   }
 
   public killProcess(processId: ProcessId): void {
-    // TODO:
+    if (processId <= maxInfrastructureProcessId) {
+      console.log(`[OS Error] Trying to kill infrastructure process ${processId}`)
+      return
+    }
+    const process = this.processOf(processId)
+    if (process == null) {
+      console.log(`[OS Error] Trying to kill unknown process ${processId}`)
+      return
+    }
+    console.log(`Kill process ${process.constructor.name}, ID: ${processId}`)
+    this.processes.delete(processId)
   }
 
   // ---- Run ---- //
@@ -117,7 +128,7 @@ export class OperatingSystem {
     Memory.os.ps.forEach(processStateMemory => {
       const process = ProcessRestorer.createStatefullProcess(processStateMemory.t, processStateMemory.i, processStateMemory.s)
       if (process == null) {
-        console.log(`[OS Error] Unrecognized process type ${processStateMemory.t}`)
+        console.log(`[OS Error] Unrecognized stateful process type ${processStateMemory.t}`)
         return
       }
       this.processes.set(process.processId, process)
@@ -165,7 +176,7 @@ export class OperatingSystem {
 
   // ---- Utility ---- //
   private getNewProcessId(): ProcessId {
-    const processId = Game.time * 1000 + this.processIndex
+    const processId = Game.time * maxInfrastructureProcessId + this.processIndex
     this.processIndex += 1
     return processId
   }
