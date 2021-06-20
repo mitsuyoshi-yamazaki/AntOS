@@ -2,11 +2,13 @@ import {
   Process,
 } from "../process"
 import { LauncherProcess } from "./launcher"
+import { MessengerProcess } from "./messenger"
 import { QuitterProcess } from "./quitter"
 
 export const rootProcessId = 1
 const launcherProcessId = 2
 const quitterProcessId = 3
+const messengerProcessId = 4
 
 export const maxInfrastructureProcessId = 1000
 
@@ -20,6 +22,7 @@ export class RootProcess implements Process {
 
   private readonly launcherProcess = new LauncherProcess(launcherProcessId)
   private readonly quitterProcess = new QuitterProcess(quitterProcessId)
+  private readonly messengerProcess = new MessengerProcess(messengerProcessId)
 
   public constructor() {
   }
@@ -33,5 +36,6 @@ export class RootProcess implements Process {
   public run(): void {
     this.launcherProcess.run()
     this.quitterProcess.run()
+    this.messengerProcess.run()
   }
 }

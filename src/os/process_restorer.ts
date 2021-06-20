@@ -22,7 +22,7 @@ export class ProcessRestorer {
       if (restoredState == null) {
         return null
       }
-      return new ScoutCreepProcess(processId, restoredState.creepId)
+      return new ScoutCreepProcess(processId, restoredState.creepId, restoredState.routes)
     }
     default:
       return null

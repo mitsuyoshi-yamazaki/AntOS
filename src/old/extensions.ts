@@ -11,6 +11,7 @@ import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { LauncherProcessMemory } from "../process/infrastructure/launcher"
 import { QuitterProcessMemory } from "../process/infrastructure/quitter"
+import { MessengerProcessMemory } from "../process/infrastructure/messenger"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -92,6 +93,7 @@ declare global {
     os: OSMemory
     launcher: LauncherProcessMemory
     quitter: QuitterProcessMemory
+    messenger: MessengerProcessMemory
 
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}

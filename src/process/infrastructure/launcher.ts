@@ -35,7 +35,7 @@ export class LauncherProcess implements Process {
     console.log(`Launcher: Launching ScoutCreep with ID: ${creepId}`)
 
     OperatingSystem.os.addProcess(processId => {
-      return new ScoutCreepProcess(processId, creepId)
+      return new ScoutCreepProcess(processId, creepId, [])
     })
   }
 }
