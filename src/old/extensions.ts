@@ -9,6 +9,7 @@ import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
+import { LauncherProcessMemory } from "../process/infrastructure/launcher"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -88,6 +89,7 @@ declare global {
   interface Memory {
     last_tick: number
     os: OSMemory
+    launcher: LauncherProcessMemory
 
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}
