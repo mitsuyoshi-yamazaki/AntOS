@@ -1,10 +1,10 @@
 import { OperatingSystem } from "os/os"
 
-export interface QuitterProcessMemory {
+export interface ProcessQuitterMemory {
   i?: string  // processId
 }
 
-export class QuitterProcess {
+export class ProcessQuitter {
   public constructor() {
     this.setupMemory()
   }
@@ -15,7 +15,7 @@ export class QuitterProcess {
     }
     const processId = parseInt(Memory.quitter.i, 10)
     if (isNaN(processId)) {
-      console.log(`QuitterProcess invalid process ID: ${Memory.quitter.i}`)
+      console.log(`ProcessQuitter invalid process ID: ${Memory.quitter.i}`)
     } else {
       OperatingSystem.os.killProcess(processId)
     }

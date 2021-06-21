@@ -9,9 +9,9 @@ import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
-import { LauncherProcessMemory } from "../os/infrastructure/launcher"
-import { QuitterProcessMemory } from "../os/infrastructure/quitter"
-import { MessengerProcessMemory } from "../os/infrastructure/messenger"
+import { ProcessLauncherMemory } from "../os/infrastructure/process_launcher"
+import { ProcessQuitterMemory } from "../os/infrastructure/process_quitter"
+import { MessengerMemory } from "../os/infrastructure/messenger"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -91,9 +91,9 @@ declare global {
   interface Memory {
     last_tick: number
     os: OSMemory
-    launcher: LauncherProcessMemory
-    quitter: QuitterProcessMemory
-    messenger: MessengerProcessMemory
+    launcher: ProcessLauncherMemory
+    quitter: ProcessQuitterMemory
+    messenger: MessengerMemory
 
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}

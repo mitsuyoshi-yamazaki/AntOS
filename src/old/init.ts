@@ -3,9 +3,9 @@ import { init as extensionInit, tick as extensionTick } from "old/extensions"
 import { init as creepInit } from "old/creep"
 import { init as spawnInit } from "old/spawn"
 import { tick as roomTick } from "old/room"
-import { leveled_colored_text } from '../utility';
+import { leveled_colored_text } from '../utility'
 
-const version = '4.1.17'
+const version = '4.1.18'
 
 export function init(): void {
   Game.version = version

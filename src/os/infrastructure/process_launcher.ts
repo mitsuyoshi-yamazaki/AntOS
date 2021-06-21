@@ -1,11 +1,11 @@
 import { OperatingSystem } from "os/os"
 import { ScoutCreepProcess } from "process/test/scout_creep"
 
-export interface LauncherProcessMemory {
+export interface ProcessLauncherMemory {
   "c.s"?: string  // creep.ScoutCreepProcess
 }
 
-export class LauncherProcess {
+export class ProcessLauncher {
   public constructor() {
     this.setupMemory()
   }
@@ -26,7 +26,7 @@ export class LauncherProcess {
 
   // ---- Launch ---- //
   private launchScoutCreep(creepId: string): void {
-    console.log(`Launcher: Launching ScoutCreep with ID: ${creepId}`)
+    console.log(`ProcessLauncher: Launching ScoutCreep with ID: ${creepId}`)
 
     OperatingSystem.os.addProcess(processId => {
       return new ScoutCreepProcess(processId, creepId, [])

@@ -1,6 +1,6 @@
-import { LauncherProcess } from "./launcher"
-import { MessengerProcess } from "./messenger"
-import { QuitterProcess } from "./quitter"
+import { ProcessLauncher } from "./process_launcher"
+import { Messenger } from "./messenger"
+import { ProcessQuitter } from "./process_quitter"
 
 /**
  * - RootProcessおよびInfrastructure Processesは状態をもたない
@@ -10,16 +10,16 @@ import { QuitterProcess } from "./quitter"
 export class RootProcess {
   public readonly shouldStore = false
 
-  private readonly launcherProcess = new LauncherProcess()
-  private readonly quitterProcess = new QuitterProcess()
-  private readonly messengerProcess = new MessengerProcess()
+  private readonly processLauncher = new ProcessLauncher()
+  private readonly processQuitter = new ProcessQuitter()
+  private readonly messenger = new Messenger()
 
   public constructor() {
   }
 
   public run(): void {
-    this.launcherProcess.run()
-    this.quitterProcess.run()
-    this.messengerProcess.run()
+    this.processLauncher.run()
+    this.processQuitter.run()
+    this.messenger.run()
   }
 }

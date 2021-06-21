@@ -1,6 +1,6 @@
 import { OperatingSystem } from "os/os"
 
-export interface MessengerProcessMemory {
+export interface MessengerMemory {
   i: string | null  // processId
   m: unknown        // message
 }
@@ -14,7 +14,7 @@ function isMessageObserver(arg: any): arg is MessageObserver {
   return arg.didReceiveMessage !== undefined
 }
 
-export class MessengerProcess {
+export class Messenger {
   public constructor() {
     this.setupMemory()
   }
