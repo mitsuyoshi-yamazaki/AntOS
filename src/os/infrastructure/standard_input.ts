@@ -5,6 +5,7 @@ import {
 } from "./console_command/console_command"
 import { HelpCommand } from "./console_command/help_command"
 import { KillCommand } from "./console_command/kill_command"
+import { LaunchCommand } from "./console_command/launch_command"
 
 export const standardInput = (rawCommand: string): string => {
   const parseResult = parseCommand(rawCommand)
@@ -71,5 +72,8 @@ function parseCommand(rawCommand: string): ResultType<ConsoleCommand> {
 
   case "kill":
     return new ResultSucceeded(new KillCommand(options, args, rawCommand))
+
+  case "launch":
+    return new ResultSucceeded(new LaunchCommand(options, args, rawCommand))
   }
 }

@@ -1,5 +1,5 @@
 import { OperatingSystem } from "os/os"
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { parseProcessId } from "./command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class KillCommand implements ConsoleCommand {
@@ -10,7 +10,7 @@ export class KillCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    const parseResult = this.parseProcessId()
+    const parseResult = parseProcessId(this.args)
     switch (parseResult.resultType) {
     case "succeeded":
       return this.killProcess(parseResult.value)
@@ -19,22 +19,11 @@ export class KillCommand implements ConsoleCommand {
     }
   }
 
-  private parseProcessId(): ResultType<number> {
-    if (this.args.length <= 0) {
-      return new ResultFailed(new Error("Missing process ID argument"))
-    }
-    const processId = parseInt(this.args[0], 10)
-    if (isNaN(processId)) {
-      return new ResultFailed(new Error(`Invalid process ID argument ${this.args[0]}`))
-    }
-    return new ResultSucceeded(processId)
-  }
-
   private killProcess(processId: number): CommandExecutionResult {
     const result = OperatingSystem.os.killProcess(processId)
     switch (result.resultType) {
     case "succeeded":
-      return `Kill process ${result.value}, ID: ${processId}`
+      return `Process ${result.value} killed, ID: ${processId}`
     case "failed":
       return `${result.error}`
     }
