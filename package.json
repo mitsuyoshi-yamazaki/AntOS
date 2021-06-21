@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Screeps script",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "tslint": "npx tslint -p ."
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mitsuyoshi-yamazaki/AntOS.git"
@@ -37,5 +33,28 @@
   "dependencies": {
     "creep-tasks": "^1.1.1",
     "source-map": "~0.6.1"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverage": false,
+    "collectCoverageFrom": [
+      "src//*.ts"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.jest.json"
+      }
+    },
+    "preset": "ts-jest",
+    "testMatch": [
+      "**/__tests__/**/*.+(ts|tsx|js)",
+      "**/?(*.)+(spec|test).+(ts|tsx|js)"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testEnvironment": "node"
   }
 }

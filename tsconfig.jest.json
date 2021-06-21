@@ -7,7 +7,7 @@
     ]
   },
   "include": [
-    "**/*.test.ts"
+    "test/**/*.test.ts"
   ],
   "exclude": []
 }
