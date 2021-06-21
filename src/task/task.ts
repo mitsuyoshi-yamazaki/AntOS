@@ -1,4 +1,11 @@
 
+export interface TaskExecutionCondition {
+  condition: "required" | "cancellable"
+  maxTickInterval: number   // maxTickIntervalに一度は必ず実行されるべき：毎tick実行する場合は1
+  minTickInterval?: number  // minTickInterval以下の間隔で実行する必要はない
+  currentPriority: TaskPriority
+}
+
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
  * - Prioritize
