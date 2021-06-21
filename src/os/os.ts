@@ -1,6 +1,6 @@
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { isProcedural, isStatefulProcess, Procedural, Process, ProcessId } from "../process/process"
-import { maxInfrastructureProcessId, RootProcess } from "./infrastructure/root"
+import { RootProcess } from "./infrastructure/root"
 import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {
@@ -35,8 +35,6 @@ export class OperatingSystem {
   private constructor() {
     ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
       this.setupMemory()
-      this.processes.set(this.rootProcess.processId, this.rootProcess)
-      this.rootProcess.infrastructureProcesses().map(process => this.processes.set(process.processId, process))
       this.restoreProcesses()
     }, "OperatingSystem()")()
   }
@@ -70,10 +68,6 @@ export class OperatingSystem {
   }
 
   public killProcess(processId: ProcessId): void {
-    if (processId <= maxInfrastructureProcessId) {
-      console.log(`[OS Error] Trying to kill infrastructure process ${processId}`)
-      return
-    }
     const process = this.processOf(processId)
     if (process == null) {
       console.log(`[OS Error] Trying to kill unknown process ${processId}`)
@@ -170,7 +164,7 @@ export class OperatingSystem {
 
   // ---- Utility ---- //
   private getNewProcessId(): ProcessId {
-    const processId = Game.time * maxInfrastructureProcessId + this.processIndex
+    const processId = Game.time * 1000 + this.processIndex
     this.processIndex += 1
     return processId
   }

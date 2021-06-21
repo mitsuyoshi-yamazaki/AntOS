@@ -1,18 +1,12 @@
 import { OperatingSystem } from "os/os"
 import { ScoutCreepProcess } from "process/test/scout_creep"
-import {
-  Process,
-  ProcessId,
-} from "../../process/process"
 
 export interface LauncherProcessMemory {
   "c.s"?: string  // creep.ScoutCreepProcess
 }
 
-export class LauncherProcess implements Process {
-  public readonly shouldStore = false
-
-  public constructor(public readonly processId: ProcessId) {
+export class LauncherProcess {
+  public constructor() {
     this.setupMemory()
   }
 

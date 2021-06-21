@@ -1,17 +1,11 @@
 import { OperatingSystem } from "os/os"
-import {
-  Process,
-  ProcessId,
-} from "../../process/process"
 
 export interface QuitterProcessMemory {
   i?: string  // processId
 }
 
-export class QuitterProcess implements Process {
-  public readonly shouldStore = false
-
-  public constructor(public readonly processId: ProcessId) {
+export class QuitterProcess {
+  public constructor() {
     this.setupMemory()
   }
 

@@ -1,8 +1,4 @@
 import { OperatingSystem } from "os/os"
-import {
-  Process,
-  ProcessId,
-} from "../../process/process"
 
 export interface MessengerProcessMemory {
   i: string | null  // processId
@@ -18,10 +14,8 @@ function isMessageObserver(arg: any): arg is MessageObserver {
   return arg.didReceiveMessage !== undefined
 }
 
-export class MessengerProcess implements Process {
-  public readonly shouldStore = false
-
-  public constructor(public readonly processId: ProcessId) {
+export class MessengerProcess {
+  public constructor() {
     this.setupMemory()
   }
 
