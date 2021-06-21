@@ -1,14 +1,52 @@
+import { ResultType, ResultFailed, ResultSucceeded } from "utility/result"
 import {
-  Process,
-  ProcessId,
-} from "../../process/process"
+  ConsoleCommand,
+  isConsoleCommand,
+  HelpCommand,
+} from "./console_command"
 
-export class StandardIOProcess implements Process {
-  public readonly shouldStore = false
+export const standardInput = (rawMessage: string): string => {
+  const parseResult = parseMessage(rawMessage)
+  switch (parseResult.resultType) {
+  case "succeeded":
+    return parseResult.value.run()
 
-  public constructor(public readonly processId: ProcessId) {
+  case "failed":
+    return `${parseResult.error}`
+
+  default:
+    return "Undefined behavior"
+  }
+}
+
+/**
+ * - [ ] "/'で囲われたスペースを許可する
+ */
+function parseMessage(rawMessage: string): ResultType<ConsoleCommand> {
+  const invalidMessageDescription = (description: string): ResultFailed<ConsoleCommand> => {
+    return new ResultFailed(new Error(`Parsing message failed: ${description} (raw message: "${rawMessage}")`))
   }
 
-  public run(): void {
+  const components = rawMessage.split(" ")
+  if (components.length <= 0) {
+    return invalidMessageDescription("Empty Message")
   }
+
+  const command = components[0]
+  if (isConsoleCommand(command) === false) {
+    return invalidMessageDescription(`Unknown command ${command}`)
+  }
+
+  switch (command) {
+  case "help":
+  default:
+    return new ResultSucceeded(new HelpCommand())
+  }
+}
+
+/**
+ * - [ ] logger以外からは直接呼ばれないようにする
+ */
+const standardOutput = (message: string, shouldNotify?: boolean): void => {
+
 }

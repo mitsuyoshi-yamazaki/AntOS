@@ -7,6 +7,7 @@ const processTypes = {
   }
 }
 
+// - [ ] infrastructure以下に入れる
 export class ProcessRestorer {
   public static createStatelessProcess(processType: string, processId: ProcessId): Process | null {
     switch (processType) {

@@ -12,6 +12,7 @@ import * as Migration from "./migration";
 import { ProcessLauncherMemory } from "../os/infrastructure/process_launcher"
 import { ProcessQuitterMemory } from "../os/infrastructure/process_quitter"
 import { MessengerMemory } from "../os/infrastructure/messenger"
+import { standardInput } from "../os/infrastructure/standard_io"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -23,6 +24,8 @@ export interface SectorMemory {
 
 declare global {
   interface Game {
+    io: (message: string) => string
+
     user: {name: 'Mitsuyoshi'}
     empire: {name: string}
     version: string
@@ -134,6 +137,8 @@ export function init() {
 }
 
 export function tick(): void {
+  Game.io = standardInput
+
   Game.user = {
     name: 'Mitsuyoshi',
   }
