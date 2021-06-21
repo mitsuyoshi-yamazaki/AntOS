@@ -1,3 +1,4 @@
+import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { isProcedural, isStatefulProcess, Process, ProcessId } from "../process/process"
 import { RootProcess } from "./infrastructure/root"
@@ -82,14 +83,14 @@ export class OperatingSystem {
     this.processes.set(processId, processInfo)
   }
 
-  public killProcess(processId: ProcessId): void {
+  public killProcess(processId: ProcessId): ResultType<string> {
     const process = this.processOf(processId)
     if (process == null) {
-      console.log(`[OS Error] Trying to kill unknown process ${processId}`)
-      return
+      return new ResultFailed(new Error(`[OS Error] Trying to kill unknown process ${processId}`))
     }
-    console.log(`Kill process ${process.constructor.name}, ID: ${processId}`)
+    console.log(`Kill process ${process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
     this.processes.delete(processId)
+    return new ResultSucceeded(process.constructor.name)
   }
 
   // ---- Run ---- //

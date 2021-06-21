@@ -12,7 +12,7 @@ import * as Migration from "./migration";
 import { ProcessLauncherMemory } from "../os/infrastructure/process_launcher"
 import { ProcessQuitterMemory } from "../os/infrastructure/process_quitter"
 import { MessengerMemory } from "../os/infrastructure/messenger"
-import { standardInput } from "../os/infrastructure/standard_io"
+import { standardInput } from "../os/infrastructure/standard_input"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
