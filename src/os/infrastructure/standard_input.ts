@@ -4,7 +4,7 @@ import {
   isConsoleCommand,
   HelpCommand,
   KillCommand,
-} from "./console_command"
+} from "./console_command/console_command"
 
 export const standardInput = (rawCommand: string): string => {
   const parseResult = parseCommand(rawCommand)
