@@ -47,11 +47,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
 
+        creep.notifyWhenAttacked(false) // 旧実装に制御されるcreepsは全て通知を停止
+
         if ((creep.ticksToLive || 0) < 1450) {
           continue
         }
 
-        creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
+        // creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
 
         if (creep.squad || creep.spawning) {
           continue
