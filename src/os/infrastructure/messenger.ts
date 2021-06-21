@@ -1,16 +1,11 @@
-import { OperatingSystem } from "os/os"
-
-export interface MessengerMemory {
-  i: string | null  // processId
-  m: unknown        // message
-}
+import { OperatingSystem } from "../os"
 
 export interface MessageObserver {
-  didReceiveMessage(message: unknown): void
+  didReceiveMessage(message: string): string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-function isMessageObserver(arg: any): arg is MessageObserver {
+export function isMessageObserver(arg: any): arg is MessageObserver {
   return arg.didReceiveMessage !== undefined
 }
 

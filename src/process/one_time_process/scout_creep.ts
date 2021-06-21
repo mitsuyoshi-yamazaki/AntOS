@@ -89,12 +89,11 @@ export class ScoutCreepProcess implements StatefulProcess, Procedural, MessageOb
   }
 
   // ---- MessageObserver ---- //
-  public didReceiveMessage(message: unknown): void {
+  public didReceiveMessage(message: unknown): string {
     if (typeof (message) !== "string") {
-      console.log(`ScoutCreepProcess invalid message ${message}`)
-      return
+      return `ScoutCreepProcess ${this.processId} received invalid message ${message}`
     }
     this.routes = message.split(",")
-    console.log(`ScoutCreepProcess message received ${message}`)
+    return `ScoutCreepProcess ${this.processId} received message: ${message}`
   }
 }

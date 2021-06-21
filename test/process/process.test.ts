@@ -4,6 +4,7 @@ class SomeObject { }
 
 test("isStatefulProcess()", () => {
   class SomeStatefulProcess implements StatefulProcess {
+    public readonly launchTime = 0
     public readonly shouldStore = true
     public readonly processId = 0
 
