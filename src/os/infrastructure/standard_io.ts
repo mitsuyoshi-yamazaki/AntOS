@@ -1,7 +1,7 @@
 import {
   Process,
   ProcessId,
-} from "../process"
+} from "../../process/process"
 
 export class StandardIOProcess implements Process {
   public readonly shouldStore = false

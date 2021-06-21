@@ -2,7 +2,7 @@ import { OperatingSystem } from "os/os"
 import {
   Process,
   ProcessId,
-} from "../process"
+} from "../../process/process"
 
 export interface MessengerProcessMemory {
   i: string | null  // processId

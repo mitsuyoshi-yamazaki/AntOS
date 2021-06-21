@@ -3,7 +3,7 @@ import { ScoutCreepProcess } from "process/test/scout_creep"
 import {
   Process,
   ProcessId,
-} from "../process"
+} from "../../process/process"
 
 export interface LauncherProcessMemory {
   "c.s"?: string  // creep.ScoutCreepProcess

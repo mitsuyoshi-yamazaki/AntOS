@@ -9,9 +9,9 @@ import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
-import { LauncherProcessMemory } from "../process/infrastructure/launcher"
-import { QuitterProcessMemory } from "../process/infrastructure/quitter"
-import { MessengerProcessMemory } from "../process/infrastructure/messenger"
+import { LauncherProcessMemory } from "../os/infrastructure/launcher"
+import { QuitterProcessMemory } from "../os/infrastructure/quitter"
+import { MessengerProcessMemory } from "../os/infrastructure/messenger"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)

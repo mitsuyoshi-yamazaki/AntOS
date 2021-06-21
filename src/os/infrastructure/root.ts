@@ -1,6 +1,6 @@
 import {
   Process,
-} from "../process"
+} from "../../process/process"
 import { LauncherProcess } from "./launcher"
 import { MessengerProcess } from "./messenger"
 import { QuitterProcess } from "./quitter"

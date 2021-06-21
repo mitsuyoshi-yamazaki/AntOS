@@ -1,6 +1,6 @@
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
 import { isProcedural, isStatefulProcess, Procedural, Process, ProcessId } from "../process/process"
-import { maxInfrastructureProcessId, RootProcess } from "../process/infrastructure/root"
+import { maxInfrastructureProcessId, RootProcess } from "./infrastructure/root"
 import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {

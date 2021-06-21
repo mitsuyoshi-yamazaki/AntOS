@@ -3,7 +3,7 @@ import {
   Procedural,
   StatefulProcess,
 } from "../process"
-import { MessageObserver } from "../infrastructure/messenger"
+import { MessageObserver } from "../../os/infrastructure/messenger"
 
 interface ScoutCreepProcessMemory {
   c: string   // creepId
