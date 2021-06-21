@@ -9,7 +9,10 @@ import {
 export class RoomBootstrapProcess implements StatefulProcess {
   public readonly shouldStore = true
 
-  public constructor(public readonly processId: ProcessId) {
+  public constructor(
+    public readonly launchTime: number,
+    public readonly processId: ProcessId,
+  ) {
   }
 
   // ---- StatefulProcess ---- //

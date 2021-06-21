@@ -1,6 +1,4 @@
-import { startsWith } from "lodash"
 import { OperatingSystem } from "os/os"
-import { parseProcessId } from "./command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class ProcessCommand implements ConsoleCommand {

@@ -1,5 +1,5 @@
-import { OperatingSystem } from "os/os"
-import { ScoutCreepProcess } from "process/test/scout_creep"
+import { OperatingSystem } from "../../os"
+import { ScoutCreepProcess } from "../../../process/one_time_process/scout_creep"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class LaunchCommand implements ConsoleCommand {

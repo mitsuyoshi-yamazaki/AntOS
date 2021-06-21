@@ -6,7 +6,8 @@ import {
 
 export type CreepProvisionPriority = "cancel_others" | "urgent" | "normal" | "anytime"
 
-interface CreepAgencyMemory {
+export interface CreepAgencyObserver {
+  didFindCreep(creep: Creep, id: number): void
 }
 
 /**
@@ -16,7 +17,10 @@ interface CreepAgencyMemory {
 export class CreepAgencyProcess implements StatefulProcess, Procedural {
   public readonly shouldStore = true
 
-  public constructor(public readonly processId: ProcessId) {
+  public constructor(
+    public readonly launchTime: number,
+    public readonly processId: ProcessId,
+  ) {
   }
 
   // ---- StatefulProcess ---- //

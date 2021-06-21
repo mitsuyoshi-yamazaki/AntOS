@@ -1,4 +1,4 @@
-import { ScoutCreepProcess } from "process/test/scout_creep"
+import { ScoutCreepProcess } from "../process/one_time_process/scout_creep"
 import { ProcessId, Process, StatefulProcess } from "../process/process"
 
 const processTypes = {
