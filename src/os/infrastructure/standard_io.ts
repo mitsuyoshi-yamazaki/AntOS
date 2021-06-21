@@ -12,7 +12,7 @@ export const standardInput = (rawMessage: string): string => {
     return parseResult.value.run()
 
   case "failed":
-    return `${parseResult.error}`
+    return `Type Game.io("help") to see available commands.\n${parseResult.error}`
 
   default:
     return "Undefined behavior"
