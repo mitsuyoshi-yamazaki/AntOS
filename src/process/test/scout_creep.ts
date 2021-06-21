@@ -17,6 +17,7 @@ export class ScoutCreepProcess implements StatefulProcess, Procedural, MessageOb
   private routes: string[]
 
   public constructor(
+    public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly creepId: string,
     routes: string[],

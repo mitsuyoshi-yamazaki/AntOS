@@ -2,6 +2,7 @@ const consoleCommandTypes = [
   "help",
   "kill",
   "launch",
+  "process",
 ] as const
 type ConsoleCommandType = typeof consoleCommandTypes[number]
 
@@ -45,5 +46,13 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
     description: "Launch specified process",
     options: [],
     args: "Process type name, process launch options key1=value1 key2=value2 ...",
+  },
+  {
+    command: "process",
+    description: "Show running process info",
+    options: [
+      "-l: List all running processes"
+    ],
+    args: "Process ID",
   }
 ]

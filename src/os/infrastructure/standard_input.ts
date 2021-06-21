@@ -6,6 +6,7 @@ import {
 import { HelpCommand } from "./console_command/help_command"
 import { KillCommand } from "./console_command/kill_command"
 import { LaunchCommand } from "./console_command/launch_command"
+import { ProcessCommand } from "./console_command/process_command"
 
 export const standardInput = (rawCommand: string): string => {
   const parseResult = parseCommand(rawCommand)
@@ -75,5 +76,8 @@ function parseCommand(rawCommand: string): ResultType<ConsoleCommand> {
 
   case "launch":
     return new ResultSucceeded(new LaunchCommand(options, args, rawCommand))
+
+  case "process":
+    return new ResultSucceeded(new ProcessCommand(options, args, rawCommand))
   }
 }

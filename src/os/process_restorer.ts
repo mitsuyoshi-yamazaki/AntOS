@@ -16,14 +16,14 @@ export class ProcessRestorer {
     }
   }
 
-  public static createStatefullProcess(processType: string, processId: ProcessId, state: unknown): StatefulProcess | null {
+  public static createStatefullProcess(processType: string, launchTime: number, processId: ProcessId, state: unknown): StatefulProcess | null {
     switch (processType) {
     case processTypes.creep.scout: {
       const restoredState = ScoutCreepProcess.parseState(state)
       if (restoredState == null) {
         return null
       }
-      return new ScoutCreepProcess(processId, restoredState.creepId, restoredState.routes)
+      return new ScoutCreepProcess(launchTime, processId, restoredState.creepId, restoredState.routes)
     }
     default:
       return null

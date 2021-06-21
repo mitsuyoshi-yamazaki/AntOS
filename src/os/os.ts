@@ -5,6 +5,7 @@ import { RootProcess } from "./infrastructure/root"
 import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {
+  l: number   // launchTime
   i: number   // processId
   t: string   // processType
   r: boolean  // running
@@ -14,9 +15,15 @@ interface ProcessStateMemory extends ProcessMemory {
   s: unknown  // state
 }
 
-interface ProcessInfo {
+interface InternalProcessInfo {
   running: boolean
   process: Process
+}
+
+export interface ProcessInfo {
+  processId: number
+  type: string
+  running: boolean
 }
 
 export interface OSMemory {
@@ -35,7 +42,7 @@ export class OperatingSystem {
   private launchTime = Game.time
   private processIndex = 0
   private readonly rootProcess = new RootProcess()
-  private readonly processes = new Map<ProcessId, ProcessInfo>()
+  private readonly processes = new Map<ProcessId, InternalProcessInfo>()
 
   private constructor() {
     ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
@@ -48,7 +55,7 @@ export class OperatingSystem {
   public addProcess<T extends Process>(maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
-    const processInfo: ProcessInfo = {
+    const processInfo: InternalProcessInfo = {
       process,
       running: true,
     }
@@ -93,6 +100,17 @@ export class OperatingSystem {
     return new ResultSucceeded(process.constructor.name)
   }
 
+  public listAllProcesses(): ProcessInfo[] {
+    return Array.from(this.processes.values()).map(processInfo => {
+      const info: ProcessInfo = {
+        processId: processInfo.process.processId,
+        type: processInfo.process.constructor.name,
+        running: processInfo.running,
+      }
+      return info
+    })
+  }
+
   // ---- Run ---- //
   public run(): void {
     ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
@@ -126,7 +144,7 @@ export class OperatingSystem {
         console.log(`[OS Error] Unrecognized process type ${processMemory.t}`)
         return
       }
-      const processInfo: ProcessInfo = {
+      const processInfo: InternalProcessInfo = {
         process,
         running: processMemory.r === true
       }
@@ -134,12 +152,12 @@ export class OperatingSystem {
     })
 
     Memory.os.ps.forEach(processStateMemory => {
-      const process = ProcessRestorer.createStatefullProcess(processStateMemory.t, processStateMemory.i, processStateMemory.s)
+      const process = ProcessRestorer.createStatefullProcess(processStateMemory.t, processStateMemory.l, processStateMemory.i, processStateMemory.s)
       if (process == null) {
         console.log(`[OS Error] Unrecognized stateful process type ${processStateMemory.t}`)
         return
       }
-      const processInfo: ProcessInfo = {
+      const processInfo: InternalProcessInfo = {
         process,
         running: processStateMemory.r === true
       }
@@ -163,6 +181,7 @@ export class OperatingSystem {
         }
         if (isStatefulProcess(process)) {
           processStatesMemory.push({
+            l: process.launchTime,
             i: process.processId,
             t: processType,
             r: processInfo.running,
@@ -170,6 +189,7 @@ export class OperatingSystem {
           })
         } else {
           processesMemory.push({
+            l: process.launchTime,
             i: process.processId,
             t: processType,
             r: processInfo.running,

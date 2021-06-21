@@ -52,7 +52,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new ScoutCreepProcess(processId, creepId, routes)
+      return new ScoutCreepProcess(Game.time, processId, creepId, routes)
     })
     return `Launched ScoutCreepProcess PID: ${process.processId}`
   }

@@ -15,6 +15,7 @@ export interface ProcessResult {
 
 // ---- Type of Process ---- //
 export interface Process {
+  launchTime: number
   processId: ProcessId
   shouldStore: boolean
 }

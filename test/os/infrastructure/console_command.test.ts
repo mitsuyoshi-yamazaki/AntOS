@@ -1,4 +1,4 @@
-import { isConsoleCommand } from "../../../src/os/infrastructure/console_command"
+import { isConsoleCommand } from "../../../src/os/infrastructure/console_command/console_command"
 
 test("isConsoleCommand", () => {
   expect(isConsoleCommand("help")).toBe(true)
