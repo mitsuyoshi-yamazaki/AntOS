@@ -7,7 +7,7 @@ import { MessageObserver } from "../../os/infrastructure/messenger"
 
 interface ScoutCreepProcessMemory {
   c: string   // creepId
-  r: string // routes (room_name1,room_name2,...)
+  r: string   // routes (room_name1,room_name2,...)
 }
 
 // W54S8,W55S8,W55S9,W56S9,W56S8
