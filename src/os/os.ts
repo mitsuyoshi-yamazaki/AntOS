@@ -1,17 +1,21 @@
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
-import { isProcedural, isStatefulProcess, Procedural, Process, ProcessId } from "../process/process"
+import { isProcedural, isStatefulProcess, Process, ProcessId } from "../process/process"
 import { RootProcess } from "./infrastructure/root"
 import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {
   i: number   // processId
   t: string   // processType
+  r: boolean  // running
 }
 
-interface ProcessStateMemory {
-  i: number   // processId
-  t: string   // processType
+interface ProcessStateMemory extends ProcessMemory {
   s: unknown  // state
+}
+
+interface ProcessInfo {
+  running: boolean
+  process: Process
 }
 
 export interface OSMemory {
@@ -29,8 +33,8 @@ export class OperatingSystem {
 
   private launchTime = Game.time
   private processIndex = 0
-  private readonly processes = new Map<ProcessId, Process>()
-  private rootProcess = new RootProcess()
+  private readonly rootProcess = new RootProcess()
+  private readonly processes = new Map<ProcessId, ProcessInfo>()
 
   private constructor() {
     ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
@@ -40,31 +44,42 @@ export class OperatingSystem {
   }
 
   // ---- Process ---- //
-  public createChildProcess<T extends Process>(parent: Process, maker: (processId: ProcessId) => T): T {
-    const processId = this.getNewProcessId()
-    const process = maker(processId)
-    this.processes.set(processId, process)
-    return process
-  }
-
   public addProcess<T extends Process>(maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
-    this.processes.set(processId, process)
+    const processInfo: ProcessInfo = {
+      process,
+      running: true,
+    }
+    this.processes.set(processId, processInfo)
     console.log(`Launch process ${process.constructor.name}, ID: ${processId}`)
     return process
   }
 
   public processOf(processId: ProcessId): Process | undefined {
-    return this.processes.get(processId)
+    return this.processes.get(processId)?.process
   }
 
   public suspendProcess(processId: ProcessId): void {
-    // TODO:
+    const processInfo = this.processes.get(processId)
+    if (processInfo == null) {
+      this.sendOSError(`No process with ID ${processId} (suspendProcess())`)
+      return
+    }
+
+    processInfo.running = false
+    this.processes.set(processId, processInfo)
   }
 
   public resumeProcess(processId: ProcessId): void {
-    // TODO:
+    const processInfo = this.processes.get(processId)
+    if (processInfo == null) {
+      this.sendOSError(`No process with ID ${processId} (resumeProcess())`)
+      return
+    }
+
+    processInfo.running = true
+    this.processes.set(processId, processInfo)
   }
 
   public killProcess(processId: ProcessId): void {
@@ -110,7 +125,11 @@ export class OperatingSystem {
         console.log(`[OS Error] Unrecognized process type ${processMemory.t}`)
         return
       }
-      this.processes.set(process.processId, process)
+      const processInfo: ProcessInfo = {
+        process,
+        running: processMemory.r === true
+      }
+      this.processes.set(process.processId, processInfo)
     })
 
     Memory.os.ps.forEach(processStateMemory => {
@@ -119,14 +138,19 @@ export class OperatingSystem {
         console.log(`[OS Error] Unrecognized stateful process type ${processStateMemory.t}`)
         return
       }
-      this.processes.set(process.processId, process)
+      const processInfo: ProcessInfo = {
+        process,
+        running: processStateMemory.r === true
+      }
+      this.processes.set(process.processId, processInfo)
     })
   }
 
   private storeProcesses(): void {
     const processesMemory: ProcessMemory[] = []
     const processStatesMemory: ProcessStateMemory[] = []
-    Array.from(this.processes.values()).forEach(process => {
+    Array.from(this.processes.values()).forEach(processInfo => {
+      const process = processInfo.process
       if (process.shouldStore === false) {
         return
       }
@@ -140,12 +164,14 @@ export class OperatingSystem {
           processStatesMemory.push({
             i: process.processId,
             t: processType,
+            r: processInfo.running,
             s: process.encode(),
           })
         } else {
           processesMemory.push({
             i: process.processId,
             t: processType,
+            r: processInfo.running,
           })
         }
       } catch (error) {
@@ -158,8 +184,15 @@ export class OperatingSystem {
 
   // ---- Execution ---- //
   private runProceduralProcesses(): void {
-    const proceduralProcesses = Array.from(this.processes.values()).filter(process => isProcedural(process)) as unknown as Procedural[]
-    proceduralProcesses.forEach(process => process.runOnTick())
+    Array.from(this.processes.values()).forEach(processInfo => {
+      if (processInfo.running !== true) {
+        return
+      }
+      if (!isProcedural(processInfo.process)) {
+        return
+      }
+      processInfo.process.runOnTick()
+    })
   }
 
   // ---- Utility ---- //
@@ -167,5 +200,9 @@ export class OperatingSystem {
     const processId = Game.time * 1000 + this.processIndex
     this.processIndex += 1
     return processId
+  }
+
+  private sendOSError(message: string): void {
+    console.log(`[OS Error] ${message}`)
   }
 }
