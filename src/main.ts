@@ -1,9 +1,10 @@
-import { ErrorMapper } from "utils/ErrorMapper"
+/* eslint-disable */
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 
-import { Empire } from "classes/empire"
-import * as Initializer from "classes/init"
-import { leveled_colored_text } from './linted/utility'
-import { ProblemSolver } from './experimental/problemsolver'
+import { Empire } from "old/empire"
+import * as Initializer from "old/init"
+import { leveled_colored_text } from './utility'
+import { OperatingSystem } from "os/os"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -37,10 +38,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
 
     const empire = new Empire(Game.user.name, owned_controllers)
-    const problemSolver = new ProblemSolver('Experimental', [])
 
     empire.run()
-    problemSolver.run()
   }, `empire.run`)()
 
   if ((Game.time % 29) == 3) {
@@ -64,7 +63,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
         // creep.memory.let_thy_die = true
         // creep.memory.squad_name = 'worker771957135'  // W48N11
       }
-      console.log(`Main creeps GC at ${Game.time}`)
+      // console.log(`Main creeps GC at ${Game.time}`)
     }, `Creeps.gc`)()
   }
 
@@ -89,13 +88,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
     Memory.debug.test_send_resources = false
   }
 
-  if ((Game.time % 197) == 100) {
-    ErrorMapper.wrapLoop(() => {
-      // if ((Game.time % 7) == 0) {  // @fixme:
-        trade()
-        console.log(`Main.trade at ${Game.time}`)
-    }, `Trade`)()
-  }
+  // if ((Game.time % 197) == 100) {
+  //   ErrorMapper.wrapLoop(() => {
+  //     // if ((Game.time % 7) == 0) {  // @fixme:
+  //       trade()
+  //       console.log(`Main.trade at ${Game.time}`)
+  //   }, `Trade`)()
+  // }
 
   // ErrorMapper.wrapLoop(() => {
   //   for (const creep_name in Game.creeps) {
@@ -164,6 +163,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
   if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
     Memory.debug.cpu.show_usage = false
   }
+
+  /* eslint-enable */
+  OperatingSystem.os.run()
+  /* eslint-disable */
 }, `Main`)
 
 function trade():void {
@@ -205,23 +208,23 @@ function trade():void {
     rooms.push(room)
   }
 
-  sellResource({
-    resource_type: RESOURCE_HYDROGEN,
-    price: 0.200,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_HYDROGEN,
+  //   price: 0.200,
+  //   rooms,
+  // })
 
-  sellResource({
-    resource_type: RESOURCE_KEANIUM,
-    price: 0.060,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_KEANIUM,
+  //   price: 0.060,
+  //   rooms,
+  // })
 
-  sellResource({
-    resource_type: RESOURCE_CATALYST,
-    price: 0.250,
-    rooms,
-  })
+  // sellResource({
+  //   resource_type: RESOURCE_CATALYST,
+  //   price: 0.250,
+  //   rooms,
+  // })
 
   // sellResource({
   //   resource_type: RESOURCE_UTRIUM,
@@ -235,17 +238,17 @@ function trade():void {
   //   rooms,
   // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_ZYNTHIUM,
-    price: 0.01,
-    rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_ZYNTHIUM,
+  //   price: 0.01,
+  //   rooms,
+  // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_UTRIUM,
-    price: 0.04,
-    rooms: u_rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_UTRIUM,
+  //   price: 0.04,
+  //   rooms: u_rooms,
+  // }, credit_amount)
 
   // buyResource({
   //   resource_type: RESOURCE_LEMERGIUM,
@@ -253,17 +256,17 @@ function trade():void {
   //   rooms,
   // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_CATALYST,
-    price: 0.03,
-    rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_CATALYST,
+  //   price: 0.03,
+  //   rooms,
+  // }, credit_amount)
 
-  buyResource({
-    resource_type: RESOURCE_POWER,
-    price: 0.1,
-    rooms: power_rooms,
-  }, credit_amount)
+  // buyResource({
+  //   resource_type: RESOURCE_POWER,
+  //   price: 0.1,
+  //   rooms: power_rooms,
+  // }, credit_amount)
 
   // buyResource({
   //   resource_type: RESOURCE_OXYGEN,

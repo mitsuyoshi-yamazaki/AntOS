@@ -3,6 +3,9 @@
     "moduleResolution": "node",
     "module": "es2015",
     "target": "es6",
+    "lib": [
+      "ES2020"
+    ],
     "outDir": "dist",
     "baseUrl": "src/",
     "sourceMap": true,
