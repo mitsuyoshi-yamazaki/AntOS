@@ -1,4 +1,3 @@
-import { ProcessLauncher } from "./process_launcher"
 import { Messenger } from "./messenger"
 
 /**
@@ -9,14 +8,12 @@ import { Messenger } from "./messenger"
 export class RootProcess {
   public readonly shouldStore = false
 
-  private readonly processLauncher = new ProcessLauncher()
   private readonly messenger = new Messenger()
 
   public constructor() {
   }
 
   public run(): void {
-    this.processLauncher.run()
     this.messenger.run()
   }
 }

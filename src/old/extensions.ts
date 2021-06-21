@@ -9,7 +9,6 @@ import { EmpireMemory } from './empire'
 import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
-import { ProcessLauncherMemory } from "../os/infrastructure/process_launcher"
 import { MessengerMemory } from "../os/infrastructure/messenger"
 import { standardInput } from "../os/infrastructure/standard_input"
 
@@ -93,7 +92,6 @@ declare global {
   interface Memory {
     last_tick: number
     os: OSMemory
-    launcher: ProcessLauncherMemory
     messenger: MessengerMemory
 
     empires: {[name: string]: EmpireMemory}
