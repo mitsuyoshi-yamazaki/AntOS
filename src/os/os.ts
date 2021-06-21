@@ -21,14 +21,8 @@ export interface OSMemory {
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
- * - デプロイ時に途切れるインスタンスのライフサイクルの
- *   - 状態の永続化
- * - CPU, メモリの使用状況に応じてプロセスの実行密度を変更する
- * - イベントの検出と通知
- *   - 子プロセスには一部のGame APIの呼び出しを制限する
- * - プロセスの親子関係
- *   - 親の情報をstoreすれば良いようにする
- * - RootProcessを含むInfrastructure Processesは状態をもたない
+ * - [ ] RootProcessの依存を外して単体でtestableにする
+ * - [ ] Memoryの依存を外す
  */
 export class OperatingSystem {
   static readonly os = new OperatingSystem()

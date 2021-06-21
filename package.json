@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Screeps script",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "tslint": "npx tslint -p ."
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mitsuyoshi-yamazaki/AntOS.git"
@@ -18,21 +14,47 @@
   },
   "homepage": "https://github.com/mitsuyoshi-yamazaki/AntOS#readme",
   "devDependencies": {
+    "@types/jest": "^26.0.23",
     "@types/lodash": "^3.10.1",
     "@types/screeps": "^2.2.1",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
     "eslint": "^7.28.0",
+    "jest": "^27.0.4",
     "rollup": "^0.57.1",
     "rollup-plugin-clean": "^1.0.0",
     "rollup-plugin-commonjs": "^9.1.0",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-screeps": "^0.1.2",
     "rollup-plugin-typescript2": "^0.12.0",
+    "ts-jest": "^27.0.3",
     "typescript": "^4.3.4"
   },
   "dependencies": {
     "creep-tasks": "^1.1.1",
     "source-map": "~0.6.1"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverage": false,
+    "collectCoverageFrom": [
+      "src//*.ts"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsconfig": "tsconfig.jest.json"
+      }
+    },
+    "preset": "ts-jest",
+    "testMatch": [
+      "**/__tests__/**/*.+(ts|tsx|js)",
+      "**/?(*.)+(spec|test).+(ts|tsx|js)"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testEnvironment": "node"
   }
 }
