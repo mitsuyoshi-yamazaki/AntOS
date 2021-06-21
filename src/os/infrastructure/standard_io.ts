@@ -23,7 +23,7 @@ export const standardInput = (rawMessage: string): string => {
  * - [ ] "/'で囲われたスペースを許可する
  */
 function parseMessage(rawMessage: string): ResultType<ConsoleCommand> {
-  const invalidMessageDescription = (description: string): ResultFailed<ConsoleCommand> => {
+  const invalidMessageDescription = (description: string): ResultFailed => {
     return new ResultFailed(new Error(`Parsing message failed: ${description} (raw message: "${rawMessage}")`))
   }
 
