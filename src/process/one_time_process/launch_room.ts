@@ -14,13 +14,12 @@ interface LaunchRoomProcessMemory {
 export class LaunchRoomProcess implements StatefulProcess, Procedural, MessageObserver {
   public readonly shouldStore = true
 
-  private claimerId: string | null = null
-  private workerIds: string[] = []
-
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: string,
+    public claimerId: string | null,
+    public workerIds: string[] = [],
   ) {
   }
 
@@ -43,7 +42,41 @@ export class LaunchRoomProcess implements StatefulProcess, Procedural, MessageOb
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    // console.log(`LaunchRoomProcess ${this.roomName}`)
+    const room = Game.rooms[this.roomName]
+    if (room == null || room.controller == null) {
+      return
+    }
+    if (room.controller.my) {
+      this.constructSpawn(room)
+    } else {
+      this.claimController(room.controller)
+    }
+  }
+
+  private getCreepById(creepId: string): Creep | null {
+    const creep = Game.getObjectById(creepId)
+    if (creep instanceof Creep) {
+      return creep
+    }
+    return null
+  }
+
+  private claimController(controller: StructureController): void {
+    if (this.claimerId == null) {
+      return
+    }
+    const claimer = this.getCreepById(this.claimerId)
+    if (claimer == null) {
+      return
+    }
+    const result = claimer.claimController(controller)
+    if (result === ERR_NOT_IN_RANGE) {
+      claimer.moveTo(controller)
+    }
+  }
+
+  private constructSpawn(room: Room): void {
+
   }
 
   // ---- MessageObserver ---- //
@@ -59,11 +92,13 @@ export class LaunchRoomProcess implements StatefulProcess, Procedural, MessageOb
     const creepBodyParts = creep.body.map(b => b.type)
     if (creepBodyParts.includes(CLAIM)) {
       this.claimerId = creepId
+      creep.memory.squad_name = ""
       return `LaunchRoomProcess ${this.processId} received claimer ID`
     }
 
     if (creepBodyParts.includes(WORK)) {
       this.workerIds.push(creepId)
+      creep.memory.squad_name = ""
       return `LaunchRoomProcess ${this.processId} received worker ID`
     }
     return `LaunchRoomProcess ${this.processId} invalid creep ${creepId}, creep has no CLAIM nor WORK parts`

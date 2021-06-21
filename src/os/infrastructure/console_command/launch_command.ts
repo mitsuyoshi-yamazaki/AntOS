@@ -68,7 +68,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new LaunchRoomProcess(Game.time, processId, roomName)
+      return new LaunchRoomProcess(Game.time, processId, roomName, null, [])
     })
     return `Launched LaunchRoomProcess PID: ${process.processId}`
   }

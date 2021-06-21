@@ -32,7 +32,7 @@ export class ProcessRestorer {
       if (restoredState == null) {
         return null
       }
-      return new LaunchRoomProcess(launchTime, processId, restoredState.r)
+      return new LaunchRoomProcess(launchTime, processId, restoredState.r, restoredState.c, restoredState.w)
     }
     default:
       return null
