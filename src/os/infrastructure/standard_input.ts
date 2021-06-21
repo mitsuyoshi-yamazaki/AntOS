@@ -2,9 +2,9 @@ import { ResultType, ResultFailed, ResultSucceeded } from "utility/result"
 import {
   ConsoleCommand,
   isConsoleCommand,
-  HelpCommand,
-  KillCommand,
 } from "./console_command/console_command"
+import { HelpCommand } from "./console_command/help_command"
+import { KillCommand } from "./console_command/kill_command"
 
 export const standardInput = (rawCommand: string): string => {
   const parseResult = parseCommand(rawCommand)
