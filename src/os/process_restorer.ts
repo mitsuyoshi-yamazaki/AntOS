@@ -1,9 +1,11 @@
+import { LaunchRoomProcess } from "process/one_time_process/launch_room"
 import { ScoutCreepProcess } from "../process/one_time_process/scout_creep"
 import { ProcessId, Process, StatefulProcess } from "../process/process"
 
 const processTypes = {
-  creep: {
-    scout: "c.scout"
+  onetime: {
+    scoutCreep: "o.sc", // ScoutCreepProcess
+    launchRoom: "o.lr", // LaunchRoomProcess
   }
 }
 
@@ -18,12 +20,19 @@ export class ProcessRestorer {
 
   public static createStatefullProcess(processType: string, launchTime: number, processId: ProcessId, state: unknown): StatefulProcess | null {
     switch (processType) {
-    case processTypes.creep.scout: {
+    case processTypes.onetime.scoutCreep: {
       const restoredState = ScoutCreepProcess.parseState(state)
       if (restoredState == null) {
         return null
       }
       return new ScoutCreepProcess(launchTime, processId, restoredState.creepId, restoredState.routes)
+    }
+    case processTypes.onetime.launchRoom: {
+      const restoredState = LaunchRoomProcess.parseState(state)
+      if (restoredState == null) {
+        return null
+      }
+      return new LaunchRoomProcess(launchTime, processId, restoredState.r)
     }
     default:
       return null
@@ -32,7 +41,10 @@ export class ProcessRestorer {
 
   public static processTypeOf(instance: Process): string | null {
     if (instance instanceof ScoutCreepProcess) {
-      return processTypes.creep.scout
+      return processTypes.onetime.scoutCreep
+    }
+    if (instance instanceof LaunchRoomProcess) {
+      return processTypes.onetime.launchRoom
     }
     return null
   }

@@ -1,6 +1,7 @@
 import { OperatingSystem } from "../../os"
 import { ScoutCreepProcess } from "../../../process/one_time_process/scout_creep"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
+import { LaunchRoomProcess } from "process/one_time_process/launch_room"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -23,6 +24,8 @@ export class LaunchCommand implements ConsoleCommand {
     switch (processTypeName) {
     case "ScoutCreepProcess":
       return this.launchScoutCreepProcess(processArguments)
+    case "LaunchRoomProcess":
+      return this.launchLaunchRoomProcess(processArguments)
     default:
       return `Invalid process type name ${processTypeName}`
     }
@@ -55,5 +58,18 @@ export class LaunchCommand implements ConsoleCommand {
       return new ScoutCreepProcess(Game.time, processId, creepId, routes)
     })
     return `Launched ScoutCreepProcess PID: ${process.processId}`
+  }
+
+  private launchLaunchRoomProcess(processArguments: Map<string, string>): CommandExecutionResult {
+    const roomName = processArguments.get("room_name")
+
+    if (roomName == null) {
+      return "Missing room_name argument"
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new LaunchRoomProcess(Game.time, processId, roomName)
+    })
+    return `Launched LaunchRoomProcess PID: ${process.processId}`
   }
 }
