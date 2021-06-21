@@ -1,6 +1,5 @@
 import { ProcessLauncher } from "./process_launcher"
 import { Messenger } from "./messenger"
-import { ProcessQuitter } from "./process_quitter"
 
 /**
  * - RootProcessおよびInfrastructure Processesは状態をもたない
@@ -11,7 +10,6 @@ export class RootProcess {
   public readonly shouldStore = false
 
   private readonly processLauncher = new ProcessLauncher()
-  private readonly processQuitter = new ProcessQuitter()
   private readonly messenger = new Messenger()
 
   public constructor() {
@@ -19,7 +17,6 @@ export class RootProcess {
 
   public run(): void {
     this.processLauncher.run()
-    this.processQuitter.run()
     this.messenger.run()
   }
 }

@@ -10,7 +10,6 @@ import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { ProcessLauncherMemory } from "../os/infrastructure/process_launcher"
-import { ProcessQuitterMemory } from "../os/infrastructure/process_quitter"
 import { MessengerMemory } from "../os/infrastructure/messenger"
 import { standardInput } from "../os/infrastructure/standard_input"
 
@@ -95,7 +94,6 @@ declare global {
     last_tick: number
     os: OSMemory
     launcher: ProcessLauncherMemory
-    quitter: ProcessQuitterMemory
     messenger: MessengerMemory
 
     empires: {[name: string]: EmpireMemory}
