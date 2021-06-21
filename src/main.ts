@@ -23,6 +23,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   ErrorMapper.wrapLoop(() => {
     const owned_controllers: StructureController[] = []
+    const rooms_controlled_by_old_codes = [
+      "W53S5",
+      "W54S7",
+      "W51S29",
+      "W48S6",
+      "W48S12",
+    ]
 
     for (const room_name in Game.rooms) {
       const room = Game.rooms[room_name]
@@ -34,6 +41,12 @@ export const loop = ErrorMapper.wrapLoop(() => {
         continue
       }
 
+      if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
+        if (Game.time % 10 === 0) {
+          console.log(`${room.name} is new`)
+        }
+        continue
+      }
       owned_controllers.push(room.controller)
     }
 
