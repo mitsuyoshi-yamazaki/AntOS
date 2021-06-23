@@ -1,4 +1,4 @@
-import { MessageObserver, isMessageObserver } from "../../../src/os/infrastructure/messenger"
+import { MessageObserver, isMessageObserver } from "../../../src/os/infrastructure/console_command/message_command"
 
 test("isMessageObserver", () => {
   class SomeObject { }

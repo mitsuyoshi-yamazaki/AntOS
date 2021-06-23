@@ -1,14 +1,10 @@
 import { getNewCreepsIn, requestCreep } from "./creep_provider_bridging_squad"
 
-export interface CreepProviderObjectiveMemory {
-
-}
-
-export type CreepProviderObjectivePriority = 0 | 1 | 2  // 0: high, 2: low
+export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 
 export interface CreepProviderCreepSpec {
   specType: string
-  priority: CreepProviderObjectivePriority
+  priority: CreepProviderPriority
   targetRoomName: string
   bodyParts: Map<BodyPartConstant, number>
   recruitableCreepSpec?: {
@@ -17,26 +13,26 @@ export interface CreepProviderCreepSpec {
   }
 }
 
-export interface CreepProviderObjectiveDelegate {
+export interface CreepProviderDelegate {
   didProvideCreep(creep: Creep, specType: string, elapsedTime: number): void
 }
 
 /**
- * - [ ] 一旦process等の仕組みは考慮に入れずに実装する
+ * - [ ] 状態をもたせる(現在はCreepProviderBridgingSquadが持っている)
  * ---
  * - あらかじめ計算した予測の数値を代わりに使えるようにする
  *   - メモリ上の数値を読み取ってコードに入れるなど
  */
-export class CreepProviderObjective {
+export class CreepProvider {
   private readonly requirement: [CreepProviderCreepSpec, number][] = []
 
   public constructor(
-    public readonly parentObjective: string,
+    public readonly delegate: CreepProviderDelegate,
     public readonly spawnRoomName: string, // TODO: 算出できるようにする
   ) {
   }
 
-  public reserveCreeps(spec: CreepProviderCreepSpec, count: number): void {
+  public requestCreeps(spec: CreepProviderCreepSpec, count: number): void {
     requestCreep(spec, count, this.spawnRoomName)
   }
 
@@ -44,7 +40,7 @@ export class CreepProviderObjective {
     const newCreeps = getNewCreepsIn(this.spawnRoomName, "")
     newCreeps.forEach(creep => {
       creep.memory.squad_name = ""
-      // TODO: notify
+      this.delegate.didProvideCreep(creep, "", 0)
     })
   }
 }

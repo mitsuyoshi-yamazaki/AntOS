@@ -1,4 +1,3 @@
-import { Messenger } from "./messenger"
 
 /**
  * - RootProcessおよびInfrastructure Processesは状態をもたない
@@ -8,12 +7,9 @@ import { Messenger } from "./messenger"
 export class RootProcess {
   public readonly shouldStore = false
 
-  private readonly messenger = new Messenger()
-
   public constructor() {
   }
 
   public run(): void {
-    this.messenger.run()
   }
 }

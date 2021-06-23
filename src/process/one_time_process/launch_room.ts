@@ -1,4 +1,4 @@
-import { MessageObserver } from "os/infrastructure/messenger"
+import { MessageObserver } from "os/infrastructure/console_command/message_command"
 import {
   Procedural,
   ProcessId,
@@ -189,15 +189,15 @@ export class LaunchRoomProcess implements StatefulProcess, Procedural, MessageOb
 /**
  * - 処理をもつDependency
  */
-export interface PreRequirementDefinition {
+interface PreRequirementDefinition {
   canStart(): boolean
 }
 
-export interface GoalDefinition {
+interface GoalDefinition {
   isFinished(): boolean
 }
 
-export interface Objective {
+interface Objective {
   description: string
   preRequirement: PreRequirementDefinition
   goal: GoalDefinition
@@ -209,7 +209,7 @@ export interface Objective {
  *   - RCL > nであること
  *   - 対象roomがclaimされていないこと
  */
-export class ClaimRoomPreRequirement implements PreRequirementDefinition {
+class ClaimRoomPreRequirement implements PreRequirementDefinition {
   public constructor(
     public readonly targetRoomName: string,
   ) {}
@@ -236,7 +236,7 @@ export class ClaimRoomPreRequirement implements PreRequirementDefinition {
 /**
  * - 探索
  */
-export class ObserveObjective {
+class ObserveObjective {
   public constructor(
     public readonly targetRoomName: string,
   ) { }

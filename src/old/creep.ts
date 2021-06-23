@@ -32,6 +32,7 @@ export enum CreepType {
   RANGED_ATTACKER          = 'ranged_attacker',
   HEALER            = 'healer',
   SCOUT             = 'scout',
+  CREEP_PROVIDER    = 'creep_provider',
 }
 
 export interface CreepDestroyOption {
