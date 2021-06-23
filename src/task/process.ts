@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { TestProcess, TestProcessState } from "task/test/test_process"
+import { SignRoomsProcess, SignRoomsProcessState } from "./sign_rooms/sign_rooms_process"
 
 export type ProcessId = number
 
@@ -54,7 +55,8 @@ class ExampleProcess implements Process { // TODO: 他のProcessを実装した�
 
 class ProcessTypes {
   "ExampleProcess" = (state: ProcessState) => ExampleProcess.decode(state as ProcessState)
-  "TestProcess" = (state: TestProcessState) => TestProcess.decode(state as TestProcessState)
+  "TestProcess" = (state: ProcessState) => TestProcess.decode(state as TestProcessState)
+  "SignRoomsProcess" = (state: ProcessState) => SignRoomsProcess.decode(state as SignRoomsProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

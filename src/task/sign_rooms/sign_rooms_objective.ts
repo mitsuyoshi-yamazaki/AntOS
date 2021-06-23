@@ -20,7 +20,6 @@ export class SignRoomObjective implements Objective {
     public readonly targetRoomNames: string[],
     public readonly mark: string,
   ) {
-
   }
 
   public run(): void {
