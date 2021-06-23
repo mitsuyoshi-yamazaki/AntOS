@@ -52,6 +52,7 @@ class ExampleObjective implements Objective { // TODO: 他のObjectiveを実装�
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static decode(state: ObjectiveState): ExampleObjective | null {
     return null
   }
