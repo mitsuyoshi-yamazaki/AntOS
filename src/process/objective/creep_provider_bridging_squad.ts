@@ -30,14 +30,21 @@ export function requestCreep(spec: CreepProviderCreepSpec, count: number, roomNa
     return
   }
   memory.req += count
+
+  if (memory.req > 3) {
+    const message = `CreepProviderBridgingSquad too many requests (${memory.req}) in ${roomName} aborting..`
+    console.log(message)
+    Game.notify(message)
+    memory.req = 0
+  }
 }
 
 let newCreepCacheTime = 0
-const newCreeps = new Map<string, Creep[]>()
+const newCreepIds = new Map<string, string[]>()
 
-export function getNewCreepsIn(roomName: string, bridgingId: string): Creep[] { // TODO: どのrequirementに対するCreepか判別できるようにする
+export function getNewCreepIdsIn(roomName: string, bridgingId: string): string[] { // TODO: どのrequirementに対するCreepか判別できるようにする
   if (newCreepCacheTime !== Game.time) {
-    newCreeps.clear()
+    newCreepIds.clear()
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       if (creep.memory.type !== CreepType.CREEP_PROVIDER) {
@@ -46,14 +53,14 @@ export function getNewCreepsIn(roomName: string, bridgingId: string): Creep[] { 
       if (creep.memory.squad_name.length === 0) {
         continue
       }
-      const creeps = newCreeps.get(creep.room.name) ?? []
-      creeps.push(creep)
-      newCreeps.set(creep.room.name, creeps)
+      const creeps = newCreepIds.get(creep.room.name) ?? []
+      creeps.push(creep.id)
+      newCreepIds.set(creep.room.name, creeps)
     }
     newCreepCacheTime = Game.time
   }
 
-  return newCreeps.get(roomName) ?? []
+  return newCreepIds.get(roomName) ?? []
 }
 
 // -------- //
@@ -69,15 +76,12 @@ export class CreepProviderBridgingSquad extends Squad {
     return SquadType.CREEP_PROVIDER_BRIDGING_SQUAD
   }
   public get spawnPriority(): SpawnPriority {
-    if (this.memory == null) {
-      return SpawnPriority.NONE
-    }
     const required = this.memory.req > 0
     return required ? SpawnPriority.LOW : SpawnPriority.NONE
   }
 
-  private get memory(): CreepProviderBridgingSquadMemory | null {
-    return Memory.squads[this.name] as CreepProviderBridgingSquadMemory | null
+  private get memory(): CreepProviderBridgingSquadMemory {
+    return Memory.squads[this.name] as CreepProviderBridgingSquadMemory
   }
 
   constructor(readonly name: string, readonly base_room: Room) {
@@ -117,7 +121,9 @@ export class CreepProviderBridgingSquad extends Squad {
       memory: memory
     })
 
-    if (result !== OK) {
+    if (result === OK) {
+      this.memory.req -= 1
+    } else {
       console.log(`CreepProviderBridgingSquadMemory spawn scout failed with error: ${result}`)
     }
   }

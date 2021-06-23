@@ -12,6 +12,8 @@ interface ScoutObjectiveMemory {
 /**
  * - 目的
  *   - 指定されたroomの周囲を探索し、signする
+ *   - W53S29,W53S28,W53S27
+ *   - Object.keys(Game.creeps).filter(name => Game.creeps[name].room.name === "W51S29" && name.includes("creep_provider_bridging_squad")).map(name => Game.creeps[name]).forEach(creep => creep.say("Hi"))
  */
 export class ScoutObjective implements Objective, Procedural, MessageObserver, CreepProviderDelegate {
   public readonly shouldStore = true
@@ -55,7 +57,9 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    if (this.creepIds.length <= 0) {
+    this.creepProvider.run()
+
+    if (this.creepIds.length <= 0 && this.creepProvider.requestingCreepsFor(this.processId) <= 0) {
       this.requestCreep()
       return
     }
@@ -66,6 +70,7 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
       if (creep instanceof Creep) {
         this.scoutRoom(creep)
       } else {
+        console.log(`dead creep ${creep}`)
         deadCreepIds.push(creepId)
       }
     })
@@ -93,12 +98,39 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
     }
   }
 
-  private signController(scout: Creep, controller: StructureController): void {
+  private getNextRoomName(currentRoomName: string): string | null {
+    if (this.targetRoomNames.length <= 0) {
+      return null
+    }
+    const currentRoomIndex = this.targetRoomNames.indexOf(currentRoomName)
+    if (currentRoomIndex < 0) {
+      return this.targetRoomNames[0]
+    }
+    return this.targetRoomNames[currentRoomIndex + 1]
+  }
 
+  private signController(creep: Creep, controller: StructureController): void {
+    const sign = () => {
+      const emoji = ["😆", "😄", "😐", "😴", "🤔", "🙃", "😃", "😑", "😖", "😝"]
+      const index = (Number(creep.room.name.slice(1, 3)) + Number(creep.room.name.slice(4, 6))) % emoji.length
+      return emoji[index]
+    }
+    const result = creep.signController(controller, sign())
+    if (result === ERR_NOT_IN_RANGE) {
+      creep.say("🏃‍♂️")
+      creep.moveTo(controller)
+    } else if (result < 0) {
+      console.log(`sign controller error: ${result}`)
+    }
   }
 
   private moveToNextRoom(scout: Creep): void {
+    const nextRoomName = this.getNextRoomName(scout.room.name)
+    if (nextRoomName == null) {
+      return
+    }
 
+    scout.moveToRoom(nextRoomName)
   }
 
   // ---- MessageObserver ---- //
@@ -110,6 +142,7 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
   // ---- CreepProviderDelegate ---- //
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public didProvideCreep(creep: Creep, specType: string, elapsedTime: number): void {
+    console.log(`creep ${creep.id} received`)
     this.creepIds.push(creep.id)
   }
 }

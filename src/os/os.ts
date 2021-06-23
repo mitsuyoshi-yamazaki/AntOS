@@ -113,7 +113,7 @@ export class OperatingSystem {
 
   // ---- Run ---- //
   public run(): void {
-    ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
+    ErrorMapper.wrapLoop(() => {
       this.rootProcess.run()
       this.runProceduralProcesses()
       this.storeProcesses()
@@ -209,10 +209,12 @@ export class OperatingSystem {
       if (processInfo.running !== true) {
         return
       }
-      if (!isProcedural(processInfo.process)) {
-        return
+      const process = processInfo.process
+      if (isProcedural(process)) {
+        ErrorMapper.wrapLoop(() => {
+          process.runOnTick()
+        }, `Procedural process ${process.processId} run()`)()
       }
-      processInfo.process.runOnTick()
     })
   }
 

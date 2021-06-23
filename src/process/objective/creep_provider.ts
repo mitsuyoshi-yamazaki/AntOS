@@ -1,4 +1,6 @@
-import { getNewCreepsIn, requestCreep } from "./creep_provider_bridging_squad"
+import { SquadType } from "old/squad/squad"
+import { ProcessId } from "process/process"
+import { CreepProviderBridgingSquadMemory, getNewCreepIdsIn, requestCreep } from "./creep_provider_bridging_squad"
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 
@@ -36,9 +38,26 @@ export class CreepProvider {
     requestCreep(spec, count, this.spawnRoomName)
   }
 
+  public requestingCreepsFor(processId: ProcessId): number {
+    for (const squadName in Memory.squads) {
+      const squadMemory = Memory.squads[squadName]
+      if (squadMemory.type !== SquadType.CREEP_PROVIDER_BRIDGING_SQUAD) {
+        continue
+      }
+      if (squadMemory.owner_name === this.spawnRoomName) {
+        return (squadMemory as CreepProviderBridgingSquadMemory).req ?? 0
+      }
+    }
+    return 0
+  }
+
   public run(): void {
-    const newCreeps = getNewCreepsIn(this.spawnRoomName, "")
-    newCreeps.forEach(creep => {
+    const newCreeps = getNewCreepIdsIn(this.spawnRoomName, "")
+    newCreeps.forEach(creepId => {
+      const creep = Game.getObjectById(creepId)
+      if (!(creep instanceof Creep)) {
+        return
+      }
       creep.memory.squad_name = ""
       this.delegate.didProvideCreep(creep, "", 0)
     })
