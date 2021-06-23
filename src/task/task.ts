@@ -1,3 +1,6 @@
+import { ProcessInfo } from "os/os"
+import { ProcessId } from "process/process"
+import { Position } from "utility/position"
 
 export interface TaskExecutionCondition {
   condition: "required" | "cancellable"
@@ -17,9 +20,7 @@ export interface TaskExecutionCondition {
  *       - 余ったら次の順位を実行→
  *         - 全て実行しても余ったらif possibleを実行
  */
-export interface TaskPriority {
-  taskPriorityType: string
-}
+export type TaskPriority = TaskPriorityIfPossible | TaskPriorityNormal | TaskPriorityAlways
 
 // Lowest
 // CPU時間が逼迫したら停止される
@@ -39,3 +40,50 @@ export interface TaskPriorityNormal {
 export interface TaskPriorityAlways {
   taskPriorityType: "always"
 }
+
+// ---- Task ---- //
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type TaskStatusType<Result, Status> = TaskStatusFinished<Result> | TaskStatusInProgress<Status> | TaskStatusFailed
+
+export class TaskStatusFinished<Result> {
+  public readonly taskStatusType = "finished"
+
+  public constructor(public readonly result: Result) { }
+}
+
+export class TaskStatusInProgress<Status> {
+  public readonly taskStatusType = "in_progress"
+
+  public constructor(public readonly status: Status) { }
+}
+
+export class TaskStatusFailed {
+  public readonly taskStatusType = "failed"
+
+  public constructor(public readonly error: Error) { }
+}
+
+
+export interface Task<Obj, Result, Status> {
+  processId: ProcessId
+  condition: TaskExecutionCondition
+
+  execute(obj: Obj): TaskStatusType<Result, Status>
+}
+
+// export class CreepInRoomMoveTask implements Task<Creep, void, void> {
+//   public constructor(
+//     public readonly processId: ProcessId,
+//     public readonly destination: Position,
+//     public readonly pathReuseDuration: number,
+//     public readonly inRange: number,
+//   ) { }
+
+//   public execute(creep: Creep): void {
+//     creep.pos
+//   }
+// }
+
+// export class CreepHarvestTask implements Task {
+
+// }

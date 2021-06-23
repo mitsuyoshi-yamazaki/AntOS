@@ -42,7 +42,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
       }
 
       if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
-        if (Game.time % 10 === 0) {
+        if (Game.time % 107 === 13) {
           console.log(`${room.name} is new`)
         }
         continue
@@ -60,7 +60,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
 
-        creep.notifyWhenAttacked(false) // 旧実装に制御されるcreepsは全て通知を停止
+        creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
 
         if ((creep.ticksToLive || 0) < 1450) {
           continue

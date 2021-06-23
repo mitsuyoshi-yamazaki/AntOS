@@ -235,9 +235,9 @@ export class Region {
         ]
         rooms_need_to_be_defended = [
           // 'W49S6',
-          'W48S5',
-          'W48S7',
-          'W49S5',
+          // 'W48S5',
+          // 'W48S7',
+          // 'W49S5',
         ]
         charger_position = {x: 35, y: 22}
         this.destination_link_id = '5b34e943bb6c0934e8274579'
