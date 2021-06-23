@@ -12,10 +12,6 @@ export function isStateful(arg: any): arg is Stateful {
   return arg.encode !== undefined
 }
 
-export interface StatefulType<T extends Stateful> {
-  decode(state: State): T | null
-}
-
 export function numberValueFor<S extends State>(key: keyof S, state: S): number | null {
   const value = state[key]
   if (typeof (value) === "number") {

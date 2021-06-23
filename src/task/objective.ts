@@ -53,12 +53,13 @@ class ExampleObjective implements Objective { // TODO: 他のObjectiveを実装�
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static decode(state: ObjectiveState): ExampleObjective | null {
-    return null
+  public static decode(state: ObjectiveState): ExampleObjective {
+    return new ExampleObjective()
   }
 }
 
 class ObjectiveTypes {
+  // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
   "ExampleObjective" = (state: ObjectiveState) => ExampleObjective.decode(state as ObjectiveState)
 }

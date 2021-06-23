@@ -24,15 +24,11 @@ export class SignRoomsProcess implements Process {
     }
   }
 
-  public static decode(state: SignRoomsProcessState): SignRoomsProcess | null {
-    const objective = SignRoomObjective.decode(state.s)
-    if (objective == null) {
-      return null
-    }
+  public static decode(state: SignRoomsProcessState): SignRoomsProcess {
     return new SignRoomsProcess(
       state.l,
       state.i,
-      objective,
+      SignRoomObjective.decode(state.s),
     )
   }
 }

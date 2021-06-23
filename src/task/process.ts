@@ -48,12 +48,13 @@ class ExampleProcess implements Process { // TODO: 他のProcessを実装した�
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static decode(state: ProcessState): ExampleProcess | null {
-    return null
+  public static decode(state: ProcessState): ExampleProcess {
+    return new ExampleProcess()
   }
 }
 
 class ProcessTypes {
+  // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "ExampleProcess" = (state: ProcessState) => ExampleProcess.decode(state as ProcessState)
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as TestProcessState)
   "SignRoomsProcess" = (state: ProcessState) => SignRoomsProcess.decode(state as SignRoomsProcessState)

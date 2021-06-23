@@ -17,7 +17,7 @@ export class TestProcess implements Process {
     }
   }
 
-  public static decode(state: TestProcessState): TestProcess | null {
+  public static decode(state: TestProcessState): TestProcess {
     return new TestProcess(state.l, state.i)
   }
 

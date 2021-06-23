@@ -37,7 +37,7 @@ export class SignRoomObjective implements Objective {
     }
   }
 
-  public static decode(state: SignRoomObjectiveState): SignRoomObjective | null {
+  public static decode(state: SignRoomObjectiveState): SignRoomObjective {
     const children = state.c.flatMap(childState => decodeObjectiveFrom(childState) ?? [])
     return new SignRoomObjective(state.s, children, state.r, state.m)
   }
