@@ -46,6 +46,7 @@ class ExampleProcess implements Process { // TODO: 他のProcessを実装した�
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static decode(state: ProcessState): ExampleProcess | null {
     return null
   }

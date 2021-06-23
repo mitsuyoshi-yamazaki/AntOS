@@ -1,8 +1,6 @@
+import { TestProcess } from "process/test_process"
 import { OperatingSystem } from "../../os"
-// import { ScoutCreepProcess } from "../../../process/one_time_process/scout_creep"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-// import { LaunchRoomProcess } from "process/one_time_process/launch_room"
-// import { ScoutObjective } from "objective/scout"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -12,29 +10,17 @@ export class LaunchCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    if (this.args.length < 1) {
-      return "No process type name specified"
-    }
-    const rawProcessArguments = this.args.concat([])
-    rawProcessArguments.splice(0, 1)
-    return this.launchProcess(this.args[0], rawProcessArguments)
-  }
-
-  private launchProcess(processTypeName: string, args: string[]): CommandExecutionResult {
-    const processArguments = this.parseProcessArguments(args)
-    switch (processTypeName) {
-    // case "ScoutCreepProcess":
-    //   return this.launchScoutCreepProcess(processArguments)
-    // case "LaunchRoomProcess":
-    //   return this.launchLaunchRoomProcess(processArguments)
-    // case "ScoutObjective":
-    //   return this.launchScoutObjective(processArguments)
+    switch (this.args[0]) {
+    case "TestProcess":
+      return this.launchTestProcess()
     default:
-      return `Invalid process type name ${processTypeName}`
+      return `Invalid process type name ${this.args[0]}`
     }
   }
 
-  private parseProcessArguments(args: string[]): Map<string, string> {
+  private parseProcessArguments(): Map<string, string> {
+    const args = this.args.concat([])
+    args.splice(0, 1)
     const result = new Map<string, string>()
     args.forEach(arg => {
       const components = arg.split("=")
@@ -44,6 +30,13 @@ export class LaunchCommand implements ConsoleCommand {
       result.set(components[0], components[1])
     })
     return result
+  }
+
+  private launchTestProcess(): CommandExecutionResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new TestProcess(Game.time, processId)
+    })
+    return `Launched TestProcess PID: ${process.processId}`
   }
 
   // private launchScoutCreepProcess(processArguments: Map<string, string>): CommandExecutionResult {
@@ -61,31 +54,5 @@ export class LaunchCommand implements ConsoleCommand {
   //     return new ScoutCreepProcess(Game.time, processId, creepId, routes)
   //   })
   //   return `Launched ScoutCreepProcess PID: ${process.processId}`
-  // }
-
-  // private launchLaunchRoomProcess(processArguments: Map<string, string>): CommandExecutionResult {
-  //   const roomName = processArguments.get("room_name")
-
-  //   if (roomName == null) {
-  //     return "Missing room_name argument"
-  //   }
-
-  //   const process = OperatingSystem.os.addProcess(processId => {
-  //     return new LaunchRoomProcess(Game.time, processId, roomName, null, [])
-  //   })
-  //   return `Launched LaunchRoomProcess PID: ${process.processId}`
-  // }
-
-  // private launchScoutObjective(processArguments: Map<string, string>): CommandExecutionResult {
-  //   const roomName = processArguments.get("room_name")
-
-  //   if (roomName == null) {
-  //     return "Missing room_name argument"
-  //   }
-
-  //   const process = OperatingSystem.os.addProcess(processId => {
-  //     return new ScoutObjective(Game.time, processId, roomName, [], [])
-  //   })
-  //   return `Launched ScoutObjective PID: ${process.processId}`
   // }
 }
