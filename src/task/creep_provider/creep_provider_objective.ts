@@ -40,9 +40,9 @@ export class CreepProviderObjective implements Objective {
     return new CreepProviderObjective(state.s, children, state.i)
   }
 
-  public requestScout(spawnRoomName: string, priority: CreepProviderPriority, identifier: string): Creep | null {
+  public requestScout(spawnRoomName: string, priority: CreepProviderPriority, identifier: string): void {
     if (this.requestingCreepIdentifiers.includes(identifier)) {
-      return this.newCreep(spawnRoomName, identifier)
+      return
     }
     this.requestingCreepIdentifiers.push(identifier)
 
@@ -56,11 +56,9 @@ export class CreepProviderObjective implements Objective {
       bodyParts,
     }
     requestCreep(spec, 1, spawnRoomName)
-
-    return this.newCreep(spawnRoomName, identifier)
   }
 
-  private newCreep(spawnRoomName: string, identifier: string): Creep | null {
+  public checkCreep(spawnRoomName: string, identifier: string): Creep | null {
     return getNewCreepIn(spawnRoomName, identifier)
   }
 }

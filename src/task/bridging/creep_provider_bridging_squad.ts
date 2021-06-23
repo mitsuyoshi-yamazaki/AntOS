@@ -40,6 +40,9 @@ export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep 
     newCreeps.clear()
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
+      if (creep.id == null) {
+        continue  // spawn直後はIDが振られていないらしい
+      }
       if (creep.memory.type !== CreepType.CREEP_PROVIDER) {
         continue
       }
@@ -56,6 +59,7 @@ export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep 
   const creeps = newCreeps.get(roomName) ?? []
   for (const creep of creeps) {
     if (creep.name === creepIdentifier) {
+      creep.memory.squad_name = ""
       return creep
     }
   }

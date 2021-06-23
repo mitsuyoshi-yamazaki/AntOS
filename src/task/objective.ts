@@ -71,3 +71,7 @@ export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
   }, `restoreObjectiveFrom(), objective type: ${state.t}`)()
   return decoded
 }
+
+// export function decodeObjectivesFrom(states: ObjectiveState[]): Objective[] {
+
+// }
