@@ -1,6 +1,6 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepType, WorkerSource } from "old/creep"
+import { CreepStatus, ActionResult, CreepType, WorkerSource } from "_old/creep"
 import { isNewLine } from "../../../node_modules/@types/acorn/index";
 
 interface WorkerSquadMemory extends SquadMemory {

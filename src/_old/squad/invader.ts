@@ -1,6 +1,6 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, TargetSpecifier } from "./squad"
-import { CreepStatus, ActionResult, CreepType } from "old/creep"
+import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 
 interface InvaderMemory extends CreepMemory {
   pair_id: number

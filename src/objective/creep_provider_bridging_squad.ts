@@ -1,6 +1,6 @@
-import { UID } from "../../utility"
-import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "old/squad/squad"
-import { CreepStatus, CreepType } from "old/creep"
+import { UID } from "../utility"
+import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_old/squad/squad"
+import { CreepStatus, CreepType } from "_old/creep"
 import { CreepProviderCreepSpec } from "./creep_provider"
 
 let requestCacheTime = 0

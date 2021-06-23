@@ -1,8 +1,8 @@
 /* eslint-disable */
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
-import { Empire } from "old/empire"
-import * as Initializer from "old/init"
+import { Empire } from "_old/empire"
+import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
 

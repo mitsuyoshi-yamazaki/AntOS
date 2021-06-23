@@ -1,6 +1,6 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepType } from "old/creep"
+import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 
 interface UpgraderSquadMemory extends SquadMemory {
   // lab_ids?: string[]

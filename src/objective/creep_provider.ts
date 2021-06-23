@@ -1,4 +1,4 @@
-import { SquadType } from "old/squad/squad"
+import { SquadType } from "_old/squad/squad"
 import { ProcessId } from "process/process"
 import { CreepProviderBridgingSquadMemory, getNewCreepIdsIn, requestCreep } from "./creep_provider_bridging_squad"
 

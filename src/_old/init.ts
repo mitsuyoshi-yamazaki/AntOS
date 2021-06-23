@@ -1,8 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { init as extensionInit, tick as extensionTick } from "old/extensions"
-import { init as creepInit } from "old/creep"
-import { init as spawnInit } from "old/spawn"
-import { tick as roomTick } from "old/room"
+import { init as extensionInit, tick as extensionTick } from "_old/extensions"
+import { init as creepInit } from "_old/creep"
+import { init as spawnInit } from "_old/spawn"
+import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 
 const version = '4.4.4'

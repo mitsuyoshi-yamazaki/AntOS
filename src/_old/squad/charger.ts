@@ -1,6 +1,6 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepTransferLinkToStorageOption, CreepType } from "old/creep"
+import { CreepStatus, ActionResult, CreepTransferLinkToStorageOption, CreepType } from "_old/creep"
 
 export class ChargerSquad extends Squad {
   private number_of_carries: number

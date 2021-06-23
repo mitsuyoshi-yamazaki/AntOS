@@ -1,6 +1,6 @@
 import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, SquadStatus } from "./squad"
-import { CreepStatus, ActionResult, CreepType, CreepSearchAndDestroyOption } from "old/creep"
+import { CreepStatus, ActionResult, CreepType, CreepSearchAndDestroyOption } from "_old/creep"
 import { runHarvester } from "./harvester"
 import { Region } from "../region";
 

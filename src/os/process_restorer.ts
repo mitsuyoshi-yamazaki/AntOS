@@ -1,4 +1,4 @@
-import { ScoutObjective } from "process/objective/scout"
+import { ScoutObjective } from "objective/scout"
 import { LaunchRoomProcess } from "process/one_time_process/launch_room"
 import { ScoutCreepProcess } from "../process/one_time_process/scout_creep"
 import { ProcessId, Process, StatefulProcess } from "../process/process"

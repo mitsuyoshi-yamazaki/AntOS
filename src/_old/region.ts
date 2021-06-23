@@ -1,9 +1,9 @@
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
-import { Squad, SquadType, SquadMemory, SpawnPriority } from "old/squad/squad"
-import { WorkerSquad } from "old/squad/worker"
-import { ManualSquad } from "old/squad/manual"
+import { Squad, SquadType, SquadMemory, SpawnPriority } from "_old/squad/squad"
+import { WorkerSquad } from "_old/squad/worker"
+import { ManualSquad } from "_old/squad/manual"
 import { HarvesterSquad, HarvesterSquadMemory } from "./squad/harvester"
-import { ScoutSquad } from "old/squad/scout"
+import { ScoutSquad } from "_old/squad/scout"
 import { ActionResult } from "./creep"
 import { AttackerSquad } from "./squad/attacker"
 import { UpgraderSquad } from "./squad/upgrader";
@@ -20,7 +20,7 @@ import { room_link, room_history_link } from "../utility";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";
-import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "process/objective/creep_provider_bridging_squad"
+import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "objective/creep_provider_bridging_squad"
 
 export enum RegionStatus {
   NORMAL              = 'normal',             // normal

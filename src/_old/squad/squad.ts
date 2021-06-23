@@ -1,5 +1,5 @@
 import { UID } from "../../utility"
-import { CreepStatus, CreepType, ActionResult } from "old/creep"
+import { CreepStatus, CreepType, ActionResult } from "_old/creep"
 
 export enum SpawnPriority {
   URGENT = 0,

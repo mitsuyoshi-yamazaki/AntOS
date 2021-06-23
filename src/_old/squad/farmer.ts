@@ -1,6 +1,6 @@
 import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
-import { CreepStatus, ActionResult, CreepType } from "old/creep"
+import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 import { runTowers } from "../tower";
 import { ErrorMapper } from "../../error_mapper/ErrorMapper";
 
