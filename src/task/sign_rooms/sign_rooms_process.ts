@@ -1,3 +1,4 @@
+import { Procedural } from "task/procedural"
 import { Process, ProcessId, ProcessState } from "task/process"
 import { SignRoomObjective, SignRoomObjectiveState } from "./sign_rooms_objective"
 
@@ -9,7 +10,7 @@ export interface SignRoomsProcessState extends ProcessState {
 /**
  * - Game.io("launch SignRoomsProcess base_room_name=W51S29 mark=😵 target_room_names=W52S29,W52S28,W53S29,W53S28")
  */
-export class SignRoomsProcess implements Process {
+export class SignRoomsProcess implements Process, Procedural {
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -36,5 +37,9 @@ export class SignRoomsProcess implements Process {
 
   public processDescription(): string {
     return this.objective.objectiveDescription()
+  }
+
+  public runOnTick(): void {
+    this.objective.run()
   }
 }

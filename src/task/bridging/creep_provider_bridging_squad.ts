@@ -1,12 +1,12 @@
 import { UID } from "utility"
 import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_old/squad/squad"
 import { CreepStatus, CreepType } from "_old/creep"
-import { CreepProviderCreepSpec } from "task/creep_provider/creep_provider"
+import { CreepProviderObjectiveCreepSpec } from "task/creep_provider/creep_provider_objective"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()
 
-export function requestCreep(spec: CreepProviderCreepSpec, count: number, roomName: string): void {
+export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: number, roomName: string): void {
   if (requestCacheTime !== Game.time) {
     squadNames.clear()
     for (const squadName in Memory.squads) {
@@ -29,22 +29,15 @@ export function requestCreep(spec: CreepProviderCreepSpec, count: number, roomNa
     console.log(`CreepProviderBridgingSquad ${squadName} memory not found`)
     return
   }
-  memory.req += count
-
-  if (memory.req > 3) {
-    const message = `CreepProviderBridgingSquad too many requests (${memory.req}) in ${roomName} aborting..`
-    console.log(message)
-    Game.notify(message)
-    memory.req = 0
-  }
+  memory.req.push(spec.specIdentifier)
 }
 
 let newCreepCacheTime = 0
-const newCreepIds = new Map<string, string[]>()
+const newCreeps = new Map<string, Creep[]>()
 
-export function getNewCreepIdsIn(roomName: string, bridgingId: string): string[] { // TODO: どのrequirementに対するCreepか判別できるようにする
+export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep | null {
   if (newCreepCacheTime !== Game.time) {
-    newCreepIds.clear()
+    newCreeps.clear()
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       if (creep.memory.type !== CreepType.CREEP_PROVIDER) {
@@ -53,19 +46,26 @@ export function getNewCreepIdsIn(roomName: string, bridgingId: string): string[]
       if (creep.memory.squad_name.length === 0) {
         continue
       }
-      const creeps = newCreepIds.get(creep.room.name) ?? []
-      creeps.push(creep.id)
-      newCreepIds.set(creep.room.name, creeps)
+      const creeps = newCreeps.get(creep.room.name) ?? []
+      creeps.push(creep)
+      newCreeps.set(creep.room.name, creeps)
     }
     newCreepCacheTime = Game.time
   }
 
-  return newCreepIds.get(roomName) ?? []
+  const creeps = newCreeps.get(roomName) ?? []
+  for (const creep of creeps) {
+    if (creep.name === creepIdentifier) {
+      return creep
+    }
+  }
+  return null
 }
 
 // -------- //
 export interface CreepProviderBridgingSquadMemory extends SquadMemory {
-  req: number // number of scouts required
+  /** requesting creep identifiers */
+  req: string[]
 }
 
 /**
@@ -76,7 +76,7 @@ export class CreepProviderBridgingSquad extends Squad {
     return SquadType.CREEP_PROVIDER_BRIDGING_SQUAD
   }
   public get spawnPriority(): SpawnPriority {
-    const required = this.memory.req > 0
+    const required = this.memory.req.length > 0
     return required ? SpawnPriority.LOW : SpawnPriority.NONE
   }
 
@@ -106,8 +106,12 @@ export class CreepProviderBridgingSquad extends Squad {
   }
 
   public addCreep(energyAvailable: number, spawnFunc: SpawnFunction): void {
+    const name = this.memory.req[0]
+    if (name == null) {
+      return
+    }
+
     const body: BodyPartConstant[] = [MOVE]
-    const name = this.generateNewName()
     const memory: CreepMemory = {
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -122,9 +126,9 @@ export class CreepProviderBridgingSquad extends Squad {
     })
 
     if (result === OK) {
-      this.memory.req -= 1
+      this.memory.req.splice(0, 1)
     } else {
-      console.log(`CreepProviderBridgingSquadMemory spawn scout failed with error: ${result}`)
+      console.log(`CreepProviderBridgingSquadMemory spawn scout ${name} failed with error: ${result}`)
     }
   }
 

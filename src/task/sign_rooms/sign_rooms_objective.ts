@@ -1,3 +1,4 @@
+import { CreepProviderObjective } from "task/creep_provider/creep_provider_objective"
 import { decodeObjectiveFrom, Objective, ObjectiveState } from "task/objective"
 
 export interface SignRoomObjectiveState extends ObjectiveState {
@@ -11,7 +12,7 @@ export interface SignRoomObjectiveState extends ObjectiveState {
   b: string
 
   /** creep id */
-  cr: string | null
+  cr: string | "fetching" | null
 }
 
 /**
@@ -20,16 +21,19 @@ export interface SignRoomObjectiveState extends ObjectiveState {
  * - 自分のsignであってもmarkが含まれていない場合は上書きする
  */
 export class SignRoomObjective implements Objective {
+  private creepProvider: CreepProviderObjective | null = null
+
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
     public readonly targetRoomNames: string[],
     public readonly mark: string,
     public readonly baseRoomName: string,
-    private creepId: string | null,
+    private creepId: string | "fetching" | null,
   ) {
   }
 
+  // TODO: Event Drivenな形に書き直す
   public run(): void {
 
   }

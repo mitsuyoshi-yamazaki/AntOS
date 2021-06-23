@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms_objective"
+import { CreepProviderObjective, CreepProviderObjectiveState } from "./creep_provider/creep_provider_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -13,14 +14,6 @@ import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_
  *       - 余ったら次の順位を実行→
  *         - 全て実行しても余ったらif possibleを実行
  */
-// export type TaskPriority = TaskPriorityIfPossible | TaskPriorityNormal | TaskPriorityAlways
-
-// export interface TaskExecutionCondition {
-//   condition: "required" | "cancellable"
-//   maxTickInterval: number   // maxTickIntervalに一度は必ず実行されるべき：毎tick実行する場合は1
-//   minTickInterval?: number  // minTickInterval以下の間隔で実行する必要はない
-//   currentPriority: TaskPriority
-// }
 
 export interface ObjectiveState extends State {
   /** type identifier */
@@ -63,6 +56,7 @@ class ObjectiveTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
   "ExampleObjective" = (state: ObjectiveState) => ExampleObjective.decode(state as ObjectiveState)
+  "CreepProviderObjective" = (state: ObjectiveState) => CreepProviderObjective.decode(state as CreepProviderObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
