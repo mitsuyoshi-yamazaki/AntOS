@@ -18,6 +18,8 @@ export interface Process {
   launchTime: number
   processId: ProcessId
   shouldStore: boolean
+
+  processDescription?(): string
 }
 
 export interface StatefulProcess extends Process {

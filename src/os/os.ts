@@ -24,6 +24,7 @@ export interface ProcessInfo {
   processId: number
   type: string
   running: boolean
+  process: Process
 }
 
 export interface OSMemory {
@@ -100,12 +101,26 @@ export class OperatingSystem {
     return new ResultSucceeded(process.constructor.name)
   }
 
+  public processInfoOf(processId: ProcessId): ProcessInfo | null {
+    const processInfo = this.processes.get(processId)
+    if (processInfo == null) {
+      return null
+    }
+    return {
+      processId: processInfo.process.processId,
+      type: processInfo.process.constructor.name,
+      running: processInfo.running,
+      process: processInfo.process,
+    }
+  }
+
   public listAllProcesses(): ProcessInfo[] {
     return Array.from(this.processes.values()).map(processInfo => {
       const info: ProcessInfo = {
         processId: processInfo.process.processId,
         type: processInfo.process.constructor.name,
         running: processInfo.running,
+        process: processInfo.process,
       }
       return info
     })

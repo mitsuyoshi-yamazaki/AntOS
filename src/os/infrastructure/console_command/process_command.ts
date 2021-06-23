@@ -9,10 +9,28 @@ export class ProcessCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    if (this.options.has("-l")) {
-      return this.listProcess()
+    if (this.args[0] != null) {
+      return this.describeProcess(this.args[0])
     }
-    return "Nothing to do"
+    return this.listProcess()
+  }
+
+  private describeProcess(processId: string): CommandExecutionResult {
+    const parsedId = parseInt(processId, 10)
+    if (isNaN(parsedId)) {
+      return `Invalid process ID: ${processId}`
+    }
+    const processInfo = OperatingSystem.os.processInfoOf(parsedId)
+    if (processInfo == null) {
+      return `No process for process ID ${parsedId}`
+    }
+
+    const basicDescription = `${processInfo.processId} ${processInfo.type}, running: ${processInfo.running}`
+    if (processInfo.process.processDescription != null) {
+      return `${basicDescription}\n${processInfo.process.processDescription()}`
+    } else {
+      return basicDescription
+    }
   }
 
   private listProcess(): CommandExecutionResult {
