@@ -1,4 +1,4 @@
-import { decodeObjectiveFrom, Objective, ObjectiveState } from "./objective"
+import { decodeObjectiveFrom, Objective, ObjectiveState } from "task/objective"
 
 export interface SignRoomObjectiveState extends ObjectiveState {
   /** target room name */

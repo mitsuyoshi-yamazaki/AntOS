@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
-import { TestProcess, TestProcessState } from "./test_process"
+import { TestProcess, TestProcessState } from "task/test/test_process"
 
 export type ProcessId = number
 

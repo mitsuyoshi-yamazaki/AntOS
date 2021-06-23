@@ -1,6 +1,6 @@
 import { SquadType } from "_old/squad/squad"
-import { ProcessId } from "process/process"
-import { CreepProviderBridgingSquadMemory, getNewCreepIdsIn, requestCreep } from "./creep_provider_bridging_squad"
+import { ProcessId } from "task/process"
+import { CreepProviderBridgingSquadMemory, getNewCreepIdsIn, requestCreep } from "task/bridging/creep_provider_bridging_squad"
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 

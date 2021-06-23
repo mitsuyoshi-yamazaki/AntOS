@@ -1,4 +1,4 @@
-import { Process, ProcessState } from "./process"
+import { Process, ProcessState } from "task/process"
 
 export interface TestProcessState extends ProcessState {
 }

@@ -1,4 +1,4 @@
-import { TestProcess } from "process/test_process"
+import { TestProcess } from "task/test/test_process"
 import { OperatingSystem } from "../../os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 

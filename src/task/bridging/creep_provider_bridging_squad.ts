@@ -1,7 +1,7 @@
-import { UID } from "../utility"
+import { UID } from "utility"
 import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_old/squad/squad"
 import { CreepStatus, CreepType } from "_old/creep"
-import { CreepProviderCreepSpec } from "./creep_provider"
+import { CreepProviderCreepSpec } from "task/creep_provider/creep_provider"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()

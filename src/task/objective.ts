@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
-import { SignRoomObjective, SignRoomObjectiveState } from "./sign_rooms"
+import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
