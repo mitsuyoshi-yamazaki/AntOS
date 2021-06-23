@@ -6,8 +6,10 @@ export interface SignRoomsProcessState extends ProcessState {
   s: SignRoomObjectiveState
 }
 
+/**
+ * - Game.io("launch SignRoomsProcess base_room_name=W51S29 mark=😵 target_room_names=W52S29,W52S28,W53S29,W53S28")
+ */
 export class SignRoomsProcess implements Process {
-
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -30,5 +32,9 @@ export class SignRoomsProcess implements Process {
       state.i,
       SignRoomObjective.decode(state.s),
     )
+  }
+
+  public processDescription(): string {
+    return this.objective.objectiveDescription()
   }
 }

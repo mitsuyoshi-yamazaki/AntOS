@@ -1,6 +1,8 @@
+import { SignRoomsProcess } from "task/sign_rooms/sign_rooms_process"
 import { TestProcess } from "task/test/test_process"
-import { OperatingSystem } from "../../os"
+import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
+import { SignRoomObjective } from "task/sign_rooms/sign_rooms_objective"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -13,11 +15,14 @@ export class LaunchCommand implements ConsoleCommand {
     switch (this.args[0]) {
     case "TestProcess":
       return this.launchTestProcess()
+    case "SignRoomsProcess":
+      return this.launchSignRoomsProcess()
     default:
       return `Invalid process type name ${this.args[0]}`
     }
   }
 
+  // ---- Argument parser ---- //
   private parseProcessArguments(): Map<string, string> {
     const args = this.args.concat([])
     args.splice(0, 1)
@@ -32,27 +37,43 @@ export class LaunchCommand implements ConsoleCommand {
     return result
   }
 
+  private missingArgumentError(argumentName: string): string {
+    return `Missing ${argumentName} argument`
+  }
+
+  // ---- Launcher ---- //
   private launchTestProcess(): CommandExecutionResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return new TestProcess(Game.time, processId)
     })
-    return `Launched TestProcess PID: ${process.processId}`
+    return `Launched ${process.constructor.name} PID: ${process.processId}`
   }
 
-  // private launchScoutCreepProcess(processArguments: Map<string, string>): CommandExecutionResult {
-  //   const creepId = processArguments.get("creep_id")
-  //   const routes = processArguments.get("routes")?.split(",")
+  private launchSignRoomsProcess(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
 
-  //   if (creepId == null) {
-  //     return "Missing creep_id argument"
-  //   }
-  //   if (routes == null) {
-  //     return "Missing routes argument"
-  //   }
+    const baseRoomName = args.get("base_room_name")
+    if (baseRoomName == null) {
+      return this.missingArgumentError("base_room_name")
+    }
 
-  //   const process = OperatingSystem.os.addProcess(processId => {
-  //     return new ScoutCreepProcess(Game.time, processId, creepId, routes)
-  //   })
-  //   return `Launched ScoutCreepProcess PID: ${process.processId}`
-  // }
+    const mark = args.get("mark")
+    if (mark == null) {
+      return this.missingArgumentError("mark")
+    }
+
+    const targets = args.get("target_room_names")
+    if (targets == null) {
+      return this.missingArgumentError("target_room_names")
+    }
+    const targetRoomName = targets.split(",")
+
+    const launchTime = Game.time
+    const objective = new SignRoomObjective(launchTime, [], targetRoomName, mark, baseRoomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new SignRoomsProcess(launchTime, processId, objective)
+    })
+    return `Launched ${process.constructor.name} PID: ${process.processId}`
+  }
 }

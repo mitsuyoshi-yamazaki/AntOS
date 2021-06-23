@@ -38,6 +38,7 @@ export interface Objective extends Stateful {
   children: Objective[]
 
   encode(): ObjectiveState
+  objectiveDescription?(): string
 }
 
 class ExampleObjective implements Objective { // TODO: 他のObjectiveを実装したら消す
