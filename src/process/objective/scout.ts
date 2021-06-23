@@ -13,7 +13,6 @@ interface ScoutObjectiveMemory {
  * - 目的
  *   - 指定されたroomの周囲を探索し、signする
  *   - W53S29,W53S28,W53S27
- *   - Object.keys(Game.creeps).filter(name => Game.creeps[name].room.name === "W51S29" && name.includes("creep_provider_bridging_squad")).map(name => Game.creeps[name]).forEach(creep => creep.say("Hi"))
  */
 export class ScoutObjective implements Objective, Procedural, MessageObserver, CreepProviderDelegate {
   public readonly shouldStore = true
@@ -135,8 +134,13 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
 
   // ---- MessageObserver ---- //
   public didReceiveMessage(message: string): string {
-    this.targetRoomNames.push(...message.split(","))
-    return `ScoutObjective received room names ${message}`
+    message.split(",").forEach(roomName => {
+      if (this.targetRoomNames.includes(roomName)) {
+        return
+      }
+      this.targetRoomNames.push(roomName)
+    })
+    return `ScoutObjective received ${message}, updated targets: ${this.targetRoomNames}`
   }
 
   // ---- CreepProviderDelegate ---- //
