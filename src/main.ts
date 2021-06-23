@@ -1,10 +1,11 @@
 /* eslint-disable */
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
-import { Empire } from "old/empire"
-import * as Initializer from "old/init"
+import { Empire } from "_old/empire"
+import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
+import { SquadType } from "_old/squad/squad"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -23,6 +24,13 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   ErrorMapper.wrapLoop(() => {
     const owned_controllers: StructureController[] = []
+    const rooms_controlled_by_old_codes = [
+      "W53S5",
+      "W54S7",
+      "W51S29",
+      "W48S6",
+      "W48S12",
+    ]
 
     for (const room_name in Game.rooms) {
       const room = Game.rooms[room_name]
@@ -34,6 +42,12 @@ export const loop = ErrorMapper.wrapLoop(() => {
         continue
       }
 
+      if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
+        if (Game.time % 107 === 13) {
+          console.log(`${room.name} is new`)
+        }
+        continue
+      }
       owned_controllers.push(room.controller)
     }
 
@@ -47,13 +61,19 @@ export const loop = ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
 
+        creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
+
         if ((creep.ticksToLive || 0) < 1450) {
           continue
         }
 
-        creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
+        // creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
 
         if (creep.squad || creep.spawning) {
+          continue
+        }
+
+        if (creep.name.includes(SquadType.CREEP_PROVIDER_BRIDGING_SQUAD)) {
           continue
         }
 

@@ -11,7 +11,7 @@ parserOptions:
 plugins:
   - '@typescript-eslint'
 ignorePatterns:
-  - src/old/**/*
+  - src/_old/**/*
   - src/error_mapper/**/*
   - rollup.config.js
 rules:
