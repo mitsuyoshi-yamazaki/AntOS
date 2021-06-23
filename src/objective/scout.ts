@@ -1,7 +1,6 @@
 import { MessageObserver } from "os/infrastructure/console_command/message_command"
-import { Procedural, ProcessId } from "process/process"
+import { Procedural, ProcessId, StatefulProcess } from "process/process"
 import { CreepProvider, CreepProviderCreepSpec, CreepProviderDelegate } from "./creep_provider"
-import { Objective } from "./objective"
 
 interface ScoutObjectiveMemory {
   b: string             // base room name
@@ -14,7 +13,7 @@ interface ScoutObjectiveMemory {
  *   - 指定されたroomの周囲を探索し、signする
  *   - W53S29,W53S28,W53S27
  */
-export class ScoutObjective implements Objective, Procedural, MessageObserver, CreepProviderDelegate {
+export class ScoutObjective implements StatefulProcess, Procedural, MessageObserver, CreepProviderDelegate {
   public readonly shouldStore = true
 
   private readonly creepProvider: CreepProvider

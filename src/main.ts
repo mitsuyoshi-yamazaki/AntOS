@@ -5,6 +5,7 @@ import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
+import { SquadType } from "_old/squad/squad"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -69,6 +70,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
         // creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
 
         if (creep.squad || creep.spawning) {
+          continue
+        }
+
+        if (creep.name.includes(SquadType.CREEP_PROVIDER_BRIDGING_SQUAD)) {
           continue
         }
 
