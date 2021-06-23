@@ -24,16 +24,6 @@ export interface Process extends Stateful {
   encode(): ProcessState
 }
 
-// ---- Type of Execution ---- //
-export interface Procedural {
-  runOnTick(): void
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function isProcedural(arg: any): arg is Procedural {
-  return arg.runOnTick !== undefined
-}
-
 // ---- Example ---- //
 class ExampleProcess implements Process { // TODO: 他のProcessを実装したら消す
   public readonly launchTime = 0

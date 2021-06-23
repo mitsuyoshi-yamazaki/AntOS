@@ -1,4 +1,4 @@
-import { isProcedural, Procedural } from "../../src/task/process"
+import { isProcedural, Procedural } from "../../src/task/procedural"
 
 class SomeObject { }
 

@@ -1,6 +1,7 @@
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeProcessFrom, isProcedural, Process, ProcessId, ProcessState } from "task/process"
+import { decodeProcessFrom, Process, ProcessId, ProcessState } from "task/process"
+import { isProcedural } from "task/procedural"
 import { RootProcess } from "./infrastructure/root"
 
 interface ProcessMemory {
