@@ -20,6 +20,7 @@ import { room_link, room_history_link } from "../utility";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";
+import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "process/objective/creep_provider_bridging_squad"
 
 export enum RegionStatus {
   NORMAL              = 'normal',             // normal
@@ -690,6 +691,7 @@ export class Region {
 
     // -- Memory --
     let worker_squad: WorkerSquad | null = null
+    let bridging_squad: CreepProviderBridgingSquad | null = null
 
     for (const squad_name in Memory.squads) {
       const squad_memory = Memory.squads[squad_name]
@@ -707,6 +709,11 @@ export class Region {
 
       ErrorMapper.wrapLoop(() => {
         switch (squad_memory.type) {
+          case SquadType.CREEP_PROVIDER_BRIDGING_SQUAD:
+            const squad = new CreepProviderBridgingSquad(squad_memory.name, this.room)
+            bridging_squad = squad
+            this.squads.set(squad.name, squad)
+            break
           case SquadType.WORKER: {
             const opts: {source?: StructureContainer | undefined, additional_container_ids?: string[]} = {}
             if (harvester_destination && (harvester_destination.structureType == STRUCTURE_CONTAINER)) {
@@ -942,6 +949,23 @@ export class Region {
             break
           }
         }, `Squad.init ${this.room.name} ${squad_memory.name}`)()
+    }
+
+    if (!bridging_squad) {
+      const name = `${CreepProviderBridgingSquad.generateNewName()}_${this.name}`
+      const squad = new CreepProviderBridgingSquad(name, this.room)
+      this.squads.set(squad.name, squad)
+
+      const memory: CreepProviderBridgingSquadMemory = {
+        name: squad.name,
+        type: squad.type,
+        owner_name: this.name,
+        number_of_creeps: 0,
+        req: 0,
+      }
+      Memory.squads[squad.name] = memory
+
+      console.log(`Create creep provider bridging squad for ${this.name}, assigned: ${squad.name}`)
     }
 
     // --- Worker ---

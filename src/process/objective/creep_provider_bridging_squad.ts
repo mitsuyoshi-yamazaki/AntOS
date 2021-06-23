@@ -57,7 +57,7 @@ export function getNewCreepsIn(roomName: string, bridgingId: string): Creep[] { 
 }
 
 // -------- //
-interface CreepProviderBridgingSquadMemory extends SquadMemory {
+export interface CreepProviderBridgingSquadMemory extends SquadMemory {
   req: number // number of scouts required
 }
 
@@ -69,12 +69,15 @@ export class CreepProviderBridgingSquad extends Squad {
     return SquadType.CREEP_PROVIDER_BRIDGING_SQUAD
   }
   public get spawnPriority(): SpawnPriority {
+    if (this.memory == null) {
+      return SpawnPriority.NONE
+    }
     const required = this.memory.req > 0
     return required ? SpawnPriority.LOW : SpawnPriority.NONE
   }
 
-  private get memory(): CreepProviderBridgingSquadMemory {
-    return Memory.squads[this.name] as CreepProviderBridgingSquadMemory
+  private get memory(): CreepProviderBridgingSquadMemory | null {
+    return Memory.squads[this.name] as CreepProviderBridgingSquadMemory | null
   }
 
   constructor(readonly name: string, readonly base_room: Room) {
