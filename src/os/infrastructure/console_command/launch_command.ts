@@ -69,7 +69,7 @@ export class LaunchCommand implements ConsoleCommand {
     const targetRoomName = targets.split(",")
 
     const launchTime = Game.time
-    const objective = new SignRoomObjective(launchTime, [], targetRoomName, mark, baseRoomName)
+    const objective = new SignRoomObjective(launchTime, [], targetRoomName, mark, baseRoomName, null)
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new SignRoomsProcess(launchTime, processId, objective)

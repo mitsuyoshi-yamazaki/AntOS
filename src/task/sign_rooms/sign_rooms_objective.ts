@@ -9,6 +9,9 @@ export interface SignRoomObjectiveState extends ObjectiveState {
 
   /** base room name */
   b: string
+
+  /** creep id */
+  cr: string | null
 }
 
 /**
@@ -23,6 +26,7 @@ export class SignRoomObjective implements Objective {
     public readonly targetRoomNames: string[],
     public readonly mark: string,
     public readonly baseRoomName: string,
+    private creepId: string | null,
   ) {
   }
 
@@ -38,12 +42,13 @@ export class SignRoomObjective implements Objective {
       r: this.targetRoomNames,
       m: this.mark,
       b: this.baseRoomName,
+      cr: this.creepId,
     }
   }
 
   public static decode(state: SignRoomObjectiveState): SignRoomObjective {
     const children = state.c.flatMap(childState => decodeObjectiveFrom(childState) ?? [])
-    return new SignRoomObjective(state.s, children, state.r, state.m, state.b)
+    return new SignRoomObjective(state.s, children, state.r, state.m, state.b, state.cr)
   }
 
   public objectiveDescription(): string {
