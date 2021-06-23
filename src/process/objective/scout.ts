@@ -33,6 +33,10 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
     this.creepProvider = new CreepProvider(this, roomName)
   }
 
+  public processDescription(): string {
+    return `- room: ${this.roomName}\n- target rooms: ${this.targetRoomNames}\n- creeps (${this.creepIds.length}): ${this.creepIds}`
+  }
+
   // ---- Stateful Process ---- //
   public static parseState(rawState: unknown): ScoutObjectiveMemory | null {
     const state = rawState as ScoutObjectiveMemory
