@@ -1,18 +1,14 @@
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { ErrorMapper } from "../error_mapper/ErrorMapper"
-import { isProcedural, isStatefulProcess, Process, ProcessId } from "../process/process"
+import { decodeProcessFrom, isProcedural, Process, ProcessId, ProcessState } from "../process/process"
 import { RootProcess } from "./infrastructure/root"
-import { ProcessRestorer } from "./process_restorer"
 
 interface ProcessMemory {
-  l: number   // launchTime
-  i: number   // processId
-  t: string   // processType
-  r: boolean  // running
-}
+  /** running */
+  r: boolean
 
-interface ProcessStateMemory extends ProcessMemory {
-  s: unknown  // state
+  /** process state */
+  s: ProcessState
 }
 
 interface InternalProcessInfo {
@@ -29,7 +25,6 @@ export interface ProcessInfo {
 
 export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
-  ps: ProcessStateMemory[]  // processStates
 }
 
 /**
@@ -40,16 +35,18 @@ export interface OSMemory {
 export class OperatingSystem {
   static readonly os = new OperatingSystem()
 
-  private launchTime = Game.time
   private processIndex = 0
   private readonly rootProcess = new RootProcess()
   private readonly processes = new Map<ProcessId, InternalProcessInfo>()
 
   private constructor() {
-    ErrorMapper.wrapLoop(() => {  // TODO: try-catchに書き換え
+    ErrorMapper.wrapLoop(() => {
       this.setupMemory()
+    }, "OperatingSystem.setupMemory()")()
+
+    ErrorMapper.wrapLoop(() => {
       this.restoreProcesses()
-    }, "OperatingSystem()")()
+    }, "OperatingSystem.restoreProcesses()")()
   }
 
   // ---- Process ---- //
@@ -129,10 +126,20 @@ export class OperatingSystem {
   // ---- Run ---- //
   public run(): void {
     ErrorMapper.wrapLoop(() => {
+      this.setupMemory()
+    }, "OperatingSystem.setupMemory()")()
+
+    ErrorMapper.wrapLoop(() => {
       this.rootProcess.run()
+    }, "OperatingSystem.rootProcess.run()")()
+
+    ErrorMapper.wrapLoop(() => {
       this.runProceduralProcesses()
+    }, "OperatingSystem.runProceduralProcesses()")()
+
+    ErrorMapper.wrapLoop(() => {
       this.storeProcesses()
-    }, "OperatingSystem.run()")()
+    }, "OperatingSystem.storeProcesses()")()
   }
 
   // ---- Private ---- //
@@ -141,35 +148,18 @@ export class OperatingSystem {
     if (Memory.os == null) {
       Memory.os = {
         p: [],
-        ps: [],
       }
     }
     if (Memory.os.p == null) {
       Memory.os.p = []
     }
-    if (Memory.os.ps == null) {
-      Memory.os.ps = []
-    }
   }
 
   private restoreProcesses(): void {
-    Memory.os.p.forEach(processMemory => {
-      const process = ProcessRestorer.createStatelessProcess(processMemory.t, processMemory.i)
+    Memory.os.p.forEach(processStateMemory => {
+      const process = decodeProcessFrom(processStateMemory.s)
       if (process == null) {
-        console.log(`[OS Error] Unrecognized process type ${processMemory.t}`)
-        return
-      }
-      const processInfo: InternalProcessInfo = {
-        process,
-        running: processMemory.r === true
-      }
-      this.processes.set(process.processId, processInfo)
-    })
-
-    Memory.os.ps.forEach(processStateMemory => {
-      const process = ProcessRestorer.createStatefullProcess(processStateMemory.t, processStateMemory.l, processStateMemory.i, processStateMemory.s)
-      if (process == null) {
-        console.log(`[OS Error] Unrecognized stateful process type ${processStateMemory.t}`)
+        this.sendOSError(`Unrecognized stateful process type ${processStateMemory}`)
         return
       }
       const processInfo: InternalProcessInfo = {
@@ -182,40 +172,16 @@ export class OperatingSystem {
 
   private storeProcesses(): void {
     const processesMemory: ProcessMemory[] = []
-    const processStatesMemory: ProcessStateMemory[] = []
     Array.from(this.processes.values()).forEach(processInfo => {
       const process = processInfo.process
-      if (process.shouldStore === false) {
-        return
-      }
-      try {
-        const processType = ProcessRestorer.processTypeOf(process)
-        if (processType == null) {
-          console.log(`[OS Error] Process type of ${process.constructor.name} not defined in ProcessRestorer`)
-          return
-        }
-        if (isStatefulProcess(process)) {
-          processStatesMemory.push({
-            l: process.launchTime,
-            i: process.processId,
-            t: processType,
-            r: processInfo.running,
-            s: process.encode(),
-          })
-        } else {
-          processesMemory.push({
-            l: process.launchTime,
-            i: process.processId,
-            t: processType,
-            r: processInfo.running,
-          })
-        }
-      } catch (error) {
-        console.log(`[OS Error] Process ${process.constructor.name}.encode() failed with error: ${error}`)
-      }
+      ErrorMapper.wrapLoop(() => {
+        processesMemory.push({
+          r: processInfo.running,
+          s: process.encode(),
+        })
+      }, "OperatingSystem.storeProcesses()")()
     })
     Memory.os.p = processesMemory
-    Memory.os.ps = processStatesMemory
   }
 
   // ---- Execution ---- //

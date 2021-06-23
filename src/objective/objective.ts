@@ -40,7 +40,7 @@ export interface Objective extends Stateful {
   encode(): ObjectiveState
 }
 
-class ExampleObjective implements Objective {
+class ExampleObjective implements Objective { // TODO: 他のObjectiveを実装したら消す
   public readonly startTime = 0
   public readonly children: Objective[] = []
 

@@ -1,36 +1,26 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { State, Stateful } from "os/infrastructure/state"
+import { TestProcess, TestProcessState } from "./test_process"
+
 export type ProcessId = number
 
-export interface PriorityInformation {
-  // TODO: 何に役に立つのか判断するのに使える情報
-  // n tick後にどのくらいの利益が見込めるか
+export interface ProcessState extends State {
+  /** type identifier */
+  t: keyof ProcessTypes
+
+  /** launch time */
+  l: number
+
+  /** process ID */
+  i: number
 }
 
-export interface ProcessRequirement {
-  // プロセス実行時に要求される内容を格納する予約interface
-}
-
-export interface ProcessResult {
-  // プロセス実行結果を格納する予約interface
-}
-
-// ---- Type of Process ---- //
-export interface Process {
+export interface Process extends Stateful {
   launchTime: number
   processId: ProcessId
-  shouldStore: boolean
 
   processDescription?(): string
-}
-
-export interface StatefulProcess extends Process {
-  // !!!! UPDATE isStatefulProcess() !!!! //
-  shouldStore: true
-  encode(): unknown
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function isStatefulProcess(arg: any): arg is StatefulProcess {
-  return arg.shouldStore === true && arg.encode !== undefined
+  encode(): ProcessState
 }
 
 // ---- Type of Execution ---- //
@@ -43,6 +33,38 @@ export function isProcedural(arg: any): arg is Procedural {
   return arg.runOnTick !== undefined
 }
 
-export interface EventDriven {
-  // TODO:
+// ---- Example ---- //
+class ExampleProcess implements Process { // TODO: 他のProcessを実装したら消す
+  public readonly launchTime = 0
+  public readonly processId = 0
+
+  public encode(): ProcessState {
+    return {
+      t: "ExampleProcess",
+      l: this.launchTime,
+      i: this.processId,
+    }
+  }
+
+  public static decode(state: ProcessState): ExampleProcess | null {
+    return null
+  }
+}
+
+class ProcessTypes {
+  "ExampleProcess" = (state: ProcessState) => ExampleProcess.decode(state as ProcessState)
+  "TestProcess" = (state: TestProcessState) => TestProcess.decode(state as TestProcessState)
+}
+
+export function decodeProcessFrom(state: ProcessState): Process | null {
+  let decoded: Process | null = null
+  ErrorMapper.wrapLoop(() => {
+    const maker = (new ProcessTypes())[state.t]
+    if (maker == null) {
+      decoded = null
+      return
+    }
+    decoded = maker(state)
+  }, `decodeProcessFrom(), process type: ${state.t}`)()
+  return decoded
 }
