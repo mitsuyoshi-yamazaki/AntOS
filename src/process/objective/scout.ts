@@ -33,6 +33,18 @@ export class ScoutObjective implements Objective, Procedural, MessageObserver, C
   }
 
   // ---- Stateful Process ---- //
+  public static parseState(rawState: unknown): ScoutObjectiveMemory | null {
+    const state = rawState as ScoutObjectiveMemory
+    if (typeof state.b !== "string") {
+      return null
+    }
+    return {
+      b: state.b,
+      t: state.t || [],
+      c: state.c || [],
+    }
+  }
+
   public encode(): ScoutObjectiveMemory {
     return {
       b: this.roomName,
