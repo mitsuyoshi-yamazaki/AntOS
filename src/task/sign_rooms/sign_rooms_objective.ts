@@ -1,5 +1,5 @@
 import { CreepProviderObjective } from "task/creep_provider/creep_provider_objective"
-import { decodeObjectiveFrom, Objective, ObjectiveState } from "task/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveState } from "task/objective"
 
 export interface SignRoomObjectiveState extends ObjectiveState {
   /** target room name */
@@ -55,13 +55,7 @@ export class SignRoomObjective implements Objective {
   }
 
   public static decode(state: SignRoomObjectiveState): SignRoomObjective {
-    const children = state.c.reduce((result, childState) => {
-      const child = decodeObjectiveFrom(childState)
-      if (child != null) {
-        result.push(child)
-      }
-      return result
-    }, [] as Objective[])
+    const children = decodeObjectivesFrom(state.c)
     return new SignRoomObjective(state.s, children, state.r, state.m, state.b, state.cr, state.ci)
   }
 

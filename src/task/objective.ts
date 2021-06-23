@@ -72,6 +72,12 @@ export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
   return decoded
 }
 
-// export function decodeObjectivesFrom(states: ObjectiveState[]): Objective[] {
-
-// }
+export function decodeObjectivesFrom(states: ObjectiveState[]): Objective[] {
+  return states.reduce((result, childState) => {
+    const child = decodeObjectiveFrom(childState)
+    if (child != null) {
+      result.push(child)
+    }
+    return result
+  }, [] as Objective[])
+}

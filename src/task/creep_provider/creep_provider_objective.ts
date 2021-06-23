@@ -1,5 +1,5 @@
 import { getNewCreepIn, requestCreep } from "task/bridging/creep_provider_bridging_squad"
-import { decodeObjectiveFrom, Objective, ObjectiveState } from "task/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveState } from "task/objective"
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 
@@ -36,7 +36,7 @@ export class CreepProviderObjective implements Objective {
   }
 
   public static decode(state: CreepProviderObjectiveState): CreepProviderObjective {
-    const children = state.c.flatMap(childState => decodeObjectiveFrom(childState) ?? [])
+    const children = decodeObjectivesFrom(state.c)
     return new CreepProviderObjective(state.s, children, state.i)
   }
 
