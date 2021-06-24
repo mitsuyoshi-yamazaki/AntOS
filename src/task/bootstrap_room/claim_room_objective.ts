@@ -2,7 +2,7 @@ import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_p
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
 import { CreepId } from "utility/game_object_types"
 
-type ClaimRoomObjectiveProgressType = ObjectiveProgressType<void, StructureController, string>
+type ClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
 export interface ClaimRoomObjectiveState extends ObjectiveState {
   /** target room name */
@@ -30,6 +30,7 @@ export interface ClaimRoomObjectiveState extends ObjectiveState {
  *               - send claimer & claim
  *                 - not succeed -> fail
  *                 - success
+ * - Game.io("launch ClaimRoomProcess target_room_name=W52S28 parent_room_name=W51S29")
  */
 export class ClaimRoomObjective implements Objective {
   private creepProvider: SingleCreepProviderObjective | null = null
@@ -99,8 +100,7 @@ export class ClaimRoomObjective implements Objective {
     }
 
     if (this.claimerCreepId == null) {
-      this.requestClaimerCreep()
-      return new ObjectiveInProgress(undefined)
+      return this.requestClaimerCreep()
     }
     const creep = Game.getObjectById(this.claimerCreepId)
     if (creep instanceof Creep) {
@@ -121,10 +121,10 @@ export class ClaimRoomObjective implements Objective {
       const progress = this.creepProvider.progress()
       switch (progress.objectProgressType) {
       case "in progress":
-        return new ObjectiveInProgress(undefined)
+        return new ObjectiveInProgress("Requesting claimer creep")
       case "succeeded":
         this.claimerCreepId = progress.result.id
-        return new ObjectiveInProgress(undefined)
+        return new ObjectiveInProgress("Fetched claimer creep")
       case "failed":
         return new ObjectiveFailed(progress.reason)
       }
@@ -135,7 +135,7 @@ export class ClaimRoomObjective implements Objective {
       requestingCreepBodyParts: [MOVE, MOVE, MOVE, MOVE, CLAIM, MOVE],
     })
     this.creepProvider = creepProvider
-    return new ObjectiveInProgress(undefined)
+    return new ObjectiveInProgress("Claimer creep requested")
   }
 
   private claim(creep: Creep, controller: StructureController): ClaimRoomObjectiveProgressType {
@@ -145,7 +145,7 @@ export class ClaimRoomObjective implements Objective {
       return new ObjectiveSucceeded(controller)
     case ERR_NOT_IN_RANGE:
       creep.moveTo(controller, {reusePath: 15})
-      return new ObjectiveInProgress(undefined)
+      return new ObjectiveInProgress(`Claimer creep heading to target room ${creep.pos}`)
     default:
       return new ObjectiveFailed(`Unexpected claimController() error ${result}`)
     }

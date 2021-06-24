@@ -37,7 +37,7 @@ export class ClaimRoomProcess implements Process, Procedural {
     const progress = this.objective.progress()
     switch (progress.objectProgressType) {
     case "in progress":
-      console.log(`ClaimRoomProcess ${this.processId} in progress`)
+      console.log(`ClaimRoomProcess ${this.processId} in progress: ${progress.value}`)
       return
     case "succeeded":
       console.log(`ClaimRoomProcess ${this.processId} successfully claimed room ${progress.result.room.name}`)

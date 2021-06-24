@@ -94,7 +94,8 @@ export class OperatingSystem {
    * killを予約する。実行されるのはstoreProcesses()の前
    */
   public killProcess(processId: ProcessId): ResultType<string> {
-    if (!(processId in this.processes)) {
+    const process = this.processOf(processId)
+    if (process == null) {
       return new ResultFailed(new Error(`[OS Error] Trying to kill unknown process ${processId}`))
     }
     if (this.processIdsToKill.includes(processId) !== true) {
@@ -165,6 +166,7 @@ export class OperatingSystem {
   }
 
   private restoreProcesses(): void {
+    this.processes.clear()
     Memory.os.p.forEach(processStateMemory => {
       const process = decodeProcessFrom(processStateMemory.s)
       if (process == null) {
@@ -227,8 +229,9 @@ export class OperatingSystem {
         this.sendOSError(`[Program bug] Trying to kill non existent process ${processId}`)
         return
       }
-      console.log(`Kill process ${process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
+      console.log(`Kill process ${processInfo.process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
       this.processes.delete(processId)
     })
+    this.processIdsToKill.splice(0, this.processIdsToKill.length)
   }
 }
