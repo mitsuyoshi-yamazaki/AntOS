@@ -40,8 +40,8 @@ export function getNewCreepIn(creepIdentifier: string): Creep | null {
     newCreeps.splice(0, newCreeps.length)
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      if (creep.id == null) {
-        continue  // spawn直後はIDが振られていないらしい
+      if (creep.spawning) {
+        continue
       }
       if (creep.memory.type !== CreepType.CREEP_PROVIDER) {
         continue

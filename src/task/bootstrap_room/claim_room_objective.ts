@@ -135,6 +135,7 @@ export class ClaimRoomObjective implements Objective {
       requestingCreepBodyParts: [MOVE, MOVE, MOVE, MOVE, CLAIM, MOVE],
     })
     this.creepProvider = creepProvider
+    this.children.push(creepProvider)
     return new ObjectiveInProgress("Claimer creep requested")
   }
 
