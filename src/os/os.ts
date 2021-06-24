@@ -39,6 +39,7 @@ export class OperatingSystem {
   private processIndex = 0
   private readonly rootProcess = new RootProcess()
   private readonly processes = new Map<ProcessId, InternalProcessInfo>()
+  private readonly processIdsToKill: ProcessId[] = []
 
   private constructor() {
     ErrorMapper.wrapLoop(() => {
@@ -89,13 +90,16 @@ export class OperatingSystem {
     this.processes.set(processId, processInfo)
   }
 
+  /**
+   * killを予約する。実行されるのはstoreProcesses()の前
+   */
   public killProcess(processId: ProcessId): ResultType<string> {
-    const process = this.processOf(processId)
-    if (process == null) {
+    if (!(processId in this.processes)) {
       return new ResultFailed(new Error(`[OS Error] Trying to kill unknown process ${processId}`))
     }
-    console.log(`Kill process ${process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
-    this.processes.delete(processId)
+    if (this.processIdsToKill.includes(processId) !== true) {
+      this.processIdsToKill.push(processId)
+    }
     return new ResultSucceeded(process.constructor.name)
   }
 
@@ -137,6 +141,10 @@ export class OperatingSystem {
     ErrorMapper.wrapLoop(() => {
       this.runProceduralProcesses()
     }, "OperatingSystem.runProceduralProcesses()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.killProcesses()
+    }, "OperatingSystem.killProcesses()")()
 
     ErrorMapper.wrapLoop(() => {
       this.storeProcesses()
@@ -209,5 +217,18 @@ export class OperatingSystem {
 
   private sendOSError(message: string): void {
     console.log(`[OS Error] ${message}`)
+  }
+
+  // ---- Kill ---- //
+  private killProcesses(): void {
+    this.processIdsToKill.forEach(processId => {
+      const processInfo = this.processes.get(processId)
+      if (processInfo == null) {
+        this.sendOSError(`[Program bug] Trying to kill non existent process ${processId}`)
+        return
+      }
+      console.log(`Kill process ${process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
+      this.processes.delete(processId)
+    })
   }
 }
