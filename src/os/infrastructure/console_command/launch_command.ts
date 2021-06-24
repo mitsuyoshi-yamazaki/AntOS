@@ -3,6 +3,8 @@ import { TestProcess } from "task/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { SignRoomObjective } from "task/sign_rooms/sign_rooms_objective"
+import { BootstrapRoomProcess } from "task/bootstrap_room/bootstrap_room_proces"
+import { BootstrapRoomObjective } from "task/bootstrap_room/bootstarp_room_objective"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -17,6 +19,8 @@ export class LaunchCommand implements ConsoleCommand {
       return this.launchTestProcess()
     case "SignRoomsProcess":
       return this.launchSignRoomsProcess()
+    case "BootstrapRoomProcess":
+      return this.launchBootstrapRoomProcess()
     default:
       return `Invalid process type name ${this.args[0]}`
     }
@@ -73,6 +77,16 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new SignRoomsProcess(launchTime, processId, objective)
+    })
+    return `Launched ${process.constructor.name} PID: ${process.processId}`
+  }
+
+  private launchBootstrapRoomProcess(): CommandExecutionResult {
+    const launchTime = Game.time
+    const objective = new BootstrapRoomObjective(launchTime, [])
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new BootstrapRoomProcess(launchTime, processId, objective)
     })
     return `Launched ${process.constructor.name} PID: ${process.processId}`
   }

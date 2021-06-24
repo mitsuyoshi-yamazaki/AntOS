@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms_objective"
+import { BootstrapRoomObjective, BootstrapRoomObjectiveState } from "./bootstrap_room/bootstarp_room_objective"
 import { CreepProviderObjective, CreepProviderObjectiveState } from "./creep_provider/creep_provider_objective"
 
 /**
@@ -34,29 +35,11 @@ export interface Objective extends Stateful {
   objectiveDescription?(): string
 }
 
-class ExampleObjective implements Objective { // TODO: 他のObjectiveを実装したら消す
-  public readonly startTime = 0
-  public readonly children: Objective[] = []
-
-  public encode(): ObjectiveState {
-    return {
-      t: "ExampleObjective",
-      s: this.startTime,
-      c: [],
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public static decode(state: ObjectiveState): ExampleObjective {
-    return new ExampleObjective()
-  }
-}
-
 class ObjectiveTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
-  "ExampleObjective" = (state: ObjectiveState) => ExampleObjective.decode(state as ObjectiveState)
   "CreepProviderObjective" = (state: ObjectiveState) => CreepProviderObjective.decode(state as CreepProviderObjectiveState)
+  "BootstrapRoomObjective" = (state: ObjectiveState) => BootstrapRoomObjective.decode(state as BootstrapRoomObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
