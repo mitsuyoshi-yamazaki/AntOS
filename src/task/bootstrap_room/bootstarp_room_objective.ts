@@ -3,6 +3,24 @@ import { decodeObjectivesFrom, Objective, ObjectiveState } from "task/objective"
 export interface BootstrapRoomObjectiveState extends ObjectiveState {
 }
 
+/**
+ * - State判定 -> Next Action
+ * - failする条件を潰していくことがロジックの成長につながる
+ * - 条件(condition)は処理を持たない情報
+ * - bootstrap (goal: Lv1 room controller & minimum upgrader)
+ *   - room
+ *     - invisible -> fail
+ *     - visible
+ *       - controller
+ *         - null -> fail
+ *         - exists
+ *           - owner
+ *             - exists -> fail
+ *             - null
+ *               - send claimer & claim
+ *                 - not succeed -> fail
+ *                 - success
+ */
 export class BootstrapRoomObjective implements Objective {
   public constructor(
     public readonly startTime: number,
@@ -22,4 +40,14 @@ export class BootstrapRoomObjective implements Objective {
     const children = decodeObjectivesFrom(state.c)
     return new BootstrapRoomObjective(state.s, children)
   }
+}
+
+export interface Condition {
+
+}
+
+export interface RoomCondition extends Condition {
+  roomName: string
+
+  isVisible: boolean
 }

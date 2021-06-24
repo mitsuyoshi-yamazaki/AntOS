@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms_objective"
 import { BootstrapRoomObjective, BootstrapRoomObjectiveState } from "./bootstrap_room/bootstarp_room_objective"
+import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { CreepProviderObjective, CreepProviderObjectiveState } from "./creep_provider/creep_provider_objective"
 
 /**
@@ -40,6 +41,7 @@ class ObjectiveTypes {
   "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
   "CreepProviderObjective" = (state: ObjectiveState) => CreepProviderObjective.decode(state as CreepProviderObjectiveState)
   "BootstrapRoomObjective" = (state: ObjectiveState) => BootstrapRoomObjective.decode(state as BootstrapRoomObjectiveState)
+  "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
