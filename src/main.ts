@@ -1,4 +1,6 @@
 /* eslint-disable */
+import * as ScreepsProfiler from "screeps-profiler"
+
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 import { Empire } from "_old/empire"
@@ -11,9 +13,7 @@ Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
 console.log(leveled_colored_text(initializing_message, 'warn'))
 
-// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
-// This utility uses source maps to get the line numbers and file names of the original, TS source code
-export const loop = ErrorMapper.wrapLoop(() => {
+const mainLoop = () => {
   if (Memory.debug.cpu.show_usage) {
     console.log(`\n\n--------------\n\n`)
   }
@@ -187,6 +187,14 @@ export const loop = ErrorMapper.wrapLoop(() => {
   /* eslint-enable */
   OperatingSystem.os.run()
   /* eslint-disable */
+}
+
+ScreepsProfiler.enable()  // FixMe: 普段はオフに
+
+// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
+// This utility uses source maps to get the line numbers and file names of the original, TS source code
+export const loop = ErrorMapper.wrapLoop(() => {
+  ScreepsProfiler.wrap(mainLoop)
 }, `Main`)
 
 function trade():void {
