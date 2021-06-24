@@ -961,7 +961,7 @@ export class Region {
         type: squad.type,
         owner_name: this.name,
         number_of_creeps: 0,
-        req: [],
+        req: {},
       }
       Memory.squads[squad.name] = memory
 

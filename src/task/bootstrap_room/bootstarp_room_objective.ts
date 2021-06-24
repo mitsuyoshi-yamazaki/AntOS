@@ -42,13 +42,3 @@ export class BootstrapRoomObjective implements Objective {
     return new BootstrapRoomObjective(state.s, children)
   }
 }
-
-export interface Condition {
-
-}
-
-export interface RoomCondition extends Condition {
-  roomName: string
-
-  isVisible: boolean
-}

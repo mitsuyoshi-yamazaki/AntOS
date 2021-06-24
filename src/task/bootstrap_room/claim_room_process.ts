@@ -26,4 +26,8 @@ export class ClaimRoomProcess implements Process {
     const objective = ClaimRoomObjective.decode(state.s)
     return new ClaimRoomProcess(state.l, state.i, objective)
   }
+
+  public processDescription(): string {
+    return this.objective.objectiveDescription()
+  }
 }

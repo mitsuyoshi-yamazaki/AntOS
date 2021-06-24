@@ -1,7 +1,7 @@
 import { UID } from "utility"
 import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_old/squad/squad"
 import { CreepStatus, CreepType } from "_old/creep"
-import { CreepProviderObjectiveCreepSpec } from "task/creep_provider/creep_provider_objective"
+import { CreepProviderObjectiveCreepSpec } from "task/creep_provider/single_creep_provider_objective"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()
@@ -29,15 +29,15 @@ export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: numbe
     console.log(`CreepProviderBridgingSquad ${squadName} memory not found`)
     return
   }
-  memory.req.push(spec.specIdentifier)
+  memory.req[spec.creepIdentifier] = spec.bodyParts
 }
 
 let newCreepCacheTime = 0
-const newCreeps = new Map<string, Creep[]>()
+const newCreeps: Creep[] = []
 
-export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep | null {
+export function getNewCreepIn(creepIdentifier: string): Creep | null {
   if (newCreepCacheTime !== Game.time) {
-    newCreeps.clear()
+    newCreeps.splice(0, newCreeps.length)
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       if (creep.id == null) {
@@ -49,15 +49,12 @@ export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep 
       if (creep.memory.squad_name.length === 0) {
         continue
       }
-      const creeps = newCreeps.get(creep.room.name) ?? []
-      creeps.push(creep)
-      newCreeps.set(creep.room.name, creeps)
+      newCreeps.push(creep)
     }
     newCreepCacheTime = Game.time
   }
 
-  const creeps = newCreeps.get(roomName) ?? []
-  for (const creep of creeps) {
+  for (const creep of newCreeps) {
     if (creep.name === creepIdentifier) {
       creep.memory.squad_name = ""
       return creep
@@ -69,7 +66,7 @@ export function getNewCreepIn(roomName: string, creepIdentifier: string): Creep 
 // -------- //
 export interface CreepProviderBridgingSquadMemory extends SquadMemory {
   /** requesting creep identifiers */
-  req: string[]
+  req: {[index: string]: BodyPartConstant[]}
 }
 
 /**
@@ -80,7 +77,7 @@ export class CreepProviderBridgingSquad extends Squad {
     return SquadType.CREEP_PROVIDER_BRIDGING_SQUAD
   }
   public get spawnPriority(): SpawnPriority {
-    const required = this.memory.req.length > 0
+    const required = Object.keys(this.memory.req).length > 0
     return required ? SpawnPriority.LOW : SpawnPriority.NONE
   }
 
@@ -110,12 +107,13 @@ export class CreepProviderBridgingSquad extends Squad {
   }
 
   public addCreep(energyAvailable: number, spawnFunc: SpawnFunction): void {
-    const name = this.memory.req[0]
-    if (name == null) {
+    const creepIdentifier = Object.keys(this.memory.req)[0]
+    if (creepIdentifier == null) {
       return
     }
 
-    const body: BodyPartConstant[] = [MOVE]
+    const name = creepIdentifier
+    const body: BodyPartConstant[] = this.memory.req[creepIdentifier]
     const memory: CreepMemory = {
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -130,7 +128,7 @@ export class CreepProviderBridgingSquad extends Squad {
     })
 
     if (result === OK) {
-      this.memory.req.splice(0, 1)
+      delete this.memory.req[creepIdentifier]
     } else {
       console.log(`CreepProviderBridgingSquadMemory spawn scout ${name} failed with error: ${result}`)
     }

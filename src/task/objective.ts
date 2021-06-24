@@ -3,7 +3,8 @@ import { State, Stateful } from "os/infrastructure/state"
 import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms_objective"
 import { BootstrapRoomObjective, BootstrapRoomObjectiveState } from "./bootstrap_room/bootstarp_room_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
-import { CreepProviderObjective, CreepProviderObjectiveState } from "./creep_provider/creep_provider_objective"
+import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
+import { ScoutObserveRoomObjective, ScoutObserveRoomObjectiveState } from "./remote_room/observe_room"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -28,6 +29,23 @@ export interface ObjectiveState extends State {
   c: ObjectiveState[]
 }
 
+export class ObjectiveInProgress<T> {
+  public readonly objectProgressType = "in progress"
+  public constructor(public readonly value: T) { }
+}
+
+export class ObjectiveSucceeded<Result> {
+  public readonly objectProgressType = "succeeded"
+  public constructor(public readonly result: Result) { }
+}
+
+export class ObjectiveFailed<Reason> {
+  public readonly  objectProgressType = "failed"
+  public constructor(public readonly reason: Reason) { }
+}
+
+export type ObjectiveProgressType<T, S, U> = ObjectiveInProgress<T> | ObjectiveSucceeded<S> | ObjectiveFailed<U>
+
 export interface Objective extends Stateful {
   startTime: number
   children: Objective[]
@@ -39,9 +57,10 @@ export interface Objective extends Stateful {
 class ObjectiveTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
-  "CreepProviderObjective" = (state: ObjectiveState) => CreepProviderObjective.decode(state as CreepProviderObjectiveState)
+  "SingleCreepProviderObjective" = (state: ObjectiveState) => SingleCreepProviderObjective.decode(state as SingleCreepProviderObjectiveState)
   "BootstrapRoomObjective" = (state: ObjectiveState) => BootstrapRoomObjective.decode(state as BootstrapRoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
+  "ScoutObserveRoomObjective" = (state: ObjectiveState) => ScoutObserveRoomObjective.decode(state as ScoutObserveRoomObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
