@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "creep-tasks": "^1.1.1",
+    "screeps-profiler": "^2.0.1",
     "source-map": "~0.6.1"
   },
   "scripts": {
