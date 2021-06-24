@@ -5,6 +5,8 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { SignRoomObjective } from "task/sign_rooms/sign_rooms_objective"
 import { BootstrapRoomProcess } from "task/bootstrap_room/bootstrap_room_proces"
 import { BootstrapRoomObjective } from "task/bootstrap_room/bootstarp_room_objective"
+import { ClaimRoomProcess } from "task/bootstrap_room/claim_room_process"
+import { ClaimRoomObjective } from "task/bootstrap_room/claim_room_objective"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -21,6 +23,8 @@ export class LaunchCommand implements ConsoleCommand {
       return this.launchSignRoomsProcess()
     case "BootstrapRoomProcess":
       return this.launchBootstrapRoomProcess()
+    case "ClaimRoomProcess":
+      return this.launchClaimRoomProcess()
     default:
       return `Invalid process type name ${this.args[0]}`
     }
@@ -87,6 +91,28 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new BootstrapRoomProcess(launchTime, processId, objective)
+    })
+    return `Launched ${process.constructor.name} PID: ${process.processId}`
+  }
+
+  private launchClaimRoomProcess(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const parentRoomName = args.get("parent_room_name")
+    if (parentRoomName == null) {
+      return this.missingArgumentError("parent_room_name")
+    }
+
+    const launchTime = Game.time
+    const objective = new ClaimRoomObjective(launchTime, [], targetRoomName, parentRoomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new ClaimRoomProcess(launchTime, processId, objective)
     })
     return `Launched ${process.constructor.name} PID: ${process.processId}`
   }

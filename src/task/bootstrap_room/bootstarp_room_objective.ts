@@ -4,6 +4,7 @@ export interface BootstrapRoomObjectiveState extends ObjectiveState {
 }
 
 /**
+ * - 切り出してClaimRoomObjectiveを実装する
  * - State判定 -> Next Action
  * - failする条件を潰していくことがロジックの成長につながる
  * - 条件(condition)は処理を持たない情報
