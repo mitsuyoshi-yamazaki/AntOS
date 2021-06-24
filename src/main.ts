@@ -189,7 +189,7 @@ const mainLoop = () => {
   /* eslint-disable */
 }
 
-ScreepsProfiler.enable()  // FixMe: 普段はオフに
+ScreepsProfiler.enable()  // TODO: 普段はオフに
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
