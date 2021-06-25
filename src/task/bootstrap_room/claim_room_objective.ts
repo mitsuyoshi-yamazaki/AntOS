@@ -1,6 +1,5 @@
 import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
-import { CreepId } from "utility/game_object_types"
 
 type ClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
@@ -12,7 +11,7 @@ export interface ClaimRoomObjectiveState extends ObjectiveState {
   p: string
 
   /** claimer creep ID */
-  i: CreepId | null
+  i: string | null
 }
 
 /**

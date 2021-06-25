@@ -1,6 +1,10 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
 import { generateUniqueId } from "utility/unique_id"
+import { CreepStatus, CreepType } from "_old/creep"
+
+const numberOfWorkersEachSource = 10
 
 interface UpgradeL3ControllerObjectiveSucceededState {
   controller: StructureController
@@ -14,22 +18,30 @@ interface UpgradeL3ControllerObjectiveFailedState {
 
 type UpgradeL3ControllerObjectiveProgressType = ObjectiveProgressType<string, UpgradeL3ControllerObjectiveSucceededState, UpgradeL3ControllerObjectiveFailedState>
 
+interface UpgradeL3ControllerObjectiveWorkerMemory extends CreepMemory {
+  sourceId: Id<Source>
+}
+
 export interface UpgradeL3ControllerObjectiveState extends ObjectiveState {
   /** creep IDs */
   cr: {
-    /** worker */
+    /** worker name */
     w: string[]
   }
+
+  /** source IDs */
+  si: Id<Source>[]
 }
 
 export class UpgradeL3ControllerObjective implements Objective {
-  private workerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE]
-  private workerSpawnEnergy = 100 + 50 + 50
+  private baseWorkerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE]
+  private baseWorkerSpawnEnergy = 100 + 50 + 50
 
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    private workerIds: string[],
+    private workerNames: string[],
+    private sourceIds: Id<Source>[],
   ) {
 
   }
@@ -40,40 +52,54 @@ export class UpgradeL3ControllerObjective implements Objective {
       s: this.startTime,
       c: this.children.map(child => child.encode()),
       cr: {
-        w: this.workerIds,
-      }
+        w: this.workerNames,
+      },
+      si: this.sourceIds,
     }
   }
 
   public static decode(state: UpgradeL3ControllerObjectiveState): UpgradeL3ControllerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w)
+    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.si)
   }
 
   public progress(spawn: StructureSpawn, controller: StructureController): UpgradeL3ControllerObjectiveProgressType {
-    const progress: UpgradeL3ControllerObjectiveProgressType | null = null
-    ErrorMapper.wrapLoop(() => {
+    let progress: UpgradeL3ControllerObjectiveProgressType | null = null
+    ErrorMapper.wrapLoop((): void => {
+
+      const sources: Source[] = this.sourceIds.reduce((result, sourceId) => {
+        const source = Game.getObjectById(sourceId)
+        if (source != null) {
+          result.push(source)
+        }
+        return result
+      }, [] as Source[])
 
       const workers: Creep[] = []
-      const aliveWorkerIds: string[] = []
-      this.workerIds.forEach(workerId => {
-        const creep = Game.getObjectById(workerId)
-        if (creep instanceof Creep) {
-          workers.push(creep)
-          aliveWorkerIds.push(workerId)
+      const aliveWorkerNames: string[] = []
+      this.workerNames.forEach(workerName => {
+        const creep = Game.creeps[workerName]
+        if (creep == null) {
+          return
         }
+        workers.push(creep)
+        aliveWorkerNames.push(workerName)
       })
-      this.workerIds = aliveWorkerIds
+      this.workerNames = aliveWorkerNames
 
       if (controller.level >= 3) {
-        return new ObjectiveSucceeded({controller, creeps: workers})
+        progress = new ObjectiveSucceeded({controller, creeps: workers})
       }
 
-      if (spawn.spawning == null && spawn.energy >= this.workerSpawnEnergy) {
-        this.spawnWorker(spawn)
+      if (workers.length < numberOfWorkersEachSource && spawn.spawning == null && spawn.store.getUsedCapacity(RESOURCE_ENERGY) >= this.baseWorkerSpawnEnergy) {
+        const sourceId = this.targetSourceId(workers, this.sourceIds)
+        if (sourceId) {
+          this.spawnWorker(spawn, sourceId)
+        }
       }
 
-      return new ObjectiveFailed({ reason: "Not implemented yet", creeps: [] })
+      this.work(workers, spawn)
+      progress = new ObjectiveInProgress(`${workers.length} working`)
     }, "UpgradeL3ControllerObjective.progress()")()
 
     if (progress != null) {
@@ -82,10 +108,82 @@ export class UpgradeL3ControllerObjective implements Objective {
     return new ObjectiveFailed({ reason: "Program bug", creeps: [] })
   }
 
-  private spawnWorker(spawn: StructureSpawn): string {
-    const name = generateUniqueId("belgian_waffle")
-    spawn.spawnCreep(this.workerBodies, name)
+  // ---- Work ---- //
+  private work(workers: Creep[], spawn: StructureSpawn): void {
+    workers.forEach(creep => {
+      if (creep.spawning) {
+        return
+      }
+      const transfer = () => this.transfer(creep, spawn)
+      const harvest = () => this.harvest(creep)
 
-    return "" // TODO:
+      switch (creep.memory.status) {
+      case CreepStatus.HARVEST:
+        if (creep.carry[RESOURCE_ENERGY] >= creep.carryCapacity) {
+          creep.memory.status = CreepStatus.CHARGE
+          transfer()
+          break
+        }
+        harvest()
+        break
+      case CreepStatus.CHARGE:
+        if (creep.carry[RESOURCE_ENERGY] <= 0) {
+          creep.memory.status = CreepStatus.HARVEST
+          harvest()
+          break
+        }
+        transfer()
+        break
+      default:
+        creep.memory.status = CreepStatus.HARVEST
+      }
+    })
+  }
+
+  private harvest(creep: Creep): void {
+    const sourceId = (creep.memory as UpgradeL3ControllerObjectiveWorkerMemory).sourceId
+    const source = Game.getObjectById(sourceId) ?? creep.pos.findClosestByPath(FIND_SOURCES)
+    if (source == null) {
+      return
+    }
+    (creep.memory as UpgradeL3ControllerObjectiveWorkerMemory).sourceId = source.id
+    if (creep.harvest(source) !== OK) {
+      creep.moveTo(source, { reusePath: 15 })
+    }
+  }
+
+  private transfer(creep: Creep, spawn: StructureSpawn): void {
+    if (creep.transfer(spawn, RESOURCE_ENERGY) !== OK) {
+      creep.moveTo(spawn)
+    }
+  }
+
+  // ---- Spawn ---- //
+  private targetSourceId(workers: Creep[], sourceIds: Id<Source>[]): Id<Source> | null {
+    // const targets: Id<Source>
+    // workers.forEach()
+    return sourceIds[0]
+  }
+
+  private spawnWorker(spawn: StructureSpawn, targetSourceId: Id<Source>): void {
+    const name = generateUniqueId("belgian_waffle")
+    const memory: UpgradeL3ControllerObjectiveWorkerMemory = {
+      sourceId: targetSourceId,
+      squad_name: "",
+      status: CreepStatus.NONE,
+      type: CreepType.WORKER,
+      birth_time: Game.time,
+      should_notify_attack: false,
+      let_thy_die: true,
+    }
+    const result = spawn.spawnCreep(this.baseWorkerBodies, name, { memory: memory })
+    switch (result) {
+    case OK:
+      this.workerNames.push(name)
+      break
+    default:
+      PrimitiveLogger.log(`UpgradeL3ControllerObjective spawn ${spawn.id} failed with error: ${result}`)
+      break
+    }
   }
 }

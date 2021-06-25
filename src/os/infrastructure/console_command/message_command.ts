@@ -16,7 +16,7 @@ export class MessageCommand implements ConsoleCommand {
     case "succeeded":
       return this.sendMessage(parseResult.value)
     case "failed":
-      return `${parseResult.error}`
+      return parseResult.reason
     }
   }
 

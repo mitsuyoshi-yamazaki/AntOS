@@ -1,3 +1,4 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { Procedural } from "task/procedural"
 import { Process, ProcessId, processLog, ProcessState } from "task/process"
@@ -8,6 +9,9 @@ export interface BootstrapL8RoomProcessState extends ProcessState {
   s: BootstrapL8RoomObjectiveState
 }
 
+/**
+ * Game.io("launch BootstrapL8RoomProcess target_room_name=W53S7 parent_room_name=W54S7 -l")
+ */
 export class BootstrapL8RoomProcess implements Process, Procedural {
   public constructor(
     public readonly launchTime: number,
@@ -42,7 +46,7 @@ export class BootstrapL8RoomProcess implements Process, Procedural {
       OperatingSystem.os.killProcess(this.processId)
       return
     case "failed":
-      processLog(this, `BootstrapL8RoomProcess ${this.processId} failed with error ${progress.reason}`)
+      PrimitiveLogger.log(`BootstrapL8RoomProcess ${this.processId} failed with error: ${progress.reason}`)
       OperatingSystem.os.killProcess(this.processId)
       return
     }

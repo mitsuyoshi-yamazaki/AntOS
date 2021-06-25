@@ -4,6 +4,7 @@ import { decodeProcessFrom, Process, ProcessId, ProcessState } from "task/proces
 import { isProcedural } from "task/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
+import { LoggerProcess } from "./process/logger"
 
 interface ProcessMemory {
   /** running */
@@ -90,10 +91,10 @@ export class OperatingSystem {
   /**
    * killを予約する。実行されるのはstoreProcesses()の前
    */
-  public killProcess(processId: ProcessId): ResultType<string> {
+  public killProcess(processId: ProcessId): ResultType<string, string> {
     const process = this.processOf(processId)
     if (process == null) {
-      return new ResultFailed(new Error(`[OS Error] Trying to kill unknown process ${processId}`))
+      return new ResultFailed(`[OS Error] Trying to kill unknown process ${processId}`)
     }
     if (this.processIdsToKill.includes(processId) !== true) {
       this.processIdsToKill.push(processId)
@@ -138,6 +139,15 @@ export class OperatingSystem {
 
   public clearProcessLogs(): void {
     this.runtimeMemory.processLogs.splice(0, this.runtimeMemory.processLogs.length)
+  }
+
+  // FixMe: プロセス特定の仕組みを実装する
+  public getLoggerProcess(): LoggerProcess | null {
+    const processInfo = Array.from(this.processes.values()).find(processInfo => processInfo.process instanceof LoggerProcess)
+    if (processInfo == null) {
+      return null
+    }
+    return processInfo.process as LoggerProcess
   }
 
   // ---- Run ---- //

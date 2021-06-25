@@ -1,3 +1,4 @@
+import { Process, ProcessId } from "task/process"
 import { SignRoomsProcess } from "task/sign_rooms/sign_rooms_process"
 import { TestProcess } from "task/test/test_process"
 import { OperatingSystem } from "os/os"
@@ -7,6 +8,9 @@ import { ClaimRoomProcess } from "task/bootstrap_room/claim_room_process"
 import { ClaimRoomObjective } from "task/bootstrap_room/claim_room_objective"
 import { BootstrapL8RoomObjective } from "task/bootstrap_room/bootstarp_l8_room_objective"
 import { BootstrapL8RoomProcess } from "task/bootstrap_room/bootstrap_l8_room_proces"
+import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+
+type LaunchCommandResult = ResultType<Process, string>
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -16,17 +20,36 @@ export class LaunchCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
+    let result: LaunchCommandResult | null = null
     switch (this.args[0]) {
     case "TestProcess":
-      return this.launchTestProcess()
+      result = this.launchTestProcess()
+      break
     case "SignRoomsProcess":
-      return this.launchSignRoomsProcess()
+      result = this.launchSignRoomsProcess()
+      break
     case "BootstrapL8RoomProcess":
-      return this.launchBootstrapL8RoomProcess()
+      result = this.launchBootstrapL8RoomProcess()
+      break
     case "ClaimRoomProcess":
-      return this.launchClaimRoomProcess()
+      result = this.launchClaimRoomProcess()
+      break
     default:
+      break
+    }
+    if (result == null) {
       return `Invalid process type name ${this.args[0]}`
+    }
+
+    switch (result.resultType) {
+    case "succeeded":
+      if (this.options.get("-l")) {
+        const logger = OperatingSystem.os.getLoggerProcess()
+        logger?.didReceiveMessage(`add id ${result.value.processId}`)
+      }
+      return `Launched ${result.value.constructor.name}, PID: ${result.value.processId}`
+    case "failed":
+      return result.reason
     }
   }
 
@@ -45,19 +68,19 @@ export class LaunchCommand implements ConsoleCommand {
     return result
   }
 
-  private missingArgumentError(argumentName: string): string {
-    return `Missing ${argumentName} argument`
+  private missingArgumentError(argumentName: string): ResultFailed<string> {
+    return new ResultFailed(`Missing ${argumentName} argument`)
   }
 
   // ---- Launcher ---- //
-  private launchTestProcess(): CommandExecutionResult {
+  private launchTestProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return new TestProcess(Game.time, processId)
     })
-    return `Launched ${process.constructor.name} PID: ${process.processId}`
+    return new ResultSucceeded(process)
   }
 
-  private launchSignRoomsProcess(): CommandExecutionResult {
+  private launchSignRoomsProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const baseRoomName = args.get("base_room_name")
@@ -82,10 +105,10 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new SignRoomsProcess(launchTime, processId, objective)
     })
-    return `Launched ${process.constructor.name} PID: ${process.processId}`
+    return new ResultSucceeded(process)
   }
 
-  private launchBootstrapL8RoomProcess(): CommandExecutionResult {
+  private launchBootstrapL8RoomProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const targetRoomName = args.get("target_room_name")
@@ -104,10 +127,10 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new BootstrapL8RoomProcess(launchTime, processId, objective)
     })
-    return `Launched ${process.constructor.name} PID: ${process.processId}`
+    return new ResultSucceeded(process)
   }
 
-  private launchClaimRoomProcess(): CommandExecutionResult {
+  private launchClaimRoomProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const targetRoomName = args.get("target_room_name")
@@ -126,6 +149,6 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new ClaimRoomProcess(launchTime, processId, objective)
     })
-    return `Launched ${process.constructor.name} PID: ${process.processId}`
+    return new ResultSucceeded(process)
   }
 }

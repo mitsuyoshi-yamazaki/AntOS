@@ -3,6 +3,7 @@ import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, 
 import { roomLink } from "utility/log"
 import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
 import { ClaimRoomObjective } from "./claim_room_objective"
+import { UpgradeL3ControllerObjective } from "./upgrade_l3_controller_objective"
 
 type BootstrapL8RoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
@@ -40,7 +41,7 @@ export class BootstrapL8RoomObjective implements Objective {
 
   public progress(): BootstrapL8RoomObjectiveProgressType {
     let progress: BootstrapL8RoomObjectiveProgressType | null = null
-    ErrorMapper.wrapLoop(() => {
+    ErrorMapper.wrapLoop((): void => {
       const room = Game.rooms[this.targetRoomName]
       if (room == null) {
         progress = new ObjectiveFailed(`${this.constructor.name} only works while target room is visible (target room: ${roomLink(this.targetRoomName)})`)
@@ -58,8 +59,13 @@ export class BootstrapL8RoomObjective implements Objective {
         progress = new ObjectiveSucceeded(room.controller)
         return
       }
-      if (room.spawns.length <= 0) {
+      const spawn = room.find(FIND_MY_SPAWNS)[0]
+      if (spawn == null) {
         progress = this.buildFirstSpawn(room.controller)
+        return
+      }
+      if (room.controller.level < 3) {
+        progress = this.upgradeToRCL3(spawn, room, room.controller)
         return
       }
 
@@ -70,6 +76,39 @@ export class BootstrapL8RoomObjective implements Objective {
       return progress
     }
     return new ObjectiveFailed("Program bug")
+  }
+
+  // ---- Upgrade to RCL3 ---- //
+  private upgradeToRCL3(spawn: StructureSpawn, room: Room, controller: StructureController): BootstrapL8RoomObjectiveProgressType {
+    const objective = this.children.find(child => child instanceof UpgradeL3ControllerObjective) as UpgradeL3ControllerObjective | null
+    if (objective == null) {
+      this.addUpgradeL3ControllerObjective(room)
+      return new ObjectiveInProgress("Launched UpgradeL3ControllerObjective")
+    }
+    const progress = objective.progress(spawn, controller)
+    switch (progress.objectProgressType) {
+    case "in progress":
+      return new ObjectiveInProgress(progress.value)
+    case "succeeded":
+      this.removeUpgradeL3ControllerObjective(objective)
+      return new ObjectiveInProgress(`Room ${roomLink(room.name)} upgraded to RCL 3`)
+    case "failed":
+      this.removeUpgradeL3ControllerObjective(objective)
+      return new ObjectiveFailed(progress.reason.reason)
+    }
+  }
+
+  private addUpgradeL3ControllerObjective(room: Room): void {
+    const sourceIds = room.sources.map(source => source.id)
+    const objective = new UpgradeL3ControllerObjective(Game.time, [], [], sourceIds)
+    this.children.push(objective)
+  }
+
+  private removeUpgradeL3ControllerObjective(objective: UpgradeL3ControllerObjective): void {
+    const index = this.children.indexOf(objective)
+    if (index >= 0) {
+      this.children.splice(index, 1)
+    }
   }
 
   // ---- Build first spawn ---- //
