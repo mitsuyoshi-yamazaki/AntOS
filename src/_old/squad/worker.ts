@@ -115,6 +115,7 @@ export class WorkerSquad extends Squad {
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
     const memory: CreepMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

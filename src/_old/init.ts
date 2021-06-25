@@ -4,8 +4,9 @@ import { init as creepInit } from "_old/creep"
 import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
+import { decodeCreepTask } from "game_object_task/game_object_task"
 
-const version = '4.7.8'
+const version = '4.8.1'
 
 export function init(): void {
   Game.version = version
