@@ -664,10 +664,10 @@
   resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-2.3.0.tgz#2e8332cc7363f887d32ec5496b207d26ba8052bb"
   integrity sha512-hkc1DATxFLQo4VxPDpMH1gCkPpBbpOoJ/4nhuXw4n63/0R6bCpQECj4+K226UJ4JO/eJQz+1mC2I7JsWanAdQw==
 
-"@types/screeps@^2.2.1":
-  version "2.3.0"
-  resolved "https://registry.npmjs.org/@types/screeps/-/screeps-2.3.0.tgz"
-  integrity sha512-E6W/3ElnUMmM8noQMSx8yo+OGA4z0ALvE6r2MjzptUTBVjq9jl5AhJh8uHaP6vgQ2fhTBwFxFET2YVKnqh85Yg==
+"@types/screeps@^3.2.2":
+  version "3.2.2"
+  resolved "https://registry.yarnpkg.com/@types/screeps/-/screeps-3.2.2.tgz#d7a4cccac98e063f37dd16c546be229bfc849536"
+  integrity sha512-oI3zKXVL1HDkZ/x0xUhjD9CfAXmQPe/1kNkyKg5Wtd092/N5E5fYbNSH+Hgd5v6LEizYCLo+4drozp82j4Z9zw==
 
 "@types/stack-utils@^2.0.0":
   version "2.0.0"

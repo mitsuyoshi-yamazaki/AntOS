@@ -414,73 +414,73 @@ function buyOrders(resource_type: ResourceConstant, price: number): Order[] {
   return Game.buyOrders(resource_type, price)
 }
 
-// -- Buy
-function buyResource(opt: TradeResourceOptions, credit_amount: number): void {
-  if (credit_amount < 380000) {
-    const message = `main.tradeResource lack of credit ${credit_amount}`
-    // console.log(message)
-    // Game.notify(message)
-    return
-  }
+// // -- Buy
+// function buyResource(opt: TradeResourceOptions, credit_amount: number): void {
+//   if (credit_amount < 380000) {
+//     const message = `main.tradeResource lack of credit ${credit_amount}`
+//     // console.log(message)
+//     // Game.notify(message)
+//     return
+//   }
 
-  const orders = sellOrders(opt.resource_type, opt.price)
-  const order = orders[0]
+//   const orders = sellOrders(opt.resource_type, opt.price)
+//   const order = orders[0]
 
-  // console.log(`${opt.resource_type} sellOrders ${orders.map(o=>[o.price, o.amount])}`)
+//   // console.log(`${opt.resource_type} sellOrders ${orders.map(o=>[o.price, o.amount])}`)
 
-  if (order) {
-    const trader: Room | undefined = buyerRoom(opt.rooms, order.amount)
-    let message: string
+//   if (order) {
+//     const trader: Room | undefined = buyerRoom(opt.rooms, order.amount)
+//     let message: string
 
-    if (trader && trader.terminal) {
-      const buy_amount = Math.min(order.amount, 20000)
+//     if (trader && trader.terminal) {
+//       const buy_amount = Math.min(order.amount, 20000)
 
-      // const trade_result = "simulate"
-      const trade_result = Game.market.deal(order.id, buy_amount, trader.name)
-      message = `BUY ${opt.resource_type}: ${trade_result}, [${order.price} * ${buy_amount} (-${order.price * buy_amount})] ${trader.name} orders: ${orders.map(o=>`\n${o.price} * ${o.amount}`)}`
+//       // const trade_result = "simulate"
+//       const trade_result = Game.market.deal(order.id, buy_amount, trader.name)
+//       message = `BUY ${opt.resource_type}: ${trade_result}, [${order.price} * ${buy_amount} (-${order.price * buy_amount})] ${trader.name} orders: ${orders.map(o=>`\n${o.price} * ${o.amount}`)}`
 
-      const index = opt.rooms.indexOf(trader)
+//       const index = opt.rooms.indexOf(trader)
 
-      if (index >= 0) {
-        opt.rooms.splice(index, 1)
-      }
+//       if (index >= 0) {
+//         opt.rooms.splice(index, 1)
+//       }
 
-      console.log(message)
-      // Game.notify(message)
-    }
-    else {
-      message = `[NO Trader] BUY ${opt.resource_type}, ${order.id} ${order.price} * ${order.amount} orders: ${orders.map(o=>`\n${o.price} * ${o.amount}`)}`
-      console.log(message)
-      // Game.notify(message)
-    }
-  }
-  else {
-    // console.log(`No ${opt.resource_type} sell orders (${opt.price})`)
-  }
-}
+//       console.log(message)
+//       // Game.notify(message)
+//     }
+//     else {
+//       message = `[NO Trader] BUY ${opt.resource_type}, ${order.id} ${order.price} * ${order.amount} orders: ${orders.map(o=>`\n${o.price} * ${o.amount}`)}`
+//       console.log(message)
+//       // Game.notify(message)
+//     }
+//   }
+//   else {
+//     // console.log(`No ${opt.resource_type} sell orders (${opt.price})`)
+//   }
+// }
 
-function buyerRoom(rooms: Room[], order_amount: number): Room | undefined {
-  return rooms.filter((room) => {
-    if (!room || !room.terminal || !room.storage) {
-      return false
-    }
+// function buyerRoom(rooms: Room[], order_amount: number): Room | undefined {
+//   return rooms.filter((room) => {
+//     if (!room || !room.terminal || !room.storage) {
+//       return false
+//     }
 
-    const storage_amount = _.sum(room.storage.store)
-    if (storage_amount > (room.storage.storeCapacity * 0.8)) {
-      return false
-    }
+//     const storage_amount = _.sum(room.storage.store)
+//     if (storage_amount > (room.storage.storeCapacity * 0.8)) {
+//       return false
+//     }
 
-    if (room.terminal.cooldown > 0) {
-      return false
-    }
+//     if (room.terminal.cooldown > 0) {
+//       return false
+//     }
 
-    const terminal_amount = _.sum(room.terminal.store)
-    if ((terminal_amount + order_amount) < (room.terminal.storeCapacity * 0.9)) {
-      return true
-    }
-    return false
-  })[0]
-}
+//     const terminal_amount = _.sum(room.terminal.store)
+//     if ((terminal_amount + order_amount) < (room.terminal.storeCapacity * 0.9)) {
+//       return true
+//     }
+//     return false
+//   })[0]
+// }
 
 
 function sellOrders(resource_type: ResourceConstant, price: number): Order[] {

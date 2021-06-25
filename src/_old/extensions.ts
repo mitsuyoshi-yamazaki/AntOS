@@ -92,6 +92,9 @@ declare global {
     last_tick: number
     os: OSMemory
 
+    lastLOANtime: number | undefined
+    LOANalliance: string | undefined
+
     empires: {[name: string]: EmpireMemory}
     squads: {[index: string]: SquadMemory}
     sectors: {[name: string]: SectorMemory}
@@ -219,8 +222,8 @@ export function tick(): void {
       return
     }
 
-    const t = !room.terminal ? 'none' : `${Math.ceil(_.sum(room.terminal.store) / 1000)}k`
-    const s = !room.storage ? 'none' : `${Math.ceil(_.sum(room.storage.store) / 1000)}k`
+    const t = !room.terminal ? 'none' : `${Math.ceil(room.terminal.store.getUsedCapacity() / 1000)}k`
+    const s = !room.storage ? 'none' : `${Math.ceil(room.storage.store.getUsedCapacity() / 1000)}k`
 
     console.log(`Resources in ${room_link(room_name)}, t: ${t}, s: ${s}`)
 
@@ -289,7 +292,7 @@ export function tick(): void {
     threshold = threshold || 5000
 
     const target_room = Game.rooms[room_name]
-    if (!target_room || !target_room.terminal || !target_room.terminal.my || (_.sum(target_room.terminal.store) > (target_room.terminal.storeCapacity * 0.8))) {
+    if (!target_room || !target_room.terminal || !target_room.terminal.my || (target_room.terminal.store.getUsedCapacity() > (target_room.terminal.store.getCapacity() * 0.8))) {
       console.log(`Game.collect_resources failed: ${room_name} not found`)
       return
     }
@@ -502,7 +505,7 @@ export function tick(): void {
       let terminal_amount_text: string
 
       if (room.terminal) {
-        const terminal_amount = Math.round((_.sum(room.terminal.store) / room.terminal.storeCapacity) * 100)
+        const terminal_amount = Math.round((room.terminal.store.getUsedCapacity() / room.terminal.storeCapacity) * 100)
         let terminal_amount_level: 'info' | 'warn' | 'critical' = info
 
         if (terminal_amount > 90) {
@@ -521,7 +524,7 @@ export function tick(): void {
       let storage_amount_text: string
 
       if (room.storage) {
-        const storage_amount = Math.round((_.sum(room.storage.store) / room.storage.storeCapacity) * 100)
+        const storage_amount = Math.round((room.storage.store.getUsedCapacity() / room.storage.storeCapacity) * 100)
         let storage_amount_level: 'info' | 'warn' | 'critical' = info
 
         if (storage_amount > 90) {
@@ -1282,8 +1285,8 @@ export function tick(): void {
         return false
       }
 
-      const terminal_empty = _.sum(room.terminal.store) < (room.terminal.storeCapacity * 0.8)
-      const storage_empty = _.sum(room.storage.store) < (room.storage.storeCapacity * 0.8)
+      const terminal_empty = room.terminal.store.getUsedCapacity() < (room.terminal.storeCapacity * 0.8)
+      const storage_empty = room.storage.store.getUsedCapacity() < (room.storage.storeCapacity * 0.8)
 
       return terminal_empty && storage_empty
     }).map(room => room.name)
@@ -1314,7 +1317,7 @@ export function tick(): void {
         return
       }
 
-      const full_storage = _.sum(room.storage.store) > (room.storage.storeCapacity * 0.9)
+      const full_storage = room.storage.store.getUsedCapacity() > (room.storage.storeCapacity * 0.9)
       if (!full_storage) {
         return
       }
@@ -1403,7 +1406,7 @@ export function tick(): void {
       return
     }
 
-    if (_.sum(storage.store) < (storage.storeCapacity * 0.9)) {
+    if (storage.store.getUsedCapacity() < (storage.storeCapacity * 0.9)) {
       if (show_logs) {
         console.log(`Not needed`)
       }

@@ -101,7 +101,7 @@ export class NukerChargerSquad extends Squad {
     }
 
     this.creeps.forEach((creep) => {
-      const carry = _.sum(creep.carry)
+      const carry = creep.store.getUsedCapacity()
 
       if (carry > 0) {
         if (creep.carry.energy > 0) {

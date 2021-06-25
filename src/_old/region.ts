@@ -752,7 +752,6 @@ export class Region {
                 break
               }
 
-              const link = Game.getObjectById(this.destination_link_id) as StructureLink | undefined
               const support_links: StructureLink[] = this.support_link_ids.map((id) => {
                 return Game.getObjectById(id) as StructureLink | undefined
               }).filter((l) => {
@@ -772,7 +771,13 @@ export class Region {
                 })
               }
 
-              const squad = new ChargerSquad(squad_memory.name, this.room, link, support_links, charger_position, opts)
+              const getLink = (): StructureLink | undefined => {
+                if (this.destination_link_id == null) {
+                  return undefined
+                }
+                return Game.getObjectById(this.destination_link_id) as StructureLink | undefined
+              }
+              const squad = new ChargerSquad(squad_memory.name, this.room, getLink(), support_links, charger_position, opts)
 
               this.squads.set(squad.name, squad)
             }
@@ -1402,25 +1407,25 @@ export class Region {
 
         const capacity = (resource_type == RESOURCE_ENERGY) ? 40000 : 10000
 
-        if (to_room && (!to_room.terminal || ((_.sum(to_room.terminal.store) > (to_room.terminal.storeCapacity - capacity))))) {
-          const message = `Terminal ${to_room.name} is full ${this.room.name} ${resource_type}`
-          // console.log(message)
+        // if (to_room && (!to_room.terminal || ((_.sum(to_room.terminal.store) > (to_room.terminal.storeCapacity - capacity))))) {
+        //   const message = `Terminal ${to_room.name} is full ${this.room.name} ${resource_type}`
+        //   // console.log(message)
 
-          if (resource_type != RESOURCE_ENERGY) {
-            // Game.notify(message)
-          }
-          continue  // Could be space for non-energy resources
-        }
+        //   if (resource_type != RESOURCE_ENERGY) {
+        //     // Game.notify(message)
+        //   }
+        //   continue  // Could be space for non-energy resources
+        // }
 
-        if (to_room && (!to_room.storage || ((_.sum(to_room.storage.store) > (to_room.storage.storeCapacity - (capacity * 3)))))) {
-          const message = `Storage ${to_room.name} is full ${this.room.name} ${resource_type}`
-          // console.log(message)
+        // if (to_room && (!to_room.storage || ((_.sum(to_room.storage.store) > (to_room.storage.storeCapacity - (capacity * 3)))))) {
+        //   const message = `Storage ${to_room.name} is full ${this.room.name} ${resource_type}`
+        //   // console.log(message)
 
-          if (resource_type != RESOURCE_ENERGY) {
-            // Game.notify(message)
-          }
-          continue  // Could be space for non-energy resources
-        }
+        //   if (resource_type != RESOURCE_ENERGY) {
+        //     // Game.notify(message)
+        //   }
+        //   continue  // Could be space for non-energy resources
+        // }
 
         const is_raw_resource = (raw_resources.indexOf(resource_type) >= 0)
         let amount_needed = is_raw_resource ? 5000 : 1000
@@ -1474,7 +1479,7 @@ export class Region {
         return
       }
 
-      const capacity = receiver_room.terminal.storeCapacity - _.sum(receiver_room.terminal.store) - 10000
+      const capacity = receiver_room.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - 10000
 
       for (const resource_type of Object.keys(terminal.store)) {
         if (excludes && (excludes.indexOf(resource_type) >= 0)) {

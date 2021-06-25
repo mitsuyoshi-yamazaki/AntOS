@@ -135,7 +135,10 @@ export class RemoteHarvesterSquad extends Squad {
       const target = Game.getObjectById(id) as Source | Mineral | undefined
 
       if (squad_memory.sources[id] && squad_memory.sources[id].container_id) {
-        container = Game.getObjectById(squad_memory.sources[id].container_id) as StructureContainer | undefined
+        const container_id = squad_memory.sources[id].container_id
+        if (container_id) {
+          container = Game.getObjectById(container_id) as StructureContainer | undefined
+        }
       }
 
       if (container) {
@@ -896,7 +899,7 @@ export class RemoteHarvesterSquad extends Squad {
           this.construction_sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES, {filter: construction_site_filter})
         }
 
-        let construction_site: ConstructionSite | undefined
+        let construction_site: ConstructionSite | null = null
         if (this.construction_sites && (this.construction_sites.length > 0)) {
           construction_site = creep.pos.findClosestByPath(this.construction_sites)
         }
@@ -987,7 +990,7 @@ export class RemoteHarvesterSquad extends Squad {
 
       if ((creep.room.name == this.room_name) && (this.room_name != 'W49S6')) {
         if ((this.escapeFromHostileIfNeeded(creep, this.room_name, this.keeper_lairs) == ActionResult.IN_PROGRESS)) {
-          if (_.sum(creep.carry) > 0) {
+          if (creep.store.getUsedCapacity() > 0) {
             creep.memory.status = CreepStatus.CHARGE
           }
           return
@@ -999,7 +1002,7 @@ export class RemoteHarvesterSquad extends Squad {
         return
       }
 
-      const carry = _.sum(creep.carry)
+      const carry = creep.store.getUsedCapacity()
       const move_to_ops: MoveToOpts = {
         maxRooms: 3,
         maxOps: 1000,
@@ -1031,7 +1034,7 @@ export class RemoteHarvesterSquad extends Squad {
         if (creep.memory.withdraw_resources_target) {
           tombstone = Game.getObjectById(creep.memory.withdraw_resources_target) as Tombstone | undefined
 
-          if (!tombstone || (_.sum(tombstone.store) == 0)) {
+          if (!tombstone || (tombstone.store.getUsedCapacity() == 0)) {
             creep.memory.withdraw_resources_target = undefined
           }
           else {
@@ -1237,7 +1240,7 @@ export class RemoteHarvesterSquad extends Squad {
             if ((creep.carry.energy == 0) && (carry > 0)) {
               const container: StructureContainer | undefined = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: (structure) => {
-                  return (structure.structureType == STRUCTURE_CONTAINER) && (_.sum(structure.store) < structure.storeCapacity)
+                  return (structure.structureType == STRUCTURE_CONTAINER) && structure.store.getFreeCapacity() > 0
                 }
               }) as StructureContainer | undefined
 

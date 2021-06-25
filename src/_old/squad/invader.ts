@@ -662,7 +662,7 @@ export class InvaderSquad extends Squad {
   }
 
   private runChargerCreep(creep: Creep, target_info: BoostInfo, terminal: StructureTerminal): void {
-    const carry = _.sum(creep.carry)
+    const carry = creep.store.getUsedCapacity()
 
     if ((creep.ticksToLive || 0) < 15) {
       if (carry <= 0) {

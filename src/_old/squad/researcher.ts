@@ -186,7 +186,7 @@ export class ResearcherSquad extends Squad {
 
   private chargeLabs(creep: Creep) {
     if (!creep.room.terminal) {
-      if ((_.sum(creep.carry) > 0) && creep.room.storage) {
+      if ((creep.store.getUsedCapacity() > 0) && creep.room.storage) {
         creep.transferResources(creep.room.storage)
       }
       return
@@ -379,7 +379,7 @@ export class ResearcherSquad extends Squad {
           return
         }
 
-        if (_.sum(creep.carry) == creep.carryCapacity) {
+        if (creep.store.getFreeCapacity() === 0) {
           creep.memory.status = CreepStatus.HARVEST
         }
 
@@ -414,7 +414,7 @@ export class ResearcherSquad extends Squad {
   }
 
   private retrieveFromLabs(creep: Creep): void {
-    if (_.sum(creep.carry) > 0) {
+    if (creep.store.getUsedCapacity() > 0) {
       if (creep.moveToRoom(this.room_name) == ActionResult.IN_PROGRESS) {
         return
       }

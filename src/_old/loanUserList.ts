@@ -24,7 +24,7 @@ export function populateLOANlist(LOANuser = "LeagueOfAutomatedNations", LOANsegm
                 let LOANdataKeys = Object.keys(LOANdata);
                 let allMyRooms = _.filter(Game.rooms, (aRoom) => (typeof aRoom.controller != "undefined") && aRoom.controller.my);
                 const anyRoom = allMyRooms[0]
-                if (!anyRoom || !anyRoom.controller) {
+                if (!anyRoom || !anyRoom.controller || !anyRoom.controller.owner) {
                     Game.LOANlist = [];
                     Memory.LOANalliance = "";
                     return false;

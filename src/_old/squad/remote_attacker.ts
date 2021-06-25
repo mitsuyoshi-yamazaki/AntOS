@@ -319,7 +319,7 @@ export class RemoteAttackerSquad extends Squad {
     const creep = this.carrier
     const terminal = this.base_room.terminal
 
-    let lack_of_resource: ResourceConstant | undefined
+    let lack_of_resource: ResourceConstant | null = null
 
     Array.from(this.boost_labs.keys()).forEach((resource_type) => {
       if (lack_of_resource) {
@@ -350,7 +350,7 @@ export class RemoteAttackerSquad extends Squad {
       return
     }
 
-    const carry = _.sum(creep.carry)
+    const carry = creep.store.getUsedCapacity()
 
     if (carry > 0) {
       const transfer_result = creep.transfer(lab, lack_of_resource)
