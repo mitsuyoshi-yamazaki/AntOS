@@ -65,7 +65,7 @@ export class BootstrapL8RoomObjective implements Objective {
       this.addBuildFirstSpawnObjective()
       return new ObjectiveInProgress("Launched BuildFirstSpawnObjective")
     }
-    const progress = objective.progress(controller, this.parentRoomName)
+    const progress = objective.progress(controller.room, this.parentRoomName)
     switch (progress.objectProgressType) {
     case "in progress":
       return new ObjectiveInProgress(progress.value)

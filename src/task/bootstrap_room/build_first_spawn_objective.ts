@@ -1,4 +1,6 @@
-import { decodeObjectivesFrom, Objective, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "task/objective"
+import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "task/objective"
+import { roomLink } from "utility/log"
 
 type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
@@ -11,6 +13,8 @@ export interface BuildFirstSpawnObjectiveState extends ObjectiveState {
 }
 
 export class BuildFirstSpawnObjective implements Objective {
+  private creepIdentifierIndex = 0
+
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
@@ -34,7 +38,111 @@ export class BuildFirstSpawnObjective implements Objective {
     return new BuildFirstSpawnObjective(state.s, children, state.cr.w)
   }
 
-  public progress(targetController: StructureController, parentRoomName: string): BuildFirstSpawnObjectiveProgressType {
+  public progress(targetRoom: Room, parentRoomName: string): BuildFirstSpawnObjectiveProgressType {
+    const inProgressMessages: string[] =this.checkChildrenProgress()
+
+    const spawnConstructionSite = (targetRoom.construction_sites ?? [])[0]
+    if (spawnConstructionSite == null) {
+      return new ObjectiveFailed(`No spawn construction site in ${roomLink(targetRoom.name)}`)
+    }
+    if (spawnConstructionSite.structureType !== STRUCTURE_SPAWN) {
+      return new ObjectiveFailed(`Construction site ${spawnConstructionSite.id} is not a spawn`)
+    }
+
+    const creepProviders: SingleCreepProviderObjective[] = this.children.filter(child => child instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
+    const numberOfWorkers = this.workerIds.length + creepProviders.length
+
+    if (numberOfWorkers < 3) {
+      const creepIdentifier = this.createCreepIdentifier()
+      this.addWorker(creepIdentifier, parentRoomName)
+      inProgressMessages.push(`Add worker with identifier ${creepIdentifier}`)
+    }
+
+    const workers: Creep[] = []
+    this.workerIds.forEach(workerId => {
+      const creep = Game.getObjectById(workerId)
+      if (creep instanceof Creep) {
+        workers.push(creep)
+      }
+    })
+    workers.forEach(creep => {
+      this.runWorker(creep, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>, targetRoom)
+    })
+    if (workers.length > 0) {
+      inProgressMessages.push(`${workers.length} working`)
+    }
+
+    if (inProgressMessages.length > 0) {
+      return new ObjectiveInProgress(inProgressMessages.join("\n"))
+    }
     return new ObjectiveInProgress("not implemented yet")
+  }
+
+  // ---- Run worker ---- //
+  private runWorker(creep: Creep, constructionSite: ConstructionSite<STRUCTURE_SPAWN>, targetRoom: Room): void {
+    if (creep.room.name !== targetRoom.name) {
+      creep.moveToRoom(targetRoom.name)
+      return
+    }
+
+
+
+    // creep.room.sources
+  }
+
+  // ---- Add creeps ---- //
+  private addWorker(creepIdentifier: string, parentRoomName: string): void {
+    const args = {
+      spawnRoomName: parentRoomName,
+      requestingCreepBodyParts: [
+        WORK, WORK, CARRY, CARRY, MOVE,
+        WORK, WORK, CARRY, CARRY, MOVE,
+      ],
+    }
+    const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)
+    this.children.push(objective)
+  }
+
+  private createCreepIdentifier(): string {
+    const identifier = `melon_parfait_${Game.time}_${this.creepIdentifierIndex}`
+    this.creepIdentifierIndex += 1
+    return identifier
+  }
+
+  private checkChildrenProgress(): string[] {
+    const progressMessages: string[] = []
+    this.children.forEach(child => {
+      if (child instanceof SingleCreepProviderObjective) {
+        const progress = this.checkCreepProviderProgress(child)
+        if (progress != null) {
+          progressMessages.push(progress)
+        }
+        return
+      }
+    })
+    return progressMessages
+  }
+
+  private checkCreepProviderProgress(objective: SingleCreepProviderObjective): string | null {
+    const progress = objective.progress()
+    switch (progress.objectProgressType) {
+    case "in progress":
+      return null
+    case "succeeded":
+      this.removeChildObjective(objective)
+      this.workerIds.push(progress.result.id)
+      return `Worker ${progress.result.id} received.`
+    case "failed":
+      this.removeChildObjective(objective)
+      return progress.reason
+    }
+
+  }
+
+  private removeChildObjective(objective: Objective): void {
+    const index = this.children.indexOf(objective)
+    if (index) {
+      this.children.splice(index, 1)
+    }
   }
 }
