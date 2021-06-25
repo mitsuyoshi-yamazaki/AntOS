@@ -1,9 +1,10 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "task/objective"
 import { roomLink } from "utility/log"
 import { CreepStatus } from "_old/creep"
 
-const maxNumberOfWorkers = 5
+const maxNumberOfWorkers = 8
 
 type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
@@ -21,7 +22,7 @@ export class BuildFirstSpawnObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    public readonly workerIds: string[],
+    private workerIds: string[],
   ) {
   }
 
@@ -62,18 +63,22 @@ export class BuildFirstSpawnObjective implements Objective {
     }
 
     const workers: Creep[] = []
+    const aliveWorkerIds: string[] = []
     this.workerIds.forEach(workerId => {
       const creep = Game.getObjectById(workerId)
       if (creep instanceof Creep) {
         workers.push(creep)
+        aliveWorkerIds.push(workerId)
+      } else {
+        inProgressMessages.push(`Worker creep ${workerId} died.`)
       }
     })
+    this.workerIds = aliveWorkerIds
+
     workers.forEach(creep => {
       this.runWorker(creep, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>, targetRoom)
     })
-    if (workers.length > 0) {
-      inProgressMessages.push(`${workers.length} workers running`)
-    }
+    inProgressMessages.push(`${workers.length} workers running, ${creepProviders.length} creeps spawning`)
 
     if (inProgressMessages.length > 0) {
       return new ObjectiveInProgress(inProgressMessages.join("\n"))
@@ -87,33 +92,37 @@ export class BuildFirstSpawnObjective implements Objective {
       creep.moveToRoom(targetRoom.name)
       return
     }
-    const source = targetRoom.sources[0]
-    if (source == null) {
-      console.log(`Unexpectedly missing source in ${roomLink(targetRoom.name)}`)
-      return
-    }
+
+    const build = () => this.build(creep, constructionSite)
+    const harvest = () => this.harvest(creep)
 
     switch (creep.memory.status) {
     case CreepStatus.HARVEST:
       if (creep.carry[RESOURCE_ENERGY] >= creep.carryCapacity) {
         creep.memory.status = CreepStatus.BUILD
+        build()
         break
       }
-      this.harvest(creep, source)
+      harvest()
       break
     case CreepStatus.BUILD:
       if (creep.carry[RESOURCE_ENERGY] <= 0) {
         creep.memory.status = CreepStatus.HARVEST
+        harvest()
         break
       }
-      this.build(creep, constructionSite)
+      build()
       break
     default:
       creep.memory.status = CreepStatus.HARVEST
     }
   }
 
-  private harvest(creep: Creep, source: Source): void {
+  private harvest(creep: Creep): void {
+    const source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
+    if (source == null) {
+      return
+    }
     if (creep.harvest(source) !== OK) {
       creep.moveTo(source, { reusePath: 15 })
     }

@@ -203,6 +203,7 @@ export class Region {
         rooms_need_scout = []//['W51S21']
         this.destination_link_id = '5b1f028bb08a2b269fba0f6e'
         charger_position = {x: 24, y: 21}
+        rooms_need_to_be_defended = ['W52S28']
         break
 
       case 'W44S7':

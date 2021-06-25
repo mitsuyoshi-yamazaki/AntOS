@@ -1,7 +1,16 @@
-/* eslint-disable */
-
 import { roomLink } from "utility/log"
+import { generateUniqueId } from "utility/unique_id"
 
+export function room_link(room_name: string, opts?: { text?: string, color?: string }): string {
+  return roomLink(room_name, opts)
+}
+
+export function UID(seed: string): string {
+  return generateUniqueId(seed)
+}
+
+// ---- Old code ---- //
+/* eslint-disable */
 export function log(obj: any): void {
   console.log(obj)  // tslint:disable-line: no-console
 }
@@ -43,18 +52,8 @@ export function leveled_colored_text(text: string, level: ColorLevel): string {
   return `<span style='color:${color}'>${text}</span>`
 }
 
-let index = 0
-export function UID(seed: string): string {
-  index += 1
-  return `${seed}${Game.time}${index}`
-}
-
 export interface StructureFilter {
   (structure: AnyStructure): boolean
-}
-
-export function room_link(room_name: string, opts?: {text?: string, color?: string}): string {
-  return roomLink(room_name, opts)
 }
 
 export function room_history_link(room_name: string, ticks: number, opts?: {text?: string, color?: string}): string {

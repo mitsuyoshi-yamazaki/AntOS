@@ -1,3 +1,4 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
 import { roomLink } from "utility/log"
 import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
@@ -38,24 +39,37 @@ export class BootstrapL8RoomObjective implements Objective {
   }
 
   public progress(): BootstrapL8RoomObjectiveProgressType {
-    const room = Game.rooms[this.targetRoomName]
-    if (room == null) {
-      return new ObjectiveFailed(`${this.constructor.name} only works while target room is visible (target room: ${roomLink(this.targetRoomName)})`)
-    }
-    if (room.controller == null) {
-      return new ObjectiveFailed(`Target room ${roomLink(this.targetRoomName)} has no controller`)
-    }
-    if (room.controller.my !== true) {
-      return this.claimTargetRoom()
-    }
-    if (room.controller.level >= 8) {
-      return new ObjectiveSucceeded(room.controller)
-    }
-    if (room.spawns.length <= 0) {
-      return this.buildFirstSpawn(room.controller)
-    }
+    let progress: BootstrapL8RoomObjectiveProgressType | null = null
+    ErrorMapper.wrapLoop(() => {
+      const room = Game.rooms[this.targetRoomName]
+      if (room == null) {
+        progress = new ObjectiveFailed(`${this.constructor.name} only works while target room is visible (target room: ${roomLink(this.targetRoomName)})`)
+        return
+      }
+      if (room.controller == null) {
+        progress = new ObjectiveFailed(`Target room ${roomLink(this.targetRoomName)} has no controller`)
+        return
+      }
+      if (room.controller.my !== true) {
+        progress = this.claimTargetRoom()
+        return
+      }
+      if (room.controller.level >= 8) {
+        progress = new ObjectiveSucceeded(room.controller)
+        return
+      }
+      if (room.spawns.length <= 0) {
+        progress = this.buildFirstSpawn(room.controller)
+        return
+      }
 
-    return new ObjectiveInProgress("not implemented yet") // TODO:
+      progress = new ObjectiveInProgress("not implemented yet") // TODO:
+    }, "BootstrapL8RoomObjective.progress()")()
+
+    if (progress != null) {
+      return progress
+    }
+    return new ObjectiveFailed("Program bug")
   }
 
   // ---- Build first spawn ---- //
