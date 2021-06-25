@@ -3,6 +3,8 @@ import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, 
 import { roomLink } from "utility/log"
 import { CreepStatus } from "_old/creep"
 
+const maxNumberOfWorkers = 5
+
 type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
 export interface BuildFirstSpawnObjectiveState extends ObjectiveState {
@@ -53,7 +55,7 @@ export class BuildFirstSpawnObjective implements Objective {
     const creepProviders: SingleCreepProviderObjective[] = this.children.filter(child => child instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
     const numberOfWorkers = this.workerIds.length + creepProviders.length
 
-    if (numberOfWorkers < 3) {
+    if (numberOfWorkers < maxNumberOfWorkers) {
       const creepIdentifier = this.createCreepIdentifier()
       this.addWorker(creepIdentifier, parentRoomName)
       inProgressMessages.push(`Add worker with identifier ${creepIdentifier}`)
