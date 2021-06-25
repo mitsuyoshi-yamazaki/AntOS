@@ -36,19 +36,14 @@ export interface OSMemory {
 export class OperatingSystem {
   static readonly os = new OperatingSystem()
 
+  private didSetup = false
   private processIndex = 0
   private readonly rootProcess = new RootProcess()
   private readonly processes = new Map<ProcessId, InternalProcessInfo>()
   private readonly processIdsToKill: ProcessId[] = []
 
   private constructor() {
-    ErrorMapper.wrapLoop(() => {
-      this.setupMemory()
-    }, "OperatingSystem.setupMemory()")()
-
-    ErrorMapper.wrapLoop(() => {
-      this.restoreProcesses()
-    }, "OperatingSystem.restoreProcesses()")()
+    // !!!! 起動処理がOSアクセスを行う場合があるためsetup()内部で実行すること !!!! //
   }
 
   // ---- Process ---- //
@@ -130,10 +125,25 @@ export class OperatingSystem {
   }
 
   // ---- Run ---- //
-  public run(): void {
+  private setup(): void {
     ErrorMapper.wrapLoop(() => {
       this.setupMemory()
     }, "OperatingSystem.setupMemory()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.restoreProcesses()
+    }, "OperatingSystem.restoreProcesses()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.rootProcess.setup()
+    }, "OperatingSystem.rootProcess.setup()")()
+  }
+
+  public run(): void {
+    if (this.didSetup !== true) {
+      this.setup()
+      this.didSetup = true
+    }
 
     ErrorMapper.wrapLoop(() => {
       this.rootProcess.run()
