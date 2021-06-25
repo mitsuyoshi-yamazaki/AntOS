@@ -118,14 +118,24 @@ export class ClaimRoomObjective implements Objective {
 
   private requestClaimerCreep(): ClaimRoomObjectiveProgressType {
     if (this.creepProvider != null) {
+      const removeCreepProvider = (provider: SingleCreepProviderObjective) => {
+        const index = this.children.indexOf(provider)
+        if (index) {
+          this.children.splice(index, 1)
+        }
+        this.creepProvider = null
+      }
+
       const progress = this.creepProvider.progress()
       switch (progress.objectProgressType) {
       case "in progress":
         return new ObjectiveInProgress("Requesting claimer creep")
       case "succeeded":
+        removeCreepProvider(this.creepProvider)
         this.claimerCreepId = progress.result.id
         return new ObjectiveInProgress("Fetched claimer creep")
       case "failed":
+        removeCreepProvider(this.creepProvider)
         return new ObjectiveFailed(progress.reason)
       }
     }
