@@ -89,9 +89,7 @@ export function tick(): void {
 
     this.resourceful_tombstones = this.find(FIND_TOMBSTONES, {
       filter: (tombstone: Tombstone) => {
-        const sum = _.sum(tombstone.store)
-        const mineral_amount = sum - tombstone.store.energy
-        return mineral_amount > 0
+        return (tombstone.store.getUsedCapacity() - tombstone.store.energy) > 0
       }
     })
 
@@ -112,13 +110,13 @@ export function tick(): void {
         // if (!structure.isActive()) { // consumes too much CPU
         //   return
         // }
-        let structure_list: AnyOwnedStructure[] | null = this.owned_structures.get(structure.structureType)
+        let structure_list: AnyOwnedStructure[] | undefined = this.owned_structures?.get(structure.structureType)
         if (!structure_list) {
           structure_list = []
         }
 
         structure_list.push(structure)
-        this.owned_structures.set(structure.structureType, structure_list)
+        this.owned_structures?.set(structure.structureType, structure_list)
       })
     }
 
@@ -511,11 +509,11 @@ export function tick(): void {
     cost_matrix.add_terrain(room)
     cost_matrix.add_normal_structures(room, {ignore_public_ramparts: true})
 
-    const costCallback = (room_name: string): boolean | CostMatrix => {
+    const costCallback = (room_name: string): void | CostMatrix => {
       if ((room.name == room_name)) {
         return cost_matrix
       }
-      return false
+      return undefined
     }
 
     const pathfinder_opts: FindPathOpts = {

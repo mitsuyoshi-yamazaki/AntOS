@@ -22,7 +22,13 @@ export class RemoteMineralHarvesterSquad extends Squad {
     const squad_memory = Memory.squads[this.name] as RemoteMineralHarvesterSquadMemory
 
     this.mineral = Game.getObjectById(squad_memory.mineral_id) as Mineral | undefined
-    this.keeper_lair = Game.getObjectById(squad_memory.keeper_lair_id) as StructureKeeperLair | undefined
+    const get_keeper_lair = () => {
+      if (squad_memory.keeper_lair_id == null) {
+        return undefined
+      }
+      return Game.getObjectById(squad_memory.keeper_lair_id) as StructureKeeperLair | undefined
+    }
+    this.keeper_lair = get_keeper_lair()
     this.room_name = squad_memory.room_name
 
     if (!this.room_name) {
@@ -216,11 +222,11 @@ export class RemoteMineralHarvesterSquad extends Squad {
         return
       }
 
-      const carry = _.sum(creep.carry)
+      const carry = creep.store.getUsedCapacity()
 
       if (creep.room.name == this.room_name) {
         if (this.escapeFromHostileIfNeeded(creep, this.room_name, keeper_lairs) == ActionResult.IN_PROGRESS) {
-          if (_.sum(creep.carry) > 0) {
+          if (carry > 0) {
             creep.memory.status = CreepStatus.CHARGE
           }
           return

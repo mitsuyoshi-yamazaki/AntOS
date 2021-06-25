@@ -88,7 +88,7 @@ export class ManualSquad extends Squad {
           if (!target_room) {
             return SpawnPriority.NONE
           }
-          if (!target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+          if (!target_room.terminal || (target_room.terminal.store.getUsedCapacity() == 0)) {
             return SpawnPriority.NONE
           }
 
@@ -141,7 +141,7 @@ export class ManualSquad extends Squad {
       case 'W45S3': {
         const target_room_name = 'W44S3'
         const target_room = Game.rooms[target_room_name]
-        if (!target_room || !target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+        if (!target_room || !target_room.terminal || (target_room.terminal.store.getUsedCapacity() == 0)) {
           return SpawnPriority.NONE
         }
 
@@ -175,7 +175,7 @@ export class ManualSquad extends Squad {
         if (!target_room) {
           return SpawnPriority.NONE
         }
-        if (!target_room.terminal || (_.sum(target_room.terminal.store) == 0)) {
+        if (!target_room.terminal || (target_room.terminal.store.getUsedCapacity() == 0)) {
           return SpawnPriority.NONE
         }
 
@@ -729,7 +729,7 @@ export class ManualSquad extends Squad {
       }
       creep.memory.let_thy_die = false
 
-      const carry = _.sum(creep.carry)
+      const carry = creep.store.getUsedCapacity()
 
       if (carry == 0) {
         if (creep.pos.roomName == this.base_room.name) {
@@ -826,7 +826,7 @@ export class ManualSquad extends Squad {
         return
       }
 
-      const carry = _.sum(creep.carry)
+      const carry = creep.store.getUsedCapacity()
 
       if ((creep.room.name != room_name) && (carry < creep.carryCapacity)) {
         const dropped_energy = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, {
@@ -881,13 +881,13 @@ export class ManualSquad extends Squad {
             if (target_room.storage && steal_energy && (target_room.storage.store.energy > 0)) {
               target = target_room.storage
             }
-            else if (target_room.storage && !steal_energy && (_.sum(target_room.storage.store) > 0)) {
+            else if (target_room.storage && !steal_energy && (target_room.storage.store.getUsedCapacity() > 0)) {
               target = target_room.storage
             }
             else if (target_room.terminal && steal_energy && (target_room.terminal.store.energy > 0)) {
               target = target_room.terminal
             }
-            else if (target_room.terminal && !steal_energy && (_.sum(target_room.terminal.store) > 0)) {
+            else if (target_room.terminal && !steal_energy && (target_room.terminal.store.getUsedCapacity() > 0)) {
               target = target_room.terminal
             }
             else {

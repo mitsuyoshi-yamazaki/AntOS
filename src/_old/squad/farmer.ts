@@ -774,8 +774,7 @@ export class FarmerSquad extends Squad {
         this.spawn.renewCreep(creep)
       }
 
-      const carry = _.sum(creep.carry)
-
+      const carry = creep.store.getUsedCapacity()
       if (carry == 0) {
         const drop = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
 
@@ -784,7 +783,7 @@ export class FarmerSquad extends Squad {
           return
         }
 
-        if ((rcl >= 6) && room.terminal && (_.sum(room.terminal.store) > (room.terminal.storeCapacity * 0.9))) {
+        if ((rcl >= 6) && room.terminal && (room.terminal.store.getUsedCapacity() > (room.terminal.store.getCapacity() * 0.9))) {
           creep.withdraw(room.terminal, RESOURCE_ENERGY)
           return
         }
@@ -802,7 +801,7 @@ export class FarmerSquad extends Squad {
         }
 
         if (((Game.time % 229) == 3) && room.terminal && (rcl >= 6) && room.storage) {
-          if ((_.sum(room.storage.store) - room.storage.store.energy) > 0) {
+          if ((room.storage.store.getUsedCapacity() - room.storage.store.energy) > 0) {
             creep.withdrawResources(room.storage, {exclude: ['energy']})
             return
           }
@@ -822,7 +821,7 @@ export class FarmerSquad extends Squad {
         creep.say(`NO ENGY`)
       }
       else {
-        if ((rcl >= 6) && room.terminal && (_.sum(room.terminal.store) >= room.terminal.storeCapacity) && room.storage) {
+        if ((rcl >= 6) && room.terminal && (room.terminal.store.getFreeCapacity() <= 0) && room.storage) {
           creep.transferResources(room.storage)
           return
         }
@@ -876,7 +875,7 @@ export class FarmerSquad extends Squad {
           return
         }
         else {
-          if (room.storage && (_.sum(room.storage.store) < (room.storage.storeCapacity * 0.8))) {
+          if (room.storage && (room.storage.store.getUsedCapacity() < (room.storage.store.getCapacity() * 0.8))) {
             // console.log(`tgt storage`)
 
             creep.transfer(room.storage, RESOURCE_ENERGY)

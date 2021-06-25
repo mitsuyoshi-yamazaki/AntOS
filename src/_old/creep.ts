@@ -418,14 +418,14 @@ export function init() {
     }
 
     if (this.room.is_keeperroom && ((this.room.name != 'W44S6') || ((Game.time % 5) < 2))) {
-      const callback = (room_name: string): boolean | CostMatrix => {
+      const callback = (room_name: string): void | CostMatrix => {
         if ((this.room.name == room_name)) {
           const matrix = this.room.cost_matrix()
           if (matrix) {
             return matrix
           }
         }
-        return false
+        return undefined
       }
 
       opt = {
@@ -989,7 +989,7 @@ export function init() {
     //   console.log(`HOGE ${s}`)
     // }
 
-    return this.pos.findClosestByPath(structures_needed_to_be_charged)
+    return this.pos.findClosestByPath(structures_needed_to_be_charged) ?? undefined
   }
 
   Creep.prototype.transferResources = function(target: StructureContainer | StructureStorage | StructureTerminal, opt?: CreepTransferOption): ScreepsReturnCode {
@@ -1133,7 +1133,7 @@ export function init() {
     const hostile_structures = this.room.find(FIND_HOSTILE_STRUCTURES)
     const towers = hostile_structures.filter(s=>s.structureType == STRUCTURE_TOWER)
 
-    let target: Structure | undefined
+    let target: Structure | null = null
 
     if (towers.length > 0) {
       target = this.pos.findClosestByPath(towers)
@@ -1219,7 +1219,7 @@ export function init() {
       return
     }
 
-    const carry = _.sum(this.carry)
+    const carry = this.store.getUsedCapacity()
     const storage = this.room.storage
 
     // withdraw
@@ -1529,7 +1529,7 @@ export function init() {
       // }
     }
 
-    const carry = _.sum(this.carry)
+    const carry = this.store.getUsedCapacity()
 
     if ((carry > this.carry.energy) && this.room.storage) {
       if (this.pos.isNearTo(this.room.storage)) {
@@ -1686,14 +1686,14 @@ export function init() {
         }
         else {
           const target = this.pos.findClosestByPath(FIND_SOURCES)
-          if (this.pos.isNearTo(target)) {
+          if (target && this.pos.isNearTo(target)) {
             this.harvest(target)
           }
           else {
             if (carry > (this.carryCapacity * 0.7)) {
               this.memory.status = CreepStatus.CHARGE
             }
-            else {
+            else if (target) {
               this.moveTo(target, move_to_opt)
             }
             return
@@ -1816,7 +1816,7 @@ export function init() {
 
       }
       else {
-        let target: ConstructionSite = this.pos.findClosestByRange(this.room.construction_sites)
+        let target = this.pos.findClosestByRange(this.room.construction_sites)
 
         if (target) {
           this.build(target)
@@ -1914,7 +1914,7 @@ export function init() {
     const memory = this.memory as {target_id?: string}
 
     if (this.room.name != room_name) {
-      let hostile_creep: Creep | undefined
+      let hostile_creep: Creep | null
       if (attack_anything) {
         hostile_creep = this.pos.findClosestByPath(this.room.attacker_info().hostile_creeps, {
           filter: (creep: Creep) => {
@@ -1938,7 +1938,7 @@ export function init() {
 
       const hostile_nearby = !(!hostile_creep) && this.pos.inRangeTo(hostile_creep.pos.x, hostile_creep.pos.y, 4)
 
-      if (hostile_nearby) {
+      if (hostile_nearby && hostile_creep) {
         return this.destroy(hostile_creep)
       }
 
@@ -1974,7 +1974,7 @@ export function init() {
 
     const memory = this.memory as {target_id?: string}
 
-    const hostile_attacker: Creep = this.pos.findClosestByPath(this.room.attacker_info().hostile_creeps, {
+    const hostile_attacker: Creep | null = this.pos.findClosestByPath(this.room.attacker_info().hostile_creeps, {
       filter: (creep: Creep) => {
         const is_attacker = creep.body.filter((body: BodyPartDefinition) => {
           return (body.type == ATTACK) || (body.type == RANGED_ATTACK) || (body.type == HEAL)
@@ -1993,7 +1993,7 @@ export function init() {
 
     const hostile_nearby = !(!hostile_attacker) && this.pos.inRangeTo(hostile_attacker.pos.x, hostile_attacker.pos.y, 4)
 
-    if (hostile_nearby) {
+    if (hostile_nearby && hostile_attacker) {
       return this.destroy(hostile_attacker)
     }
 
@@ -2027,12 +2027,12 @@ export function init() {
       return this.destroy(hostile_tower)
     }
 
-    const hostile_spawn: StructureSpawn = this.pos.findClosestByPath(FIND_HOSTILE_SPAWNS)
+    const hostile_spawn: StructureSpawn | null = this.pos.findClosestByPath(FIND_HOSTILE_SPAWNS)
     if (hostile_spawn) {
       return this.destroy(hostile_spawn)
     }
 
-    const hostile_creep: Creep = this.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {  // workers
+    const hostile_creep: Creep | null = this.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {  // workers
       filter: (creep) => {
         if (Game.isEnemy(creep) == false) {
           return false
@@ -2075,7 +2075,7 @@ export function init() {
       STRUCTURE_CONTAINER,
     ]
 
-    const hostile_structure: AnyStructure = this.pos.findClosestByPath(FIND_STRUCTURES, {
+    const hostile_structure: AnyStructure | null = this.pos.findClosestByPath(FIND_STRUCTURES, {
       filter: (structure) => {
         if (structure.room.controller && structure.room.controller.my) {
           return false

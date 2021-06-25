@@ -647,11 +647,11 @@ export class HarvesterSquad extends Squad {
         }
       }
 
-      const carry_amount = _.sum(creep.carry)
+      const carry_amount = creep.store.getUsedCapacity()
 
       if (!creep.room.attacker_info().attacked && (creep.room.resourceful_tombstones.length > 0) && ((carry_amount - creep.carry.energy) < (creep.carryCapacity - 100))) {
         const target = creep.room.resourceful_tombstones[0]
-        const resource_amount = _.sum(target.store) - target.store.energy
+        const resource_amount = target.store.getUsedCapacity() - target.store.energy
         if (resource_amount > 0) {
           const vacancy = creep.carryCapacity - carry_amount
           if (vacancy < resource_amount) {
@@ -688,7 +688,7 @@ export class HarvesterSquad extends Squad {
         else if ((carry_amount > 0) && (this.harvesters.length == 0)) {
           creep.memory.status = CreepStatus.CHARGE
         }
-        else if (creep.room.attacker_info().attacked && (_.sum(creep.carry) > 0) && ((!creep.room.controller || !creep.room.controller.my))) { // If there's no creep in the room, there's no way to know the room is under attack
+        else if (creep.room.attacker_info().attacked && (creep.store.getUsedCapacity() > 0) && ((!creep.room.controller || !creep.room.controller.my))) { // If there's no creep in the room, there's no way to know the room is under attack
           creep.say('RUN')
           creep.moveTo(this.destination)
           creep.memory.status = CreepStatus.CHARGE
@@ -726,7 +726,7 @@ export class HarvesterSquad extends Squad {
       // Charge
       if (creep.memory.status == CreepStatus.CHARGE) {
 
-        const has_mineral = creep.carry.energy != _.sum(creep.carry)
+        const has_mineral = creep.carry.energy != creep.store.getUsedCapacity()
         const destination = (has_mineral && !(!this.destination_storage)) ? this.destination_storage : this.destination
 
         let resource_type: ResourceConstant | undefined
@@ -908,9 +908,7 @@ export function runHarvester(creep: Creep, room_name: string, source: Source | M
       // Does nothing
     }
     else if (resource_type && (store as StructureContainer).store) {
-      const capacity = (store as StructureContainer).storeCapacity
-      const energy_amount = _.sum((store as StructureContainer).store)
-      has_capacity = (energy_amount < capacity)
+      has_capacity = (store as StructureContainer).store.getFreeCapacity() > 0
     }
     else if (store.structureType == STRUCTURE_LINK) {
       const capacity = (store as StructureLink).energyCapacity
