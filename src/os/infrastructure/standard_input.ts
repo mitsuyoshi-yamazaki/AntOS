@@ -16,16 +16,16 @@ export const standardInput = (rawCommand: string): string => {
     return parseResult.value.run()
 
   case "failed":
-    return `Type Game.io("help") to see available commands.\n${parseResult.error}`
+    return `Type Game.io("help") to see available commands.\n${parseResult.reason}`
   }
 }
 
 /**
  * - [ ] "/'で囲われたスペースを許可する
  */
-function parseCommand(rawCommand: string): ResultType<ConsoleCommand> {
-  const invalidCommandDescription = (description: string): ResultFailed => {
-    return new ResultFailed(new Error(`Parsing command failed: ${description} (raw command: "${rawCommand}")`))
+function parseCommand(rawCommand: string): ResultType<ConsoleCommand, string> {
+  const invalidCommandDescription = (description: string): ResultFailed<string> => {
+    return new ResultFailed(`Parsing command failed: ${description} (raw command: "${rawCommand}")`)
   }
 
   const components = rawCommand.split(" ")

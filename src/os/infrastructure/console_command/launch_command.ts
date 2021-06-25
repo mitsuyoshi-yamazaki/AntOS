@@ -1,4 +1,4 @@
-import { Process, ProcessId } from "task/process"
+import { Process } from "task/process"
 import { SignRoomsProcess } from "task/sign_rooms/sign_rooms_process"
 import { TestProcess } from "task/test/test_process"
 import { OperatingSystem } from "os/os"
@@ -42,12 +42,19 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     switch (result.resultType) {
-    case "succeeded":
-      if (this.options.get("-l")) {
+    case "succeeded": {
+      let detail = ""
+      if (this.options.get("-l") != null) {
         const logger = OperatingSystem.os.getLoggerProcess()
-        logger?.didReceiveMessage(`add id ${result.value.processId}`)
+        if (logger) {
+          const loggerResult = logger.didReceiveMessage(`add id ${result.value.processId}`)
+          detail = `, ${loggerResult}`
+        } else {
+          detail = ", missing logger process"
+        }
       }
-      return `Launched ${result.value.constructor.name}, PID: ${result.value.processId}`
+      return `Launched ${result.value.constructor.name}, PID: ${result.value.processId}${detail}`
+    }
     case "failed":
       return result.reason
     }

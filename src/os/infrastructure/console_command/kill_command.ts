@@ -15,7 +15,7 @@ export class KillCommand implements ConsoleCommand {
     case "succeeded":
       return this.killProcess(parseResult.value)
     case "failed":
-      return `${parseResult.error}`
+      return `${parseResult.reason}`
     }
   }
 
@@ -25,7 +25,7 @@ export class KillCommand implements ConsoleCommand {
     case "succeeded":
       return `Process ${result.value} killed, ID: ${processId}`
     case "failed":
-      return `${result.error}`
+      return `${result.reason}`
     }
   }
 }
