@@ -64,7 +64,7 @@ export class BootstrapL8RoomObjective implements Objective {
         progress = this.buildFirstSpawn(room.controller)
         return
       }
-      if (room.controller.level < 3) {
+      if (true) { //(room.controller.level < 3) { // TODO:
         progress = this.upgradeToRCL3(spawn, room, room.controller)
         return
       }

@@ -1,3 +1,4 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { ResultType, ResultFailed, ResultSucceeded } from "utility/result"
 import {
   ConsoleCommand,
@@ -10,14 +11,24 @@ import { MessageCommand } from "./console_command/message_command"
 import { ProcessCommand } from "./console_command/process_command"
 
 export const standardInput = (rawCommand: string): string => {
-  const parseResult = parseCommand(rawCommand)
-  switch (parseResult.resultType) {
-  case "succeeded":
-    return parseResult.value.run()
+  let result: string | null = null
 
-  case "failed":
-    return `Type Game.io("help") to see available commands.\n${parseResult.reason}`
+  ErrorMapper.wrapLoop((): void => {
+    const parseResult = parseCommand(rawCommand)
+    switch (parseResult.resultType) {
+    case "succeeded":
+      result = parseResult.value.run()
+      return
+
+    case "failed":
+      result = `Type Game.io("help") to see available commands.\n${parseResult.reason}`
+      return
+    }
+  })
+  if (result == null) {
+    return "Program bug"
   }
+  return result
 }
 
 /**

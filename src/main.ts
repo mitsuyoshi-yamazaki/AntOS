@@ -62,26 +62,6 @@ const mainLoop = () => {
         const creep = Game.creeps[creep_name]
 
         creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
-
-        if ((creep.ticksToLive || 0) < 1450) {
-          continue
-        }
-
-        // creep.notifyWhenAttacked(!(!creep.memory.should_notify_attack))
-
-        if (creep.squad || creep.spawning) {
-          continue
-        }
-
-        if (creep.name.includes(SquadType.CREEP_PROVIDER_BRIDGING_SQUAD)) {
-          continue
-        }
-
-        console.log(`Creep missing squad ${creep.name}, squad name: ${creep.memory.squad_name}, ${creep.memory.status}, ${creep.memory.type}, at ${creep.pos}`)
-        creep.say(`NO SQD`)
-
-        // creep.memory.let_thy_die = true
-        // creep.memory.squad_name = 'worker771957135'  // W48N11
       }
       // console.log(`Main creeps GC at ${Game.time}`)
     }, `Creeps.gc`)()
