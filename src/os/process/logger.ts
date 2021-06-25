@@ -27,6 +27,11 @@ function isLoggerProcessMessageFilterType(arg: string): arg is LoggerProcessMess
 }
 
 export class LoggerProcess implements Process, Procedural, MessageObserver {
+  private lastLog: { time: number, message: string } = {
+    time: 0,
+    message: "",
+  }
+
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -80,7 +85,17 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   }
 
   private show(log: ProcessLog): void {
-    PrimitiveLogger.log(`${log.processId} ${log.processType}: ${log.message}`)
+    const message = `${log.processId} ${log.processType}: ${log.message}`
+    if (message === this.lastLog.message) {
+      if (Game.time - this.lastLog.time < 10) { // TODO: tick数を変更可能にする
+        return
+      }
+    }
+    this.lastLog = {
+      time: Game.time,
+      message,
+    }
+    PrimitiveLogger.log(message)
   }
 
   // ---- MessageObserver ---- //
