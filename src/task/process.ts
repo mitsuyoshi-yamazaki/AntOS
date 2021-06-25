@@ -3,7 +3,7 @@ import { State, Stateful } from "os/infrastructure/state"
 import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "task/test/test_process"
-import { BootstrapRoomProcess, BootstrapRoomProcessState } from "./bootstrap_room/bootstrap_room_proces"
+import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap_room/bootstrap_l8_room_proces"
 import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/claim_room_process"
 import { SignRoomsProcess, SignRoomsProcessState } from "./sign_rooms/sign_rooms_process"
 
@@ -33,7 +33,7 @@ class ProcessTypes {
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as TestProcessState)
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as LoggerProcessState)
   "SignRoomsProcess" = (state: ProcessState) => SignRoomsProcess.decode(state as SignRoomsProcessState)
-  "BootstrapRoomProcess" = (state: ProcessState) => BootstrapRoomProcess.decode(state as BootstrapRoomProcessState)
+  "BootstrapL8RoomProcess" = (state: ProcessState) => BootstrapL8RoomProcess.decode(state as BootstrapL8RoomProcessState)
   "ClaimRoomProcess" = (state: ProcessState) => ClaimRoomProcess.decode(state as ClaimRoomProcessState)
 }
 

@@ -1,6 +1,6 @@
 import { decodeObjectivesFrom, Objective, ObjectiveState } from "task/objective"
 
-export interface BootstrapRoomObjectiveState extends ObjectiveState {
+export interface BootstrapL8RoomObjectiveState extends ObjectiveState {
 }
 
 /**
@@ -22,23 +22,23 @@ export interface BootstrapRoomObjectiveState extends ObjectiveState {
  *                 - not succeed -> fail
  *                 - success
  */
-export class BootstrapRoomObjective implements Objective {
+export class BootstrapL8RoomObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
   ) {
   }
 
-  public encode(): BootstrapRoomObjectiveState {
+  public encode(): BootstrapL8RoomObjectiveState {
     return {
-      t: "BootstrapRoomObjective",
+      t: "BootstrapL8RoomObjective",
       s: this.startTime,
       c: this.children.map(child => child.encode()),
     }
   }
 
-  public static decode(state: BootstrapRoomObjectiveState): BootstrapRoomObjective {
+  public static decode(state: BootstrapL8RoomObjectiveState): BootstrapL8RoomObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new BootstrapRoomObjective(state.s, children)
+    return new BootstrapL8RoomObjective(state.s, children)
   }
 }
