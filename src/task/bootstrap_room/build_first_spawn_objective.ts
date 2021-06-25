@@ -115,13 +115,13 @@ export class BuildFirstSpawnObjective implements Objective {
 
   private harvest(creep: Creep, source: Source): void {
     if (creep.harvest(source) !== OK) {
-      creep.moveTo(source)
+      creep.moveTo(source, { reusePath: 15 })
     }
   }
 
   private build(creep: Creep, constructionSite: ConstructionSite<STRUCTURE_SPAWN>): void {
     if (creep.build(constructionSite) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(constructionSite)
+      creep.moveTo(constructionSite, { reusePath: 15 })
     }
   }
 

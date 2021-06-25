@@ -5,7 +5,6 @@ import { BootstrapL8RoomObjective, BootstrapL8RoomObjectiveState } from "./boots
 import { BuildFirstSpawnObjective, BuildFirstSpawnObjectiveState } from "./bootstrap_room/build_first_spawn_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
-import { ScoutObserveRoomObjective, ScoutObserveRoomObjectiveState } from "./remote_room/observe_room"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -61,7 +60,6 @@ class ObjectiveTypes {
   "SingleCreepProviderObjective" = (state: ObjectiveState) => SingleCreepProviderObjective.decode(state as SingleCreepProviderObjectiveState)
   "BootstrapL8RoomObjective" = (state: ObjectiveState) => BootstrapL8RoomObjective.decode(state as BootstrapL8RoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
-  "ScoutObserveRoomObjective" = (state: ObjectiveState) => ScoutObserveRoomObjective.decode(state as ScoutObserveRoomObjectiveState)
   "BuildFirstSpawnObjective" = (state: ObjectiveState) => BuildFirstSpawnObjective.decode(state as BuildFirstSpawnObjectiveState)
 }
 
