@@ -31,6 +31,10 @@ export class MessageCommand implements ConsoleCommand {
     if (this.args.length < 2) {
       return "No message argument"
     }
-    return targetProcess.didReceiveMessage(this.args[1])
+
+    const messageArguments = this.args.concat([])
+    messageArguments.splice(0, 1)
+    const message = messageArguments.join(" ")
+    return targetProcess.didReceiveMessage(message)
   }
 }

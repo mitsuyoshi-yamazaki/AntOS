@@ -3,6 +3,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeProcessFrom, Process, ProcessId, ProcessState } from "task/process"
 import { isProcedural } from "task/procedural"
 import { RootProcess } from "./infrastructure/root"
+import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
 
 interface ProcessMemory {
   /** running */
@@ -41,6 +42,7 @@ export class OperatingSystem {
   private readonly rootProcess = new RootProcess()
   private readonly processes = new Map<ProcessId, InternalProcessInfo>()
   private readonly processIdsToKill: ProcessId[] = []
+  private runtimeMemory: RuntimeMemory = {processLogs: []}
 
   private constructor() {
     // !!!! 起動処理がOSアクセスを行う場合があるためsetup()内部で実行すること !!!! //
@@ -122,6 +124,20 @@ export class OperatingSystem {
       }
       return info
     })
+  }
+
+  // ---- Runtime Memory Access ---- //
+  // - [ ] 任意のkeyに対するAPIに書き換える
+  public addProcessLog(log: ProcessLog): void {
+    this.runtimeMemory.processLogs.push(log)
+  }
+
+  public processLogs(): ProcessLog[] {
+    return this.runtimeMemory.processLogs.concat([])
+  }
+
+  public clearProcessLogs(): void {
+    this.runtimeMemory.processLogs.splice(0, this.runtimeMemory.processLogs.length)
   }
 
   // ---- Run ---- //

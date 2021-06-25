@@ -48,3 +48,7 @@ export function decodeProcessFrom(state: ProcessState): Process | null {
   }, `decodeProcessFrom(), process type: ${state.t}`)()
   return decoded
 }
+
+export function processLog(sender: Process, message: string): void {
+
+}

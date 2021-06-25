@@ -11,6 +11,10 @@ export class InfrastructureProcessLauncher {
   }
 
   private launchLoggerProcess(): void {
-    OperatingSystem.os.addProcess(processId => new LoggerProcess(Game.time, processId))
+    const emptyFilter = {
+      processIds: [],
+      processTypes: [],
+    }
+    OperatingSystem.os.addProcess(processId => new LoggerProcess(Game.time, processId, emptyFilter))
   }
 }
