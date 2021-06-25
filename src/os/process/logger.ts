@@ -2,8 +2,8 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessLog } from "os/infrastructure/runtime_memory"
 import { OperatingSystem } from "os/os"
-import { Procedural } from "task/procedural"
-import { Process, ProcessId, ProcessState } from "task/process"
+import { Procedural } from "objective/procedural"
+import { Process, ProcessId, ProcessState } from "objective/process"
 
 export interface LoggerProcessState extends ProcessState {
   /** message filter (|| statement) */

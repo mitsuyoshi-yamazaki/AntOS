@@ -24,7 +24,7 @@ export const standardInput = (rawCommand: string): string => {
       result = `Type Game.io("help") to see available commands.\n${parseResult.reason}`
       return
     }
-  })
+  })()
   if (result == null) {
     return "Program bug"
   }

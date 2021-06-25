@@ -1,5 +1,5 @@
-import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
-import { decodeObjectivesFrom, Objective, ObjectiveState } from "task/objective"
+import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
+import { decodeObjectivesFrom, Objective, ObjectiveState } from "objective/objective"
 
 export interface SignRoomObjectiveState extends ObjectiveState {
   /** target room name */

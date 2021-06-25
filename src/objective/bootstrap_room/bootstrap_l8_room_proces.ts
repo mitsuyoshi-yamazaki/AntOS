@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
-import { Procedural } from "task/procedural"
-import { Process, ProcessId, processLog, ProcessState } from "task/process"
+import { Procedural } from "objective/procedural"
+import { Process, ProcessId, processLog, ProcessState } from "objective/process"
 import { BootstrapL8RoomObjective, BootstrapL8RoomObjectiveState } from "./bootstarp_l8_room_objective"
 
 export interface BootstrapL8RoomProcessState extends ProcessState {

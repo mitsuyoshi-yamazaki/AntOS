@@ -1,5 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 import { roomLink } from "utility/log"
 import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
 import { ClaimRoomObjective } from "./claim_room_objective"
@@ -64,12 +64,12 @@ export class BootstrapL8RoomObjective implements Objective {
         progress = this.buildFirstSpawn(room.controller)
         return
       }
-      if (true) { //(room.controller.level < 3) { // TODO:
-        progress = this.upgradeToRCL3(spawn, room, room.controller)
-        return
-      }
+      // if (room.controller.level < 3) { // TODO:
+      progress = this.upgradeToRCL3(spawn, room, room.controller)
+      return
+      // }
 
-      progress = new ObjectiveInProgress("not implemented yet") // TODO:
+      // progress = new ObjectiveInProgress("not implemented yet") // TODO:
     }, "BootstrapL8RoomObjective.progress()")()
 
     if (progress != null) {

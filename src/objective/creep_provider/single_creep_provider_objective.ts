@@ -1,4 +1,4 @@
-import { getNewCreepIn, requestCreep } from "task/bridging/creep_provider_bridging_squad"
+import { getNewCreepIn, requestCreep } from "objective/bridging/creep_provider_bridging_squad"
 import {
   decodeObjectivesFrom,
   Objective,
@@ -6,7 +6,7 @@ import {
   ObjectiveProgressType,
   ObjectiveState,
   ObjectiveSucceeded
-} from "task/objective"
+} from "objective/objective"
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 

@@ -1,5 +1,5 @@
-import { Procedural } from "task/procedural"
-import { Process, processLog, ProcessState } from "task/process"
+import { Procedural } from "objective/procedural"
+import { Process, processLog, ProcessState } from "objective/process"
 import { CreepStatus } from "_old/creep"
 
 export interface TestProcessState extends ProcessState {

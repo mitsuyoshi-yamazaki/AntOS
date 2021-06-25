@@ -1,5 +1,5 @@
-import { Procedural } from "task/procedural"
-import { Process, ProcessId, ProcessState } from "task/process"
+import { Procedural } from "objective/procedural"
+import { Process, ProcessId, ProcessState } from "objective/process"
 import { SignRoomObjective, SignRoomObjectiveState } from "./sign_rooms_objective"
 
 export interface SignRoomsProcessState extends ProcessState {

@@ -1,5 +1,5 @@
-import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
+import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 
 type ClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 

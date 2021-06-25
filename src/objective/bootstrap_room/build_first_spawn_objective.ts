@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "task/objective"
+import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
 import { roomLink } from "utility/log"
 import { CreepStatus } from "_old/creep"
 
