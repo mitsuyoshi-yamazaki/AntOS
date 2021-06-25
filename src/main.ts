@@ -8,6 +8,7 @@ import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
 import { SquadType } from "_old/squad/squad"
+import { roomLink } from "utility/log"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -44,7 +45,7 @@ const mainLoop = () => {
 
       if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
         if (Game.time % 107 === 13) {
-          console.log(`${room.name} is new`)
+          console.log(`${roomLink(room.name)} is new`)
         }
         continue
       }

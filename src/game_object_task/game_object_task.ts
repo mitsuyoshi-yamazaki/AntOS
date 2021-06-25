@@ -1,4 +1,7 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
+import { HarvestTask, HarvestTaskState } from "./creep_task/harvest_task"
+import { UpgradeControllerTask, UpgradeControllerTaskState } from "./creep_task/upgrade_controller_task"
 
 export interface GameObjectTaskState extends State {
   /** start time */
@@ -12,54 +15,31 @@ export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 
 export interface GameObjectTask<T> extends Stateful {
   startTime: number
+  taskType: keyof TaskTypes
 
+  encode(): GameObjectTaskState
   run(obj: T): GameObjectTaskReturnCode
-}
-
-export interface HarvestTaskState extends GameObjectTaskState {
-  /** target id */
-  i: Id<Source>
-}
-
-export class HarvestTask implements GameObjectTask<Creep> {
-  public constructor(
-    public readonly startTime: number,
-    public readonly source: Source,
-  ) { }
-
-  public encode(): HarvestTaskState {
-    return {
-      s: this.startTime,
-      t: "HarvestTask",
-      i: this.source.id,
-    }
-  }
-
-  public static decode(state: HarvestTaskState): HarvestTask | null {
-    const source = Game.getObjectById(state.i)
-    if (source == null) {
-      return null
-    }
-    return new HarvestTask(state.s, source)
-  }
-
-  public run(creep: Creep): GameObjectTaskReturnCode {
-    if (creep.store.getFreeCapacity() <= 0) {
-      return "finished"
-    }
-
-    const result = creep.harvest(this.source)
-    switch (result) {
-    case OK:
-      return "in progress"
-    default:
-      creep.moveTo(this.source, {reusePath: 15})
-      return "in progress"
-    }
-  }
 }
 
 class TaskTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "HarvestTask" = (state: GameObjectTaskState) => HarvestTask.decode(state as HarvestTaskState)
+  "UpgradeControllerTask" = (state: GameObjectTaskState) => UpgradeControllerTask.decode(state as UpgradeControllerTaskState)
+}
+
+export function decodeCreepTask(creep: Creep): GameObjectTask<Creep> | null {
+  const state = creep.memory.ts
+  if (state == null) {
+    return null
+  }
+  let decoded: GameObjectTask<Creep> | null = null
+  ErrorMapper.wrapLoop(() => {
+    const maker = (new TaskTypes())[state.t]
+    if (maker == null) {
+      decoded = null
+      return
+    }
+    decoded = maker(state)
+  }, `decodeGameObjectTaskFrom(), objective type: ${state.t}`)()
+  return decoded
 }

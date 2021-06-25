@@ -172,8 +172,8 @@ export class OperatingSystem {
     }
 
     ErrorMapper.wrapLoop(() => {
-      this.rootProcess.run()
-    }, "OperatingSystem.rootProcess.run()")()
+      this.rootProcess.runBeforeTick()
+    }, "OperatingSystem.rootProcess.runBeforeTick()")()
 
     ErrorMapper.wrapLoop(() => {
       this.runProceduralProcesses()
@@ -186,6 +186,10 @@ export class OperatingSystem {
     ErrorMapper.wrapLoop(() => {
       this.storeProcesses()
     }, "OperatingSystem.storeProcesses()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.rootProcess.runAfterTick()
+    }, "OperatingSystem.rootProcess.runAfterTick()")()
   }
 
   // ---- Private ---- //
