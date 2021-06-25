@@ -1,6 +1,6 @@
 import { OperatingSystem } from "os/os"
 import { Procedural } from "task/procedural"
-import { Process, ProcessId, ProcessState } from "task/process"
+import { Process, ProcessId, processLog, ProcessState } from "task/process"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./claim_room_objective"
 
 export interface ClaimRoomProcessState extends ProcessState {
@@ -37,14 +37,14 @@ export class ClaimRoomProcess implements Process, Procedural {
     const progress = this.objective.progress()
     switch (progress.objectProgressType) {
     case "in progress":
-      console.log(`ClaimRoomProcess ${this.processId} in progress: ${progress.value}`)
+      processLog(this, `ClaimRoomProcess ${this.processId} in progress: ${progress.value}`)
       return
     case "succeeded":
-      console.log(`ClaimRoomProcess ${this.processId} successfully claimed room ${progress.result.room.name}`)
+      processLog(this, `ClaimRoomProcess ${this.processId} successfully claimed room ${progress.result.room.name}`)
       OperatingSystem.os.killProcess(this.processId)
       return
     case "failed":
-      console.log(`ClaimRoomProcess ${this.processId} failed with error ${progress.reason}`)
+      processLog(this, `ClaimRoomProcess ${this.processId} failed with error ${progress.reason}`)
       OperatingSystem.os.killProcess(this.processId)
       return
     }

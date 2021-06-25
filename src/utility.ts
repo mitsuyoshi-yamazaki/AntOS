@@ -1,5 +1,7 @@
 /* eslint-disable */
 
+import { roomLink } from "utility/log"
+
 export function log(obj: any): void {
   console.log(obj)  // tslint:disable-line: no-console
 }
@@ -52,10 +54,7 @@ export interface StructureFilter {
 }
 
 export function room_link(room_name: string, opts?: {text?: string, color?: string}): string {
-  opts = opts || {}
-  const color = opts.color || '#FFFFFF'
-  const text = opts.text || room_name
-  return `<a href="https://screeps.com/a/#!/room/shard2/${room_name}", style='color:${color}'>${text}</a>`
+  return roomLink(room_name, opts)
 }
 
 export function room_history_link(room_name: string, ticks: number, opts?: {text?: string, color?: string}): string {

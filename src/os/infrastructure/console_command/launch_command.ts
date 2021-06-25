@@ -3,10 +3,10 @@ import { TestProcess } from "task/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { SignRoomObjective } from "task/sign_rooms/sign_rooms_objective"
-import { BootstrapRoomProcess } from "task/bootstrap_room/bootstrap_room_proces"
-import { BootstrapRoomObjective } from "task/bootstrap_room/bootstarp_room_objective"
 import { ClaimRoomProcess } from "task/bootstrap_room/claim_room_process"
 import { ClaimRoomObjective } from "task/bootstrap_room/claim_room_objective"
+import { BootstrapL8RoomObjective } from "task/bootstrap_room/bootstarp_l8_room_objective"
+import { BootstrapL8RoomProcess } from "task/bootstrap_room/bootstrap_l8_room_proces"
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -21,8 +21,8 @@ export class LaunchCommand implements ConsoleCommand {
       return this.launchTestProcess()
     case "SignRoomsProcess":
       return this.launchSignRoomsProcess()
-    case "BootstrapRoomProcess":
-      return this.launchBootstrapRoomProcess()
+    case "BootstrapL8RoomProcess":
+      return this.launchBootstrapL8RoomProcess()
     case "ClaimRoomProcess":
       return this.launchClaimRoomProcess()
     default:
@@ -85,12 +85,24 @@ export class LaunchCommand implements ConsoleCommand {
     return `Launched ${process.constructor.name} PID: ${process.processId}`
   }
 
-  private launchBootstrapRoomProcess(): CommandExecutionResult {
+  private launchBootstrapL8RoomProcess(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const parentRoomName = args.get("parent_room_name")
+    if (parentRoomName == null) {
+      return this.missingArgumentError("parent_room_name")
+    }
+
     const launchTime = Game.time
-    const objective = new BootstrapRoomObjective(launchTime, [])
+    const objective = new BootstrapL8RoomObjective(launchTime, [], targetRoomName, parentRoomName)
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new BootstrapRoomProcess(launchTime, processId, objective)
+      return new BootstrapL8RoomProcess(launchTime, processId, objective)
     })
     return `Launched ${process.constructor.name} PID: ${process.processId}`
   }
