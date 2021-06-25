@@ -1,5 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
+import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "task/test/test_process"
 import { BootstrapRoomProcess, BootstrapRoomProcessState } from "./bootstrap_room/bootstrap_room_proces"
@@ -50,5 +51,9 @@ export function decodeProcessFrom(state: ProcessState): Process | null {
 }
 
 export function processLog(sender: Process, message: string): void {
-
+  OperatingSystem.os.addProcessLog({
+    processId: sender.processId,
+    processType: sender.constructor.name,
+    message: message
+  })
 }

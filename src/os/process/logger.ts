@@ -54,6 +54,10 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     return new LoggerProcess(state.l, state.i, filter)
   }
 
+  public processDescription(): string {
+    return `- filters:\n  - process ID: ${this.filter.processIds}\n  - process types: ${this.filter.processTypes}`
+  }
+
   // ---- Procedural ---- //
   public runOnTick(): void {
     const logs = OperatingSystem.os.processLogs()
