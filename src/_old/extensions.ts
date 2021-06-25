@@ -23,48 +23,8 @@ declare global {
   interface Game {
     io: (message: string) => string
 
-    user: {name: 'Mitsuyoshi'}
-    empire: {name: string}
+    user: { name: 'Mitsuyoshi' }
     version: string
-    reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
-    squad_creeps: {[squad_name: string]: Creep[]}
-
-    // Market
-    _fetchOrders(): void
-    _buyOrders: Order[]
-    _sellOrders: Order[]
-    buyOrders(resource_type: ResourceConstant, price: number | null): Order[]
-    sellOrders(resource_type: ResourceConstant, price: number | null): Order[]
-
-    check_resources: (resource_type: ResourceConstant) => {[room_name: string]: number}
-    check_resource_amount: (resource_type: ResourceConstant) => number
-    check_resources_in: (room_name: string) => void
-    check_all_resources: () => void
-    collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
-    send_resource: (from: string[], to: string, resource_type: ResourceConstant, amount: number) => ActionResult
-
-    info: (target_name?: string) => void
-    creep_positions: (squad_name: string) => void
-    squad_info: (squad_type: SquadType) => void
-    last_attacked_rooms: (opts?: {last?: number}) => void
-
-    get_costmatrix: (room_name: string) => CostMatrix | undefined
-    set_costmatrix: (room_name: string, costmatrix: CostMatrix) => void
-    reset_costmatrix: (room_name: string) => void
-    reset_all_costmatrixes: () => void
-
-    resource_transfer: (opts?: {reversed?: boolean, room?: string} | string) => void
-    transfer_energy: (target_room_name: string, opts?: {stop?: boolean, notify?: boolean}) => void
-    transfer_resource: (resource_type: ResourceConstant, target_room_name: string, opts?: {stop?: boolean, notify?: boolean, no_immediate_send?: boolean}) => void
-
-    show_excluded_walls(room_name: string): void
-    add_excluded_walls(room_name: string, x_min: number, x_max: number, y_min: number, y_max: number, opts?: {dry_run?: boolean, include_rampart?: boolean}): void
-
-    build_remote_roads(squad_name: string, opts?: {dry_run?: boolean}): void
-
-    test(energy: number): void
-    dump_memory(): void // @todo:
-    refresh_room_memory(opts?:{dry_run?: boolean}): void
 
     // Alliance
     LOANlist: string[]
@@ -72,40 +32,169 @@ declare global {
     populateLOANlist(): void
     isEnemy(creep: Creep): boolean
 
+
+    /** @deprecated Old codebase */
+    empire: {name: string}
+
+    /** @deprecated Old codebase */
+    reactions: {[index: string]: {lhs: ResourceConstant, rhs: ResourceConstant}}  // Used in init.ts
+
+    /** @deprecated Old codebase */
+    squad_creeps: {[squad_name: string]: Creep[]}
+
+    // Market
+
+    /** @deprecated Old codebase */
+    _fetchOrders(): void
+
+    /** @deprecated Old codebase */
+    _buyOrders: Order[]
+
+    /** @deprecated Old codebase */
+    _sellOrders: Order[]
+
+    /** @deprecated Old codebase */
+    buyOrders(resource_type: ResourceConstant, price: number | null): Order[]
+
+    /** @deprecated Old codebase */
+    sellOrders(resource_type: ResourceConstant, price: number | null): Order[]
+
+
+    /** @deprecated Old codebase */
+    check_resources: (resource_type: ResourceConstant) => {[room_name: string]: number}
+
+    /** @deprecated Old codebase */
+    check_resource_amount: (resource_type: ResourceConstant) => number
+
+    /** @deprecated Old codebase */
+    check_resources_in: (room_name: string) => void
+
+    /** @deprecated Old codebase */
+    check_all_resources: () => void
+
+    /** @deprecated Old codebase */
+    collect_resources: (resource_type: ResourceConstant, room_name: string, threshold?: number) => void
+
+    /** @deprecated Old codebase */
+    send_resource: (from: string[], to: string, resource_type: ResourceConstant, amount: number) => ActionResult
+
+
+    /** @deprecated Old codebase */
+    info: (target_name?: string) => void
+
+    /** @deprecated Old codebase */
+    creep_positions: (squad_name: string) => void
+
+    /** @deprecated Old codebase */
+    squad_info: (squad_type: SquadType) => void
+
+    /** @deprecated Old codebase */
+    last_attacked_rooms: (opts?: {last?: number}) => void
+
+
+    /** @deprecated Old codebase */
+    get_costmatrix: (room_name: string) => CostMatrix | undefined
+
+    /** @deprecated Old codebase */
+    set_costmatrix: (room_name: string, costmatrix: CostMatrix) => void
+
+    /** @deprecated Old codebase */
+    reset_costmatrix: (room_name: string) => void
+
+    /** @deprecated Old codebase */
+    reset_all_costmatrixes: () => void
+
+
+    /** @deprecated Old codebase */
+    resource_transfer: (opts?: {reversed?: boolean, room?: string} | string) => void
+
+    /** @deprecated Old codebase */
+    transfer_energy: (target_room_name: string, opts?: {stop?: boolean, notify?: boolean}) => void
+
+    /** @deprecated Old codebase */
+    transfer_resource: (resource_type: ResourceConstant, target_room_name: string, opts?: {stop?: boolean, notify?: boolean, no_immediate_send?: boolean}) => void
+
+
+    /** @deprecated Old codebase */
+    show_excluded_walls(room_name: string): void
+
+    /** @deprecated Old codebase */
+    add_excluded_walls(room_name: string, x_min: number, x_max: number, y_min: number, y_max: number, opts?: {dry_run?: boolean, include_rampart?: boolean}): void
+
+
+    /** @deprecated Old codebase */
+    build_remote_roads(squad_name: string, opts?: {dry_run?: boolean}): void
+
+
+    /** @deprecated Old codebase */
+    test(energy: number): void
+
+    /** @deprecated Old codebase */
+    dump_memory(): void // @todo:
+
+    /** @deprecated Old codebase */
+    refresh_room_memory(opts?:{dry_run?: boolean}): void
+
     // Migration
+    /** @deprecated Old codebase */
     migration: {
       migrate: (name: string, opts?:{dry_run?: boolean}) => Migration.MigrationResult
       list: () => string[]
     }
 
     // Claim
+    /** @deprecated Old codebase */
     claim_next_room(base_room: string, target_room: string, layout_pos: {x: number, y: number} | null, opts?:{layout_name?: string, delegate_until?: number}): void
 
     // Storage balancing
+    /** @deprecated Old codebase */
     _balance_storage(sector_memory: SectorMemory, opts?: {dry_run?: boolean, no_logs?: boolean}): 'done' | 'nothing'
+
+    /** @deprecated Old codebase */
     balance_storage(opts?: {dry_run?: boolean, no_logs?: boolean, sector_name?: string}): void
 
+    /** @deprecated Old codebase */
     sell_excess_resources(terminal: StructureTerminal, opts?: {dry_run?: boolean, no_logs?: boolean}): void
   }
 
   interface Memory {
     last_tick: number
     os: OSMemory
+    versions: string[]
+    cpu_usages: number[]
+    cpu: {
+      last_bucket: number
+    }
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
 
+
+
+    /** @deprecated Old codebase */
     empires: {[name: string]: EmpireMemory}
+
+    /** @deprecated Old codebase */
     squads: {[index: string]: SquadMemory}
+
+    /** @deprecated Old codebase */
     sectors: {[name: string]: SectorMemory}
+
+    /** @deprecated Old codebase */
     debug_last_tick: any
-    versions: string[]
+
+    /** @deprecated Old codebase */
     regions: {[index: string]: RegionMemory}
-    cpu_usages: number[]
+
+    /** @deprecated Old codebase */
     trading: {stop: boolean}
+
+    /** @deprecated Old codebase */
     migrations: {
       list: {name: string, status: 'prepared' | 'done' | 'failed'}[]
     }
+
+    /** @deprecated Old codebase */
     debug: {
       show_visuals: string | null,
       show_path: boolean,
@@ -118,14 +207,17 @@ declare global {
       },
       test?: number[],
     }
-    cpu: {
-      last_bucket: number
-    }
   }
 
   interface CostMatrix {
+
+    /** @deprecated Old codebase */
     add_terrain(room: Room): void
+
+    /** @deprecated Old codebase */
     add_normal_structures(room: Room, opts?: {ignore_public_ramparts?: boolean}): void
+
+    /** @deprecated Old codebase */
     show(room: Room, opt?: {colors?: {[index: number]: string}}): void
   }
 }

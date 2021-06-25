@@ -68,39 +68,83 @@ export type WorkerSource = StructureContainer | StructureStorage | StructureTerm
 
 declare global {
   interface Creep {
+    /** @deprecated Old codebase */
     squad: Squad
+
+    /** @deprecated Old codebase */
     initialize(): void
 
+    /** @deprecated Old codebase */
     _boosted: boolean
+
+    /** @deprecated Old codebase */
     boosted(): boolean
+
+    /** @deprecated Old codebase */
     _boost_info: {[index: string]: boolean}
+
+    /** @deprecated Old codebase */
     boost_info(): {[index: string]: boolean}
+
+    /** @deprecated Old codebase */
     _carrying_resources: ResourceConstant[]
+
+    /** @deprecated Old codebase */
     carrying_resources(): ResourceConstant[]
 
     // Attributes
+    /** @deprecated Old codebase */
     hasActiveBodyPart(body_part: BodyPartConstant): boolean
 
     // General tasks
+    /** @deprecated Old codebase */
     moveToRoom(destination_room_name: string): ActionResult
+
+    /** @deprecated Old codebase */
     _moveToRoom(destination_room_name: string): ActionResult
+
+    /** @deprecated Old codebase */
     goToRenew(spawn: StructureSpawn, opts?:{ticks?: number, no_auto_finish?: boolean, withdraw?: boolean}): ActionResult
+
+    /** @deprecated Old codebase */
     find_charge_target(opts?: CreepChargeTargetOption): ChargeTarget | undefined
+
+    /** @deprecated Old codebase */
     transferResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
+
+    /** @deprecated Old codebase */
     withdrawResources(target: {store: StoreDefinition}, opt?: CreepTransferOption): ScreepsReturnCode
+
+    /** @deprecated Old codebase */
     dropResources(opt?: CreepTransferOption): ScreepsReturnCode
+
+    /** @deprecated Old codebase */
     dismantleObjects(target_room_name: string, opts?:{include_wall?: boolean, excludes?: StructureConstant[]}): ActionResult
+
+    /** @deprecated Old codebase */
     transferLinkToStorage(link: StructureLink | undefined, pos: {x: number, y: number}, opt?: CreepTransferLinkToStorageOption): void
 
     // Worker tasks
+    /** @deprecated Old codebase */
     work(room: Room, sources: WorkerSource[], opts?: {additional_container_ids?: string[]}): void
+
+    /** @deprecated Old codebase */
     upgrade(source_filter: StructureFilter | undefined): ActionResult
+
+    /** @deprecated Old codebase */
     searchAndDestroyTo(room_name: string, attack_anything: boolean, opt?: CreepSearchAndDestroyOption): ActionResult
+
+    /** @deprecated Old codebase */
     searchAndDestroy(opt?: CreepSearchAndDestroyOption): ActionResult
+
+    /** @deprecated Old codebase */
     healNearbyCreep(): ActionResult
+
+    /** @deprecated Old codebase */
     destroy(target: Creep | Structure, opt?: CreepDestroyOption): ActionResult
 
     // Controller tasks
+    /** @deprecated Old codebase */
     claim(target_room_name: string, should_claim?: boolean): ActionResult
 
     // Replacing methods

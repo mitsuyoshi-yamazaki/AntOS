@@ -2,7 +2,11 @@ import { CreepStatus, ActionResult } from "./creep";
 
 declare global {
   interface StructureSpawn {
+
+    /** @deprecated Old codebase */
     initialize(): void
+
+    /** @deprecated Old codebase */
     renewSurroundingCreeps(): ActionResult
   }
 

@@ -33,39 +33,95 @@ declare global {
   }
 
   interface Room {
+
+    /** @deprecated Old codebase */
     sources: Source[]
+
+    /** @deprecated Old codebase */
     spawns: StructureSpawn[]  // Initialized in Spawn.initialize()
+
+    /** @deprecated Old codebase */
     resourceful_tombstones: Tombstone[]
+
+    /** @deprecated Old codebase */
     is_keeperroom: boolean
+
+    /** @deprecated Old codebase */
     is_centerroom: boolean
+
+    /** @deprecated Old codebase */
     cost_matrix(): CostMatrix | undefined
+
+    /** @deprecated Old codebase */
     construction_sites?: ConstructionSite[]  // Only checked if controller.my is true
+
+    /** @deprecated Old codebase */
     owned_structures?: Map<StructureConstant, AnyOwnedStructure[]>
+
+    /** @deprecated Old codebase */
     _attacker_info: AttackerInfo | undefined
+
+    /** @deprecated Old codebase */
     attacker_info(): AttackerInfo
+
+    /** @deprecated Old codebase */
     connected_rooms(): string[]
+
+    /** @deprecated Old codebase */
     _sector: string | undefined
+
+    /** @deprecated Old codebase */
     sector(): string
+
+    /** @deprecated Old codebase */
     remote_harvester_squad_name(): string
 
+
+    /** @deprecated Old codebase */
     owned_structures_not_found_error(structure_type: StructureConstant): void
+
+    /** @deprecated Old codebase */
     add_remote_harvester(owner_room_name: string, opts?: {dry_run?: boolean, memory_only?: boolean, no_flags_in_base?: boolean, no_memory?: boolean}): string[] | null
+
+    /** @deprecated Old codebase */
     add_remote_mineral_harvester(owner_room_name: string, opts?:{forced?: boolean}): string | null
+
+    /** @deprecated Old codebase */
     remote_layout(x: number, y: number): CostMatrix | null
+
+    /** @deprecated Old codebase */
     test(from: Structure): void
+
+    /** @deprecated Old codebase */
     place_construction_sites(): void
+
+    /** @deprecated Old codebase */
     source_road_positions(from_position: RoomPosition): RoomPosition[] | null
 
+
+    /** @deprecated Old codebase */
     show_layout(name: string, opts?: RoomLayoutOpts): RoomLayout | null
+
+    /** @deprecated Old codebase */
     place_layout(name: string, opts?: RoomLayoutOpts): RoomLayout | null
+
+    /** @deprecated Old codebase */
     remove_all_flags(): void
 
+
+    /** @deprecated Old codebase */
     show_weakest_walls(opts?:{max?: number}): void
 
+
+    /** @deprecated Old codebase */
     info(): void
 
+
+    /** @deprecated Old codebase */
     initialize(): void
 
+
+    /** @deprecated Old codebase */
     structures_needed_to_be_charged?: ChargeTarget[]
   }
 
