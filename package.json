@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/lodash": "^3.10.1",
-    "@types/screeps": "^2.2.1",
+    "@types/screeps": "^3.2.2",
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
     "eslint": "^7.28.0",
