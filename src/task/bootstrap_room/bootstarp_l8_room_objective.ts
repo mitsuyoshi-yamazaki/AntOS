@@ -1,5 +1,6 @@
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "task/objective"
 import { roomLink } from "utility/log"
+import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
 import { ClaimRoomObjective } from "./claim_room_objective"
 
 type BootstrapL8RoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
@@ -50,26 +51,62 @@ export class BootstrapL8RoomObjective implements Objective {
     if (room.controller.level >= 8) {
       return new ObjectiveSucceeded(room.controller)
     }
+    if (room.spawns.length <= 0) {
+      return this.buildFirstSpawn(room.controller)
+    }
 
     return new ObjectiveInProgress("not implemented yet") // TODO:
   }
 
+  // ---- Build first spawn ---- //
+  private buildFirstSpawn(controller: StructureController): BootstrapL8RoomObjectiveProgressType {
+    const objective = this.children.find(child => child instanceof BuildFirstSpawnObjective) as BuildFirstSpawnObjective | null
+    if (objective == null) {
+      this.addBuildFirstSpawnObjective()
+      return new ObjectiveInProgress("Launched BuildFirstSpawnObjective")
+    }
+    const progress = objective.progress(controller, this.parentRoomName)
+    switch (progress.objectProgressType) {
+    case "in progress":
+      return new ObjectiveInProgress(progress.value)
+    case "succeeded":
+      this.removeBuildFirstSpawnObjective(objective)
+      return new ObjectiveInProgress(`Spawn ${progress.result.id} built at ${progress.result.pos}`)
+    case "failed":
+      this.removeBuildFirstSpawnObjective(objective)
+      return new ObjectiveFailed(progress.reason)
+    }
+  }
+
+  private addBuildFirstSpawnObjective(): void {
+    const objective = new BuildFirstSpawnObjective(Game.time, [], [])
+    this.children.push(objective)
+  }
+
+  private removeBuildFirstSpawnObjective(objective: BuildFirstSpawnObjective): void {
+    const index = this.children.indexOf(objective)
+    if (index >= 0) {
+      this.children.splice(index, 1)
+    }
+  }
+
+  // ---- Claim target room ---- //
   private claimTargetRoom(): BootstrapL8RoomObjectiveProgressType {
-    const claimRoomObjective = this.children.find(child => child instanceof ClaimRoomObjective) as ClaimRoomObjective | null
-    if (claimRoomObjective == null) {
+    const objective = this.children.find(child => child instanceof ClaimRoomObjective) as ClaimRoomObjective | null
+    if (objective == null) {
       this.addClaimRoomObjective()
       return new ObjectiveInProgress("Launched ClaimRoomObjective")
     }
-    const claimRoomProgress = claimRoomObjective.progress()
-    switch (claimRoomProgress.objectProgressType) {
+    const progress = objective.progress()
+    switch (progress.objectProgressType) {
     case "in progress":
-      return new ObjectiveInProgress(claimRoomProgress.value)
+      return new ObjectiveInProgress(progress.value)
     case "succeeded":
-      this.removeClaimRoomObjective(claimRoomObjective)
-      return new ObjectiveInProgress(`Room ${roomLink(claimRoomProgress.result.room.name)} successfully claimed.`)
+      this.removeClaimRoomObjective(objective)
+      return new ObjectiveInProgress(`Room ${roomLink(progress.result.room.name)} successfully claimed.`)
     case "failed":
-      this.removeClaimRoomObjective(claimRoomObjective)
-      return new ObjectiveFailed(claimRoomProgress.reason)
+      this.removeClaimRoomObjective(objective)
+      return new ObjectiveFailed(progress.reason)
     }
   }
 
@@ -78,8 +115,8 @@ export class BootstrapL8RoomObjective implements Objective {
     this.children.push(objective)
   }
 
-  private removeClaimRoomObjective(claimRoomObjective: ClaimRoomObjective): void {
-    const index = this.children.indexOf(claimRoomObjective)
+  private removeClaimRoomObjective(objective: ClaimRoomObjective): void {
+    const index = this.children.indexOf(objective)
     if (index >= 0) {
       this.children.splice(index, 1)
     }

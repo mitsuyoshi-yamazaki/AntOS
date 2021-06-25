@@ -33,7 +33,9 @@ export class BootstrapL8RoomProcess implements Process, Procedural {
     const progress = this.objective.progress()
     switch (progress.objectProgressType) {
     case "in progress":
-      processLog(this, `BootstrapL8RoomProcess ${this.processId} in progress: ${progress.value}`)
+      if (progress.value !== "not implemented yet") {
+        processLog(this, `BootstrapL8RoomProcess ${this.processId} in progress: ${progress.value}`)
+      }
       return
     case "succeeded":
       processLog(this, `BootstrapL8RoomProcess ${this.processId} successfully level up to 8! ${progress.result.room.name}`)

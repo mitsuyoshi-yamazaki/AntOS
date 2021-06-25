@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { SignRoomObjective, SignRoomObjectiveState } from "task/sign_rooms/sign_rooms_objective"
 import { BootstrapL8RoomObjective, BootstrapL8RoomObjectiveState } from "./bootstrap_room/bootstarp_l8_room_objective"
+import { BuildFirstSpawnObjective, BuildFirstSpawnObjectiveState } from "./bootstrap_room/build_first_spawn_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
 import { ScoutObserveRoomObjective, ScoutObserveRoomObjectiveState } from "./remote_room/observe_room"
@@ -61,6 +62,7 @@ class ObjectiveTypes {
   "BootstrapL8RoomObjective" = (state: ObjectiveState) => BootstrapL8RoomObjective.decode(state as BootstrapL8RoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
   "ScoutObserveRoomObjective" = (state: ObjectiveState) => ScoutObserveRoomObjective.decode(state as ScoutObserveRoomObjectiveState)
+  "BuildFirstSpawnObjective" = (state: ObjectiveState) => BuildFirstSpawnObjective.decode(state as BuildFirstSpawnObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
