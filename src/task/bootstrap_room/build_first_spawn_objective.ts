@@ -1,6 +1,7 @@
 import { SingleCreepProviderObjective } from "task/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "task/objective"
 import { roomLink } from "utility/log"
+import { CreepStatus } from "_old/creep"
 
 type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
@@ -69,7 +70,7 @@ export class BuildFirstSpawnObjective implements Objective {
       this.runWorker(creep, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>, targetRoom)
     })
     if (workers.length > 0) {
-      inProgressMessages.push(`${workers.length} working`)
+      inProgressMessages.push(`${workers.length} workers running`)
     }
 
     if (inProgressMessages.length > 0) {
@@ -84,10 +85,42 @@ export class BuildFirstSpawnObjective implements Objective {
       creep.moveToRoom(targetRoom.name)
       return
     }
+    const source = targetRoom.sources[0]
+    if (source == null) {
+      console.log(`Unexpectedly missing source in ${roomLink(targetRoom.name)}`)
+      return
+    }
 
+    switch (creep.memory.status) {
+    case CreepStatus.HARVEST:
+      if (creep.carry[RESOURCE_ENERGY] >= creep.carryCapacity) {
+        creep.memory.status = CreepStatus.BUILD
+        break
+      }
+      this.harvest(creep, source)
+      break
+    case CreepStatus.BUILD:
+      if (creep.carry[RESOURCE_ENERGY] <= 0) {
+        creep.memory.status = CreepStatus.HARVEST
+        break
+      }
+      this.build(creep, constructionSite)
+      break
+    default:
+      creep.memory.status = CreepStatus.HARVEST
+    }
+  }
 
+  private harvest(creep: Creep, source: Source): void {
+    if (creep.harvest(source) !== OK) {
+      creep.moveTo(source)
+    }
+  }
 
-    // creep.room.sources
+  private build(creep: Creep, constructionSite: ConstructionSite<STRUCTURE_SPAWN>): void {
+    if (creep.build(constructionSite) === ERR_NOT_IN_RANGE) {
+      creep.moveTo(constructionSite)
+    }
   }
 
   // ---- Add creeps ---- //
@@ -95,8 +128,8 @@ export class BuildFirstSpawnObjective implements Objective {
     const args = {
       spawnRoomName: parentRoomName,
       requestingCreepBodyParts: [
-        WORK, WORK, CARRY, CARRY, MOVE,
-        WORK, WORK, CARRY, CARRY, MOVE,
+        WORK, WORK, CARRY, CARRY, MOVE, MOVE,
+        WORK, WORK, CARRY, CARRY, MOVE, MOVE,
       ],
     }
     const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)
