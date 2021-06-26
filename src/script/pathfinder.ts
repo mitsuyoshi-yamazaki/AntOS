@@ -1,3 +1,5 @@
+import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+
 export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
   const startObject = Game.getObjectById(startObjectId)
   if (!(startObject instanceof RoomObject)) {
@@ -31,9 +33,27 @@ export function findPathToSource(spawnName: string, sourceId: Id<Source>): strin
   if (spawn == null) {
     return `Spawn ${spawnName} not found`
   }
+  const result = calculateSourceRoute(sourceId, spawn.pos)
+  switch (result.resultType) {
+  case "succeeded": {
+    const harvestPositionDescription = result.value.harvestPositions.map(p => `(${p.x}, ${p.y})`).join(", ")
+    return `Found ${result.value.harvestPositions.length} harvest positions: ${harvestPositionDescription}`
+  }
+  case "failed":
+    return result.reason
+  }
+}
+
+interface SourceRoute {
+  path: PathFinderPath
+  harvestPositions: RoomPosition[]
+}
+
+// TODO: Sourceが埋まっていたらよくないことが起きる
+export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosition): ResultType<SourceRoute, string> {
   const source = Game.getObjectById(sourceId)
   if (!(source instanceof Source)) {
-    return `Invalid source id ${sourceId}`
+    return new ResultFailed(`Invalid source id ${sourceId}`)
   }
 
   const walkableTerrains: Terrain[] = ["swamp", "plain"]
@@ -46,12 +66,12 @@ export function findPathToSource(spawnName: string, sourceId: Id<Source>): strin
     }
     return false
   })
-  visualize(harvestPositions, {text: "■", color: "#ff0000"})
+  visualize(harvestPositions, { text: "■", color: "#ff0000" })
 
   const pathFindResults: string[] = []
   const results: PathFinderPath[] = []
   harvestPositions.forEach(position => {
-    const result = PathFinder.search(spawn.pos, { pos: position, range: 0 })
+    const result = PathFinder.search(destination, { pos: position, range: 0 })
     if (result.incomplete === true) {
       pathFindResults.push(`Failed to find path (${position.x}, ${position.y})`)
       return
@@ -59,10 +79,17 @@ export function findPathToSource(spawnName: string, sourceId: Id<Source>): strin
     results.push(result)
   })
 
-  const shorestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
+  const shortestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
 
-  visualize(shorestPath.path, { color: "#ffffff" })
+  visualize(shortestPath.path, { color: "#ffffff" })
 
-  const harvestPositionDescription = harvestPositions.map(p => `(${p.x}, ${p.y})`).join(", ")
-  return `Found ${harvestPositions.length} harvest positions: ${harvestPositionDescription}`
+  if (shortestPath == null) {
+    return new ResultFailed(`No route found from (${destination.x}, ${destination.y}) to source (${source.pos.x}, ${source.pos.y})`)
+  }
+
+  const result: SourceRoute = {
+    path: shortestPath,
+    harvestPositions,
+  }
+  return new ResultSucceeded(result)
 }
