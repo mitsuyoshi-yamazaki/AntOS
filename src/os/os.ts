@@ -5,6 +5,7 @@ import { isProcedural } from "objective/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
 import { LoggerProcess } from "./process/logger"
+import { init as initRoomPositionPrototype } from "prototype/room_position"
 
 interface ProcessMemory {
   /** running */
@@ -30,13 +31,24 @@ export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
 }
 
+function init(): void {
+  updatePrototypes()
+}
+
+function updatePrototypes(): void {
+  initRoomPositionPrototype()
+}
+
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
  * - [ ] RootProcessの依存を外して単体でtestableにする
  * - [ ] Memoryの依存を外す
  */
 export class OperatingSystem {
-  static readonly os = new OperatingSystem()
+  static readonly os = (() => {
+    init()
+    return new OperatingSystem()
+  })()
 
   private didSetup = false
   private processIndex = 0
