@@ -3,7 +3,7 @@ import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, 
 import { roomLink } from "utility/log"
 import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
 import { ClaimRoomObjective } from "./claim_room_objective"
-import { UpgradeL3ControllerObjective } from "./upgrade_l3_controller_objective"
+import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveWorkingInfo } from "./upgrade_l3_controller_objective"
 
 type BootstrapL8RoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
@@ -100,7 +100,10 @@ export class BootstrapL8RoomObjective implements Objective {
 
   private addUpgradeL3ControllerObjective(room: Room): void {
     const sourceIds = room.sources.map(source => source.id)
-    const objective = new UpgradeL3ControllerObjective(Game.time, [], [], [], [], sourceIds)
+    const emptyWorkingInfo: UpgradeL3ControllerObjectiveWorkingInfo = {
+      constructionSiteId: null
+    }
+    const objective = new UpgradeL3ControllerObjective(Game.time, [], [], [], [], sourceIds, emptyWorkingInfo)
     this.children.push(objective)
   }
 

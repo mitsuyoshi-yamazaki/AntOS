@@ -39,6 +39,16 @@ export interface UpgradeL3ControllerObjectiveState extends ObjectiveState {
 
   /** source IDs */
   si: Id<Source>[]
+
+  /** working state */
+  w: {
+    /** building construction site */
+    c: Id<ConstructionSite<BuildableStructureConstant>> | null
+  }
+}
+
+export interface UpgradeL3ControllerObjectiveWorkingInfo {
+  constructionSiteId: Id<ConstructionSite<BuildableStructureConstant>> | null
 }
 
 export class UpgradeL3ControllerObjective implements Objective {
@@ -53,6 +63,7 @@ export class UpgradeL3ControllerObjective implements Objective {
     private harvesterNames: CreepName[],
     private haulerNames: CreepName[],
     private sourceIds: Id<Source>[],
+    private workingInfo: UpgradeL3ControllerObjectiveWorkingInfo,
   ) {
 
   }
@@ -68,12 +79,18 @@ export class UpgradeL3ControllerObjective implements Objective {
         hl: this.haulerNames,
       },
       si: this.sourceIds,
+      w: {
+        c: this.workingInfo.constructionSiteId,
+      },
     }
   }
 
   public static decode(state: UpgradeL3ControllerObjectiveState): UpgradeL3ControllerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.hv, state.cr.hl, state.si)
+    const workingInfo: UpgradeL3ControllerObjectiveWorkingInfo = {
+      constructionSiteId: state.w?.c
+    }
+    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.hv, state.cr.hl, state.si, workingInfo)
   }
 
   public progress(spawn: StructureSpawn, controller: StructureController): UpgradeL3ControllerObjectiveProgressType {
@@ -132,31 +149,43 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (creep.spawning) {
         return
       }
-      const isIdle = creep.task == null || creep.task.run(creep) !== "in progress"
-      if (isIdle !== true) {
-        return
+      if (creep.task == null) {
+        this.assignNewTask(creep, workers, sources, spawn, controller)
       }
-
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-        const source = this.getSourceToAssign(workers, sources)
-        if (source != null) {
-          this.assignTask(creep, new HarvestEnergyTask(Game.time, source))
-        } else {
-          this.assignTask(creep, null)
-        }
-      } else {
-        if (spawn.store.getCapacity(RESOURCE_ENERGY) > spawn.store[RESOURCE_ENERGY]) {
-          this.assignTask(creep, new TransferToStructureTask(Game.time, spawn))
-        } else {
-          const constructionSite = this.getConstructionSiteToAssign(creep)
-          if (constructionSite != null) {
-            this.assignTask(creep, new BuildTask(Game.time, constructionSite))
-          } else {
-            this.assignTask(creep, new UpgradeControllerTask(Game.time, controller))
-          }
-        }
+      const taskFinished = creep.task?.run(creep) !== "in progress"
+      if (taskFinished) {
+        this.assignNewTask(creep, workers, sources, spawn, controller, true)
       }
     })
+  }
+
+  private assignNewTask(creep: Creep, workers: Creep[], sources: Source[], spawn: StructureSpawn, controller: StructureController, alreadyRun?: boolean): void {
+    const noEnergy = (): boolean => {
+      if (alreadyRun === true) {
+        return creep.store.getFreeCapacity() > 0  // タスクを実行済みである場合、storeが更新されていないため
+      } else {
+        return creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+      }
+    }
+    if (noEnergy()) {
+      const source = this.getSourceToAssign(workers, sources)
+      if (source != null) {
+        this.assignTask(creep, new HarvestEnergyTask(Game.time, source))
+      } else {
+        this.assignTask(creep, null)
+      }
+    } else {
+      if (spawn.store.getCapacity(RESOURCE_ENERGY) > spawn.store[RESOURCE_ENERGY]) {
+        this.assignTask(creep, new TransferToStructureTask(Game.time, spawn))
+      } else {
+        const constructionSite = this.getConstructionSiteToAssign(controller.room)
+        if (constructionSite != null) {
+          this.assignTask(creep, new BuildTask(Game.time, constructionSite))
+        } else {
+          this.assignTask(creep, new UpgradeControllerTask(Game.time, controller))
+        }
+      }
+    }
   }
 
   private assignTask(creep: Creep, task: GameObjectTask<Creep> | null): void {
@@ -192,8 +221,17 @@ export class UpgradeL3ControllerObjective implements Objective {
     return Game.getObjectById(sourceId[0])
   }
 
-  private getConstructionSiteToAssign(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
-    return creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES)
+  private getConstructionSiteToAssign(room: Room): ConstructionSite<BuildableStructureConstant> | null {
+    if (this.workingInfo.constructionSiteId) {
+      const constructionSite = Game.getObjectById(this.workingInfo.constructionSiteId)
+      if (constructionSite != null) {
+        return constructionSite
+      }
+    }
+
+    const constructionSite = room.find(FIND_CONSTRUCTION_SITES)[0]
+    this.workingInfo.constructionSiteId = constructionSite?.id
+    return constructionSite
   }
 
   // ---- Spawn ---- //
