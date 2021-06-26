@@ -88,7 +88,7 @@ export class UpgradeL3ControllerObjective implements Objective {
   public static decode(state: UpgradeL3ControllerObjectiveState): UpgradeL3ControllerObjective {
     const children = decodeObjectivesFrom(state.c)
     const workingInfo: UpgradeL3ControllerObjectiveWorkingInfo = {
-      constructionSiteId: state.w?.c
+      constructionSiteId: state.w.c
     }
     return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.hv, state.cr.hl, state.si, workingInfo)
   }
@@ -175,7 +175,8 @@ export class UpgradeL3ControllerObjective implements Objective {
         this.assignTask(creep, null)
       }
     } else {
-      if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
+      // if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) { // TODO: extensionに入れる
+      if (spawn.room.energyAvailable < 300) {
         this.assignTask(creep, new TransferToStructureTask(Game.time, spawn))
       } else {
         const constructionSite = this.getConstructionSiteToAssign(controller.room)
