@@ -1,7 +1,7 @@
 import { StructureFilter, room_link } from "../utility"
 import { Squad } from "_old/squad/squad"
 import { ChargeTarget } from "./room"
-import { decodeCreepTask, GameObjectTask, GameObjectTaskState } from "game_object_task/game_object_task"
+import { GameObjectTaskState } from "game_object_task/game_object_task"
 
 export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks
   NONE    = "none",
@@ -69,8 +69,6 @@ export type WorkerSource = StructureContainer | StructureStorage | StructureTerm
 
 declare global {
   interface Creep {
-    task: GameObjectTask<Creep> | null
-
     /** @deprecated Old codebase */
     squad: Squad
 
