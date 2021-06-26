@@ -162,7 +162,7 @@ export class UpgradeL3ControllerObjective implements Objective {
   private assignNewTask(creep: Creep, workers: Creep[], sources: Source[], spawn: StructureSpawn, controller: StructureController, alreadyRun?: boolean): void {
     const noEnergy = (): boolean => {
       if (alreadyRun === true) {
-        return creep.store.getFreeCapacity() > 0  // タスクを実行済みである場合、storeが更新されていないため
+        return creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getCapacity() / 2  // タスクを実行済みである場合、storeが更新されていないため
       } else {
         return creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
       }
