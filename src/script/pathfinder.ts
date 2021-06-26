@@ -48,13 +48,20 @@ export function findPathToSource(spawnName: string, sourceId: Id<Source>): strin
   })
   visualize(harvestPositions, {text: "■", color: "#ff0000"})
 
-  const result = PathFinder.search(spawn.pos, { pos: source.pos, range: 1 })
-  if (result.incomplete === true) {
-    visualize(result.path, { color: "#ff0000" })
-    return "[INCOMPLETE] Pathfinder failed to find path"
-  }
+  const pathFindResults: string[] = []
+  const results: PathFinderPath[] = []
+  harvestPositions.forEach(position => {
+    const result = PathFinder.search(spawn.pos, { pos: position, range: 0 })
+    if (result.incomplete === true) {
+      pathFindResults.push(`Failed to find path (${position.x}, ${position.y})`)
+      return
+    }
+    results.push(result)
+  })
 
-  visualize(result.path, { color: "#ffffff" })
+  const shorestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
+
+  visualize(shorestPath.path, { color: "#ffffff" })
 
   const harvestPositionDescription = harvestPositions.map(p => `(${p.x}, ${p.y})`).join(", ")
   return `Found ${harvestPositions.length} harvest positions: ${harvestPositionDescription}`
