@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath } from "script/pathfinder"
+import { findPath, findPathToSource } from "script/pathfinder"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -12,6 +12,8 @@ export class ExecCommand implements ConsoleCommand {
     switch (this.args[0]) {
     case "FindPath":
       return this.findPath()
+    case "FindPathToSource":
+      return this.findPathToSource()
     default:
       return "Invalid script type"
     }
@@ -60,5 +62,21 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return findPath(startObjectId, goalObjectId, range)
+  }
+
+  private findPathToSource(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const spawnName = args.get("spawn_name")
+    if (spawnName == null) {
+      return this.missingArgumentError("spawn_name")
+    }
+
+    const sourceId = args.get("source_id")
+    if (sourceId == null) {
+      return this.missingArgumentError("source_id")
+    }
+
+    return findPathToSource(spawnName, sourceId as Id<Source>)
   }
 }

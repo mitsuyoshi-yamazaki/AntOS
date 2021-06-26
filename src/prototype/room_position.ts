@@ -7,8 +7,8 @@ declare global {
 export function init(): void {
   RoomPosition.prototype.neighbours = function (): RoomPosition[] {
     const result: RoomPosition[] = []
-    for (let j = -1; j < 1; j += 1) {
-      for (let i = -1; i < 1; i += 1) {
+    for (let j = -1; j <= 1; j += 1) {
+      for (let i = -1; i <= 1; i += 1) {
         if (i === 0 && j === 0) {
           continue
         }
