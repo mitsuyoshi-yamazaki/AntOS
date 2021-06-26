@@ -6,6 +6,7 @@ import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
 import { LoggerProcess } from "./process/logger"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
+import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
 
 interface ProcessMemory {
@@ -38,6 +39,7 @@ function init(): void {
 
 function updatePrototypes(): void {
   initRoomPositionPrototype()
+  initRoomObjectPrototype()
   initCreepPrototype()
 }
 

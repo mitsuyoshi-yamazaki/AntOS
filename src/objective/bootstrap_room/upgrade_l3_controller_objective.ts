@@ -123,10 +123,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       const canSpawn = spawn.room.energyAvailable >= this.baseWorkerSpawnEnergy
 
       if (hasEnoughWorkers !== true && spawn.spawning == null && canSpawn) {
-        const source = this.getSourceToAssign(workers, sources)
-        if (source != null) {
-          this.spawnWorker(spawn, source)
-        }
+        this.spawnWorker(spawn, this.getSourceToAssign(sources))
       }
 
       this.work(workers, controller, sources, spawn)
@@ -164,7 +161,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       }
     }
     if (noEnergy()) {
-      const source = this.getSourceToAssign(workers, sources)
+      const source = this.getSourceToAssign(sources)
       if (source != null) {
         creep.task = new HarvestEnergyTask(Game.time, source)
       } else {
@@ -185,17 +182,10 @@ export class UpgradeL3ControllerObjective implements Objective {
     }
   }
 
-  private getSourceToAssign(workers: Creep[], sources: Source[]): Source | null {
-    const leastTargetedSource = sources.reduce((lhs, rhs) => {
-      const l = TaskTargetCache.targetingTaskRunnerIds(lhs.id)
-      const r = TaskTargetCache.targetingTaskRunnerIds(rhs.id)
-      console.log(`${lhs.id}: ${l.length}`)
-      console.log(`${rhs.id}: ${r.length}`)
-      return l.length < r.length ? lhs : rhs
+  private getSourceToAssign(sources: Source[]): Source | null {
+    return sources.reduce((lhs, rhs) => {
+      return lhs.targetedBy.length < rhs.targetedBy.length ? lhs : rhs
     })
-
-    console.log(`getSourceToAssign least: ${leastTargetedSource.id}`)
-    return leastTargetedSource
   }
 
   private getConstructionSiteToAssign(room: Room): ConstructionSite<BuildableStructureConstant> | null {
@@ -212,12 +202,12 @@ export class UpgradeL3ControllerObjective implements Objective {
   }
 
   // ---- Spawn ---- //
-  private spawnWorker(spawn: StructureSpawn, targetSource: Source): void {
+  private spawnWorker(spawn: StructureSpawn, targetSource: Source | null): void {
     const time = Game.time
-    const initialTask = new HarvestEnergyTask(time, targetSource)
+    const initialTask = targetSource != null ? new HarvestEnergyTask(time, targetSource) : null
     const name = generateUniqueId("belgian_waffle")
     const memory: CreepMemory = {
-      ts: initialTask.encode(),
+      ts: initialTask?.encode() ?? null,
       squad_name: "",
       status: CreepStatus.NONE,
       type: CreepType.WORKER,
