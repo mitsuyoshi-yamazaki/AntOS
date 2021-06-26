@@ -71,7 +71,7 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
   const pathFindResults: string[] = []
   const results: PathFinderPath[] = []
   harvestPositions.forEach(position => {
-    const result = PathFinder.search(destination, { pos: position, range: 0 })
+    const result = PathFinder.search(destination, { pos: position, range: 1 })
     if (result.incomplete === true) {
       pathFindResults.push(`Failed to find path (${position.x}, ${position.y})`)
       return
@@ -80,6 +80,17 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
   })
 
   const shortestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
+  if (shortestPath != null) {
+    const lastPosition = shortestPath.path[shortestPath.path.length - 1]
+    harvestPositions.sort((lhs, rhs) => {
+      const lValue = Math.abs(lhs.x - lastPosition.x) + Math.abs(lhs.y - lastPosition.y)
+      const rValue = Math.abs(rhs.x - lastPosition.x) + Math.abs(rhs.y - lastPosition.y)
+      if (lValue === rValue) {
+        return 0
+      }
+      return lValue > rValue ? 1 : -1
+    })
+  }
 
   visualize(shortestPath.path, { color: "#ffffff" })
 

@@ -130,7 +130,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       this.work(workers, controller, sources, spawn)
       progress = new ObjectiveInProgress(`${workers.length} working`)
 
-      // this._sourceRoute(controller.room, sources, spawn)
+      this._sourceRoute(controller.room, sources, spawn)
 
     }, "UpgradeL3ControllerObjective.progress()")()
 
@@ -242,13 +242,16 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (sourcePath == null) {
         const result = calculateSourceRoute(source.id, spawn.pos)
         switch (result.resultType) {
-        case "succeeded":
+        case "succeeded": {
+          const path = result.value.path.path.map(position => ({ x: position.x, y: position.y }))
+          path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
           pathInMemory.s[source.id] = {
-            p: result.value.path.path.map(position => ({ x: position.x, y: position.y })),
-            d: {x: spawn.pos.x, y: spawn.pos.y},
+            p: path,
+            d: { x: spawn.pos.x, y: spawn.pos.y },
           }
           console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
           break
+        }
         case "failed":
           pathInMemory.s[source.id] = "no path"
           console.log(`source path cannot found: ${result.reason}`)
@@ -259,8 +262,8 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (sourcePath === "no path") {
         return
       }
-      console.log(`source path found for ${source.id}`)
-      sourcePath.p.forEach(position => source.room.visual.text("*", position.x, position.y))
+      // console.log(`source path found for ${source.id}`)
+      // sourcePath.p.forEach(position => source.room.visual.text("*", position.x, position.y))
     })
   }
 }

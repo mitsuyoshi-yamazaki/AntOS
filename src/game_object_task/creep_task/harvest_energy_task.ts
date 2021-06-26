@@ -1,5 +1,31 @@
 import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
+const sourcePathCache = new Map<Id<Source>, RoomPosition[]>()
+
+function getCachedPathFor(source: Source): RoomPosition[] | null {
+  const cachedPath = sourcePathCache.get(source.id)
+  if (cachedPath != null) {
+    if (cachedPath.length <= 0) {
+      return null
+    } else {
+      return cachedPath
+    }
+  }
+  if (source.room.memory.p == null) {
+    sourcePathCache.set(source.id, [])
+    return null
+  }
+  const memoryCachedPath = source.room.memory.p.s[source.id]
+  if (memoryCachedPath == null || memoryCachedPath === "no path") {
+    sourcePathCache.set(source.id, [])
+    return null
+  }
+  const roomName = source.room.name
+  const roomPositions = memoryCachedPath.p.map(position => new RoomPosition(position.x, position.y, roomName))
+  sourcePathCache.set(source.id, roomPositions)
+  return roomPositions
+}
+
 export interface HarvestEnergyTaskState extends GameObjectTaskState {
   /** target id */
   i: Id<Source>
@@ -34,6 +60,7 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
+    // キャッシュされたroute to sourceがあればそれを使う
     const result = creep.harvest(this.source)
 
     switch (result) {
@@ -41,6 +68,8 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
       const harvestAmount = creep.body.filter(b => b.type === WORK).length * HARVEST_POWER
       if (creep.store.getFreeCapacity() <= harvestAmount) {
         return "finished"
+      } else {
+        this.move(creep)
       }
       return "in progress"
     }
@@ -66,22 +95,14 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
   }
 
   private move(creep: Creep): void {
-    if (this.source.id === "59f19fb482100e1594f356f4") {
-      this.moveByCachedPath(creep)
+    const cachedPath = getCachedPathFor(this.source)
+    if (cachedPath == null) {
+      creep.moveTo(this.source, { reusePath: 15 })
       return
     }
-    creep.moveTo(this.source, { reusePath: 15 })
-  }
-
-  private moveByCachedPath(creep: Creep): void {  // FixMe:
-    const path = creep.room.find(FIND_FLAGS)
-      .filter(flag => flag.color === COLOR_ORANGE)
-      .map(flag => flag.pos)
-    const result = creep.moveByPath(path)
-
+    const result = creep.moveByPath(cachedPath)
     switch (result) {
     case OK:
-      // creep.say("🏃‍♂️")
       return
 
     case ERR_INVALID_ARGS:
@@ -89,8 +110,7 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
       return
 
     case ERR_NOT_FOUND:
-      creep.say("notonpath")
-      creep.moveTo(creep.pos.findClosestByRange(path) ?? path[0])
+      creep.moveTo(creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0])
       return
 
     case ERR_NOT_OWNER:
@@ -101,7 +121,6 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
     case ERR_TIRED:
     case ERR_BUSY:
     default:
-      creep.say("🏃‍♂️")
       return
     }
   }

@@ -7,5 +7,9 @@ const scripts = {
 
   pathFinding: () => {
     PathFinder.search(Game.spawns["Spawn2"].pos, {pos:Game.getObjectById("59f19fc582100e1594f358bd").pos, range:3}).path.forEach(pos => Game.rooms[pos.roomName].visual.text("*", pos))
-  }
+  },
+
+  removeFlags: () => {
+    Game.rooms["W53S7"].find(FIND_FLAGS).forEach(flag => flag.remove())
+  },
 }
