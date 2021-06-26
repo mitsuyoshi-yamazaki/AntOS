@@ -4,6 +4,7 @@ import {
   ConsoleCommand,
   isConsoleCommand,
 } from "./console_command/console_command"
+import { ExecCommand } from "./console_command/exec_command"
 import { HelpCommand } from "./console_command/help_command"
 import { KillCommand } from "./console_command/kill_command"
 import { LaunchCommand } from "./console_command/launch_command"
@@ -88,6 +89,9 @@ function parseCommand(rawCommand: string): ResultType<ConsoleCommand, string> {
 
   case "launch":
     return new ResultSucceeded(new LaunchCommand(options, args, rawCommand))
+
+  case "exec":
+    return new ResultSucceeded(new ExecCommand(options, args, rawCommand))
 
   case "process":
     return new ResultSucceeded(new ProcessCommand(options, args, rawCommand))

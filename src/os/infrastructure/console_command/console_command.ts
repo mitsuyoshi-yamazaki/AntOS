@@ -2,6 +2,7 @@ const consoleCommandTypes = [
   "help",
   "kill",
   "launch",
+  "exec",
   "process",
   "message",
 ] as const
@@ -45,8 +46,16 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
   {
     command: "launch",
     description: "Launch specified process",
+    options: [
+      "-l: Add launched process ID to logger filter"
+    ],
+    args: "Process type name, process launch arguments key1=value1 key2=value2 ...",
+  },
+  {
+    command: "exec",
+    description: "Execute specified script",
     options: [],
-    args: "Process type name, process launch options key1=value1 key2=value2 ...",
+    args: "Script name, script arguments key1=value1 key2=value2 ...",
   },
   {
     command: "process",
