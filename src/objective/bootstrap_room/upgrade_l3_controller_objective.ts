@@ -124,7 +124,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       }, [] as Source[])
 
       const hasEnoughWorkers = workers.length >= numberOfWorkersEachSource * sources.length
-      const canSpawn = spawn.store.getUsedCapacity(RESOURCE_ENERGY) >= this.baseWorkerSpawnEnergy
+      const canSpawn = spawn.room.energyAvailable >= this.baseWorkerSpawnEnergy
 
       if (hasEnoughWorkers !== true && spawn.spawning == null && canSpawn) {
         const source = this.getSourceToAssign(workers, sources)
@@ -175,7 +175,7 @@ export class UpgradeL3ControllerObjective implements Objective {
         this.assignTask(creep, null)
       }
     } else {
-      if (spawn.store.getCapacity(RESOURCE_ENERGY) > spawn.store[RESOURCE_ENERGY]) {
+      if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
         this.assignTask(creep, new TransferToStructureTask(Game.time, spawn))
       } else {
         const constructionSite = this.getConstructionSiteToAssign(controller.room)
