@@ -38,7 +38,7 @@ export class UpgradeControllerTask implements GameObjectTask<Creep> {
 
     switch (result) {
     case OK: {
-      const consumeAmount = creep.body.filter(b => b.type === WORK).length * BUILD_POWER
+      const consumeAmount = creep.body.filter(b => b.type === WORK).length * UPGRADE_CONTROLLER_POWER
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= consumeAmount) {
         return "finished"
       }
