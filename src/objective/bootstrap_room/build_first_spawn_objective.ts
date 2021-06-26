@@ -1,4 +1,3 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
 import { roomLink } from "utility/log"
@@ -47,7 +46,13 @@ export class BuildFirstSpawnObjective implements Objective {
 
     const spawnConstructionSite = (targetRoom.construction_sites ?? [])[0]
     if (spawnConstructionSite == null) {
-      return new ObjectiveFailed(`No spawn construction site in ${roomLink(targetRoom.name)}`)
+      const flag = targetRoom.find(FIND_FLAGS)[0]
+      if (flag == null) {
+        return new ObjectiveFailed(`No spawn construction site in ${roomLink(targetRoom.name)}`)
+      }
+      targetRoom.createConstructionSite(flag.pos.x, flag.pos.y, STRUCTURE_SPAWN)
+      flag.remove()
+      return new ObjectiveInProgress(`Created spawn construction site at ${flag.pos}`)
     }
     if (spawnConstructionSite.structureType !== STRUCTURE_SPAWN) {
       return new ObjectiveFailed(`Construction site ${spawnConstructionSite.id} is not a spawn`)

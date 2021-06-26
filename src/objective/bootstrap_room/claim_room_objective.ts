@@ -1,5 +1,6 @@
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
+import { roomLink } from "utility/log"
 
 type ClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
@@ -155,7 +156,7 @@ export class ClaimRoomObjective implements Objective {
       return new ObjectiveSucceeded(controller)
     case ERR_NOT_IN_RANGE:
       creep.moveTo(controller, {reusePath: 15})
-      return new ObjectiveInProgress(`Claimer creep heading to target room ${creep.pos}`)
+      return new ObjectiveInProgress(`Claimer creep heading to target room ${creep.pos} ${roomLink(creep.room.name)}`)
     default:
       return new ObjectiveFailed(`Unexpected claimController() error ${result}`)
     }
