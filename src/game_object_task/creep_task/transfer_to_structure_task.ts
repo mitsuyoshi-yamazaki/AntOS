@@ -8,6 +8,9 @@ export interface TransferToStructureTaskState extends GameObjectTaskState {
 export class TransferToStructureTask implements GameObjectTask<Creep> {
   public readonly taskType = "TransferToStructureTask"
   public readonly shortDescription = "transfer"
+  public get targetId(): Id<AnyStructure> {
+    return this.structure.id
+  }
 
   public constructor(
     public readonly startTime: number,

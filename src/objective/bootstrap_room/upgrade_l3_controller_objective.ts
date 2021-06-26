@@ -8,7 +8,7 @@ import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to
 import { CreepName } from "prototype/creep"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { BuildTask } from "game_object_task/creep_task/build_task"
-import { GameObjectTask } from "game_object_task/game_object_task"
+import { TaskTargetCache } from "game_object_task/task_target_cache"
 
 const numberOfWorkersEachSource = 8
 
@@ -54,7 +54,6 @@ export interface UpgradeL3ControllerObjectiveWorkingInfo {
 export class UpgradeL3ControllerObjective implements Objective {
   private baseWorkerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE]
   private baseWorkerSpawnEnergy = 100 + 50 + 50
-  private sourceAssignsCache = new Map<Id<Source>, number>()
 
   public constructor(
     public readonly startTime: number,
@@ -65,7 +64,6 @@ export class UpgradeL3ControllerObjective implements Objective {
     private sourceIds: Id<Source>[],
     private workingInfo: UpgradeL3ControllerObjectiveWorkingInfo,
   ) {
-
   }
 
   public encode(): UpgradeL3ControllerObjectiveState {
@@ -96,8 +94,6 @@ export class UpgradeL3ControllerObjective implements Objective {
   public progress(spawn: StructureSpawn, controller: StructureController): UpgradeL3ControllerObjectiveProgressType {
     let progress: UpgradeL3ControllerObjectiveProgressType | null = null
     ErrorMapper.wrapLoop((): void => {
-
-      this.sourceAssignsCache.clear()
 
       const workers: Creep[] = []
       const aliveWorkerNames: string[] = []
@@ -170,56 +166,36 @@ export class UpgradeL3ControllerObjective implements Objective {
     if (noEnergy()) {
       const source = this.getSourceToAssign(workers, sources)
       if (source != null) {
-        this.assignTask(creep, new HarvestEnergyTask(Game.time, source))
+        creep.task = new HarvestEnergyTask(Game.time, source)
       } else {
-        this.assignTask(creep, null)
+        creep.task = null
       }
     } else {
       // if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) { // TODO: extensionに入れる
       if (spawn.room.energyAvailable < 300) {
-        this.assignTask(creep, new TransferToStructureTask(Game.time, spawn))
+        creep.task = new TransferToStructureTask(Game.time, spawn)
       } else {
         const constructionSite = this.getConstructionSiteToAssign(controller.room)
         if (constructionSite != null) {
-          this.assignTask(creep, new BuildTask(Game.time, constructionSite))
+          creep.task = new BuildTask(Game.time, constructionSite)
         } else {
-          this.assignTask(creep, new UpgradeControllerTask(Game.time, controller))
+          creep.task = new UpgradeControllerTask(Game.time, controller)
         }
       }
     }
-  }
-
-  private assignTask(creep: Creep, task: GameObjectTask<Creep> | null): void {
-    creep.task = task
-    creep.say(task?.shortDescription ?? "idle")
   }
 
   private getSourceToAssign(workers: Creep[], sources: Source[]): Source | null {
-    if (this.sourceAssignsCache.size <= 0) {
-      sources.forEach(source => this.sourceAssignsCache.set(source.id, 0))
+    const leastTargetedSource = sources.reduce((lhs, rhs) => {
+      const l = TaskTargetCache.targetingTaskRunnerIds(lhs.id)
+      const r = TaskTargetCache.targetingTaskRunnerIds(rhs.id)
+      console.log(`${lhs.id}: ${l.length}`)
+      console.log(`${rhs.id}: ${r.length}`)
+      return l.length < r.length ? lhs : rhs
+    })
 
-      for (const creep of workers) {
-        if (!(creep.task instanceof HarvestEnergyTask)) {
-          continue
-        }
-        const sourceId = creep.task.source.id
-        const count = this.sourceAssignsCache.get(sourceId) ?? 0
-        this.sourceAssignsCache.set(sourceId, count + 1)
-      }
-    }
-
-    const sourceId = Array.from(this.sourceAssignsCache.entries()).reduce((result: [Id<Source>, number] | null, current: [Id<Source>, number]) => {
-      if (result == null) {
-        return current
-      }
-      return current[1] <= result[1] ? current : result
-    }, null)
-
-    if (sourceId == null) {
-      return null
-    }
-
-    return Game.getObjectById(sourceId[0])
+    console.log(`getSourceToAssign least: ${leastTargetedSource.id}`)
+    return leastTargetedSource
   }
 
   private getConstructionSiteToAssign(room: Room): ConstructionSite<BuildableStructureConstant> | null {

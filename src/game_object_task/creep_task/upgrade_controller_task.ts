@@ -8,6 +8,9 @@ export interface UpgradeControllerTaskState extends GameObjectTaskState {
 export class UpgradeControllerTask implements GameObjectTask<Creep> {
   public readonly taskType = "UpgradeControllerTask"
   public readonly shortDescription = "upgrade"
+  public get targetId(): Id<StructureController> {
+    return this.controller.id
+  }
 
   public constructor(
     public readonly startTime: number,

@@ -5,6 +5,9 @@ import { HarvestEnergyTask, HarvestEnergyTaskState } from "./creep_task/harvest_
 import { TransferToStructureTask, TransferToStructureTaskState } from "./creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask, UpgradeControllerTaskState } from "./creep_task/upgrade_controller_task"
 
+export type TaskRunnerType = Creep | StructureSpawn | StructureTower
+export type TargetType = Creep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+
 export interface GameObjectTaskState extends State {
   /** start time */
   s: number
@@ -16,6 +19,7 @@ export interface GameObjectTaskState extends State {
 export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 
 export interface GameObjectTask<T> extends Stateful {
+  targetId?: Id<TargetType>
   startTime: number
   taskType: keyof TaskTypes
   shortDescription: string

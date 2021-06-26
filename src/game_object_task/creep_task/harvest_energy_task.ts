@@ -8,6 +8,9 @@ export interface HarvestEnergyTaskState extends GameObjectTaskState {
 export class HarvestEnergyTask implements GameObjectTask<Creep> {
   public readonly taskType = "HarvestEnergyTask"
   public readonly shortDescription = "E-harvest"
+  public get targetId(): Id<Source> {
+    return this.source.id
+  }
 
   public constructor(
     public readonly startTime: number,
