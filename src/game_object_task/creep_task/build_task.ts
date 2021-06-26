@@ -7,6 +7,7 @@ export interface BuildTaskState extends GameObjectTaskState {
 
 export class BuildTask implements GameObjectTask<Creep> {
   public readonly taskType = "BuildTask"
+  public readonly shortDescription = "build"
 
   public constructor(
     public readonly startTime: number,

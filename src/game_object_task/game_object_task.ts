@@ -18,6 +18,7 @@ export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 export interface GameObjectTask<T> extends Stateful {
   startTime: number
   taskType: keyof TaskTypes
+  shortDescription: string
 
   encode(): GameObjectTaskState
   run(obj: T): GameObjectTaskReturnCode
