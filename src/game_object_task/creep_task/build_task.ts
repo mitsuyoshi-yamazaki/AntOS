@@ -1,36 +1,36 @@
 import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
-export interface UpgradeControllerTaskState extends GameObjectTaskState {
+export interface BuildTaskState extends GameObjectTaskState {
   /** target id */
-  i: Id<StructureController>
+  i: Id<ConstructionSite<BuildableStructureConstant>>
 }
 
-export class UpgradeControllerTask implements GameObjectTask<Creep> {
-  public readonly taskType = "UpgradeControllerTask"
+export class BuildTask implements GameObjectTask<Creep> {
+  public readonly taskType = "BuildTask"
 
   public constructor(
     public readonly startTime: number,
-    public readonly controller: StructureController,
+    public readonly constructionSite: ConstructionSite<BuildableStructureConstant>,
   ) { }
 
-  public encode(): UpgradeControllerTaskState {
+  public encode(): BuildTaskState {
     return {
       s: this.startTime,
-      t: "UpgradeControllerTask",
-      i: this.controller.id,
+      t: "BuildTask",
+      i: this.constructionSite.id,
     }
   }
 
-  public static decode(state: UpgradeControllerTaskState): UpgradeControllerTask | null {
-    const controller = Game.getObjectById(state.i)
-    if (controller == null) {
+  public static decode(state: BuildTaskState): BuildTask | null {
+    const target = Game.getObjectById(state.i)
+    if (target == null) {
       return null
     }
-    return new UpgradeControllerTask(state.s, controller)
+    return new BuildTask(state.s, target)
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    const result = creep.upgradeController(this.controller)
+    const result = creep.build(this.constructionSite)
 
     switch (result) {
     case OK: {
@@ -41,7 +41,7 @@ export class UpgradeControllerTask implements GameObjectTask<Creep> {
       return "in progress"
     }
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.controller, { reusePath: 15 })
+      creep.moveTo(this.constructionSite, { reusePath: 15 })
       return "in progress"
     case ERR_NOT_ENOUGH_RESOURCES:
       return "finished"

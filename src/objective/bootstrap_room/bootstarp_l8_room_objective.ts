@@ -100,7 +100,7 @@ export class BootstrapL8RoomObjective implements Objective {
 
   private addUpgradeL3ControllerObjective(room: Room): void {
     const sourceIds = room.sources.map(source => source.id)
-    const objective = new UpgradeL3ControllerObjective(Game.time, [], [], sourceIds)
+    const objective = new UpgradeL3ControllerObjective(Game.time, [], [], [], [], sourceIds)
     this.children.push(objective)
   }
 

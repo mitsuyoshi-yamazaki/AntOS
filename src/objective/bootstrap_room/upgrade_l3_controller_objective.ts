@@ -3,11 +3,13 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
-import { HarvestTask } from "game_object_task/creep_task/harvest_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
+import { CreepName } from "prototype/creep"
+import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
+import { BuildTask } from "game_object_task/creep_task/build_task"
 
-const numberOfWorkersEachSource = 10
+const numberOfWorkersEachSource = 8
 
 interface UpgradeL3ControllerObjectiveSucceededState {
   controller: StructureController
@@ -25,7 +27,13 @@ export interface UpgradeL3ControllerObjectiveState extends ObjectiveState {
   /** creep IDs */
   cr: {
     /** worker name */
-    w: string[]
+    w: CreepName[]
+
+    /** harvester name */
+    hv: CreepName[]
+
+    /** hauler name */
+    hl: CreepName[]
   }
 
   /** source IDs */
@@ -40,7 +48,9 @@ export class UpgradeL3ControllerObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    private workerNames: string[],
+    private workerNames: CreepName[],
+    private harvesterNames: CreepName[],
+    private haulerNames: CreepName[],
     private sourceIds: Id<Source>[],
   ) {
 
@@ -53,6 +63,8 @@ export class UpgradeL3ControllerObjective implements Objective {
       c: this.children.map(child => child.encode()),
       cr: {
         w: this.workerNames,
+        hv: this.harvesterNames,
+        hl: this.haulerNames,
       },
       si: this.sourceIds,
     }
@@ -60,7 +72,7 @@ export class UpgradeL3ControllerObjective implements Objective {
 
   public static decode(state: UpgradeL3ControllerObjectiveState): UpgradeL3ControllerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.si)
+    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.hv ?? [], state.cr.hl ?? [], state.si)
   }
 
   public progress(spawn: StructureSpawn, controller: StructureController): UpgradeL3ControllerObjectiveProgressType {
@@ -127,7 +139,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
         const source = this.getSourceToAssign(workers, sources)
         if (source != null) {
-          creep.task = new HarvestTask(Game.time, source)
+          creep.task = new HarvestEnergyTask(Game.time, source)
         } else {
           creep.task = null
         }
@@ -135,7 +147,12 @@ export class UpgradeL3ControllerObjective implements Objective {
         if (spawn.store.getCapacity(RESOURCE_ENERGY) > spawn.store[RESOURCE_ENERGY]) {
           creep.task = new TransferToStructureTask(Game.time, spawn)
         } else {
-          creep.task = new UpgradeControllerTask(Game.time, controller)
+          const constructionSite = this.getConstructionSiteToAssign(controller.room)
+          if (constructionSite != null) {
+            creep.task = new BuildTask(Game.time, constructionSite)
+          } else {
+            creep.task = new UpgradeControllerTask(Game.time, controller)
+          }
         }
       }
     })
@@ -146,7 +163,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       sources.forEach(source => this.sourceAssignsCache.set(source.id, 0))
 
       for (const creep of workers) {
-        if (!(creep.task instanceof HarvestTask)) {
+        if (!(creep.task instanceof HarvestEnergyTask)) {
           continue
         }
         const sourceId = creep.task.source.id
@@ -169,10 +186,14 @@ export class UpgradeL3ControllerObjective implements Objective {
     return Game.getObjectById(sourceId[0])
   }
 
+  private getConstructionSiteToAssign(room: Room): ConstructionSite<BuildableStructureConstant> | null {
+    return room.find(FIND_CONSTRUCTION_SITES)[0]
+  }
+
   // ---- Spawn ---- //
   private spawnWorker(spawn: StructureSpawn, targetSource: Source): void {
     const time = Game.time
-    const initialTask = new HarvestTask(time, targetSource)
+    const initialTask = new HarvestEnergyTask(time, targetSource)
     const name = generateUniqueId("belgian_waffle")
     const memory: CreepMemory = {
       ts: initialTask.encode(),
