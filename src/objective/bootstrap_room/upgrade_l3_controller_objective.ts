@@ -5,6 +5,7 @@ import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
 import { HarvestTask } from "game_object_task/creep_task/harvest_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
+import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
 
 const numberOfWorkersEachSource = 10
 
@@ -92,14 +93,17 @@ export class UpgradeL3ControllerObjective implements Objective {
         return result
       }, [] as Source[])
 
-      if (workers.length < numberOfWorkersEachSource && spawn.spawning == null && spawn.store.getUsedCapacity(RESOURCE_ENERGY) >= this.baseWorkerSpawnEnergy) {
+      const hasEnoughWorkers = workers.length >= numberOfWorkersEachSource * sources.length
+      const canSpawn = spawn.store.getUsedCapacity(RESOURCE_ENERGY) >= this.baseWorkerSpawnEnergy
+
+      if (hasEnoughWorkers !== true && spawn.spawning == null && canSpawn) {
         const source = this.getSourceToAssign(workers, sources)
         if (source != null) {
           this.spawnWorker(spawn, source)
         }
       }
 
-      this.work(workers, controller, sources)
+      this.work(workers, controller, sources, spawn)
       progress = new ObjectiveInProgress(`${workers.length} working`)
     }, "UpgradeL3ControllerObjective.progress()")()
 
@@ -110,7 +114,7 @@ export class UpgradeL3ControllerObjective implements Objective {
   }
 
   // ---- Work ---- //
-  private work(workers: Creep[], controller: StructureController, sources: Source[]): void {
+  private work(workers: Creep[], controller: StructureController, sources: Source[], spawn: StructureSpawn): void {
     workers.forEach(creep => {
       if (creep.spawning) {
         return
@@ -119,22 +123,20 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (isIdle !== true) {
         return
       }
-      switch (creep.task?.taskType) {
-      case "HarvestTask": {
+
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
         const source = this.getSourceToAssign(workers, sources)
         if (source != null) {
           creep.task = new HarvestTask(Game.time, source)
         } else {
           creep.task = null
         }
-        break
-      }
-      case "UpgradeControllerTask":
-      default:
-        creep.task = new UpgradeControllerTask(Game.time, controller)
-        break
-
-        // TODO: メモリに入れる
+      } else {
+        if (spawn.store.getCapacity(RESOURCE_ENERGY) > spawn.store[RESOURCE_ENERGY]) {
+          creep.task = new TransferToStructureTask(Game.time, spawn)
+        } else {
+          creep.task = new UpgradeControllerTask(Game.time, controller)
+        }
       }
     })
   }
@@ -157,7 +159,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (result == null) {
         return current
       }
-      return current[1] < result[1] ? current : result
+      return current[1] <= result[1] ? current : result
     }, null)
 
     if (sourceId == null) {
