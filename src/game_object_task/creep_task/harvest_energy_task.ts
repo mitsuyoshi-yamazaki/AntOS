@@ -73,7 +73,7 @@ export class HarvestEnergyTask implements GameObjectTask<Creep> {
     creep.moveTo(this.source, { reusePath: 15 })
   }
 
-  private moveByCachedPath(creep: Creep): void {
+  private moveByCachedPath(creep: Creep): void {  // FixMe:
     const path = creep.room.find(FIND_FLAGS)
       .filter(flag => flag.color === COLOR_ORANGE)
       .map(flag => flag.pos)

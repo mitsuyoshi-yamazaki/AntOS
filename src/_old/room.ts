@@ -4,6 +4,7 @@ import { RoomLayout, RoomLayoutOpts } from "./room_layout"
 import { UID, room_history_link, room_link, leveled_colored_text, getSectorName } from '../utility';
 import { RemoteMineralHarvesterSquadMemory } from "./squad/remote_m_harvester";
 import { ErrorMapper } from "../error_mapper/ErrorMapper";
+import { RoomPathMemory } from "prototype/room";
 
 export interface AttackerInfo  {
   attacked: boolean
@@ -22,13 +23,30 @@ export type ChargeTarget = StructureExtension | StructureSpawn | StructureTower 
 
 declare global {
   interface RoomMemory {
+    p?: RoomPathMemory
+
+    /** @deprecated Old codebase */
     harvesting_source_ids: string[]
+
+    /** @deprecated Old codebase */
     cost_matrix?: number[] | undefined
+
+    /** @deprecated Old codebase */
     attacked_time?: number
+
+    /** @deprecated Old codebase */
     last_attacked_time?: number
+
+    /** @deprecated Old codebase */
     description_position?: {x:number, y:number}
+
+    /** @deprecated Old codebase */
     exits?: {[exit: number]: {x:number, y:number}}
+
+    /** @deprecated Old codebase */
     ancestor?: string
+
+    /** @deprecated Old codebase */
     is_gcl_farm?: boolean
   }
 

@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
@@ -8,7 +8,8 @@ import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to
 import { CreepName } from "prototype/creep"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { BuildTask } from "game_object_task/creep_task/build_task"
-import { TaskTargetCache } from "game_object_task/task_target_cache"
+import { RoomPathMemory } from "prototype/room"
+import { calculateSourceRoute } from "script/pathfinder"
 
 const numberOfWorkersEachSource = 8
 
@@ -128,6 +129,9 @@ export class UpgradeL3ControllerObjective implements Objective {
 
       this.work(workers, controller, sources, spawn)
       progress = new ObjectiveInProgress(`${workers.length} working`)
+
+      // this._sourceRoute(controller.room, sources, spawn)
+
     }, "UpgradeL3ControllerObjective.progress()")()
 
     if (progress != null) {
@@ -224,5 +228,39 @@ export class UpgradeL3ControllerObjective implements Objective {
       PrimitiveLogger.log(`UpgradeL3ControllerObjective spawn ${spawn.id} failed with error: ${result}`)
       break
     }
+  }
+
+  // ---- Source route ---- //
+  private _sourceRoute(room: Room, sources: Source[], spawn: StructureSpawn): void {  // TODO: 適切なインターフェースにする
+    const pathInMemory: RoomPathMemory = room.memory.p ?? {s: {}}
+    if (room.memory.p == null) {
+      room.memory.p = pathInMemory
+    }
+
+    sources.forEach(source => {
+      const sourcePath = pathInMemory.s[source.id]
+      if (sourcePath == null) {
+        const result = calculateSourceRoute(source.id, spawn.pos)
+        switch (result.resultType) {
+        case "succeeded":
+          pathInMemory.s[source.id] = {
+            p: result.value.path.path.map(position => ({ x: position.x, y: position.y })),
+            d: {x: spawn.pos.x, y: spawn.pos.y},
+          }
+          console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
+          break
+        case "failed":
+          pathInMemory.s[source.id] = "no path"
+          console.log(`source path cannot found: ${result.reason}`)
+          break
+        }
+        return
+      }
+      if (sourcePath === "no path") {
+        return
+      }
+      console.log(`source path found for ${source.id}`)
+      sourcePath.p.forEach(position => source.room.visual.text("*", position.x, position.y))
+    })
   }
 }
