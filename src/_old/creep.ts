@@ -1,7 +1,7 @@
 import { StructureFilter, room_link } from "../utility"
 import { Squad } from "_old/squad/squad"
 import { ChargeTarget } from "./room"
-import { GameObjectTaskState } from "game_object_task/game_object_task"
+import { CreepTaskState } from "game_object_task/game_object_task"
 
 export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks
   NONE    = "none",
@@ -154,7 +154,7 @@ declare global {
 
   interface CreepMemory {
     /** task state */
-    ts: GameObjectTaskState | null
+    ts: CreepTaskState | null
 
     /** @deprecated Old codebase */
     squad_name: string

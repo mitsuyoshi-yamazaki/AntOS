@@ -1,3 +1,4 @@
+import { StructureSpawnTaskState } from "game_object_task/game_object_task";
 import { CreepStatus, ActionResult } from "./creep";
 
 declare global {
@@ -11,6 +12,11 @@ declare global {
   }
 
   interface SpawnMemory {
+    /** task state */
+    ts: StructureSpawnTaskState | null
+
+
+    /** @deprecated Old codebase */
     spawning: boolean[]
   }
 }

@@ -1,11 +1,11 @@
-import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { CreepTask, CreepTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
-export interface BuildTaskState extends GameObjectTaskState {
+export interface BuildTaskState extends CreepTaskState {
   /** target id */
   i: Id<ConstructionSite<BuildableStructureConstant>>
 }
 
-export class BuildTask implements GameObjectTask<Creep> {
+export class BuildTask implements CreepTask {
   public readonly taskType = "BuildTask"
   public readonly shortDescription = "build"
   public get targetId(): Id<ConstructionSite<BuildableStructureConstant>> {

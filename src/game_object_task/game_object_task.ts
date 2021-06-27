@@ -4,51 +4,97 @@ import { BuildTask, BuildTaskState } from "./creep_task/build_task"
 import { HarvestEnergyTask, HarvestEnergyTaskState } from "./creep_task/harvest_energy_task"
 import { TransferToStructureTask, TransferToStructureTaskState } from "./creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask, UpgradeControllerTaskState } from "./creep_task/upgrade_controller_task"
+import { SpawnCreepTask, SpawnCreepTaskState } from "./spwan_task/spawn_creep_task"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
 export type TargetType = Creep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
 
-export interface GameObjectTaskState extends State {
+interface GameObjectTaskState extends State {
   /** start time */
   s: number
 
   /** type identifier */
-  t: keyof TaskTypes
+  t: string
 }
 
 export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 
-export interface GameObjectTask<T> extends Stateful {
+interface GameObjectTask<T> extends Stateful {
   targetId?: Id<TargetType>
   startTime: number
-  taskType: keyof TaskTypes
+  taskType: string
   shortDescription: string
 
   encode(): GameObjectTaskState
   run(obj: T): GameObjectTaskReturnCode
 }
 
-class TaskTypes {
-  // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
-  "HarvestEnergyTask" = (state: GameObjectTaskState) => HarvestEnergyTask.decode(state as HarvestEnergyTaskState)
-  "UpgradeControllerTask" = (state: GameObjectTaskState) => UpgradeControllerTask.decode(state as UpgradeControllerTaskState)
-  "TransferToStructureTask" = (state: GameObjectTaskState) => TransferToStructureTask.decode(state as TransferToStructureTaskState)
-  "BuildTask" = (state: GameObjectTaskState) => BuildTask.decode(state as BuildTaskState)
+// ---- Creep Task ---- //
+export interface CreepTaskState extends GameObjectTaskState {
+  /** type identifier */
+  t: keyof CreepTaskTypes
 }
 
-export function decodeCreepTask(creep: Creep): GameObjectTask<Creep> | null {
+export interface CreepTask extends GameObjectTask<Creep> {
+  taskType: keyof CreepTaskTypes
+
+  encode(): CreepTaskState
+}
+
+class CreepTaskTypes {
+  // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
+  "HarvestEnergyTask" = (state: CreepTaskState) => HarvestEnergyTask.decode(state as HarvestEnergyTaskState)
+  "UpgradeControllerTask" = (state: CreepTaskState) => UpgradeControllerTask.decode(state as UpgradeControllerTaskState)
+  "TransferToStructureTask" = (state: CreepTaskState) => TransferToStructureTask.decode(state as TransferToStructureTaskState)
+  "BuildTask" = (state: CreepTaskState) => BuildTask.decode(state as BuildTaskState)
+}
+
+export function decodeCreepTask(creep: Creep): CreepTask | null {
   const state = creep.memory.ts
   if (state == null) {
     return null
   }
-  let decoded: GameObjectTask<Creep> | null = null
+  let decoded: CreepTask | null = null
   ErrorMapper.wrapLoop(() => {
-    const maker = (new TaskTypes())[state.t]
+    const maker = (new CreepTaskTypes())[state.t]
     if (maker == null) {
       decoded = null
       return
     }
     decoded = maker(state)
-  }, `decodeGameObjectTaskFrom(), objective type: ${state.t}`)()
+  }, `decodeCreepTask(), objective type: ${state.t}`)()
+  return decoded
+}
+
+// ---- Spawn Task ---- //
+export interface StructureSpawnTaskState extends GameObjectTaskState {
+  /** type identifier */
+  t: keyof SpawnTaskTypes
+}
+
+export interface StructureSpawnTask extends GameObjectTask<StructureSpawn> {
+  taskType: keyof SpawnTaskTypes
+
+  encode(): StructureSpawnTaskState
+}
+
+class SpawnTaskTypes {
+  "SpawnCreepTask" = (state: StructureSpawnTaskState) => SpawnCreepTask.decode(state as SpawnCreepTaskState)
+}
+
+export function decodeSpawnTask(spawn: StructureSpawn): StructureSpawnTask | null {
+  const state = spawn.memory.ts
+  if (state == null) {
+    return null
+  }
+  let decoded: StructureSpawnTask | null = null
+  ErrorMapper.wrapLoop(() => {
+    const maker = (new SpawnTaskTypes())[state.t]
+    if (maker == null) {
+      decoded = null
+      return
+    }
+    decoded = maker(state)
+  }, `decodeSpawnTask(), objective type: ${state.t}`)()
   return decoded
 }

@@ -1,23 +1,21 @@
-import { CreepTask } from "game_object_task/game_object_task"
+import { StructureSpawnTask } from "game_object_task/game_object_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
 
-export type CreepName = string
-
 declare global {
-  interface Creep {
-    task: CreepTask | null
+  interface StructureSpawn {
+    task: StructureSpawnTask | null
 
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-    _task: CreepTask | null
+    _task: StructureSpawnTask | null
   }
 }
 
 export function init(): void {
-  Object.defineProperty(Creep.prototype, "task", {
-    get(): CreepTask | null {
+  Object.defineProperty(StructureSpawn.prototype, "task", {
+    get(): StructureSpawnTask | null {
       return this._task
     },
-    set(task: CreepTask | null): void {
+    set(task: StructureSpawnTask | null): void {
       if (this._task != null && this._task.targetId != null) {
         TaskTargetCache.didFinishTask(this, this._task.targetId)
       }
@@ -25,7 +23,6 @@ export function init(): void {
         TaskTargetCache.didAssignTask(this, task.targetId)
       }
       this._task = task
-      this.say(task?.shortDescription ?? "idle")
     }
   })
 }

@@ -1,11 +1,11 @@
-import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { CreepTask, CreepTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
-export interface UpgradeControllerTaskState extends GameObjectTaskState {
+export interface UpgradeControllerTaskState extends CreepTaskState {
   /** target id */
   i: Id<StructureController>
 }
 
-export class UpgradeControllerTask implements GameObjectTask<Creep> {
+export class UpgradeControllerTask implements CreepTask {
   public readonly taskType = "UpgradeControllerTask"
   public readonly shortDescription = "upgrade"
   public get targetId(): Id<StructureController> {

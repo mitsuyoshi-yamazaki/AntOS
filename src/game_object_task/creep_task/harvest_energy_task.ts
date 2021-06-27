@@ -1,12 +1,12 @@
-import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { CreepTask, CreepTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { getCachedPathFor } from "script/pathfinder"
 
-export interface HarvestEnergyTaskState extends GameObjectTaskState {
+export interface HarvestEnergyTaskState extends CreepTaskState {
   /** target id */
   i: Id<Source>
 }
 
-export class HarvestEnergyTask implements GameObjectTask<Creep> {
+export class HarvestEnergyTask implements CreepTask {
   public readonly taskType = "HarvestEnergyTask"
   public readonly shortDescription = "E-harvest"
   public get targetId(): Id<Source> {

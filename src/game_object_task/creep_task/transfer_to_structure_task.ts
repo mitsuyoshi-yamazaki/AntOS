@@ -1,11 +1,11 @@
-import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { CreepTask, CreepTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
-export interface TransferToStructureTaskState extends GameObjectTaskState {
+export interface TransferToStructureTaskState extends CreepTaskState {
   /** target id */
   i: Id<AnyStructure>
 }
 
-export class TransferToStructureTask implements GameObjectTask<Creep> {
+export class TransferToStructureTask implements CreepTask {
   public readonly taskType = "TransferToStructureTask"
   public readonly shortDescription = "transfer"
   public get targetId(): Id<AnyStructure> {
