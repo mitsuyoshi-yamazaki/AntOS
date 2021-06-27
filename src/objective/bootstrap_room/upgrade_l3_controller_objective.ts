@@ -32,6 +32,9 @@ export interface UpgradeL3ControllerObjectiveState extends ObjectiveState {
     /** worker name */
     w: CreepName[]
 
+    /** worker names in spawn cache */
+    cw: CreepName[]
+
     /** harvester name */
     hv: CreepName[]
 
@@ -61,6 +64,7 @@ export class UpgradeL3ControllerObjective implements Objective {
     public readonly startTime: number,
     public readonly children: Objective[],
     private workerNames: CreepName[],
+    private workerNamesInCache: CreepName[],
     private harvesterNames: CreepName[],
     private haulerNames: CreepName[],
     private sourceIds: Id<Source>[],
@@ -75,6 +79,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       c: this.children.map(child => child.encode()),
       cr: {
         w: this.workerNames,
+        cw: this.workerNamesInCache,
         hv: this.harvesterNames,
         hl: this.haulerNames,
       },
@@ -90,7 +95,7 @@ export class UpgradeL3ControllerObjective implements Objective {
     const workingInfo: UpgradeL3ControllerObjectiveWorkingInfo = {
       constructionSiteId: state.w.c
     }
-    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.hv, state.cr.hl, state.si, workingInfo)
+    return new UpgradeL3ControllerObjective(state.s, children, state.cr.w, state.cr.cw, state.cr.hv, state.cr.hl, state.si, workingInfo)
   }
 
   public progress(spawn: StructureSpawn, controller: StructureController): UpgradeL3ControllerObjectiveProgressType {
@@ -108,6 +113,18 @@ export class UpgradeL3ControllerObjective implements Objective {
         aliveWorkerNames.push(workerName)
       })
       this.workerNames = aliveWorkerNames
+
+      const workerNamesInCache: CreepName[] = []
+      this.workerNamesInCache.forEach(name => {
+        const creep = Game.creeps[name]
+        if (creep == null) {
+          workerNamesInCache.push(name)
+        } else {
+          this.workerNames.push(name)
+          workers.push(creep)
+        }
+      })
+      this.workerNamesInCache = workerNamesInCache
 
       // if (controller.level >= 3) { // FixMe:
       //   progress = new ObjectiveSucceeded({controller, creeps: workers})
@@ -128,7 +145,7 @@ export class UpgradeL3ControllerObjective implements Objective {
         }
         return null
       })()
-      const numberOfWorkers = workers.length + (spawnTask?.cacheLengthOf(spawnIdentifier) ?? 0)
+      const numberOfWorkers = workers.length + this.workerNamesInCache.length
       const hasEnoughWorkers = numberOfWorkers >= numberOfWorkersEachSource * sources.length
 
       if (hasEnoughWorkers !== true) {
@@ -241,6 +258,7 @@ export class UpgradeL3ControllerObjective implements Objective {
     }
 
     spawnTask.addCreepToSpawn(identifier, creepName, this.baseWorkerBodies, memory, spawnPriorityLow)
+    this.workerNamesInCache.push(creepName)
   }
 
   // ---- Source route ---- //
