@@ -53,8 +53,8 @@ export interface UpgradeL3ControllerObjectiveWorkingInfo {
 }
 
 export class UpgradeL3ControllerObjective implements Objective {
-  private baseWorkerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE]
-  private baseWorkerSpawnEnergy = 100 + 50 + 50
+  private baseWorkerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE, MOVE]
+  private baseWorkerSpawnEnergy = 100 + 50 + 50 + 50
 
   public constructor(
     public readonly startTime: number,
@@ -147,16 +147,16 @@ export class UpgradeL3ControllerObjective implements Objective {
         return
       }
       if (creep.task == null) {
-        this.assignNewTask(creep, workers, sources, spawn, controller)
+        this.assignNewTask(creep, sources, spawn, controller)
       }
       const taskFinished = creep.task?.run(creep) !== "in progress"
       if (taskFinished) {
-        this.assignNewTask(creep, workers, sources, spawn, controller, true)
+        this.assignNewTask(creep, sources, spawn, controller, true)
       }
     })
   }
 
-  private assignNewTask(creep: Creep, workers: Creep[], sources: Source[], spawn: StructureSpawn, controller: StructureController, alreadyRun?: boolean): void {
+  private assignNewTask(creep: Creep, sources: Source[], spawn: StructureSpawn, controller: StructureController, alreadyRun?: boolean): void {
     const noEnergy = (): boolean => {
       if (alreadyRun === true) {
         return creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getCapacity() / 2  // タスクを実行済みである場合、storeが更新されていないため

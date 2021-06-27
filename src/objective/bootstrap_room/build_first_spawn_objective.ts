@@ -1,9 +1,10 @@
+import { BuildTask } from "game_object_task/creep_task/build_task"
+import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
 import { roomLink } from "utility/log"
-import { CreepStatus } from "_old/creep"
 
-const maxNumberOfWorkers = 8
+const maxNumberOfWorkers = 12
 
 type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
@@ -21,7 +22,7 @@ export class BuildFirstSpawnObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    private workerIds: string[],
+    public workerIds: string[],
   ) {
   }
 
@@ -80,9 +81,7 @@ export class BuildFirstSpawnObjective implements Objective {
     })
     this.workerIds = aliveWorkerIds
 
-    workers.forEach(creep => {
-      this.runWorker(creep, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>, targetRoom)
-    })
+    this.work(workers, targetRoom, targetRoom.sources, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>)
     inProgressMessages.push(`${workers.length} workers running, ${creepProviders.length} creeps spawning`)
 
     if (inProgressMessages.length > 0) {
@@ -91,52 +90,51 @@ export class BuildFirstSpawnObjective implements Objective {
     return new ObjectiveInProgress("not implemented yet")
   }
 
-  // ---- Run worker ---- //
-  private runWorker(creep: Creep, constructionSite: ConstructionSite<STRUCTURE_SPAWN>, targetRoom: Room): void {
-    if (creep.room.name !== targetRoom.name) {
-      creep.moveToRoom(targetRoom.name)
-      return
+  // ---- Work ---- //
+  private work(workers: Creep[], targetRoom: Room, sources: Source[], constructionSite: ConstructionSite<STRUCTURE_SPAWN>): void {
+    workers.forEach(creep => {
+      if (creep.spawning) {
+        return
+      }
+      if (creep.room.name !== targetRoom.name) {
+        creep.moveToRoom(targetRoom.name)
+        return
+      }
+
+      if (creep.task == null) {
+        this.assignNewTask(creep, sources, constructionSite)
+      }
+      const taskFinished = creep.task?.run(creep) !== "in progress"
+      if (taskFinished) {
+        this.assignNewTask(creep, sources, constructionSite, true)
+      }
+    })
+  }
+
+  private assignNewTask(creep: Creep, sources: Source[], constructionSite: ConstructionSite<STRUCTURE_SPAWN>, alreadyRun?: boolean): void {
+    const noEnergy = (): boolean => {
+      if (alreadyRun === true) {
+        return creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getCapacity() / 2  // タスクを実行済みである場合、storeが更新されていないため
+      } else {
+        return creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+      }
     }
-
-    const build = () => this.build(creep, constructionSite)
-    const harvest = () => this.harvest(creep)
-
-    switch (creep.memory.status) {
-    case CreepStatus.HARVEST:
-      if (creep.carry[RESOURCE_ENERGY] >= creep.carryCapacity) {
-        creep.memory.status = CreepStatus.BUILD
-        build()
-        break
+    if (noEnergy()) {
+      const source = this.getSourceToAssign(sources)
+      if (source != null) {
+        creep.task = new HarvestEnergyTask(Game.time, source)
+      } else {
+        creep.task = null
       }
-      harvest()
-      break
-    case CreepStatus.BUILD:
-      if (creep.carry[RESOURCE_ENERGY] <= 0) {
-        creep.memory.status = CreepStatus.HARVEST
-        harvest()
-        break
-      }
-      build()
-      break
-    default:
-      creep.memory.status = CreepStatus.HARVEST
+    } else {
+      creep.task = new BuildTask(Game.time, constructionSite)
     }
   }
 
-  private harvest(creep: Creep): void {
-    const source = creep.pos.findClosestByPath(FIND_SOURCES_ACTIVE)
-    if (source == null) {
-      return
-    }
-    if (creep.harvest(source) !== OK) {
-      creep.moveTo(source, { reusePath: 15 })
-    }
-  }
-
-  private build(creep: Creep, constructionSite: ConstructionSite<STRUCTURE_SPAWN>): void {
-    if (creep.build(constructionSite) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(constructionSite, { reusePath: 15 })
-    }
+  private getSourceToAssign(sources: Source[]): Source | null {
+    return sources.reduce((lhs, rhs) => {
+      return lhs.targetedBy.length < rhs.targetedBy.length ? lhs : rhs
+    })
   }
 
   // ---- Add creeps ---- //
@@ -144,8 +142,8 @@ export class BuildFirstSpawnObjective implements Objective {
     const args = {
       spawnRoomName: parentRoomName,
       requestingCreepBodyParts: [
-        WORK, WORK, CARRY, CARRY, MOVE, MOVE,
-        WORK, WORK, CARRY, CARRY, MOVE, MOVE,
+        WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
+        WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
       ],
     }
     const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)

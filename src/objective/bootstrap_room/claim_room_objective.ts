@@ -156,7 +156,7 @@ export class ClaimRoomObjective implements Objective {
       return new ObjectiveSucceeded(controller)
     case ERR_NOT_IN_RANGE:
       creep.moveTo(controller, {reusePath: 15})
-      return new ObjectiveInProgress(`Claimer creep heading to target room ${creep.pos} ${roomLink(creep.room.name)}`)
+      return new ObjectiveInProgress(`Claimer creep heading to target room ${roomLink(this.targetRoomName)}, current: ${roomLink(creep.room.name)}`)
     default:
       return new ObjectiveFailed(`Unexpected claimController() error ${result}`)
     }
