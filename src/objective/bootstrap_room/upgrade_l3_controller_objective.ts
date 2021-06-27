@@ -10,6 +10,7 @@ import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_ta
 import { BuildTask } from "game_object_task/creep_task/build_task"
 import { RoomPathMemory } from "prototype/room"
 import { calculateSourceRoute } from "script/pathfinder"
+import { SpawnCreepTask, spawnPriorityLow } from "game_object_task/spwan_task/spawn_creep_task"
 
 const numberOfWorkersEachSource = 8
 
@@ -120,11 +121,29 @@ export class UpgradeL3ControllerObjective implements Objective {
         return result
       }, [] as Source[])
 
-      const hasEnoughWorkers = workers.length >= numberOfWorkersEachSource * sources.length
-      const canSpawn = spawn.room.energyAvailable >= this.baseWorkerSpawnEnergy
+      const spawnIdentifier = `${spawn.room.name}_${this.constructor.name}`
+      const spawnTask = ((): SpawnCreepTask | null => {
+        if (spawn.task instanceof SpawnCreepTask) {
+          return spawn.task
+        }
+        return null
+      })()
+      const numberOfWorkers = workers.length + (spawnTask?.cacheLengthOf(spawnIdentifier) ?? 0)
+      const hasEnoughWorkers = numberOfWorkers >= numberOfWorkersEachSource * sources.length
 
-      if (hasEnoughWorkers !== true && spawn.spawning == null && canSpawn) {
-        this.spawnWorker(spawn, this.getSourceToAssign(sources))
+      if (hasEnoughWorkers !== true) {
+        if (spawnTask != null) {
+          this.spawnWorker(spawnTask, spawnIdentifier, sources)
+        } else {
+          const newSpawnTask = new SpawnCreepTask(Game.time, [], null)
+          spawn.task = newSpawnTask
+          this.spawnWorker(newSpawnTask, spawnIdentifier, sources)
+        }
+      }
+      if (spawn.task != null) {
+        if (spawn.task.run(spawn) !== "in progress") {
+          spawn.task = null
+        }
       }
 
       this.work(workers, controller, sources, spawn)
@@ -206,10 +225,11 @@ export class UpgradeL3ControllerObjective implements Objective {
   }
 
   // ---- Spawn ---- //
-  private spawnWorker(spawn: StructureSpawn, targetSource: Source | null): void {
+  private spawnWorker(spawnTask: SpawnCreepTask, identifier: string, sources: Source[]): void {
     const time = Game.time
+    const targetSource = this.getSourceToAssign(sources)
     const initialTask = targetSource != null ? new HarvestEnergyTask(time, targetSource) : null
-    const name = generateUniqueId("belgian_waffle")
+    const creepName = generateUniqueId("belgian_waffle")
     const memory: CreepMemory = {
       ts: initialTask?.encode() ?? null,
       squad_name: "",
@@ -219,15 +239,8 @@ export class UpgradeL3ControllerObjective implements Objective {
       should_notify_attack: false,
       let_thy_die: true,
     }
-    const result = spawn.spawnCreep(this.baseWorkerBodies, name, { memory: memory })
-    switch (result) {
-    case OK:
-      this.workerNames.push(name)
-      break
-    default:
-      PrimitiveLogger.log(`UpgradeL3ControllerObjective spawn ${spawn.id} failed with error: ${result}`)
-      break
-    }
+
+    spawnTask.addCreepToSpawn(identifier, creepName, this.baseWorkerBodies, memory, spawnPriorityLow)
   }
 
   // ---- Source route ---- //
