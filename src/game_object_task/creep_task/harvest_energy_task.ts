@@ -1,30 +1,5 @@
 import { GameObjectTask, GameObjectTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
-
-const sourcePathCache = new Map<Id<Source>, RoomPosition[]>()
-
-function getCachedPathFor(source: Source): RoomPosition[] | null {
-  const cachedPath = sourcePathCache.get(source.id)
-  if (cachedPath != null) {
-    if (cachedPath.length <= 0) {
-      return null
-    } else {
-      return cachedPath
-    }
-  }
-  if (source.room.memory.p == null) {
-    sourcePathCache.set(source.id, [])
-    return null
-  }
-  const memoryCachedPath = source.room.memory.p.s[source.id]
-  if (memoryCachedPath == null || memoryCachedPath === "no path") {
-    sourcePathCache.set(source.id, [])
-    return null
-  }
-  const roomName = source.room.name
-  const roomPositions = memoryCachedPath.p.map(position => new RoomPosition(position.x, position.y, roomName))
-  sourcePathCache.set(source.id, roomPositions)
-  return roomPositions
-}
+import { getCachedPathFor } from "script/pathfinder"
 
 export interface HarvestEnergyTaskState extends GameObjectTaskState {
   /** target id */
