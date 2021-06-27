@@ -1,18 +1,24 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeCreepTask, decodeSpawnTask } from "game_object_task/game_object_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
+import { ApplicationProcessLauncher } from "./application_process_launcher"
 import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
 
 export class RootProcess {
-  private readonly processLauncher = new InfrastructureProcessLauncher()
+  private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
+  private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
 
   public constructor() {
   }
 
   public setup(): void {
     ErrorMapper.wrapLoop(() => {
-      this.processLauncher.launchProcess()
-    }, "RootProcess.processLauncher.launchProcess()")()
+      this.infrastructureProcessLauncher.launchProcess()
+    }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.applicationProcessLauncher.launchProcess()
+    }, "RootProcess.applicationProcessLauncher.launchProcess()")()
   }
 
   public runBeforeTick(): void {

@@ -1,7 +1,6 @@
 import { Procedural } from "objective/procedural"
 import { Process, ProcessId, processLog, ProcessState } from "objective/process"
 import { RoomName } from "prototype/room"
-import { LoggerProcess } from "os/process/logger"
 import { roomLink } from "utility/log"
 
 export interface RoomKeeperProcessState extends ProcessState {

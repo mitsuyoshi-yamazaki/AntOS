@@ -9,6 +9,7 @@ import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
 import { SquadType } from "_old/squad/squad"
 import { roomLink } from "utility/log"
+import { Migration } from "utility/migration"
 
 Initializer.init()
 const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
@@ -25,13 +26,7 @@ const mainLoop = () => {
 
   ErrorMapper.wrapLoop(() => {
     const owned_controllers: StructureController[] = []
-    const rooms_controlled_by_old_codes = [
-      "W53S5",
-      "W54S7",
-      "W51S29",
-      "W48S6",
-      "W48S12",
-    ]
+    const rooms_controlled_by_old_codes = Migration.oldRoomNames
 
     for (const room_name in Game.rooms) {
       const room = Game.rooms[room_name]

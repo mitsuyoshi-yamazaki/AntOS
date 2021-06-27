@@ -1,20 +1,44 @@
-import { OperatingSystem } from "os/os"
-import { LoggerProcess } from "os/process/logger"
+import { RoomKeeperProcess } from "objective/room_keeper/room_keeper_process"
+import { OperatingSystem, ProcessInfo } from "os/os"
+import { RoomName } from "prototype/room"
+import { Migration } from "utility/migration"
 
 export class ApplicationProcessLauncher {
   public launchProcess(): void {
-    const processInfo = OperatingSystem.os.listAllProcesses()
-    const loggerExists = processInfo.some(info => info.type === "LoggerProcess")
-    if (loggerExists !== true) {
-      this.launchLoggerProcess()
-    }
+    const allProcessInfo = OperatingSystem.os.listAllProcesses()
+    this.roomsNeedKeeper(allProcessInfo).forEach(roomName => this.launchRoomKeeperProcess(roomName))
   }
 
-  private launchLoggerProcess(): void {
-    const emptyFilter = {
-      processIds: [],
-      processTypes: [],
+  private roomsNeedKeeper(allProcessInfo: ProcessInfo[]): RoomName[] {
+    const roomsWithKeeperProcess = allProcessInfo.map(processInfo => {
+      if (processInfo.process instanceof RoomKeeperProcess) {
+        return processInfo.process.roomName
+      }
+      return null
+    })
+
+    const roomNames: RoomName[] = []
+    for (const roomName in Game.rooms) {
+      const room = Game.rooms[roomName]
+      if (room.controller == null) {
+        continue
+      }
+      if (room.controller.my !== true) {
+        continue
+      }
+      if (Migration.oldRoomNames.includes(roomName) === true) {
+        continue
+      }
+      if (roomsWithKeeperProcess.includes(roomName) === true) {
+        continue
+      }
+      roomNames.push(roomName)
     }
-    OperatingSystem.os.addProcess(processId => new LoggerProcess(Game.time, processId, emptyFilter))
+
+    return roomNames
+  }
+
+  private launchRoomKeeperProcess(roomName: RoomName): void {
+    OperatingSystem.os.addProcess(processId => new RoomKeeperProcess(Game.time, processId, roomName))
   }
 }
