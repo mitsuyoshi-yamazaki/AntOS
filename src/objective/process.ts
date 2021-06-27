@@ -6,6 +6,7 @@ import { TestProcess, TestProcessState } from "objective/test/test_process"
 import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap_room/bootstrap_l8_room_proces"
 import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/claim_room_process"
 import { SignRoomsProcess, SignRoomsProcessState } from "./sign_rooms/sign_rooms_process"
+import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper/room_keeper_process"
 
 export type ProcessId = number
 
@@ -35,6 +36,7 @@ class ProcessTypes {
   "SignRoomsProcess" = (state: ProcessState) => SignRoomsProcess.decode(state as SignRoomsProcessState)
   "BootstrapL8RoomProcess" = (state: ProcessState) => BootstrapL8RoomProcess.decode(state as BootstrapL8RoomProcessState)
   "ClaimRoomProcess" = (state: ProcessState) => ClaimRoomProcess.decode(state as ClaimRoomProcessState)
+  "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

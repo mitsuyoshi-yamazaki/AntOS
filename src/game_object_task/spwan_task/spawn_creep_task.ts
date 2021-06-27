@@ -120,9 +120,13 @@ export class SpawnCreepTask implements StructureSpawnTask {
     if (nextSpawn == null) {
       return "finished"
     }
+
     const result = spawn.spawnCreep(nextSpawn.b, nextSpawn.n, { memory: nextSpawn.m })
+
     switch (result) {
     case OK:
+      this.spawning = nextSpawn
+      this.spawnCache.shift()
       return "in progress"
 
     case ERR_NOT_ENOUGH_ENERGY:
@@ -172,6 +176,7 @@ export class SpawnCreepTask implements StructureSpawnTask {
 
   private cancelCurrentSpawning(spawning: Spawning): void {
     // TODO: cancelを通知する or 呼び出し側でcacheLengthOf()等を使用して確認する
+    PrimitiveLogger.log(`${spawning.spawn.name} canceled spawn ${spawning.name}`)
     spawning.cancel()
     this.spawning = null
   }

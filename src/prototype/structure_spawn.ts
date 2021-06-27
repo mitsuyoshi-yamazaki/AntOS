@@ -10,6 +10,7 @@ declare global {
   }
 }
 
+// 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(StructureSpawn.prototype, "task", {
     get(): StructureSpawnTask | null {

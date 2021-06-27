@@ -104,7 +104,7 @@ export class BootstrapL8RoomObjective implements Objective {
       constructionSiteId: null
     }
     const workerNames = room.find(FIND_MY_CREEPS).map(creep => creep.name)
-    const objective = new UpgradeL3ControllerObjective(Game.time, [], workerNames, [], [], sourceIds, emptyWorkingInfo)
+    const objective = new UpgradeL3ControllerObjective(Game.time, [], workerNames, [], [], [], sourceIds, emptyWorkingInfo)
     this.children.push(objective)
   }
 

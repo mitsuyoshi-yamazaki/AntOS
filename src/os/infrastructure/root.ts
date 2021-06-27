@@ -28,9 +28,13 @@ export class RootProcess {
   }
 
   public runAfterTick(): void {
-    for (const creep_name in Game.creeps) {
-      const creep = Game.creeps[creep_name]
+    for (const creepName in Game.creeps) {
+      const creep = Game.creeps[creepName]
       creep.memory.ts = creep.task?.encode() ?? null
+    }
+    for (const spawnName in Game.spawns) {
+      const spawn = Game.spawns[spawnName]
+      spawn.memory.ts = spawn.task?.encode() ?? null
     }
   }
 }

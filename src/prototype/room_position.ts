@@ -4,6 +4,7 @@ declare global {
   }
 }
 
+// 毎tick呼び出すこと
 export function init(): void {
   RoomPosition.prototype.neighbours = function (): RoomPosition[] {
     const result: RoomPosition[] = []

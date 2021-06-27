@@ -151,7 +151,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (hasEnoughWorkers !== true) {
         if (spawnTask != null) {
           this.spawnWorker(spawnTask, spawnIdentifier, sources)
-        } else {
+        } else if (spawn.task == null) {
           const newSpawnTask = new SpawnCreepTask(Game.time, [], null)
           spawn.task = newSpawnTask
           this.spawnWorker(newSpawnTask, spawnIdentifier, sources)

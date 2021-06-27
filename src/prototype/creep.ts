@@ -12,6 +12,7 @@ declare global {
   }
 }
 
+// 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(Creep.prototype, "task", {
     get(): CreepTask | null {

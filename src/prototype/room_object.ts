@@ -7,6 +7,7 @@ declare global {
   }
 }
 
+// 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(RoomObject.prototype, "targetedBy", {
     get(): Id<TaskRunnerType>[] {

@@ -42,10 +42,11 @@ export class UpgradeControllerTask implements CreepTask {
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= consumeAmount) {
         return "finished"
       }
+      this.move(creep)
       return "in progress"
     }
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.controller, { reusePath: 15 })
+      this.move(creep)
       return "in progress"
     case ERR_NOT_ENOUGH_RESOURCES:
       return "finished"
@@ -57,5 +58,12 @@ export class UpgradeControllerTask implements CreepTask {
     default:
       return "in progress"
     }
+  }
+
+  private move(creep: Creep): void {
+    if (creep.pos.isNearTo(this.controller.pos) === true) {
+      return
+    }
+    creep.moveTo(this.controller, { reusePath: 15 })
   }
 }

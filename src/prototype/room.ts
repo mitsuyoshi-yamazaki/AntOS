@@ -1,3 +1,5 @@
+export type RoomName = string
+
 export interface RoomPathMemory {
   /** source paths */
   s: {
