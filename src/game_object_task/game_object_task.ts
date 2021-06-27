@@ -17,6 +17,10 @@ interface GameObjectTaskState extends State {
   t: string
 }
 
+export interface GameObjectTaskReturnType<T> {  // TODO:
+  value: T
+  code: GameObjectTaskReturnCode
+}
 export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 
 interface GameObjectTask<T> extends Stateful {

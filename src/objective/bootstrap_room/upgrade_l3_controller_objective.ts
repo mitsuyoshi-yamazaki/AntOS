@@ -151,7 +151,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       }
       const taskFinished = creep.task?.run(creep) !== "in progress"
       if (taskFinished) {
-        this.assignNewTask(creep, sources, spawn, controller, true)
+        this.assignNewTask(creep, sources, spawn, controller, true) // TODO: already run を Task.run() の返り値から取る
       }
     })
   }

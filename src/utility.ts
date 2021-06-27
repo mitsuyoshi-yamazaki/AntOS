@@ -1,4 +1,4 @@
-import { roomLink } from "utility/log"
+import { coloredText, roomLink, textColor, TextColor } from "utility/log"
 import { generateUniqueId } from "utility/unique_id"
 
 export function room_link(room_name: string, opts?: { text?: string, color?: string }): string {
@@ -33,23 +33,13 @@ export function getSectorName(room_name: string): string | null {
   return `${h_direction}${h}${v_direction}${v}`
 }
 
-const leveled_colors: {[index: string]: string} = {
-  info: 'white',
-  warn: '#F9E79F',
-  error: '#F78C6C',
-  critical: '#E74C3C',
-  high: '#64C3F9',
-  almost: '#47CAB0',
-}
-
-export type ColorLevel = 'info' | 'warn' | 'error' | 'critical' | 'high' | 'almost'
+export type ColorLevel = TextColor
 export function leveled_color(level: ColorLevel): string {
-  return leveled_colors[level]
+  return textColor(level)
 }
 
 export function leveled_colored_text(text: string, level: ColorLevel): string {
-  const color = leveled_color(level)
-  return `<span style='color:${color}'>${text}</span>`
+  return coloredText(text, level)
 }
 
 export interface StructureFilter {
