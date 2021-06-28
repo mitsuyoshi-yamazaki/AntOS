@@ -3,6 +3,7 @@ import { decodeCreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
 import { decodeTowerTask } from "game_object_task/tower_task"
+import { OwnedRoomObjectCache } from "objective/room_keeper/owned_room_object_cache"
 import { ApplicationProcessLauncher } from "./application_process_launcher"
 import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
 
@@ -39,7 +40,6 @@ export class RootProcess {
     //   }
     //   tower._task = decodeTowerTask(towerId as Id<StructureTower>)
     // }
-    TaskTargetCache.clearCache()
   }
 
   public runAfterTick(): void {
@@ -54,5 +54,8 @@ export class RootProcess {
     // for () { // TODO:
 
     // }
+
+    TaskTargetCache.clearCache()
+    OwnedRoomObjectCache.clearCache()
   }
 }

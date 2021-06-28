@@ -6,18 +6,7 @@ import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { roomLink } from "utility/log"
 import { LowLevelWorkerObjective } from "./low_level_worker_objective"
-
-interface RoomKeeperObjectiveRoomInfo { // TODO:
-  sources: Source[]
-  constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
-  activeStructures: {
-    spawns: StructureSpawn[]
-    extensions: StructureExtension[]
-    towers: StructureTower[]
-
-    chargeableStructures: EnergyChargeableStructure[]
-  }
-}
+import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
   spawnedCreeps: number
@@ -93,59 +82,29 @@ export class RoomKeeperObjective implements Objective {
     if (room == null) {
       return new ObjectiveFailed(`${roomLink(this.roomName)} is not visible`)
     }
-    if (room.controller == null || room.controller.my !== true) {
+
+    const roomObjects = OwnedRoomObjectCache.objectsInRoom(room)
+    if (roomObjects == null) {
       return new ObjectiveFailed(`${roomLink(this.roomName)} is not owned by me`)
     }
-
-    const controller = room.controller
-    const sources = room.find(FIND_SOURCES)
-    const spawns: StructureSpawn[] = []
-    const extensions: StructureExtension[] = []
-    const towers: StructureTower[] = []
-    const chargeableStructures: EnergyChargeableStructure[] = []
-    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
-
-    const myStructures = room.find(FIND_MY_STRUCTURES)
-    myStructures.forEach(structure => {
-      if (structure.isActive() !== true) {
-        return
-      }
-      switch (structure.structureType) {
-      case STRUCTURE_SPAWN:
-        spawns.push(structure)
-        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-          chargeableStructures.push(structure)
-        }
-        break
-      case STRUCTURE_EXTENSION:
-        extensions.push(structure)
-        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-          chargeableStructures.push(structure)
-        }
-        break
-      case STRUCTURE_TOWER:
-        towers.push(structure)
-        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-          chargeableStructures.push(structure)
-        }
-        break
-      default:
-        break // TODO: 全て網羅する
-      }
-    })
 
     let status = ""
     let workerStatus = null as string | null
 
     ErrorMapper.wrapLoop((): void => {
-      workerStatus = this.runWorker(sources, chargeableStructures, controller, constructionSites)
+      workerStatus = this.runWorker(
+        roomObjects.sources,
+        roomObjects.activeStructures.chargeableStructures,
+        roomObjects.controller,
+        roomObjects.constructionSites
+      )
     }, "RoomKeeperObjective.runWorker()")()
     status += workerStatus == null ? `${this.workerObjective.constructor.name} failed execution` : workerStatus
 
     let spawnResult = null as [number, CreepName[]] | null
 
     ErrorMapper.wrapLoop((): void => {
-      spawnResult = this.runCreepSpawn(room, spawns)
+      spawnResult = this.runCreepSpawn(room, roomObjects.activeStructures.spawns)
     }, "RoomKeeperObjective.runCreepSpawn()")()
 
     const [spawnedCreeps, canceledCreepNames] = spawnResult ?? [0, []]
