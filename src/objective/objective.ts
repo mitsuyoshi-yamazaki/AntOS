@@ -6,6 +6,9 @@ import { BuildFirstSpawnObjective, BuildFirstSpawnObjectiveState } from "./boots
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveState } from "./bootstrap_room/upgrade_l3_controller_objective"
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
+import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
+import { SourceEnergyHarvester300Objective, SourceEnergyHarvester300ObjectiveState } from "./energy_harvester/source_energy_harvester_300_objective"
+import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -63,6 +66,9 @@ class ObjectiveTypes {
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
   "BuildFirstSpawnObjective" = (state: ObjectiveState) => BuildFirstSpawnObjective.decode(state as BuildFirstSpawnObjectiveState)
   "UpgradeL3ControllerObjective" = (state: ObjectiveState) => UpgradeL3ControllerObjective.decode(state as UpgradeL3ControllerObjectiveState)
+  "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
+  "SourceEnergyHarvester300Objective" = (state: ObjectiveState) => SourceEnergyHarvester300Objective.decode(state as SourceEnergyHarvester300ObjectiveState)
+  "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {
