@@ -21,17 +21,20 @@ export const OwnedRoomObjectCache = {
     cache.clear()
   },
 
-  objectsInRoom: (room: Room): OwnedRoomObjects | null => {
-    const cachedObjects = cache.get(room.name)
-    if (cachedObjects != null) {
-      return cachedObjects
-    }
+  createCache: (room: Room): void => {
     const objects = enumerateObjectsIn(room)
-    if (objects != null) {
-      cache.set(room.name, objects)
-      return objects
+    if (objects == null) {
+      return
     }
-    return null
+    cache.set(room.name, objects)
+  },
+
+  objectsInRoom: (room: Room): OwnedRoomObjects | null => {
+    return cache.get(room.name) ?? null
+  },
+
+  allRoomObjects: (): OwnedRoomObjects[] => {
+    return Array.from(cache.values())
   }
 }
 

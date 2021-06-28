@@ -10,7 +10,7 @@ declare global {
   }
 
   interface TowerMemory {
-    ts: StructureTowerTaskState
+    ts: StructureTowerTaskState | null
   }
 }
 
