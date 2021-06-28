@@ -28,7 +28,7 @@ export const spawnPriorityLow = 0
 // export type SpawnPriority = SpawnPriorityUrgent | SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
 export type SpawnPriority = SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
 
-interface SpawnCreepQueueItem {
+export interface SpawnCreepQueueItem {
   /** time added to cache */
   t: number
 

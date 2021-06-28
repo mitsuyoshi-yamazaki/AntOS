@@ -137,7 +137,7 @@ export class BootstrapL8RoomObjective implements Objective {
   }
 
   private addBuildFirstSpawnObjective(): void {
-    const objective = new OldBuildFirstSpawnObjective(Game.time, [], [])
+    const objective = new OldBuildFirstSpawnObjective(Game.time, [], [], [])
     this.children.push(objective)
   }
 

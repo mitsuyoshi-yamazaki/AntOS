@@ -2,17 +2,28 @@ import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
+import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { CreepName } from "prototype/creep"
 import { roomLink } from "utility/log"
+import { Migration } from "utility/migration"
+import { generateUniqueId } from "utility/unique_id"
+import { CreepStatus, CreepType } from "_old/creep"
 
 const maxNumberOfWorkers = 12
 
 type OldBuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
 export interface OldBuildFirstSpawnObjectiveState extends ObjectiveState {
-  /** creep IDs */
+  /** creep names */
   cr: {
     /** worker */
-    w: string[]
+    w: CreepName[]
+  }
+
+  /** creep spawn queue */
+  cq: {
+    /** worker */
+    w: CreepName[]
   }
 }
 
@@ -22,7 +33,8 @@ export class OldBuildFirstSpawnObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    public workerIds: string[],
+    public workerNames: CreepName[],
+    public workerNamesInQueue: CreepName[]
   ) {
   }
 
@@ -32,14 +44,17 @@ export class OldBuildFirstSpawnObjective implements Objective {
       s: this.startTime,
       c: this.children.map(child => child.encode()),
       cr: {
-        w: this.workerIds,
+        w: this.workerNames,
+      },
+      cq: {
+        w: this.workerNamesInQueue,
       }
     }
   }
 
   public static decode(state: OldBuildFirstSpawnObjectiveState): OldBuildFirstSpawnObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new OldBuildFirstSpawnObjective(state.s, children, state.cr.w)
+    return new OldBuildFirstSpawnObjective(state.s, children, state.cr.w, state.cq.w)
   }
 
   public progress(targetRoom: Room, parentRoomName: string): OldBuildFirstSpawnObjectiveProgressType {
@@ -60,7 +75,7 @@ export class OldBuildFirstSpawnObjective implements Objective {
     }
 
     const creepProviders: SingleCreepProviderObjective[] = this.children.filter(child => child instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
-    const numberOfWorkers = this.workerIds.length + creepProviders.length
+    const numberOfWorkers = this.workerNames.length + this.workerNamesInQueue.length + creepProviders.length
 
     if (numberOfWorkers < maxNumberOfWorkers) {
       const creepIdentifier = this.createCreepIdentifier()
@@ -69,17 +84,26 @@ export class OldBuildFirstSpawnObjective implements Objective {
     }
 
     const workers: Creep[] = []
-    const aliveWorkerIds: string[] = []
-    this.workerIds.forEach(workerId => {
-      const creep = Game.getObjectById(workerId)
+    const aliveWorkerNames: CreepName[] = []
+    this.workerNames.forEach(name => {
+      const creep = Game.creeps[name]
       if (creep instanceof Creep) {
         workers.push(creep)
-        aliveWorkerIds.push(workerId)
+        aliveWorkerNames.push(name)
       } else {
-        inProgressMessages.push(`Worker creep ${workerId} died.`)
+        inProgressMessages.push(`Worker creep ${name} died.`)
       }
     })
-    this.workerIds = aliveWorkerIds
+    const spawnedWorkerNames: CreepName[] = []
+    this.workerNamesInQueue.forEach(name => {
+      const creep = Game.creeps[name]
+      if (creep instanceof Creep) {
+        workers.push(creep)
+        spawnedWorkerNames.push(name)
+      }
+    })
+    this.workerNamesInQueue = this.workerNamesInQueue.filter(name => spawnedWorkerNames.includes(name) !== true)
+    this.workerNames = aliveWorkerNames.concat(spawnedWorkerNames)
 
     this.work(workers, targetRoom, targetRoom.sources, spawnConstructionSite as ConstructionSite<STRUCTURE_SPAWN>)
     inProgressMessages.push(`${workers.length} workers running, ${creepProviders.length} creeps spawning`)
@@ -139,6 +163,14 @@ export class OldBuildFirstSpawnObjective implements Objective {
 
   // ---- Add creeps ---- //
   private addWorker(creepIdentifier: string, parentRoomName: string): void {
+    if (Migration.oldRoomNames.includes(parentRoomName) === true) {
+      this.requestToCreepProvider(creepIdentifier, parentRoomName)
+    } else {
+      this.addWorkerQueue(creepIdentifier, parentRoomName)
+    }
+  }
+
+  private requestToCreepProvider(creepIdentifier: string, parentRoomName: string): void {
     const args = {
       spawnRoomName: parentRoomName,
       requestingCreepBodyParts: [
@@ -148,6 +180,34 @@ export class OldBuildFirstSpawnObjective implements Objective {
     }
     const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)
     this.children.push(objective)
+  }
+
+  private addWorkerQueue(creepIdentifier: string, parentRoomName: string): void {
+    if (Memory.spawnCreepRequests[parentRoomName] == null) {
+      Memory.spawnCreepRequests[parentRoomName] = []
+    }
+
+    const creepName = generateUniqueId("chocolate_parfait")
+    const body: BodyPartConstant[] = [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
+    const memory: CreepMemory = {
+      ts: null,
+      squad_name: "",
+      status: CreepStatus.NONE,
+      birth_time: Game.time,
+      type: CreepType.CREEP_PROVIDER,
+      should_notify_attack: false,
+      let_thy_die: true,
+    }
+
+    Memory.spawnCreepRequests[parentRoomName].push({
+      t: Game.time,
+      i: creepIdentifier,
+      b: body,
+      p: spawnPriorityLow,
+      n: creepName,
+      m: memory,
+    })
+    this.workerNamesInQueue.push(creepName)
   }
 
   private createCreepIdentifier(): string {
@@ -177,8 +237,8 @@ export class OldBuildFirstSpawnObjective implements Objective {
       return null
     case "succeeded":
       this.removeChildObjective(objective)
-      this.workerIds.push(progress.result.id)
-      return `Worker ${progress.result.id} received.`
+      this.workerNames.push(progress.result.name)
+      return `Worker ${progress.result.name} received.`
     case "failed":
       this.removeChildObjective(objective)
       return progress.reason

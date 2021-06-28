@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { BuildFirstSpawnObjective } from "objective/bootstrap_room/build_first_spawn_objective"
 import { ClaimRoomObjective } from "objective/bootstrap_room/claim_room_objective"
+import { OldBuildFirstSpawnObjective } from "objective/bootstrap_room/old_build_first_spawn_objective"
 import { DefendOwnedRoomObjective } from "objective/defend_room/defend_owned_room_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
 import { SpawnCreepObjective } from "objective/spawn/spawn_creep_objective"
@@ -31,7 +31,7 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
   private readonly workerObjective: LowLevelWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
-  private buildFirstSpawnObjective: BuildFirstSpawnObjective | null
+  private buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null
   private defendRoomObjective: DefendOwnedRoomObjective | null
   private claimRoomObjective: ClaimRoomObjective | null
 
@@ -43,7 +43,7 @@ export class RoomKeeperObjective implements Objective {
     let spawnCreepObjective: SpawnCreepObjective | null = null
     let workerObjective: LowLevelWorkerObjective | null = null
     let defendRoomObjective: DefendOwnedRoomObjective | null = null
-    let buildFirstSpawnObjective: BuildFirstSpawnObjective | null = null
+    let buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null = null
     let claimRoomObjective: ClaimRoomObjective | null = null
     children.forEach(child => {
       if (child instanceof SpawnCreepObjective) {
@@ -58,7 +58,7 @@ export class RoomKeeperObjective implements Objective {
         defendRoomObjective = child
         return
       }
-      if (child instanceof BuildFirstSpawnObjective) {
+      if (child instanceof OldBuildFirstSpawnObjective) {
         buildFirstSpawnObjective = child
         return
       }
@@ -202,11 +202,11 @@ export class RoomKeeperObjective implements Objective {
   }
 
   private buildFirstSpawn(room: Room): string {
-    const buildFirstSpawnObjective = ((): BuildFirstSpawnObjective => {
+    const buildFirstSpawnObjective = ((): OldBuildFirstSpawnObjective => {
       if (this.buildFirstSpawnObjective != null) {
         return this.buildFirstSpawnObjective
       }
-      const objective = new BuildFirstSpawnObjective(Game.time, [], [])
+      const objective = new OldBuildFirstSpawnObjective(Game.time, [], [], [])
       this.buildFirstSpawnObjective = objective
       this.children.push(objective)
       return objective
@@ -233,7 +233,7 @@ export class RoomKeeperObjective implements Objective {
     }
   }
 
-  private removeBuildFirstSpawnObjective(objective: BuildFirstSpawnObjective): void {
+  private removeBuildFirstSpawnObjective(objective: OldBuildFirstSpawnObjective): void {
     this.buildFirstSpawnObjective = null
     const index = this.children.indexOf(objective)
     if (index >= 0) {
@@ -317,6 +317,8 @@ export class RoomKeeperObjective implements Objective {
   }
 
   private runCreepSpawn(room: Room, spawns: StructureSpawn[]): [number, CreepName[]] {
+    this.retrieveQueuedRequests()
+
     const spawnCreepProgress = this.spawnCreepObjective.progress(room, spawns)
     let spawnedCreeps = 0
     const canceledCreepNames: CreepName[] = []
@@ -345,5 +347,16 @@ export class RoomKeeperObjective implements Objective {
     }
 
     return [spawnedCreeps, canceledCreepNames]
+  }
+
+  private retrieveQueuedRequests(): void {
+    const queue = Memory.spawnCreepRequests[this.roomName]
+    if (queue == null) {
+      return
+    }
+    queue.forEach(item => {
+      this.spawnCreepObjective.enqueueCreep(item.i, item.n, item.b, item.m, item.p)
+    })
+    Memory.spawnCreepRequests[this.roomName] = []
   }
 }
