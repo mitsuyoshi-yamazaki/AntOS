@@ -61,9 +61,11 @@ export class UpgradeControllerTask implements CreepTask {
   }
 
   private move(creep: Creep): void {
-    if (creep.pos.isNearTo(this.controller.pos) === true) {
+    const range = creep.pos.getRangeTo(this.controller.pos)
+    if (range <= 2) {
       return
     }
-    creep.moveTo(this.controller, { reusePath: 15 })
+    const reusePath = creep.pos.getRangeTo(this.controller.pos) <= 3 ? CREEP_LIFE_TIME : 15
+    creep.moveTo(this.controller, { reusePath })
   }
 }

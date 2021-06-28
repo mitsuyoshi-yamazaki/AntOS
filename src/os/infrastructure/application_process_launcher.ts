@@ -1,3 +1,4 @@
+import { RoomKeeperObjective } from "objective/room_keeper/room_keeper_objective"
 import { RoomKeeperProcess } from "objective/room_keeper/room_keeper_process"
 import { OperatingSystem, ProcessInfo } from "os/os"
 import { RoomName } from "prototype/room"
@@ -39,6 +40,8 @@ export class ApplicationProcessLauncher {
   }
 
   private launchRoomKeeperProcess(roomName: RoomName): void {
-    OperatingSystem.os.addProcess(processId => new RoomKeeperProcess(Game.time, processId, roomName))
+    const time = Game.time
+    const objective = new RoomKeeperObjective(time, [], roomName)
+    OperatingSystem.os.addProcess(processId => new RoomKeeperProcess(time, processId, objective))
   }
 }

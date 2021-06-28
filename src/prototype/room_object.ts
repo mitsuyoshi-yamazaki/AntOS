@@ -1,6 +1,8 @@
 import { TaskRunnerType } from "game_object_task/game_object_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
 
+export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower  // TODO: まだある
+
 declare global {
   interface RoomObject {
     targetedBy: Id<TaskRunnerType>[]

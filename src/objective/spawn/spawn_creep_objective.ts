@@ -1,5 +1,5 @@
 import { SpawnCreepTask } from "game_object_task/spwan_task/spawn_creep_task"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
 import { CreepName } from "prototype/creep"
 
 interface SpawnCreepObjectiveProgressInfo {
@@ -12,7 +12,7 @@ interface SpawnCreepObjectiveFailedInfo {
   queuedCreepNames: string[]
 }
 
-type SpawnCreepObjectiveProgressType = ObjectiveProgressType<SpawnCreepObjectiveProgressInfo, void, SpawnCreepObjectiveFailedInfo>
+type SpawnCreepObjectiveProgressType = ObjectiveInProgress<SpawnCreepObjectiveProgressInfo> | ObjectiveFailed<SpawnCreepObjectiveFailedInfo>
 
 /** It cancels current spawning unless the priority is SpawnPriorityHigh or SpawnPriorityUrgent */
 // export type SpawnPriorityUrgent = 3  // TODO: implement
@@ -125,7 +125,10 @@ export class SpawnCreepObjective implements Objective {
     }
 
     spawns.forEach(spawn => {
-      if (spawn.spawning == null || spawn.task == null) {
+      if (spawn.spawning != null) {
+        return
+      }
+      if (spawn.task == null) {
         this.assignNewTask(spawn)
       }
       if (spawn.task == null) {
@@ -139,11 +142,13 @@ export class SpawnCreepObjective implements Objective {
         if (spawn.task instanceof SpawnCreepTask) {
           info.spawnedCreepNames.push(spawn.task.creepName)
         }
+        spawn.task = null
         return
       case "failed":
         if (spawn.task instanceof SpawnCreepTask) {
           info.canceledCreepNames.push(spawn.task.creepName)
         }
+        spawn.task = null
         return
       }
     })

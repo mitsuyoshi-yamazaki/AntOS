@@ -47,26 +47,26 @@ export class SpawnCreepTask implements StructureSpawnTask {
       return "in progress"
 
     case ERR_NAME_EXISTS:
-      PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_NAME_EXISTS, spawn: ${spawn.name} at ${roomLink(spawn.room.name)}, duplicated name: ${this.creepName}, trying to discard current spawn and retry..`)
+      PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_NAME_EXISTS, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, duplicated name: ${this.creepName}, trying to discard current spawn and retry..`)
       return "failed"
 
     case ERR_BUSY:
-      PrimitiveLogger.log(`spawn.spawnCreep() returns ERR_BUSY possibly programming bug (spawn: ${spawn.name})`)
+      PrimitiveLogger.log(`spawn.spawnCreep() returns ERR_BUSY possibly programming bug (spawn: ${spawn.name} in ${roomLink(spawn.room.name)})`)
       return "in progress"
 
     case ERR_INVALID_ARGS:
-      PrimitiveLogger.log(`spawn.spawnCreep() returns ERR_INVALID_ARGS possibly programming bug (spawn: ${spawn.name}, creep name: ${this.creepName}, body: ${this.body}), trying to discard current spawn and retry..`)
+      PrimitiveLogger.log(`spawn.spawnCreep() returns ERR_INVALID_ARGS possibly programming bug (spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, creep name: ${this.creepName}, body: ${this.body}), trying to discard current spawn and retry..`)
       return "failed"
 
     case ERR_NOT_OWNER:
       return "failed"
 
     case ERR_RCL_NOT_ENOUGH:
-      PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_RCL_NOT_ENOUGH, spawn: ${spawn.name} at ${roomLink(spawn.room.name)}`)
+      PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_RCL_NOT_ENOUGH, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}`)
       return "failed"
 
     default:
-      PrimitiveLogger.fatal(`spawn.spawnCreep() returns unexpected return code: ${result}, spawn: ${spawn.name} at ${roomLink(spawn.room.name)}, trying to discard current spawn and retry..`)
+      PrimitiveLogger.fatal(`spawn.spawnCreep() returns unexpected return code: ${result}, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, trying to discard current spawn and retry..`)
       return "failed"
     }
   }

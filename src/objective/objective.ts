@@ -9,6 +9,7 @@ import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from 
 import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
 import { SourceEnergyHarvester300Objective, SourceEnergyHarvester300ObjectiveState } from "./energy_harvester/source_energy_harvester_300_objective"
 import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
+import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_keeper/low_level_worker_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -69,6 +70,7 @@ class ObjectiveTypes {
   "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
   "SourceEnergyHarvester300Objective" = (state: ObjectiveState) => SourceEnergyHarvester300Objective.decode(state as SourceEnergyHarvester300ObjectiveState)
   "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
+  "LowLevelWorkerObjective" = (state: ObjectiveState) => LowLevelWorkerObjective.decode(state as LowLevelWorkerObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {

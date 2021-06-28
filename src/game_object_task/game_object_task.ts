@@ -27,7 +27,6 @@ interface GameObjectTask<T> extends Stateful {
   targetId?: Id<TargetType>
   startTime: number
   taskType: string
-  shortDescription: string
 
   encode(): GameObjectTaskState
   run(obj: T): GameObjectTaskReturnCode
@@ -41,6 +40,7 @@ export interface CreepTaskState extends GameObjectTaskState {
 
 export interface CreepTask extends GameObjectTask<Creep> {
   taskType: keyof CreepTaskTypes
+  shortDescription: string
 
   encode(): CreepTaskState
 }

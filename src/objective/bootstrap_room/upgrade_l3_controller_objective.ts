@@ -1,5 +1,4 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "objective/objective"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
@@ -10,7 +9,7 @@ import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_ta
 import { BuildTask } from "game_object_task/creep_task/build_task"
 import { RoomPathMemory } from "prototype/room"
 import { calculateSourceRoute } from "script/pathfinder"
-import { SpawnCreepTask, spawnPriorityLow } from "game_object_task/spwan_task/spawn_creep_task"
+import { SpawnCreepTask } from "game_object_task/spwan_task/spawn_creep_task"
 
 const numberOfWorkersEachSource = 8
 
@@ -148,20 +147,22 @@ export class UpgradeL3ControllerObjective implements Objective {
       const numberOfWorkers = workers.length + this.workerNamesInCache.length
       const hasEnoughWorkers = numberOfWorkers >= numberOfWorkersEachSource * sources.length
 
-      if (hasEnoughWorkers !== true) {
-        if (spawnTask != null) {
-          this.spawnWorker(spawnTask, spawnIdentifier, sources)
-        } else if (spawn.task == null) {
-          const newSpawnTask = new SpawnCreepTask(Game.time, [], null)
-          spawn.task = newSpawnTask
-          this.spawnWorker(newSpawnTask, spawnIdentifier, sources)
-        }
-      }
-      if (spawn.task != null) {
-        if (spawn.task.run(spawn) !== "in progress") {
-          spawn.task = null
-        }
-      }
+      // if (hasEnoughWorkers !== true) {
+      //   if (spawnTask != null) {
+      //     const targetSource = this.getSourceToAssign(sources, spawn.pos)
+      //     this.spawnWorker(spawnTask, spawnIdentifier, targetSource)
+      //   } else if (spawn.task == null) {
+      //     const newSpawnTask = new SpawnCreepTask(Game.time, [], null)
+      //     spawn.task = newSpawnTask
+      //     const targetSource = this.getSourceToAssign(sources, spawn.pos)
+      //     this.spawnWorker(newSpawnTask, spawnIdentifier, targetSource)
+      //   }
+      // }
+      // if (spawn.task != null) {
+      //   if (spawn.task.run(spawn) !== "in progress") {
+      //     spawn.task = null
+      //   }
+      // }
 
       this.work(workers, controller, sources, spawn)
       progress = new ObjectiveInProgress(`${workers.length} working`)
@@ -201,7 +202,7 @@ export class UpgradeL3ControllerObjective implements Objective {
       }
     }
     if (noEnergy()) {
-      const source = this.getSourceToAssign(sources)
+      const source = this.getSourceToAssign(sources, creep.pos)
       if (source != null) {
         creep.task = new HarvestEnergyTask(Game.time, source)
       } else {
@@ -222,9 +223,14 @@ export class UpgradeL3ControllerObjective implements Objective {
     }
   }
 
-  private getSourceToAssign(sources: Source[]): Source | null {
+  private getSourceToAssign(sources: Source[], position: RoomPosition): Source | null {
     return sources.reduce((lhs, rhs) => {
-      return lhs.targetedBy.length < rhs.targetedBy.length ? lhs : rhs
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
     })
   }
 
@@ -242,24 +248,23 @@ export class UpgradeL3ControllerObjective implements Objective {
   }
 
   // ---- Spawn ---- //
-  private spawnWorker(spawnTask: SpawnCreepTask, identifier: string, sources: Source[]): void {
-    const time = Game.time
-    const targetSource = this.getSourceToAssign(sources)
-    const initialTask = targetSource != null ? new HarvestEnergyTask(time, targetSource) : null
-    const creepName = generateUniqueId("belgian_waffle")
-    const memory: CreepMemory = {
-      ts: initialTask?.encode() ?? null,
-      squad_name: "",
-      status: CreepStatus.NONE,
-      type: CreepType.WORKER,
-      birth_time: time,
-      should_notify_attack: false,
-      let_thy_die: true,
-    }
+  // private spawnWorker(spawnTask: SpawnCreepTask, identifier: string, targetSource: Source | null): void {
+  //   const time = Game.time
+  //   const initialTask = targetSource != null ? new HarvestEnergyTask(time, targetSource) : null
+  //   const creepName = generateUniqueId("belgian_waffle")
+  //   const memory: CreepMemory = {
+  //     ts: initialTask?.encode() ?? null,
+  //     squad_name: "",
+  //     status: CreepStatus.NONE,
+  //     type: CreepType.WORKER,
+  //     birth_time: time,
+  //     should_notify_attack: false,
+  //     let_thy_die: true,
+  //   }
 
-    spawnTask.addCreepToSpawn(identifier, creepName, this.baseWorkerBodies, memory, spawnPriorityLow)
-    this.workerNamesInCache.push(creepName)
-  }
+  //   spawnTask.addCreepToSpawn(identifier, creepName, this.baseWorkerBodies, memory, spawnPriorityLow)
+  //   this.workerNamesInCache.push(creepName)
+  // }
 
   // ---- Source route ---- //
   private _sourceRoute(room: Room, sources: Source[], spawn: StructureSpawn): void {  // TODO: 適切なインターフェースにする
