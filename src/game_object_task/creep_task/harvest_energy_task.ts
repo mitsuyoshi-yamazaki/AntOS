@@ -1,4 +1,5 @@
-import { CreepTask, CreepTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { CreepTask, CreepTaskState } from "game_object_task/creep_task"
+import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { getCachedPathFor } from "script/pathfinder"
 
 export interface HarvestEnergyTaskState extends CreepTaskState {

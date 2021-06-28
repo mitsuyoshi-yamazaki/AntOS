@@ -1,4 +1,4 @@
-import { StructureSpawnTask } from "game_object_task/game_object_task"
+import { StructureSpawnTask } from "game_object_task/spawn_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
 
 declare global {

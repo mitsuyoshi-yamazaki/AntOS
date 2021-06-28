@@ -166,6 +166,8 @@ declare global {
       last_bucket: number
     }
 
+    towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>
+
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
 

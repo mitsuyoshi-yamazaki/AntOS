@@ -1,4 +1,5 @@
-import { StructureSpawnTask, StructureSpawnTaskState, GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { StructureSpawnTask, StructureSpawnTaskState } from "game_object_task/spawn_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 

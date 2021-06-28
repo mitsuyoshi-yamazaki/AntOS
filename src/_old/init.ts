@@ -5,7 +5,7 @@ import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 
-const version = '4.9.3'
+const version = '4.9.4'
 
 export function init(): void {
   Game.version = version
@@ -19,6 +19,10 @@ export function init(): void {
   if (Memory.versions.indexOf(Game.version) < 0) {
     Memory.versions.push(Game.version)
     console.log(`Updated v${Game.version}`)
+  }
+
+  if (Memory.towers == null) {
+    Memory.towers = {}
   }
 
   if (!Memory.empires) {

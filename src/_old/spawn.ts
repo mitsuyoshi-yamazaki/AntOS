@@ -1,4 +1,4 @@
-import { StructureSpawnTaskState } from "game_object_task/game_object_task";
+import { StructureSpawnTaskState } from "game_object_task/spawn_task";
 import { CreepStatus, ActionResult } from "./creep";
 
 declare global {

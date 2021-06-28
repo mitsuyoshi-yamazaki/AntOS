@@ -1,6 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeCreepTask, decodeSpawnTask } from "game_object_task/game_object_task"
+import { decodeCreepTask } from "game_object_task/creep_task"
+import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
+import { decodeTowerTask } from "game_object_task/tower_task"
 import { ApplicationProcessLauncher } from "./application_process_launcher"
 import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
 
@@ -30,6 +32,13 @@ export class RootProcess {
       const spawn = Game.spawns[spawnName]
       spawn._task = decodeSpawnTask(spawn)
     }
+    // for (const towerId in Memory.towers) { // TODO:
+    //   const tower = Game.getObjectById(towerId)
+    //   if (!(tower instanceof StructureTower)) {
+    //     continue
+    //   }
+    //   tower._task = decodeTowerTask(towerId as Id<StructureTower>)
+    // }
     TaskTargetCache.clearCache()
   }
 
@@ -42,5 +51,8 @@ export class RootProcess {
       const spawn = Game.spawns[spawnName]
       spawn.memory.ts = spawn.task?.encode() ?? null
     }
+    // for () { // TODO:
+
+    // }
   }
 }
