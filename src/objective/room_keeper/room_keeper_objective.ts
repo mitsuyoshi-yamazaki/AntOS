@@ -56,12 +56,21 @@ export class RoomKeeperObjective implements Objective {
         return
       }
     })
-    this.spawnCreepObjective = spawnCreepObjective ?? new SpawnCreepObjective(Game.time, [], [])
+    this.spawnCreepObjective = ((): SpawnCreepObjective => {
+      if (spawnCreepObjective != null) {
+        return spawnCreepObjective
+      }
+      const newObjective = new SpawnCreepObjective(Game.time, [], [])
+      this.children.push(newObjective)
+      return newObjective
+    })()
     this.workerObjective = ((): LowLevelWorkerObjective => {
       if (workerObjective != null) {
         return workerObjective
       }
-      return new LowLevelWorkerObjective(Game.time, [], [], [])
+      const newObjective = new LowLevelWorkerObjective(Game.time, [], [], [])
+      this.children.push(newObjective)
+      return newObjective
     })()
   }
 
