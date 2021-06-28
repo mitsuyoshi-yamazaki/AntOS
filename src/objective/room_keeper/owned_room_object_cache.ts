@@ -12,6 +12,14 @@ interface OwnedRoomObjects {
 
     chargeableStructures: EnergyChargeableStructure[]
   }
+  hostiles: {
+    creeps: Creep[]
+    powerCreeps: PowerCreep[]
+  }
+  alliances: {
+    creeps: Creep[]
+    powerCreeps: PowerCreep[]
+  }
 }
 
 const cache = new Map<RoomName, OwnedRoomObjects>()
@@ -80,6 +88,28 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
     }
   })
 
+  const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
+  const othersPowerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS)
+  const hostileCreeps: Creep[] = []
+  const hostilePowerCreeps: PowerCreep[] = []
+  const allianceCreeps: Creep[] = []
+  const alliancePowerCreeps: PowerCreep[] = []
+
+  othersCreeps.forEach(creep => {
+    if (Game.isEnemy(creep.owner)) {
+      hostileCreeps.push(creep)
+    } else {
+      allianceCreeps.push(creep)
+    }
+  })
+  othersPowerCreeps.forEach(powerCreep => {
+    if (Game.isEnemy(powerCreep.owner)) {
+      hostilePowerCreeps.push(powerCreep)
+    } else {
+      alliancePowerCreeps.push(powerCreep)
+    }
+  })
+
   return {
     controller,
     sources,
@@ -89,6 +119,14 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
       extensions,
       towers,
       chargeableStructures,
+    },
+    hostiles: {
+      creeps: hostileCreeps,
+      powerCreeps: hostilePowerCreeps,
+    },
+    alliances: {
+      creeps: allianceCreeps,
+      powerCreeps: alliancePowerCreeps,
     }
   }
 }

@@ -260,7 +260,7 @@ export function tick(): void {
 
     attacker_info.hostile_creeps = room.find(FIND_HOSTILE_CREEPS, {
       filter: (creep: Creep) => {
-        if (!Game.isEnemy(creep)) {
+        if (!Game.isEnemy(creep.owner)) {
           return false
         }
 

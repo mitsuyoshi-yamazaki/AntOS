@@ -7,20 +7,6 @@ const cache = new Map<TargetTypeId, TaskRunnerId[]>()
 
 // TODO: Process適合にする
 export const TaskTargetCache = {
-  clearCache: (): void => {
-    cache.clear()
-
-    for (const creep_name in Game.creeps) {
-      const creep = Game.creeps[creep_name]
-      if (creep.task == null || creep.task.targetId == null) {
-        continue
-      }
-      addTaskRunner(creep.id, creep.task.targetId)
-    }
-
-    // TODO: Spawn
-    // TODO: Tower
-  },
   didAssignTask(taskRunnerId: TaskRunnerId, targetId: TargetTypeId): void {
     addTaskRunner(taskRunnerId, targetId)
   },

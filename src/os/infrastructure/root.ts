@@ -1,7 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeCreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
-import { TaskTargetCache } from "game_object_task/task_target_cache"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "objective/room_keeper/owned_room_object_cache"
 import { Migration } from "utility/migration"
@@ -11,6 +10,7 @@ import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
+  private shouldCacheTasks = true
 
   public constructor() {
   }
@@ -42,7 +42,6 @@ export class RootProcess {
   public runAfterTick(): void {
     this.storeTasks()
 
-    TaskTargetCache.clearCache()
     OwnedRoomObjectCache.clearCache()
   }
 
@@ -56,15 +55,28 @@ export class RootProcess {
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      creep._task = decodeCreepTask(creep)
+      if (this.shouldCacheTasks) {
+        creep.task = decodeCreepTask(creep)
+      } else {
+        creep._task = decodeCreepTask(creep)
+      }
     }
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName]
-      spawn._task = decodeSpawnTask(spawn)
+      if (this.shouldCacheTasks) {
+        spawn.task = decodeSpawnTask(spawn)
+      } else {
+        spawn._task = decodeSpawnTask(spawn)
+      }
     }
     this.getAllTowers().forEach(tower => {
-      tower._task = decodeTowerTask(tower.id as Id<StructureTower>)
+      if (this.shouldCacheTasks) {
+        tower.task = decodeTowerTask(tower.id as Id<StructureTower>)
+      } else {
+        tower._task = decodeTowerTask(tower.id as Id<StructureTower>)
+      }
     })
+    this.shouldCacheTasks = false
   }
 
   private storeTasks(): void {

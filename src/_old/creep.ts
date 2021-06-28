@@ -2109,7 +2109,7 @@ export function init() {
 
     const hostile_creep: Creep | null = this.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {  // workers
       filter: (creep) => {
-        if (Game.isEnemy(creep) == false) {
+        if (Game.isEnemy(creep.owner) == false) {
           return false
         }
         if (creep.pos.x == 0) {
@@ -2268,7 +2268,7 @@ export function init() {
     else {
       const creep_nearby = this.pos.findInRange(FIND_HOSTILE_CREEPS, 3, {
         filter: (creep: Creep) => {
-          return Game.isEnemy(creep)
+          return Game.isEnemy(creep.owner)
         }
       })[0]
 

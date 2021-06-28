@@ -30,7 +30,7 @@ declare global {
     LOANlist: string[]
     whitelist: string[]
     populateLOANlist(): void
-    isEnemy(creep: Creep): boolean
+    isEnemy(player: Owner): boolean
 
 
     /** @deprecated Old codebase */
@@ -1287,8 +1287,8 @@ export function tick(): void {
     }
   }
 
-  Game.isEnemy = function(creep: Creep): boolean {
-    return Game.whitelist.indexOf(creep.owner.username) < 0
+  Game.isEnemy = function(player: Owner): boolean {
+    return Game.whitelist.includes(player.username) !== true
   }
 
   Game.migration = Migration
