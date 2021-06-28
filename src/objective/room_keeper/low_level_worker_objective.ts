@@ -1,4 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
@@ -31,6 +32,9 @@ export interface LowLevelWorkerObjectiveState extends ObjectiveState {
     /** worker */
     w: CreepName[]
   }
+
+  /** building construction site ID */
+  cs: Id<ConstructionSite<BuildableStructureConstant>> | null
 }
 
 /**
@@ -44,6 +48,7 @@ export class LowLevelWorkerObjective implements Objective {
     public readonly children: Objective[],
     private workerNames: CreepName[],
     private queuedWorkerNames: CreepName[],
+    private buildingConstructionSiteId: Id<ConstructionSite<BuildableStructureConstant>> | null,
   ) {
   }
 
@@ -57,13 +62,14 @@ export class LowLevelWorkerObjective implements Objective {
       },
       cq: {
         w: this.queuedWorkerNames,
-      }
+      },
+      cs: this.buildingConstructionSiteId,
     }
   }
 
   public static decode(state: LowLevelWorkerObjectiveState): LowLevelWorkerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new LowLevelWorkerObjective(state.s, children, state.cr.w, state.cq.w)
+    return new LowLevelWorkerObjective(state.s, children, state.cr.w, state.cq.w, state.cs)
   }
 
   // ---- Public API ---- //
@@ -87,6 +93,7 @@ export class LowLevelWorkerObjective implements Objective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     controller: StructureController,
+    constructionSites: ConstructionSite<BuildableStructureConstant>[],
     spawnCreepObjective: SpawnCreepObjective,
   ): LowLevelWorkerObjectiveProgressType {
 
@@ -106,7 +113,7 @@ export class LowLevelWorkerObjective implements Objective {
     if (workersNeeded > 0) {
       this.spawnWorkers(workersNeeded, spawnCreepObjective)
     }
-    this.work(workers, sources, chargeableStructures, controller)
+    this.work(workers, sources, chargeableStructures, constructionSites, controller)
 
     const event: LowLevelWorkerObjectiveEvent = {
       diedWorkers: diedWorkers.length,
@@ -121,6 +128,7 @@ export class LowLevelWorkerObjective implements Objective {
     workers: Creep[],
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
+    constructionSites: ConstructionSite<BuildableStructureConstant>[],
     controller: StructureController,
   ): void {
 
@@ -129,16 +137,24 @@ export class LowLevelWorkerObjective implements Objective {
         return
       }
       if (creep.task == null) {
-        this.assignNewTask(creep, sources, chargeableStructures, controller)
+        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, controller)
       }
       const taskFinished = creep.task?.run(creep) !== "in progress"
       if (taskFinished) {
-        this.assignNewTask(creep, sources, chargeableStructures, controller, true) // TODO: already run を Task.run() の返り値から取る
+        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, controller, true) // TODO: already run を Task.run() の返り値から取る
       }
     })
   }
 
-  private assignNewTask(creep: Creep, sources: Source[], chargeableStructures: EnergyChargeableStructure[], controller: StructureController, alreadyRun?: boolean): void {
+  private assignNewTask(
+    creep: Creep,
+    sources: Source[],
+    chargeableStructures: EnergyChargeableStructure[],
+    constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    controller: StructureController,
+    alreadyRun?: boolean
+  ): void {
+
     const noEnergy = (): boolean => {
       if (alreadyRun === true) {
         return creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getCapacity() / 2  // タスクを実行済みである場合、storeが更新されていないため
@@ -158,12 +174,12 @@ export class LowLevelWorkerObjective implements Objective {
       if (structureToCharge != null) {
         creep.task = new TransferToStructureTask(Game.time, structureToCharge)
       } else {
-        // const constructionSite = this.getConstructionSiteToAssign(controller.room) // TODO:
-        // if (constructionSite != null) {
-        //   creep.task = new BuildTask(Game.time, constructionSite)
-        // } else {
-        creep.task = new UpgradeControllerTask(Game.time, controller)
-        // }
+        const constructionSite = this.getConstructionSiteToAssign(constructionSites)
+        if (constructionSite != null) {
+          creep.task = new BuildTask(Game.time, constructionSite)
+        } else {
+          creep.task = new UpgradeControllerTask(Game.time, controller)
+        }
       }
     }
   }
@@ -194,6 +210,22 @@ export class LowLevelWorkerObjective implements Objective {
       }
       return lTargetedBy < rTargetedBy ? lhs : rhs
     })
+  }
+
+  private getConstructionSiteToAssign(constructionSites: ConstructionSite<BuildableStructureConstant>[]): ConstructionSite<BuildableStructureConstant> | null {
+    const storedConstructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
+      if (this.buildingConstructionSiteId == null) {
+        return null
+      }
+      return Game.getObjectById(this.buildingConstructionSiteId)
+    })()
+    if (storedConstructionSite != null) {
+      return storedConstructionSite
+    }
+
+    const constructionSite = constructionSites[0]
+    this.buildingConstructionSiteId = constructionSite?.id
+    return constructionSite
   }
 
   // ---- Spawn ---- //

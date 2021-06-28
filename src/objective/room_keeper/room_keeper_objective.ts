@@ -68,7 +68,7 @@ export class RoomKeeperObjective implements Objective {
       if (workerObjective != null) {
         return workerObjective
       }
-      const newObjective = new LowLevelWorkerObjective(Game.time, [], [], [])
+      const newObjective = new LowLevelWorkerObjective(Game.time, [], [], [], null)
       this.children.push(newObjective)
       return newObjective
     })()
@@ -103,6 +103,7 @@ export class RoomKeeperObjective implements Objective {
     const extensions: StructureExtension[] = []
     const towers: StructureTower[] = []
     const chargeableStructures: EnergyChargeableStructure[] = []
+    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
 
     const myStructures = room.find(FIND_MY_STRUCTURES)
     myStructures.forEach(structure => {
@@ -137,7 +138,7 @@ export class RoomKeeperObjective implements Objective {
     let workerStatus = null as string | null
 
     ErrorMapper.wrapLoop((): void => {
-      workerStatus = this.runWorker(sources, chargeableStructures, controller)
+      workerStatus = this.runWorker(sources, chargeableStructures, controller, constructionSites)
     }, "RoomKeeperObjective.runWorker()")()
     status += workerStatus == null ? `${this.workerObjective.constructor.name} failed execution` : workerStatus
 
@@ -163,9 +164,10 @@ export class RoomKeeperObjective implements Objective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     controller: StructureController,
+    constructionSites: ConstructionSite<BuildableStructureConstant>[],
   ): string {
 
-    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, this.spawnCreepObjective)
+    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, this.spawnCreepObjective)
     return ((): string => {
       switch (workerProgress.objectProgressType) {
       case "in progress": {
