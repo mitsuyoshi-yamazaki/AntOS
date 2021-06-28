@@ -1,13 +1,11 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
-import { SignRoomObjective, SignRoomObjectiveState } from "objective/sign_rooms/sign_rooms_objective"
 import { BootstrapL8RoomObjective, BootstrapL8RoomObjectiveState } from "./bootstrap_room/bootstarp_l8_room_objective"
 import { BuildFirstSpawnObjective, BuildFirstSpawnObjectiveState } from "./bootstrap_room/build_first_spawn_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveState } from "./bootstrap_room/upgrade_l3_controller_objective"
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
 import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
-import { SourceEnergyHarvester300Objective, SourceEnergyHarvester300ObjectiveState } from "./energy_harvester/source_energy_harvester_300_objective"
 import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
 import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_keeper/low_level_worker_objective"
 
@@ -61,14 +59,12 @@ export interface Objective extends Stateful {
 
 class ObjectiveTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
-  "SignRoomObjective" = (state: ObjectiveState) => SignRoomObjective.decode(state as SignRoomObjectiveState)
   "SingleCreepProviderObjective" = (state: ObjectiveState) => SingleCreepProviderObjective.decode(state as SingleCreepProviderObjectiveState)
   "BootstrapL8RoomObjective" = (state: ObjectiveState) => BootstrapL8RoomObjective.decode(state as BootstrapL8RoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
   "BuildFirstSpawnObjective" = (state: ObjectiveState) => BuildFirstSpawnObjective.decode(state as BuildFirstSpawnObjectiveState)
   "UpgradeL3ControllerObjective" = (state: ObjectiveState) => UpgradeL3ControllerObjective.decode(state as UpgradeL3ControllerObjectiveState)
   "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
-  "SourceEnergyHarvester300Objective" = (state: ObjectiveState) => SourceEnergyHarvester300Objective.decode(state as SourceEnergyHarvester300ObjectiveState)
   "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
   "LowLevelWorkerObjective" = (state: ObjectiveState) => LowLevelWorkerObjective.decode(state as LowLevelWorkerObjectiveState)
 }

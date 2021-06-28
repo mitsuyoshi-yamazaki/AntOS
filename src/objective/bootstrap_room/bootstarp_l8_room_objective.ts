@@ -15,6 +15,7 @@ export interface BootstrapL8RoomObjectiveState extends ObjectiveState {
   p: string
 }
 
+/** deprecated */
 export class BootstrapL8RoomObjective implements Objective {
   public constructor(
     public readonly startTime: number,

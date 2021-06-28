@@ -1,9 +1,7 @@
 import { Process } from "objective/process"
-import { SignRoomsProcess } from "objective/sign_rooms/sign_rooms_process"
 import { TestProcess } from "objective/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { SignRoomObjective } from "objective/sign_rooms/sign_rooms_objective"
 import { ClaimRoomProcess } from "objective/bootstrap_room/claim_room_process"
 import { ClaimRoomObjective } from "objective/bootstrap_room/claim_room_objective"
 import { BootstrapL8RoomObjective } from "objective/bootstrap_room/bootstarp_l8_room_objective"
@@ -24,9 +22,6 @@ export class LaunchCommand implements ConsoleCommand {
     switch (this.args[0]) {
     case "TestProcess":
       result = this.launchTestProcess()
-      break
-    case "SignRoomsProcess":
-      result = this.launchSignRoomsProcess()
       break
     case "BootstrapL8RoomProcess":
       result = this.launchBootstrapL8RoomProcess()
@@ -83,34 +78,6 @@ export class LaunchCommand implements ConsoleCommand {
   private launchTestProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return new TestProcess(Game.time, processId)
-    })
-    return new ResultSucceeded(process)
-  }
-
-  private launchSignRoomsProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const baseRoomName = args.get("base_room_name")
-    if (baseRoomName == null) {
-      return this.missingArgumentError("base_room_name")
-    }
-
-    const mark = args.get("mark")
-    if (mark == null) {
-      return this.missingArgumentError("mark")
-    }
-
-    const targets = args.get("target_room_names")
-    if (targets == null) {
-      return this.missingArgumentError("target_room_names")
-    }
-    const targetRoomName = targets.split(",")
-
-    const launchTime = Game.time
-    const objective = new SignRoomObjective(launchTime, [], targetRoomName, mark, baseRoomName, null, null)
-
-    const process = OperatingSystem.os.addProcess(processId => {
-      return new SignRoomsProcess(launchTime, processId, objective)
     })
     return new ResultSucceeded(process)
   }

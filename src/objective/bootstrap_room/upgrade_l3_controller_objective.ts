@@ -55,6 +55,7 @@ export interface UpgradeL3ControllerObjectiveWorkingInfo {
   constructionSiteId: Id<ConstructionSite<BuildableStructureConstant>> | null
 }
 
+/** deprecated */
 export class UpgradeL3ControllerObjective implements Objective {
   private baseWorkerBodies: BodyPartConstant[] = [WORK, CARRY, MOVE, MOVE]
   private baseWorkerSpawnEnergy = 100 + 50 + 50 + 50
