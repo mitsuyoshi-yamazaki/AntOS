@@ -15,8 +15,6 @@ export interface SpawnCreepTaskState extends StructureSpawnTaskState {
 }
 
 export class SpawnCreepTask implements StructureSpawnTask {
-  public readonly taskType = "SpawnCreepTask"
-
   public constructor(
     public readonly startTime: number,
     public readonly creepName: string,
@@ -60,6 +58,7 @@ export class SpawnCreepTask implements StructureSpawnTask {
       return "failed"
 
     case ERR_NOT_OWNER:
+      PrimitiveLogger.log(`spawn.spawnCreep() returns ERR_NOT_OWNER possibly programming bug (spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, trying to discard current spawn and retry..`)
       return "failed"
 
     case ERR_RCL_NOT_ENOUGH:

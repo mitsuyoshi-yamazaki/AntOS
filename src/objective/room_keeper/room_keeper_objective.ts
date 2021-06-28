@@ -1,4 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { DefendOwnedRoomObjective } from "objective/defend_room/defend_owned_room_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
 import { SpawnCreepObjective } from "objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
@@ -27,6 +28,7 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
   private readonly workerObjective: LowLevelWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
+  private defendRoomObjective: DefendOwnedRoomObjective | null
 
   public constructor(
     public readonly startTime: number,
@@ -35,6 +37,7 @@ export class RoomKeeperObjective implements Objective {
   ) {
     let spawnCreepObjective: SpawnCreepObjective | null = null
     let workerObjective: LowLevelWorkerObjective | null = null
+    let defendRoomObjective: DefendOwnedRoomObjective | null = null
     children.forEach(child => {
       if (child instanceof SpawnCreepObjective) {
         spawnCreepObjective = child
@@ -42,6 +45,10 @@ export class RoomKeeperObjective implements Objective {
       }
       if (child instanceof LowLevelWorkerObjective) {
         workerObjective = child
+        return
+      }
+      if (child instanceof DefendOwnedRoomObjective) {
+        defendRoomObjective = child
         return
       }
     })
@@ -61,6 +68,7 @@ export class RoomKeeperObjective implements Objective {
       this.children.push(newObjective)
       return newObjective
     })()
+    this.defendRoomObjective = defendRoomObjective
   }
 
   public encode(): RoomKeeperObjectiveState {
@@ -89,6 +97,18 @@ export class RoomKeeperObjective implements Objective {
     }
 
     let status = ""
+
+    if (roomObjects.hostiles.creeps.length > 0 || roomObjects.hostiles.powerCreeps.length > 0) {
+      ErrorMapper.wrapLoop((): void => {
+        const attackState = this.defend(room, roomObjects.hostiles.creeps, roomObjects.hostiles.powerCreeps, roomObjects.activeStructures.towers)
+        status += attackState
+      }, "RoomKeeperObjective.defend()")()
+    } else {
+      if (this.defendRoomObjective != null) {
+        this.removeDefendRoomObjective(this.defendRoomObjective)
+      }
+    }
+
     let workerStatus = null as string | null
 
     ErrorMapper.wrapLoop((): void => {
@@ -137,6 +157,58 @@ export class RoomKeeperObjective implements Objective {
         return workerProgress.reason
       }
     })()
+  }
+
+  private defend(room: Room, hostileCreeps: Creep[], hostilePowerCreeps: PowerCreep[], towers: StructureTower[]): string {
+    const attackingPlayerNames: string[] = []
+    hostileCreeps.forEach(creep => {
+      if (attackingPlayerNames.includes(creep.owner.username) !== true) {
+        attackingPlayerNames.push(creep.owner.username)
+      }
+    })
+    hostilePowerCreeps.forEach(powerCreep => {
+      if (attackingPlayerNames.includes(powerCreep.owner.username) !== true) {
+        attackingPlayerNames.push(powerCreep.owner.username)
+      }
+    })
+
+    const defendRoomObjective = ((): DefendOwnedRoomObjective | null => {
+      if (this.defendRoomObjective != null) {
+        return this.defendRoomObjective
+      }
+      const target = DefendOwnedRoomObjective.chooseNewTarget(hostileCreeps, hostilePowerCreeps)
+      if (target == null) {
+        return null // 来ない想定
+      }
+      const objective = new DefendOwnedRoomObjective(Game.time, [], target.id)
+      this.defendRoomObjective = objective
+      this.children.push(objective)
+      return objective
+    })()
+
+    if (defendRoomObjective == null) {
+      return "wrong code" // 来ない想定
+    }
+
+    const progress = defendRoomObjective.progress(room, hostileCreeps, hostilePowerCreeps, towers)
+    switch (progress.objectProgressType) {
+    case "in progress":
+      break
+    case "succeeded":
+      this.removeDefendRoomObjective(defendRoomObjective)
+      break
+    case "failed":
+      break
+    }
+
+    return `${roomLink(room.name)} is attacked by ${attackingPlayerNames}`
+  }
+
+  private removeDefendRoomObjective(defendRoomObjective: DefendOwnedRoomObjective): void {
+    const index = this.children.indexOf(defendRoomObjective)
+    if (index >= 0) {
+      this.children.splice(index, 1)
+    }
   }
 
   private runCreepSpawn(room: Room, spawns: StructureSpawn[]): [number, CreepName[]] {

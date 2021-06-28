@@ -8,8 +8,6 @@ export interface StructureSpawnTaskState extends GameObjectTaskState {
 }
 
 export interface StructureSpawnTask extends GameObjectTask<StructureSpawn> {
-  taskType: keyof SpawnTaskTypes
-
   encode(): StructureSpawnTaskState
 }
 

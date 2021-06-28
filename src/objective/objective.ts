@@ -8,6 +8,7 @@ import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from 
 import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
 import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
 import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_keeper/low_level_worker_objective"
+import { DefendOwnedRoomObjective, DefendOwnedRoomObjectiveState } from "./defend_room/defend_owned_room_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -67,6 +68,7 @@ class ObjectiveTypes {
   "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
   "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
   "LowLevelWorkerObjective" = (state: ObjectiveState) => LowLevelWorkerObjective.decode(state as LowLevelWorkerObjectiveState)
+  "DefendOwnedRoomObjective" = (state: ObjectiveState) => DefendOwnedRoomObjective.decode(state as DefendOwnedRoomObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {

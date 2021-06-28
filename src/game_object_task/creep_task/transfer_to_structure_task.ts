@@ -7,7 +7,6 @@ export interface TransferToStructureTaskState extends CreepTaskState {
 }
 
 export class TransferToStructureTask implements CreepTask {
-  public readonly taskType = "TransferToStructureTask"
   public readonly shortDescription = "transfer"
   public get targetId(): Id<AnyStructure> {
     return this.structure.id

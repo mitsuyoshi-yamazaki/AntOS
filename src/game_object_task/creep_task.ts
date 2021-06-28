@@ -11,7 +11,6 @@ export interface CreepTaskState extends GameObjectTaskState {
 }
 
 export interface CreepTask extends GameObjectTask<Creep> {
-  taskType: keyof CreepTaskTypes
   shortDescription: string
 
   encode(): CreepTaskState

@@ -8,7 +8,6 @@ export interface HarvestEnergyTaskState extends CreepTaskState {
 }
 
 export class HarvestEnergyTask implements CreepTask {
-  public readonly taskType = "HarvestEnergyTask"
   public readonly shortDescription = "E-harvest"
   public get targetId(): Id<Source> {
     return this.source.id

@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { GameObjectTask, GameObjectTaskState } from "./game_object_task"
-import { AttackTask, AttackTaskState } from "./tower_task/tower_attack_task"
+import { TowerAttackTask, TowerAttackTaskState } from "./tower_task/tower_attack_task"
 
 export interface StructureTowerTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -8,13 +8,11 @@ export interface StructureTowerTaskState extends GameObjectTaskState {
 }
 
 export interface StructureTowerTask extends GameObjectTask<StructureTower> {
-  taskType: keyof TowerTaskTypes
-
   encode(): StructureTowerTaskState
 }
 
 class TowerTaskTypes {
-  "AttackTask" = (state: StructureTowerTaskState) => AttackTask.decode(state as AttackTaskState)
+  "AttackTask" = (state: StructureTowerTaskState) => TowerAttackTask.decode(state as TowerAttackTaskState)
 }
 
 export function decodeTowerTask(towerId: Id<StructureTower>): StructureTowerTask | null {

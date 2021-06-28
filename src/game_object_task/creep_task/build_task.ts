@@ -7,7 +7,6 @@ export interface BuildTaskState extends CreepTaskState {
 }
 
 export class BuildTask implements CreepTask {
-  public readonly taskType = "BuildTask"
   public readonly shortDescription = "build"
   public get targetId(): Id<ConstructionSite<BuildableStructureConstant>> {
     return this.constructionSite.id

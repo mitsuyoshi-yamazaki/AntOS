@@ -7,7 +7,6 @@ export interface UpgradeControllerTaskState extends CreepTaskState {
 }
 
 export class UpgradeControllerTask implements CreepTask {
-  public readonly taskType = "UpgradeControllerTask"
   public readonly shortDescription = "upgrade"
   public get targetId(): Id<StructureController> {
     return this.controller.id
