@@ -122,6 +122,7 @@ export class AttackerSquad extends Squad {
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
     const memory: CreepMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -185,7 +186,7 @@ export class AttackerSquad extends Squad {
 
       const target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS, {
         filter: (c: Creep) => {
-          return Game.isEnemy(c)
+          return Game.isEnemy(c.owner)
         }
       })
       if (target) {

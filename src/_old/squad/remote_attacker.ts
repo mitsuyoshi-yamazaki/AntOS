@@ -236,6 +236,7 @@ export class RemoteAttackerSquad extends Squad {
 
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -266,6 +267,7 @@ export class RemoteAttackerSquad extends Squad {
 
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -296,6 +298,7 @@ export class RemoteAttackerSquad extends Squad {
 
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

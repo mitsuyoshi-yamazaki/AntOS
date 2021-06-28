@@ -1,12 +1,22 @@
+import { StructureSpawnTaskState } from "game_object_task/spawn_task";
 import { CreepStatus, ActionResult } from "./creep";
 
 declare global {
   interface StructureSpawn {
+
+    /** @deprecated Old codebase */
     initialize(): void
+
+    /** @deprecated Old codebase */
     renewSurroundingCreeps(): ActionResult
   }
 
   interface SpawnMemory {
+    /** task state */
+    ts: StructureSpawnTaskState | null
+
+
+    /** @deprecated Old codebase */
     spawning: boolean[]
   }
 }

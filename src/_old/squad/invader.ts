@@ -283,6 +283,7 @@ export class InvaderSquad extends Squad {
     }
 
     const memory: InvaderMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -341,6 +342,7 @@ export class InvaderSquad extends Squad {
     const pair_id = (this.leader.memory as InvaderMemory).pair_id
 
     const memory: InvaderMemory = {
+      ts: null,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

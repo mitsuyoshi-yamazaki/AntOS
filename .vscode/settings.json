@@ -16,5 +16,10 @@
         "activityBar.background": "#a71554"
     },
     "tslint.configFile": "tslint.json",
-    "tslint.alwaysShowRuleFailuresAsWarnings": false
+    "tslint.alwaysShowRuleFailuresAsWarnings": false,
+    "files.autoSave": "onFocusChange",
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    },
 }

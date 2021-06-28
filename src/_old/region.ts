@@ -20,7 +20,7 @@ import { room_link, room_history_link } from "../utility";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";
-import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "task/bridging/creep_provider_bridging_squad"
+import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "objective/bridging/creep_provider_bridging_squad"
 
 export enum RegionStatus {
   NORMAL              = 'normal',             // normal

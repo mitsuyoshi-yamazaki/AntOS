@@ -1,9 +1,14 @@
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeProcessFrom, Process, ProcessId, ProcessState } from "task/process"
-import { isProcedural } from "task/procedural"
+import { decodeProcessFrom, Process, ProcessId, ProcessState } from "objective/process"
+import { isProcedural } from "objective/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
+import { LoggerProcess } from "./process/logger"
+import { init as initRoomPositionPrototype } from "prototype/room_position"
+import { init as initRoomObjectPrototype } from "prototype/room_object"
+import { init as initCreepPrototype } from "prototype/creep"
+import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 
 interface ProcessMemory {
   /** running */
@@ -29,13 +34,27 @@ export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
 }
 
+function init(): void {
+  updatePrototypes()
+}
+
+function updatePrototypes(): void {
+  initRoomPositionPrototype()
+  initRoomObjectPrototype()
+  initCreepPrototype()
+  initStructureSpawnPrototype()
+}
+
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
  * - [ ] RootProcessの依存を外して単体でtestableにする
  * - [ ] Memoryの依存を外す
  */
 export class OperatingSystem {
-  static readonly os = new OperatingSystem()
+  static readonly os = (() => {
+    init()
+    return new OperatingSystem()
+  })()
 
   private didSetup = false
   private processIndex = 0
@@ -90,10 +109,10 @@ export class OperatingSystem {
   /**
    * killを予約する。実行されるのはstoreProcesses()の前
    */
-  public killProcess(processId: ProcessId): ResultType<string> {
+  public killProcess(processId: ProcessId): ResultType<string, string> {
     const process = this.processOf(processId)
     if (process == null) {
-      return new ResultFailed(new Error(`[OS Error] Trying to kill unknown process ${processId}`))
+      return new ResultFailed(`[OS Error] Trying to kill unknown process ${processId}`)
     }
     if (this.processIdsToKill.includes(processId) !== true) {
       this.processIdsToKill.push(processId)
@@ -140,6 +159,15 @@ export class OperatingSystem {
     this.runtimeMemory.processLogs.splice(0, this.runtimeMemory.processLogs.length)
   }
 
+  // FixMe: プロセス特定の仕組みを実装する
+  public getLoggerProcess(): LoggerProcess | null {
+    const processInfo = Array.from(this.processes.values()).find(processInfo => processInfo.process instanceof LoggerProcess)
+    if (processInfo == null) {
+      return null
+    }
+    return processInfo.process as LoggerProcess
+  }
+
   // ---- Run ---- //
   private setup(): void {
     ErrorMapper.wrapLoop(() => {
@@ -162,8 +190,8 @@ export class OperatingSystem {
     }
 
     ErrorMapper.wrapLoop(() => {
-      this.rootProcess.run()
-    }, "OperatingSystem.rootProcess.run()")()
+      this.rootProcess.runBeforeTick()
+    }, "OperatingSystem.rootProcess.runBeforeTick()")()
 
     ErrorMapper.wrapLoop(() => {
       this.runProceduralProcesses()
@@ -176,6 +204,10 @@ export class OperatingSystem {
     ErrorMapper.wrapLoop(() => {
       this.storeProcesses()
     }, "OperatingSystem.storeProcesses()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.rootProcess.runAfterTick()
+    }, "OperatingSystem.rootProcess.runAfterTick()")()
   }
 
   // ---- Private ---- //
