@@ -4,7 +4,7 @@ import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "objective/test/test_process"
 import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap_room/bootstrap_l8_room_proces"
-import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/claim_room_process"
+import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper/room_keeper_process"
 
 export type ProcessId = number

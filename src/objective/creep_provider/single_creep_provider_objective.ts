@@ -2,11 +2,13 @@ import { getNewCreepIn, requestCreep } from "objective/bridging/creep_provider_b
 import {
   decodeObjectivesFrom,
   Objective,
+  ObjectiveFailed,
   ObjectiveInProgress,
   ObjectiveProgressType,
   ObjectiveState,
   ObjectiveSucceeded
 } from "objective/objective"
+import { ResultType } from "utility/result"
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
 
@@ -22,6 +24,8 @@ export interface SingleCreepProviderObjectiveState extends ObjectiveState {
 }
 
 export class SingleCreepProviderObjective implements Objective {
+  private readonly requestCreepResult: ResultType<void, string> | null
+
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
@@ -32,7 +36,9 @@ export class SingleCreepProviderObjective implements Objective {
     } | null
   ) {
     if (launchTimeArguments != null) {
-      this.requestCreep(launchTimeArguments.spawnRoomName, launchTimeArguments.requestingCreepBodyParts)
+      this.requestCreepResult = this.requestCreep(launchTimeArguments.spawnRoomName, launchTimeArguments.requestingCreepBodyParts)
+    } else {
+      this.requestCreepResult = null
     }
   }
 
@@ -50,16 +56,20 @@ export class SingleCreepProviderObjective implements Objective {
     return new SingleCreepProviderObjective(state.s, children, state.i, null)
   }
 
-  private requestCreep(spawnRoomName: string, bodyParts: BodyPartConstant[]): void {
+  private requestCreep(spawnRoomName: string, bodyParts: BodyPartConstant[]): ResultType<void, string> {
     const spec: CreepProviderObjectiveCreepSpec = {
       creepIdentifier: this.requestingCreepIdentifier,
       priority: 2,
       bodyParts: bodyParts,
     }
-    requestCreep(spec, 1, spawnRoomName)
+    return requestCreep(spec, 1, spawnRoomName)
   }
 
   public progress(): ObjectiveProgressType<void, Creep, string> {
+    if (this.requestCreepResult != null && this.requestCreepResult.resultType === "failed") {
+      return new ObjectiveFailed(this.requestCreepResult.reason)
+    }
+
     const creep = getNewCreepIn(this.requestingCreepIdentifier)
     if (creep == null) {
       return new ObjectiveInProgress<void>(undefined)

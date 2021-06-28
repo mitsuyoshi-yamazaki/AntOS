@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 import { roomLink } from "utility/log"
 import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
-import { ClaimRoomObjective } from "./claim_room_objective"
+import { OldClaimRoomObjective } from "./old_claim_room_objective"
 import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveWorkingInfo } from "./upgrade_l3_controller_objective"
 
 type BootstrapL8RoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
@@ -150,30 +150,30 @@ export class BootstrapL8RoomObjective implements Objective {
 
   // ---- Claim target room ---- //
   private claimTargetRoom(): BootstrapL8RoomObjectiveProgressType {
-    const objective = this.children.find(child => child instanceof ClaimRoomObjective) as ClaimRoomObjective | null
+    const objective = this.children.find(child => child instanceof OldClaimRoomObjective) as OldClaimRoomObjective | null
     if (objective == null) {
-      this.addClaimRoomObjective()
-      return new ObjectiveInProgress("Launched ClaimRoomObjective")
+      this.addOldClaimRoomObjective()
+      return new ObjectiveInProgress("Launched OldClaimRoomObjective")
     }
     const progress = objective.progress()
     switch (progress.objectProgressType) {
     case "in progress":
       return new ObjectiveInProgress(progress.value)
     case "succeeded":
-      this.removeClaimRoomObjective(objective)
+      this.removeOldClaimRoomObjective(objective)
       return new ObjectiveInProgress(`Room ${roomLink(progress.result.room.name)} successfully claimed.`)
     case "failed":
-      this.removeClaimRoomObjective(objective)
+      this.removeOldClaimRoomObjective(objective)
       return new ObjectiveFailed(progress.reason)
     }
   }
 
-  private addClaimRoomObjective(): void {
-    const objective = new ClaimRoomObjective(Game.time, [], this.targetRoomName, this.parentRoomName, null)
+  private addOldClaimRoomObjective(): void {
+    const objective = new OldClaimRoomObjective(Game.time, [], this.targetRoomName, this.parentRoomName, null)
     this.children.push(objective)
   }
 
-  private removeClaimRoomObjective(objective: ClaimRoomObjective): void {
+  private removeOldClaimRoomObjective(objective: OldClaimRoomObjective): void {
     const index = this.children.indexOf(objective)
     if (index >= 0) {
       this.children.splice(index, 1)

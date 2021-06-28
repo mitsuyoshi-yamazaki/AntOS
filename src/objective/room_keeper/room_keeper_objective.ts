@@ -1,7 +1,10 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { BuildFirstSpawnObjective } from "objective/bootstrap_room/build_first_spawn_objective"
+import { ClaimRoomObjective } from "objective/bootstrap_room/claim_room_objective"
 import { DefendOwnedRoomObjective } from "objective/defend_room/defend_owned_room_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
 import { SpawnCreepObjective } from "objective/spawn/spawn_creep_objective"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
@@ -28,7 +31,9 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
   private readonly workerObjective: LowLevelWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
+  private buildFirstSpawnObjective: BuildFirstSpawnObjective | null
   private defendRoomObjective: DefendOwnedRoomObjective | null
+  private claimRoomObjective: ClaimRoomObjective | null
 
   public constructor(
     public readonly startTime: number,
@@ -38,6 +43,8 @@ export class RoomKeeperObjective implements Objective {
     let spawnCreepObjective: SpawnCreepObjective | null = null
     let workerObjective: LowLevelWorkerObjective | null = null
     let defendRoomObjective: DefendOwnedRoomObjective | null = null
+    let buildFirstSpawnObjective: BuildFirstSpawnObjective | null = null
+    let claimRoomObjective: ClaimRoomObjective | null = null
     children.forEach(child => {
       if (child instanceof SpawnCreepObjective) {
         spawnCreepObjective = child
@@ -49,6 +56,14 @@ export class RoomKeeperObjective implements Objective {
       }
       if (child instanceof DefendOwnedRoomObjective) {
         defendRoomObjective = child
+        return
+      }
+      if (child instanceof BuildFirstSpawnObjective) {
+        buildFirstSpawnObjective = child
+        return
+      }
+      if (child instanceof ClaimRoomObjective) {
+        claimRoomObjective = child
         return
       }
     })
@@ -69,6 +84,8 @@ export class RoomKeeperObjective implements Objective {
       return newObjective
     })()
     this.defendRoomObjective = defendRoomObjective
+    this.buildFirstSpawnObjective = buildFirstSpawnObjective
+    this.claimRoomObjective = claimRoomObjective
   }
 
   public encode(): RoomKeeperObjectiveState {
@@ -85,6 +102,11 @@ export class RoomKeeperObjective implements Objective {
     return new RoomKeeperObjective(state.s, children, state.r)
   }
 
+  public claimRoom(targetRoomName: RoomName): void {
+    const objective = new ClaimRoomObjective(Game.time, [], targetRoomName, null, false)
+    this.children.push(objective)
+  }
+
   public progress(): RoomKeeperObjectiveProgressType {
     const room = Game.rooms[this.roomName]
     if (room == null) {
@@ -96,7 +118,27 @@ export class RoomKeeperObjective implements Objective {
       return new ObjectiveFailed(`${roomLink(this.roomName)} is not owned by me`)
     }
 
+    if (roomObjects.activeStructures.spawns.length <= 0) {  // TODO: downgradeした場合を考慮していない
+      let buildFirstSpawnStatus = null as string | null
+      ErrorMapper.wrapLoop((): void => {
+        buildFirstSpawnStatus = this.buildFirstSpawn(room)
+      }, "RoomKeeperObjective.buildFirstSpawn()")()
+      const event: RoomKeeperObjectiveEvents = {
+        spawnedCreeps: 0,
+        canceledCreepNames: [],
+        status: buildFirstSpawnStatus ?? "program bug",
+      }
+      return new ObjectiveInProgress(event)
+    }
+
     let status = ""
+
+    if (this.claimRoomObjective != null) {
+      const claimRoomObjective = this.claimRoomObjective
+      ErrorMapper.wrapLoop((): void => {
+        status += this.runClaimRoomObjective(claimRoomObjective)
+      }, "RoomKeeperObjective.claimRoom()") ()
+    }
 
     if (roomObjects.hostiles.creeps.length > 0 || roomObjects.hostiles.powerCreeps.length > 0) {
       ErrorMapper.wrapLoop((): void => {
@@ -159,6 +201,68 @@ export class RoomKeeperObjective implements Objective {
     })()
   }
 
+  private buildFirstSpawn(room: Room): string {
+    const buildFirstSpawnObjective = ((): BuildFirstSpawnObjective => {
+      if (this.buildFirstSpawnObjective != null) {
+        return this.buildFirstSpawnObjective
+      }
+      const objective = new BuildFirstSpawnObjective(Game.time, [], [])
+      this.buildFirstSpawnObjective = objective
+      this.children.push(objective)
+      return objective
+    })()
+
+    const parentRooms: {[index: string]: string} = { // TODO:
+      W51S37: "W53S36"
+    }
+    const parentRoomName = parentRooms[room.name]
+    if (parentRoomName == null) {
+      PrimitiveLogger.fatal(`BuildFirstSpawnObjective with room ${roomLink(room.name)} is not implemented yet`)
+      return "Not implemented yet"
+    }
+    const progress = buildFirstSpawnObjective.progress(room, parentRoomName)
+    switch (progress.objectProgressType) {
+    case "in progress":
+      return progress.value
+    case "succeeded":
+      this.removeBuildFirstSpawnObjective(buildFirstSpawnObjective)
+      return `Spawn ${progress.result.name} built in ${roomLink(room.name)}`
+    case "failed":
+      this.removeBuildFirstSpawnObjective(buildFirstSpawnObjective)
+      return progress.reason
+    }
+  }
+
+  private removeBuildFirstSpawnObjective(objective: BuildFirstSpawnObjective): void {
+    this.buildFirstSpawnObjective = null
+    const index = this.children.indexOf(objective)
+    if (index >= 0) {
+      this.children.splice(index, 1)
+    }
+  }
+
+  private runClaimRoomObjective(claimRoomObjective: ClaimRoomObjective): string {
+    const progress = claimRoomObjective.progress(this.spawnCreepObjective)
+    switch (progress.objectProgressType) {
+    case "in progress":
+      return progress.value
+    case "succeeded":
+      this.removeClaimRoomObjective(claimRoomObjective)
+      return `Room ${roomLink(progress.result.room.name)} successfully claimed`
+    case "failed":
+      this.removeClaimRoomObjective(claimRoomObjective)
+      return progress.reason
+    }
+  }
+
+  private removeClaimRoomObjective(objective: ClaimRoomObjective): void {
+    this.claimRoomObjective = null
+    const index = this.children.indexOf(objective)
+    if (index >= 0) {
+      this.children.splice(index, 1)
+    }
+  }
+
   private defend(room: Room, hostileCreeps: Creep[], hostilePowerCreeps: PowerCreep[], towers: StructureTower[]): string {
     const attackingPlayerNames: string[] = []
     hostileCreeps.forEach(creep => {
@@ -205,6 +309,7 @@ export class RoomKeeperObjective implements Objective {
   }
 
   private removeDefendRoomObjective(defendRoomObjective: DefendOwnedRoomObjective): void {
+    this.defendRoomObjective = null
     const index = this.children.indexOf(defendRoomObjective)
     if (index >= 0) {
       this.children.splice(index, 1)
@@ -220,10 +325,12 @@ export class RoomKeeperObjective implements Objective {
     case "in progress":
       if (spawnCreepProgress.value.spawnedCreepNames.length > 0) {
         this.workerObjective.didSpawnCreep(spawnCreepProgress.value.spawnedCreepNames)
+        this.claimRoomObjective?.didSpawnCreep(spawnCreepProgress.value.spawnedCreepNames)
         spawnedCreeps = spawnCreepProgress.value.spawnedCreepNames.length
       }
       if (spawnCreepProgress.value.canceledCreepNames.length > 0) {
         this.workerObjective.didCancelCreep(spawnCreepProgress.value.canceledCreepNames)
+        this.claimRoomObjective?.didCancelCreep(spawnCreepProgress.value.canceledCreepNames)
         canceledCreepNames.push(...spawnCreepProgress.value.canceledCreepNames)
       }
       break
@@ -231,6 +338,7 @@ export class RoomKeeperObjective implements Objective {
     case "failed":
       if (spawnCreepProgress.reason.queuedCreepNames.length > 0) {
         this.workerObjective.didCancelCreep(spawnCreepProgress.reason.queuedCreepNames)
+        this.claimRoomObjective?.didCancelCreep(spawnCreepProgress.reason.queuedCreepNames)
         canceledCreepNames.push(...spawnCreepProgress.reason.queuedCreepNames)
       }
       break

@@ -2,8 +2,8 @@ import { Process } from "objective/process"
 import { TestProcess } from "objective/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { ClaimRoomProcess } from "objective/bootstrap_room/claim_room_process"
-import { ClaimRoomObjective } from "objective/bootstrap_room/claim_room_objective"
+import { ClaimRoomProcess } from "objective/bootstrap_room/old_claim_room_process"
+import { OldClaimRoomObjective } from "objective/bootstrap_room/old_claim_room_objective"
 import { BootstrapL8RoomObjective } from "objective/bootstrap_room/bootstarp_l8_room_objective"
 import { BootstrapL8RoomProcess } from "objective/bootstrap_room/bootstrap_l8_room_proces"
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
@@ -118,7 +118,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const launchTime = Game.time
-    const objective = new ClaimRoomObjective(launchTime, [], targetRoomName, parentRoomName, null)
+    const objective = new OldClaimRoomObjective(launchTime, [], targetRoomName, parentRoomName, null)
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new ClaimRoomProcess(launchTime, processId, objective)

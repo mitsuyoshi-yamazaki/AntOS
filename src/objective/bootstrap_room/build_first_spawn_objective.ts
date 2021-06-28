@@ -47,7 +47,7 @@ export class BuildFirstSpawnObjective implements Objective {
 
     const spawnConstructionSite = (targetRoom.construction_sites ?? [])[0]
     if (spawnConstructionSite == null) {
-      const flag = targetRoom.find(FIND_FLAGS)[0]
+      const flag = targetRoom.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREY)
       if (flag == null) {
         return new ObjectiveFailed(`No spawn construction site in ${roomLink(targetRoom.name)}`)
       }

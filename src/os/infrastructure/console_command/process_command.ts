@@ -59,10 +59,12 @@ export class ProcessCommand implements ConsoleCommand {
             result.push(getArrayDescription(value, indent + 1))
             result.push(`${getIndent(indent)}]`)
           }
-        } else if (typeof(value) === "object") {
+        } else if (typeof (value) === "object") {
           result.push(`${getIndent(indent)}- ${key}: {`)
           result.push(getMemoryDescription(value, indent + 1))
           result.push(`${getIndent(indent)}}`)
+        } else if (value == null) {
+          result.push(`${getIndent(indent)}- ${key}: null`)
         } else {
           result.push(`${getIndent(indent)}- ${key}: ${value}`)
         }
@@ -86,6 +88,8 @@ export class ProcessCommand implements ConsoleCommand {
           result.push(`${getIndent(indent)}- {`)
           result.push(getMemoryDescription(value, indent + 1))
           result.push(`${getIndent(indent)}}`)
+        } else if (value == null) {
+          result.push(`${getIndent(indent)}- null`)
         } else {
           result.push(`${getIndent(indent)}- ${value}`)
         }

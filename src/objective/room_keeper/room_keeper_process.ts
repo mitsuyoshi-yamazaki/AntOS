@@ -1,5 +1,6 @@
 import { Procedural } from "objective/procedural"
 import { Process, ProcessId, processLog, ProcessState } from "objective/process"
+import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
@@ -10,7 +11,7 @@ export interface RoomKeeperProcessState extends ProcessState {
   s: RoomKeeperObjectiveState
 }
 
-export class RoomKeeperProcess implements Process, Procedural {
+export class RoomKeeperProcess implements Process, Procedural, MessageObserver {
   public get roomName(): RoomName {
     return this.objective.roomName
   }
@@ -49,6 +50,18 @@ export class RoomKeeperProcess implements Process, Procedural {
       PrimitiveLogger.log(`Failed with error: ${progress.reason}`)
       return
     }
+  }
+
+  public didReceiveMessage(message: string): string {
+    const components = message.split(" ")
+    if (components.length < 2) {
+      return `Lack of arguments: expecting &ltcommand&gt &lttarget&gt, raw: ${message}`
+    }
+    if (components[0] !== "claim") {
+      return `Invalid command ${components[0]}, available commands: [claim]`
+    }
+    this.objective.claimRoom(components[1])
+    return "ok"
   }
 
   private logEvent(event: RoomKeeperObjectiveEvents): void {
