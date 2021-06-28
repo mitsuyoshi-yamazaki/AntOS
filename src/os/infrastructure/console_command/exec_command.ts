@@ -1,6 +1,7 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
+import { showTargetedBy } from "script/task_target_cache_viewer"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -21,6 +22,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showOldRoomPlan()
     case "PlaceOldRoomPlan":
       return this.placeOldRoomPlan()
+    case "ShowTargetedBy":
+      return this.showTargetedBy()
     default:
       return "Invalid script type"
     }
@@ -164,5 +167,16 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
+  }
+
+  private showTargetedBy(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const targetIds = args.get("target_ids")
+    if (targetIds == null) {
+      return this.missingArgumentError("target_ids")
+    }
+
+    return showTargetedBy(targetIds.split(","))
   }
 }

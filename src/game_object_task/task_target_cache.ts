@@ -1,7 +1,7 @@
 import { TargetType, TaskRunnerType } from "./game_object_task"
 
-type TaskRunnerId = Id<TaskRunnerType>
-type TargetTypeId = Id<TargetType>
+export type TaskRunnerId = Id<TaskRunnerType>
+export type TargetTypeId = Id<TargetType>
 
 const cache = new Map<TargetTypeId, TaskRunnerId[]>()
 

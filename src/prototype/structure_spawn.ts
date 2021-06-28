@@ -18,10 +18,10 @@ export function init(): void {
     },
     set(task: StructureSpawnTask | null): void {
       if (this._task != null && this._task.targetId != null) {
-        TaskTargetCache.didFinishTask(this, this._task.targetId)
+        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
       }
       if (task != null && task.targetId != null) {
-        TaskTargetCache.didAssignTask(this, task.targetId)
+        TaskTargetCache.didAssignTask(this.id, task.targetId)
       }
       this._task = task
     }
