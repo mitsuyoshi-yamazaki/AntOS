@@ -1,5 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, showCachedSourcePath } from "script/pathfinder"
+import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -16,6 +17,10 @@ export class ExecCommand implements ConsoleCommand {
       return this.findPathToSource()
     case "ShowCachedSourcePath":
       return this.showCachedSourcePath()
+    case "ShowOldRoomPlan":
+      return this.showOldRoomPlan()
+    case "PlaceOldRoomPlan":
+      return this.placeOldRoomPlan()
     default:
       return "Invalid script type"
     }
@@ -91,5 +96,73 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return showCachedSourcePath(sourceId as Id<Source>)
+  }
+
+  private showOldRoomPlan(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const layoutName = args.get("layout_name")
+    if (layoutName == null) {
+      return this.missingArgumentError("layout_name")
+    }
+
+    const x = args.get("x")
+    if (x == null) {
+      return this.missingArgumentError("x")
+    }
+    const parsedX = parseInt(x, 10)
+    if (isNaN(parsedX)) {
+      return `x is not a number (${x})`
+    }
+
+    const y = args.get("y")
+    if (y == null) {
+      return this.missingArgumentError("y")
+    }
+    const parsedY = parseInt(y, 10)
+    if (isNaN(parsedY)) {
+      return `y is not a number (${y})`
+    }
+
+    return showOldRoomPlan(roomName, layoutName, parsedX, parsedY)
+  }
+
+  private placeOldRoomPlan(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const layoutName = args.get("layout_name")
+    if (layoutName == null) {
+      return this.missingArgumentError("layout_name")
+    }
+
+    const x = args.get("x")
+    if (x == null) {
+      return this.missingArgumentError("x")
+    }
+    const parsedX = parseInt(x, 10)
+    if (isNaN(parsedX)) {
+      return `x is not a number (${x})`
+    }
+
+    const y = args.get("y")
+    if (y == null) {
+      return this.missingArgumentError("y")
+    }
+    const parsedY = parseInt(y, 10)
+    if (isNaN(parsedY)) {
+      return `y is not a number (${y})`
+    }
+
+    return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
   }
 }
