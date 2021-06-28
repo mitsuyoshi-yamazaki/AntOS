@@ -2,9 +2,9 @@ import { SingleCreepProviderObjective } from "objective/creep_provider/single_cr
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 import { roomLink } from "utility/log"
 
-type ClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
+type OldClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
 
-export interface ClaimRoomObjectiveState extends ObjectiveState {
+export interface OldClaimRoomObjectiveState extends ObjectiveState {
   /** target room name */
   r: string
 
@@ -32,7 +32,7 @@ export interface ClaimRoomObjectiveState extends ObjectiveState {
  *                 - success
  * - Game.io("launch ClaimRoomProcess target_room_name=W52S28 parent_room_name=W51S29")
  */
-export class ClaimRoomObjective implements Objective {
+export class OldClaimRoomObjective implements Objective {
   private creepProvider: SingleCreepProviderObjective | null = null
 
   public constructor(
@@ -50,9 +50,9 @@ export class ClaimRoomObjective implements Objective {
     }
   }
 
-  public encode(): ClaimRoomObjectiveState {
+  public encode(): OldClaimRoomObjectiveState {
     return {
-      t: "ClaimRoomObjective",
+      t: "OldClaimRoomObjective",
       s: this.startTime,
       c: this.children.map(child => child.encode()),
       r: this.targetRoomName,
@@ -61,9 +61,9 @@ export class ClaimRoomObjective implements Objective {
     }
   }
 
-  public static decode(state: ClaimRoomObjectiveState): ClaimRoomObjective {
+  public static decode(state: OldClaimRoomObjectiveState): OldClaimRoomObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new ClaimRoomObjective(state.s, children, state.r, state.p, state.i)
+    return new OldClaimRoomObjective(state.s, children, state.r, state.p, state.i)
   }
 
   public objectiveDescription(): string {
@@ -78,11 +78,7 @@ export class ClaimRoomObjective implements Objective {
     return `${baseDescription}${childObjectivesDescription}`
   }
 
-  /**
-   * - condition assertionを実行する
-   *   - → それを中央集権で行うのがevent detector
-   */
-  public progress(): ClaimRoomObjectiveProgressType {
+  public progress(): OldClaimRoomObjectiveProgressType {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
       return new ObjectiveFailed(`No target room ${this.targetRoomName} visibility`)
@@ -116,7 +112,7 @@ export class ClaimRoomObjective implements Objective {
     return Game.rooms[this.parentRoomName]
   }
 
-  private requestClaimerCreep(): ClaimRoomObjectiveProgressType {
+  private requestClaimerCreep(): OldClaimRoomObjectiveProgressType {
     if (this.creepProvider != null) {
       const removeCreepProvider = (provider: SingleCreepProviderObjective) => {
         const index = this.children.indexOf(provider)
@@ -149,7 +145,7 @@ export class ClaimRoomObjective implements Objective {
     return new ObjectiveInProgress("Claimer creep requested")
   }
 
-  private claim(creep: Creep, controller: StructureController): ClaimRoomObjectiveProgressType {
+  private claim(creep: Creep, controller: StructureController): OldClaimRoomObjectiveProgressType {
     const result = creep.claimController(controller)
     switch (result) {
     case OK:

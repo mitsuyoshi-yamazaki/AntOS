@@ -1,18 +1,18 @@
 import { OperatingSystem } from "os/os"
 import { Procedural } from "objective/procedural"
 import { Process, ProcessId, processLog, ProcessState } from "objective/process"
-import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./claim_room_objective"
+import { OldClaimRoomObjective, OldClaimRoomObjectiveState } from "./old_claim_room_objective"
 
 export interface ClaimRoomProcessState extends ProcessState {
   /** objective state */
-  s: ClaimRoomObjectiveState
+  s: OldClaimRoomObjectiveState
 }
 
 export class ClaimRoomProcess implements Process, Procedural {
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly objective: ClaimRoomObjective,
+    private readonly objective: OldClaimRoomObjective,
   ) { }
 
   public encode(): ClaimRoomProcessState {
@@ -25,7 +25,7 @@ export class ClaimRoomProcess implements Process, Procedural {
   }
 
   public static decode(state: ClaimRoomProcessState): ClaimRoomProcess {
-    const objective = ClaimRoomObjective.decode(state.s)
+    const objective = OldClaimRoomObjective.decode(state.s)
     return new ClaimRoomProcess(state.l, state.i, objective)
   }
 
