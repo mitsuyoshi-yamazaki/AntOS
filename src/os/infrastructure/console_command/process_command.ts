@@ -44,9 +44,10 @@ export class ProcessCommand implements ConsoleCommand {
     const mediumTab = 20
     const smallTab = 10
 
-    const startString = `${tab("PID", mediumTab)}${tab("Type", largeTab)}${tab("Running", smallTab)}`
+    const startString = `${tab("PID", mediumTab)}${tab("Type", largeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
     return OperatingSystem.os.listAllProcesses().reduce((result, current) => {
-      return `${result}\n${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, largeTab)}${tab(`${current.running}`, smallTab)}`
+      const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
+      return `${result}\n${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, largeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
     }, startString)
   }
 }
