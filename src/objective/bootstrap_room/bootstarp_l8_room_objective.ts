@@ -1,7 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
 import { roomLink } from "utility/log"
-import { BuildFirstSpawnObjective } from "./build_first_spawn_objective"
+import { OldBuildFirstSpawnObjective } from "./old_build_first_spawn_objective"
 import { OldClaimRoomObjective } from "./old_claim_room_objective"
 import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveWorkingInfo } from "./upgrade_l3_controller_objective"
 
@@ -118,7 +118,7 @@ export class BootstrapL8RoomObjective implements Objective {
 
   // ---- Build first spawn ---- //
   private buildFirstSpawn(controller: StructureController): BootstrapL8RoomObjectiveProgressType {
-    const objective = this.children.find(child => child instanceof BuildFirstSpawnObjective) as BuildFirstSpawnObjective | null
+    const objective = this.children.find(child => child instanceof OldBuildFirstSpawnObjective) as OldBuildFirstSpawnObjective | null
     if (objective == null) {
       this.addBuildFirstSpawnObjective()
       return new ObjectiveInProgress("Launched BuildFirstSpawnObjective")
@@ -137,11 +137,11 @@ export class BootstrapL8RoomObjective implements Objective {
   }
 
   private addBuildFirstSpawnObjective(): void {
-    const objective = new BuildFirstSpawnObjective(Game.time, [], [])
+    const objective = new OldBuildFirstSpawnObjective(Game.time, [], [])
     this.children.push(objective)
   }
 
-  private removeBuildFirstSpawnObjective(objective: BuildFirstSpawnObjective): void {
+  private removeBuildFirstSpawnObjective(objective: OldBuildFirstSpawnObjective): void {
     const index = this.children.indexOf(objective)
     if (index >= 0) {
       this.children.splice(index, 1)

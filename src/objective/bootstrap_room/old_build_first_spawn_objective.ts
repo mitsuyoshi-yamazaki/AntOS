@@ -6,9 +6,9 @@ import { roomLink } from "utility/log"
 
 const maxNumberOfWorkers = 12
 
-type BuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
+type OldBuildFirstSpawnObjectiveProgressType = ObjectiveProgressType<string, StructureSpawn, string>
 
-export interface BuildFirstSpawnObjectiveState extends ObjectiveState {
+export interface OldBuildFirstSpawnObjectiveState extends ObjectiveState {
   /** creep IDs */
   cr: {
     /** worker */
@@ -16,7 +16,7 @@ export interface BuildFirstSpawnObjectiveState extends ObjectiveState {
   }
 }
 
-export class BuildFirstSpawnObjective implements Objective {
+export class OldBuildFirstSpawnObjective implements Objective {
   private creepIdentifierIndex = 0
 
   public constructor(
@@ -26,9 +26,9 @@ export class BuildFirstSpawnObjective implements Objective {
   ) {
   }
 
-  public encode(): BuildFirstSpawnObjectiveState {
+  public encode(): OldBuildFirstSpawnObjectiveState {
     return {
-      t: "BuildFirstSpawnObjective",
+      t: "OldBuildFirstSpawnObjective",
       s: this.startTime,
       c: this.children.map(child => child.encode()),
       cr: {
@@ -37,12 +37,12 @@ export class BuildFirstSpawnObjective implements Objective {
     }
   }
 
-  public static decode(state: BuildFirstSpawnObjectiveState): BuildFirstSpawnObjective {
+  public static decode(state: OldBuildFirstSpawnObjectiveState): OldBuildFirstSpawnObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new BuildFirstSpawnObjective(state.s, children, state.cr.w)
+    return new OldBuildFirstSpawnObjective(state.s, children, state.cr.w)
   }
 
-  public progress(targetRoom: Room, parentRoomName: string): BuildFirstSpawnObjectiveProgressType {
+  public progress(targetRoom: Room, parentRoomName: string): OldBuildFirstSpawnObjectiveProgressType {
     const inProgressMessages: string[] =this.checkChildrenProgress()
 
     const spawnConstructionSite = (targetRoom.construction_sites ?? [])[0]

@@ -1,7 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { BootstrapL8RoomObjective, BootstrapL8RoomObjectiveState } from "./bootstrap_room/bootstarp_l8_room_objective"
-import { BuildFirstSpawnObjective, BuildFirstSpawnObjectiveState } from "./bootstrap_room/build_first_spawn_objective"
 import { OldClaimRoomObjective, OldClaimRoomObjectiveState } from "./bootstrap_room/old_claim_room_objective"
 import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveState } from "./bootstrap_room/upgrade_l3_controller_objective"
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
@@ -10,6 +9,7 @@ import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_cre
 import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_keeper/low_level_worker_objective"
 import { DefendOwnedRoomObjective, DefendOwnedRoomObjectiveState } from "./defend_room/defend_owned_room_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
+import { OldBuildFirstSpawnObjective, OldBuildFirstSpawnObjectiveState } from "./bootstrap_room/old_build_first_spawn_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -64,7 +64,7 @@ class ObjectiveTypes {
   "SingleCreepProviderObjective" = (state: ObjectiveState) => SingleCreepProviderObjective.decode(state as SingleCreepProviderObjectiveState)
   "BootstrapL8RoomObjective" = (state: ObjectiveState) => BootstrapL8RoomObjective.decode(state as BootstrapL8RoomObjectiveState)
   "OldClaimRoomObjective" = (state: ObjectiveState) => OldClaimRoomObjective.decode(state as OldClaimRoomObjectiveState)
-  "BuildFirstSpawnObjective" = (state: ObjectiveState) => BuildFirstSpawnObjective.decode(state as BuildFirstSpawnObjectiveState)
+  "OldBuildFirstSpawnObjective" = (state: ObjectiveState) => OldBuildFirstSpawnObjective.decode(state as OldBuildFirstSpawnObjectiveState)
   "UpgradeL3ControllerObjective" = (state: ObjectiveState) => UpgradeL3ControllerObjective.decode(state as UpgradeL3ControllerObjectiveState)
   "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
   "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
