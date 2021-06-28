@@ -52,9 +52,13 @@ export class ProcessCommand implements ConsoleCommand {
       for (const key in memory) {
         const value = memory[key]
         if (value instanceof Array) {
-          result.push(`${getIndent(indent)}- ${key}: [`)
-          result.push(getArrayDescription(value, indent + 1))
-          result.push(`${getIndent(indent)}]`)
+          if (value.length <= 0) {
+            result.push(`${getIndent(indent)}- ${key}: []`)
+          } else {
+            result.push(`${getIndent(indent)}- ${key}: [`)
+            result.push(getArrayDescription(value, indent + 1))
+            result.push(`${getIndent(indent)}]`)
+          }
         } else if (typeof(value) === "object") {
           result.push(`${getIndent(indent)}- ${key}: {`)
           result.push(getMemoryDescription(value, indent + 1))
@@ -71,9 +75,13 @@ export class ProcessCommand implements ConsoleCommand {
       const result: string[] = []
       array.forEach(value => {
         if (value instanceof Array) {
-          result.push(`${getIndent(indent)}- [`)
-          result.push(getArrayDescription(value, indent + 1))
-          result.push(`${getIndent(indent)}]`)
+          if (value.length <= 0) {
+            result.push(`${getIndent(indent)}- []`)
+          } else {
+            result.push(`${getIndent(indent)}- [`)
+            result.push(getArrayDescription(value, indent + 1))
+            result.push(`${getIndent(indent)}]`)
+          }
         } else if (typeof (value) === "object") {
           result.push(`${getIndent(indent)}- {`)
           result.push(getMemoryDescription(value, indent + 1))
