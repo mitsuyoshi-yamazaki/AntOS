@@ -7,7 +7,6 @@ import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
-import { SquadType } from "_old/squad/squad"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 
@@ -153,16 +152,16 @@ const mainLoop = () => {
 
   // console.log(`move()/Creeps: ${move_called}/${Object.keys(Game.creeps).length}`)
 
+  /* eslint-enable */
+  OperatingSystem.os.run()
+  /* eslint-disable */
+
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
 
   if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
     Memory.debug.cpu.show_usage = false
   }
-
-  /* eslint-enable */
-  OperatingSystem.os.run()
-  /* eslint-disable */
 }
 
 ScreepsProfiler.enable()  // TODO: 普段はオフに
