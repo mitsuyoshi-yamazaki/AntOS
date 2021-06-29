@@ -49,7 +49,7 @@ export class Shard3BootstrapProcess implements Process, Procedural {
       this.claim(creep)
       return
     case CreepType.SCOUT:
-      this.scout(creep)
+      this.gather(creep)
       return
     case CreepType.TAKE_OVER:
       this.gather(creep)

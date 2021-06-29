@@ -73,6 +73,10 @@ export class LowLevelWorkerObjective implements Objective {
   }
 
   // ---- Public API ---- //
+  public addCreeps(creepNames: CreepName[]): void {
+    this.workerNames.push(...creepNames)
+  }
+
   public didSpawnCreep(creepNames: CreepName[]): void {
     const spawnedCreepNames: CreepName[] = []
     this.queuedWorkerNames = this.queuedWorkerNames.filter(name => {

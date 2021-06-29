@@ -88,7 +88,7 @@ export class CreepProviderBridgingSquad extends Squad {
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
-      type: CreepType.CREEP_PROVIDER,
+      type: CreepType.TAKE_OVER,
       should_notify_attack: false,
       let_thy_die: true,
     }

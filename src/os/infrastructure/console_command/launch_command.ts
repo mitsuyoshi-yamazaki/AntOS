@@ -174,6 +174,12 @@ export class LaunchCommand implements ConsoleCommand {
           WORK, CARRY, MOVE, MOVE,
           WORK, CARRY, MOVE, MOVE,
         ]
+      case "huge_worker":
+        return [
+          CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+          WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK,
+          MOVE, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,
+        ]
       case "claimer":
         return [CLAIM, MOVE]
       default:
@@ -181,7 +187,7 @@ export class LaunchCommand implements ConsoleCommand {
       }
     }) ()
     if (body == null) {
-      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, claimer")
+      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer")
     }
 
     const launchTime = Game.time

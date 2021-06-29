@@ -650,8 +650,8 @@ export class Region {
       }
       else {
         if ((Game.time % 101) == 3) {
-          const message = `No reaction ${this.name}`
-          console.log(message)
+          // const message = `No reaction ${this.name}`
+          // console.log(message)
           // Game.notify(message)
         }
       }

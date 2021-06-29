@@ -114,7 +114,7 @@ export class SingleCreepProviderObjective implements Objective {
         squad_name: "",
         status: CreepStatus.NONE,
         birth_time: Game.time,
-        type: CreepType.CREEP_PROVIDER,
+        type: CreepType.TAKE_OVER,
         should_notify_attack: false,
         let_thy_die: true,
       }

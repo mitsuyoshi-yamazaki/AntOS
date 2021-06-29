@@ -130,6 +130,11 @@ export class RoomKeeperObjective implements Objective {
         status: buildFirstSpawnStatus ?? "program bug",
       }
       return new ObjectiveInProgress(event)
+    } else {
+      if (this.buildFirstSpawnObjective != null) {
+        this.workerObjective.addCreeps(this.buildFirstSpawnObjective.workerNames)
+        this.removeBuildFirstSpawnObjective(this.buildFirstSpawnObjective)
+      }
     }
 
     let status = ""
@@ -212,9 +217,11 @@ export class RoomKeeperObjective implements Objective {
       if (this.buildFirstSpawnObjective != null) {
         return this.buildFirstSpawnObjective
       }
-      const takenOverCreepNames: CreepName[] = room.find(FIND_MY_CREEPS)
+      const takenOverCreeps: Creep[] = room.find(FIND_MY_CREEPS)
         .filter(creep => creep.memory.type === CreepType.TAKE_OVER)
-        .map(creep => creep.name)
+
+      takenOverCreeps.forEach(creep => creep.memory.type = CreepType.WORKER)
+      const takenOverCreepNames = takenOverCreeps.map(creep => creep.name)
 
       const objective = new OldBuildFirstSpawnObjective(Game.time, [], takenOverCreepNames, [])
       this.buildFirstSpawnObjective = objective
