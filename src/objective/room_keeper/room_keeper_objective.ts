@@ -170,11 +170,16 @@ export class RoomKeeperObjective implements Objective {
     }, "RoomKeeperObjective.runCreepSpawn()")()
 
     const [spawnedCreeps, canceledCreepNames] = spawnResult ?? [0, []]
-
     const event: RoomKeeperObjectiveEvents = {
       spawnedCreeps,
       canceledCreepNames,
       status,
+    }
+
+    if (roomObjects.constructionSites.length <= 0 && roomObjects.flags.length > 0) {
+      ErrorMapper.wrapLoop((): void => {
+        this.placeConstructionSite(room, roomObjects.flags)
+      }, "RoomKeeperObjective.placeConstructionSite()")()
     }
 
     return new ObjectiveInProgress(event)
@@ -358,5 +363,40 @@ export class RoomKeeperObjective implements Objective {
       this.spawnCreepObjective.enqueueCreep(item.i, item.n, item.b, item.m, item.p)
     })
     Memory.spawnCreepRequests[this.roomName] = []
+  }
+
+  private placeConstructionSite(room: Room, flags: Flag[]): void {
+    const colorMap = new Map<ColorConstant, StructureConstant>([
+      [COLOR_BROWN, STRUCTURE_ROAD],
+      [COLOR_GREEN, STRUCTURE_STORAGE],
+      [COLOR_PURPLE, STRUCTURE_TERMINAL],
+      [COLOR_ORANGE, STRUCTURE_LINK],
+      [COLOR_BLUE, STRUCTURE_LAB],
+      [COLOR_RED, STRUCTURE_TOWER],
+      [COLOR_GREY, STRUCTURE_SPAWN],
+      [COLOR_CYAN, STRUCTURE_NUKER],
+      [COLOR_WHITE, STRUCTURE_EXTENSION],
+    ])
+
+    for (const flag of flags) {
+      const structureType = colorMap.get(flag.color)
+      if (structureType == null) {
+        continue
+      }
+      const result = room.createConstructionSite(flag.pos, structureType)
+      switch (result) {
+      case OK:
+        flag.remove()
+        return
+      case ERR_NOT_OWNER:
+      case ERR_INVALID_TARGET:
+      case ERR_INVALID_ARGS:
+        flag.remove()
+        break
+      case ERR_FULL:
+      case ERR_RCL_NOT_ENOUGH:
+        break
+      }
+    }
   }
 }

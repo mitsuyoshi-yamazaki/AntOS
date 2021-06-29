@@ -21,6 +21,7 @@ interface OwnedRoomObjects {
     creeps: Creep[]
     powerCreeps: PowerCreep[]
   }
+  flags: Flag[]
 }
 
 const cache = new Map<RoomName, OwnedRoomObjects>()
@@ -59,6 +60,8 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
   const towers: StructureTower[] = []
   const chargeableStructures: EnergyChargeableStructure[] = []
   const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
+
+  const flags = room.find(FIND_FLAGS)
 
   const myStructures = room.find(FIND_MY_STRUCTURES)
   myStructures.forEach(structure => {
@@ -137,7 +140,8 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
     alliances: {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
-    }
+    },
+    flags,
   }
 }
 
