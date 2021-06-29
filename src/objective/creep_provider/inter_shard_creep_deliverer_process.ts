@@ -7,7 +7,7 @@ export interface InterShardCreepDelivererProcessState extends ProcessState {
   s: InterShardCreepDelivererObjectiveState
 }
 
-// Game.io("launch InterShardCreepDelivererProcess -l portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=armored_scout")
+// Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=armored_scout")
 export class InterShardCreepDelivererProcess implements Process {
   public constructor(
     public readonly launchTime: number,
@@ -27,6 +27,10 @@ export class InterShardCreepDelivererProcess implements Process {
   public static decode(state: InterShardCreepDelivererProcessState): InterShardCreepDelivererProcess {
     const objective = InterShardCreepDelivererObjective.decode(state.s)
     return new InterShardCreepDelivererProcess(state.l, state.i, objective)
+  }
+
+  public processShortDescription(): string {
+    return this.objective.destinationShardName
   }
 
   public runOnTick(): void {
