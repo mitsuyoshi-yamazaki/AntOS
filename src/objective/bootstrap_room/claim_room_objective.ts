@@ -108,6 +108,7 @@ export class ClaimRoomObjective implements Objective {
       const body: BodyPartConstant[] = [MOVE, CLAIM, MOVE]
       const memory: CreepMemory = {
         ts: null,
+        tt: 0,
         squad_name: "",
         status: CreepStatus.NONE,
         birth_time: Game.time,

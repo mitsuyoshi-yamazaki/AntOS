@@ -85,6 +85,7 @@ export class CreepProviderBridgingSquad extends Squad {
     const body: BodyPartConstant[] = this.memory.req[creepIdentifier]
     const memory: CreepMemory = {
       ts: null,
+      tt: 0,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

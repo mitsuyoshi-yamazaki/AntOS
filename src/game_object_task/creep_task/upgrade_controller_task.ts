@@ -34,6 +34,8 @@ export class UpgradeControllerTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
+    creep.memory.tt = Game.time
+
     const result = creep.upgradeController(this.controller)
 
     switch (result) {

@@ -13,6 +13,7 @@ import { OldBuildFirstSpawnObjective, OldBuildFirstSpawnObjectiveState } from ".
 import { SingleCreepRemoteProviderObjective, SingleCreepRemoteProviderObjectiveState } from "./creep_provider/single_creep_remote_provider_objective"
 import { SingleCreepInterShardProviderObjective, SingleCreepInterShardProviderObjectiveState } from "./creep_provider/single_creep_inter_shard_provider_objective"
 import { InterShardCreepDelivererObjective, InterShardCreepDelivererObjectiveState } from "./creep_provider/inter_shard_creep_deliverer_objective"
+import { MultiRoleWorkerObjective, MultiRoleWorkerObjectiveState } from "./worker/multi_role_worker_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -77,6 +78,7 @@ class ObjectiveTypes {
   "SingleCreepRemoteProviderObjective" = (state: ObjectiveState) => SingleCreepRemoteProviderObjective.decode(state as SingleCreepRemoteProviderObjectiveState)
   "SingleCreepInterShardProviderObjective" = (state: ObjectiveState) => SingleCreepInterShardProviderObjective.decode(state as SingleCreepInterShardProviderObjectiveState)
   "InterShardCreepDelivererObjective" = (state: ObjectiveState) => InterShardCreepDelivererObjective.decode(state as InterShardCreepDelivererObjectiveState)
+  "MultiRoleWorkerObjective" = (state: ObjectiveState) => MultiRoleWorkerObjective.decode(state as MultiRoleWorkerObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {

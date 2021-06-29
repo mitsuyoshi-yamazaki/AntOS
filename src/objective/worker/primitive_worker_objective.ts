@@ -79,7 +79,12 @@ export class PrimitiveWorkerObjective implements Objective {
 
   // ---- Public API ---- //
   public addCreeps(creepNames: CreepName[]): void {
-    this.workerNames.push(...creepNames)
+    creepNames.forEach(name => {
+      if (this.workerNames.includes(name) === true) {
+        return
+      }
+      this.workerNames.push(name)
+    })
   }
 
   public didSpawnCreep(creepNames: CreepName[]): void {
@@ -251,6 +256,7 @@ export class PrimitiveWorkerObjective implements Objective {
         const creepName = generateUniqueId("mont_blanc")
         const memory: CreepMemory = {
           ts: null,
+          tt: 0,
           squad_name: "",
           status: CreepStatus.NONE,
           type: CreepType.WORKER,

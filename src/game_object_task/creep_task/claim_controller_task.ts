@@ -34,6 +34,8 @@ export class ClaimControllerTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
+    creep.memory.tt = Game.time
+
     if (creep.pos.roomName !== this.controller.pos.roomName) {
       creep.moveToRoom(this.controller.room.name)
       return "in progress"

@@ -157,6 +157,9 @@ declare global {
     /** task state */
     ts: CreepTaskState | null
 
+    /** last time task executed */
+    tt: number
+
     /** @deprecated Old codebase */
     squad_name: string
 

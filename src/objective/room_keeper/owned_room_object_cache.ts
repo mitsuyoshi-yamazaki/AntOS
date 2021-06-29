@@ -4,6 +4,7 @@ import { calculateSourceRoute } from "script/pathfinder"
 
 interface OwnedRoomObjects {
   controller: StructureController
+  idleCreeps: Creep[]
   sources: Source[]
   constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
   activeStructures: {
@@ -54,6 +55,7 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
   }
 
   const controller = room.controller
+  const idleCreeps: Creep[] = []//room.find(FIND_MY_CREEPS).filter(creep => creep.spawning !== true && (creep.memory.tt ?? 0) < idleTime) // TODO: 他人の制御権を奪わないかどうか
   const sources = room.find(FIND_SOURCES)
   const spawns: StructureSpawn[] = []
   const extensions: StructureExtension[] = []
@@ -125,6 +127,7 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
 
   return {
     controller,
+    idleCreeps,
     sources,
     constructionSites,
     activeStructures: {
