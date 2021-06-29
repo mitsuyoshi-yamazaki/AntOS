@@ -239,7 +239,12 @@ export class LowLevelWorkerObjective implements Objective {
 
   // ---- Spawn ---- //
   private spawnWorkers(energyCapacity: number, workerNeeded: number, spawnCreepObjective: SpawnCreepObjective): void {
-    const body = buildBodyParts(energyCapacity, this.bodyUnit, 3, this.bodyUnitCost)
+    const body = ((): BodyPartConstant[] => {
+      if (this.workerNames.length > 0) {
+        return buildBodyParts(energyCapacity, this.bodyUnit, 3, this.bodyUnitCost)
+      }
+      return this.bodyUnit
+    })()
 
     ErrorMapper.wrapLoop((): void => {
       for (let i = 0; i < workerNeeded; i += 1) {
