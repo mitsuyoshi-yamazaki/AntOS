@@ -41,6 +41,7 @@ export class SingleCreepInterShardProviderObjective implements Objective {
     return new SingleCreepInterShardProviderObjective(state.s, children, state.n, state.p)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public request(parentRoomName: RoomName, portalRoomName: RoomName): void {
 
   }

@@ -73,6 +73,7 @@ export const InterShardMemoryManager = {
       return parsedMemory.c.filter(content => isInterShardCreepRequest(content)).concat(cachedRequests)
     })()
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const content: InterShardMemoryContent = {
       c: requests,
       r: {},  // TODO:

@@ -48,7 +48,7 @@ export class SpawnCreepTask implements StructureSpawnTask {
 
     case ERR_NOT_ENOUGH_ENERGY:
       if (spawn.room.energyCapacityAvailable < this.bodyCost) {
-        PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_NOT_ENOUGH_ENERGY, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, body cost: ${this.bodyCost}, energy capacity: ${spawn.room.energyCapacityAvailable}, trying to discard current spawn and retry..`)
+        PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_NOT_ENOUGH_ENERGY, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, body cost: ${this.bodyCost}, energy capacity: ${spawn.room.energyCapacityAvailable}, name: ${this.creepName}, trying to discard current spawn and retry..`)
         return "failed"
       }
       return "in progress"

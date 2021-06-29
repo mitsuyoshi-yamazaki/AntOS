@@ -7,6 +7,7 @@ import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, 
 import { SpawnCreepObjective, spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { buildBodyParts } from "script/body_part_builder"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
 
@@ -43,6 +44,9 @@ export interface LowLevelWorkerObjectiveState extends ObjectiveState {
  * - [ ] 防衛設備のないときにinvaderが襲来したら部屋の外に出る
  */
 export class LowLevelWorkerObjective implements Objective {
+  private readonly bodyUnit = [WORK, CARRY, MOVE, MOVE]
+  private readonly bodyUnitCost: number
+
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
@@ -50,6 +54,7 @@ export class LowLevelWorkerObjective implements Objective {
     private queuedWorkerNames: CreepName[],
     private buildingConstructionSiteId: Id<ConstructionSite<BuildableStructureConstant>> | null,
   ) {
+    this.bodyUnitCost = this.bodyUnit.reduce((result, current) => result + BODYPART_COST[current], 0)
   }
 
   public encode(): LowLevelWorkerObjectiveState {
@@ -115,7 +120,7 @@ export class LowLevelWorkerObjective implements Objective {
 
     const workersNeeded = (sources.length * numberOfWorkersEachSource) - (workers.length + this.queuedWorkerNames.length)
     if (workersNeeded > 0) {
-      this.spawnWorkers(workersNeeded, spawnCreepObjective)
+      this.spawnWorkers(controller.room.energyCapacityAvailable, workersNeeded, spawnCreepObjective)
     }
     this.work(workers, sources, chargeableStructures, constructionSites, controller)
 
@@ -233,8 +238,8 @@ export class LowLevelWorkerObjective implements Objective {
   }
 
   // ---- Spawn ---- //
-  private spawnWorkers(workerNeeded: number, spawnCreepObjective: SpawnCreepObjective): void {
-    const body = [WORK, CARRY, MOVE, MOVE]
+  private spawnWorkers(energyCapacity: number, workerNeeded: number, spawnCreepObjective: SpawnCreepObjective): void {
+    const body = buildBodyParts(energyCapacity, this.bodyUnit, 3, this.bodyUnitCost)
 
     ErrorMapper.wrapLoop((): void => {
       for (let i = 0; i < workerNeeded; i += 1) {
