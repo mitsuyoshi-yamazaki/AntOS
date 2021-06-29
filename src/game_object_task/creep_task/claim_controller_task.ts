@@ -42,6 +42,7 @@ export class ClaimControllerTask implements CreepTask {
 
     switch (result) {
     case OK:
+      creep.signController(this.controller, `v${Game.version} at ${Game.time}`)
       return "finished"
     case ERR_NOT_IN_RANGE:
       creep.moveTo(this.controller, { reusePath: 0 })
