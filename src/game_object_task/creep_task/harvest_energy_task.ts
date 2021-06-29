@@ -72,7 +72,7 @@ export class HarvestEnergyTask implements CreepTask {
   private move(creep: Creep): void {
     const cachedPath = getCachedPathFor(this.source)
     if (cachedPath == null) {
-      creep.moveTo(this.source, { reusePath: 15 })
+      creep.moveTo(this.source, { reusePath: 0 })
       return
     }
     const result = creep.moveByPath(cachedPath)

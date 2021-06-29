@@ -34,7 +34,7 @@ export class MoveToPortalTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    const result = creep.moveTo(this.portal, {reusePath: 15})
+    const result = creep.moveTo(this.portal, {reusePath: 0})
 
     switch (result) {
     case OK: {

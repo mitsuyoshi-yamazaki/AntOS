@@ -15,12 +15,16 @@ export interface SpawnCreepTaskState extends StructureSpawnTaskState {
 }
 
 export class SpawnCreepTask implements StructureSpawnTask {
+  private readonly bodyCost: number
+
   public constructor(
     public readonly startTime: number,
     public readonly creepName: string,
     private readonly body: BodyPartConstant[],
     private readonly memory: CreepMemory,
-  ) { }
+  ) {
+    this.bodyCost = body.reduce((result, current) => result + BODYPART_COST[current], 0)
+  }
 
   public encode(): SpawnCreepTaskState {
     return {
@@ -43,6 +47,10 @@ export class SpawnCreepTask implements StructureSpawnTask {
       return "finished"
 
     case ERR_NOT_ENOUGH_ENERGY:
+      if (spawn.room.energyCapacityAvailable < this.bodyCost) {
+        PrimitiveLogger.fatal(`spawn.spawnCreep() returns ERR_NOT_ENOUGH_ENERGY, spawn: ${spawn.name} in ${roomLink(spawn.room.name)}, body cost: ${this.bodyCost}, energy capacity: ${spawn.room.energyCapacityAvailable}, trying to discard current spawn and retry..`)
+        return "failed"
+      }
       return "in progress"
 
     case ERR_NAME_EXISTS:

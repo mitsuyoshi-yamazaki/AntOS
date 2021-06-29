@@ -2,7 +2,6 @@ import { OperatingSystem, ProcessInfo } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 const veryLargeTab = 40
-const largeTab = 30
 const mediumTab = 20
 const smallTab = 10
 type Tab = number

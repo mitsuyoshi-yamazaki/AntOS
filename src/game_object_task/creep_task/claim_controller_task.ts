@@ -44,7 +44,7 @@ export class ClaimControllerTask implements CreepTask {
     case OK:
       return "finished"
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.controller, { reusePath: 15 })
+      creep.moveTo(this.controller, { reusePath: 0 })
       return "in progress"
 
     case ERR_NOT_OWNER:

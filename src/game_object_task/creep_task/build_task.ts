@@ -45,7 +45,7 @@ export class BuildTask implements CreepTask {
       return "in progress"
     }
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.constructionSite, { reusePath: 15 })
+      creep.moveTo(this.constructionSite, { reusePath: 0 })
       return "in progress"
     case ERR_NOT_ENOUGH_RESOURCES:
       return "finished"
