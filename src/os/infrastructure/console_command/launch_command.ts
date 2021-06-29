@@ -11,6 +11,7 @@ import { InterShardCreepDelivererProcess } from "objective/creep_provider/inter_
 import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateUniqueCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { Shard3BootstrapProcess } from "objective/test/shard3_bootstrap_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -35,6 +36,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "InterShardCreepDelivererProcess":
       result = this.launchInterShardCreepDelivererProcess()
+      break
+    case "Shard3BootstrapProcess":
+      result = this.launchShard3BootstrapProcess()
       break
     default:
       break
@@ -197,6 +201,13 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new InterShardCreepDelivererProcess(launchTime, processId, objective)
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchShard3BootstrapProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new Shard3BootstrapProcess(Game.time, processId)
     })
     return new ResultSucceeded(process)
 
