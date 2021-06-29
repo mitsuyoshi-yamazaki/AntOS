@@ -51,17 +51,6 @@ const mainLoop = () => {
       empire.run()
     }, `empire.run`)()
 
-    if ((Game.time % 29) == 3) {
-      ErrorMapper.wrapLoop(() => {
-        for (const creep_name in Game.creeps) {
-          const creep = Game.creeps[creep_name]
-
-          creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
-        }
-        // console.log(`Main creeps GC at ${Game.time}`)
-      }, `Creeps.gc`)()
-    }
-
     if ((Game.time % 997) == 17) {
       ErrorMapper.wrapLoop(() => {
         for (const squad_name in Memory.squads) {
@@ -84,6 +73,17 @@ const mainLoop = () => {
     }
   }
 
+  if ((Game.time % 29) == 3) {
+    ErrorMapper.wrapLoop(() => {
+      for (const creep_name in Game.creeps) {
+        const creep = Game.creeps[creep_name]
+
+        creep.notifyWhenAttacked(false) // creepsは全て通知を停止
+      }
+      // console.log(`Main creeps GC at ${Game.time}`)
+    }, `Creeps.gc`)()
+  }
+
   // if ((Game.time % 197) == 100) {
   //   ErrorMapper.wrapLoop(() => {
   //     // if ((Game.time % 7) == 0) {  // @fixme:
@@ -104,52 +104,52 @@ const mainLoop = () => {
   //   }
   // }, `Creep.debug`)()
 
-  if (Memory.debug.show_costmatrix) {
-    const room_name: string = Memory.debug.show_costmatrix
+  // if (Memory.debug.show_costmatrix) {
+  //   const room_name: string = Memory.debug.show_costmatrix
 
-    ErrorMapper.wrapLoop(() => {
-      const room = Game.rooms[room_name]
+  //   ErrorMapper.wrapLoop(() => {
+  //     const room = Game.rooms[room_name]
 
-      if (!room) {
-        console.log(`Show costmatrix no room ${room_name} found`)
-      }
-      else {
-        const cost_matrix: CostMatrix | undefined = room.cost_matrix()
-        console.log(`Showing costmatrix ${room_name}`)
+  //     if (!room) {
+  //       console.log(`Show costmatrix no room ${room_name} found`)
+  //     }
+  //     else {
+  //       const cost_matrix: CostMatrix | undefined = room.cost_matrix()
+  //       console.log(`Showing costmatrix ${room_name}`)
 
-        if (cost_matrix) {
-          cost_matrix.show(room)
-        }
-        else {
-          room.visual.text(`NO costmatrix for ${room_name}`, 25, 25, {
-            color: '#ff0000',
-            align: 'center',
-            font: '12px',
-            opacity: 0.8,
-          })
-        }
-      }
-    }, `Show costmatrix ${room_name}`)()
-  }
+  //       if (cost_matrix) {
+  //         cost_matrix.show(room)
+  //       }
+  //       else {
+  //         room.visual.text(`NO costmatrix for ${room_name}`, 25, 25, {
+  //           color: '#ff0000',
+  //           align: 'center',
+  //           font: '12px',
+  //           opacity: 0.8,
+  //         })
+  //       }
+  //     }
+  //   }, `Show costmatrix ${room_name}`)()
+  // }
 
-  if ((Game.time % 47) == 13) {
-    ErrorMapper.wrapLoop(() => {
-      const credit = Game.market.credits
-      let message: string | undefined
+  // if ((Game.time % 47) == 13) {
+  //   ErrorMapper.wrapLoop(() => {
+  //     const credit = Game.market.credits
+  //     let message: string | undefined
 
-      if (credit < 380000) {
-        const credit_message = `Credit ${credit}`
-        message = message ? (message + credit_message) : credit_message
-      }
+  //     if (credit < 380000) {
+  //       const credit_message = `Credit ${credit}`
+  //       message = message ? (message + credit_message) : credit_message
+  //     }
 
-      if (message) {
-        message = '[WARNING] ' + message
+  //     if (message) {
+  //       message = '[WARNING] ' + message
 
-        console.log(message)
-        Game.notify(message)
-      }
-    }, `Notify credit | cpu`)()
-  }
+  //       console.log(message)
+  //       Game.notify(message)
+  //     }
+  //   }, `Notify credit | cpu`)()
+  // }
 
   // console.log(`move()/Creeps: ${move_called}/${Object.keys(Game.creeps).length}`)
 
