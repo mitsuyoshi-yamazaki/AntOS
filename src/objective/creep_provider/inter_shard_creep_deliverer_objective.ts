@@ -24,7 +24,7 @@ export interface InterShardCreepDelivererObjectiveState extends ObjectiveState {
  *   - それ以降はrequest元shardでSingleCreepInterShardProviderObjectiveが引き継ぎ
  */
 export class InterShardCreepDelivererObjective implements Objective {
-  private readonly creepProvider: SingleCreepProviderObjective | null
+  private creepProvider: SingleCreepProviderObjective | null
 
   public constructor(
     public readonly startTime: number,
@@ -93,6 +93,7 @@ export class InterShardCreepDelivererObjective implements Objective {
   }
 
   private removeCreepProvider(creepProvider: SingleCreepProviderObjective): void {
+    this.creepProvider = null
     const index = this.children.indexOf(creepProvider)
     if (index < 0) {
       return
