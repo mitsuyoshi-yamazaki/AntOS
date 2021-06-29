@@ -7,7 +7,6 @@ import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap
 import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "./creep_provider/inter_shard_creep_deliverer_process"
-import { Shard3BootstrapProcess, Shard3BootstrapProcessState } from "./test/shard3_bootstrap_process"
 
 export type ProcessId = number
 
@@ -39,7 +38,6 @@ class ProcessTypes {
   "ClaimRoomProcess" = (state: ProcessState) => ClaimRoomProcess.decode(state as ClaimRoomProcessState)
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
   "InterShardCreepDelivererProcess" = (state: ProcessState) => InterShardCreepDelivererProcess.decode(state as InterShardCreepDelivererProcessState)
-  "Shard3BootstrapProcess" = (state: ProcessState) => Shard3BootstrapProcess.decode(state as Shard3BootstrapProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
