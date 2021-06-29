@@ -3,6 +3,7 @@ import { decodeCreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "objective/room_keeper/owned_room_object_cache"
+import { InterShardMemoryManager } from "prototype/shard"
 import { Migration } from "utility/migration"
 import { ApplicationProcessLauncher } from "./application_process_launcher"
 import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
@@ -40,9 +41,17 @@ export class RootProcess {
   }
 
   public runAfterTick(): void {
-    this.storeTasks()
+    ErrorMapper.wrapLoop((): void => {
+      this.storeTasks()
+    }, "RootProcess.storeTasks()")()
 
-    OwnedRoomObjectCache.clearCache()
+    ErrorMapper.wrapLoop((): void => {
+      OwnedRoomObjectCache.clearCache()
+    }, "OwnedRoomObjectCache.clearCache()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      InterShardMemoryManager.store()
+    }, "InterShardMemoryManager.store()")()
   }
 
   // ---- Private ---- //

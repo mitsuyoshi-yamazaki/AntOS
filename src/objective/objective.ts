@@ -10,6 +10,9 @@ import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_ke
 import { DefendOwnedRoomObjective, DefendOwnedRoomObjectiveState } from "./defend_room/defend_owned_room_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { OldBuildFirstSpawnObjective, OldBuildFirstSpawnObjectiveState } from "./bootstrap_room/old_build_first_spawn_objective"
+import { SingleCreepRemoteProviderObjective, SingleCreepRemoteProviderObjectiveState } from "./creep_provider/single_creep_remote_provider_objective"
+import { SingleCreepInterShardProviderObjective, SingleCreepInterShardProviderObjectiveState } from "./creep_provider/single_creep_inter_shard_provider_objective"
+import { InterShardCreepDelivererObjective, InterShardCreepDelivererObjectiveState } from "./creep_provider/inter_shard_creep_deliverer_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -71,6 +74,9 @@ class ObjectiveTypes {
   "LowLevelWorkerObjective" = (state: ObjectiveState) => LowLevelWorkerObjective.decode(state as LowLevelWorkerObjectiveState)
   "DefendOwnedRoomObjective" = (state: ObjectiveState) => DefendOwnedRoomObjective.decode(state as DefendOwnedRoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
+  "SingleCreepRemoteProviderObjective" = (state: ObjectiveState) => SingleCreepRemoteProviderObjective.decode(state as SingleCreepRemoteProviderObjectiveState)
+  "SingleCreepInterShardProviderObjective" = (state: ObjectiveState) => SingleCreepInterShardProviderObjective.decode(state as SingleCreepInterShardProviderObjectiveState)
+  "InterShardCreepDelivererObjective" = (state: ObjectiveState) => InterShardCreepDelivererObjective.decode(state as InterShardCreepDelivererObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {

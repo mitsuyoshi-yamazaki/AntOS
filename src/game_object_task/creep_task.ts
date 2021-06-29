@@ -5,6 +5,7 @@ import { HarvestEnergyTask, HarvestEnergyTaskState } from "./creep_task/harvest_
 import { TransferToStructureTask, TransferToStructureTaskState } from "./creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask, UpgradeControllerTaskState } from "./creep_task/upgrade_controller_task"
 import { ClaimControllerTask, ClaimControllerTaskState } from "./creep_task/claim_controller_task"
+import { MoveToPortalTask, MoveToPortalTaskState } from "./creep_task/move_to_position_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -24,6 +25,7 @@ class CreepTaskTypes {
   "TransferToStructureTask" = (state: CreepTaskState) => TransferToStructureTask.decode(state as TransferToStructureTaskState)
   "BuildTask" = (state: CreepTaskState) => BuildTask.decode(state as BuildTaskState)
   "ClaimControllerTask" = (state: CreepTaskState) => ClaimControllerTask.decode(state as ClaimControllerTaskState)
+  "MoveToPortalTask" = (state: CreepTaskState) => MoveToPortalTask.decode(state as MoveToPortalTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
