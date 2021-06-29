@@ -6,7 +6,7 @@ import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveState } from 
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
 import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
 import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
-import { PrimitiveWorkerObjective, PrimitiveWorkerObjectiveState } from "./room_keeper/primitive_worker_objective"
+import { PrimitiveWorkerObjective, PrimitiveWorkerObjectiveState } from "./worker/primitive_worker_objective"
 import { DefendOwnedRoomObjective, DefendOwnedRoomObjectiveState } from "./defend_room/defend_owned_room_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { OldBuildFirstSpawnObjective, OldBuildFirstSpawnObjectiveState } from "./bootstrap_room/old_build_first_spawn_objective"

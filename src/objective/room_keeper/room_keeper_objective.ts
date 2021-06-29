@@ -10,7 +10,7 @@ import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { roomLink } from "utility/log"
 import { CreepType } from "_old/creep"
-import { PrimitiveWorkerObjective } from "./primitive_worker_objective"
+import { PrimitiveWorkerObjective } from "objective/worker/primitive_worker_objective"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
