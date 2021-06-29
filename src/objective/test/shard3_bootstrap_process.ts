@@ -51,7 +51,7 @@ export class Shard3BootstrapProcess implements Process, Procedural {
     case CreepType.SCOUT:
       this.scout(creep)
       return
-    case CreepType.WORKER:
+    case CreepType.TAKE_OVER:
       this.gather(creep)
       return
     default:
@@ -67,7 +67,7 @@ export class Shard3BootstrapProcess implements Process, Procedural {
       return
     }
     if (body.includes(WORK) === true) {
-      creep.memory.type = CreepType.WORKER
+      creep.memory.type = CreepType.TAKE_OVER
       return
     }
     creep.memory.type = CreepType.SCOUT

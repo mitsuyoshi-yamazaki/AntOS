@@ -9,6 +9,7 @@ import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { roomLink } from "utility/log"
+import { CreepType } from "_old/creep"
 import { LowLevelWorkerObjective } from "./low_level_worker_objective"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
@@ -211,14 +212,19 @@ export class RoomKeeperObjective implements Objective {
       if (this.buildFirstSpawnObjective != null) {
         return this.buildFirstSpawnObjective
       }
-      const objective = new OldBuildFirstSpawnObjective(Game.time, [], [], [])
+      const takenOverCreepNames: CreepName[] = room.find(FIND_MY_CREEPS)
+        .filter(creep => creep.memory.type === CreepType.TAKE_OVER)
+        .map(creep => creep.name)
+
+      const objective = new OldBuildFirstSpawnObjective(Game.time, [], takenOverCreepNames, [])
       this.buildFirstSpawnObjective = objective
       this.children.push(objective)
       return objective
     })()
 
     const parentRooms: {[index: string]: string} = { // TODO:
-      W51S37: "W53S36"
+      W51S37: "W53S36",
+      W51S29: "W51S29",
     }
     const parentRoomName = parentRooms[room.name]
     if (parentRoomName == null) {

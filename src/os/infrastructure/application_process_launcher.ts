@@ -27,7 +27,7 @@ export class ApplicationProcessLauncher {
       if (room.controller.my !== true) {
         continue
       }
-      if (Migration.oldRoomNames.includes(roomName) === true) {
+      if (Migration.isOldRoom(roomName) === true) {
         continue
       }
       if (roomsWithKeeperProcess.includes(roomName) === true) {

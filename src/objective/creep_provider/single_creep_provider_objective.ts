@@ -131,6 +131,6 @@ export class SingleCreepProviderObjective implements Objective {
   }
 
   private isOldRoom(spawnRoomName: string): boolean {
-    return Migration.oldRoomNames.includes(spawnRoomName) === true
+    return Migration.isOldRoom(spawnRoomName) === true
   }
 }

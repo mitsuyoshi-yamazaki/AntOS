@@ -34,6 +34,7 @@ export enum CreepType {
   HEALER            = 'healer',
   SCOUT             = 'scout',
   CREEP_PROVIDER    = 'creep_provider',
+  TAKE_OVER         = 'take_over',
 }
 
 export interface CreepDestroyOption {

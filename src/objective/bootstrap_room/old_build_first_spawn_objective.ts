@@ -163,7 +163,7 @@ export class OldBuildFirstSpawnObjective implements Objective {
 
   // ---- Add creeps ---- //
   private addWorker(creepIdentifier: string, parentRoomName: string): void {
-    if (Migration.oldRoomNames.includes(parentRoomName) === true) {
+    if (Migration.isOldRoom(parentRoomName) === true) {
       this.requestToCreepProvider(creepIdentifier, parentRoomName)
     } else {
       this.addWorkerQueue(creepIdentifier, parentRoomName)

@@ -23,64 +23,65 @@ const mainLoop = () => {
     Initializer.tick()
   }, `Initializer.tick`)()
 
-  ErrorMapper.wrapLoop(() => {
-    const owned_controllers: StructureController[] = []
-    const rooms_controlled_by_old_codes = Migration.oldRoomNames
-
-    for (const room_name in Game.rooms) {
-      const room = Game.rooms[room_name]
-      if (!room || !room.controller || !room.controller.my) {
-        continue
-      }
-
-      if (room.memory && room.memory.is_gcl_farm) {
-        continue
-      }
-
-      if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
-        if (Game.time % 107 === 13) {
-          console.log(`${roomLink(room.name)} is new`)
-        }
-        continue
-      }
-      owned_controllers.push(room.controller)
-    }
-
-    const empire = new Empire(Game.user.name, owned_controllers)
-
-    empire.run()
-  }, `empire.run`)()
-
-  if ((Game.time % 29) == 3) {
+  if (Game.shard.name === "shard2") {
     ErrorMapper.wrapLoop(() => {
-      for (const creep_name in Game.creeps) {
-        const creep = Game.creeps[creep_name]
+      const owned_controllers: StructureController[] = []
 
-        creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
-      }
-      // console.log(`Main creeps GC at ${Game.time}`)
-    }, `Creeps.gc`)()
-  }
-
-  if ((Game.time % 997) == 17) {
-    ErrorMapper.wrapLoop(() => {
-      for (const squad_name in Memory.squads) {
-        const squad_memory = Memory.squads[squad_name]
-        const room = Game.rooms[squad_memory.owner_name]
-
-        if (room && room.controller && room.controller.my) {
+      for (const room_name in Game.rooms) {
+        const room = Game.rooms[room_name]
+        if (!room || !room.controller || !room.controller.my) {
           continue
         }
 
-        delete Memory.squads[squad_name]
-      }
-      console.log(`Main squads GC at ${Game.time}`)
-    }, `Squads.gc`)()
-  }
+        if (room.memory && room.memory.is_gcl_farm) {
+          continue
+        }
 
-  const test_send_resources = Memory.debug.test_send_resources
-  if (test_send_resources) {
-    Memory.debug.test_send_resources = false
+        if (Migration.isOldRoom(room.name) !== true) {
+          if (Game.time % 107 === 13) {
+            console.log(`${roomLink(room.name)} is new`)
+          }
+          continue
+        }
+        owned_controllers.push(room.controller)
+      }
+
+      const empire = new Empire(Game.user.name, owned_controllers)
+
+      empire.run()
+    }, `empire.run`)()
+
+    if ((Game.time % 29) == 3) {
+      ErrorMapper.wrapLoop(() => {
+        for (const creep_name in Game.creeps) {
+          const creep = Game.creeps[creep_name]
+
+          creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
+        }
+        // console.log(`Main creeps GC at ${Game.time}`)
+      }, `Creeps.gc`)()
+    }
+
+    if ((Game.time % 997) == 17) {
+      ErrorMapper.wrapLoop(() => {
+        for (const squad_name in Memory.squads) {
+          const squad_memory = Memory.squads[squad_name]
+          const room = Game.rooms[squad_memory.owner_name]
+
+          if (room && room.controller && room.controller.my) {
+            continue
+          }
+
+          delete Memory.squads[squad_name]
+        }
+        console.log(`Main squads GC at ${Game.time}`)
+      }, `Squads.gc`)()
+    }
+
+    const test_send_resources = Memory.debug.test_send_resources
+    if (test_send_resources) {
+      Memory.debug.test_send_resources = false
+    }
   }
 
   // if ((Game.time % 197) == 100) {

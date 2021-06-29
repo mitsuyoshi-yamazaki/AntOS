@@ -119,7 +119,7 @@ export class RootProcess {
       if (room.controller.my !== true) {
         continue
       }
-      if (Migration.oldRoomNames.includes(roomName) === true) {
+      if (Migration.isOldRoom(roomName) === true) {
         continue
       }
       ownedRooms.push(room)
