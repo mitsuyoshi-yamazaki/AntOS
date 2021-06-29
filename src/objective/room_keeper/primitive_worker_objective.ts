@@ -13,15 +13,15 @@ import { CreepStatus, CreepType } from "_old/creep"
 
 const numberOfWorkersEachSource = 8
 
-interface LowLevelWorkerObjectiveEvent {
+interface PrimitiveWorkerObjectiveEvent {
   diedWorkers: number
   workers: number
   queueingWorkers: number
 }
 
-type LowLevelWorkerObjectiveProgressType = ObjectiveInProgress<LowLevelWorkerObjectiveEvent> | ObjectiveFailed<string>
+type PrimitiveWorkerObjectiveProgressType = ObjectiveInProgress<PrimitiveWorkerObjectiveEvent> | ObjectiveFailed<string>
 
-export interface LowLevelWorkerObjectiveState extends ObjectiveState {
+export interface PrimitiveWorkerObjectiveState extends ObjectiveState {
   /** creeps */
   cr: {
     /** worker */
@@ -43,7 +43,7 @@ export interface LowLevelWorkerObjectiveState extends ObjectiveState {
  * - 外敵の影響でfailすることはある // TODO:
  * - [ ] 防衛設備のないときにinvaderが襲来したら部屋の外に出る
  */
-export class LowLevelWorkerObjective implements Objective {
+export class PrimitiveWorkerObjective implements Objective {
   private readonly bodyUnit = [WORK, CARRY, MOVE, MOVE]
   private readonly bodyUnitCost: number
 
@@ -57,9 +57,9 @@ export class LowLevelWorkerObjective implements Objective {
     this.bodyUnitCost = this.bodyUnit.reduce((result, current) => result + BODYPART_COST[current], 0)
   }
 
-  public encode(): LowLevelWorkerObjectiveState {
+  public encode(): PrimitiveWorkerObjectiveState {
     return {
-      t: "LowLevelWorkerObjective",
+      t: "PrimitiveWorkerObjective",
       s: this.startTime,
       c: this.children.map(child => child.encode()),
       cr: {
@@ -72,9 +72,9 @@ export class LowLevelWorkerObjective implements Objective {
     }
   }
 
-  public static decode(state: LowLevelWorkerObjectiveState): LowLevelWorkerObjective {
+  public static decode(state: PrimitiveWorkerObjectiveState): PrimitiveWorkerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new LowLevelWorkerObjective(state.s, children, state.cr.w, state.cq.w, state.cs)
+    return new PrimitiveWorkerObjective(state.s, children, state.cr.w, state.cq.w, state.cs)
   }
 
   // ---- Public API ---- //
@@ -104,7 +104,7 @@ export class LowLevelWorkerObjective implements Objective {
     controller: StructureController,
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
     spawnCreepObjective: SpawnCreepObjective,
-  ): LowLevelWorkerObjectiveProgressType {
+  ): PrimitiveWorkerObjectiveProgressType {
 
     const workers: Creep[] = []
     const diedWorkers: CreepName[] = []
@@ -124,7 +124,7 @@ export class LowLevelWorkerObjective implements Objective {
     }
     this.work(workers, sources, chargeableStructures, constructionSites, controller)
 
-    const event: LowLevelWorkerObjectiveEvent = {
+    const event: PrimitiveWorkerObjectiveEvent = {
       diedWorkers: diedWorkers.length,
       workers: workers.length,
       queueingWorkers: this.queuedWorkerNames.length,
@@ -261,6 +261,6 @@ export class LowLevelWorkerObjective implements Objective {
         spawnCreepObjective.enqueueCreep(creepName, body, memory, spawnPriorityLow)
         this.queuedWorkerNames.push(creepName)
       }
-    }, "LowLevelWorkerObjective.spawnWorkers()")()
+    }, "PrimitiveWorkerObjective.spawnWorkers()")()
   }
 }

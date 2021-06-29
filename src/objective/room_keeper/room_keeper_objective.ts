@@ -10,7 +10,7 @@ import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { roomLink } from "utility/log"
 import { CreepType } from "_old/creep"
-import { LowLevelWorkerObjective } from "./low_level_worker_objective"
+import { PrimitiveWorkerObjective } from "./primitive_worker_objective"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
@@ -31,7 +31,7 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
  */
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
-  private readonly workerObjective: LowLevelWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
+  private readonly workerObjective: PrimitiveWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
   private buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null
   private defendRoomObjective: DefendOwnedRoomObjective | null
   private claimRoomObjective: ClaimRoomObjective | null
@@ -42,7 +42,7 @@ export class RoomKeeperObjective implements Objective {
     public readonly roomName: RoomName,
   ) {
     let spawnCreepObjective: SpawnCreepObjective | null = null
-    let workerObjective: LowLevelWorkerObjective | null = null
+    let workerObjective: PrimitiveWorkerObjective | null = null
     let defendRoomObjective: DefendOwnedRoomObjective | null = null
     let buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null = null
     let claimRoomObjective: ClaimRoomObjective | null = null
@@ -51,7 +51,7 @@ export class RoomKeeperObjective implements Objective {
         spawnCreepObjective = child
         return
       }
-      if (child instanceof LowLevelWorkerObjective) {
+      if (child instanceof PrimitiveWorkerObjective) {
         workerObjective = child
         return
       }
@@ -76,11 +76,11 @@ export class RoomKeeperObjective implements Objective {
       this.children.push(newObjective)
       return newObjective
     })()
-    this.workerObjective = ((): LowLevelWorkerObjective => {
+    this.workerObjective = ((): PrimitiveWorkerObjective => {
       if (workerObjective != null) {
         return workerObjective
       }
-      const newObjective = new LowLevelWorkerObjective(Game.time, [], [], [], null)
+      const newObjective = new PrimitiveWorkerObjective(Game.time, [], [], [], null)
       this.children.push(newObjective)
       return newObjective
     })()
