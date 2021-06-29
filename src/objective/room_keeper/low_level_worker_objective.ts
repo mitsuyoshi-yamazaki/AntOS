@@ -244,7 +244,7 @@ export class LowLevelWorkerObjective implements Objective {
           should_notify_attack: false,
           let_thy_die: true,
         }
-        spawnCreepObjective.enqueueCreep(this.constructor.name, creepName, body, memory, spawnPriorityLow)
+        spawnCreepObjective.enqueueCreep(creepName, body, memory, spawnPriorityLow)
         this.queuedWorkerNames.push(creepName)
       }
     }, "LowLevelWorkerObjective.spawnWorkers()")()

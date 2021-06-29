@@ -177,14 +177,15 @@ export class OldBuildFirstSpawnObjective implements Objective {
         WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
         WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
       ],
+      priority: spawnPriorityLow,
     }
     const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)
     this.children.push(objective)
   }
 
   private addWorkerQueue(creepIdentifier: string, parentRoomName: string): void {
-    if (Memory.spawnCreepRequests[parentRoomName] == null) {
-      Memory.spawnCreepRequests[parentRoomName] = []
+    if (Memory.creepRequests[parentRoomName] == null) {
+      Memory.creepRequests[parentRoomName] = []
     }
 
     const creepName = generateUniqueId("chocolate_parfait")
@@ -199,9 +200,8 @@ export class OldBuildFirstSpawnObjective implements Objective {
       let_thy_die: true,
     }
 
-    Memory.spawnCreepRequests[parentRoomName].push({
+    Memory.creepRequests[parentRoomName].push({
       t: Game.time,
-      i: creepIdentifier,
       b: body,
       p: spawnPriorityLow,
       n: creepName,

@@ -1,3 +1,4 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 
@@ -80,17 +81,41 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
     results.push(result)
   })
 
+  // TODO: こういうのをテスタブルにしたい
   const shortestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
-  if (shortestPath != null) {
+  if (shortestPath != null && harvestPositions.length > 0) {
     const lastPosition = shortestPath.path[shortestPath.path.length - 1]
-    harvestPositions.sort((lhs, rhs) => {
-      const lValue = Math.abs(lhs.x - lastPosition.x) + Math.abs(lhs.y - lastPosition.y)
-      const rValue = Math.abs(rhs.x - lastPosition.x) + Math.abs(rhs.y - lastPosition.y)
-      if (lValue === rValue) {
-        return 0
-      }
-      return lValue > rValue ? 1 : -1
-    })
+
+    if (lastPosition.isNearTo(harvestPositions[0]) === true) {
+      // do nothing
+    } else if (lastPosition.isNearTo(harvestPositions[harvestPositions.length - 1]) === true) {
+      harvestPositions.reverse()
+    } else {
+
+      // FixMe: 必ずしも動かないわけではないが動くわけでもない
+      PrimitiveLogger.fatal(`Pathfinder cannot calculate proper path to source ${sourceId} in ${roomLink(source.room.name)}`)
+      harvestPositions.sort((lhs, rhs) => {
+        const lValue = Math.abs(lhs.x - lastPosition.x) + Math.abs(lhs.y - lastPosition.y)
+        const rValue = Math.abs(rhs.x - lastPosition.x) + Math.abs(rhs.y - lastPosition.y)
+        if (lValue === rValue) {
+          return 0
+        }
+        return lValue > rValue ? 1 : -1
+      })
+
+      // TODO:
+      // const firstHarvestPosition = harvestPositions[0]
+      // const lastHarvestPosition = harvestPositions[1]
+      // if (firstHarvestPosition.getRangeTo(lastPosition) < lastHarvestPosition.getRangeTo(lastPosition)) {
+      //   const betweenPositions = getPathBetween(firstHarvestPosition, lastPosition)
+      //   if (betweenPositions == null) {
+
+      //   }
+      //   shortestPath.path.
+      // } else {
+      //   harvestPositions.reverse()
+      // }
+    }
   }
 
   visualize(shortestPath.path, { color: "#ffffff" })
@@ -105,6 +130,10 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
   }
   return new ResultSucceeded(result)
 }
+
+// function getPathBetween(position1: RoomPosition, position2: RoomPosition): RoomPosition[] | null {
+//   // TODO: 既存のパスに重ならないようなcost matrix
+// }
 
 export function showCachedSourcePath(sourceId: Id<Source>): string {
   const source = Game.getObjectById(sourceId)

@@ -28,39 +28,8 @@ export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: numbe
   if (memory == null) {
     return new ResultFailed(`CreepProviderBridgingSquad ${squadName} memory not found`)
   }
-  memory.req[spec.creepIdentifier] = spec.bodyParts
+  memory.req[spec.creepName] = spec.bodyParts
   return new ResultSucceeded(undefined)
-}
-
-let newCreepCacheTime = 0
-const newCreeps: Creep[] = []
-
-export function getNewCreepIn(creepIdentifier: string): Creep | null {
-  if (newCreepCacheTime !== Game.time) {
-    newCreeps.splice(0, newCreeps.length)
-    for (const creepName in Game.creeps) {
-      const creep = Game.creeps[creepName]
-      if (creep.spawning) {
-        continue
-      }
-      if (creep.memory.type !== CreepType.CREEP_PROVIDER) {
-        continue
-      }
-      if (creep.memory.squad_name.length === 0) {
-        continue
-      }
-      newCreeps.push(creep)
-    }
-    newCreepCacheTime = Game.time
-  }
-
-  for (const creep of newCreeps) {
-    if (creep.name === creepIdentifier) {
-      creep.memory.squad_name = ""
-      return creep
-    }
-  }
-  return null
 }
 
 // -------- //

@@ -355,14 +355,14 @@ export class RoomKeeperObjective implements Objective {
   }
 
   private retrieveQueuedRequests(): void {
-    const queue = Memory.spawnCreepRequests[this.roomName]
+    const queue = Memory.creepRequests[this.roomName]
     if (queue == null) {
       return
     }
     queue.forEach(item => {
-      this.spawnCreepObjective.enqueueCreep(item.i, item.n, item.b, item.m, item.p)
+      this.spawnCreepObjective.enqueueCreep(item.n, item.b, item.m, item.p)
     })
-    Memory.spawnCreepRequests[this.roomName] = []
+    Memory.creepRequests[this.roomName] = []
   }
 
   private placeConstructionSite(room: Room, flags: Flag[]): void {

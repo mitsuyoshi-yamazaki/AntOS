@@ -10,7 +10,7 @@ import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
-import { SpawnCreepQueueItem } from "objective/spawn/spawn_creep_objective"
+import { SingleCreepProviderCreepRequest } from "objective/creep_provider/single_creep_provider_objective"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -169,7 +169,7 @@ declare global {
 
     towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>
 
-    spawnCreepRequests: { [index: string]: SpawnCreepQueueItem[] }  // index: string
+    creepRequests: { [index: string]: SingleCreepProviderCreepRequest[] }  // index: room name
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined

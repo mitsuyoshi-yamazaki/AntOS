@@ -5,7 +5,7 @@ import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 
-const version = '4.10.6'
+const version = '4.10.7'
 
 export function init(): void {
   Game.version = version
@@ -25,8 +25,8 @@ export function init(): void {
     Memory.towers = {}
   }
 
-  if (Memory.spawnCreepRequests == null) {
-    Memory.spawnCreepRequests = {}
+  if (Memory.creepRequests == null) {
+    Memory.creepRequests = {}
   }
 
   if (!Memory.empires) {
