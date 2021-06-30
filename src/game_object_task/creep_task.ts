@@ -15,6 +15,7 @@ import { MoveResourceTask, MoveResourceTaskState } from "./creep_task/multi_task
 import { RangedAttackTask, RangedAttackTaskState } from "./creep_task/ranged_attack_task"
 import { BoostTask, BoostTaskState } from "./creep_task/boost_task"
 import { BoostAllTask, BoostAllTaskState } from "./creep_task/multi_task/boost_all_task"
+import { SequentialTask, SequentialTaskState } from "./creep_task/multi_task/sequential_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -44,6 +45,7 @@ class CreepTaskTypes {
   "RangedAttackTask" = (state: CreepTaskState) => RangedAttackTask.decode(state as RangedAttackTaskState)
   "BoostTask" = (state: CreepTaskState) => BoostTask.decode(state as BoostTaskState)
   "BoostAllTask" = (state: CreepTaskState) => BoostAllTask.decode(state as BoostAllTaskState)
+  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
@@ -51,6 +53,10 @@ export function decodeCreepTask(creep: Creep): CreepTask | null {
   if (state == null) {
     return null
   }
+  return decodeCreepTaskFromState(state)
+}
+
+export function decodeCreepTaskFromState(state: CreepTaskState): CreepTask | null {
   let decoded: CreepTask | null = null
   ErrorMapper.wrapLoop(() => {
     const maker = (new CreepTaskTypes())[state.t]
