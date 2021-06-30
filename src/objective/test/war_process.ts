@@ -2,6 +2,7 @@ import { AttackTask } from "game_object_task/creep_task/attack_task"
 import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { HealTask } from "game_object_task/creep_task/heal_task"
+import { RangedAttackTask } from "game_object_task/creep_task/ranged_attack_task"
 import { ScoutTask } from "game_object_task/creep_task/scout_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
@@ -17,6 +18,7 @@ import { CreepType } from "_old/creep"
 
 const portalExitRoomName = "W50S30"
 const ownedRoomName = "W51S29"
+const enemyBaseRoomName = "W48S27"
 const sourceIds: Id<Source>[] = [
   "5bbcaa559099fc012e6312b9",
   "5bbcaa559099fc012e6312ba",
@@ -107,6 +109,10 @@ export class WarProcess implements Process, Procedural {
     this.attackerNames = updatedAttackerNames
     attackers.forEach(creep => this.runAttacker(creep))
 
+    const [updatedRangedAttackerNames, rangedAttackers] = this.getCreeps(this.rangedAttackerNames)
+    this.rangedAttackerNames = updatedRangedAttackerNames
+    rangedAttackers.forEach(creep => this.runRangedAttacker(creep))
+
     this.runWorkers()
     this.runScouts()
   }
@@ -124,6 +130,42 @@ export class WarProcess implements Process, Procedural {
     })
     const updatedCreepNames = creepNames.filter(name => diedCreeps.includes(name) !== true)
     return [updatedCreepNames, creeps]
+  }
+
+  // ---- Ranged Attack ---- //
+  private runRangedAttacker(creep: Creep): void {
+    creep.heal(creep)
+
+    if (creep.room.name === enemyBaseRoomName) {
+      const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 2).filter(c => Game.isEnemy(c.owner) === true)[0]
+      if (hostileCreep == null) {
+        if (creep.task?.run(creep) === "in progress") {
+          return
+        }
+        const tower = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}) as StructureTower | null
+        if (tower != null) {
+          creep.task = new RangedAttackTask(Game.time, tower)
+          return
+        }
+        creep.say("🙂")
+        return
+      } else {
+        creep.task = null
+        creep.rangedAttack(hostileCreep)
+
+        const path = PathFinder.search(creep.pos, hostileCreep.pos, {
+          flee: true,
+          maxRooms: 1,
+        })
+        creep.moveByPath(path.path)
+      }
+    } else {
+      creep.moveToRoom(enemyBaseRoomName)
+      const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(c => Game.isEnemy(c.owner) === true)[0]
+      if (hostileCreep != null) {
+        creep.rangedAttack(hostileCreep)
+      }
+    }
   }
 
   // ---- Attack ---- //

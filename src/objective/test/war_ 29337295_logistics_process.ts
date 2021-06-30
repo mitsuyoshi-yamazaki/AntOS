@@ -133,6 +133,10 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
   }
 
   private runRangedAttacker(creep: Creep, labs: StructureLab[]): void {
+    if (creep.spawning === true) {
+      return
+    }
+
     if (creep.task == null) {
       const portal = Game.getObjectById(portalId)
       if (portal == null) {
@@ -142,7 +146,7 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
 
       const time = Game.time
       const childTasks: CreepTask[] = [
-        // new BoostAllTask(time, labs),
+        new BoostAllTask(time, labs),
         new MoveToPortalTask(time, portal),
       ]
       creep.task = new SequentialTask(time, childTasks, {i: false})
@@ -165,7 +169,14 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
     for (let i = 0; i < 1; i += 1) {
       const creepName = generateUniqueId(this.codename)
       const body: BodyPartConstant[] = [
-        TOUGH, MOVE, RANGED_ATTACK, MOVE, MOVE, HEAL
+        // TOUGH, MOVE, RANGED_ATTACK, MOVE, MOVE, HEAL // for testing
+        TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+        MOVE, MOVE, MOVE,
+        RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+        RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+        MOVE, MOVE, MOVE,
+        HEAL, HEAL, HEAL, HEAL, HEAL,
+        HEAL, HEAL, HEAL, HEAL,
       ]
       const creepProvider = new SingleCreepProviderObjective(Game.time, [], creepName, {
         spawnRoomName,
