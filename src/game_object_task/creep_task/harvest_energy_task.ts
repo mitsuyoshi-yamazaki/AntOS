@@ -56,7 +56,7 @@ export class HarvestEnergyTask implements CreepTask {
       return "in progress"
 
     case ERR_NOT_ENOUGH_RESOURCES:
-      if (creep.store.getFreeCapacity() >= creep.store.getCapacity() * 0.6) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity() * 0.6) {
         return "finished"
       }
       this.move(creep)
