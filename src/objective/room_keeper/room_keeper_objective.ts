@@ -40,6 +40,7 @@ export class RoomKeeperObjective implements Objective {
     public readonly startTime: number,
     public readonly children: Objective[],
     public readonly roomName: RoomName,
+    takenOverWorkerNames: CreepName[],
   ) {
     let spawnCreepObjective: SpawnCreepObjective | null = null
     let workerObjective: PrimitiveWorkerObjective | null = null
@@ -87,6 +88,8 @@ export class RoomKeeperObjective implements Objective {
     this.defendRoomObjective = defendRoomObjective
     this.buildFirstSpawnObjective = buildFirstSpawnObjective
     this.claimRoomObjective = claimRoomObjective
+
+    this.workerObjective.addCreeps(takenOverWorkerNames)
   }
 
   public encode(): RoomKeeperObjectiveState {
@@ -100,7 +103,7 @@ export class RoomKeeperObjective implements Objective {
 
   public static decode(state: RoomKeeperObjectiveState): RoomKeeperObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new RoomKeeperObjective(state.s, children, state.r)
+    return new RoomKeeperObjective(state.s, children, state.r, [])
   }
 
   public claimRoom(targetRoomName: RoomName): void {

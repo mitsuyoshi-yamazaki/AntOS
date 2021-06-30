@@ -42,6 +42,7 @@ export class AttackTask implements CreepTask {
 
     switch (result) {
     case OK:
+      creep.moveTo(this.target.pos)
       return "in progress"
 
     case ERR_NOT_IN_RANGE:

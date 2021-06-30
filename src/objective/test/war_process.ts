@@ -1,11 +1,12 @@
-import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { AttackTask } from "game_object_task/creep_task/attack_task"
+import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { HealTask } from "game_object_task/creep_task/heal_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
 import { CreepName } from "prototype/creep"
+import { getCachedPathFor } from "script/pathfinder"
 import { CreepType } from "_old/creep"
 
 const portalExitRoomName = "W50S30"
@@ -14,6 +15,8 @@ const sourceIds: Id<Source>[] = [
   "5bbcaa559099fc012e6312b9",
   "5bbcaa559099fc012e6312ba",
 ] as Id<Source>[]
+const attackerWaitingPosition = new RoomPosition(40, 25, ownedRoomName)
+const blockedSourceId = "5bbcaa559099fc012e6312b9" as Id <Source>
 
 export interface WarProcessState extends ProcessState {
   /** target id */
@@ -34,6 +37,8 @@ export interface WarProcessState extends ProcessState {
 
 // Game.io("launch WarProcess")
 // Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=heavy_attacker")
+// Game.getObjectById("5b994d9e0417171556aa96d7").send(RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 2000, "W51S29")
+// Game.check_resources(RESOURCE_CATALYZED_KEANIUM_ALKALIDE)
 export class WarProcess implements Process, Procedural {
   public constructor(
     public readonly launchTime: number,
@@ -72,17 +77,7 @@ export class WarProcess implements Process, Procedural {
     this.attackerNames = updatedAttackerNames
     attackers.forEach(creep => this.runAttacker(creep))
 
-    const sources: Source[] = []
-    sourceIds.forEach(sourceId => {
-      const source = Game.getObjectById(sourceId)
-      if (source != null) {
-        sources.push(source)
-      }
-    })
-
-    const [updatedWorkerNames, workers] = this.getCreeps(this.workerNames)
-    this.workerNames = updatedWorkerNames
-    workers.forEach(creep => this.runWorker(creep, sources))
+    this.runWorkers()
   }
 
   private getCreeps(creepNames: CreepName[]): [CreepName[], Creep[]] {
@@ -102,7 +97,7 @@ export class WarProcess implements Process, Procedural {
 
   // ---- Attack ---- //
   private runAttacker(creep: Creep): void {
-    if (creep.room.name !== ownedRoomName) {
+    if (creep.task == null && creep.room.name !== ownedRoomName) {
       creep.moveToRoom(ownedRoomName)
       return
     }
@@ -129,6 +124,23 @@ export class WarProcess implements Process, Procedural {
 
     if (target == null) {
       creep.task = new HealTask(Game.time, creep)
+
+      if (creep.pos.inRangeTo(attackerWaitingPosition, 3) !== true) {
+        creep.moveTo(attackerWaitingPosition, { reusePath: 0 })
+        return
+      }
+      const source = Game.getObjectById(blockedSourceId)
+      if (source == null) {
+        return
+      }
+      const cachedPath = getCachedPathFor(source)
+      if (cachedPath == null) {
+        return
+      }
+      if (cachedPath.includes(creep.pos) === true) {
+        this.moveToRandomDirection(creep)
+        return
+      }
       return
     }
 
@@ -137,37 +149,105 @@ export class WarProcess implements Process, Procedural {
     creep.task.run(creep)
   }
 
+  private moveToRandomDirection(creep: Creep): void {
+    const directions: DirectionConstant[] = [
+      TOP,
+      TOP_LEFT,
+      LEFT,
+      BOTTOM_LEFT,
+      BOTTOM,
+      BOTTOM_RIGHT,
+      RIGHT,
+      TOP_RIGHT,
+    ]
+    const direction: DirectionConstant = directions[Math.floor(Math.random() * directions.length)]
+    creep.move(direction)
+  }
+
   private nextTarget(creep: Creep): Creep | AnyStructure | null {
     return creep.room.find(FIND_HOSTILE_CREEPS)[0]
   }
 
   // ---- Run Worker ---- //
+  private runWorkers(): void {
+    if (this.workerNames.length <= 0) {
+      return
+    }
+
+    const shouldTakeOver = ((): boolean => {
+      const room = Game.rooms[ownedRoomName]
+      if (room == null) {
+        return false
+      }
+      if (room.find(FIND_MY_SPAWNS).length > 0) {
+        return true
+      }
+      return false
+    })()
+
+    const [updatedWorkerNames, workers] = this.getCreeps(this.workerNames)
+    this.workerNames = updatedWorkerNames
+
+    if (shouldTakeOver === true) {
+      workers.forEach(creep => {
+        if (creep.room.name !== ownedRoomName) {
+          creep.moveToRoom(ownedRoomName)
+          return
+        }
+        const index = this.workerNames.indexOf(creep.name)
+        if (index < 0) {
+          return
+        }
+        this.workerNames.splice(index, 1)
+      })
+    } else {
+      const sources: Source[] = []
+      sourceIds.forEach(sourceId => {
+        const source = Game.getObjectById(sourceId)
+        if (source != null) {
+          sources.push(source)
+        }
+      })
+
+      workers.forEach(creep => this.runWorker(creep, sources))
+    }
+  }
+
   private runWorker(creep: Creep, sources: Source[]): void {
     if (creep.task?.run(creep) === "in progress") {
       return
+    }
+
+    if (creep.room.name === ownedRoomName) {
+      creep.memory.type = CreepType.TAKE_OVER
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       const source = this.getSourceToAssign(sources, creep.pos)
       if (source != null) {
         creep.task = new HarvestEnergyTask(Game.time, source)
+        return
       } else {
         creep.task = null
+        return
       }
-    } else {
-      // const structureToCharge = this.getStructureToCharge(chargeableStructures, creep.pos)
-      // if (structureToCharge != null) {
-      //   creep.task = new TransferToStructureTask(Game.time, structureToCharge)
-      // } else {
-      //   const constructionSite = this.getConstructionSiteToAssign(constructionSites)
-      //   if (constructionSite != null) {
-      //     creep.task = new BuildTask(Game.time, constructionSite)
-      //   } else {
-      if (creep.room.controller != null) {
-        creep.task = new UpgradeControllerTask(Game.time, creep.room.controller)
-      }
-      // }
     }
+    // const structureToCharge = this.getStructureToCharge(chargeableStructures, creep.pos)
+    // if (structureToCharge != null) {
+    //   creep.task = new TransferToStructureTask(Game.time, structureToCharge)
+    // } else {
+    if (creep.room.name === ownedRoomName) {
+      const constructionSite = creep.room.find(FIND_MY_CONSTRUCTION_SITES)[0]
+      if (constructionSite != null) {
+        creep.task = new BuildTask(Game.time, constructionSite)
+        return
+      }
+    }
+    if (creep.room.controller != null) {
+      creep.task = new UpgradeControllerTask(Game.time, creep.room.controller)
+      return
+    }
+    // }
   }
 
   private getSourceToAssign(sources: Source[], position: RoomPosition): Source | null {
