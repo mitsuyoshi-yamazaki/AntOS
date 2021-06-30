@@ -3,7 +3,7 @@ import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 
-type TransferTaskTargetType = StructureStorage | StructureTerminal | StructureLab
+export type TransferTaskTargetType = StructureStorage | StructureTerminal | StructureLab
 
 export interface TransferTaskState extends CreepTaskState {
   /** target id */

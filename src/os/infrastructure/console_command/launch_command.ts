@@ -248,7 +248,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new War29337295LogisticsProcess(Game.time, processId, [])
+      return new War29337295LogisticsProcess(Game.time, processId, [], null)
     })
     return new ResultSucceeded(process)
   }

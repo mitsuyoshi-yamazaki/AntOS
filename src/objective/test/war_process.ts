@@ -341,22 +341,22 @@ export class WarProcess implements Process, Procedural {
 
     const assigned = false as boolean
 
-    scouts.forEach(creep => {
-      if (creep.task == null) {
-        creep.task = new ScoutTask(Game.time, "W48S28")
-      }
-      // if (creep.task == null) {
-      //   if (nonTargetedRoomNames[0] != null) {
-      //     creep.task = new ScoutTask(Game.time, nonTargetedRoomNames[0])
-      //     assigned = true
-      //   } else {
-      //     creep.task = new ScoutTask(Game.time, scoutRoomNames[0])
-      //   }
-      // }
-      if (Game.cpu.bucket > 5000) {
-        creep.task.run(creep)
-      }
-    })
+    // scouts.forEach(creep => {
+    //   if (creep.task == null) {
+    //     creep.task = new ScoutTask(Game.time, "W48S28")
+    //   }
+    //   // if (creep.task == null) {
+    //   //   if (nonTargetedRoomNames[0] != null) {
+    //   //     creep.task = new ScoutTask(Game.time, nonTargetedRoomNames[0])
+    //   //     assigned = true
+    //   //   } else {
+    //   //     creep.task = new ScoutTask(Game.time, scoutRoomNames[0])
+    //   //   }
+    //   // }
+    //   if (Game.cpu.bucket > 5000) {
+    //     creep.task.run(creep)
+    //   }
+    // })
 
     if (assigned !== true && nonTargetedRoomNames.length > 0) {
       // this.addScoutTo()
