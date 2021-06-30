@@ -63,7 +63,11 @@ export class WarProcess implements Process, Procedural {
 
     const [updatedAttackerNames, attackers] = this.getCreeps(this.attackerNames)
     this.attackerNames = updatedAttackerNames
-    attackers.forEach(this.runAttacker)
+    attackers.forEach(creep => this.runAttacker(creep))
+
+    const [updatedWorkerNames, workers] = this.getCreeps(this.workerNames)
+    this.workerNames = updatedWorkerNames
+    workers.forEach(creep => this.runWorker(creep))
   }
 
   private getCreeps(creepNames: CreepName[]): [CreepName[], Creep[]] {
@@ -93,7 +97,9 @@ export class WarProcess implements Process, Procedural {
     const target = ((): Creep | AnyStructure | null => {
       if (this.targetId != null) {
         const storedTarget = Game.getObjectById(this.targetId)
-        if (storedTarget != null && creep.room.name === storedTarget.room.name) {
+        if (storedTarget == null) {
+          this.targetId = null
+        } else if (creep.room.name === storedTarget.room.name) {
           return storedTarget
         }
       }
@@ -107,12 +113,18 @@ export class WarProcess implements Process, Procedural {
     if (target == null) {
       return
     }
+    processLog(this, `Attacker ${creep.name} new target assigned: ${target.id}`)
     creep.task = new AttackTask(Game.time, target)
     creep.task.run(creep)
   }
 
   private nextTarget(creep: Creep): Creep | AnyStructure | null {
     return creep.room.find(FIND_HOSTILE_CREEPS)[0]
+  }
+
+  // ---- Run Worker ---- //
+  private runWorker(creep: Creep): void {
+
   }
 
   // ---- Receive Creeps ---- //
