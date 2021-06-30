@@ -1,4 +1,8 @@
+import { CreepTask } from "game_object_task/creep_task"
+import { MoveToPortalTask } from "game_object_task/creep_task/move_to_position_task"
+import { BoostAllTask } from "game_object_task/creep_task/multi_task/boost_all_task"
 import { MoveResourceTask } from "game_object_task/creep_task/multi_task/move_resource_task"
+import { SequentialTask } from "game_object_task/creep_task/multi_task/sequential_task"
 import { TransferTask } from "game_object_task/creep_task/transfer_task"
 import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { CreepProviderPriority, SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
@@ -6,13 +10,16 @@ import { decodeObjectiveFrom, Objective, ObjectiveState } from "objective/object
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
+import { roomLink } from "utility/log"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 
 const destinationShardName = "shard3"
 const spawnRoomName = "W51S29"
 const portalRoomName = "W50S30"
+const portalId = "5c0e406c504e0a34e3d61db1" as Id<StructurePortal>
 const labInfo: { [index: string]: {resource: MineralCompoundConstant, part: BodyPartConstant}} = {
   "5b3b46b6db891733a68763db": {resource: RESOURCE_CATALYZED_GHODIUM_ALKALIDE, part: TOUGH},
   "5b3b3f3b58a02e70ebaa0add": {resource: RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE, part: MOVE},
@@ -30,18 +37,26 @@ export interface War29337295LogisticsProcessState extends ProcessState {
   cr: {
     /** lab charger name */
     l: CreepName | null
+
+    /** ranged attacker names */
+    ra: CreepName[]
   }
 }
 
 // Game.io("launch War29337295LogisticsProcess -l")
-export class War29337295LogisticsProcess implements Process, Procedural {
+export class War29337295LogisticsProcess implements Process, Procedural, MessageObserver {
   private readonly codename = generateCodename(this.constructor.name, this.launchTime)
+  private shouldSpawnRangedAttacker = false
+  private get creepProviders(): SingleCreepProviderObjective[] {
+    return this.objectives.filter(objective => objective instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
+  }
 
   public constructor(
     public readonly launchTime: number,
     public readonly processId: number,
     private readonly objectives: Objective[],
     private labChargerName: CreepName | null,
+    private rangedAttackerNames: CreepName[],
   ) { }
 
   public encode(): War29337295LogisticsProcessState {
@@ -52,6 +67,7 @@ export class War29337295LogisticsProcess implements Process, Procedural {
       s: this.objectives.map(objective => objective.encode()),
       cr: {
         l: this.labChargerName,
+        ra: this.rangedAttackerNames,
       },
     }
   }
@@ -64,31 +80,105 @@ export class War29337295LogisticsProcess implements Process, Procedural {
       }
       return result
     }, [] as Objective[])
-    return new War29337295LogisticsProcess(state.l, state.i, objectives, state.cr?.l)
+    return new War29337295LogisticsProcess(state.l, state.i, objectives, state.cr.l, state.cr.ra ?? [])
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public didReceiveMessage(message: string): string {
+    const labs = this.getLabs()
+    if (this.isLabsReady(labs) !== true) {
+      return "labs not ready"
+    }
+    this.shouldSpawnRangedAttacker = true
+    return "ok"
   }
 
   public runOnTick(): void {
     this.runObjectives()
-    this.runLabs()
+    const labs = this.getLabs()
+    this.runLabs(labs)
 
     const time = Game.time
     if (time % 249 === 0) {
       this.addCreep("heavy_attacker")
     }
+
+    if (this.shouldSpawnRangedAttacker === true) {
+      this.shouldSpawnRangedAttacker = false
+      this.spawnRangedAttacker()
+    }
+
+    this.runRangedAttackers(labs)
+  }
+
+  // ---- Ranged Attacker ---- //
+  private runRangedAttackers(labs: StructureLab[]): void {
+    const spawningCreepNames = this.creepProviders.map(objective => objective.creepName)
+    const deadCreepNames: CreepName[] = []
+    const rangedAttackers: Creep[] = []
+    this.rangedAttackerNames.forEach(name => {
+      const creep = Game.creeps[name]
+      if (creep != null) {
+        rangedAttackers.push(creep)
+        return
+      }
+      if (spawningCreepNames.includes(name) === true) {
+        return
+      }
+      deadCreepNames.push(name)
+    })
+    this.rangedAttackerNames = this.rangedAttackerNames.filter(name => deadCreepNames.includes(name) !== true)
+
+    rangedAttackers.forEach(creep => this.runRangedAttacker(creep, labs))
+  }
+
+  private runRangedAttacker(creep: Creep, labs: StructureLab[]): void {
+    if (creep.task == null) {
+      const portal = Game.getObjectById(portalId)
+      if (portal == null) {
+        PrimitiveLogger.fatal(`Portal ${portalId} not found`)
+        return
+      }
+
+      const time = Game.time
+      const childTasks: CreepTask[] = [
+        // new BoostAllTask(time, labs),
+        new MoveToPortalTask(time, portal),
+      ]
+      creep.task = new SequentialTask(time, childTasks, {i: false})
+    }
+
+    const result = creep.task.run(creep)
+    switch (result) {
+    case "in progress":
+      return
+    case "finished":
+      processLog(this, `Creep ${creep.name} finished its task ${roomLink(creep.room.name)}`)
+      return
+    case "failed":
+      PrimitiveLogger.fatal(`Creep ${creep.name} failed its task ${roomLink(creep.room.name)}`)
+      return
+    }
+  }
+
+  private spawnRangedAttacker(): void {
+    for (let i = 0; i < 1; i += 1) {
+      const creepName = generateUniqueId(this.codename)
+      const body: BodyPartConstant[] = [
+        TOUGH, MOVE, RANGED_ATTACK, MOVE, MOVE, HEAL
+      ]
+      const creepProvider = new SingleCreepProviderObjective(Game.time, [], creepName, {
+        spawnRoomName,
+        requestingCreepBodyParts: body,
+        priority: spawnPriorityLow,
+      })
+      this.objectives.push(creepProvider)
+      this.rangedAttackerNames.push(creepName)
+    }
   }
 
   // ---- Lab ---- //
-  private runLabs(): void {
-    const labs: StructureLab[] = []
-    for (const labId of Object.keys(labInfo)) {
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        PrimitiveLogger.fatal(`Lab with ID ${labId} not found (${lab})`)
-        return
-      }
-      labs.push(lab)
-    }
-
+  private runLabs(labs: StructureLab[]): void {
     const labCharger = ((): Creep | null => {
       if (this.labChargerName == null) {
         return null
@@ -107,9 +197,22 @@ export class War29337295LogisticsProcess implements Process, Procedural {
     }
 
     const spawningCharger = this.objectives.some(objective => objective instanceof SingleCreepProviderObjective)
-    if (spawningCharger !== true) {
+    if (spawningCharger !== true) { // FixMe: ranged attacker もSingleCreepProviderObjectiveを使用している
       this.addLabCharger()
     }
+  }
+
+  private getLabs(): StructureLab[] {
+    const labs: StructureLab[] = []
+    for (const labId of Object.keys(labInfo)) {
+      const lab = Game.getObjectById(labId)
+      if (!(lab instanceof StructureLab)) {
+        PrimitiveLogger.fatal(`Lab with ID ${labId} not found (${lab})`)
+        return []
+      }
+      labs.push(lab)
+    }
+    return labs
   }
 
   private isLabsReady(labs: StructureLab[]): boolean {
@@ -139,6 +242,12 @@ export class War29337295LogisticsProcess implements Process, Procedural {
     }
 
     this.assignNewTaskFor(creep, labs)
+
+    if (creep.task == null) {
+      if (creep.pos.x !== 22, creep.pos.y !== 19) {
+        creep.moveTo(22, 19)
+      }
+    }
   }
 
   private assignNewTaskFor(creep: Creep, labs: StructureLab[]): void {
@@ -269,7 +378,9 @@ export class War29337295LogisticsProcess implements Process, Procedural {
     case "in progress":
       return
     case "succeeded":
-      this.labChargerName = result.result.name
+      if (this.rangedAttackerNames.includes(result.result.name) !== true) {
+        this.labChargerName = result.result.name
+      }
       this.removeChildObjective(objective)
       return
     case "failed":

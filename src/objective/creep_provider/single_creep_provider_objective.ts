@@ -52,7 +52,7 @@ export class SingleCreepProviderObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    private readonly creepName: CreepName,
+    public readonly creepName: CreepName,
     launchTimeArguments: {
       spawnRoomName: string,
       requestingCreepBodyParts: BodyPartConstant[],

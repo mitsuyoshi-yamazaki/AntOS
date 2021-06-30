@@ -37,6 +37,9 @@ export interface WarProcessState extends ProcessState {
     /** attacker names */
     a: CreepName[]
 
+    /** ranged attacker names */
+    ra: CreepName[]
+
     /** scout names */
     s: CreepName[]
 
@@ -61,6 +64,7 @@ export class WarProcess implements Process, Procedural {
     public readonly processId: number,
     private targetId: Id<Creep | AnyStructure> | null,
     private attackerNames: CreepName[],
+    private rangedAttackerNames: CreepName[],
     private scoutNames: CreepName[],
     private workerNames: CreepName[],
     private childObjectives: Objective[],
@@ -74,6 +78,7 @@ export class WarProcess implements Process, Procedural {
       ti: this.targetId,
       cr: {
         a: this.attackerNames,
+        ra: this.rangedAttackerNames,
         s: this.scoutNames,
         w: this.workerNames,
       },
@@ -89,7 +94,7 @@ export class WarProcess implements Process, Procedural {
       }
       return result
     }, [] as Objective[])
-    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.s, state.cr.w, objectives)
+    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.ra ?? [], state.cr.s, state.cr.w, objectives)
   }
 
   public runOnTick(): void {
@@ -401,6 +406,12 @@ export class WarProcess implements Process, Procedural {
       this.attackerNames.push(creep.name)
       creep.memory.type = CreepType.ATTACKER
       processLog(this, `Assign creep ${creep.name} to attacker`)
+      return
+    }
+    if (body.includes(RANGED_ATTACK) === true) {
+      this.rangedAttackerNames.push(creep.name)
+      creep.memory.type = CreepType.RANGED_ATTACKER
+      processLog(this, `Assign creep ${creep.name} to ranged attacker`)
       return
     }
     if (body.includes(WORK) === true) {
