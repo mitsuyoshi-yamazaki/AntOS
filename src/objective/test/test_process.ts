@@ -1,4 +1,3 @@
-import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
 
@@ -28,15 +27,8 @@ export class TestProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    // if (Game.time % 13 === 7) {
-    //   processLog(this, `Test log at ${Game.time}`)
-    // }
-
-    // const result = ErrorMapper.wrapLoop((): string => {
-    //   const fuga = {hoge: "hogefuga"} as unknown as { hoge: string }
-    //   // const fuga = undefined as unknown as { hoge: string }
-    //   return fuga.hoge
-    // })()
-    // console.log(`result: ${result}`)
+    if (Game.time % 13 === 7) {
+      processLog(this, `Test log at ${Game.time}`)
+    }
   }
 }

@@ -9,9 +9,10 @@ import { BootstrapL8RoomProcess } from "objective/bootstrap_room/bootstrap_l8_ro
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { InterShardCreepDelivererProcess } from "objective/creep_provider/inter_shard_creep_deliverer_process"
 import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
-import { generateUniqueCodename, generateUniqueId } from "utility/unique_id"
+import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
 import { WarProcess } from "objective/test/war_process"
+import { War29337295LogisticsProcess } from "objective/test/war_ 29337295_logistics_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -39,6 +40,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "WarProcess":
       result = this.launchWarProcess()
+      break
+    case "War29337295LogisticsProcess":
+      result = this.launchWar29337295LogisticsProcess()
       break
     default:
       break
@@ -207,7 +211,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const launchTime = Game.time
-    const creepName = generateUniqueId(generateUniqueCodename("InterShardCreepDelivererObjective", launchTime))
+    const creepName = generateUniqueId(generateCodename("InterShardCreepDelivererObjective", launchTime))
     const objective = new InterShardCreepDelivererObjective(
       launchTime,
       [],
@@ -228,8 +232,23 @@ export class LaunchCommand implements ConsoleCommand {
   }
 
   private launchWarProcess(): LaunchCommandResult {
+    if (Game.shard.name !== "shard3") {
+      return new ResultFailed("Cannot launch WarProcess except shard3")
+    }
+
     const process = OperatingSystem.os.addProcess(processId => {
       return new WarProcess(Game.time, processId, null, [], [], [])
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchWar29337295LogisticsProcess(): LaunchCommandResult {
+    if (Game.shard.name !== "shard2") {
+      return new ResultFailed("Cannot launch WarProcess except shard2")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new War29337295LogisticsProcess(Game.time, processId, [])
     })
     return new ResultSucceeded(process)
   }

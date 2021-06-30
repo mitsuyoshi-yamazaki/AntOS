@@ -34,7 +34,7 @@ const sweets: string[] = [
   "beer", // 🍻
 ]
 
-export function generateUniqueCodename(fixedParameter: string, flexibleParameter: number): string {
+export function generateCodename(fixedParameter: string, flexibleParameter: number): string {
   const adjectiveIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % adjectives.length
   const sweetIndex = flexibleParameter % sweets.length
   return `${adjectives[adjectiveIndex]}_${sweets[sweetIndex]}`

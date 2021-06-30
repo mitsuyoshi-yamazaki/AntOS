@@ -6,7 +6,7 @@ import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 import { isSimulation } from "utility/game"
 
-const version = '4.10.13'
+const version = '4.10.14'
 
 export function init(): void {
   Game.version = version
