@@ -1,5 +1,6 @@
 import { CreepTask, CreepTaskState } from "game_object_task/creep_task"
 import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 type AttackTaskTarget = Creep | AnyStructure
 
@@ -9,7 +10,7 @@ export interface AttackTaskState extends CreepTaskState {
 }
 
 export class AttackTask implements CreepTask {
-  public readonly shortDescription = "build"
+  public readonly shortDescription = "attack"
   public get targetId(): Id<AttackTaskTarget> {
     return this.target.id
   }
@@ -38,18 +39,23 @@ export class AttackTask implements CreepTask {
   public run(creep: Creep): GameObjectTaskReturnCode {
     creep.memory.tt = Game.time
     const result = creep.attack(this.target)
-    creep.heal(creep)
+    // creep.heal(creep) // FixMe:
 
     switch (result) {
-    case OK: {
+    case OK:
       return "in progress"
-    }
+
     case ERR_NOT_IN_RANGE:
       creep.moveTo(this.target, { reusePath: 0 })
       return "in progress"
+
     case ERR_NOT_OWNER:
-    case ERR_INVALID_TARGET:
       return "failed"
+
+    case ERR_INVALID_TARGET:
+      PrimitiveLogger.fatal(`creep.attack() returns ERR_INVALID_TARGET, creep: ${creep.name}, target: ${this.target.id}`)
+      return "failed"
+
     case ERR_NO_BODYPART:
     case ERR_BUSY:
     default:

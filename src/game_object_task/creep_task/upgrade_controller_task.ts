@@ -50,12 +50,21 @@ export class UpgradeControllerTask implements CreepTask {
     case ERR_NOT_IN_RANGE:
       this.move(creep)
       return "in progress"
+
     case ERR_NOT_ENOUGH_RESOURCES:
       return "finished"
+
     case ERR_NOT_OWNER:
-    case ERR_INVALID_TARGET:
     case ERR_NO_BODYPART:
       return "failed"
+
+    case ERR_INVALID_TARGET:
+      if (this.controller.upgradeBlocked > 0) {
+        this.move(creep)
+        return "in progress"
+      }
+      return "failed"
+
     case ERR_BUSY:
     default:
       return "in progress"
