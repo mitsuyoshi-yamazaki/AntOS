@@ -8,6 +8,7 @@ import { ClaimControllerTask, ClaimControllerTaskState } from "./creep_task/clai
 import { MoveToPortalTask, MoveToPortalTaskState } from "./creep_task/move_to_position_task"
 import { AttackTask, AttackTaskState } from "./creep_task/attack_task"
 import { HealTask, HealTaskState } from "./creep_task/heal_task"
+import { RepairTask, RepairTaskState } from "./creep_task/repair_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -30,6 +31,7 @@ class CreepTaskTypes {
   "MoveToPortalTask" = (state: CreepTaskState) => MoveToPortalTask.decode(state as MoveToPortalTaskState)
   "AttackTask" = (state: CreepTaskState) => AttackTask.decode(state as AttackTaskState)
   "HealTask" = (state: CreepTaskState) => HealTask.decode(state as HealTaskState)
+  "RepairTask" = (state: CreepTaskState) => RepairTask.decode(state as RepairTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {

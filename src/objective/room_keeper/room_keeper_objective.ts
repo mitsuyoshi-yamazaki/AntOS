@@ -168,6 +168,7 @@ export class RoomKeeperObjective implements Objective {
         roomObjects.activeStructures.chargeableStructures,
         roomObjects.controller,
         roomObjects.constructionSites,
+        roomObjects.activeStructures.damagedStructures,
         roomObjects.idleCreeps,
       )
     }, "RoomKeeperObjective.runWorker()")()
@@ -201,12 +202,13 @@ export class RoomKeeperObjective implements Objective {
     chargeableStructures: EnergyChargeableStructure[],
     controller: StructureController,
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    damagedStructures: AnyOwnedStructure[],
     idleCreeps: Creep[],
   ): string {
 
     this.workerObjective.addCreeps(idleCreeps.map(creep => creep.name))
 
-    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, this.spawnCreepObjective)
+    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, damagedStructures, this.spawnCreepObjective)
     return ((): string => {
       switch (workerProgress.objectProgressType) {
       case "in progress": {

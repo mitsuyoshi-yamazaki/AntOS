@@ -48,12 +48,44 @@ export class War29337295LogisticsProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    this.runObjectives()
+
     const time = Game.time
     if (time % 249 === 0) {
       this.addCreep("heavy_attacker")
     }
   }
 
+  // ---- Run Objectives ---- //
+  private runObjectives(): void {
+    this.objectives.forEach(objective => {
+      if (objective instanceof InterShardCreepDelivererObjective) {
+        this.runInterShardCreepDelivererObjective(objective)
+      }
+    })
+  }
+
+  private runInterShardCreepDelivererObjective(objective: InterShardCreepDelivererObjective): void {
+    const result = objective.progress()
+    switch (result.objectProgressType) {
+    case "in progress":
+      return
+    case "succeeded":
+    case "failed":
+      this.removeChildObjective(objective)
+      return
+    }
+  }
+
+  private removeChildObjective(objective: Objective): void {
+    const index = this.objectives.indexOf(objective)
+    if (index < 0) {
+      return
+    }
+    this.objectives.splice(index, 1)
+  }
+
+  // ---- Add Creep ---- //
   private addCreep(creepType: War29337295LogisticsProcessCreepType): void {
     const creepName = generateUniqueId(this.codename)
     const body = this.bodyPatsFor(creepType)

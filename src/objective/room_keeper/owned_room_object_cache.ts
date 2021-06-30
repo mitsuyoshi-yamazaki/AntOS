@@ -12,6 +12,7 @@ interface OwnedRoomObjects {
     extensions: StructureExtension[]
     towers: StructureTower[]
 
+    damagedStructures: AnyOwnedStructure[]
     chargeableStructures: EnergyChargeableStructure[]
   }
   hostiles: {
@@ -60,16 +61,22 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
   const spawns: StructureSpawn[] = []
   const extensions: StructureExtension[] = []
   const towers: StructureTower[] = []
+  const damagedStructures: AnyOwnedStructure[] = []
   const chargeableStructures: EnergyChargeableStructure[] = []
   const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
 
   const flags = room.find(FIND_FLAGS)
 
+  const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
   const myStructures = room.find(FIND_MY_STRUCTURES)
   myStructures.forEach(structure => {
     if (structure.isActive() !== true) {
       return
     }
+    if (wallTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
+      damagedStructures.push(structure)
+    }
+
     switch (structure.structureType) {
     case STRUCTURE_SPAWN:
       spawns.push(structure)
@@ -134,6 +141,7 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
       spawns,
       extensions,
       towers,
+      damagedStructures,
       chargeableStructures,
     },
     hostiles: {

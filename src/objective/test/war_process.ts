@@ -2,11 +2,17 @@ import { AttackTask } from "game_object_task/creep_task/attack_task"
 import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { HealTask } from "game_object_task/creep_task/heal_task"
+import { ScoutTask } from "game_object_task/creep_task/scout_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
+import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
+import { decodeObjectiveFrom, Objective, ObjectiveState } from "objective/objective"
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
+import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
+import { RoomName } from "prototype/room"
 import { getCachedPathFor } from "script/pathfinder"
+import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { CreepType } from "_old/creep"
 
 const portalExitRoomName = "W50S30"
@@ -16,7 +22,11 @@ const sourceIds: Id<Source>[] = [
   "5bbcaa559099fc012e6312ba",
 ] as Id<Source>[]
 const attackerWaitingPosition = new RoomPosition(40, 25, ownedRoomName)
-const blockedSourceId = "5bbcaa559099fc012e6312b9" as Id <Source>
+const blockedSourceId = "5bbcaa559099fc012e6312b9" as Id<Source>
+const scoutRoomNames: RoomName[] = [
+  "W50S29",
+  "W50S30",
+]
 
 export interface WarProcessState extends ProcessState {
   /** target id */
@@ -33,13 +43,19 @@ export interface WarProcessState extends ProcessState {
     /** worker names */
     w: CreepName[]
   }
+
+  /** child objective states */
+  s: ObjectiveState[]
 }
 
+// - [ ] 終了したらプロセスをリネームして保存
 // Game.io("launch WarProcess")
 // Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=heavy_attacker")
 // Game.getObjectById("5b994d9e0417171556aa96d7").send(RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 2000, "W51S29")
 // Game.check_resources(RESOURCE_CATALYZED_KEANIUM_ALKALIDE)
 export class WarProcess implements Process, Procedural {
+  private readonly codename = generateCodename(this.constructor.name, this.launchTime)
+
   public constructor(
     public readonly launchTime: number,
     public readonly processId: number,
@@ -47,6 +63,7 @@ export class WarProcess implements Process, Procedural {
     private attackerNames: CreepName[],
     private scoutNames: CreepName[],
     private workerNames: CreepName[],
+    private childObjectives: Objective[],
   ) { }
 
   public encode(): WarProcessState {
@@ -60,11 +77,19 @@ export class WarProcess implements Process, Procedural {
         s: this.scoutNames,
         w: this.workerNames,
       },
+      s: this.childObjectives.map(objective => objective.encode()),
     }
   }
 
   public static decode(state: WarProcessState): WarProcess {
-    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.s, state.cr.w)
+    const objectives = (state.s ?? []).reduce((result: Objective[], current: ObjectiveState): Objective[] => {
+      const objective = decodeObjectiveFrom(current)
+      if (objective != null) {
+        result.push(objective)
+      }
+      return result
+    }, [] as Objective[])
+    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.s, state.cr.w, objectives)
   }
 
   public runOnTick(): void {
@@ -78,6 +103,7 @@ export class WarProcess implements Process, Procedural {
     attackers.forEach(creep => this.runAttacker(creep))
 
     this.runWorkers()
+    this.runScouts()
   }
 
   private getCreeps(creepNames: CreepName[]): [CreepName[], Creep[]] {
@@ -264,6 +290,102 @@ export class WarProcess implements Process, Procedural {
     })
   }
 
+  // ---- Scout ---- //
+  private runScouts(): void {
+    const creepProviders = this.childObjectives.filter(objective => objective instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
+    creepProviders.forEach(objective => {
+      if (!(objective instanceof SingleCreepProviderObjective)) {
+        return
+      }
+
+      const result = objective.progress()
+      switch (result.objectProgressType) {
+      case "in progress":
+        return
+      case "succeeded":
+        this.removeChildObjective(objective)
+        this.scoutNames.push(result.result.name)
+        return
+      case "failed":
+        this.removeChildObjective(objective)
+        return
+      }
+    })
+
+    const [updatedScoutNames, scouts] = this.getCreeps(this.scoutNames)
+    this.scoutNames = updatedScoutNames
+
+    const targetedRoomNames: RoomName[] = []
+    scouts.forEach(creep => {
+      if (!(creep.task instanceof ScoutTask)) {
+        return
+      }
+      targetedRoomNames.push(creep.task.roomName)
+    })
+    const nonTargetedRoomNames: RoomName[] = []
+
+    const isSpawning = creepProviders.length > 0
+    scoutRoomNames.forEach(roomName => {
+      const room = Game.rooms[roomName]
+      if (room != null) {
+        return
+      }
+      if (isSpawning === true) {
+        return
+      }
+      if (targetedRoomNames.includes(roomName) === true) {
+        return
+      }
+      nonTargetedRoomNames.push(roomName)
+    })
+
+    const assigned = false as boolean
+
+    scouts.forEach(creep => {
+      if (creep.task == null) {
+        creep.task = new ScoutTask(Game.time, "W48S28")
+      }
+      // if (creep.task == null) {
+      //   if (nonTargetedRoomNames[0] != null) {
+      //     creep.task = new ScoutTask(Game.time, nonTargetedRoomNames[0])
+      //     assigned = true
+      //   } else {
+      //     creep.task = new ScoutTask(Game.time, scoutRoomNames[0])
+      //   }
+      // }
+      if (Game.cpu.bucket > 5000) {
+        creep.task.run(creep)
+      }
+    })
+
+    if (assigned !== true && nonTargetedRoomNames.length > 0) {
+      // this.addScoutTo()
+    }
+  }
+
+  private addScoutTo(): void {
+    const creepName = generateUniqueId(this.codename)
+    const creepProvider = new SingleCreepProviderObjective(
+      Game.time,
+      [],
+      creepName,
+      {
+        spawnRoomName: ownedRoomName,
+        requestingCreepBodyParts: [MOVE],
+        priority: spawnPriorityLow,
+      }
+    )
+    this.childObjectives.push(creepProvider)
+    processLog(this, "Added scout")
+  }
+
+  private removeChildObjective(objective: Objective): void {
+    const index = this.childObjectives.indexOf(objective)
+    if (index < 0) {
+      return
+    }
+    this.childObjectives.splice(index, 1)
+  }
 
   // ---- Receive Creeps ---- //
   private receiveCreeps(room: Room): void {

@@ -59,7 +59,8 @@ export class SpawnCreepObjective implements Objective {
     public readonly startTime: number,
     public readonly children: Objective[],
     private readonly queue: SpawnCreepQueueItem[],
-  ) { }
+  ) {
+  }
 
   public encode(): SpawnCreepObjectiveState {
     return {

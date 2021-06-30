@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { BuildTask } from "game_object_task/creep_task/build_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
+import { RepairTask } from "game_object_task/creep_task/repair_task"
 import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
@@ -108,6 +109,7 @@ export class PrimitiveWorkerObjective implements Objective {
     chargeableStructures: EnergyChargeableStructure[],
     controller: StructureController,
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    damagedStructures: AnyOwnedStructure[],
     spawnCreepObjective: SpawnCreepObjective,
   ): PrimitiveWorkerObjectiveProgressType {
 
@@ -127,7 +129,7 @@ export class PrimitiveWorkerObjective implements Objective {
     if (workersNeeded > 0) {
       this.spawnWorkers(controller.room.energyCapacityAvailable, workersNeeded, spawnCreepObjective)
     }
-    this.work(workers, sources, chargeableStructures, constructionSites, controller)
+    this.work(workers, sources, chargeableStructures, constructionSites, damagedStructures, controller)
 
     const event: PrimitiveWorkerObjectiveEvent = {
       diedWorkers: diedWorkers.length,
@@ -143,6 +145,7 @@ export class PrimitiveWorkerObjective implements Objective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    damagedStructures: AnyOwnedStructure[],
     controller: StructureController,
   ): void {
 
@@ -151,11 +154,11 @@ export class PrimitiveWorkerObjective implements Objective {
         return
       }
       if (creep.task == null) {
-        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, controller)
+        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, damagedStructures, controller)
       }
       const taskFinished = creep.task?.run(creep) !== "in progress"
       if (taskFinished) {
-        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, controller, true) // TODO: already run を Task.run() の返り値から取る
+        this.assignNewTask(creep, sources, chargeableStructures, constructionSites, damagedStructures, controller, true) // TODO: already run を Task.run() の返り値から取る
       }
     })
   }
@@ -165,6 +168,7 @@ export class PrimitiveWorkerObjective implements Objective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    damagedStructures: AnyOwnedStructure[],
     controller: StructureController,
     alreadyRun?: boolean
   ): void {
@@ -188,11 +192,16 @@ export class PrimitiveWorkerObjective implements Objective {
       if (structureToCharge != null) {
         creep.task = new TransferToStructureTask(Game.time, structureToCharge)
       } else {
-        const constructionSite = this.getConstructionSiteToAssign(constructionSites)
-        if (constructionSite != null) {
-          creep.task = new BuildTask(Game.time, constructionSite)
+        const damagedStructure = this.getRepairStructureToAssign(damagedStructures)
+        if (damagedStructure != null) {
+          creep.task = new RepairTask(Game.time, damagedStructure)
         } else {
-          creep.task = new UpgradeControllerTask(Game.time, controller)
+          const constructionSite = this.getConstructionSiteToAssign(constructionSites)
+          if (constructionSite != null) {
+            creep.task = new BuildTask(Game.time, constructionSite)
+          } else {
+            creep.task = new UpgradeControllerTask(Game.time, controller)
+          }
         }
       }
     }
@@ -240,6 +249,10 @@ export class PrimitiveWorkerObjective implements Objective {
     const constructionSite = constructionSites[0]
     this.buildingConstructionSiteId = constructionSite?.id
     return constructionSite
+  }
+
+  private getRepairStructureToAssign(damagedStructures: AnyOwnedStructure[]): AnyOwnedStructure | null {
+    return damagedStructures[0] ?? null
   }
 
   // ---- Spawn ---- //
