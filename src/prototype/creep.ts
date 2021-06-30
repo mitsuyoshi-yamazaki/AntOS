@@ -3,6 +3,18 @@ import { TaskTargetCache } from "game_object_task/task_target_cache"
 
 export type CreepName = string
 
+export type CreepRoleHarvester = "harvester"
+export type CreepRoleHauler = "hauler"
+export type CreepRoleWorker = "worker"
+export type CreepRoleScout = "scout"
+
+export const creepRoleHarvester: CreepRoleHarvester = "harvester"
+export const creepRoleHauler: CreepRoleHauler = "hauler"
+export const creepRoleWorker: CreepRoleWorker = "worker"
+export const creepRoleScout: CreepRoleScout = "scout"
+
+export type CreepRole = CreepRoleHarvester | CreepRoleHauler | CreepRoleWorker | CreepRoleScout
+
 declare global {
   interface Creep {
     task: CreepTask | null

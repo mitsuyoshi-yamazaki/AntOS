@@ -1,22 +1,18 @@
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "objective/objective"
 import { SpawnCreepObjective } from "objective/spawn/spawn_creep_objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, CreepRoleHarvester, CreepRoleHauler } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
 
 type PrimitiveWorkerObjectiveProgressType = ObjectiveInProgress<void> | ObjectiveFailed<string>
 
-export interface MultiRoleWorkerObjectiveState extends ObjectiveState {
-  /** creeps */
-  cr: {
-    /** worker */
-    w: CreepName[]
-  }
+type MultiRoleWorkerObjectiveCreepRole = CreepRoleHarvester | CreepRoleHauler
 
-  /** creep spawn queue */
-  cq: {
-    /** worker */
-    w: CreepName[]
-  }
+export interface MultiRoleWorkerObjectiveState extends ObjectiveState {
+  // /** creep names */
+  // cr: { [index: string]: string[] }  // index: MultiRoleWorkerObjectiveCreepRole
+
+  // /** creep spawn queue */
+  // cq: { [index: string]: string[] }  // index: MultiRoleWorkerObjectiveCreepRole
 
   /** building construction site ID */
   cs: Id<ConstructionSite<BuildableStructureConstant>> | null
@@ -31,8 +27,8 @@ export class MultiRoleWorkerObjective implements Objective {
   public constructor(
     public readonly startTime: number,
     public readonly children: Objective[],
-    private workerNames: CreepName[],
-    private queuedWorkerNames: CreepName[],
+    // private creepNames: CreepName[],
+    // private queuedHarvesterNames: CreepName[],
     private buildingConstructionSiteId: Id<ConstructionSite<BuildableStructureConstant>> | null,
   ) {
   }
@@ -42,49 +38,52 @@ export class MultiRoleWorkerObjective implements Objective {
       t: "MultiRoleWorkerObjective",
       s: this.startTime,
       c: this.children.map(child => child.encode()),
-      cr: {
-        w: this.workerNames,
-      },
-      cq: {
-        w: this.queuedWorkerNames,
-      },
+      // cr: {
+      //   w: this.workerNames,
+      // },
+      // cq: {
+      //   w: this.queuedWorkerNames,
+      // },
       cs: this.buildingConstructionSiteId,
     }
   }
 
   public static decode(state: MultiRoleWorkerObjectiveState): MultiRoleWorkerObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new MultiRoleWorkerObjective(state.s, children, state.cr.w, state.cq.w, state.cs)
+    return new MultiRoleWorkerObjective(state.s, children, state.cs)
   }
 
   // ---- Public API ---- //
-  public addCreeps(creepNames: CreepName[]): void {
-    this.workerNames.push(...creepNames)
-  }
+  // public addCreeps(creepNames: CreepName[]): void {
+  //   this.workerNames.push(...creepNames)
+  // }
 
-  public didSpawnCreep(creepNames: CreepName[]): void {
-    const spawnedCreepNames: CreepName[] = []
-    this.queuedWorkerNames = this.queuedWorkerNames.filter(name => {
-      if (creepNames.includes(name) !== true) {
-        return true
-      }
-      spawnedCreepNames.push(name)
-      return false
-    })
-    this.workerNames.push(...spawnedCreepNames)
-  }
+  // public didSpawnCreep(creepNames: CreepName[]): void {
+  //   const spawnedCreepNames: CreepName[] = []
+  //   this.queuedWorkerNames = this.queuedWorkerNames.filter(name => {
+  //     if (creepNames.includes(name) !== true) {
+  //       return true
+  //     }
+  //     spawnedCreepNames.push(name)
+  //     return false
+  //   })
+  //   this.workerNames.push(...spawnedCreepNames)
+  // }
 
-  public didCancelCreep(creepNames: CreepName[]): void {
-    this.queuedWorkerNames = this.queuedWorkerNames.filter(name => creepNames.includes(name) !== true)
-  }
+  // public didCancelCreep(creepNames: CreepName[]): void {
+  //   this.queuedWorkerNames = this.queuedWorkerNames.filter(name => creepNames.includes(name) !== true)
+  // }
 
-  public progress(
-    sources: Source[],
-    chargeableStructures: EnergyChargeableStructure[],
-    controller: StructureController,
-    constructionSites: ConstructionSite<BuildableStructureConstant>[],
-    spawnCreepObjective: SpawnCreepObjective,
-  ): PrimitiveWorkerObjectiveProgressType {
-    return new ObjectiveInProgress(undefined)
-  }
+  // public progress(
+  //   sources: Source[],
+  //   chargeableStructures: EnergyChargeableStructure[],
+  //   controller: StructureController,
+  //   constructionSites: ConstructionSite<BuildableStructureConstant>[],
+  //   spawnCreepObjective: SpawnCreepObjective,
+  // ): PrimitiveWorkerObjectiveProgressType {
+
+
+
+  //   return new ObjectiveInProgress(undefined) // TODO:
+  // }
 }
