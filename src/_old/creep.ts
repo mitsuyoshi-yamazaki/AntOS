@@ -326,6 +326,11 @@ export function init() {
       return ActionResult.DONE
     }
 
+    if (Game.shard.name === "shard3" && destination_room_name === "W48S27" && this.room.name === "W49S27") {
+      this.moveTo(49, 22)
+      return ActionResult.IN_PROGRESS
+    }
+
     if (this.memory.no_path != null) {
       this.move(this.memory.no_path)
 

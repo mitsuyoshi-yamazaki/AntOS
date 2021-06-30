@@ -1,5 +1,6 @@
 import { AttackTask } from "game_object_task/creep_task/attack_task"
 import { BuildTask } from "game_object_task/creep_task/build_task"
+import { DismantleTask } from "game_object_task/creep_task/dismantle_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
 import { HealTask } from "game_object_task/creep_task/heal_task"
 import { RangedAttackTask } from "game_object_task/creep_task/ranged_attack_task"
@@ -10,6 +11,7 @@ import { decodeObjectiveFrom, Objective, ObjectiveState } from "objective/object
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { MessageObserver } from "os/infrastructure/message_observer"
 import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { getCachedPathFor } from "script/pathfinder"
@@ -51,14 +53,18 @@ export interface WarProcessState extends ProcessState {
 
   /** child objective states */
   s: ObjectiveState[]
+
+  /** target enemy room name */
+  r: RoomName
 }
 
 // - [ ] 終了したらプロセスをリネームして保存
+// - [ ] 行った状況を記録しておく
 // Game.io("launch WarProcess")
 // Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=heavy_attacker")
 // Game.getObjectById("5b994d9e0417171556aa96d7").send(RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 2000, "W51S29")
 // Game.check_resources(RESOURCE_CATALYZED_KEANIUM_ALKALIDE)
-export class WarProcess implements Process, Procedural {
+export class WarProcess implements Process, Procedural, MessageObserver {
   private readonly codename = generateCodename(this.constructor.name, this.launchTime)
 
   public constructor(
@@ -70,6 +76,7 @@ export class WarProcess implements Process, Procedural {
     private scoutNames: CreepName[],
     private workerNames: CreepName[],
     private childObjectives: Objective[],
+    private targetEnemyRoomName: RoomName,
   ) { }
 
   public encode(): WarProcessState {
@@ -85,6 +92,7 @@ export class WarProcess implements Process, Procedural {
         w: this.workerNames,
       },
       s: this.childObjectives.map(objective => objective.encode()),
+      r: this.targetEnemyRoomName,
     }
   }
 
@@ -96,7 +104,12 @@ export class WarProcess implements Process, Procedural {
       }
       return result
     }, [] as Objective[])
-    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.ra ?? [], state.cr.s, state.cr.w, objectives)
+    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.ra, state.cr.s, state.cr.w, objectives, state.r ?? enemyBaseRoomName)
+  }
+
+  public didReceiveMessage(message: string): string {
+    this.targetEnemyRoomName = message
+    return `Override target enemy room name to ${message}`
   }
 
   public runOnTick(): void {
@@ -113,7 +126,8 @@ export class WarProcess implements Process, Procedural {
     this.rangedAttackerNames = updatedRangedAttackerNames
     rangedAttackers.forEach(creep => this.runRangedAttacker(creep))
 
-    this.runWorkers()
+    // this.runWorkers()
+    this.runDismantlers()
     this.runScouts()
   }
 
@@ -136,8 +150,24 @@ export class WarProcess implements Process, Procedural {
   private runRangedAttacker(creep: Creep): void {
     creep.heal(creep)
 
-    if (creep.room.name === enemyBaseRoomName) {
-      const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 2).filter(c => Game.isEnemy(c.owner) === true)[0]
+    const getHostileCreep = ((range: number): Creep | null => {
+      return creep.pos.findInRange(FIND_HOSTILE_CREEPS, range).filter(c => {
+        if (Game.isEnemy(c.owner) !== true) {
+          return false
+        }
+        const body = c.body.map(b => b.type)
+        if (body.includes(ATTACK) === true) {
+          return true
+        }
+        if (body.includes(RANGED_ATTACK) === true) {
+          return true
+        }
+        return false
+      })[0]
+    })
+
+    if (creep.room.name === this.targetEnemyRoomName) {
+      const hostileCreep = getHostileCreep(2)
       if (hostileCreep == null) {
         if (creep.task?.run(creep) === "in progress") {
           return
@@ -145,6 +175,35 @@ export class WarProcess implements Process, Procedural {
         const tower = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}) as StructureTower | null
         if (tower != null) {
           creep.task = new RangedAttackTask(Game.time, tower)
+          processLog(this, `Creep ${creep.name} ranged attack tower ${tower.id}`)
+          return
+        }
+        const spawn = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
+        if (spawn != null) {
+          creep.task = new RangedAttackTask(Game.time, spawn)
+          processLog(this, `Creep ${creep.name} ranged attack spawn ${spawn.id}`)
+          return
+        }
+        const hostileCreep = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+        if (hostileCreep != null) {
+          creep.task = new RangedAttackTask(Game.time, hostileCreep)
+          processLog(this, `Creep ${creep.name} ranged attack creep ${hostileCreep.id}`)
+          return
+        }
+        if (creep.room.storage != null) {
+          creep.task = new RangedAttackTask(Game.time, creep.room.storage)
+          processLog(this, `Creep ${creep.name} ranged attack storage ${creep.room.storage.id}`)
+          return
+        }
+        if (creep.room.terminal != null) {
+          creep.task = new RangedAttackTask(Game.time, creep.room.terminal)
+          processLog(this, `Creep ${creep.name} ranged attack terminal ${creep.room.terminal.id}`)
+          return
+        }
+        const extension = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION } }) as StructureExtension | null
+        if (extension != null) {
+          creep.task = new RangedAttackTask(Game.time, extension)
+          processLog(this, `Creep ${creep.name} ranged attack extension ${extension.id}`)
           return
         }
         creep.say("🙂")
@@ -160,11 +219,69 @@ export class WarProcess implements Process, Procedural {
         creep.moveByPath(path.path)
       }
     } else {
-      creep.moveToRoom(enemyBaseRoomName)
-      const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(c => Game.isEnemy(c.owner) === true)[0]
+      const hostileCreep = getHostileCreep(3)
       if (hostileCreep != null) {
         creep.rangedAttack(hostileCreep)
+      } else {
+        if (creep.task != null) {
+          if (creep.task.run(creep) !== "in progress") {
+            creep.task = null
+          }
+          return
+        } else {
+          creep.moveToRoom(this.targetEnemyRoomName)
+        }
       }
+    }
+  }
+
+  // ---- Dismantle ---- //
+  private runDismantlers(): void {
+    const [updatedDismantlerNames, dismantler] = this.getCreeps(this.workerNames)
+    this.workerNames = updatedDismantlerNames
+    dismantler.forEach(creep => this.runDismantler(creep))
+  }
+
+  private runDismantler(creep: Creep): void {
+    if (creep.task != null) {
+      if (creep.task.run(creep) === "in progress") {
+        return
+      }
+      creep.task = null
+    }
+
+    const targetRoomName = this.targetEnemyRoomName
+    if (creep.room.name !== targetRoomName) {
+      creep.moveToRoom(targetRoomName)
+      return
+    }
+
+    if (creep.pos.x === 0) {
+      creep.move(RIGHT)
+      return
+    } else if (creep.pos.x === 49) {
+      creep.move(LEFT)
+      return
+    } else if (creep.pos.y === 0) {
+      creep.move(BOTTOM)
+      return
+    } else if (creep.pos.y === 49) {
+      creep.move(TOP)
+      return
+    }
+
+    // const targetWall = Game.getObjectById("5e11ab0c8e7f2e59bb7bfdb0") as StructureWall | null
+    // if (targetWall != null) {
+    //   creep.task = new DismantleTask(Game.time, targetWall)
+    //   return
+    // }
+
+    const excludes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART, STRUCTURE_CONTROLLER]
+    const target = creep.room.find(FIND_HOSTILE_STRUCTURES).filter(structure => excludes.includes(structure.structureType) !== true)[0]
+    if (target) {
+      creep.task = new DismantleTask(Game.time, target)
+    } else {
+      creep.say("😴")
     }
   }
 

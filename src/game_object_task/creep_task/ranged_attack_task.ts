@@ -43,7 +43,9 @@ export class RangedAttackTask implements CreepTask {
 
     switch (result) {
     case OK:
-      creep.moveTo(this.target.pos)
+      if (creep.pos.getRangeTo(this.target.pos) > 2) {
+        creep.moveTo(this.target.pos)
+      }
       return "in progress"
 
     case ERR_NOT_IN_RANGE:

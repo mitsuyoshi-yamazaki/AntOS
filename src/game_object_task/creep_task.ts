@@ -16,6 +16,7 @@ import { RangedAttackTask, RangedAttackTaskState } from "./creep_task/ranged_att
 import { BoostTask, BoostTaskState } from "./creep_task/boost_task"
 import { BoostAllTask, BoostAllTaskState } from "./creep_task/multi_task/boost_all_task"
 import { SequentialTask, SequentialTaskState } from "./creep_task/multi_task/sequential_task"
+import { DismantleTask, DismantleTaskState } from "./creep_task/dismantle_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -46,6 +47,7 @@ class CreepTaskTypes {
   "BoostTask" = (state: CreepTaskState) => BoostTask.decode(state as BoostTaskState)
   "BoostAllTask" = (state: CreepTaskState) => BoostAllTask.decode(state as BoostAllTaskState)
   "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState)
+  "DismantleTask" = (state: CreepTaskState) => DismantleTask.decode(state as DismantleTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {

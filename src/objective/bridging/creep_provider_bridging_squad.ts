@@ -3,6 +3,7 @@ import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_ol
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepProviderObjectiveCreepSpec } from "objective/creep_provider/single_creep_provider_objective"
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()
@@ -98,10 +99,35 @@ export class CreepProviderBridgingSquad extends Squad {
       memory: memory
     })
 
-    if (result === OK) {
+    switch (result) {
+    case OK:
       delete this.memory.req[creepIdentifier]
-    } else {
-      console.log(`CreepProviderBridgingSquadMemory spawn scout ${name} failed with error: ${result}`)
+      return
+
+    case ERR_NOT_OWNER:
+      PrimitiveLogger.fatal(`CreepProviderBridgingSquadMemory spawn creep ${name} returns ERR_NOT_OWNER`)
+      delete this.memory.req[creepIdentifier]
+      return
+
+    case ERR_NAME_EXISTS:
+      PrimitiveLogger.fatal(`CreepProviderBridgingSquadMemory spawn creep ${name} returns ERR_NAME_EXISTS`)
+      delete this.memory.req[creepIdentifier]
+      return
+
+    case ERR_INVALID_ARGS:
+      PrimitiveLogger.fatal(`CreepProviderBridgingSquadMemory spawn creep ${name} returns ERR_INVALID_ARGS, body: ${body}`)
+      delete this.memory.req[creepIdentifier]
+      return
+
+
+    case ERR_RCL_NOT_ENOUGH:
+      PrimitiveLogger.fatal(`CreepProviderBridgingSquadMemory spawn creep ${name} returns ERR_RCL_NOT_ENOUGH`)
+      return
+
+
+    case ERR_BUSY:
+    case ERR_NOT_ENOUGH_ENERGY:
+      return
     }
   }
 

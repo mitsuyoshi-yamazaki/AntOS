@@ -27,7 +27,7 @@ const labInfo: { [index: string]: {resource: MineralCompoundConstant, part: Body
   "5b258a00a84f8b52880bff57": {resource: RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE, part: HEAL},
 }
 
-type War29337295LogisticsProcessCreepType = "heavy_attacker"
+type War29337295LogisticsProcessCreepType = "heavy_attacker" | "heavy_dismantler"
 
 export interface War29337295LogisticsProcessState extends ProcessState {
   /** child objective states */
@@ -83,14 +83,22 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
     return new War29337295LogisticsProcess(state.l, state.i, objectives, state.cr.l, state.cr.ra ?? [])
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public didReceiveMessage(message: string): string {
-    const labs = this.getLabs()
-    if (this.isLabsReady(labs) !== true) {
-      return "labs not ready"
+    switch (message) {
+    case "ranged_attacker": {
+      const labs = this.getLabs()
+      if (this.isLabsReady(labs) !== true) {
+        return "labs not ready"
+      }
+      this.shouldSpawnRangedAttacker = true
+      return "ok"
     }
-    this.shouldSpawnRangedAttacker = true
-    return "ok"
+    case "dismantler":
+      this.addCreep("heavy_dismantler")
+      return "ok"
+    default:
+      return `Invalid creep type, specify one of [ranged_attacker, dismantler] (${message})`
+    }
   }
 
   public runOnTick(): void {
@@ -99,7 +107,7 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
     this.runLabs(labs)
 
     const time = Game.time
-    if (time % 249 === 0) {
+    if (time % 403 === 0) {
       this.addCreep("heavy_attacker")
     }
 
@@ -174,7 +182,9 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
         MOVE, MOVE, MOVE,
         RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
         RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-        MOVE, MOVE, MOVE,
+        RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+        RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+        MOVE, MOVE, MOVE, MOVE, MOVE,
         HEAL, HEAL, HEAL, HEAL, HEAL,
         HEAL, HEAL, HEAL, HEAL,
       ]
@@ -433,6 +443,8 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
     switch (creepType) {
     case "heavy_attacker":
       return spawnPriorityLow
+    case "heavy_dismantler":
+      return spawnPriorityLow
     }
   }
 
@@ -452,6 +464,14 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
         ATTACK,
         MOVE,
         HEAL, HEAL, HEAL, HEAL, HEAL,
+      ]
+    case "heavy_dismantler":
+      return [
+        WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+        WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+        WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+        WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+        WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
       ]
     }
   }

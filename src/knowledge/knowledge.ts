@@ -12,7 +12,5 @@ export const epicScenes: { description: string, url: string }[] = [
 ]
 
 /**
- * - strategy
- *   - room bootstrap
- *     - W1C1M1でharvest, C1M1でcarry (300 energy)
+ * - 敵のSpawnをCreepで囲うことはできない（敵のCreepが出てくる際に踏まれて死ぬ
  */
