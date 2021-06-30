@@ -38,7 +38,11 @@ export function init(): void {
         TaskTargetCache.didAssignTask(this.id, task.targetId)
       }
       this._task = task
-      this.say(task?.shortDescription ?? "idle")
+      if (task == null) {
+        this.say("idle")
+      } else if (task.shortDescription != null) {
+        this.say(task.shortDescription)
+      }
     }
   })
 }

@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { AttackTask } from "game_object_task/creep_task/attack_task"
 import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_task"
+import { HealTask } from "game_object_task/creep_task/heal_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { Procedural } from "objective/procedural"
 import { Process, processLog, ProcessState } from "objective/process"
@@ -108,6 +109,7 @@ export class WarProcess implements Process, Procedural {
     if (creep.task?.run(creep) === "in progress") {
       return
     }
+
     const target = ((): Creep | AnyStructure | null => {
       if (this.targetId != null) {
         const storedTarget = Game.getObjectById(this.targetId)
@@ -124,9 +126,12 @@ export class WarProcess implements Process, Procedural {
       }
       return null
     })()
+
     if (target == null) {
+      creep.task = new HealTask(Game.time, creep)
       return
     }
+
     processLog(this, `Attacker ${creep.name} new target assigned: ${target.id}`)
     creep.task = new AttackTask(Game.time, target)
     creep.task.run(creep)
