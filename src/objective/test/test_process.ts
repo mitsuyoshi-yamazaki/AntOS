@@ -32,11 +32,11 @@ export class TestProcess implements Process, Procedural {
     //   processLog(this, `Test log at ${Game.time}`)
     // }
 
-    const result = ErrorMapper.wrapLoop((): string => {
-      const fuga = {hoge: "hogefuga"} as unknown as { hoge: string }
-      // const fuga = undefined as unknown as { hoge: string }
-      return fuga.hoge
-    })()
-    console.log(`result: ${result}`)
+    // const result = ErrorMapper.wrapLoop((): string => {
+    //   const fuga = {hoge: "hogefuga"} as unknown as { hoge: string }
+    //   // const fuga = undefined as unknown as { hoge: string }
+    //   return fuga.hoge
+    // })()
+    // console.log(`result: ${result}`)
   }
 }

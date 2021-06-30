@@ -11,6 +11,7 @@ import { InterShardCreepDelivererProcess } from "objective/creep_provider/inter_
 import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateUniqueCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { WarProcess } from "objective/test/war_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -35,6 +36,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "InterShardCreepDelivererProcess":
       result = this.launchInterShardCreepDelivererProcess()
+      break
+    case "WarProcess":
+      result = this.launchWarProcess()
       break
     default:
       break
@@ -178,12 +182,28 @@ export class LaunchCommand implements ConsoleCommand {
         ]
       case "claimer":
         return [CLAIM, MOVE]
+      case "heavy_attacker":
+        return [
+          TOUGH, TOUGH, TOUGH, TOUGH,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK,
+          MOVE,
+          HEAL, HEAL, HEAL, HEAL, HEAL,
+        ]
+
       default:
         return null
       }
     }) ()
     if (body == null) {
-      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer")
+      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer, heavy_attacker")
     }
 
     const launchTime = Game.time
@@ -203,6 +223,13 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new InterShardCreepDelivererProcess(launchTime, processId, objective)
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchWarProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new WarProcess(Game.time, processId, null, [], [], [])
     })
     return new ResultSucceeded(process)
   }
