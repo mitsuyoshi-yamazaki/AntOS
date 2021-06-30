@@ -137,7 +137,7 @@ export class WarProcess implements Process, Procedural {
       if (cachedPath == null) {
         return
       }
-      if (cachedPath.includes(creep.pos) === true) {
+      if (cachedPath.some(position => position.x === creep.pos.x && position.y === creep.pos.y) === true) {
         this.moveToRandomDirection(creep)
         return
       }
