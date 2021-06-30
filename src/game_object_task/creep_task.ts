@@ -13,6 +13,8 @@ import { WithdrawTask, WithdrawTaskState } from "./creep_task/withdraw_task"
 import { TransferTask, TransferTaskState } from "./creep_task/transfer_task"
 import { MoveResourceTask, MoveResourceTaskState } from "./creep_task/multi_task/move_resource_task"
 import { RangedAttackTask, RangedAttackTaskState } from "./creep_task/ranged_attack_task"
+import { BoostTask, BoostTaskState } from "./creep_task/boost_task"
+import { BoostAllTask, BoostAllTaskState } from "./creep_task/multi_task/boost_all_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -40,6 +42,8 @@ class CreepTaskTypes {
   "TransferTask" = (state: CreepTaskState) => TransferTask.decode(state as TransferTaskState)
   "MoveResourceTask" = (state: CreepTaskState) => MoveResourceTask.decode(state as MoveResourceTaskState)
   "RangedAttackTask" = (state: CreepTaskState) => RangedAttackTask.decode(state as RangedAttackTaskState)
+  "BoostTask" = (state: CreepTaskState) => BoostTask.decode(state as BoostTaskState)
+  "BoostAllTask" = (state: CreepTaskState) => BoostAllTask.decode(state as BoostAllTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
