@@ -10,7 +10,7 @@ import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
-import { SingleCreepProviderCreepRequest } from "objective/creep_provider/single_creep_provider_objective"
+import { SingleCreepProviderCreepRequest } from "old_objective/creep_provider/single_creep_provider_objective"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
