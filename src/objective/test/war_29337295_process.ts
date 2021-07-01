@@ -58,7 +58,14 @@ export interface War29337295ProcessState extends ProcessState {
   r: RoomName
 }
 
-// - [ ] 行った状況を記録しておく
+/**
+ * shard3で起動中のW51S29を https://screeps.com/a/#!/profile/cleanarchitector がAttacker + Claimerで襲撃、CreepとStructureが全損
+ * cleanarchitectorはRCL6以下の部屋が3つ、RCL8がひとつ
+ * shard2のW51S29からこちらのAttackerを派遣して部屋の安全を確保しつつshard3のW51S29を再建
+ * 3つの部屋にはTowerが2つ以下しかなかったので単体のBoosted Creepで耐えられるとわかり、常時HEAL可能なRANGED_ATTACKで攻撃機を生成
+ * またTowerが遠方のターゲットをattackしないコードになっていたので、部屋の端のwallへはDismantlerを派遣
+ * RCL6以下の部屋のTowerとSpawnを全て破壊したところで相手がrespawn
+ */
 // Game.io("launch War29337295Process")
 // Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=heavy_attacker")
 // Game.getObjectById("5b994d9e0417171556aa96d7").send(RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 2000, "W51S29")
