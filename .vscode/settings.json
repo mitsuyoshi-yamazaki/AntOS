@@ -22,4 +22,7 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.eslint": true
     },
+    "workbench.tree.indent": 16,
+    "workbench.tree.renderIndentGuides": "always",
+    "editor.fontSize": 10,
 }
