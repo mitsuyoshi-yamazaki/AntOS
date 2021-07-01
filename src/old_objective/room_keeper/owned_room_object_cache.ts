@@ -2,7 +2,7 @@ import { RoomName, RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
 
-interface OwnedRoomObjects {
+export interface OwnedRoomObjects {
   controller: StructureController
   idleCreeps: Creep[]
   sources: Source[]
@@ -23,6 +23,7 @@ interface OwnedRoomObjects {
     creeps: Creep[]
     powerCreeps: PowerCreep[]
   }
+  resources: Resource[]
   flags: Flag[]
 }
 
@@ -64,6 +65,7 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
   const damagedStructures: AnyOwnedStructure[] = []
   const chargeableStructures: EnergyChargeableStructure[] = []
   const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
+  const resources = room.find(FIND_DROPPED_RESOURCES)
 
   const flags = room.find(FIND_FLAGS)
 
@@ -152,6 +154,7 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
     },
+    resources,
     flags,
   }
 }

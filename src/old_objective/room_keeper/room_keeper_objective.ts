@@ -4,14 +4,17 @@ import { OldBuildFirstSpawnObjective } from "old_objective/bootstrap_room/old_bu
 import { DefendOwnedRoomObjective } from "old_objective/defend_room/defend_owned_room_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
 import { SpawnCreepObjective } from "old_objective/spawn/spawn_creep_objective"
+import { MultiRoleWorkerObjective } from "old_objective/worker/multi_role_worker_objective"
+import { PrimitiveWorkerObjective } from "old_objective/worker/primitive_worker_objective"
+import { isWorkerObjective, WorkerObjective } from "old_objective/worker/worker_objective"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { isSimulation } from "utility/game"
 import { roomLink } from "utility/log"
 import { CreepType } from "_old/creep"
-import { PrimitiveWorkerObjective } from "old_objective/worker/primitive_worker_objective"
-import { OwnedRoomObjectCache } from "./owned_room_object_cache"
+import { OwnedRoomObjectCache, OwnedRoomObjects } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
   spawnedCreeps: number
@@ -31,7 +34,7 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
  */
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
-  private readonly workerObjective: PrimitiveWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
+  private readonly workerObjective: WorkerObjective
   private buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null
   private defendRoomObjective: DefendOwnedRoomObjective | null
   private claimRoomObjective: ClaimRoomObjective | null
@@ -43,7 +46,7 @@ export class RoomKeeperObjective implements Objective {
     takenOverWorkerNames: CreepName[],
   ) {
     let spawnCreepObjective: SpawnCreepObjective | null = null
-    let workerObjective: PrimitiveWorkerObjective | null = null
+    let workerObjective: WorkerObjective | null = null
     let defendRoomObjective: DefendOwnedRoomObjective | null = null
     let buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null = null
     let claimRoomObjective: ClaimRoomObjective | null = null
@@ -52,7 +55,7 @@ export class RoomKeeperObjective implements Objective {
         spawnCreepObjective = child
         return
       }
-      if (child instanceof PrimitiveWorkerObjective) {
+      if (isWorkerObjective(child)) {
         workerObjective = child
         return
       }
@@ -77,11 +80,17 @@ export class RoomKeeperObjective implements Objective {
       this.children.push(newObjective)
       return newObjective
     })()
-    this.workerObjective = ((): PrimitiveWorkerObjective => {
+    this.workerObjective = ((): WorkerObjective => {
       if (workerObjective != null) {
         return workerObjective
       }
-      const newObjective = new PrimitiveWorkerObjective(Game.time, [], [], [], null)
+      const newObjective = ((): WorkerObjective => {
+        if (isSimulation() === true) {
+          return new MultiRoleWorkerObjective(Game.time, [], [], [])
+        } else {
+          return new PrimitiveWorkerObjective(Game.time, [], [], [], null)
+        }
+      })()
       this.children.push(newObjective)
       return newObjective
     })()
@@ -163,14 +172,7 @@ export class RoomKeeperObjective implements Objective {
     let workerStatus = null as string | null
 
     ErrorMapper.wrapLoop((): void => {
-      workerStatus = this.runWorker(
-        roomObjects.sources,
-        roomObjects.activeStructures.chargeableStructures,
-        roomObjects.controller,
-        roomObjects.constructionSites,
-        roomObjects.activeStructures.damagedStructures,
-        roomObjects.idleCreeps,
-      )
+      workerStatus = this.runWorker(roomObjects)
     }, "RoomKeeperObjective.runWorker()")()
     status += workerStatus == null ? `${this.workerObjective.constructor.name} failed execution` : workerStatus
 
@@ -197,18 +199,11 @@ export class RoomKeeperObjective implements Objective {
   }
 
   // ---- Private ---- //
-  private runWorker(
-    sources: Source[],
-    chargeableStructures: EnergyChargeableStructure[],
-    controller: StructureController,
-    constructionSites: ConstructionSite<BuildableStructureConstant>[],
-    damagedStructures: AnyOwnedStructure[],
-    idleCreeps: Creep[],
-  ): string {
+  private runWorker(roomObjects: OwnedRoomObjects): string {
 
-    this.workerObjective.addCreeps(idleCreeps.map(creep => creep.name))
+    this.workerObjective.addCreeps(roomObjects.idleCreeps.map(creep => creep.name))
 
-    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, damagedStructures, this.spawnCreepObjective)
+    const workerProgress = this.workerObjective.progress(roomObjects, this.spawnCreepObjective)
     return ((): string => {
       switch (workerProgress.objectProgressType) {
       case "in progress": {

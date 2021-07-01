@@ -4,23 +4,20 @@ import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_ta
 import { RepairTask } from "game_object_task/creep_task/repair_task"
 import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
-import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
+import { decodeObjectivesFrom, Objective, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
+import { OwnedRoomObjects } from "old_objective/room_keeper/owned_room_object_cache"
 import { SpawnCreepObjective, spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { buildBodyParts } from "script/body_part_builder"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
+import { WorkerObjective, WorkerObjectiveEvent, WorkerObjectiveProgressType } from "./worker_objective"
 
 const numberOfWorkersEachSource = 8
 
-interface PrimitiveWorkerObjectiveEvent {
-  diedWorkers: number
-  workers: number
-  queueingWorkers: number
-}
-
-type PrimitiveWorkerObjectiveProgressType = ObjectiveInProgress<PrimitiveWorkerObjectiveEvent> | ObjectiveFailed<string>
+type PrimitiveWorkerObjectiveEvent = WorkerObjectiveEvent
+type PrimitiveWorkerObjectiveProgressType = WorkerObjectiveProgressType
 
 export interface PrimitiveWorkerObjectiveState extends ObjectiveState {
   /** creeps */
@@ -44,7 +41,9 @@ export interface PrimitiveWorkerObjectiveState extends ObjectiveState {
  * - 外敵の影響でfailすることはある // TODO:
  * - [ ] 防衛設備のないときにinvaderが襲来したら部屋の外に出る
  */
-export class PrimitiveWorkerObjective implements Objective {
+export class PrimitiveWorkerObjective implements WorkerObjective {
+  public readonly objectiveType = "worker"
+
   private readonly bodyUnit = [WORK, CARRY, MOVE, MOVE]
   private readonly bodyUnitCost: number
 
@@ -104,14 +103,12 @@ export class PrimitiveWorkerObjective implements Objective {
     this.queuedWorkerNames = this.queuedWorkerNames.filter(name => creepNames.includes(name) !== true)
   }
 
-  public progress(
-    sources: Source[],
-    chargeableStructures: EnergyChargeableStructure[],
-    controller: StructureController,
-    constructionSites: ConstructionSite<BuildableStructureConstant>[],
-    damagedStructures: AnyOwnedStructure[],
-    spawnCreepObjective: SpawnCreepObjective,
-  ): PrimitiveWorkerObjectiveProgressType {
+  public progress(roomObjects: OwnedRoomObjects, spawnCreepObjective: SpawnCreepObjective): PrimitiveWorkerObjectiveProgressType {
+    const sources = roomObjects.sources
+    const chargeableStructures = roomObjects.activeStructures.chargeableStructures
+    const controller = roomObjects.controller
+    const constructionSites = roomObjects.constructionSites
+    const damagedStructures = roomObjects.activeStructures.damagedStructures
 
     const workers: Creep[] = []
     const diedWorkers: CreepName[] = []
