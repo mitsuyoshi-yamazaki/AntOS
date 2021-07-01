@@ -5,8 +5,8 @@ import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
 import { InterShardMemoryManager } from "prototype/shard"
 import { Migration } from "utility/migration"
-import { ApplicationProcessLauncher } from "./application_process_launcher"
-import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
+import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
+import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
