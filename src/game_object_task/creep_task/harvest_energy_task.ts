@@ -35,6 +35,8 @@ export class HarvestEnergyTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
+    creep.memory.tt = Game.time
+
     // キャッシュされたroute to sourceがあればそれを使う
     const result = creep.harvest(this.source)
 
@@ -54,7 +56,11 @@ export class HarvestEnergyTask implements CreepTask {
       return "in progress"
 
     case ERR_NOT_ENOUGH_RESOURCES:
-      return "finished"
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity() * 0.6) {
+        return "finished"
+      }
+      this.move(creep)
+      return "in progress"
 
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
@@ -72,7 +78,7 @@ export class HarvestEnergyTask implements CreepTask {
   private move(creep: Creep): void {
     const cachedPath = getCachedPathFor(this.source)
     if (cachedPath == null) {
-      creep.moveTo(this.source, { reusePath: 15 })
+      creep.moveTo(this.source, { reusePath: 0 })
       return
     }
     const result = creep.moveByPath(cachedPath)

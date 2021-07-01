@@ -7,7 +7,6 @@ import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from './utility'
 import { OperatingSystem } from "os/os"
-import { SquadType } from "_old/squad/squad"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 
@@ -24,64 +23,65 @@ const mainLoop = () => {
     Initializer.tick()
   }, `Initializer.tick`)()
 
-  ErrorMapper.wrapLoop(() => {
-    const owned_controllers: StructureController[] = []
-    const rooms_controlled_by_old_codes = Migration.oldRoomNames
+  if (Game.shard.name === "shard2") {
+    ErrorMapper.wrapLoop(() => {
+      const owned_controllers: StructureController[] = []
 
-    for (const room_name in Game.rooms) {
-      const room = Game.rooms[room_name]
-      if (!room || !room.controller || !room.controller.my) {
-        continue
-      }
-
-      if (room.memory && room.memory.is_gcl_farm) {
-        continue
-      }
-
-      if (rooms_controlled_by_old_codes.includes(room.name) !== true) {
-        if (Game.time % 107 === 13) {
-          console.log(`${roomLink(room.name)} is new`)
+      for (const room_name in Game.rooms) {
+        const room = Game.rooms[room_name]
+        if (!room || !room.controller || !room.controller.my) {
+          continue
         }
-        continue
+
+        if (room.memory && room.memory.is_gcl_farm) {
+          continue
+        }
+
+        if (Migration.isOldRoom(room.name) !== true) {
+          if (Game.time % 107 === 13) {
+            console.log(`${roomLink(room.name)} is new`)
+          }
+          continue
+        }
+        owned_controllers.push(room.controller)
       }
-      owned_controllers.push(room.controller)
+
+      const empire = new Empire(Game.user.name, owned_controllers)
+
+      empire.run()
+    }, `empire.run`)()
+
+    if ((Game.time % 997) == 17) {
+      ErrorMapper.wrapLoop(() => {
+        for (const squad_name in Memory.squads) {
+          const squad_memory = Memory.squads[squad_name]
+          const room = Game.rooms[squad_memory.owner_name]
+
+          if (room && room.controller && room.controller.my) {
+            continue
+          }
+
+          delete Memory.squads[squad_name]
+        }
+        console.log(`Main squads GC at ${Game.time}`)
+      }, `Squads.gc`)()
     }
 
-    const empire = new Empire(Game.user.name, owned_controllers)
-
-    empire.run()
-  }, `empire.run`)()
+    const test_send_resources = Memory.debug.test_send_resources
+    if (test_send_resources) {
+      Memory.debug.test_send_resources = false
+    }
+  }
 
   if ((Game.time % 29) == 3) {
     ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
 
-        creep.notifyWhenAttacked(false) // ~旧実装に制御される~ creepsは全て通知を停止
+        creep.notifyWhenAttacked(false) // creepsは全て通知を停止
       }
       // console.log(`Main creeps GC at ${Game.time}`)
     }, `Creeps.gc`)()
-  }
-
-  if ((Game.time % 997) == 17) {
-    ErrorMapper.wrapLoop(() => {
-      for (const squad_name in Memory.squads) {
-        const squad_memory = Memory.squads[squad_name]
-        const room = Game.rooms[squad_memory.owner_name]
-
-        if (room && room.controller && room.controller.my) {
-          continue
-        }
-
-        delete Memory.squads[squad_name]
-      }
-      console.log(`Main squads GC at ${Game.time}`)
-    }, `Squads.gc`)()
-  }
-
-  const test_send_resources = Memory.debug.test_send_resources
-  if (test_send_resources) {
-    Memory.debug.test_send_resources = false
   }
 
   // if ((Game.time % 197) == 100) {
@@ -104,54 +104,58 @@ const mainLoop = () => {
   //   }
   // }, `Creep.debug`)()
 
-  if (Memory.debug.show_costmatrix) {
-    const room_name: string = Memory.debug.show_costmatrix
+  // if (Memory.debug.show_costmatrix) {
+  //   const room_name: string = Memory.debug.show_costmatrix
 
-    ErrorMapper.wrapLoop(() => {
-      const room = Game.rooms[room_name]
+  //   ErrorMapper.wrapLoop(() => {
+  //     const room = Game.rooms[room_name]
 
-      if (!room) {
-        console.log(`Show costmatrix no room ${room_name} found`)
-      }
-      else {
-        const cost_matrix: CostMatrix | undefined = room.cost_matrix()
-        console.log(`Showing costmatrix ${room_name}`)
+  //     if (!room) {
+  //       console.log(`Show costmatrix no room ${room_name} found`)
+  //     }
+  //     else {
+  //       const cost_matrix: CostMatrix | undefined = room.cost_matrix()
+  //       console.log(`Showing costmatrix ${room_name}`)
 
-        if (cost_matrix) {
-          cost_matrix.show(room)
-        }
-        else {
-          room.visual.text(`NO costmatrix for ${room_name}`, 25, 25, {
-            color: '#ff0000',
-            align: 'center',
-            font: '12px',
-            opacity: 0.8,
-          })
-        }
-      }
-    }, `Show costmatrix ${room_name}`)()
-  }
+  //       if (cost_matrix) {
+  //         cost_matrix.show(room)
+  //       }
+  //       else {
+  //         room.visual.text(`NO costmatrix for ${room_name}`, 25, 25, {
+  //           color: '#ff0000',
+  //           align: 'center',
+  //           font: '12px',
+  //           opacity: 0.8,
+  //         })
+  //       }
+  //     }
+  //   }, `Show costmatrix ${room_name}`)()
+  // }
 
-  if ((Game.time % 47) == 13) {
-    ErrorMapper.wrapLoop(() => {
-      const credit = Game.market.credits
-      let message: string | undefined
+  // if ((Game.time % 47) == 13) {
+  //   ErrorMapper.wrapLoop(() => {
+  //     const credit = Game.market.credits
+  //     let message: string | undefined
 
-      if (credit < 380000) {
-        const credit_message = `Credit ${credit}`
-        message = message ? (message + credit_message) : credit_message
-      }
+  //     if (credit < 380000) {
+  //       const credit_message = `Credit ${credit}`
+  //       message = message ? (message + credit_message) : credit_message
+  //     }
 
-      if (message) {
-        message = '[WARNING] ' + message
+  //     if (message) {
+  //       message = '[WARNING] ' + message
 
-        console.log(message)
-        Game.notify(message)
-      }
-    }, `Notify credit | cpu`)()
-  }
+  //       console.log(message)
+  //       Game.notify(message)
+  //     }
+  //   }, `Notify credit | cpu`)()
+  // }
 
   // console.log(`move()/Creeps: ${move_called}/${Object.keys(Game.creeps).length}`)
+
+  /* eslint-enable */
+  OperatingSystem.os.run()
+  /* eslint-disable */
 
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
@@ -159,10 +163,6 @@ const mainLoop = () => {
   if ((all_cpu > Memory.debug.cpu.stop_threshold) && Memory.debug.cpu.show_usage) {
     Memory.debug.cpu.show_usage = false
   }
-
-  /* eslint-enable */
-  OperatingSystem.os.run()
-  /* eslint-disable */
 }
 
 ScreepsProfiler.enable()  // TODO: 普段はオフに

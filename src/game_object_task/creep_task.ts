@@ -5,6 +5,19 @@ import { HarvestEnergyTask, HarvestEnergyTaskState } from "./creep_task/harvest_
 import { TransferToStructureTask, TransferToStructureTaskState } from "./creep_task/transfer_to_structure_task"
 import { UpgradeControllerTask, UpgradeControllerTaskState } from "./creep_task/upgrade_controller_task"
 import { ClaimControllerTask, ClaimControllerTaskState } from "./creep_task/claim_controller_task"
+import { MoveToPortalTask, MoveToPortalTaskState } from "./creep_task/move_to_position_task"
+import { AttackTask, AttackTaskState } from "./creep_task/attack_task"
+import { HealTask, HealTaskState } from "./creep_task/heal_task"
+import { RepairTask, RepairTaskState } from "./creep_task/repair_task"
+import { WithdrawTask, WithdrawTaskState } from "./creep_task/withdraw_task"
+import { TransferTask, TransferTaskState } from "./creep_task/transfer_task"
+import { MoveResourceTask, MoveResourceTaskState } from "./creep_task/multi_task/move_resource_task"
+import { RangedAttackTask, RangedAttackTaskState } from "./creep_task/ranged_attack_task"
+import { BoostTask, BoostTaskState } from "./creep_task/boost_task"
+import { BoostAllTask, BoostAllTaskState } from "./creep_task/multi_task/boost_all_task"
+import { SequentialTask, SequentialTaskState } from "./creep_task/multi_task/sequential_task"
+import { DismantleTask, DismantleTaskState } from "./creep_task/dismantle_task"
+import { PatrolRoomTask, PatrolRoomTaskState } from "./creep_task/multi_task/patrol_room_task"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -12,7 +25,7 @@ export interface CreepTaskState extends GameObjectTaskState {
 }
 
 export interface CreepTask extends GameObjectTask<Creep> {
-  shortDescription: string
+  shortDescription?: string
 
   encode(): CreepTaskState
 }
@@ -24,6 +37,19 @@ class CreepTaskTypes {
   "TransferToStructureTask" = (state: CreepTaskState) => TransferToStructureTask.decode(state as TransferToStructureTaskState)
   "BuildTask" = (state: CreepTaskState) => BuildTask.decode(state as BuildTaskState)
   "ClaimControllerTask" = (state: CreepTaskState) => ClaimControllerTask.decode(state as ClaimControllerTaskState)
+  "MoveToPortalTask" = (state: CreepTaskState) => MoveToPortalTask.decode(state as MoveToPortalTaskState)
+  "AttackTask" = (state: CreepTaskState) => AttackTask.decode(state as AttackTaskState)
+  "HealTask" = (state: CreepTaskState) => HealTask.decode(state as HealTaskState)
+  "RepairTask" = (state: CreepTaskState) => RepairTask.decode(state as RepairTaskState)
+  "WithdrawTask" = (state: CreepTaskState) => WithdrawTask.decode(state as WithdrawTaskState)
+  "TransferTask" = (state: CreepTaskState) => TransferTask.decode(state as TransferTaskState)
+  "MoveResourceTask" = (state: CreepTaskState) => MoveResourceTask.decode(state as MoveResourceTaskState)
+  "RangedAttackTask" = (state: CreepTaskState) => RangedAttackTask.decode(state as RangedAttackTaskState)
+  "BoostTask" = (state: CreepTaskState) => BoostTask.decode(state as BoostTaskState)
+  "BoostAllTask" = (state: CreepTaskState) => BoostAllTask.decode(state as BoostAllTaskState)
+  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState)
+  "DismantleTask" = (state: CreepTaskState) => DismantleTask.decode(state as DismantleTaskState)
+  "PatrolRoomTask" = (state: CreepTaskState) => PatrolRoomTask.decode(state as PatrolRoomTaskState)
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
@@ -31,6 +57,10 @@ export function decodeCreepTask(creep: Creep): CreepTask | null {
   if (state == null) {
     return null
   }
+  return decodeCreepTaskFromState(state)
+}
+
+export function decodeCreepTaskFromState(state: CreepTaskState): CreepTask | null {
   let decoded: CreepTask | null = null
   ErrorMapper.wrapLoop(() => {
     const maker = (new CreepTaskTypes())[state.t]

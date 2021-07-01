@@ -9,7 +9,8 @@ import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { roomLink } from "utility/log"
-import { LowLevelWorkerObjective } from "./low_level_worker_objective"
+import { CreepType } from "_old/creep"
+import { PrimitiveWorkerObjective } from "objective/worker/primitive_worker_objective"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
@@ -30,7 +31,7 @@ export interface RoomKeeperObjectiveState extends ObjectiveState {
  */
 export class RoomKeeperObjective implements Objective {
   private readonly spawnCreepObjective: SpawnCreepObjective
-  private readonly workerObjective: LowLevelWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
+  private readonly workerObjective: PrimitiveWorkerObjective // TODO: RCLごとに実行するobjectiveを切り替える
   private buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null
   private defendRoomObjective: DefendOwnedRoomObjective | null
   private claimRoomObjective: ClaimRoomObjective | null
@@ -39,9 +40,10 @@ export class RoomKeeperObjective implements Objective {
     public readonly startTime: number,
     public readonly children: Objective[],
     public readonly roomName: RoomName,
+    takenOverWorkerNames: CreepName[],
   ) {
     let spawnCreepObjective: SpawnCreepObjective | null = null
-    let workerObjective: LowLevelWorkerObjective | null = null
+    let workerObjective: PrimitiveWorkerObjective | null = null
     let defendRoomObjective: DefendOwnedRoomObjective | null = null
     let buildFirstSpawnObjective: OldBuildFirstSpawnObjective | null = null
     let claimRoomObjective: ClaimRoomObjective | null = null
@@ -50,7 +52,7 @@ export class RoomKeeperObjective implements Objective {
         spawnCreepObjective = child
         return
       }
-      if (child instanceof LowLevelWorkerObjective) {
+      if (child instanceof PrimitiveWorkerObjective) {
         workerObjective = child
         return
       }
@@ -75,17 +77,19 @@ export class RoomKeeperObjective implements Objective {
       this.children.push(newObjective)
       return newObjective
     })()
-    this.workerObjective = ((): LowLevelWorkerObjective => {
+    this.workerObjective = ((): PrimitiveWorkerObjective => {
       if (workerObjective != null) {
         return workerObjective
       }
-      const newObjective = new LowLevelWorkerObjective(Game.time, [], [], [], null)
+      const newObjective = new PrimitiveWorkerObjective(Game.time, [], [], [], null)
       this.children.push(newObjective)
       return newObjective
     })()
     this.defendRoomObjective = defendRoomObjective
     this.buildFirstSpawnObjective = buildFirstSpawnObjective
     this.claimRoomObjective = claimRoomObjective
+
+    this.workerObjective.addCreeps(takenOverWorkerNames)
   }
 
   public encode(): RoomKeeperObjectiveState {
@@ -99,7 +103,7 @@ export class RoomKeeperObjective implements Objective {
 
   public static decode(state: RoomKeeperObjectiveState): RoomKeeperObjective {
     const children = decodeObjectivesFrom(state.c)
-    return new RoomKeeperObjective(state.s, children, state.r)
+    return new RoomKeeperObjective(state.s, children, state.r, [])
   }
 
   public claimRoom(targetRoomName: RoomName): void {
@@ -129,6 +133,11 @@ export class RoomKeeperObjective implements Objective {
         status: buildFirstSpawnStatus ?? "program bug",
       }
       return new ObjectiveInProgress(event)
+    } else {
+      if (this.buildFirstSpawnObjective != null) {
+        this.workerObjective.addCreeps(this.buildFirstSpawnObjective.workerNames)
+        this.removeBuildFirstSpawnObjective(this.buildFirstSpawnObjective)
+      }
     }
 
     let status = ""
@@ -158,7 +167,9 @@ export class RoomKeeperObjective implements Objective {
         roomObjects.sources,
         roomObjects.activeStructures.chargeableStructures,
         roomObjects.controller,
-        roomObjects.constructionSites
+        roomObjects.constructionSites,
+        roomObjects.activeStructures.damagedStructures,
+        roomObjects.idleCreeps,
       )
     }, "RoomKeeperObjective.runWorker()")()
     status += workerStatus == null ? `${this.workerObjective.constructor.name} failed execution` : workerStatus
@@ -170,11 +181,16 @@ export class RoomKeeperObjective implements Objective {
     }, "RoomKeeperObjective.runCreepSpawn()")()
 
     const [spawnedCreeps, canceledCreepNames] = spawnResult ?? [0, []]
-
     const event: RoomKeeperObjectiveEvents = {
       spawnedCreeps,
       canceledCreepNames,
       status,
+    }
+
+    if (roomObjects.constructionSites.length <= 0 && roomObjects.flags.length > 0) {
+      ErrorMapper.wrapLoop((): void => {
+        this.placeConstructionSite(room, roomObjects.flags)
+      }, "RoomKeeperObjective.placeConstructionSite()")()
     }
 
     return new ObjectiveInProgress(event)
@@ -186,9 +202,13 @@ export class RoomKeeperObjective implements Objective {
     chargeableStructures: EnergyChargeableStructure[],
     controller: StructureController,
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
+    damagedStructures: AnyOwnedStructure[],
+    idleCreeps: Creep[],
   ): string {
 
-    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, this.spawnCreepObjective)
+    this.workerObjective.addCreeps(idleCreeps.map(creep => creep.name))
+
+    const workerProgress = this.workerObjective.progress(sources, chargeableStructures, controller, constructionSites, damagedStructures, this.spawnCreepObjective)
     return ((): string => {
       switch (workerProgress.objectProgressType) {
       case "in progress": {
@@ -206,14 +226,21 @@ export class RoomKeeperObjective implements Objective {
       if (this.buildFirstSpawnObjective != null) {
         return this.buildFirstSpawnObjective
       }
-      const objective = new OldBuildFirstSpawnObjective(Game.time, [], [], [])
+      const takenOverCreeps: Creep[] = room.find(FIND_MY_CREEPS)
+        .filter(creep => creep.memory.type === CreepType.TAKE_OVER)
+
+      takenOverCreeps.forEach(creep => creep.memory.type = CreepType.WORKER)
+      const takenOverCreepNames = takenOverCreeps.map(creep => creep.name)
+
+      const objective = new OldBuildFirstSpawnObjective(Game.time, [], takenOverCreepNames, [])
       this.buildFirstSpawnObjective = objective
       this.children.push(objective)
       return objective
     })()
 
     const parentRooms: {[index: string]: string} = { // TODO:
-      W51S37: "W53S36"
+      W51S37: "W53S36",
+      W51S29: "W51S29",
     }
     const parentRoomName = parentRooms[room.name]
     if (parentRoomName == null) {
@@ -350,13 +377,48 @@ export class RoomKeeperObjective implements Objective {
   }
 
   private retrieveQueuedRequests(): void {
-    const queue = Memory.spawnCreepRequests[this.roomName]
+    const queue = Memory.creepRequests[this.roomName]
     if (queue == null) {
       return
     }
     queue.forEach(item => {
-      this.spawnCreepObjective.enqueueCreep(item.i, item.n, item.b, item.m, item.p)
+      this.spawnCreepObjective.enqueueCreep(item.n, item.b, item.m, item.p)
     })
-    Memory.spawnCreepRequests[this.roomName] = []
+    Memory.creepRequests[this.roomName] = []
+  }
+
+  private placeConstructionSite(room: Room, flags: Flag[]): void {
+    const colorMap = new Map<ColorConstant, StructureConstant>([
+      [COLOR_BROWN, STRUCTURE_ROAD],
+      [COLOR_GREEN, STRUCTURE_STORAGE],
+      [COLOR_PURPLE, STRUCTURE_TERMINAL],
+      [COLOR_ORANGE, STRUCTURE_LINK],
+      [COLOR_BLUE, STRUCTURE_LAB],
+      [COLOR_RED, STRUCTURE_TOWER],
+      [COLOR_GREY, STRUCTURE_SPAWN],
+      [COLOR_CYAN, STRUCTURE_NUKER],
+      [COLOR_WHITE, STRUCTURE_EXTENSION],
+    ])
+
+    for (const flag of flags) {
+      const structureType = colorMap.get(flag.color)
+      if (structureType == null) {
+        continue
+      }
+      const result = room.createConstructionSite(flag.pos, structureType)
+      switch (result) {
+      case OK:
+        flag.remove()
+        return
+      case ERR_NOT_OWNER:
+      case ERR_INVALID_TARGET:
+      case ERR_INVALID_ARGS:
+        flag.remove()
+        break
+      case ERR_FULL:
+      case ERR_RCL_NOT_ENOUGH:
+        break
+      }
+    }
   }
 }

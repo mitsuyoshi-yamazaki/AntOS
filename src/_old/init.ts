@@ -4,8 +4,9 @@ import { init as creepInit } from "_old/creep"
 import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
+import { isSimulation } from "utility/game"
 
-const version = '4.10.5'
+const version = '4.10.15'
 
 export function init(): void {
   Game.version = version
@@ -25,8 +26,8 @@ export function init(): void {
     Memory.towers = {}
   }
 
-  if (Memory.spawnCreepRequests == null) {
-    Memory.spawnCreepRequests = {}
+  if (Memory.creepRequests == null) {
+    Memory.creepRequests = {}
   }
 
   if (!Memory.empires) {
@@ -117,7 +118,7 @@ export function tick(): void {
 
   Memory.cpu.last_bucket = current_bucket
 
-  if ((Game.time % cpu_ticks) == 0) {
+  if (((Game.time % cpu_ticks) === 0) && (isSimulation() !== true)) {
     const limit = Game.cpu.limit
 
     const info = 'info'

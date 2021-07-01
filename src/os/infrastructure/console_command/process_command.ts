@@ -1,7 +1,7 @@
 import { OperatingSystem, ProcessInfo } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
-const largeTab = 30
+const veryLargeTab = 40
 const mediumTab = 20
 const smallTab = 10
 type Tab = number
@@ -40,9 +40,9 @@ export class ProcessCommand implements ConsoleCommand {
   }
 
   private showMemory(processInfo: ProcessInfo): CommandExecutionResult {
-    const header = `${this.tab("PID", mediumTab)}${this.tab("Type", largeTab)}${this.tab("Running", smallTab)}${this.tab("Description", mediumTab)}`
+    const header = `${this.tab("PID", mediumTab)}${this.tab("Type", veryLargeTab)}${this.tab("Running", smallTab)}${this.tab("Description", mediumTab)}`
     const shortDescription = processInfo.process.processShortDescription == null ? "" : processInfo.process.processShortDescription()
-    const processDescription = `${this.tab(`${processInfo.processId}`, mediumTab)}${this.tab(`${processInfo.type}`, largeTab)}${this.tab(`${processInfo.running}`, smallTab)}${this.tab(shortDescription, mediumTab)}`
+    const processDescription = `${this.tab(`${processInfo.processId}`, mediumTab)}${this.tab(`${processInfo.type}`, veryLargeTab)}${this.tab(`${processInfo.running}`, smallTab)}${this.tab(shortDescription, mediumTab)}`
 
     const getIndent = (indent: number): string => spaces.slice(0, indent * 2)
 
@@ -113,10 +113,10 @@ export class ProcessCommand implements ConsoleCommand {
   private listProcess(): CommandExecutionResult {
     const tab = (str: string, tabs: Tab): string => this.tab(str, tabs)
 
-    const startString = `${tab("PID", mediumTab)}${tab("Type", largeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
+    const startString = `${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
     return OperatingSystem.os.listAllProcesses().reduce((result, current) => {
       const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
-      return `${result}\n${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, largeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
+      return `${result}\n${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
     }, startString)
   }
 

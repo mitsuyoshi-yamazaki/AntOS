@@ -21,9 +21,9 @@ export type SpawnPriorityNormal = 1
 export type SpawnPriorityLow = 0
 
 // export const spawnPriorityUrgent = 3
-export const spawnPriorityHigh = 2
-export const spawnPriorityNormal = 1
-export const spawnPriorityLow = 0
+export const spawnPriorityHigh: SpawnPriorityHigh = 2
+export const spawnPriorityNormal: SpawnPriorityNormal = 1
+export const spawnPriorityLow: SpawnPriorityLow = 0
 
 // export type SpawnPriority = SpawnPriorityUrgent | SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
 export type SpawnPriority = SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
@@ -31,9 +31,6 @@ export type SpawnPriority = SpawnPriorityHigh | SpawnPriorityNormal | SpawnPrior
 export interface SpawnCreepQueueItem {
   /** time added to cache */
   t: number
-
-  /** identifier */
-  i: string
 
   /** priority */
   p: SpawnPriority
@@ -62,7 +59,8 @@ export class SpawnCreepObjective implements Objective {
     public readonly startTime: number,
     public readonly children: Objective[],
     private readonly queue: SpawnCreepQueueItem[],
-  ) { }
+  ) {
+  }
 
   public encode(): SpawnCreepObjectiveState {
     return {
@@ -79,10 +77,9 @@ export class SpawnCreepObjective implements Objective {
   }
 
   // ---- Pulbic API ---- //
-  public enqueueCreep(identifier: string, creepName: string, body: BodyPartConstant[], memory: CreepMemory, priority: SpawnPriority): void {
+  public enqueueCreep(creepName: string, body: BodyPartConstant[], memory: CreepMemory, priority: SpawnPriority): void {
     this.queue.push({
       t: Game.time,
-      i: identifier,
       p: priority,
       n: creepName,
       b: body,

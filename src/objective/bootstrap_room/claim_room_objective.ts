@@ -104,11 +104,11 @@ export class ClaimRoomObjective implements Objective {
     }
 
     if (this.claimerName == null) {
-      const identifier = `ClaimRoomObjective_${this.targetRoomName}`
       const creepName = ClaimRoomObjective.generateCreepName()
       const body: BodyPartConstant[] = [MOVE, CLAIM, MOVE]
       const memory: CreepMemory = {
         ts: null,
+        tt: 0,
         squad_name: "",
         status: CreepStatus.NONE,
         birth_time: Game.time,
@@ -116,7 +116,7 @@ export class ClaimRoomObjective implements Objective {
         should_notify_attack: false,
         let_thy_die: true,
       }
-      spawnCreepObjective.enqueueCreep(identifier, creepName, body, memory, spawnPriorityLow)
+      spawnCreepObjective.enqueueCreep(creepName, body, memory, spawnPriorityLow)
       this.claimerName = creepName
       this.requestingClaimerCreep = true
       return new ObjectiveInProgress(`Queued claimer creep ${creepName}`)

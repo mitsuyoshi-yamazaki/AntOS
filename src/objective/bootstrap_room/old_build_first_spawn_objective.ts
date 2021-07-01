@@ -163,7 +163,7 @@ export class OldBuildFirstSpawnObjective implements Objective {
 
   // ---- Add creeps ---- //
   private addWorker(creepIdentifier: string, parentRoomName: string): void {
-    if (Migration.oldRoomNames.includes(parentRoomName) === true) {
+    if (Migration.isOldRoom(parentRoomName) === true) {
       this.requestToCreepProvider(creepIdentifier, parentRoomName)
     } else {
       this.addWorkerQueue(creepIdentifier, parentRoomName)
@@ -177,20 +177,22 @@ export class OldBuildFirstSpawnObjective implements Objective {
         WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
         WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE,
       ],
+      priority: spawnPriorityLow,
     }
     const objective = new SingleCreepProviderObjective(Game.time, [], creepIdentifier, args)
     this.children.push(objective)
   }
 
   private addWorkerQueue(creepIdentifier: string, parentRoomName: string): void {
-    if (Memory.spawnCreepRequests[parentRoomName] == null) {
-      Memory.spawnCreepRequests[parentRoomName] = []
+    if (Memory.creepRequests[parentRoomName] == null) {
+      Memory.creepRequests[parentRoomName] = []
     }
 
     const creepName = generateUniqueId("chocolate_parfait")
     const body: BodyPartConstant[] = [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
     const memory: CreepMemory = {
       ts: null,
+      tt: 0,
       squad_name: "",
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -199,9 +201,8 @@ export class OldBuildFirstSpawnObjective implements Objective {
       let_thy_die: true,
     }
 
-    Memory.spawnCreepRequests[parentRoomName].push({
+    Memory.creepRequests[parentRoomName].push({
       t: Game.time,
-      i: creepIdentifier,
       b: body,
       p: spawnPriorityLow,
       n: creepName,

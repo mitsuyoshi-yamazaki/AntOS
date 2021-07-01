@@ -1,8 +1,10 @@
 import { RoomName, RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { calculateSourceRoute } from "script/pathfinder"
 
 interface OwnedRoomObjects {
   controller: StructureController
+  idleCreeps: Creep[]
   sources: Source[]
   constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
   activeStructures: {
@@ -10,6 +12,7 @@ interface OwnedRoomObjects {
     extensions: StructureExtension[]
     towers: StructureTower[]
 
+    damagedStructures: AnyOwnedStructure[]
     chargeableStructures: EnergyChargeableStructure[]
   }
   hostiles: {
@@ -20,6 +23,7 @@ interface OwnedRoomObjects {
     creeps: Creep[]
     powerCreeps: PowerCreep[]
   }
+  flags: Flag[]
 }
 
 const cache = new Map<RoomName, OwnedRoomObjects>()
@@ -52,18 +56,27 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
   }
 
   const controller = room.controller
+  const idleCreeps: Creep[] = []//room.find(FIND_MY_CREEPS).filter(creep => creep.spawning !== true && (creep.memory.tt ?? 0) < idleTime) // TODO: 他人の制御権を奪わないかどうか
   const sources = room.find(FIND_SOURCES)
   const spawns: StructureSpawn[] = []
   const extensions: StructureExtension[] = []
   const towers: StructureTower[] = []
+  const damagedStructures: AnyOwnedStructure[] = []
   const chargeableStructures: EnergyChargeableStructure[] = []
   const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
 
+  const flags = room.find(FIND_FLAGS)
+
+  const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
   const myStructures = room.find(FIND_MY_STRUCTURES)
   myStructures.forEach(structure => {
     if (structure.isActive() !== true) {
       return
     }
+    if (wallTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
+      damagedStructures.push(structure)
+    }
+
     switch (structure.structureType) {
     case STRUCTURE_SPAWN:
       spawns.push(structure)
@@ -110,14 +123,25 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
     }
   })
 
+  if (spawns[0] != null) {
+    calculateSourceRouteIn(room, sources, spawns[0].pos)
+  } else {
+    const spawnConstructionSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
+    if (spawnConstructionSite != null) {
+      calculateSourceRouteIn(room, sources, spawnConstructionSite.pos)
+    }
+  }
+
   return {
     controller,
+    idleCreeps,
     sources,
     constructionSites,
     activeStructures: {
       spawns,
       extensions,
       towers,
+      damagedStructures,
       chargeableStructures,
     },
     hostiles: {
@@ -127,44 +151,43 @@ function enumerateObjectsIn(room: Room): OwnedRoomObjects | null {
     alliances: {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
-    }
+    },
+    flags,
   }
 }
 
+function calculateSourceRouteIn(room: Room, sources: Source[], destination: RoomPosition): void {
+  const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
+  if (room.memory.p == null) {
+    room.memory.p = pathInMemory
+  }
 
-
-// function calculateSourceRoute(room: Room, sources: Source[], destination: RoomPosition): void {
-//   const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
-//   if (room.memory.p == null) {
-//     room.memory.p = pathInMemory
-//   }
-
-//   sources.forEach(source => {
-//     const sourcePath = pathInMemory.s[source.id]
-//     if (sourcePath == null) {
-//       const result = calculateSourceRoute(source.id, spawn.pos)
-//       switch (result.resultType) {
-//       case "succeeded": {
-//         const path = result.value.path.path.map(position => ({ x: position.x, y: position.y }))
-//         path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
-//         pathInMemory.s[source.id] = {
-//           p: path,
-//           d: { x: spawn.pos.x, y: spawn.pos.y },
-//         }
-//         console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
-//         break
-//       }
-//       case "failed":
-//         pathInMemory.s[source.id] = "no path"
-//         console.log(`source path cannot found: ${result.reason}`)
-//         break
-//       }
-//       return
-//     }
-//     if (sourcePath === "no path") {
-//       return
-//     }
-//     // console.log(`source path found for ${source.id}`)
-//     // sourcePath.p.forEach(position => source.room.visual.text("*", position.x, position.y))
-//   })
-// }
+  sources.forEach(source => {
+    const sourcePath = pathInMemory.s[source.id]
+    if (sourcePath === "no path") {
+      return
+    }
+    if (sourcePath != null) {
+      return
+    }
+    const result = calculateSourceRoute(source.id, destination)
+    switch (result.resultType) {
+    case "succeeded": {
+      const path = result.value.path.path
+        .map(position => ({ x: position.x, y: position.y }))
+        .splice(3, result.value.path.path.length - 3)
+      path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
+      pathInMemory.s[source.id] = {
+        p: path,
+        d: { x: destination.x, y: destination.y },
+      }
+      console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
+      break
+    }
+    case "failed":
+      pathInMemory.s[source.id] = "no path"
+      console.log(`source path cannot found: ${result.reason}`)
+      break
+    }
+  })
+}

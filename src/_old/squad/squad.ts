@@ -179,6 +179,7 @@ export abstract class Squad {
     const name = this.generateNewName()
     const memory: CreepMemory = opts.memory || {
       ts: null,
+      tt: 0,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -222,6 +223,7 @@ export abstract class Squad {
     const name = this.generateNewName()
     const memory: CreepMemory = opts.memory || {
       ts: null,
+      tt: 0,
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

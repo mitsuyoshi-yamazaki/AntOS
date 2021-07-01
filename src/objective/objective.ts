@@ -6,10 +6,14 @@ import { UpgradeL3ControllerObjective, UpgradeL3ControllerObjectiveState } from 
 import { SingleCreepProviderObjective, SingleCreepProviderObjectiveState } from "./creep_provider/single_creep_provider_objective"
 import { RoomKeeperObjective, RoomKeeperObjectiveState } from "./room_keeper/room_keeper_objective"
 import { SpawnCreepObjective, SpawnCreepObjectiveState } from "./spawn/spawn_creep_objective"
-import { LowLevelWorkerObjective, LowLevelWorkerObjectiveState } from "./room_keeper/low_level_worker_objective"
+import { PrimitiveWorkerObjective, PrimitiveWorkerObjectiveState } from "./worker/primitive_worker_objective"
 import { DefendOwnedRoomObjective, DefendOwnedRoomObjectiveState } from "./defend_room/defend_owned_room_objective"
 import { ClaimRoomObjective, ClaimRoomObjectiveState } from "./bootstrap_room/claim_room_objective"
 import { OldBuildFirstSpawnObjective, OldBuildFirstSpawnObjectiveState } from "./bootstrap_room/old_build_first_spawn_objective"
+import { SingleCreepRemoteProviderObjective, SingleCreepRemoteProviderObjectiveState } from "./creep_provider/single_creep_remote_provider_objective"
+import { SingleCreepInterShardProviderObjective, SingleCreepInterShardProviderObjectiveState } from "./creep_provider/single_creep_inter_shard_provider_objective"
+import { InterShardCreepDelivererObjective, InterShardCreepDelivererObjectiveState } from "./creep_provider/inter_shard_creep_deliverer_objective"
+import { MultiRoleWorkerObjective, MultiRoleWorkerObjectiveState } from "./worker/multi_role_worker_objective"
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385#comment-e0d2fee7895843
@@ -68,9 +72,13 @@ class ObjectiveTypes {
   "UpgradeL3ControllerObjective" = (state: ObjectiveState) => UpgradeL3ControllerObjective.decode(state as UpgradeL3ControllerObjectiveState)
   "RoomKeeperObjective" = (state: ObjectiveState) => RoomKeeperObjective.decode(state as RoomKeeperObjectiveState)
   "SpawnCreepObjective" = (state: ObjectiveState) => SpawnCreepObjective.decode(state as SpawnCreepObjectiveState)
-  "LowLevelWorkerObjective" = (state: ObjectiveState) => LowLevelWorkerObjective.decode(state as LowLevelWorkerObjectiveState)
+  "PrimitiveWorkerObjective" = (state: ObjectiveState) => PrimitiveWorkerObjective.decode(state as PrimitiveWorkerObjectiveState)
   "DefendOwnedRoomObjective" = (state: ObjectiveState) => DefendOwnedRoomObjective.decode(state as DefendOwnedRoomObjectiveState)
   "ClaimRoomObjective" = (state: ObjectiveState) => ClaimRoomObjective.decode(state as ClaimRoomObjectiveState)
+  "SingleCreepRemoteProviderObjective" = (state: ObjectiveState) => SingleCreepRemoteProviderObjective.decode(state as SingleCreepRemoteProviderObjectiveState)
+  "SingleCreepInterShardProviderObjective" = (state: ObjectiveState) => SingleCreepInterShardProviderObjective.decode(state as SingleCreepInterShardProviderObjectiveState)
+  "InterShardCreepDelivererObjective" = (state: ObjectiveState) => InterShardCreepDelivererObjective.decode(state as InterShardCreepDelivererObjectiveState)
+  "MultiRoleWorkerObjective" = (state: ObjectiveState) => MultiRoleWorkerObjective.decode(state as MultiRoleWorkerObjectiveState)
 }
 
 export function decodeObjectiveFrom(state: ObjectiveState): Objective | null {

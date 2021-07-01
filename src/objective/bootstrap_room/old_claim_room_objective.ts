@@ -1,5 +1,6 @@
 import { SingleCreepProviderObjective } from "objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "objective/objective"
+import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
 import { roomLink } from "utility/log"
 
 type OldClaimRoomObjectiveProgressType = ObjectiveProgressType<string, StructureController, string>
@@ -139,6 +140,7 @@ export class OldClaimRoomObjective implements Objective {
     const creepProvider = new SingleCreepProviderObjective(Game.time, [], identifier, {
       spawnRoomName: this.parentRoomName,
       requestingCreepBodyParts: [MOVE, MOVE, MOVE, MOVE, CLAIM, MOVE],
+      priority: spawnPriorityLow,
     })
     this.creepProvider = creepProvider
     this.children.push(creepProvider)

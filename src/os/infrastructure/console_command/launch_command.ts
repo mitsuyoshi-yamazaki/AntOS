@@ -7,6 +7,12 @@ import { OldClaimRoomObjective } from "objective/bootstrap_room/old_claim_room_o
 import { BootstrapL8RoomObjective } from "objective/bootstrap_room/bootstarp_l8_room_objective"
 import { BootstrapL8RoomProcess } from "objective/bootstrap_room/bootstrap_l8_room_proces"
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { InterShardCreepDelivererProcess } from "objective/creep_provider/inter_shard_creep_deliverer_process"
+import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
+import { generateCodename, generateUniqueId } from "utility/unique_id"
+import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
+import { WarProcess } from "objective/test/war_process"
+import { War29337295LogisticsProcess } from "objective/test/war_ 29337295_logistics_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -28,6 +34,15 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "ClaimRoomProcess":
       result = this.launchClaimRoomProcess()
+      break
+    case "InterShardCreepDelivererProcess":
+      result = this.launchInterShardCreepDelivererProcess()
+      break
+    case "WarProcess":
+      result = this.launchWarProcess()
+      break
+    case "War29337295LogisticsProcess":
+      result = this.launchWar29337295LogisticsProcess()
       break
     default:
       break
@@ -122,6 +137,118 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return new ClaimRoomProcess(launchTime, processId, objective)
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchInterShardCreepDelivererProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const portalRoomName = args.get("portal_room_name")
+    if (portalRoomName == null) {
+      return this.missingArgumentError("portal_room_name")
+    }
+
+    const parentRoomName = args.get("parent_room_name")
+    if (parentRoomName == null) {
+      return this.missingArgumentError("parent_room_name")
+    }
+
+    const shardName = args.get("shard_name")
+    if (shardName == null) {
+      return this.missingArgumentError("shard_name")
+    }
+
+    const creepType = args.get("creep_type")
+    if (creepType == null) {
+      return this.missingArgumentError("creep_type")
+    }
+
+    const body = ((): BodyPartConstant[] | null => {
+      switch (creepType) {
+      case "scout":
+        return [MOVE]
+      case "armored_scout":
+        return [TOUGH, TOUGH, MOVE, MOVE]
+      case "minimum_worker":
+        return [WORK, CARRY, MOVE, MOVE]
+      case "worker":
+        return [
+          WORK, CARRY, MOVE, MOVE,
+          WORK, CARRY, MOVE, MOVE,
+          WORK, CARRY, MOVE, MOVE,
+        ]
+      case "huge_worker":
+        return [
+          CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+          WORK, WORK, WORK, WORK, WORK, WORK, WORK, WORK,
+          MOVE, MOVE, MOVE, MOVE, MOVE,MOVE, MOVE, MOVE,
+        ]
+      case "claimer":
+        return [CLAIM, MOVE]
+      case "heavy_attacker":
+        return [
+          TOUGH, TOUGH, TOUGH, TOUGH,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          MOVE, MOVE, MOVE, MOVE,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+          ATTACK,
+          MOVE,
+          HEAL, HEAL, HEAL, HEAL, HEAL,
+        ]
+
+      default:
+        return null
+      }
+    }) ()
+    if (body == null) {
+      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer, heavy_attacker")
+    }
+
+    const launchTime = Game.time
+    const creepName = generateUniqueId(generateCodename("InterShardCreepDelivererObjective", launchTime))
+    const objective = new InterShardCreepDelivererObjective(
+      launchTime,
+      [],
+      creepName,
+      portalRoomName,
+      shardName,
+      {
+        spawnRoomName: parentRoomName,
+        requestingCreepBodyParts: body,
+        priority: spawnPriorityLow,
+      }
+    )
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new InterShardCreepDelivererProcess(launchTime, processId, objective)
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchWarProcess(): LaunchCommandResult {
+    if (Game.shard.name !== "shard3") {
+      return new ResultFailed("Cannot launch WarProcess except shard3")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new WarProcess(Game.time, processId, null, [], [], [], [], [], "W48S27")
+    })
+    return new ResultSucceeded(process)
+  }
+
+  private launchWar29337295LogisticsProcess(): LaunchCommandResult {
+    if (Game.shard.name !== "shard2") {
+      return new ResultFailed("Cannot launch WarProcess except shard2")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return new War29337295LogisticsProcess(Game.time, processId, [], null, [])
     })
     return new ResultSucceeded(process)
   }

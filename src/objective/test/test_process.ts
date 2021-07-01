@@ -10,7 +10,7 @@ export class TestProcess implements Process, Procedural {
     public readonly processId: number,
   ) {}
 
-  public encode(): ProcessState {
+  public encode(): TestProcessState {
     return {
       t: "TestProcess",
       l: this.launchTime,

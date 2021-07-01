@@ -34,6 +34,8 @@ export class ClaimControllerTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
+    creep.memory.tt = Game.time
+
     if (creep.pos.roomName !== this.controller.pos.roomName) {
       creep.moveToRoom(this.controller.room.name)
       return "in progress"
@@ -42,9 +44,10 @@ export class ClaimControllerTask implements CreepTask {
 
     switch (result) {
     case OK:
+      creep.signController(this.controller, `v${Game.version} at ${Game.time}`)
       return "finished"
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.controller, { reusePath: 15 })
+      creep.moveTo(this.controller, { reusePath: 0 })
       return "in progress"
 
     case ERR_NOT_OWNER:

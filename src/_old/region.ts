@@ -650,8 +650,8 @@ export class Region {
       }
       else {
         if ((Game.time % 101) == 3) {
-          const message = `No reaction ${this.name}`
-          console.log(message)
+          // const message = `No reaction ${this.name}`
+          // console.log(message)
           // Game.notify(message)
         }
       }
@@ -1738,7 +1738,7 @@ export class Region {
           }
           else {
             // @fixme: If
-            const message = `${spawn.name} in ${this.name} assign to ${squad.name}: ${result}, energy: ${this.room.energyAvailable}, (length: ${body.length}) [${body}]`
+            const message = `${spawn.name} in ${this.name} assign to ${squad.name}: ${result}, creep name: ${name}, energy: ${this.room.energyAvailable}, (length: ${body.length}) [${body}]`
             console.log(message)
             // Game.notify(message)
           }
