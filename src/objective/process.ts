@@ -7,7 +7,7 @@ import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap
 import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "./creep_provider/inter_shard_creep_deliverer_process"
-import { WarProcess, WarProcessState } from "./test/war_process"
+import { War29337295Process, War29337295ProcessState } from "./test/war_29337295_process"
 import { War29337295LogisticsProcess, War29337295LogisticsProcessState } from "./test/war_ 29337295_logistics_process"
 
 export type ProcessId = number
@@ -42,7 +42,7 @@ class ProcessTypes {
   "InterShardCreepDelivererProcess" = (state: ProcessState) => InterShardCreepDelivererProcess.decode(state as InterShardCreepDelivererProcessState)
 
   // onetime processes
-  "WarProcess" = (state: ProcessState) => WarProcess.decode(state as WarProcessState)
+  "War29337295Process" = (state: ProcessState) => War29337295Process.decode(state as War29337295ProcessState)
   "War29337295LogisticsProcess" = (state: ProcessState) => War29337295LogisticsProcess.decode(state as War29337295LogisticsProcessState)
 }
 

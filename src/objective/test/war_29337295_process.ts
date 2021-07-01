@@ -32,7 +32,7 @@ const scoutRoomNames: RoomName[] = [
   "W50S30",
 ]
 
-export interface WarProcessState extends ProcessState {
+export interface War29337295ProcessState extends ProcessState {
   /** target id */
   ti: Id<Creep | AnyStructure> | null
 
@@ -58,13 +58,12 @@ export interface WarProcessState extends ProcessState {
   r: RoomName
 }
 
-// - [ ] 終了したらプロセスをリネームして保存
 // - [ ] 行った状況を記録しておく
-// Game.io("launch WarProcess")
+// Game.io("launch War29337295Process")
 // Game.io("launch InterShardCreepDelivererProcess portal_room_name=W50S30 parent_room_name=W51S29 shard_name=shard3 creep_type=heavy_attacker")
 // Game.getObjectById("5b994d9e0417171556aa96d7").send(RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 2000, "W51S29")
 // Game.check_resources(RESOURCE_CATALYZED_KEANIUM_ALKALIDE)
-export class WarProcess implements Process, Procedural, MessageObserver {
+export class War29337295Process implements Process, Procedural, MessageObserver {
   private readonly codename = generateCodename(this.constructor.name, this.launchTime)
 
   public constructor(
@@ -79,9 +78,9 @@ export class WarProcess implements Process, Procedural, MessageObserver {
     private targetEnemyRoomName: RoomName,
   ) { }
 
-  public encode(): WarProcessState {
+  public encode(): War29337295ProcessState {
     return {
-      t: "WarProcess",
+      t: "War29337295Process",
       l: this.launchTime,
       i: this.processId,
       ti: this.targetId,
@@ -96,7 +95,7 @@ export class WarProcess implements Process, Procedural, MessageObserver {
     }
   }
 
-  public static decode(state: WarProcessState): WarProcess {
+  public static decode(state: War29337295ProcessState): War29337295Process {
     const objectives = (state.s ?? []).reduce((result: Objective[], current: ObjectiveState): Objective[] => {
       const objective = decodeObjectiveFrom(current)
       if (objective != null) {
@@ -104,7 +103,7 @@ export class WarProcess implements Process, Procedural, MessageObserver {
       }
       return result
     }, [] as Objective[])
-    return new WarProcess(state.l, state.i, state.ti, state.cr.a, state.cr.ra, state.cr.s, state.cr.w, objectives, state.r ?? enemyBaseRoomName)
+    return new War29337295Process(state.l, state.i, state.ti, state.cr.a, state.cr.ra, state.cr.s, state.cr.w, objectives, state.r ?? enemyBaseRoomName)
   }
 
   public didReceiveMessage(message: string): string {

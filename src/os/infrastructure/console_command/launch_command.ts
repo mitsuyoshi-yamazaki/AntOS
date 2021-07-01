@@ -11,8 +11,8 @@ import { InterShardCreepDelivererProcess } from "objective/creep_provider/inter_
 import { InterShardCreepDelivererObjective } from "objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "objective/spawn/spawn_creep_objective"
-import { WarProcess } from "objective/test/war_process"
 import { War29337295LogisticsProcess } from "objective/test/war_ 29337295_logistics_process"
+import { War29337295Process } from "objective/test/war_29337295_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -237,7 +237,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new WarProcess(Game.time, processId, null, [], [], [], [], [], "W48S27")
+      return new War29337295Process(Game.time, processId, null, [], [], [], [], [], "W48S27")
     })
     return new ResultSucceeded(process)
   }
