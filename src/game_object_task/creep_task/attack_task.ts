@@ -2,7 +2,7 @@ import { CreepTask, CreepTaskState } from "game_object_task/creep_task"
 import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
-type AttackTaskTarget = Creep | AnyStructure
+export type AttackTaskTarget = Creep | AnyStructure
 
 export interface AttackTaskState extends CreepTaskState {
   /** target id */

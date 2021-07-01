@@ -107,7 +107,7 @@ export class War29337295LogisticsProcess implements Process, Procedural, Message
     this.runLabs(labs)
 
     const time = Game.time
-    if (time % 403 === 0) {
+    if (time % 631 === 0) {
       this.addCreep("heavy_attacker")
     }
 

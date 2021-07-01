@@ -1,4 +1,5 @@
 import { State, Stateful } from "os/infrastructure/state"
+import { RoomName } from "prototype/room"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
 export type TargetType = Creep | PowerCreep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
@@ -18,7 +19,7 @@ export interface GameObjectTaskReturnType<T> {  // TODO:
 export type GameObjectTaskReturnCode = "finished" | "in progress" | "failed"
 
 export interface GameObjectTask<T> extends Stateful {
-  targetId?: Id<TargetType>
+  targetId?: Id<TargetType> | RoomName
   startTime: number
 
   encode(): GameObjectTaskState
