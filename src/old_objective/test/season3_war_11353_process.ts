@@ -8,10 +8,10 @@ import { CreepName } from "prototype/creep"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { CreepType } from "_old/creep"
 
-type Season3War11353ProcessCreepType = CreepType.SCOUT
+type Season3War11353ProcessCreepType = CreepType.SCOUT | CreepType.DECOY | CreepType.WORKER
 
 const ownedRoomName = "W27S26"
-const targetRoomName = "W23S25"
+const targetRoomName = "W28S17"
 const scoutTargets: RoomPosition[] = [
   new RoomPosition(29, 6, "W23S25"),
   new RoomPosition(18, 10, "W23S25"),
@@ -85,9 +85,285 @@ export class Season3War11353Process implements Process, Procedural {
 
     this.runObjectives()
 
-    const [spawningCreepNames, scouts] = this.refreshCreeps()
+    const [spawningCreepNames, scouts, decoys, dismantlers] = this.refreshCreeps()
 
     this.runScouts(scouts, spawningCreepNames.length > 0)
+    this.runDecoys(decoys, spawningCreepNames.length > 0)
+    this.runDismantler(dismantlers, spawningCreepNames.length > 0)
+  }
+
+  // ---- Dismantle ---- //
+  private runDismantler(dismantlers: Creep[], isSpawning: boolean): void {
+    const room = Game.rooms[targetRoomName]
+    const hostileAttackers = ((): Creep[] => {
+      if (room == null) {
+        return []
+      }
+      return room.find(FIND_HOSTILE_CREEPS).filter(creep => creep.body.map(b => b.type).includes(ATTACK) && creep.hits >= 100)
+    })()
+
+    const hostileTower = ((): StructureTower | null => {
+      if (room == null) {
+        return null
+      }
+      return room.find(FIND_HOSTILE_STRUCTURES).filter(structure => structure.structureType === STRUCTURE_TOWER)[0] as StructureTower | null
+    })()
+
+    const spawnConstructionSite = ((): ConstructionSite<STRUCTURE_SPAWN> | null => {
+      if (room == null) {
+        return null
+      }
+      return room.find(FIND_CONSTRUCTION_SITES).filter(site => site.structureType === STRUCTURE_SPAWN)[0] as ConstructionSite<STRUCTURE_SPAWN> | null
+    })()
+
+    const hostileSpawn = ((): StructureSpawn | null => {
+      if (room == null) {
+        return null
+      }
+      return room.find(FIND_HOSTILE_SPAWNS)[0]
+    })()
+
+    const ignoreStructureTypes: StructureConstant[] = [
+      STRUCTURE_CONTROLLER,
+      STRUCTURE_WALL,
+      STRUCTURE_RAMPART,
+    ]
+    const hostileStructures = ((): AnyStructure[] => {
+      if (room == null) {
+        return []
+      }
+      return room.find(FIND_HOSTILE_STRUCTURES).filter(structure => ignoreStructureTypes.includes(structure.structureType) !== true)
+    })()
+
+
+    dismantlers.forEach(creep => {
+      if (creep.room.name !== targetRoomName) {
+        creep.moveToRoom(targetRoomName)
+        return
+      }
+
+      const hostileAttacker = creep.pos.findInRange(hostileAttackers, 3)[0]
+      if (hostileAttacker != null) {
+        const path = PathFinder.search(creep.pos, hostileAttacker.pos, {
+          flee: true,
+          maxRooms: 1,
+        })
+        creep.moveByPath(path.path)
+        return
+      }
+
+      if (hostileTower != null) {
+        if (creep.dismantle(hostileTower) !== OK) {
+          creep.moveTo(hostileTower, { reusePath: 0 })
+        }
+        return
+      }
+
+      if (hostileSpawn != null) {
+        if (creep.dismantle(hostileSpawn) !== OK) {
+          creep.moveTo(hostileSpawn, { reusePath: 0 })
+        }
+        return
+      }
+
+      if (spawnConstructionSite != null) {
+        creep.moveTo(spawnConstructionSite, { reusePath: 0 })
+        return
+      }
+
+      if (hostileStructures[0] != null) {
+        if (creep.dismantle(hostileStructures[0]) !== OK) {
+          creep.moveTo(hostileStructures[0], { reusePath: 0 })
+        }
+        return
+      }
+    })
+
+    const dismantlersNeeded = 3 - dismantlers.length
+    if (isSpawning !== true && dismantlersNeeded > 0) {
+      for (let i = 0; i < dismantlersNeeded; i += 1) {
+        // this.addCreep(CreepType.WORKER)
+      }
+    }
+  }
+
+  // ---- Decoy ---- //
+  private runDecoys(decoys: Creep[], isSpawning: boolean): void {
+    const room = Game.rooms[targetRoomName]
+
+    const hostileCreeps = ((): Creep[] => {
+      if (room == null) {
+        return []
+      }
+      return room.find(FIND_HOSTILE_CREEPS)
+    })()
+
+    const hostileAttackers = ((): Creep[] => {
+      if (room == null) {
+        return []
+      }
+      return room.find(FIND_HOSTILE_CREEPS).filter(creep => creep.body.map(b => b.type).includes(ATTACK))
+    })()
+    const highHpAttackers = hostileAttackers.filter(creep => creep.hits >= 100)
+
+    // const attackerExistsInRoom = ((): boolean => {
+    //   if (room == null) {
+    //     return false
+    //   }
+    //   let exists = false
+    //   hostileAttackers.forEach(creep => {
+    //     if (creep.pos.y > 25) {
+    //       exists = true
+    //     }
+    //   })
+    //   return exists
+    // })()
+    // const decoyExistsInRoom = ((): boolean => {
+    //   let exists = false
+    //   decoys.forEach(creep => {
+    //     if (creep.room.name === targetRoomName) {
+    //       exists = true
+    //     }
+    //   })
+    //   return exists
+
+    // })()
+
+    const hostileTower = ((): StructureTower | null => {
+      if (room == null) {
+        return null
+      }
+      return room.find(FIND_HOSTILE_STRUCTURES).filter(structure => structure.structureType === STRUCTURE_TOWER)[0] as StructureTower | null
+    })()
+
+    const hostileSpawn = ((): StructureSpawn | null => {
+      if (room == null) {
+        return null
+      }
+      return room.find(FIND_HOSTILE_SPAWNS)[0]
+    })()
+
+    const ignoreStructureTypes: StructureConstant[] = [
+      STRUCTURE_CONTROLLER,
+      STRUCTURE_WALL,
+      STRUCTURE_RAMPART,
+    ]
+    const hostileStructures = ((): AnyStructure[] => {
+      if (room == null) {
+        return []
+      }
+      return room.find(FIND_HOSTILE_STRUCTURES).filter(structure => ignoreStructureTypes.includes(structure.structureType) !== true)
+    })()
+
+    decoys.forEach(creep => {
+      if (creep.room.name !== targetRoomName) {
+        creep.moveToRoom(targetRoomName)
+        return
+      }
+
+      const nearHostile = creep.pos.findInRange(highHpAttackers, 1)[0]
+      if (nearHostile != null) {
+        creep.attack(nearHostile)
+        return
+      }
+
+      const hostileCreep = creep.pos.findClosestByPath(hostileCreeps)
+      if (hostileCreep != null) {
+        if (creep.attack(hostileCreep) !== OK) {
+          creep.moveTo(hostileCreep, {reusePath: 0})
+        }
+        return
+      }
+
+      if (hostileTower != null) {
+        if (creep.attack(hostileTower) !== OK) {
+          creep.moveTo(hostileTower, { reusePath: 0 })
+        }
+        return
+      }
+
+      if (hostileSpawn != null) {
+        if (creep.attack(hostileSpawn) !== OK) {
+          creep.moveTo(hostileSpawn, { reusePath: 0 })
+        }
+        return
+      }
+
+      if (hostileStructures[0] != null) {
+        if (creep.attack(hostileStructures[0]) !== OK) {
+          creep.moveTo(hostileStructures[0], { reusePath: 0 })
+        }
+        return
+      }
+
+      //   if (creep.room.name === targetRoomName) {
+      //     if (creep.pos.x === 0) {
+      //       creep.move(RIGHT)
+      //       return
+      //     } else if (creep.pos.x === 49) {
+      //       creep.move(LEFT)
+      //       return
+      //     } else if (creep.pos.y === 0) {
+      //       creep.move(BOTTOM)
+      //       return
+      //     } else if (creep.pos.y === 49) {
+      //       creep.move(TOP)
+      //       return
+      //     }
+
+      //     const nearHostile = creep.pos.findInRange(highHpAttackers, 1)[0]
+      //     if (nearHostile != null) {
+      //       creep.attack(nearHostile)
+      //     }
+
+      //     if (hostileTower != null) {
+      //       if (creep.attack(hostileTower) !== OK) {
+      //         creep.moveTo(hostileTower, {reusePath: 0})
+      //       }
+      //     }
+
+      //     return
+      //   }
+
+      //   if (creep.room.name === "W23S26") {
+      //     if (attackerExistsInRoom === false && decoyExistsInRoom === false) {
+      //       creep.moveToRoom(targetRoomName)
+      //       return
+      //     }
+      //     creep.moveTo(11, 2)
+      //     return
+      //   }
+
+    //   if (["W27S26", "W27S27", "W27S28", "W26S28", "W26S29"].includes(creep.room.name) === true) {
+    //     creep.moveToRoom("W26S30")
+    //     return
+    //   }
+    //   if (["W26S30", "W25S30"].includes(creep.room.name) === true) {
+    //     creep.moveToRoom("W24S30")
+    //     return
+    //   }
+    //   if (["W26S30", "W25S30"].includes(creep.room.name) === true) {
+    //     creep.moveToRoom("W24S30")
+    //     return
+    //   }
+    //   if (["W24S30"].includes(creep.room.name) === true) {
+    //     creep.moveToRoom("W24S29")
+    //     return
+    //   }
+    //   if (["W24S29", "W23S29"].includes(creep.room.name) === true) {
+    //     creep.moveToRoom("W22S29")
+    //     return
+    //   }
+    //   creep.moveToRoom("W23S26")
+    }
+    )
+
+    const decoysNeeded = 3 - decoys.length
+    if (isSpawning !== true && decoysNeeded > 0) {
+      for (let i = 0; i < decoysNeeded; i += 1) {
+        // this.addCreep(CreepType.DECOY)
+      }
+    }
   }
 
   // ---- Scout ---- //
@@ -120,13 +396,6 @@ export class Season3War11353Process implements Process, Procedural {
       return room.find(FIND_CONSTRUCTION_SITES)
     })()
 
-    const hostileSpawn = ((): StructureSpawn | null => {
-      if (room == null) {
-        return null
-      }
-      return room.find(FIND_HOSTILE_SPAWNS)[0]
-    })()
-
     const hostileAttackers = ((): Creep[] => {
       if (room == null) {
         return []
@@ -156,13 +425,6 @@ export class Season3War11353Process implements Process, Procedural {
 
 
       if (creep.room.name === targetRoomName) {
-        if (hostileSpawn != null && (room.controller?.safeMode ?? 0) <= 0 && creep.body.map(b => b.type).includes(WORK) === true) {
-          if (creep.dismantle(hostileSpawn) !== OK) {
-            creep.moveTo(hostileSpawn)
-          }
-          return
-        }
-
         if (towerConstructionSite != null) {
           creep.moveTo(towerConstructionSite, { reusePath: 0 })
           return
@@ -175,6 +437,9 @@ export class Season3War11353Process implements Process, Procedural {
             return
           }
         }
+
+        creep.moveTo(15, 29)
+        return
       }
 
       if (creep.task != null) {
@@ -186,11 +451,11 @@ export class Season3War11353Process implements Process, Procedural {
       }
     })
 
-    if (isSpawning !== true) {
-      for (let i = 0; i < nonTargetedPositions.length; i += 1) {
-        this.addCreep(CreepType.SCOUT)
-      }
-    }
+    // if (isSpawning !== true) {
+    //   for (let i = 0; i < nonTargetedPositions.length; i += 1) {
+    //     this.addCreep(CreepType.SCOUT)
+    //   }
+    // }
   }
 
   // ---- Targeting ---- //
@@ -198,10 +463,12 @@ export class Season3War11353Process implements Process, Procedural {
 
   // ---- Spawn ---- //
   /**
-   * @returns [spawningCreepNames, scouts]
+   * @returns [spawningCreepNames, scouts, decoys, dismantlers]
    */
-  private refreshCreeps(): [CreepName[], Creep[]] {
+  private refreshCreeps(): [CreepName[], Creep[], Creep[], Creep[]] {
     const scouts: Creep[] = []
+    const decoys: Creep[] = []
+    const dismantlers: Creep[] = []
     const diedCreepNames: CreepName[] = []
     const spawningCreepNames = this.objectives.reduce((result, current) => {
       if (current instanceof SingleCreepProviderObjective) {
@@ -217,10 +484,28 @@ export class Season3War11353Process implements Process, Procedural {
         case CreepType.SCOUT:
           scouts.push(creep)
           break
-        default:
-          scouts.push(creep)  // FixMe: 判定する
+        case CreepType.DECOY:
+          decoys.push(creep)
+          break
+        case CreepType.WORKER:
+          dismantlers.push(creep)
+          break
+        default: {
+          const body = creep.body.map(b => b.type)
+          if (body.includes(ATTACK) === true) {
+            decoys.push(creep)
+            creep.memory.type = CreepType.DECOY
+            break
+          }
+          if (body.includes(WORK) === true) {
+            dismantlers.push(creep)
+            creep.memory.type = CreepType.WORKER
+            break
+          }
+          scouts.push(creep)
           creep.memory.type = CreepType.SCOUT
           break
+        }
         }
         return
       }
@@ -232,10 +517,21 @@ export class Season3War11353Process implements Process, Procedural {
 
     this.creepName = this.creepName.filter(creepName => diedCreepNames.includes(creepName) !== true)
 
-    return [spawningCreepNames, scouts]
+    return [spawningCreepNames, scouts, decoys, dismantlers]
   }
 
   private addCreep(creepType: Season3War11353ProcessCreepType): void {
+    const body = ((): BodyPartConstant[] => {
+      switch (creepType) {
+      case CreepType.SCOUT:
+        return [MOVE]
+      case CreepType.DECOY:
+        return [MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK]
+      case CreepType.WORKER:
+        return [MOVE, MOVE, MOVE, MOVE, MOVE, WORK]
+      }
+    })()
+
     const creepName = generateUniqueId(this.codename)
     const creepProvider = new SingleCreepProviderObjective(
       Game.time,
@@ -243,8 +539,7 @@ export class Season3War11353Process implements Process, Procedural {
       creepName,
       {
         spawnRoomName: ownedRoomName,
-        // requestingCreepBodyParts: [MOVE, MOVE, MOVE, MOVE, MOVE, WORK], // TODO:
-        requestingCreepBodyParts: [MOVE], // TODO:
+        requestingCreepBodyParts: body,
         priority: spawnPriorityLow,
       }
     )

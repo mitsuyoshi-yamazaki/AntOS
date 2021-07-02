@@ -35,6 +35,7 @@ export enum CreepType {
   SCOUT             = 'scout',
   CREEP_PROVIDER    = 'creep_provider',
   TAKE_OVER         = 'take_over',
+  DECOY             = 'decoy',
 }
 
 export interface CreepDestroyOption {
@@ -356,16 +357,19 @@ export function init() {
       if (["W27S26", "W28S26", "W28S25", "W29S25"].includes(this.room.name) === true && destination_room_name === "W23S25") {
         destination_room_name = "W30S25"
       }
-      if (["W30S25", "W30S24", "W30S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
+      else if (["W27S26", "W28S26", "W28S25", "W29S25"].includes(this.room.name) === true && destination_room_name === "W28S17") {
+        destination_room_name = "W30S25"
+      }
+      else if (["W30S25", "W30S24", "W30S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
         destination_room_name = "W29S23"
       }
-      if (["W29S23", "W28S23", "W27S23", "W26S23", "W25S23", "W25S22"].includes(this.room.name) === true && destination_room_name === "W23S25") {
+      else if (["W29S23", "W28S23", "W27S23", "W26S23", "W25S23", "W25S22"].includes(this.room.name) === true && destination_room_name === "W23S25") {
         destination_room_name = "W24S22"
       }
-      if (["W24S22", "W23S22", "W24S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
+      else if (["W24S22", "W23S22", "W24S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
         destination_room_name = "W23S23"
       }
-      if (["W23S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
+      else if (["W23S23"].includes(this.room.name) === true && destination_room_name === "W23S25") {
         destination_room_name = "W23S24"
       }
     }
