@@ -11,9 +11,13 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(RoomObject.prototype, "targetedBy", {
-    get(): Id<TaskRunnerType>[] {
-      return TaskTargetCache.targetingTaskRunnerIds(this.id)
-    },
-  })
+  try { // FixMe:
+    Object.defineProperty(RoomObject.prototype, "targetedBy", {
+      get(): Id<TaskRunnerType>[] {
+        return TaskTargetCache.targetingTaskRunnerIds(this.id)
+      },
+    })
+  } catch (error) {
+    //
+  }
 }
