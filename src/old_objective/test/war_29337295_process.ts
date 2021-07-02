@@ -462,75 +462,75 @@ export class War29337295Process implements Process, Procedural, MessageObserver 
 
   // ---- Scout ---- //
   private runScouts(): void {
-    const creepProviders = this.childObjectives.filter(objective => objective instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
-    creepProviders.forEach(objective => {
-      if (!(objective instanceof SingleCreepProviderObjective)) {
-        return
-      }
-
-      const result = objective.progress()
-      switch (result.objectProgressType) {
-      case "in progress":
-        return
-      case "succeeded":
-        this.removeChildObjective(objective)
-        this.scoutNames.push(result.result.name)
-        return
-      case "failed":
-        this.removeChildObjective(objective)
-        return
-      }
-    })
-
-    const [updatedScoutNames, scouts] = this.getCreeps(this.scoutNames)
-    this.scoutNames = updatedScoutNames
-
-    const targetedRoomNames: RoomName[] = []
-    scouts.forEach(creep => {
-      if (!(creep.task instanceof ScoutTask)) {
-        return
-      }
-      targetedRoomNames.push(creep.task.roomName)
-    })
-    const nonTargetedRoomNames: RoomName[] = []
-
-    const isSpawning = creepProviders.length > 0
-    scoutRoomNames.forEach(roomName => {
-      const room = Game.rooms[roomName]
-      if (room != null) {
-        return
-      }
-      if (isSpawning === true) {
-        return
-      }
-      if (targetedRoomNames.includes(roomName) === true) {
-        return
-      }
-      nonTargetedRoomNames.push(roomName)
-    })
-
-    const assigned = false as boolean
-
-    // scouts.forEach(creep => {
-    //   if (creep.task == null) {
-    //     creep.task = new ScoutTask(Game.time, "W48S28")
+    // const creepProviders = this.childObjectives.filter(objective => objective instanceof SingleCreepProviderObjective) as SingleCreepProviderObjective[]
+    // creepProviders.forEach(objective => {
+    //   if (!(objective instanceof SingleCreepProviderObjective)) {
+    //     return
     //   }
-    //   // if (creep.task == null) {
-    //   //   if (nonTargetedRoomNames[0] != null) {
-    //   //     creep.task = new ScoutTask(Game.time, nonTargetedRoomNames[0])
-    //   //     assigned = true
-    //   //   } else {
-    //   //     creep.task = new ScoutTask(Game.time, scoutRoomNames[0])
-    //   //   }
-    //   // }
-    //   if (Game.cpu.bucket > 5000) {
-    //     creep.task.run(creep)
+
+    //   const result = objective.progress()
+    //   switch (result.objectProgressType) {
+    //   case "in progress":
+    //     return
+    //   case "succeeded":
+    //     this.removeChildObjective(objective)
+    //     this.scoutNames.push(result.result.name)
+    //     return
+    //   case "failed":
+    //     this.removeChildObjective(objective)
+    //     return
     //   }
     // })
 
-    if (assigned !== true && nonTargetedRoomNames.length > 0) {
-      // this.addScoutTo()
-    }
+    // const [updatedScoutNames, scouts] = this.getCreeps(this.scoutNames)
+    // this.scoutNames = updatedScoutNames
+
+    // const targetedRoomNames: RoomName[] = []
+    // scouts.forEach(creep => {
+    //   if (!(creep.task instanceof ScoutTask)) {
+    //     return
+    //   }
+    //   targetedRoomNames.push(creep.task.roomName)
+    // })
+    // const nonTargetedRoomNames: RoomName[] = []
+
+    // const isSpawning = creepProviders.length > 0
+    // scoutRoomNames.forEach(roomName => {
+    //   const room = Game.rooms[roomName]
+    //   if (room != null) {
+    //     return
+    //   }
+    //   if (isSpawning === true) {
+    //     return
+    //   }
+    //   if (targetedRoomNames.includes(roomName) === true) {
+    //     return
+    //   }
+    //   nonTargetedRoomNames.push(roomName)
+    // })
+
+    // const assigned = false as boolean
+
+    // // scouts.forEach(creep => {
+    // //   if (creep.task == null) {
+    // //     creep.task = new ScoutTask(Game.time, "W48S28")
+    // //   }
+    // //   // if (creep.task == null) {
+    // //   //   if (nonTargetedRoomNames[0] != null) {
+    // //   //     creep.task = new ScoutTask(Game.time, nonTargetedRoomNames[0])
+    // //   //     assigned = true
+    // //   //   } else {
+    // //   //     creep.task = new ScoutTask(Game.time, scoutRoomNames[0])
+    // //   //   }
+    // //   // }
+    // //   if (Game.cpu.bucket > 5000) {
+    // //     creep.task.run(creep)
+    // //   }
+    // // })
+
+    // if (assigned !== true && nonTargetedRoomNames.length > 0) {
+    //   // this.addScoutTo()
+    // }
   }
 
   private addScoutTo(): void {

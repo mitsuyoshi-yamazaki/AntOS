@@ -3,8 +3,8 @@ import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { RoomName } from "prototype/room"
 
 export interface ScoutTaskState extends CreepTaskState {
-  /** target room name */
-  r: RoomName
+  /** position */
+  p: { x: number, y: number, r: RoomName }
 }
 
 export class ScoutTask implements CreepTask {
@@ -12,25 +12,30 @@ export class ScoutTask implements CreepTask {
 
   public constructor(
     public readonly startTime: number,
-    public readonly roomName: RoomName,
+    public readonly position: RoomPosition,
   ) { }
 
   public encode(): ScoutTaskState {
     return {
       s: this.startTime,
       t: "BuildTask",
-      r: this.roomName,
+      p: {
+        x: this.position.x,
+        y: this.position.y,
+        r: this.position.roomName,
+      },
     }
   }
 
   public static decode(state: ScoutTaskState): ScoutTask {
-    return new ScoutTask(state.s, state.r)
+    const position = new RoomPosition(state.p.x, state.p.y, state.p.r)
+    return new ScoutTask(state.s, position)
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
     creep.memory.tt = Game.time
-    if (creep.room.name !== this.roomName) {
-      creep.moveToRoom(this.roomName)
+    if (creep.room.name !== this.position.roomName) {
+      creep.moveToRoom(this.position.roomName)
       return "in progress"
     }
 
@@ -54,10 +59,7 @@ export class ScoutTask implements CreepTask {
       return "in progress"
     }
 
-    if (creep.pos.inRangeTo(25, 25, 3) !== true) {
-      creep.moveTo(25, 25, { reusePath: 0 })
-      return "in progress"
-    }
+    creep.moveTo(this.position, { reusePath: 0 })
     return "in progress"
   }
 }

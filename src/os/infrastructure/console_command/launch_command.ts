@@ -13,6 +13,7 @@ import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { War29337295LogisticsProcess } from "old_objective/test/war_ 29337295_logistics_process"
 import { War29337295Process } from "old_objective/test/war_29337295_process"
+import { Season3War11353Process } from "old_objective/test/season3_war_11353_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -38,11 +39,14 @@ export class LaunchCommand implements ConsoleCommand {
     case "InterShardCreepDelivererProcess":
       result = this.launchInterShardCreepDelivererProcess()
       break
-    case "WarProcess":
-      result = this.launchWarProcess()
-      break
-    case "War29337295LogisticsProcess":
-      result = this.launchWar29337295LogisticsProcess()
+    // case "WarProcess":
+    //   result = this.launchWarProcess()
+    //   break
+    // case "War29337295LogisticsProcess":
+    //   result = this.launchWar29337295LogisticsProcess()
+    //   break
+    case "Season3War11353Process":
+      result = this.launchSeason3War11353Process()
       break
     default:
       break
@@ -231,25 +235,37 @@ export class LaunchCommand implements ConsoleCommand {
     return new ResultSucceeded(process)
   }
 
-  private launchWarProcess(): LaunchCommandResult {
-    if (Game.shard.name !== "shard3") {
-      return new ResultFailed("Cannot launch WarProcess except shard3")
+  // private launchWarProcess(): LaunchCommandResult {
+  //   if (Game.shard.name !== "shard3") {
+  //     return new ResultFailed("Cannot launch WarProcess except shard3")
+  //   }
+
+  //   const process = OperatingSystem.os.addProcess(processId => {
+  //     return new War29337295Process(Game.time, processId, null, [], [], [], [], [], "W48S27")
+  //   })
+  //   return new ResultSucceeded(process)
+  // }
+
+  // private launchWar29337295LogisticsProcess(): LaunchCommandResult {
+  //   if (Game.shard.name !== "shard2") {
+  //     return new ResultFailed("Cannot launch WarProcess except shard2")
+  //   }
+
+  //   const process = OperatingSystem.os.addProcess(processId => {
+  //     return new War29337295LogisticsProcess(Game.time, processId, [], null, [])
+  //   })
+  //   return new ResultSucceeded(process)
+  // }
+
+  private launchSeason3War11353Process(): LaunchCommandResult {
+    if (Game.shard.name !== "shardSeason") {
+      return new ResultFailed("Cannot launch Season3War11353Process except season")
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new War29337295Process(Game.time, processId, null, [], [], [], [], [], "W48S27")
+      return new Season3War11353Process(Game.time, processId, [], [])
     })
     return new ResultSucceeded(process)
   }
 
-  private launchWar29337295LogisticsProcess(): LaunchCommandResult {
-    if (Game.shard.name !== "shard2") {
-      return new ResultFailed("Cannot launch WarProcess except shard2")
-    }
-
-    const process = OperatingSystem.os.addProcess(processId => {
-      return new War29337295LogisticsProcess(Game.time, processId, [], null, [])
-    })
-    return new ResultSucceeded(process)
-  }
 }

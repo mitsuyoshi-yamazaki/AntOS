@@ -352,7 +352,15 @@ export function init() {
       destination_room_name = this.memory.destination_room_name
     }
 
-    const exit = this.room.findExitTo(destination_room_name) as FindConstant
+    if (Game.shard.name === "shardSeason") {
+      if (["W27S26", "W28S26", "W28S25", "W29S25"].includes(this.room.name) === true && destination_room_name === "W23S25") {
+        destination_room_name = "W30S25"
+      }
+    }
+
+    const exit = ((): FindConstant => {
+      return this.room.findExitTo(destination_room_name) as FindConstant
+    })()
     if (exit < 0) {
       console.log(`Creep.moveToRoom from ${this.room.name} to ${destination_room_name} can't find exit ${exit}, ${this.name}, ${this.pos}`)
       this.say('NOEXIT')
