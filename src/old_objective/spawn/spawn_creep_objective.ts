@@ -106,6 +106,13 @@ export class SpawnCreepObjective implements Objective {
   }
 
   public progress(room: Room, activeSpawns: StructureSpawn[]): SpawnCreepObjectiveProgressType {
+    const indexes = this.queue.filter(q => q.n.includes("baked_jelly")).map(name => this.queue.indexOf(name)) // FixMe:
+    indexes.forEach(index => {
+      if (index >= 0) {
+        this.queue.splice(index, 1)
+      }
+    })
+
     if (activeSpawns.length <= 0) {
       return this.noSpawnFailed(room)
     }
