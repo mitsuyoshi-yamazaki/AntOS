@@ -45,9 +45,9 @@ export class LaunchCommand implements ConsoleCommand {
     // case "War29337295LogisticsProcess":
     //   result = this.launchWar29337295LogisticsProcess()
     //   break
-    case "Season3War11353Process":
-      result = this.launchSeason3War11353Process()
-      break
+    // case "Season3War11353Process":
+    //   result = this.launchSeason3War11353Process()
+    //   break
     default:
       break
     }
@@ -257,15 +257,15 @@ export class LaunchCommand implements ConsoleCommand {
   //   return new ResultSucceeded(process)
   // }
 
-  private launchSeason3War11353Process(): LaunchCommandResult {
-    if (Game.shard.name !== "shardSeason") {
-      return new ResultFailed("Cannot launch Season3War11353Process except season")
-    }
+  // private launchSeason3War11353Process(): LaunchCommandResult {
+  //   if (Game.shard.name !== "shardSeason") {
+  //     return new ResultFailed("Cannot launch Season3War11353Process except season")
+  //   }
 
-    const process = OperatingSystem.os.addProcess(processId => {
-      return new Season3War11353Process(Game.time, processId, [], [])
-    })
-    return new ResultSucceeded(process)
-  }
+  //   const process = OperatingSystem.os.addProcess(processId => {
+  //     return new Season3War11353Process(Game.time, processId, [], [])
+  //   })
+  //   return new ResultSucceeded(process)
+  // }
 
 }
