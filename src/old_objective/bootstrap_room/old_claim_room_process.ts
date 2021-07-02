@@ -1,6 +1,6 @@
 import { OperatingSystem } from "os/os"
 import { Procedural } from "old_objective/procedural"
-import { Process, ProcessId, processLog, ProcessState } from "old_objective/process"
+import { Process, ProcessId, processLog, ProcessState } from "process/process"
 import { OldClaimRoomObjective, OldClaimRoomObjectiveState } from "./old_claim_room_objective"
 
 export interface ClaimRoomProcessState extends ProcessState {

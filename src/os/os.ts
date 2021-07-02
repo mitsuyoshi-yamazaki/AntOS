@@ -1,6 +1,6 @@
 import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeProcessFrom, Process, ProcessId, ProcessState } from "old_objective/process"
+import { decodeProcessFrom, Process, ProcessId, ProcessState } from "process/process"
 import { isProcedural } from "old_objective/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"

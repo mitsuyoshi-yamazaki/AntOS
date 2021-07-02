@@ -3,12 +3,12 @@ import { State, Stateful } from "os/infrastructure/state"
 import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "old_objective/test/test_process"
-import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "./bootstrap_room/bootstrap_l8_room_proces"
-import { ClaimRoomProcess, ClaimRoomProcessState } from "./bootstrap_room/old_claim_room_process"
-import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper/room_keeper_process"
-import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "./creep_provider/inter_shard_creep_deliverer_process"
-import { War29337295Process, War29337295ProcessState } from "./test/war_29337295_process"
-import { War29337295LogisticsProcess, War29337295LogisticsProcessState } from "./test/war_ 29337295_logistics_process"
+import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "../old_objective/bootstrap_room/bootstrap_l8_room_proces"
+import { ClaimRoomProcess, ClaimRoomProcessState } from "../old_objective/bootstrap_room/old_claim_room_process"
+import { RoomKeeperProcess, RoomKeeperProcessState } from "../old_objective/room_keeper/room_keeper_process"
+import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "../old_objective/creep_provider/inter_shard_creep_deliverer_process"
+import { War29337295Process, War29337295ProcessState } from "../old_objective/test/war_29337295_process"
+import { War29337295LogisticsProcess, War29337295LogisticsProcessState } from "../old_objective/test/war_ 29337295_logistics_process"
 
 export type ProcessId = number
 

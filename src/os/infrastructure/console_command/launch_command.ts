@@ -1,4 +1,4 @@
-import { Process } from "old_objective/process"
+import { Process } from "process/process"
 import { TestProcess } from "old_objective/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"

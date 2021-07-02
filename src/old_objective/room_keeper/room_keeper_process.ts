@@ -1,5 +1,5 @@
 import { Procedural } from "old_objective/procedural"
-import { Process, ProcessId, processLog, ProcessState } from "old_objective/process"
+import { Process, ProcessId, processLog, ProcessState } from "process/process"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"

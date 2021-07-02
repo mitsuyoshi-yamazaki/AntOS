@@ -9,7 +9,7 @@ import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_contr
 import { SingleCreepProviderObjective } from "old_objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectiveFrom, Objective, ObjectiveState } from "old_objective/objective"
 import { Procedural } from "old_objective/procedural"
-import { Process, processLog, ProcessState } from "old_objective/process"
+import { Process, processLog, ProcessState } from "process/process"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { CreepName } from "prototype/creep"

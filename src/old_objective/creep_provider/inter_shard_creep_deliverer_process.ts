@@ -1,4 +1,4 @@
-import { Process, processLog, ProcessState } from "old_objective/process"
+import { Process, processLog, ProcessState } from "process/process"
 import { OperatingSystem } from "os/os"
 import { InterShardCreepDelivererObjective, InterShardCreepDelivererObjectiveState } from "./inter_shard_creep_deliverer_objective"
 
