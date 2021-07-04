@@ -1,6 +1,7 @@
 import { RoomKeeperObjective } from "old_objective/room_keeper/room_keeper_objective"
 import { RoomKeeperProcess } from "old_objective/room_keeper/room_keeper_process"
 import { OperatingSystem, ProcessInfo } from "os/os"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { Migration } from "utility/migration"
 import { World } from "world_info/world_info"
@@ -13,9 +14,9 @@ export class ApplicationProcessLauncher {
   }
 
   private roomsNeedKeeper(allProcessInfo: ProcessInfo[]): RoomName[] {
-    if (World.isSimulation()) {
-      return []
-    }
+    // if (World.isSimulation()) {  // FixMe:
+    //   return []
+    // }
 
     const roomsWithKeeperProcess = allProcessInfo.map(processInfo => {
       if (processInfo.process instanceof RoomKeeperProcess) {
@@ -54,6 +55,9 @@ export class ApplicationProcessLauncher {
       }
       return room
         .find(FIND_MY_CREEPS).filter(creep => {
+          if (!isV4CreepMemory(creep.memory)) {
+            return false
+          }
           if (creep.memory.type !== CreepType.TAKE_OVER) {
             return false
           }
@@ -63,7 +67,7 @@ export class ApplicationProcessLauncher {
           return true
         })
     })()
-    workers.forEach(creep => creep.memory.type = CreepType.WORKER)
+    workers.forEach(creep => (creep.memory as V4CreepMemory).type = CreepType.WORKER)
     const workerNames = workers.map(creep => creep.name)
     const objective = new RoomKeeperObjective(time, [], roomName, workerNames)
     OperatingSystem.os.addProcess(processId => new RoomKeeperProcess(time, processId, objective))

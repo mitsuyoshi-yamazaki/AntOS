@@ -3,10 +3,11 @@ import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, SquadStatu
 import { CreepStatus, ActionResult, CreepType, CreepSearchAndDestroyOption } from "_old/creep"
 import { runHarvester } from "./harvester"
 import { Region } from "../region";
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep";
 
 export type HarvesterDestination = StructureContainer | StructureTerminal | StructureStorage | StructureLink
 
-export interface RemoteHarvesterMemory extends CreepMemory {
+export interface RemoteHarvesterMemory extends V4CreepMemory {
   source_id: string | undefined
 }
 
@@ -184,6 +185,10 @@ export class RemoteHarvesterSquad extends Squad {
     let attacker_max_ticks = 0
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
+
       const memory = creep.memory as RemoteHarvesterMemory
 
       // Log current position
@@ -746,6 +751,9 @@ export class RemoteHarvesterSquad extends Squad {
     }
 
     this.builders.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }
@@ -992,6 +1000,9 @@ export class RemoteHarvesterSquad extends Squad {
 
   private runCarrier(): void {
     this.carriers.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }

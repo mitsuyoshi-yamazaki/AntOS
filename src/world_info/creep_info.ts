@@ -1,4 +1,4 @@
-import { CreepName } from "prototype/creep"
+import { CreepName, isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { GameObjectInfo } from "./game_object_info"
 // Worldをimportしない
@@ -57,16 +57,16 @@ export const Creeps: CreepsInterface = {
         delete Memory.creeps[creepName]
         continue
       }
-      if (creep.memory.v5 == null) {
+      if (!isV5CreepMemory(creep.memory)) {
         continue
       }
       const creeps = ((): Creep[] => {
-        const stored = allCreeps.get(creep.memory.v5.p)
+        const stored = allCreeps.get(creep.memory.p)
         if (stored != null) {
           return stored
         }
         const newList: Creep[] = []
-        allCreeps.set(creep.memory.v5.p, newList)
+        allCreeps.set(creep.memory.p, newList)
         return newList
       })()
 

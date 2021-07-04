@@ -2,7 +2,8 @@ import { StructureFilter, room_link } from "../utility"
 import { Squad } from "_old/squad/squad"
 import { ChargeTarget } from "./room"
 import { CreepTaskState } from "game_object_task/creep_task"
-import { V5CreepMemory } from "prototype/creep"
+import { isV4CreepMemory, V5CreepMemory } from "prototype/creep"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks
   NONE    = "none",
@@ -154,57 +155,6 @@ declare global {
     // Replacing methods
     // _say(message: string, toPublic?: boolean): 0 | -1 | -4
   }
-
-  interface CreepMemory {
-    /** task state */
-    ts: CreepTaskState | null
-
-    /** v5.x.x creep memory */
-    v5?: V5CreepMemory
-
-    // ----
-    /** @deprecated Old codebase */
-    squad_name: string
-
-    /** @deprecated Old codebase */
-    status: CreepStatus
-
-    /** @deprecated Old codebase */
-    type: CreepType
-
-    /** @deprecated Old codebase */
-    birth_time: number
-
-    /** @deprecated Old codebase */
-    should_silent?: boolean
-
-    /** @deprecated Old codebase */
-    should_notify_attack: boolean
-
-    /** @deprecated Old codebase */
-    let_thy_die: boolean
-
-    /** @deprecated Old codebase */
-    debug?: boolean
-
-    /** @deprecated Old codebase */
-    stop?: boolean
-
-    /** @deprecated Old codebase */
-    destination_room_name?: string
-
-    /** @deprecated Old codebase */
-    withdraw_target?: string            // something that has energy
-
-    /** @deprecated Old codebase */
-    withdraw_resources_target?: string  // something that has store
-
-    /** @deprecated Old codebase */
-    pickup_target?: string
-
-    /** @deprecated Old codebase */
-    no_path?: DirectionConstant
-  }
 }
 
 export let move_called = 0
@@ -237,6 +187,9 @@ export function init() {
   // }
 
   Creep.prototype.initialize = function() {
+    if (!isV4CreepMemory(this.memory)) {
+      return
+    }
     if ((this.memory.status == null) || (this.memory.status == undefined)) {
       this.memory.status = CreepStatus.NONE
     }
@@ -301,6 +254,11 @@ export function init() {
   }
 
   Creep.prototype.moveToRoom = function(destination_room_name: string): ActionResult {
+    if (!isV4CreepMemory(this.memory)) {
+      PrimitiveLogger.fatal("Creep.moveToRoom() does not work in v5")
+      return ActionResult.DONE
+    }
+
     if (this.room.name == destination_room_name) {
       const index = (Game.time % 3)
 
@@ -455,6 +413,11 @@ export function init() {
   }
 
   Creep.prototype.goToRenew = function(spawn: StructureSpawn, opts?:{ticks?: number, no_auto_finish?: boolean, withdraw?: boolean}): ActionResult {
+    if (!isV4CreepMemory(this.memory)) {
+      PrimitiveLogger.fatal("Creep.goToRenew() does not work in v5")
+      return ActionResult.DONE
+    }
+
     opts = opts || {}
     const ticks = opts.ticks || 1400
 
@@ -1072,6 +1035,10 @@ export function init() {
    * source_filter: Filter structure that creep can withdrow from it
    */
   Creep.prototype.upgrade = function(source_filter: StructureFilter | undefined): ActionResult {
+    if (!isV4CreepMemory(this.memory)) {
+      PrimitiveLogger.fatal("Creep.upgrade() does not work in v5")
+      return ActionResult.DONE
+    }
     if (!this.room.controller || !this.room.controller.my) {
       console.log(`Creep.upgrade the room is not owned ${this.room.controller}, ${this.name}`)
       return ActionResult.DONE
@@ -1162,6 +1129,10 @@ export function init() {
 
   // --- Work ---
   Creep.prototype.work = function(room: Room, sources: WorkerSource[], opts?: {additional_container_ids?: string[]}): void {
+    if (!isV4CreepMemory(this.memory)) {
+      PrimitiveLogger.fatal("Creep.work() does not work in v5")
+      return
+    }
     opts = opts || {}
 
     if (!room) {
@@ -1231,7 +1202,9 @@ export function init() {
 
           for (const creep_name in Game.creeps) {
             const creep = Game.creeps[creep_name]
-
+            if (!isV4CreepMemory(creep.memory)) {
+              return
+            }
             if ((creep.room.name == this.room.name) && (creep.memory.type == CreepType.WORKER)) {
               if (creep.memory.status == CreepStatus.CHARGE) {
                 number += 1
@@ -1414,6 +1387,9 @@ export function init() {
 
         for (const creep_name in Game.creeps) {
           const creep = Game.creeps[creep_name]
+          if (!isV4CreepMemory(creep.memory)) {
+            return
+          }
 
           if ((creep.room.name == this.room.name) && (creep.memory.type == CreepType.WORKER)) {
             if (creep.memory.status == CreepStatus.UPGRADE) {

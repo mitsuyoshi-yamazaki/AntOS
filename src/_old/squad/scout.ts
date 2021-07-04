@@ -1,8 +1,9 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
-interface ScoutCreepMemory extends CreepMemory {
+interface ScoutCreepMemory extends V4CreepMemory {
   readonly room_name: string
 }
 
@@ -97,6 +98,9 @@ export class ScoutSquad extends Squad {
 
   public run(): void {
     this.creep_for_room.forEach((creep, room_name) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }

@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory } from "prototype/creep"
 
 export interface RemoteMineralHarvesterSquadMemory extends SquadMemory {
   room_name: string
@@ -36,6 +37,9 @@ export class RemoteMineralHarvesterSquad extends Squad {
     }
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       switch (creep.memory.type) {
         case CreepType.HARVESTER:
           this.harvester = creep
@@ -218,6 +222,9 @@ export class RemoteMineralHarvesterSquad extends Squad {
     const keeper_lairs = this.keeper_lair ? [this.keeper_lair] : []
 
     this.carriers.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }

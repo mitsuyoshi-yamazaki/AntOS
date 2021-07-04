@@ -3,7 +3,7 @@ import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_tas
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
-import { CreepRole } from "prototype/creep"
+import { CreepRole, isV5CreepMemory, V4CreepMemory } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
 import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
@@ -111,21 +111,14 @@ export class RootProcess {
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      if (creep.task != null) {
-        if (creep.memory.v5 == null) {
-          creep.memory.v5 = {
-            p: creep.room.name, // FixMe: migration code
-            r: [CreepRole.Mover, CreepRole.Worker],
-            t: creep.task.encode()
-          }
-        } else {
-          creep.memory.v5.t = creep.task.encode()
-        }
+      if (creep.task != null && isV5CreepMemory(creep.memory)) {
+        creep.memory.t = creep.task.encode()
       } else {
-        if (creep.memory.v5 != null) {
-          creep.memory.v5.t = null
+        if (isV5CreepMemory(creep.memory)) {
+          creep.memory.t = null
+        } else {
+          (creep.memory as V4CreepMemory).ts = creep.v4Task?.encode() ?? null
         }
-        creep.memory.ts = creep.v4Task?.encode() ?? null
       }
     }
     for (const spawnName in Game.spawns) {

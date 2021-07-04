@@ -1,5 +1,6 @@
 import { CreepTask, CreepTaskState } from "game_object_task/creep_task"
 import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
+import { SystemInfo } from "utility/system_info"
 
 export interface ClaimControllerTaskState extends CreepTaskState {
   /** target controller ID */
@@ -43,7 +44,7 @@ export class ClaimControllerTask implements CreepTask {
 
     switch (result) {
     case OK:
-      creep.signController(this.controller, `v${Game.version} at ${Game.time}`)
+      creep.signController(this.controller, `v${SystemInfo.application.version} at ${Game.time}`)
       return "finished"
     case ERR_NOT_IN_RANGE:
       creep.moveTo(this.controller, { reusePath: 0 })

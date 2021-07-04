@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory } from "prototype/creep"
 
 interface UpgraderSquadMemory extends SquadMemory {
   // lab_ids?: string[]
@@ -142,6 +143,9 @@ export class UpgraderSquad extends Squad {
     let no_lab = ['dummy'].indexOf(room_name) >= 0
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }

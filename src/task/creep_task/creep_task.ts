@@ -1,5 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { isV5CreepMemory } from "prototype/creep"
 import { Task, TaskProgressType, TaskState } from "task/task"
 import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./conbined_task/move_harvest_energy_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./conbined_task/move_to_target_task"
@@ -27,10 +28,10 @@ class CreepTaskDecoderMap {
 const decoderMap = new CreepTaskDecoderMap()
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
-  if (creep.memory.v5 == null) {
+  if (!isV5CreepMemory(creep.memory)) {
     return null
   }
-  const state = creep.memory.v5.t
+  const state = creep.memory.t
   if (state == null) {
     return null
   }

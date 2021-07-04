@@ -1,6 +1,7 @@
 import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory } from "prototype/creep"
 
 export interface ResearchTarget {
   readonly id: string
@@ -79,6 +80,9 @@ export class ResearcherSquad extends Squad {
     // }
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       creep.memory.let_thy_die = !this.needs_research
     })
   }
@@ -143,6 +147,9 @@ export class ResearcherSquad extends Squad {
 
   public run(): void {
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       // creep.say(`${creep.memory.status}`)
       if (creep.spawning) {
         return
@@ -187,6 +194,9 @@ export class ResearcherSquad extends Squad {
   // --- Private ---
 
   private chargeLabs(creep: Creep) {
+    if (!isV4CreepMemory(creep.memory)) {
+      return
+    }
     if (!creep.room.terminal) {
       if ((creep.store.getUsedCapacity() > 0) && creep.room.storage) {
         creep.transferResources(creep.room.storage)

@@ -1,8 +1,10 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { SystemInfo } from "utility/system_info"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
-interface TempMemory extends CreepMemory {
+interface TempMemory extends V4CreepMemory {
   arrived: boolean
 }
 
@@ -25,6 +27,9 @@ export class TempSquad extends Squad {
     super(name, base_room)
 
     this.creeps.forEach((creep, _) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       switch (creep.memory.type) {
         case CreepType.SCOUT:
           this.scout = creep
@@ -226,6 +231,9 @@ export class TempSquad extends Squad {
       return
     }
     const creep = this.scout
+    if (!isV4CreepMemory(creep.memory)) {
+      return
+    }
 
     if (creep.memory.stop) {
       return
@@ -277,6 +285,9 @@ export class TempSquad extends Squad {
       return
     }
     const creep = this.claimer
+    if (!isV4CreepMemory(creep.memory)) {
+      return
+    }
 
     if (!this.target_room_name) {
       this.say(`ERR`)
@@ -359,11 +370,11 @@ export class TempSquad extends Squad {
 
     if (((Game.time % 41) == 1) && (creep.room.name == target_room_name) && creep.room.controller) {
       if (creep.room.memory && creep.room.memory.is_gcl_farm) {
-        creep.signController(creep.room.controller, `[${Game.version}] GCL Farm`)
+        creep.signController(creep.room.controller, `[${SystemInfo.application.version}] GCL Farm`)
       }
       else {
         if (!creep.room.controller.sign || (Memory.versions.indexOf(creep.room.controller.sign.text) < 0)) {
-          creep.signController(creep.room.controller, Game.version)
+          creep.signController(creep.room.controller, SystemInfo.application.version)
         }
       }
     }

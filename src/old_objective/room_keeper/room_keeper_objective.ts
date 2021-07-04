@@ -4,15 +4,13 @@ import { OldBuildFirstSpawnObjective } from "old_objective/bootstrap_room/old_bu
 import { DefendOwnedRoomObjective } from "old_objective/defend_room/defend_owned_room_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
 import { SpawnCreepObjective } from "old_objective/spawn/spawn_creep_objective"
-import { MultiRoleWorkerObjective } from "old_objective/worker/multi_role_worker_objective"
 import { PrimitiveWorkerObjective } from "old_objective/worker/primitive_worker_objective"
 import { isWorkerObjective, WorkerObjective } from "old_objective/worker/worker_objective"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { CreepName } from "prototype/creep"
+import { CreepName, isV4CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { World } from "world_info/world_info"
 import { CreepType } from "_old/creep"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
@@ -85,11 +83,7 @@ export class RoomKeeperObjective implements Objective {
         return workerObjective
       }
       const newObjective = ((): WorkerObjective => {
-        if (World.isSimulation() === true) {
-          return new MultiRoleWorkerObjective(Game.time, [], [], [])
-        } else {
-          return new PrimitiveWorkerObjective(Game.time, [], [], [], null)
-        }
+        return new PrimitiveWorkerObjective(Game.time, [], [], [], null)
       })()
       this.children.push(newObjective)
       return newObjective
@@ -220,9 +214,19 @@ export class RoomKeeperObjective implements Objective {
         return this.buildFirstSpawnObjective
       }
       const takenOverCreeps: Creep[] = room.find(FIND_MY_CREEPS)
-        .filter(creep => creep.memory.type === CreepType.TAKE_OVER)
+        .filter(creep => {
+          if (!isV4CreepMemory(creep.memory)) {
+            return false
+          }
+          return creep.memory.type === CreepType.TAKE_OVER
+        })
 
-      takenOverCreeps.forEach(creep => creep.memory.type = CreepType.WORKER)
+      takenOverCreeps.forEach(creep => {
+        if (!isV4CreepMemory(creep.memory)) {
+          return false
+        }
+        return creep.memory.type = CreepType.WORKER
+      })
       const takenOverCreepNames = takenOverCreeps.map(creep => creep.name)
 
       const objective = new OldBuildFirstSpawnObjective(Game.time, [], takenOverCreepNames, [])

@@ -11,6 +11,8 @@ import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
 import { SingleCreepProviderCreepRequest } from "old_objective/creep_provider/single_creep_provider_objective"
+import { SystemInfo } from "utility/system_info"
+import { isV4CreepMemory } from "prototype/creep"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -25,7 +27,6 @@ declare global {
     io: (message: string) => string
 
     user: { name: 'Mitsuyoshi' }
-    version: string
 
     // Alliance
     LOANlist: string[]
@@ -546,7 +547,7 @@ export function tick(): void {
 
     const room_desc = target.type == 'empire' ? ` claimed rooms ${rooms.length}/${Game.gcl.level}` : ''
 
-    console.log(`v${Game.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%${room_desc}`)
+    console.log(`v${SystemInfo.application.version}, GCL: <b>${Game.gcl.level}</b>, <b>${gcl_progress}</b>M/<b>${gcl_progress_total}</b>M, <b>${gcl_progress_text}</b>%${room_desc}`)
 
     console.log(`- Regions in ${target.type} ${target.name}`)
 
@@ -973,6 +974,9 @@ export function tick(): void {
     ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
+        if (!isV4CreepMemory(creep.memory)) {
+          return
+        }
 
         if (creep.memory.squad_name != squad_name) {
           continue

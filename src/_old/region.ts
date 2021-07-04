@@ -21,6 +21,7 @@ import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";
 import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "old_objective/bridging/creep_provider_bridging_squad"
+import { SystemInfo } from "utility/system_info"
 
 export enum RegionStatus {
   NORMAL              = 'normal',             // normal
@@ -141,8 +142,8 @@ export class Region {
         send_resources_to: [],
         send_resources_to_excludes: [],
         ancestor,
-        region_version: Game.version,
-        sign: Game.version,
+        region_version: SystemInfo.application.version,
+        sign: SystemInfo.application.version,
       }
 
       ErrorMapper.wrapLoop(() => {

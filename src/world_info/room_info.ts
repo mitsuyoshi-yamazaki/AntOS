@@ -1,4 +1,4 @@
-import { CreepRole, hasNecessaryRoles } from "prototype/creep"
+import { CreepRole, hasNecessaryRoles, isV5CreepMemory } from "prototype/creep"
 import { RoomName, RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
@@ -98,7 +98,7 @@ function enumerateObjects(controller: StructureController, creeps: Creep[]): Own
   energyStores.push(...droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
   energyStores.push(...tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
   const energyStoreCreeps = creeps.filter(creep => {
-    if (creep.memory.v5 == null) {
+    if (!isV5CreepMemory(creep.memory)) {
       return false
     }
     if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {

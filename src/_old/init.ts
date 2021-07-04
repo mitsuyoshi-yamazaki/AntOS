@@ -5,11 +5,10 @@ import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
-
-const version = '5.1.22'
+import { SystemInfo } from "utility/system_info"
+import { isV4CreepMemory } from "prototype/creep"
 
 export function init(): void {
-  Game.version = version
   const now = Game.time
 
   Memory.last_tick = now
@@ -17,9 +16,10 @@ export function init(): void {
   if (!Memory.versions) {
     Memory.versions = []
   }
-  if (Memory.versions.indexOf(Game.version) < 0) {
-    Memory.versions.push(Game.version)
-    console.log(`Updated v${Game.version}`)
+  const version = SystemInfo.application.version
+  if (Memory.versions.indexOf(version) < 0) {
+    Memory.versions.push(version)
+    console.log(`Updated v${version}`)
   }
 
   if (Memory.towers == null) {
@@ -90,8 +90,6 @@ export function init(): void {
 }
 
 export function tick(): void {
-  Game.version = version
-
   const time = Game.time
 
   if ((time % 2099) == 0) {
@@ -225,6 +223,10 @@ export function tick(): void {
 
   for (const creep_name in Game.creeps) {
     const creep = Game.creeps[creep_name]
+    if (!isV4CreepMemory(creep.memory)) {
+      return
+    }
+
     const squad_name = creep.memory.squad_name
 
     if (!squad_name) {

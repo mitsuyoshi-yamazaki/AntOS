@@ -71,27 +71,4 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       spawn.spawnCreep(request.body, creepName, {memory: memory})
     })
   }
-
-  // spawning中でもメモリはあるため不要のはず
-  // /**
-  //  *
-  //  * @returns 重複あり
-  //  */
-  // public spawningCreepRoles(): CreepRole[] {
-  //   return this.spawns.reduce((result, current) => {
-  //     if (current.spawning == null) {
-  //       return result
-  //     }
-  //     const memory = Memory.creeps[current.spawning.name]
-  //     if (memory == null) {
-  //       PrimitiveLogger.fatal(`[Program bug] spawning creep doesn't have its memory: ${current.spawning.name} in ${roomLink(current.room.name)}`)
-  //       return result
-  //     }
-  //     if (memory.v5 == null) {
-  //       return result
-  //     }
-  //     result.push(...memory.v5.r)
-  //     return result
-  //   }, [] as CreepRole[])
-  // }
 }

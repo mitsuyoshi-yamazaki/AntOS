@@ -1,18 +1,20 @@
-/* eslint-disable */
 import * as ScreepsProfiler from "screeps-profiler"
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
-import { leveled_colored_text } from './utility'
+import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
+import { SystemInfo } from "utility/system_info"
 
 Initializer.init()
-const initializing_message = `Initializer.init() v${Game.version} at ${Game.time}`
-console.log(leveled_colored_text(initializing_message, 'warn'))
+const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot at ${Game.time}`
+console.log(leveled_colored_text(initializing_message, "warn"))
+
+/* eslint-disable */
 
 const mainLoop = () => {
   if (Memory.debug.cpu.show_usage) {

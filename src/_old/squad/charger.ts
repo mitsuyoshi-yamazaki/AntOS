@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepTransferLinkToStorageOption, CreepType } from "_old/creep"
+import { isV4CreepMemory } from "prototype/creep"
 
 export class ChargerSquad extends Squad {
   private number_of_carries: number
@@ -109,6 +110,10 @@ export class ChargerSquad extends Squad {
       if (creep.spawning) {
         return
       }
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
+
 
       const ticksToLive = (creep.ticksToLive || 1500)
       const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((ticksToLive < 1400)))

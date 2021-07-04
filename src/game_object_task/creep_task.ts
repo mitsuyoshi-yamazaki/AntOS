@@ -18,6 +18,7 @@ import { BoostAllTask, BoostAllTaskState } from "./creep_task/multi_task/boost_a
 import { SequentialTask, SequentialTaskState } from "./creep_task/multi_task/sequential_task"
 import { DismantleTask, DismantleTaskState } from "./creep_task/dismantle_task"
 import { PatrolRoomTask, PatrolRoomTaskState } from "./creep_task/multi_task/patrol_room_task"
+import { isV4CreepMemory } from "prototype/creep"
 
 export interface CreepTaskState extends GameObjectTaskState {
   /** type identifier */
@@ -53,6 +54,9 @@ class CreepTaskTypes {
 }
 
 export function decodeCreepTask(creep: Creep): CreepTask | null {
+  if (!isV4CreepMemory(creep.memory)) {
+    return null
+  }
   const state = creep.memory.ts
   if (state == null) {
     return null

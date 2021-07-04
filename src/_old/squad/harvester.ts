@@ -2,6 +2,7 @@ import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 import { Region } from "../region";
+import { isV4CreepMemory } from "prototype/creep";
 
 export interface HarvesterSquadMemory extends SquadMemory {
   readonly source_id: string
@@ -38,6 +39,10 @@ export class HarvesterSquad extends Squad {
     this.carriers = []
 
     this.creeps.forEach((creep, _) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
+
       switch (creep.memory.type) {
         case CreepType.HARVESTER:
           this.harvesters.push(creep)
@@ -376,6 +381,9 @@ export class HarvesterSquad extends Squad {
     if (this.needs_harvester) {
       if (room && room.attacker_info().heavyly_attacked && (this.resource_type != RESOURCE_ENERGY)) {
         this.creeps.forEach((creep) => {
+          if (!isV4CreepMemory(creep.memory)) {
+            return
+          }
           creep.memory.let_thy_die = true
         })
         return SpawnPriority.NONE
@@ -386,6 +394,9 @@ export class HarvesterSquad extends Squad {
       if (room && (source as Mineral).mineralType && ((source as Mineral).mineralAmount == 0) && ((source.ticksToRegeneration || 0) > 100)) {
         if ((Game.time % 23) == 5) {
           this.creeps.forEach((creep) => {
+            if (!isV4CreepMemory(creep.memory)) {
+              return
+            }
             creep.memory.let_thy_die = true
           })
         }
@@ -630,6 +641,9 @@ export class HarvesterSquad extends Squad {
       if (creep.spawning) {
         return
       }
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
 
       if (this.store && (this.store.structureType == STRUCTURE_LINK)) {
         creep.memory.let_thy_die = true
@@ -838,6 +852,9 @@ export interface RunHarvesterOptions {
 
 export function runHarvester(creep: Creep, room_name: string, source: Source | Mineral | undefined, store: StructureContainer | StructureLink | StructureStorage | undefined, container: StructureContainer | StructureLink | undefined, opt?: RunHarvesterOptions): void {
   if (creep.spawning) {
+    return
+  }
+  if (!isV4CreepMemory(creep.memory)) {
     return
   }
 

@@ -1,3 +1,4 @@
+import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
 import { SpawnPool, SpawnPoolSpawnRequest } from "./spawn_resource_pool"
@@ -104,7 +105,7 @@ function reloadCreepResourcePools(allCreeps: Map<RoomName, Creep[]>): void {
 
   allCreeps.forEach((creeps, parentRoomName) => {
     creeps.forEach(creep => {
-      if (creep.memory.v5 == null) {
+      if (!isV5CreepMemory(creep.memory)) {
         return
       }
       const pool = ((): CreepPool => {

@@ -1,6 +1,9 @@
 import { CreepTask as V4CreepTask } from "game_object_task/creep_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
 import { CreepTask, CreepTaskState } from "task/creep_task/creep_task"
+import { CreepTaskState as V4CreepTaskState } from "game_object_task/creep_task"
+import { ShortVersion, ShortVersionV5 } from "utility/system_info"
+import { CreepStatus, CreepType } from "_old/creep"
 import { RoomName } from "./room"
 
 // ---- Types and Constants ---- //
@@ -28,10 +31,10 @@ export const CreepRole = {
 }
 
 export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
-  if (creep.memory.v5 == null) {
+  if (!isV5CreepMemory(creep.memory)) {
     return false
   }
-  const creepRoles = creep.memory.v5.r
+  const creepRoles = creep.memory.r
   const missingRoles = roles.some(role => creepRoles.includes(role) !== true)
   return missingRoles !== true
 }
@@ -49,7 +52,12 @@ export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 970
 
 
 // ---- Memory ---- //
+export type CreepMemory = V5CreepMemory | V4CreepMemory
+
 export interface V5CreepMemory {
+  /** system version */
+  v: ShortVersionV5
+
   /** parent room name */
   p: RoomName
 
@@ -58,6 +66,63 @@ export interface V5CreepMemory {
 
   /** task */
   t: CreepTaskState | null
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isV5CreepMemory(arg: any): arg is V5CreepMemory {
+  return arg.v === ShortVersion.v5
+}
+
+export interface V4CreepMemory {
+  /** task state */
+  ts: V4CreepTaskState | null
+
+  /** @deprecated Old codebase */
+  squad_name: string
+
+  /** @deprecated Old codebase */
+  status: CreepStatus
+
+  /** @deprecated Old codebase */
+  type: CreepType
+
+  /** @deprecated Old codebase */
+  birth_time: number
+
+  /** @deprecated Old codebase */
+  should_silent?: boolean
+
+  /** @deprecated Old codebase */
+  should_notify_attack: boolean
+
+  /** @deprecated Old codebase */
+  let_thy_die: boolean
+
+  /** @deprecated Old codebase */
+  debug?: boolean
+
+  /** @deprecated Old codebase */
+  stop?: boolean
+
+  /** @deprecated Old codebase */
+  destination_room_name?: string
+
+  /** @deprecated Old codebase */
+  withdraw_target?: string            // something that has energy
+
+  /** @deprecated Old codebase */
+  withdraw_resources_target?: string  // something that has store
+
+  /** @deprecated Old codebase */
+  pickup_target?: string
+
+  /** @deprecated Old codebase */
+  no_path?: DirectionConstant
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
+  return arg.v == null
 }
 
 
