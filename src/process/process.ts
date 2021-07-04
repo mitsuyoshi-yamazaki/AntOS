@@ -7,6 +7,7 @@ import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "../old_obje
 import { ClaimRoomProcess, ClaimRoomProcessState } from "../old_objective/bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "../old_objective/room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "../old_objective/creep_provider/inter_shard_creep_deliverer_process"
+import { LowRCLRoomKeeperProcess, LowRCLRoomKeeperProcessState } from "objective/low_rcl_room_keeper_process"
 
 export type ProcessId = number
 
@@ -39,7 +40,10 @@ class ProcessTypes {
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
   "InterShardCreepDelivererProcess" = (state: ProcessState) => InterShardCreepDelivererProcess.decode(state as InterShardCreepDelivererProcessState)
 
-  // onetime processes
+  // ---- v5 process ---- //
+  "LowRCLRoomKeeperProcess" = (state: ProcessState) => LowRCLRoomKeeperProcess.decode(state as LowRCLRoomKeeperProcessState)
+
+  // ---- onetime processes ---- //
   // "War29337295Process" = (state: ProcessState) => War29337295Process.decode(state as War29337295ProcessState)
   // "War29337295LogisticsProcess" = (state: ProcessState) => War29337295LogisticsProcess.decode(state as War29337295LogisticsProcessState)
   // "Season3War11353Process" = (state: ProcessState) => Season3War11353Process.decode(state as Season3War11353ProcessState)

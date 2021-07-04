@@ -6,22 +6,28 @@ import { RoomName } from "./room"
 // ---- Types and Constants ---- //
 export type CreepName = string
 
-export type CreepRoleHarvester = "harvester"
-export type CreepRoleHauler = "hauler"
-export type CreepRoleWorker = "worker"
-export type CreepRoleScout = "scout"
+type CreepRoleHarvester = "hv"
+type CreepRoleWorker = "wr"
+type CreepRoleEnergyStore = "es"
+type CreepRoleHauler = "hl"
+type CreepRoleScout = "sc"
 
-export const creepRoleHarvester: CreepRoleHarvester = "harvester"
-export const creepRoleHauler: CreepRoleHauler = "hauler"
-export const creepRoleWorker: CreepRoleWorker = "worker"
-export const creepRoleScout: CreepRoleScout = "scout"
+export const creepRoleHarvester: CreepRoleHarvester = "hv"
+export const creepRoleWorker: CreepRoleWorker = "wr"
+export const creepRoleEnergyStore: CreepRoleEnergyStore = "es"
+export const creepRoleHauler: CreepRoleHauler = "hl"
+export const creepRoleScout: CreepRoleScout = "sc"
 
-export type CreepRole = CreepRoleHarvester | CreepRoleHauler | CreepRoleWorker | CreepRoleScout
+export type CreepRole = CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout
 
+// ---- Custon Return Code ---- //
+export type FINISHED = 967
+export type IN_PROGRESS = 968
+export type ERR_PROGRAMMING_ERROR = 969
 
-// ---- Custon Error Code ---- //
-export type ERR_PROGRAMMING_ERROR = 967
-export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 967
+export const FINISHED: FINISHED = 967
+export const IN_PROGRESS: IN_PROGRESS = 968
+export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 969
 
 
 // ---- Memory ---- //
@@ -57,7 +63,7 @@ declare global {
 export function init(): void {
   Object.defineProperty(Creep.prototype, "task", {
     get(): CreepTask | null {
-      return this._v4Task
+      return this._task
     },
     set(task: CreepTask | null): void {
       this.v4Task = null

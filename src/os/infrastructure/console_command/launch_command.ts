@@ -11,6 +11,7 @@ import { InterShardCreepDelivererProcess } from "old_objective/creep_provider/in
 import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
+import { LowRCLRoomKeeperProcess } from "objective/low_rcl_room_keeper_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 
@@ -35,6 +36,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "InterShardCreepDelivererProcess":
       result = this.launchInterShardCreepDelivererProcess()
+      break
+    case "LowRCLRoomKeeperProcess":
+      result = this.launchLowRCLRoomKeeperProcess()
       break
     // case "WarProcess":
     //   result = this.launchWarProcess()
@@ -265,4 +269,17 @@ export class LaunchCommand implements ConsoleCommand {
   //   return new ResultSucceeded(process)
   // }
 
+  private launchLowRCLRoomKeeperProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return LowRCLRoomKeeperProcess.create(processId, roomName)
+    })
+    return new ResultSucceeded(process)
+  }
 }

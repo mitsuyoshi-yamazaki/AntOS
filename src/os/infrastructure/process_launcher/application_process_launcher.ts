@@ -3,6 +3,7 @@ import { RoomKeeperProcess } from "old_objective/room_keeper/room_keeper_process
 import { OperatingSystem, ProcessInfo } from "os/os"
 import { RoomName } from "prototype/room"
 import { Migration } from "utility/migration"
+import { World } from "world_info/world_info"
 import { CreepType } from "_old/creep"
 
 export class ApplicationProcessLauncher {
@@ -12,6 +13,10 @@ export class ApplicationProcessLauncher {
   }
 
   private roomsNeedKeeper(allProcessInfo: ProcessInfo[]): RoomName[] {
+    if (World.isSimulation()) {
+      return []
+    }
+
     const roomsWithKeeperProcess = allProcessInfo.map(processInfo => {
       if (processInfo.process instanceof RoomKeeperProcess) {
         return processInfo.process.roomName

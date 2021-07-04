@@ -1,62 +1,57 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { ERR_PROGRAMMING_ERROR } from "prototype/creep"
-import { DecodeFailureTask } from "task/failure_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Task, TaskProgressType, TaskState } from "task/task"
+import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./conbined_task/move_harvest_energy_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./conbined_task/move_to_target_task"
-import { HarvestEnergyTask, HarvestEnergyTaskState } from "./primitive_task/harvest_energy_task"
-import { MoveTask, MoveTaskState } from "./primitive_task/move_task"
-
-export type CreepTaskSuccededDidRun = boolean
-export type CreepTaskReturnCode = OK | ERR_PROGRAMMING_ERROR
-export type CreepTaskProgressType = TaskProgressType<void, CreepTaskSuccededDidRun, CreepTaskReturnCode>
 
 export interface CreepTaskState extends TaskState {
   /** type identifier */
   t: keyof CreepTaskDecoderMap
 }
 
-export interface CreepTask extends Task<Creep, void, CreepTaskSuccededDidRun, CreepTaskReturnCode> {
+export interface CreepTask extends Task<Creep> {
   shortDescription?: string
 
   encode(): CreepTaskState
-  run(creep: Creep): CreepTaskProgressType
+  run(creep: Creep): TaskProgressType
 }
-
-type CreepTaskTypes = CreepDecodeFailureTask
-  | MoveToTargetTask
-  | HarvestEnergyTask
-  | MoveTask
 
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   /** general task */
   "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as MoveToTargetTaskState)
 
-  /** primitive task */
-  "HarvestEnergyTask" = (state: CreepTaskState) => HarvestEnergyTask.decode(state as HarvestEnergyTaskState)
-  "MoveTask" = (state: CreepTaskState) => MoveTask.decode(state as MoveTaskState)
-
   /** combined task */
+  "MoveHarvestEnergyTask" = (state: CreepTaskState) => MoveHarvestEnergyTask.decode(state as MoveHarvestEnergyTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 
-// export function decodeCreepTask(creep: Creep): CreepTask | null {
-//   const state = creep.memory.ts
-//   if (state == null) {
-//     return null
-//   }
-//   return decodeCreepTaskFromState(state)
-// }
+export function decodeCreepTask(creep: Creep): CreepTask | null {
+  if (creep.memory.v5 == null) {
+    return null
+  }
+  const state = creep.memory.v5.t
+  if (state == null) {
+    return null
+  }
+  return decodeCreepTaskFromState(state)
+}
 
-export function decodeCreepTaskFromState(state: CreepTaskState): CreepTaskTypes | null {
-  return ErrorMapper.wrapLoop((): CreepTaskTypes | null => {
+export function decodeCreepTaskFromState(state: CreepTaskState): CreepTask | null {
+  const result = ErrorMapper.wrapLoop((): CreepTask | null => {
     const decoder = decoderMap[state.t]
     if (decoder == null) {
+      const message = `Decode failed by program bug: missing decoder (task type identifier: ${state.t})`
+      PrimitiveLogger.fatal(message)
       return null
     }
     return decoder(state)
   }, `decodeCreepTaskFromState(), objective type: ${state.t}`)()
-}
 
-export class CreepDecodeFailureTask extends DecodeFailureTask<Creep> {
+  if (result == null) {
+    const message = `Decode failed by program bug (task type identifier: ${state.t})`
+    PrimitiveLogger.fatal(message)
+    return null
+  }
+  return result
 }

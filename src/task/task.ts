@@ -5,23 +5,13 @@ export type TaskRunnerType = Creep | StructureSpawn | StructureTower
 export type TaskTargetType = Creep | PowerCreep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
 export type TaskTargetIdType = Id<TaskTargetType> | RoomName
 
-export class TaskInProgress<T> {
-  public readonly taskProgressType = "in progress"
-  public constructor(public readonly value: T) { }
-}
+export type TaskProgressTypeFinished = 0
+export type TaskProgressTypeInProgress = 1
 
-export class TaskSucceeded<Result> {
-  public readonly taskProgressType = "succeeded"
-  public constructor(public readonly result: Result) { }
-}
+export const taskProgressTypeFinished: TaskProgressTypeFinished = 0
+export const taskProgressTypeInProgress: TaskProgressTypeInProgress = 1
 
-export class TaskFailed<Reason> {
-  public readonly taskProgressType = "failed"
-  public constructor(public readonly reason: Reason) { }
-}
-
-export type TaskProgressType<T, S, U> = TaskInProgress<T> | TaskSucceeded<S> | TaskFailed<U>
-
+export type TaskProgressType = TaskProgressTypeFinished | TaskProgressTypeInProgress
 
 export interface TaskState extends State {
   /** type identifier */
@@ -31,10 +21,13 @@ export interface TaskState extends State {
   s: number
 }
 
-export interface Task<O, T, S, U> extends Stateful {
+/**
+ * - in progress / finished の2値で表せるタスク
+ */
+export interface Task<ObjectType> extends Stateful {
   targetId?: TaskTargetIdType
   startTime: number
 
   encode(): TaskState
-  run(obj: O): TaskProgressType<T, S, U>
+  run(obj: ObjectType): TaskProgressType
 }

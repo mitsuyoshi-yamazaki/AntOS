@@ -1,4 +1,4 @@
-import { Task, TaskFailed, TaskState, TaskTargetIdType } from "./task"
+import { Task, taskProgressTypeFinished, TaskProgressTypeFinished, TaskState, TaskTargetIdType } from "./task"
 
 export class DecodeFailureTaskReasonTargetNotFound {
   public readonly failedType = "target not found"
@@ -8,14 +8,18 @@ export class DecodeFailureTaskReasonTargetNotFound {
   ) { }
 }
 
-export class DecodeFailureTaskReasonUnknown {
-  public readonly failedType = "unknown"
+export class DecodeFailureTaskReasonProgramBug {
+  public readonly failedType = "program bug"
+
+  public constructor(
+    public readonly reason?: string,
+  ) { }
 }
 
-export type DecodeFailureTaskReason = DecodeFailureTaskReasonTargetNotFound | DecodeFailureTaskReasonUnknown
+export type DecodeFailureTaskReason = DecodeFailureTaskReasonTargetNotFound | DecodeFailureTaskReasonProgramBug
 
 /** Decodeに失敗したという情報をrun()時まで保管するTask */
-export class DecodeFailureTask<T> implements Task<T, void, void, DecodeFailureTaskReason> {
+export class DecodeFailureTask<T> implements Task<T> {
   public constructor(
     public readonly taskIdentifier: string,
     public readonly startTime: number,
@@ -30,7 +34,7 @@ export class DecodeFailureTask<T> implements Task<T, void, void, DecodeFailureTa
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public run(obj: T): TaskFailed<DecodeFailureTaskReason> {
-    return new TaskFailed(this.reason)
+  public run(obj: T): TaskProgressTypeFinished {
+    return taskProgressTypeFinished
   }
 }

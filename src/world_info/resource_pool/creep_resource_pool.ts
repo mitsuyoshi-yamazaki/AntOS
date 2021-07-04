@@ -2,6 +2,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
+import { taskProgressTypeInProgress } from "task/task"
 import { ResourcePoolType } from "./resource_pool"
 // Worldをimportしない
 
@@ -44,10 +45,10 @@ export class CreepPool implements ResourcePoolType<Creep> {
     const creeps = ((): Creep[] => {
       switch (priority) {
       case creepPoolAssignPriorityLow:
-        return this.creeps.filter(filter)
+        return this.creeps.filter(creep => creep.task == null).filter(filter)
       case creepPoolAssignPriorityUrgent:
         PrimitiveLogger.fatal("creepPoolAssignPriorityUrgent not implemented yet")
-        return this.creeps.filter(filter)
+        return this.creeps.filter(creep => creep.task == null).filter(filter)
       }
     })()
 
@@ -58,5 +59,15 @@ export class CreepPool implements ResourcePoolType<Creep> {
       }
       creep.task = newTask
     }
+  }
+
+  public executeTask(): void {
+    this.creeps.forEach(creep => {
+      if (creep.task != null) {
+        if (creep.task.run(creep) !== taskProgressTypeInProgress) {
+          creep.task = null
+        }
+      }
+    })
   }
 }

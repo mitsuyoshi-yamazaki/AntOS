@@ -1,9 +1,11 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeCreepTask } from "game_object_task/creep_task"
+import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
+import { creepRoleWorker } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
+import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
@@ -47,16 +49,16 @@ export class RootProcess {
 
   public runAfterTick(): void {
     ErrorMapper.wrapLoop((): void => {
+      World.afterTick()
+    }, "World.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
       this.storeTasks()
     }, "RootProcess.storeTasks()")()
 
     ErrorMapper.wrapLoop((): void => {
       OwnedRoomObjectCache.clearCache()
     }, "OwnedRoomObjectCache.clearCache()")()
-
-    ErrorMapper.wrapLoop((): void => {
-      World.afterTick()
-    }, "World.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       InterShardMemoryManager.store()
@@ -73,10 +75,19 @@ export class RootProcess {
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
+      const task = decodeCreepTask(creep)
       if (this.shouldCacheTasks) {
-        creep.v4Task = decodeCreepTask(creep)
+        if (task != null) {
+          creep.task = task
+        } else {
+          creep.v4Task = decodeV4CreepTask(creep)
+        }
       } else {
-        creep._v4Task = decodeCreepTask(creep)
+        if (task != null) {
+          creep._task = task
+        } else {
+          creep._v4Task = decodeV4CreepTask(creep)
+        }
       }
     }
     for (const spawnName in Game.spawns) {
@@ -100,7 +111,22 @@ export class RootProcess {
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      creep.memory.ts = creep.v4Task?.encode() ?? null
+      if (creep.task != null) {
+        if (creep.memory.v5 == null) {
+          creep.memory.v5 = {
+            p: creep.room.name, // FixMe: migration code
+            r: [creepRoleWorker],
+            t: creep.task.encode()
+          }
+        } else {
+          creep.memory.v5.t = creep.task.encode()
+        }
+      } else {
+        if (creep.memory.v5 != null) {
+          creep.memory.v5.t = null
+        }
+        creep.memory.ts = creep.v4Task?.encode() ?? null
+      }
     }
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName]

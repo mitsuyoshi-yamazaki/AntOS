@@ -1,51 +1,64 @@
-import { DecodeFailureTaskReasonUnknown } from "task/failure_task"
-import { TaskInProgress } from "task/task"
-import { CreepTargetingTask, CreepTargetingTaskState } from "../creep_targeting_task"
-import { CreepTask, CreepTaskState, decodeCreepTaskFromState, CreepDecodeFailureTask, CreepTaskProgressType } from "../creep_task"
-import { MoveTask, MoveTaskState } from "../primitive_task/move_task"
+import { ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { TargetingApiWrapper, TargetingApiWrapperTargetType } from "task/targeting_api_wrapper"
+import { TaskProgressType, taskProgressTypeFinished, taskProgressTypeInProgress } from "task/task"
+import { CreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
+import { CreepTask, CreepTaskState } from "../creep_task"
+
+type MoveToTargetTaskApiWrapperResult = FINISHED | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
+type MoveToTargetTaskApiWrapper = CreepApiWrapper<MoveToTargetTaskApiWrapperResult> & TargetingApiWrapper
 
 export interface MoveToTargetTaskState extends CreepTaskState {
-  /** work task state */
-  w: CreepTargetingTaskState
-
-  /** move task state */
-  m: MoveTaskState
+  /** api warpper state */
+  as: CreepApiWrapperState
 }
 
-export class MoveToTargetTask implements CreepTask<void> {
-  public constructor(
+export class MoveToTargetTask implements CreepTask {
+  public get targetId(): Id<TargetingApiWrapperTargetType> {
+    return this.apiWrapper.target.id
+  }
+
+  private constructor(
     public readonly startTime: number,
-    public readonly workTask: CreepTargetingTask,
-    public readonly moveTask: MoveTask,
+    private readonly apiWrapper: MoveToTargetTaskApiWrapper,
   ) { }
 
   public encode(): MoveToTargetTaskState {
     return {
-      t: "MoveToTargetTask",
       s: this.startTime,
-      w: this.workTask.encode(),
-      m: this.moveTask.encode(),
+      t: "MoveToTargetTask",
+      as: this.apiWrapper.encode(),
     }
   }
 
-  public static decode(state: MoveToTargetTaskState): MoveToTargetTask | CreepDecodeFailureTask {
-    const workTask = decodeCreepTaskFromState(state.w)
-    if (workTask instanceof CreepDecodeFailureTask) {
-      return workTask
+  public static decode(state: MoveToTargetTaskState): MoveToTargetTask | null {
+    const wrapper = decodeCreepApiWrapperFromState(state.as)
+    if (wrapper == null) {
+      return null
     }
-    const moveTask = MoveTask.decode(state.m)
-    if (!(workTask instanceof CreepTargetingTask)) {
-      return new CreepDecodeFailureTask(state.t, state.s, new DecodeFailureTaskReasonUnknown())
-    }
-    return new MoveToTargetTask(state.s, workTask, moveTask)
+    return new MoveToTargetTask(state.s, wrapper as MoveToTargetTaskApiWrapper)
   }
 
-  public run(creep: Creep): CreepTaskProgressType<void> {
-    const result = this.workTask.run(creep)
+  public static create(apiWrapper: MoveToTargetTaskApiWrapper): MoveToTargetTask {
+    return new MoveToTargetTask(Game.time, apiWrapper)
+  }
 
-    switch (result.taskProgressType) {
-    default:
-      return new TaskInProgress(undefined)  // TODO:
+  public run(creep: Creep): TaskProgressType {
+    const result = this.apiWrapper.run(creep)
+
+    switch (result) {
+    case FINISHED:
+      return taskProgressTypeFinished
+
+    case IN_PROGRESS:
+    case ERR_NOT_IN_RANGE:
+      creep.moveTo(this.apiWrapper.target, {reusePath: 0})
+      return taskProgressTypeInProgress
+
+    case ERR_BUSY:
+      return taskProgressTypeInProgress
+
+    case ERR_PROGRAMMING_ERROR:
+      return taskProgressTypeFinished
     }
   }
 }

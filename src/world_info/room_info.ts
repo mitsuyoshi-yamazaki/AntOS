@@ -1,5 +1,6 @@
+import { creepRoleEnergyStore } from "prototype/creep"
 import { RoomName, RoomPathMemory } from "prototype/room"
-import { EnergyChargeableStructure } from "prototype/room_object"
+import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
 // Worldをimportしない
 
@@ -7,12 +8,12 @@ export interface OwnedRoomObjects {
   controller: StructureController
   sources: Source[]
   constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
+  damagedStructures: AnyStructure[]
   activeStructures: {
     spawns: StructureSpawn[]
     extensions: StructureExtension[]
     towers: StructureTower[]
 
-    damagedStructures: AnyOwnedStructure[]
     chargeableStructures: EnergyChargeableStructure[]
   }
   hostiles: {
@@ -24,6 +25,8 @@ export interface OwnedRoomObjects {
     powerCreeps: PowerCreep[]
   }
   droppedResources: Resource[]
+  tombStones: Tombstone[]
+  energyStores: EnergyStore[] // TODO: Creepも含める
   flags: Flag[]
 }
 
@@ -32,7 +35,7 @@ const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
 
 export interface RoomsInterface {
   // ---- Lifecycle ---- //
-  beforeTick(): Room[]
+  beforeTick(creeps: Map<RoomName, Creep[]>): Room[]
   afterTick(): void
 
   // ---- Function ---- //
@@ -43,7 +46,7 @@ export interface RoomsInterface {
 
 export const Rooms: RoomsInterface = {
   // ---- Lifecycle ---- //
-  beforeTick: function (): Room[] {
+  beforeTick: function (creeps: Map<RoomName, Creep[]>): Room[] {
     allVisibleRooms.splice(0, allVisibleRooms.length)
     ownedRoomObjects.clear()
 
@@ -52,7 +55,7 @@ export const Rooms: RoomsInterface = {
       allVisibleRooms.push(room)
 
       if (room.controller != null && room.controller.my === true) {
-        ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
+        ownedRoomObjects.set(roomName, enumerateObjects(room.controller, creeps.get(roomName) ?? []))
       }
     }
 
@@ -78,27 +81,47 @@ export const Rooms: RoomsInterface = {
 }
 
 // ---- Function ---- //
-function enumerateObjects(controller: StructureController): OwnedRoomObjects {
+function enumerateObjects(controller: StructureController, creeps: Creep[]): OwnedRoomObjects {
   const room = controller.room
 
   const sources = room.find(FIND_SOURCES)
   const spawns: StructureSpawn[] = []
   const extensions: StructureExtension[] = []
   const towers: StructureTower[] = []
-  const damagedStructures: AnyOwnedStructure[] = []
+  const damagedStructures: AnyStructure[] = []
   const chargeableStructures: EnergyChargeableStructure[] = []
   const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
   const droppedResources = room.find(FIND_DROPPED_RESOURCES)
+  const tombStones = room.find(FIND_TOMBSTONES)
+  const energyStores: EnergyStore[] = []
+
+  energyStores.push(...droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
+  energyStores.push(...tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
+  const energyStoreCreeps = creeps.filter(creep => {
+    if (creep.memory.v5 == null) {
+      return false
+    }
+    if (creep.memory.v5.r.includes(creepRoleEnergyStore) !== true) {
+      return false
+    }
+    return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+  })
+  energyStores.push(...energyStoreCreeps)
 
   const flags = room.find(FIND_FLAGS)
 
-  const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
-  const myStructures = room.find(FIND_MY_STRUCTURES)
+  const excludedDamagedStructureTypes: StructureConstant[] = [
+    STRUCTURE_WALL,
+    STRUCTURE_RAMPART,
+    STRUCTURE_ROAD,
+    STRUCTURE_CONTAINER,
+  ]
+  const myStructures = room.find(FIND_STRUCTURES)
   myStructures.forEach(structure => {
     if (structure.isActive() !== true) {
       return
     }
-    if (wallTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
+    if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
       damagedStructures.push(structure)
     }
 
@@ -119,6 +142,21 @@ function enumerateObjects(controller: StructureController): OwnedRoomObjects {
       towers.push(structure)
       if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         chargeableStructures.push(structure)
+      }
+      break
+    case STRUCTURE_CONTAINER:
+      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        energyStores.push(structure)
+      }
+      break
+    case STRUCTURE_STORAGE:
+      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        energyStores.push(structure)
+      }
+      break
+    case STRUCTURE_TERMINAL:
+      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        energyStores.push(structure)
       }
       break
     default:
@@ -161,11 +199,11 @@ function enumerateObjects(controller: StructureController): OwnedRoomObjects {
     controller,
     sources,
     constructionSites,
+    damagedStructures,
     activeStructures: {
       spawns,
       extensions,
       towers,
-      damagedStructures,
       chargeableStructures,
     },
     hostiles: {
@@ -177,6 +215,8 @@ function enumerateObjects(controller: StructureController): OwnedRoomObjects {
       powerCreeps: alliancePowerCreeps,
     },
     droppedResources,
+    tombStones,
+    energyStores,
     flags,
   }
 }

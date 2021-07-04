@@ -1,4 +1,5 @@
 import { CreepName } from "prototype/creep"
+import { RoomName } from "prototype/room"
 import { GameObjectInfo } from "./game_object_info"
 // Worldをimportしない
 
@@ -32,33 +33,47 @@ export class CreepInfo implements CreepInfoInterface {
 }
 
 const creepInfo = new Map<CreepName, CreepInfo>()
-const allCreeps: Creep[] = []
+const allCreeps = new Map<RoomName, Creep[]>()
 
 export interface CreepsInterface {
   // ---- Lifecycle ---- //
-  beforeTick(): Creep[]
+  beforeTick(): Map<RoomName, Creep[]>
   afterTick(): void
 
   // ---- Functions ---- //
-  list(): Creep[]
+  list(): Map<RoomName, Creep[]>
   get(creepName: CreepName): Creep | null
   getInfo(creepName: CreepName): CreepInfo | null
 }
 
 export const Creeps: CreepsInterface = {
   // ---- Lifecycle ---- //
-  beforeTick: function (): Creep[] {
-    allCreeps.splice(0, allCreeps.length)
+  beforeTick: function (): Map<RoomName, Creep[]> {
+    allCreeps.clear()
+
     for (const creepName in Memory.creeps) {
       const creep = Game.creeps[creepName]
       if (creep == null) {
         delete Memory.creeps[creepName]
         continue
       }
-      allCreeps.push(creep)
+      if (creep.memory.v5 == null) {
+        continue
+      }
+      const creeps = ((): Creep[] => {
+        const stored = allCreeps.get(creep.memory.v5.p)
+        if (stored != null) {
+          return stored
+        }
+        const newList: Creep[] = []
+        allCreeps.set(creep.memory.v5.p, newList)
+        return newList
+      })()
+
+      creeps.push(creep)
     }
 
-    return allCreeps.concat([])
+    return new Map(allCreeps)
   },
 
   afterTick: function (): void {
@@ -66,8 +81,8 @@ export const Creeps: CreepsInterface = {
   },
 
   // ---- Functions ---- //
-  list: function (): Creep[] {
-    return allCreeps
+  list: function (): Map<RoomName, Creep[]> {
+    return new Map(allCreeps)
   },
 
   get: function (creepName: CreepName): Creep | null {

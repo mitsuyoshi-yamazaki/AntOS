@@ -4,9 +4,9 @@ import { init as creepInit } from "_old/creep"
 import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
-import { isSimulation } from "utility/game"
+import { World } from "world_info/world_info"
 
-const version = '5.1.2'
+const version = '5.1.15'
 
 export function init(): void {
   Game.version = version
@@ -118,7 +118,7 @@ export function tick(): void {
 
   Memory.cpu.last_bucket = current_bucket
 
-  if (((Game.time % cpu_ticks) === 0) && (isSimulation() !== true)) {
+  if (((Game.time % cpu_ticks) === 0) && (World.isSimulation() !== true)) {
     const limit = Game.cpu.limit
 
     const info = 'info'

@@ -10,9 +10,9 @@ import { isWorkerObjective, WorkerObjective } from "old_objective/worker/worker_
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
-import { isSimulation } from "utility/game"
 import { roomLink } from "utility/log"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { World } from "world_info/world_info"
 import { CreepType } from "_old/creep"
 import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
@@ -85,7 +85,7 @@ export class RoomKeeperObjective implements Objective {
         return workerObjective
       }
       const newObjective = ((): WorkerObjective => {
-        if (isSimulation() === true) {
+        if (World.isSimulation() === true) {
           return new MultiRoleWorkerObjective(Game.time, [], [], [])
         } else {
           return new PrimitiveWorkerObjective(Game.time, [], [], [], null)

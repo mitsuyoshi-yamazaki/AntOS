@@ -108,7 +108,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     const chargeableStructures = roomObjects.activeStructures.chargeableStructures
     const controller = roomObjects.controller
     const constructionSites = roomObjects.constructionSites
-    const damagedStructures = roomObjects.activeStructures.damagedStructures
+    const damagedStructures = roomObjects.damagedStructures
 
     const workers: Creep[] = []
     const diedWorkers: CreepName[] = []
@@ -142,7 +142,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
-    damagedStructures: AnyOwnedStructure[],
+    damagedStructures: AnyStructure[],
     controller: StructureController,
   ): void {
 
@@ -165,7 +165,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     sources: Source[],
     chargeableStructures: EnergyChargeableStructure[],
     constructionSites: ConstructionSite<BuildableStructureConstant>[],
-    damagedStructures: AnyOwnedStructure[],
+    damagedStructures: AnyStructure[],
     controller: StructureController,
     alreadyRun?: boolean
   ): void {
@@ -248,7 +248,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     return constructionSite
   }
 
-  private getRepairStructureToAssign(damagedStructures: AnyOwnedStructure[]): AnyOwnedStructure | null {
+  private getRepairStructureToAssign(damagedStructures: AnyStructure[]): AnyStructure | null {
     return damagedStructures[0] ?? null
   }
 
