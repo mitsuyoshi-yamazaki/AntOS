@@ -3,7 +3,7 @@ import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_tas
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
-import { creepRoleWorker } from "prototype/creep"
+import { CreepRole } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
 import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
@@ -115,7 +115,7 @@ export class RootProcess {
         if (creep.memory.v5 == null) {
           creep.memory.v5 = {
             p: creep.room.name, // FixMe: migration code
-            r: [creepRoleWorker],
+            r: [CreepRole.Mover, CreepRole.Worker],
             t: creep.task.encode()
           }
         } else {

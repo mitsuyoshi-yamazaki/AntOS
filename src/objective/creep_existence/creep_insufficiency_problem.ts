@@ -9,9 +9,9 @@ export class CreepInsufficiencyProblem implements Problem {
 
   public constructor(
     public readonly roomName: RoomName,
-    public readonly role: CreepRole,
+    public readonly roles: CreepRole[],
   ) {
-    this.identifier = `${this.constructor.name}_${roomName}_${role}`
-    this.problemSolver = new CreepInsufficiencyProblemSolver(roomName, role)
+    this.identifier = `${this.constructor.name}_${roomName}_${roles.join(",")}`
+    this.problemSolver = new CreepInsufficiencyProblemSolver(roomName, roles)
   }
 }

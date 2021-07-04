@@ -6,20 +6,35 @@ import { RoomName } from "./room"
 // ---- Types and Constants ---- //
 export type CreepName = string
 
-type CreepRoleMover = "mv"
-type CreepRoleHarvester = "hv"
-type CreepRoleWorker = "wr"
-type CreepRoleEnergyStore = "es"
-type CreepRoleHauler = "hl"
+type CreepRoleMover = "mover"
+type CreepRoleHarvester = "harvester"
+type CreepRoleWorker = "worker"
+type CreepRoleEnergyStore = "energy_store"
+type CreepRoleHauler = "hauler"
 
-// TODO: namespaceを設ける
-export const creepRoleMover: CreepRoleMover = "mv"
-export const creepRoleHarvester: CreepRoleHarvester = "hv"
-export const creepRoleWorker: CreepRoleWorker = "wr"
-export const creepRoleEnergyStore: CreepRoleEnergyStore = "es"
-export const creepRoleHauler: CreepRoleHauler = "hl"
+const creepRoleMover: CreepRoleMover = "mover"
+const creepRoleHarvester: CreepRoleHarvester = "harvester"
+const creepRoleWorker: CreepRoleWorker = "worker"
+const creepRoleEnergyStore: CreepRoleEnergyStore = "energy_store"
+const creepRoleHauler: CreepRoleHauler = "hauler"
 
 export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler
+export const CreepRole = {
+  Mover: creepRoleMover,
+  Harvester: creepRoleHarvester,
+  Worker: creepRoleWorker,
+  EnergyStore: creepRoleEnergyStore,
+  Hauler: creepRoleHauler,
+}
+
+export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
+  if (creep.memory.v5 == null) {
+    return false
+  }
+  const creepRoles = creep.memory.v5.r
+  const missingRoles = roles.some(role => creepRoles.includes(role) !== true)
+  return missingRoles !== true
+}
 
 // ---- Custon Return Code ---- //
 export type FINISHED = 967

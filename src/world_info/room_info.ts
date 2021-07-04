@@ -1,4 +1,4 @@
-import { creepRoleEnergyStore } from "prototype/creep"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep"
 import { RoomName, RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
@@ -101,7 +101,7 @@ function enumerateObjects(controller: StructureController, creeps: Creep[]): Own
     if (creep.memory.v5 == null) {
       return false
     }
-    if (creep.memory.v5.r.includes(creepRoleEnergyStore) !== true) {
+    if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {
       return false
     }
     return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0

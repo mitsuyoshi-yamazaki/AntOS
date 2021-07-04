@@ -7,7 +7,7 @@ import { World } from "world_info/world_info"
 export class CreepInsufficiencyProblemSolver implements ProblemSolver {
   public constructor(
     public readonly roomName: RoomName,
-    public readonly role: CreepRole,
+    public readonly roles: CreepRole[],
   ) {
   }
 
@@ -18,7 +18,7 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
         priority: spawnPoolSpawnRequestPriorityLow,
         numberOfCreeps: 1,  // TODO:
         body: this.body(),
-        roles: [this.role],
+        roles: this.roles,
         codename: "creep",  // TODO:
       }
     )

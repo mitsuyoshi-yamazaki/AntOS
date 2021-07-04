@@ -4,7 +4,7 @@ import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNot
 import { Problem } from "objective/problem"
 import { TaskRunner } from "objective/task_runner"
 import { OwnedRoomWorkTaskRunner } from "objective/worker/owned_room_worker_task_runner"
-import { creepRoleWorker } from "prototype/creep"
+import { CreepRole } from "prototype/creep"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export class UpgradeControllerObjective implements Objective {
@@ -21,7 +21,7 @@ export class UpgradeControllerObjective implements Objective {
   public currentStatus(): ObjectiveStatus {
     const children: Objective[] = [
       new OwnedRoomEnergyAvailableObjective(this.objects),
-      new OwnedRoomCreepExistsObjective(this.objects, creepRoleWorker, 8 * this.objects.sources.length),
+      new OwnedRoomCreepExistsObjective(this.objects, [CreepRole.Worker, CreepRole.Mover], 8 * this.objects.sources.length),
     ]
 
     // TODO: この辺はObjective（or ParentObjective）に含めて共通化する
