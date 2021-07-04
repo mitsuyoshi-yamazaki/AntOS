@@ -1,4 +1,4 @@
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { Result } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeProcessFrom, Process, ProcessId, ProcessState } from "process/process"
 import { isProcedural } from "old_objective/procedural"
@@ -109,15 +109,15 @@ export class OperatingSystem {
   /**
    * killを予約する。実行されるのはstoreProcesses()の前
    */
-  public killProcess(processId: ProcessId): ResultType<string, string> {
+  public killProcess(processId: ProcessId): Result<string, string> {
     const process = this.processOf(processId)
     if (process == null) {
-      return new ResultFailed(`[OS Error] Trying to kill unknown process ${processId}`)
+      return Result.Failed(`[OS Error] Trying to kill unknown process ${processId}`)
     }
     if (this.processIdsToKill.includes(processId) !== true) {
       this.processIdsToKill.push(processId)
     }
-    return new ResultSucceeded(process.constructor.name)
+    return Result.Succeeded(process.constructor.name)
   }
 
   public processInfoOf(processId: ProcessId): ProcessInfo | null {

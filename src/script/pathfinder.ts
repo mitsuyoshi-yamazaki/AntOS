@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { Result } from "utility/result"
 
 export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
   const startObject = Game.getObjectById(startObjectId)
@@ -52,10 +52,10 @@ interface SourceRoute {
 }
 
 // TODO: Sourceが壁等で埋まっていたらよくないことが起きる
-export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosition): ResultType<SourceRoute, string> {
+export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosition): Result<SourceRoute, string> {
   const source = Game.getObjectById(sourceId)
   if (!(source instanceof Source)) {
-    return new ResultFailed(`Invalid source id ${sourceId}`)
+    return Result.Failed(`Invalid source id ${sourceId}`)
   }
 
   const walkableTerrains: Terrain[] = ["swamp", "plain"]
@@ -121,14 +121,14 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
   visualize(shortestPath.path, { color: "#ffffff" })
 
   if (shortestPath == null) {
-    return new ResultFailed(`No route found from (${destination.x}, ${destination.y}) to source (${source.pos.x}, ${source.pos.y})`)
+    return Result.Failed(`No route found from (${destination.x}, ${destination.y}) to source (${source.pos.x}, ${source.pos.y})`)
   }
 
   const result: SourceRoute = {
     path: shortestPath,
     harvestPositions,
   }
-  return new ResultSucceeded(result)
+  return Result.Succeeded(result)
 }
 
 // function getPathBetween(position1: RoomPosition, position2: RoomPosition): RoomPosition[] | null {

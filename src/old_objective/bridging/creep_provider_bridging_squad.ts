@@ -2,13 +2,13 @@ import { UID } from "utility"
 import { Squad, SquadType, SpawnPriority, SpawnFunction, SquadMemory } from "_old/squad/squad"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepProviderObjectiveCreepSpec } from "old_objective/creep_provider/single_creep_provider_objective"
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Result } from "utility/result"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()
 
-export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: number, roomName: string): ResultType<void, string> {
+export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: number, roomName: string): Result<void, string> {
   if (requestCacheTime !== Game.time) {
     squadNames.clear()
     for (const squadName in Memory.squads) {
@@ -23,14 +23,14 @@ export function requestCreep(spec: CreepProviderObjectiveCreepSpec, count: numbe
   }
   const squadName = squadNames.get(roomName)
   if (squadName == null) {
-    return new ResultFailed(`CreepProviderBridgingSquad in room ${roomName} not found`)
+    return Result.Failed(`CreepProviderBridgingSquad in room ${roomName} not found`)
   }
   const memory = Memory.squads[squadName] as CreepProviderBridgingSquadMemory | null
   if (memory == null) {
-    return new ResultFailed(`CreepProviderBridgingSquad ${squadName} memory not found`)
+    return Result.Failed(`CreepProviderBridgingSquad ${squadName} memory not found`)
   }
   memory.req[spec.creepName] = spec.bodyParts
-  return new ResultSucceeded(undefined)
+  return Result.Succeeded(undefined)
 }
 
 // -------- //

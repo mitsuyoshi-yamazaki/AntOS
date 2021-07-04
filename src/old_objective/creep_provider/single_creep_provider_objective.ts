@@ -11,7 +11,7 @@ import {
 import { SpawnPriorityHigh, SpawnPriorityLow, SpawnPriorityNormal } from "old_objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
 import { Migration } from "utility/migration"
-import { ResultSucceeded, ResultType } from "utility/result"
+import { Result } from "utility/result"
 import { CreepStatus, CreepType } from "_old/creep"
 
 export type SingleCreepProviderSpawnPriority = SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
@@ -47,7 +47,7 @@ export interface SingleCreepProviderObjectiveState extends ObjectiveState {
 }
 
 export class SingleCreepProviderObjective implements Objective {
-  private readonly requestCreepResult: ResultType<void, string> | null
+  private readonly requestCreepResult: Result<void, string> | null
 
   public constructor(
     public readonly startTime: number,
@@ -96,7 +96,7 @@ export class SingleCreepProviderObjective implements Objective {
     return new ObjectiveSucceeded(creep)
   }
 
-  private requestCreep(spawnRoomName: string, bodyParts: BodyPartConstant[], priority: SingleCreepProviderSpawnPriority): ResultType<void, string> {
+  private requestCreep(spawnRoomName: string, bodyParts: BodyPartConstant[], priority: SingleCreepProviderSpawnPriority): Result<void, string> {
     if (this.isOldRoom(spawnRoomName) === true) {
       const spec: CreepProviderObjectiveCreepSpec = {
         creepName: this.creepName,
@@ -127,7 +127,7 @@ export class SingleCreepProviderObjective implements Objective {
         b: bodyParts,
         m: memory,
       })
-      return new ResultSucceeded(undefined)
+      return Result.Succeeded(undefined)
     }
   }
 

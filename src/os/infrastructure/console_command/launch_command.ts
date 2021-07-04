@@ -6,14 +6,14 @@ import { ClaimRoomProcess } from "old_objective/bootstrap_room/old_claim_room_pr
 import { OldClaimRoomObjective } from "old_objective/bootstrap_room/old_claim_room_objective"
 import { BootstrapL8RoomObjective } from "old_objective/bootstrap_room/bootstarp_l8_room_objective"
 import { BootstrapL8RoomProcess } from "old_objective/bootstrap_room/bootstrap_l8_room_proces"
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { Result, ResultFailed } from "utility/result"
 import { InterShardCreepDelivererProcess } from "old_objective/creep_provider/inter_shard_creep_deliverer_process"
 import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { LowRCLRoomKeeperProcess } from "process/low_rcl_room_keeper_process"
 
-type LaunchCommandResult = ResultType<Process, string>
+type LaunchCommandResult = Result<Process, string>
 
 export class LaunchCommand implements ConsoleCommand {
   public constructor(
@@ -91,7 +91,7 @@ export class LaunchCommand implements ConsoleCommand {
   }
 
   private missingArgumentError(argumentName: string): ResultFailed<string> {
-    return new ResultFailed(`Missing ${argumentName} argument`)
+    return Result.Failed(`Missing ${argumentName} argument`)
   }
 
   // ---- Launcher ---- //
@@ -99,7 +99,7 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new TestProcess(Game.time, processId)
     })
-    return new ResultSucceeded(process)
+    return Result.Succeeded(process)
   }
 
   private launchBootstrapL8RoomProcess(): LaunchCommandResult {
@@ -121,7 +121,7 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new BootstrapL8RoomProcess(launchTime, processId, objective)
     })
-    return new ResultSucceeded(process)
+    return Result.Succeeded(process)
   }
 
   private launchClaimRoomProcess(): LaunchCommandResult {
@@ -143,7 +143,7 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new ClaimRoomProcess(launchTime, processId, objective)
     })
-    return new ResultSucceeded(process)
+    return Result.Succeeded(process)
   }
 
   private launchInterShardCreepDelivererProcess(): LaunchCommandResult {
@@ -212,7 +212,7 @@ export class LaunchCommand implements ConsoleCommand {
       }
     }) ()
     if (body == null) {
-      return new ResultFailed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer, heavy_attacker")
+      return Result.Failed("Invalid creep_type, available types: scout, armored_scout, minimum_worker, worker, huge_worker, claimer, heavy_attacker")
     }
 
     const launchTime = Game.time
@@ -233,40 +233,40 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return new InterShardCreepDelivererProcess(launchTime, processId, objective)
     })
-    return new ResultSucceeded(process)
+    return Result.Succeeded(process)
   }
 
   // private launchWarProcess(): LaunchCommandResult {
   //   if (Game.shard.name !== "shard3") {
-  //     return new ResultFailed("Cannot launch WarProcess except shard3")
+  //     return Result.Failed("Cannot launch WarProcess except shard3")
   //   }
 
   //   const process = OperatingSystem.os.addProcess(processId => {
   //     return new War29337295Process(Game.time, processId, null, [], [], [], [], [], "W48S27")
   //   })
-  //   return new ResultSucceeded(process)
+  //   return Result.Succeeded(process)
   // }
 
   // private launchWar29337295LogisticsProcess(): LaunchCommandResult {
   //   if (Game.shard.name !== "shard2") {
-  //     return new ResultFailed("Cannot launch WarProcess except shard2")
+  //     return Result.Failed("Cannot launch WarProcess except shard2")
   //   }
 
   //   const process = OperatingSystem.os.addProcess(processId => {
   //     return new War29337295LogisticsProcess(Game.time, processId, [], null, [])
   //   })
-  //   return new ResultSucceeded(process)
+  //   return Result.Succeeded(process)
   // }
 
   // private launchSeason3War11353Process(): LaunchCommandResult {
   //   if (Game.shard.name !== "shardSeason") {
-  //     return new ResultFailed("Cannot launch Season3War11353Process except season")
+  //     return Result.Failed("Cannot launch Season3War11353Process except season")
   //   }
 
   //   const process = OperatingSystem.os.addProcess(processId => {
   //     return new Season3War11353Process(Game.time, processId, [], [])
   //   })
-  //   return new ResultSucceeded(process)
+  //   return Result.Succeeded(process)
   // }
 
   private launchLowRCLRoomKeeperProcess(): LaunchCommandResult {
@@ -280,6 +280,6 @@ export class LaunchCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(processId => {
       return LowRCLRoomKeeperProcess.create(processId, roomName)
     })
-    return new ResultSucceeded(process)
+    return Result.Succeeded(process)
   }
 }

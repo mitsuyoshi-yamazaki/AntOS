@@ -1,5 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { ResultType, ResultFailed, ResultSucceeded } from "utility/result"
+import { Result, ResultFailed } from "utility/result"
 import {
   ConsoleCommand,
   isConsoleCommand,
@@ -35,9 +35,9 @@ export const standardInput = (rawCommand: string): string => {
 /**
  * - [ ] "/'で囲われたスペースを許可する
  */
-function parseCommand(rawCommand: string): ResultType<ConsoleCommand, string> {
+function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
   const invalidCommandDescription = (description: string): ResultFailed<string> => {
-    return new ResultFailed(`Parsing command failed: ${description} (raw command: "${rawCommand}")`)
+    return Result.Failed(`Parsing command failed: ${description} (raw command: "${rawCommand}")`)
   }
 
   const components = rawCommand.split(" ")
@@ -82,21 +82,21 @@ function parseCommand(rawCommand: string): ResultType<ConsoleCommand, string> {
 
   switch (command) {
   case "help":
-    return new ResultSucceeded(new HelpCommand(options, args, rawCommand))
+    return Result.Succeeded(new HelpCommand(options, args, rawCommand))
 
   case "kill":
-    return new ResultSucceeded(new KillCommand(options, args, rawCommand))
+    return Result.Succeeded(new KillCommand(options, args, rawCommand))
 
   case "launch":
-    return new ResultSucceeded(new LaunchCommand(options, args, rawCommand))
+    return Result.Succeeded(new LaunchCommand(options, args, rawCommand))
 
   case "exec":
-    return new ResultSucceeded(new ExecCommand(options, args, rawCommand))
+    return Result.Succeeded(new ExecCommand(options, args, rawCommand))
 
   case "process":
-    return new ResultSucceeded(new ProcessCommand(options, args, rawCommand))
+    return Result.Succeeded(new ProcessCommand(options, args, rawCommand))
 
   case "message":
-    return new ResultSucceeded(new MessageCommand(options, args, rawCommand))
+    return Result.Succeeded(new MessageCommand(options, args, rawCommand))
   }
 }
