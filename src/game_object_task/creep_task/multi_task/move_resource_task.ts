@@ -50,7 +50,6 @@ export class MoveResourceTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
 
     if (creep.store.getUsedCapacity(this.resource) <= 0) {
       return this.runWithdrawTask(creep)

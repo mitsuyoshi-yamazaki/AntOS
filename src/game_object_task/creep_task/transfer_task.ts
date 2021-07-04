@@ -43,7 +43,6 @@ export class TransferTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.transfer(this.target, this.resource)
 
     switch (result) {

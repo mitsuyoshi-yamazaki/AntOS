@@ -192,7 +192,7 @@ export class TempSquad extends Squad {
     const name = this.generateNewName()
     const memory: TempMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

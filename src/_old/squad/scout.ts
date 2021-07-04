@@ -80,7 +80,7 @@ export class ScoutSquad extends Squad {
     const name = this.generateNewName()
     const memory: ScoutCreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

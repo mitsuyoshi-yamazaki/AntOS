@@ -35,7 +35,6 @@ export class BoostTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = this.lab.boostCreep(creep)
 
     switch (result) {

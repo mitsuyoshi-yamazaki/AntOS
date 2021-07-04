@@ -65,9 +65,9 @@ export class RootProcess {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       if (this.shouldCacheTasks) {
-        creep.task = decodeCreepTask(creep)
+        creep.v4Task = decodeCreepTask(creep)
       } else {
-        creep._task = decodeCreepTask(creep)
+        creep._v4Task = decodeCreepTask(creep)
       }
     }
     for (const spawnName in Game.spawns) {
@@ -91,7 +91,7 @@ export class RootProcess {
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      creep.memory.ts = creep.task?.encode() ?? null
+      creep.memory.ts = creep.v4Task?.encode() ?? null
     }
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName]

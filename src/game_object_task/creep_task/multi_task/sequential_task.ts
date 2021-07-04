@@ -50,7 +50,6 @@ export class SequentialTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const currentTask = this.childTasks[0]
     if (currentTask == null) {
       return "finished"

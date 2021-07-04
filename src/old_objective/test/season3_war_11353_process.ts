@@ -371,8 +371,8 @@ export class Season3War11353Process implements Process, Procedural {
     const nonTargetedPositions = scoutTargets.concat([])
 
     scouts.forEach(creep => {
-      if (creep.task instanceof ScoutTask) {
-        const scoutTask = creep.task
+      if (creep.v4Task instanceof ScoutTask) {
+        const scoutTask = creep.v4Task
         const index = nonTargetedPositions.findIndex(position => position.isEqualTo(scoutTask.position))
         if (index >= 0) {
           nonTargetedPositions.splice(index, 1)
@@ -442,12 +442,12 @@ export class Season3War11353Process implements Process, Procedural {
         return
       }
 
-      if (creep.task != null) {
-        creep.task.run(creep)
+      if (creep.v4Task != null) {
+        creep.v4Task.run(creep)
       } else {
         const position = nonTargetedPositions.shift() ?? scoutTargets[0]
-        creep.task = new ScoutTask(Game.time, position)
-        creep.task.run(creep)
+        creep.v4Task = new ScoutTask(Game.time, position)
+        creep.v4Task.run(creep)
       }
     })
 

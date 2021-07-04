@@ -490,7 +490,7 @@ export class HarvesterSquad extends Squad {
     let body: BodyPartConstant[] = body_unit
     const memory: CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -549,7 +549,7 @@ export class HarvesterSquad extends Squad {
     let body: BodyPartConstant[] = []
     const memory: CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

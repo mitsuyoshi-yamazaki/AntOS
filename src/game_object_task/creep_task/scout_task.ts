@@ -33,7 +33,6 @@ export class ScoutTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     if (creep.room.name !== this.position.roomName) {
       creep.moveToRoom(this.position.roomName)
       return "in progress"

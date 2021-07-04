@@ -37,7 +37,6 @@ export class HealTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.heal(this.target)
 
     switch (result) {

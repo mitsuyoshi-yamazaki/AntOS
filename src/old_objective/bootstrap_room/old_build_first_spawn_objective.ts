@@ -125,10 +125,10 @@ export class OldBuildFirstSpawnObjective implements Objective {
         return
       }
 
-      if (creep.task == null) {
+      if (creep.v4Task == null) {
         this.assignNewTask(creep, sources, constructionSite)
       }
-      const taskFinished = creep.task?.run(creep) !== "in progress"
+      const taskFinished = creep.v4Task?.run(creep) !== "in progress"
       if (taskFinished) {
         this.assignNewTask(creep, sources, constructionSite, true)
       }
@@ -146,12 +146,12 @@ export class OldBuildFirstSpawnObjective implements Objective {
     if (noEnergy()) {
       const source = this.getSourceToAssign(sources)
       if (source != null) {
-        creep.task = new HarvestEnergyTask(Game.time, source)
+        creep.v4Task = new HarvestEnergyTask(Game.time, source)
       } else {
-        creep.task = null
+        creep.v4Task = null
       }
     } else {
-      creep.task = new BuildTask(Game.time, constructionSite)
+      creep.v4Task = new BuildTask(Game.time, constructionSite)
     }
   }
 
@@ -192,7 +192,7 @@ export class OldBuildFirstSpawnObjective implements Objective {
     const body: BodyPartConstant[] = [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
     const memory: CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: "",
       status: CreepStatus.NONE,
       birth_time: Game.time,

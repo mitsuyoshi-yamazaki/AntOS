@@ -184,10 +184,10 @@ export class UpgradeL3ControllerObjective implements Objective {
       if (creep.spawning) {
         return
       }
-      if (creep.task == null) {
+      if (creep.v4Task == null) {
         this.assignNewTask(creep, sources, spawn, controller)
       }
-      const taskFinished = creep.task?.run(creep) !== "in progress"
+      const taskFinished = creep.v4Task?.run(creep) !== "in progress"
       if (taskFinished) {
         this.assignNewTask(creep, sources, spawn, controller, true) // TODO: already run を Task.run() の返り値から取る
       }
@@ -205,20 +205,20 @@ export class UpgradeL3ControllerObjective implements Objective {
     if (noEnergy()) {
       const source = this.getSourceToAssign(sources, creep.pos)
       if (source != null) {
-        creep.task = new HarvestEnergyTask(Game.time, source)
+        creep.v4Task = new HarvestEnergyTask(Game.time, source)
       } else {
-        creep.task = null
+        creep.v4Task = null
       }
     } else {
       // if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) { // TODO: extensionに入れる
       if (spawn.room.energyAvailable < 300) {
-        creep.task = new TransferToStructureTask(Game.time, spawn)
+        creep.v4Task = new TransferToStructureTask(Game.time, spawn)
       } else {
         const constructionSite = this.getConstructionSiteToAssign(controller.room)
         if (constructionSite != null) {
-          creep.task = new BuildTask(Game.time, constructionSite)
+          creep.v4Task = new BuildTask(Game.time, constructionSite)
         } else {
-          creep.task = new UpgradeControllerTask(Game.time, controller)
+          creep.v4Task = new UpgradeControllerTask(Game.time, controller)
         }
       }
     }

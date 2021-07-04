@@ -481,7 +481,7 @@ export class FarmerSquad extends Squad {
 
     const memory: FarmerUpgraderMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -507,7 +507,7 @@ export class FarmerSquad extends Squad {
     let body: BodyPartConstant[] = []
     const memory: CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

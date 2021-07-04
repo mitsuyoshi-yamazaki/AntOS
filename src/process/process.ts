@@ -7,9 +7,6 @@ import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "../old_obje
 import { ClaimRoomProcess, ClaimRoomProcessState } from "../old_objective/bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "../old_objective/room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "../old_objective/creep_provider/inter_shard_creep_deliverer_process"
-import { War29337295Process, War29337295ProcessState } from "../old_objective/test/war_29337295_process"
-import { War29337295LogisticsProcess, War29337295LogisticsProcessState } from "../old_objective/test/war_ 29337295_logistics_process"
-import { Season3War11353Process, Season3War11353ProcessState } from "old_objective/test/season3_war_11353_process"
 
 export type ProcessId = number
 
@@ -43,9 +40,9 @@ class ProcessTypes {
   "InterShardCreepDelivererProcess" = (state: ProcessState) => InterShardCreepDelivererProcess.decode(state as InterShardCreepDelivererProcessState)
 
   // onetime processes
-  "War29337295Process" = (state: ProcessState) => War29337295Process.decode(state as War29337295ProcessState)
-  "War29337295LogisticsProcess" = (state: ProcessState) => War29337295LogisticsProcess.decode(state as War29337295LogisticsProcessState)
-  "Season3War11353Process" = (state: ProcessState) => Season3War11353Process.decode(state as Season3War11353ProcessState)
+  // "War29337295Process" = (state: ProcessState) => War29337295Process.decode(state as War29337295ProcessState)
+  // "War29337295LogisticsProcess" = (state: ProcessState) => War29337295LogisticsProcess.decode(state as War29337295LogisticsProcessState)
+  // "Season3War11353Process" = (state: ProcessState) => Season3War11353Process.decode(state as Season3War11353ProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

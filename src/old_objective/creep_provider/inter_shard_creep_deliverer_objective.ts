@@ -128,11 +128,11 @@ export class InterShardCreepDelivererObjective implements Objective {
     }
 
     const task = ((): MoveToPortalTask => {
-      if (creep.task instanceof MoveToPortalTask) {
-        return creep.task
+      if (creep.v4Task instanceof MoveToPortalTask) {
+        return creep.v4Task
       }
       const newTask = new MoveToPortalTask(Game.time, portal)
-      creep.task = newTask
+      creep.v4Task = newTask
       return newTask
     })()
 
@@ -141,10 +141,10 @@ export class InterShardCreepDelivererObjective implements Objective {
     case "in progress":
       return new ObjectiveInProgress(undefined)
     case "finished":
-      creep.task = null
+      creep.v4Task = null
       return new ObjectiveSucceeded(creep)
     case "failed":
-      creep.task = null
+      creep.v4Task = null
       return new ObjectiveFailed(`MoveToPortalTask failed in ${roomLink(creep.room.name)}`)
     }
   }

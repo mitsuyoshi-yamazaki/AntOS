@@ -108,7 +108,7 @@ export class ClaimRoomObjective implements Objective {
       const body: BodyPartConstant[] = [MOVE, CLAIM, MOVE]
       const memory: CreepMemory = {
         ts: null,
-        tt: 0,
+
         squad_name: "",
         status: CreepStatus.NONE,
         birth_time: Game.time,
@@ -131,11 +131,11 @@ export class ClaimRoomObjective implements Objective {
     if (creep.spawning === true) {
       return new ObjectiveInProgress("")
     }
-    if (creep.task == null) {
-      creep.task = new ClaimControllerTask(Game.time, targetRoom.controller)
+    if (creep.v4Task == null) {
+      creep.v4Task = new ClaimControllerTask(Game.time, targetRoom.controller)
     }
-    if (creep.task?.run(creep) !== "in progress") {
-      creep.task = null
+    if (creep.v4Task?.run(creep) !== "in progress") {
+      creep.v4Task = null
     }
     return new ObjectiveInProgress("")
   }

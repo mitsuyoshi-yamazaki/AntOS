@@ -37,7 +37,6 @@ export class AttackTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.attack(this.target)
 
     switch (result) {

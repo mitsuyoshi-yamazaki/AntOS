@@ -11,9 +11,6 @@ import { InterShardCreepDelivererProcess } from "old_objective/creep_provider/in
 import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
-import { War29337295LogisticsProcess } from "old_objective/test/war_ 29337295_logistics_process"
-import { War29337295Process } from "old_objective/test/war_29337295_process"
-import { Season3War11353Process } from "old_objective/test/season3_war_11353_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 

@@ -34,7 +34,6 @@ export class RepairTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.repair(this.structure)
 
     switch (result) {

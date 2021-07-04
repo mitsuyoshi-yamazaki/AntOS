@@ -150,10 +150,10 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
       if (creep.spawning) {
         return
       }
-      if (creep.task == null) {
+      if (creep.v4Task == null) {
         this.assignNewTask(creep, sources, chargeableStructures, constructionSites, damagedStructures, controller)
       }
-      const taskFinished = creep.task?.run(creep) !== "in progress"
+      const taskFinished = creep.v4Task?.run(creep) !== "in progress"
       if (taskFinished) {
         this.assignNewTask(creep, sources, chargeableStructures, constructionSites, damagedStructures, controller, true) // TODO: already run を Task.run() の返り値から取る
       }
@@ -180,24 +180,24 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     if (noEnergy()) {
       const source = this.getSourceToAssign(sources, creep.pos)
       if (source != null) {
-        creep.task = new HarvestEnergyTask(Game.time, source)
+        creep.v4Task = new HarvestEnergyTask(Game.time, source)
       } else {
-        creep.task = null
+        creep.v4Task = null
       }
     } else {
       const structureToCharge = this.getStructureToCharge(chargeableStructures, creep.pos)
       if (structureToCharge != null) {
-        creep.task = new TransferToStructureTask(Game.time, structureToCharge)
+        creep.v4Task = new TransferToStructureTask(Game.time, structureToCharge)
       } else {
         const damagedStructure = this.getRepairStructureToAssign(damagedStructures)
         if (damagedStructure != null) {
-          creep.task = new RepairTask(Game.time, damagedStructure)
+          creep.v4Task = new RepairTask(Game.time, damagedStructure)
         } else {
           const constructionSite = this.getConstructionSiteToAssign(constructionSites)
           if (constructionSite != null) {
-            creep.task = new BuildTask(Game.time, constructionSite)
+            creep.v4Task = new BuildTask(Game.time, constructionSite)
           } else {
-            creep.task = new UpgradeControllerTask(Game.time, controller)
+            creep.v4Task = new UpgradeControllerTask(Game.time, controller)
           }
         }
       }
@@ -266,7 +266,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
         const creepName = generateUniqueId("mont_blanc")
         const memory: CreepMemory = {
           ts: null,
-          tt: 0,
+
           squad_name: "",
           status: CreepStatus.NONE,
           type: CreepType.WORKER,

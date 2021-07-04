@@ -31,7 +31,6 @@ export class PatrolRoomTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
 
     return "failed" // TODO: 途中
 
