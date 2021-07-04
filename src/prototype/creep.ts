@@ -12,6 +12,7 @@ type CreepRoleEnergyStore = "es"
 type CreepRoleHauler = "hl"
 type CreepRoleScout = "sc"
 
+// TODO: namespaceを設ける
 export const creepRoleHarvester: CreepRoleHarvester = "hv"
 export const creepRoleWorker: CreepRoleWorker = "wr"
 export const creepRoleEnergyStore: CreepRoleEnergyStore = "es"
