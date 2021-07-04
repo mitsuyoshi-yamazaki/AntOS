@@ -1,6 +1,7 @@
 import { CreepInsufficiencyProblem } from "objective/creep_existence/creep_insufficiency_problem"
 import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNotAchieved } from "objective/objective"
 import { Problem } from "objective/problem"
+import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
@@ -10,6 +11,10 @@ export class OwnedRoomEnergyAvailableObjective implements Objective {
   public constructor(
     public readonly objects: OwnedRoomObjects,
   ) { }
+
+  public taskRunners(): TaskRunner[] {
+    return []
+  }
 
   public currentStatus(): ObjectiveStatus {
     const necessaryRoles: CreepRole[] = [CreepRole.EnergyStore, CreepRole.Mover]

@@ -1,4 +1,5 @@
 import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNotAchieved } from "objective/objective"
+import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
@@ -10,6 +11,10 @@ export class OwnedRoomCreepExistsObjective implements Objective {
     public readonly creepRoles: CreepRole[],
     public readonly requiredCreeps: number,
   ) { }
+
+  public taskRunners(): TaskRunner[] {
+    return []
+  }
 
   public currentStatus(): ObjectiveStatus {
     const numberOfCreeps = World.resourcePools.checkCreeps(
