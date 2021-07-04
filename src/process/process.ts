@@ -7,7 +7,7 @@ import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "../old_obje
 import { ClaimRoomProcess, ClaimRoomProcessState } from "../old_objective/bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "../old_objective/room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "../old_objective/creep_provider/inter_shard_creep_deliverer_process"
-import { LowRCLRoomKeeperProcess, LowRCLRoomKeeperProcessState } from "objective/low_rcl_room_keeper_process"
+import { LowRCLRoomKeeperProcess, LowRCLRoomKeeperProcessState } from "./low_rcl_room_keeper_process"
 
 export type ProcessId = number
 

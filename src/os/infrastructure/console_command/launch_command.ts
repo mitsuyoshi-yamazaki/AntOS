@@ -11,7 +11,7 @@ import { InterShardCreepDelivererProcess } from "old_objective/creep_provider/in
 import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/inter_shard_creep_deliverer_objective"
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
-import { LowRCLRoomKeeperProcess } from "objective/low_rcl_room_keeper_process"
+import { LowRCLRoomKeeperProcess } from "process/low_rcl_room_keeper_process"
 
 type LaunchCommandResult = ResultType<Process, string>
 

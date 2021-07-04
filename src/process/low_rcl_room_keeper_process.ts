@@ -1,11 +1,11 @@
+import { Problem } from "objective/problem"
+import { UpgradeControllerObjective } from "objective/upgrade_controller/upgrade_controller_objective"
 import { Procedural } from "old_objective/procedural"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Process, ProcessId, processLog, ProcessState } from "process/process"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
-import { Problem } from "./problem"
-import { UpgradeControllerObjective } from "./upgrade_controller/upgrade_controller_objective"
 
 export interface LowRCLRoomKeeperProcessState extends ProcessState {
   /** room name */
