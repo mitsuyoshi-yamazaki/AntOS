@@ -1,6 +1,8 @@
 import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { BuildApiWrapper } from "task/creep_task/api_wrapper/build_api_wrapper"
+import { RepairApiWrapper } from "task/creep_task/api_wrapper/repair_api_wrapper"
 import { TransferEnergyApiWrapper } from "task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { MoveHarvestEnergyTask } from "task/creep_task/conbined_task/move_harvest_energy_task"
@@ -46,13 +48,11 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
 
     const damagedStructure = this.getRepairStructureToAssign()
     if (damagedStructure != null) {
-      creep.v4Task = new RepairTask(Game.time, damagedStructure)
-    } else {
-      const constructionSite = this.getConstructionSiteToAssign(constructionSites)
-      if (constructionSite != null) {
-        creep.v4Task = new BuildTask(Game.time, constructionSite)
-      } else {
-      }
+      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
+    }
+    const constructionSite = this.getConstructionSiteToAssign()
+    if (constructionSite != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
     return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(this.objects.controller))
@@ -88,23 +88,12 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
     })
   }
 
-  private getConstructionSiteToAssign(constructionSites: ConstructionSite<BuildableStructureConstant>[]): ConstructionSite<BuildableStructureConstant> | null {
-    const storedConstructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
-      if (this.buildingConstructionSiteId == null) {
-        return null
-      }
-      return Game.getObjectById(this.buildingConstructionSiteId)
-    })()
-    if (storedConstructionSite != null) {
-      return storedConstructionSite
-    }
-
-    const constructionSite = constructionSites[0]
-    this.buildingConstructionSiteId = constructionSite?.id
-    return constructionSite
+  private getConstructionSiteToAssign(): ConstructionSite<BuildableStructureConstant> | null {
+    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = this.objects.constructionSites
+    return constructionSites[0]
   }
 
   private getRepairStructureToAssign(): AnyStructure | null {
-    return this.objects.damagedStructures[0] ?? null
+    return this.objects.damagedStructures[0]
   }
 }
