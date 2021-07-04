@@ -212,11 +212,6 @@ export function tick(): void {
 
   roomTick()
 
-  if ((Game.time % 89) == 1) {
-    refreshMemory()
-    console.log(`Init refresh memory at ${Game.time}`)
-  }
-
   for (const room_name in Game.rooms) {
     const room = Game.rooms[room_name]
     room.initialize()
@@ -241,16 +236,6 @@ export function tick(): void {
     }
 
     Game.squad_creeps[squad_name].push(creep)
-  }
-}
-
-function refreshMemory() {
-  // @todo: clear spawn, squad memory
-  // Automatically delete memory of missing creeps
-  for (const name in Memory.creeps) {
-    if (!(name in Game.creeps)) {
-      delete Memory.creeps[name]
-    }
   }
 }
 

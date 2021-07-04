@@ -1,4 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { ERR_PROGRAMMING_ERROR } from "prototype/creep"
 import { DecodeFailureTask } from "task/failure_task"
 import { Task, TaskProgressType, TaskState } from "task/task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./conbined_task/move_to_target_task"
@@ -6,16 +7,19 @@ import { HarvestEnergyTask, HarvestEnergyTaskState } from "./primitive_task/harv
 import { MoveTask, MoveTaskState } from "./primitive_task/move_task"
 
 export type CreepTaskSuccededDidRun = boolean
-export type CreepTaskProgressType<E> = TaskProgressType<void, CreepTaskSuccededDidRun, E>
+export type CreepTaskReturnCode = OK | ERR_PROGRAMMING_ERROR
+export type CreepTaskProgressType = TaskProgressType<void, CreepTaskSuccededDidRun, CreepTaskReturnCode>
 
 export interface CreepTaskState extends TaskState {
   /** type identifier */
   t: keyof CreepTaskDecoderMap
 }
 
-export interface CreepTask<E> extends Task<Creep, void, CreepTaskSuccededDidRun, E> {
+export interface CreepTask extends Task<Creep, void, CreepTaskSuccededDidRun, CreepTaskReturnCode> {
+  shortDescription?: string
+
   encode(): CreepTaskState
-  run(creep: Creep): CreepTaskProgressType<E>
+  run(creep: Creep): CreepTaskProgressType
 }
 
 type CreepTaskTypes = CreepDecodeFailureTask

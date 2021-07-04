@@ -1,7 +1,8 @@
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { Creeps } from "./creep_info"
-import { ResourcePools } from "./resource_pool"
+import { ResourcePools } from "./resource_pool/resource_pool"
 import { Rooms } from "./room_info"
+import { Spawns } from "./spawn_info"
 
 export interface OwnedRoomObjects {
   controller: StructureController
@@ -33,13 +34,15 @@ export interface OwnedRoomObjects {
  */
 export const World = {
   creeps: Creeps,
+  spawns: Spawns,
   rooms: Rooms,
   resourcePools: ResourcePools,
 
   beforeTick: function (): void {
     // 呼び出し順序に注意: 基本的に低次の処理から呼び出す
     const allCreeps = this.creeps.beforeTick()
-    this.resourcePools.beforeTick(allCreeps)
+    const allSpawns = this.spawns.beforeTick()
+    this.resourcePools.beforeTick(allCreeps, allSpawns)
   },
 
   afterTick: function (): void {

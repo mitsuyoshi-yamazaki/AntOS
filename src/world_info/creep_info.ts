@@ -49,12 +49,12 @@ export const Creeps = {
 
   beforeTick: function (): Creep[] {
     allCreeps.splice(0, allCreeps.length)
-    // const deadCreeps = Array.from(creepInfo.keys()) // TODO:
-    for (const creepName in Game.creeps) {
+    for (const creepName in Memory.creeps) {
       const creep = Game.creeps[creepName]
-      // const info = creepInfo.get(creepName) ?? new CreepInfo(creepName)  // TODO:
-      // info.update(creep)
-
+      if (creep == null) {
+        delete Memory.creeps[creepName]
+        continue
+      }
       allCreeps.push(creep)
     }
 

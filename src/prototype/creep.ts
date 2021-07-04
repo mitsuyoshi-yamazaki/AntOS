@@ -1,6 +1,6 @@
-import { CreepTask as OldCreepTask } from "game_object_task/creep_task"
+import { CreepTask as V4CreepTask } from "game_object_task/creep_task"
 import { TaskTargetCache } from "game_object_task/task_target_cache"
-import { CreepTaskState } from "task/creep_task/creep_task"
+import { CreepTask, CreepTaskState } from "task/creep_task/creep_task"
 import { RoomName } from "./room"
 
 // ---- Types and Constants ---- //
@@ -40,21 +40,49 @@ export interface V5CreepMemory {
 // ---- Prototype ---- //
 declare global {
   interface Creep {
-    /** @deprecated */
-    v4Task: OldCreepTask | null
+    task: CreepTask | null
+
+    /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
+    _task: CreepTask | null
 
     /** @deprecated */
-    _v4Task: OldCreepTask | null
+    v4Task: V4CreepTask | null
+
+    /** @deprecated */
+    _v4Task: V4CreepTask | null
   }
 }
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(Creep.prototype, "v4Task", {
-    get(): OldCreepTask | null {
+  Object.defineProperty(Creep.prototype, "task", {
+    get(): CreepTask | null {
       return this._v4Task
     },
-    set(v4Task: OldCreepTask | null): void {
+    set(task: CreepTask | null): void {
+      this.v4Task = null
+
+      this._task = task
+      if (task == null) {
+        this.say("idle")
+      } else if (task.shortDescription != null) {
+        this.say(task.shortDescription)
+      }
+    }
+  })
+
+  Object.defineProperty(Creep.prototype, "v4Task", {
+    get(): V4CreepTask | null {
+      if (this._task != null) {
+        return null
+      }
+      return this._v4Task
+    },
+    set(v4Task: V4CreepTask | null): void {
+      if (this._task != null) {
+        return
+      }
+
       if (this._v4Task != null && this._v4Task.targetId != null) {
         TaskTargetCache.didFinishTask(this.id, this._v4Task.targetId)
       }
