@@ -44,16 +44,16 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
       return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
 
-    // const damagedStructure = this.getRepairStructureToAssign()
-    // if (damagedStructure != null) {
-    //   creep.v4Task = new RepairTask(Game.time, damagedStructure)
-    // } else {
-    //   const constructionSite = this.getConstructionSiteToAssign(constructionSites)
-    //   if (constructionSite != null) {
-    //     creep.v4Task = new BuildTask(Game.time, constructionSite)
-    //   } else {
-    //   }
-    // }
+    const damagedStructure = this.getRepairStructureToAssign()
+    if (damagedStructure != null) {
+      creep.v4Task = new RepairTask(Game.time, damagedStructure)
+    } else {
+      const constructionSite = this.getConstructionSiteToAssign(constructionSites)
+      if (constructionSite != null) {
+        creep.v4Task = new BuildTask(Game.time, constructionSite)
+      } else {
+      }
+    }
 
     return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(this.objects.controller))
   }
@@ -88,23 +88,23 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
     })
   }
 
-  // private getConstructionSiteToAssign(constructionSites: ConstructionSite<BuildableStructureConstant>[]): ConstructionSite<BuildableStructureConstant> | null {
-  //   const storedConstructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
-  //     if (this.buildingConstructionSiteId == null) {
-  //       return null
-  //     }
-  //     return Game.getObjectById(this.buildingConstructionSiteId)
-  //   })()
-  //   if (storedConstructionSite != null) {
-  //     return storedConstructionSite
-  //   }
+  private getConstructionSiteToAssign(constructionSites: ConstructionSite<BuildableStructureConstant>[]): ConstructionSite<BuildableStructureConstant> | null {
+    const storedConstructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
+      if (this.buildingConstructionSiteId == null) {
+        return null
+      }
+      return Game.getObjectById(this.buildingConstructionSiteId)
+    })()
+    if (storedConstructionSite != null) {
+      return storedConstructionSite
+    }
 
-  //   const constructionSite = constructionSites[0]
-  //   this.buildingConstructionSiteId = constructionSite?.id
-  //   return constructionSite
-  // }
+    const constructionSite = constructionSites[0]
+    this.buildingConstructionSiteId = constructionSite?.id
+    return constructionSite
+  }
 
-  // private getRepairStructureToAssign(): AnyStructure | null {
-  //   return this.objects.damagedStructures[0] ?? null
-  // }
+  private getRepairStructureToAssign(): AnyStructure | null {
+    return this.objects.damagedStructures[0] ?? null
+  }
 }

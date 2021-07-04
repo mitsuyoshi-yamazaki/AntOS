@@ -1,7 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "old_objective/objective"
-import { generateUniqueId } from "utility/unique_id"
-import { CreepStatus, CreepType } from "_old/creep"
 import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_controller_task"
 import { TransferToStructureTask } from "game_object_task/creep_task/transfer_to_structure_task"
 import { CreepName } from "prototype/creep"

@@ -1,11 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
 import { ApiWrapper } from "task/api_wrapper"
 import { TargetingApiWrapper } from "task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 
-type HarvestEnergyApiWrapperResult = FINISHED | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_NOT_ENOUGH_RESOURCES | ERR_BUSY | ERR_PROGRAMMING_ERROR
+type HarvestEnergyApiWrapperResult = FINISHED | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_NOT_ENOUGH_RESOURCES | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
 export interface HarvestEnergyApiWrapperState extends CreepApiWrapperState {
   /** source id */
@@ -63,13 +63,15 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
     case ERR_BUSY:
       return ERR_BUSY
 
+    case ERR_NO_BODYPART:
+      return ERR_DAMAGED
+
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
-    case ERR_NO_BODYPART:
     case ERR_NOT_FOUND:
     case ERR_TIRED:
     default:
-      PrimitiveLogger.fatal(`creep.transfer() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.harvest() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

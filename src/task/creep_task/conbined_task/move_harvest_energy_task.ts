@@ -1,4 +1,4 @@
-import { ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
 import { getCachedPathFor } from "script/pathfinder"
 import { TaskProgressType, taskProgressTypeFinished, taskProgressTypeInProgress } from "task/task"
 import { HarvestEnergyApiWrapper } from "../api_wrapper/harvest_energy_api_wrapper"
@@ -66,6 +66,9 @@ export class MoveHarvestEnergyTask implements CreepTask {
 
     case ERR_BUSY:
       return taskProgressTypeInProgress
+
+    case ERR_DAMAGED:
+      return taskProgressTypeFinished
 
     case ERR_PROGRAMMING_ERROR:
       return taskProgressTypeFinished
