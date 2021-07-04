@@ -233,8 +233,8 @@ export class Region {
         rooms_need_scout = [
           // 'W49S6',
           // 'W48S5',
-          'W48S7',
-          'W49S5',
+          // 'W48S7',
+          // 'W49S5',
         ]
         rooms_need_to_be_defended = [
           // 'W49S6',
