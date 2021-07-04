@@ -10,11 +10,11 @@ import { isWorkerObjective, WorkerObjective } from "old_objective/worker/worker_
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { RoomName } from "prototype/room"
-import { EnergyChargeableStructure } from "prototype/room_object"
 import { isSimulation } from "utility/game"
 import { roomLink } from "utility/log"
+import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepType } from "_old/creep"
-import { OwnedRoomObjectCache, OwnedRoomObjects } from "./owned_room_object_cache"
+import { OwnedRoomObjectCache } from "./owned_room_object_cache"
 
 export interface RoomKeeperObjectiveEvents {
   spawnedCreeps: number
@@ -200,8 +200,6 @@ export class RoomKeeperObjective implements Objective {
 
   // ---- Private ---- //
   private runWorker(roomObjects: OwnedRoomObjects): string {
-
-    this.workerObjective.addCreeps(roomObjects.idleCreeps.map(creep => creep.name))
 
     const workerProgress = this.workerObjective.progress(roomObjects, this.spawnCreepObjective)
     return ((): string => {

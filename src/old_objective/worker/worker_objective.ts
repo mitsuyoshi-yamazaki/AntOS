@@ -1,5 +1,5 @@
 import { Objective, ObjectiveFailed, ObjectiveInProgress } from "old_objective/objective"
-import { OwnedRoomObjects } from "old_objective/room_keeper/owned_room_object_cache"
+import { OwnedRoomObjects } from "world_info/room_info"
 import { SpawnCreepObjective } from "old_objective/spawn/spawn_creep_objective"
 import { CreepName } from "prototype/creep"
 

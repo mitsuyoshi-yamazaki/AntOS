@@ -1,38 +1,23 @@
-import { EnergyChargeableStructure } from "prototype/room_object"
-import { Creeps } from "./creep_info"
-import { ResourcePools } from "./resource_pool/resource_pool"
-import { Rooms } from "./room_info"
-import { Spawns } from "./spawn_info"
+import { Creeps, CreepsInterface } from "./creep_info"
+import { ResourcePools, ResourcePoolsInterface } from "./resource_pool/resource_pool"
+import { Rooms, RoomsInterface } from "./room_info"
+import { Spawns, SpawnsInterface } from "./spawn_info"
 
-export interface OwnedRoomObjects {
-  controller: StructureController
-  idleCreeps: Creep[]
-  sources: Source[]
-  constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
-  activeStructures: {
-    spawns: StructureSpawn[]
-    extensions: StructureExtension[]
-    towers: StructureTower[]
+interface WorldInterface {
+  creeps: CreepsInterface
+  spawns: SpawnsInterface
+  rooms: RoomsInterface
+  resourcePools: ResourcePoolsInterface
 
-    damagedStructures: AnyOwnedStructure[]
-    chargeableStructures: EnergyChargeableStructure[]
-  }
-  hostiles: {
-    creeps: Creep[]
-    powerCreeps: PowerCreep[]
-  }
-  alliances: {
-    creeps: Creep[]
-    powerCreeps: PowerCreep[]
-  }
-  resources: Resource[]
-  flags: Flag[]
+  // ---- Lifecycle ---- //
+  beforeTick(): void
+  afterTick(): void
 }
 
 /**
  * - "現在の情報"（PhysicalGameObjectなど）と"キャッシュ"（RoomPositionなど）と"継続した観察結果"がある
  */
-export const World = {
+export const World: WorldInterface = {
   creeps: Creeps,
   spawns: Spawns,
   rooms: Rooms,
@@ -42,11 +27,14 @@ export const World = {
     // 呼び出し順序に注意: 基本的に低次の処理から呼び出す
     const allCreeps = this.creeps.beforeTick()
     const allSpawns = this.spawns.beforeTick()
+    this.rooms.beforeTick()
     this.resourcePools.beforeTick(allCreeps, allSpawns)
   },
 
   afterTick: function (): void {
     this.resourcePools.afterTick()
+    this.rooms.afterTick()
+    this.spawns.afterTick()
     this.creeps.afterTick()
   },
 }

@@ -5,6 +5,7 @@ import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
 import { InterShardMemoryManager } from "prototype/shard"
 import { Migration } from "utility/migration"
+import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 
@@ -24,16 +25,20 @@ export class RootProcess {
     const ownedRooms = this.getOwnedRooms()
 
     ErrorMapper.wrapLoop((): void => {
-      this.createOwnedRoomObjectsCache(ownedRooms)
-    }, "RootProcess.createOwnedRoomObjectsCache()")()
-
-    ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess()
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.applicationProcessLauncher.launchProcess()
     }, "RootProcess.applicationProcessLauncher.launchProcess()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      World.beforeTick()
+    }, "World.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      this.createOwnedRoomObjectsCache(ownedRooms)
+    }, "RootProcess.createOwnedRoomObjectsCache()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.restoreTasks()
@@ -48,6 +53,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       OwnedRoomObjectCache.clearCache()
     }, "OwnedRoomObjectCache.clearCache()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      World.afterTick()
+    }, "World.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       InterShardMemoryManager.store()

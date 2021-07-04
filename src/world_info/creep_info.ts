@@ -34,19 +34,19 @@ export class CreepInfo implements CreepInfoInterface {
 const creepInfo = new Map<CreepName, CreepInfo>()
 const allCreeps: Creep[] = []
 
-export const Creeps = {
-  list: function (): Creep[] {
-    return allCreeps
-  },
+export interface CreepsInterface {
+  // ---- Lifecycle ---- //
+  beforeTick(): Creep[]
+  afterTick(): void
 
-  get: function (creepName: CreepName): Creep | null {
-    return Game.creeps[creepName]
-  },
+  // ---- Functions ---- //
+  list(): Creep[]
+  get(creepName: CreepName): Creep | null
+  getInfo(creepName: CreepName): CreepInfo | null
+}
 
-  getInfo: function (creepName: CreepName): CreepInfo | null {
-    return creepInfo.get(creepName) ?? null
-  },
-
+export const Creeps: CreepsInterface = {
+  // ---- Lifecycle ---- //
   beforeTick: function (): Creep[] {
     allCreeps.splice(0, allCreeps.length)
     for (const creepName in Memory.creeps) {
@@ -63,5 +63,18 @@ export const Creeps = {
 
   afterTick: function (): void {
 
+  },
+
+  // ---- Functions ---- //
+  list: function (): Creep[] {
+    return allCreeps
+  },
+
+  get: function (creepName: CreepName): Creep | null {
+    return Game.creeps[creepName]
+  },
+
+  getInfo: function (creepName: CreepName): CreepInfo | null {
+    return creepInfo.get(creepName) ?? null
   },
 }

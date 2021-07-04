@@ -7,14 +7,15 @@ export interface LowRCLRoomKeeperProcessState extends ProcessState {
 
 }
 
+/**
+ * - creep管理を永続化する必要がないためProblem, TaskRunnerも永続化する必要がない？
+ *   - →その場合は毎tick生成する = Problemは自動で解決する
+ */
 export class LowRCLRoomKeeperProcess implements Process, Procedural {
-  private problems: Problem[] = []
-
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
-    public readonly storedObjective: Objective,
   ) {
 
   }
@@ -28,6 +29,11 @@ export class LowRCLRoomKeeperProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    const problems: Problem[] = []
+    const taskRunners: TaskRunner[] = []
+
+
+
     const objective = this.currentObjective()
     if (objective == null) {
       return
@@ -82,7 +88,7 @@ export class LowRCLRoomKeeperProcess implements Process, Procedural {
 // 時分割でタスクが変わることをメタタスク内に情報として持てないか
 
 interface Objective {
-  public currentStatus(): ObjectiveStatus
+  currentStatus(): ObjectiveStatus
 }
 
 type ProblemIdentifier = string

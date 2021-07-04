@@ -3,15 +3,18 @@ import { SpawnName } from "prototype/structure_spawn"
 
 const allSpawns: StructureSpawn[] = []
 
-export const Spawns = {
-  list: function (): StructureSpawn[] {
-    return allSpawns
-  },
+export interface SpawnsInterface {
+  // ---- Lifecycle ---- //
+  beforeTick(): StructureSpawn[]
+  afterTick(): void
 
-  get: function (spawnName: SpawnName): StructureSpawn | null {
-    return Game.spawns[spawnName]
-  },
+  // ---- Function ---- //
+  list(): StructureSpawn[]
+  get(spawnName: SpawnName): StructureSpawn | null
+}
 
+export const Spawns: SpawnsInterface = {
+  // ---- Lifecycle ---- //
   beforeTick: function (): StructureSpawn[] {
     allSpawns.splice(0, allSpawns.length)
     for (const spawnName in Memory.spawns) {
@@ -28,5 +31,14 @@ export const Spawns = {
 
   afterTick: function (): void {
 
+  },
+
+  // ---- Function ---- //
+  list: function (): StructureSpawn[] {
+    return allSpawns
+  },
+
+  get: function (spawnName: SpawnName): StructureSpawn | null {
+    return Game.spawns[spawnName]
   },
 }

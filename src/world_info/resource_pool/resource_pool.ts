@@ -16,8 +16,8 @@ const creepResourcePools = new Map<ResourcePoolIdentifier, CreepPool>()
 const spawnResourcePools = new Map<ResourcePoolIdentifier, SpawnPool>()
 const spawnCreepRequests = new Map<ResourcePoolIdentifier, SpawnPoolSpawnRequest[]>()
 
-interface ResourcePoolInterface {
-  // ---- System ---- //
+export interface ResourcePoolsInterface {
+  // ---- Lifecycle ---- //
   beforeTick(allCreeps: Creep[], allSpawns: StructureSpawn[]): void
   afterTick(): void
 
@@ -35,7 +35,8 @@ interface ResourcePoolInterface {
  * - creep resource pool
  *   - ひとつのcreepが複数のpoolに登録される場合もある
  */
-export const ResourcePools: ResourcePoolInterface = {
+export const ResourcePools: ResourcePoolsInterface = {
+  // ---- Lifecycle ---- //
   beforeTick: (allCreeps: Creep[], allSpawns: StructureSpawn[]): void => {
     reloadCreepResourcePools(allCreeps)
     reloadSpawnResourcePools(allSpawns)
