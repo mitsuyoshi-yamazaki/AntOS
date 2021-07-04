@@ -16,6 +16,7 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
   public get target(): Source {
     return this.source
   }
+  public readonly shortDescription = "E-harvest"
 
   private constructor(
     public readonly source: Source,

@@ -14,6 +14,8 @@ export interface TransferEnergyApiWrapperState extends CreepApiWrapperState {
 }
 
 export class TransferEnergyApiWrapper implements ApiWrapper<Creep, TransferEnergyApiWrapperResult>, TargetingApiWrapper {
+  public readonly shortDescription = "transfer"
+
   public constructor(
     public readonly target: TransferEnergyApiWrapperTargetType,
   ) { }

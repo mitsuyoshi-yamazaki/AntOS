@@ -10,7 +10,7 @@ export interface MoveHarvestEnergyTaskState extends CreepTaskState {
 }
 
 export class MoveHarvestEnergyTask implements CreepTask {
-  public readonly shortDescription = "E-harvest"
+  public readonly shortDescription: string
   public get targetId(): Id<Source> {
     return this.apiWrapper.source.id
   }
@@ -22,6 +22,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
     source: Source,
   ) {
     this.apiWrapper = HarvestEnergyApiWrapper.create(source)
+    this.shortDescription = this.apiWrapper.shortDescription
   }
 
   public encode(): MoveHarvestEnergyTaskState {

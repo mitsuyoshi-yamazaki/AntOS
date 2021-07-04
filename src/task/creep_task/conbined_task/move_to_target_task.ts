@@ -13,6 +13,7 @@ export interface MoveToTargetTaskState extends CreepTaskState {
 }
 
 export class MoveToTargetTask implements CreepTask {
+  public readonly shortDescription: string
   public get targetId(): Id<TargetingApiWrapperTargetType> {
     return this.apiWrapper.target.id
   }
@@ -20,7 +21,9 @@ export class MoveToTargetTask implements CreepTask {
   private constructor(
     public readonly startTime: number,
     private readonly apiWrapper: MoveToTargetTaskApiWrapper,
-  ) { }
+  ) {
+    this.shortDescription = apiWrapper.shortDescription
+  }
 
   public encode(): MoveToTargetTaskState {
     return {
