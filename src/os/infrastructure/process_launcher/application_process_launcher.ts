@@ -14,9 +14,9 @@ export class ApplicationProcessLauncher {
   }
 
   private roomsNeedKeeper(allProcessInfo: ProcessInfo[]): RoomName[] {
-    // if (World.isSimulation()) {  // FixMe:
-    //   return []
-    // }
+    if (World.isSimulation()) {
+      return []
+    }
 
     const roomsWithKeeperProcess = allProcessInfo.map(processInfo => {
       if (processInfo.process instanceof RoomKeeperProcess) {

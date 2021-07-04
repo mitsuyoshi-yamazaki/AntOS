@@ -3,7 +3,7 @@ import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_tas
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
 import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
-import { CreepRole, isV5CreepMemory, V4CreepMemory } from "prototype/creep"
+import { isV5CreepMemory, V4CreepMemory } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
 import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
