@@ -12,7 +12,15 @@ export class OwnedRoomCreepExistsObjective implements Objective {
   ) { }
 
   public currentStatus(): ObjectiveStatus {
-    const numberOfCreeps = World.resourcePools.checkCreeps(this.objects.controller.room.name, this.creepRole, () => true)
+    const numberOfCreeps = World.resourcePools.checkCreeps(
+      this.objects.controller.room.name,
+      creep => {
+        if (creep.memory.v5 == null) {
+          return false
+        }
+        return creep.memory.v5.r.includes(this.creepRole)
+      },
+    )
     if (numberOfCreeps > this.requiredCreeps) {
       return new ObjectiveStatusAchieved()
     }

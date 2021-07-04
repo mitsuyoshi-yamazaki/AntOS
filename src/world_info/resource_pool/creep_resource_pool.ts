@@ -1,5 +1,4 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { CreepRole } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
 import { taskProgressTypeInProgress } from "task/task"
@@ -24,7 +23,6 @@ export class CreepPool implements ResourcePoolType<Creep> {
 
   public constructor(
     public readonly parentRoomName: RoomName,
-    public readonly role: CreepRole,
   ) { }
 
   public addResource(creep: Creep): void {
@@ -61,7 +59,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
     }
   }
 
-  public executeTask(): void {
+  public executeTask(): void {  // FixMe: 重複して行われてしまう
     this.creeps.forEach(creep => {
       if (creep.task != null) {
         if (creep.task.run(creep) !== taskProgressTypeInProgress) {

@@ -13,7 +13,15 @@ export class OwnedRoomEnergyAvailableObjective implements Objective {
 
   public currentStatus(): ObjectiveStatus {
     const problems: Problem[] = []
-    const numberOfEnergyStoreCreeps = World.resourcePools.checkCreeps(this.objects.controller.room.name, creepRoleEnergyStore, () => true)
+    const numberOfEnergyStoreCreeps = World.resourcePools.checkCreeps(
+      this.objects.controller.room.name,
+      creep => {
+        if (creep.memory.v5 == null) {
+          return false
+        }
+        return creep.memory.v5.r.includes(creepRoleEnergyStore)
+      },
+    )
     if (this.objects.energyStores.length <= 0 && numberOfEnergyStoreCreeps <= 0) {
       problems.push(new EnergyInsufficiencyProblem(this.objects.controller.room.name))
     }

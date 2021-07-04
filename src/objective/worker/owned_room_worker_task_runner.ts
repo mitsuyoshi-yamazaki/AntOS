@@ -1,5 +1,5 @@
 import { TaskRunner } from "objective/task_runner"
-import { creepRoleWorker } from "prototype/creep"
+import { CreepRole, creepRoleMover, creepRoleWorker } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { TransferEnergyApiWrapper } from "task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
@@ -16,14 +16,22 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
   ) { }
 
   public run(): void {
+    const necessaryRoles: CreepRole[] = [creepRoleWorker, creepRoleMover]
+
     World.resourcePools.assignTasks(
       this.objects.controller.room.name,
-      creepRoleWorker,
       creepPoolAssignPriorityLow,
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep)
       },
-      () => true,
+      (creep: Creep): boolean => {
+        if (creep.memory.v5 == null) {
+          return false
+        }
+        const roles = creep.memory.v5.r
+        const notSatisfied = necessaryRoles.some(role => roles.includes(role) !== true)
+        return notSatisfied !== true
+      },
     )
   }
 

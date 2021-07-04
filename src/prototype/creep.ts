@@ -6,20 +6,20 @@ import { RoomName } from "./room"
 // ---- Types and Constants ---- //
 export type CreepName = string
 
+type CreepRoleMover = "mv"
 type CreepRoleHarvester = "hv"
 type CreepRoleWorker = "wr"
 type CreepRoleEnergyStore = "es"
 type CreepRoleHauler = "hl"
-type CreepRoleScout = "sc"
 
 // TODO: namespaceを設ける
+export const creepRoleMover: CreepRoleMover = "mv"
 export const creepRoleHarvester: CreepRoleHarvester = "hv"
 export const creepRoleWorker: CreepRoleWorker = "wr"
 export const creepRoleEnergyStore: CreepRoleEnergyStore = "es"
 export const creepRoleHauler: CreepRoleHauler = "hl"
-export const creepRoleScout: CreepRoleScout = "sc"
 
-export type CreepRole = CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout
+export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler
 
 // ---- Custon Return Code ---- //
 export type FINISHED = 967
