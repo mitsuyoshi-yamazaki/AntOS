@@ -4,7 +4,7 @@ import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNot
 import { Problem } from "objective/problem"
 import { TaskRunner } from "objective/task_runner"
 import { OwnedRoomWorkTaskRunner } from "objective/worker/owned_room_worker_task_runner"
-import { CreepRole } from "prototype/creep"
+import { CreepRole } from "prototype/creep_role"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export class UpgradeControllerObjective implements Objective {

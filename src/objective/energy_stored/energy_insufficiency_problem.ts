@@ -1,6 +1,6 @@
 import { CreepInsufficiencyProblemSolver } from "objective/creep_existence/creep_insufficiency_problem_solver"
 import { Problem, ProblemIdentifier } from "objective/problem"
-import { CreepRole } from "prototype/creep"
+import { CreepRole } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 
 export class EnergyInsufficiencyProblem implements Problem {

@@ -7,7 +7,7 @@ import { UpgradeControllerTask } from "game_object_task/creep_task/upgrade_contr
 import { decodeObjectivesFrom, Objective, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { SpawnCreepObjective, spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, V4CreepMemory } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { buildBodyParts } from "script/body_part_builder"
 import { generateUniqueId } from "utility/unique_id"
@@ -264,7 +264,7 @@ export class PrimitiveWorkerObjective implements WorkerObjective {
     ErrorMapper.wrapLoop((): void => {
       for (let i = 0; i < workerNeeded; i += 1) {
         const creepName = generateUniqueId("mont_blanc")
-        const memory: CreepMemory = {
+        const memory: V4CreepMemory = {
           ts: null,
 
           squad_name: "",

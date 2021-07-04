@@ -9,7 +9,7 @@ import {
   ObjectiveSucceeded
 } from "old_objective/objective"
 import { SpawnPriorityHigh, SpawnPriorityLow, SpawnPriorityNormal } from "old_objective/spawn/spawn_creep_objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, V4CreepMemory } from "prototype/creep"
 import { Migration } from "utility/migration"
 import { Result } from "utility/result"
 import { CreepStatus, CreepType } from "_old/creep"
@@ -30,7 +30,7 @@ export interface SingleCreepProviderCreepRequest {
   b: BodyPartConstant[]
 
   /** memory */
-  m: CreepMemory
+  m: V4CreepMemory
 }
 
 export type CreepProviderPriority = 0 | 1 | 2  // 0: high, 2: low
@@ -109,7 +109,7 @@ export class SingleCreepProviderObjective implements Objective {
         Memory.creepRequests[spawnRoomName] = []
       }
 
-      const memory: CreepMemory = {
+      const memory: V4CreepMemory = {
         ts: null,
 
         squad_name: "",

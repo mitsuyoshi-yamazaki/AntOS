@@ -253,7 +253,7 @@ export class UpgradeL3ControllerObjective implements Objective {
   //   const time = Game.time
   //   const initialTask = targetSource != null ? new HarvestEnergyTask(time, targetSource) : null
   //   const creepName = generateUniqueId("belgian_waffle")
-  //   const memory: CreepMemory = {
+  //   const memory: V4CreepMemory = {
   //     ts: initialTask?.encode() ?? null,
   //     squad_name: "",
   //     status: CreepStatus.NONE,

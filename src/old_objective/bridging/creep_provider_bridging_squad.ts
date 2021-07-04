@@ -4,6 +4,7 @@ import { CreepStatus, CreepType } from "_old/creep"
 import { CreepProviderObjectiveCreepSpec } from "old_objective/creep_provider/single_creep_provider_objective"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Result } from "utility/result"
+import { V4CreepMemory } from "prototype/creep"
 
 let requestCacheTime = 0
 const squadNames = new Map<string, string>()
@@ -84,7 +85,7 @@ export class CreepProviderBridgingSquad extends Squad {
 
     const name = creepIdentifier
     const body: BodyPartConstant[] = this.memory.req[creepIdentifier]
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,

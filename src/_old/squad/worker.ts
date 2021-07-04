@@ -1,8 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType, WorkerSource } from "_old/creep"
-import { isNewLine } from "../../../node_modules/@types/acorn/index";
-import { isV4CreepMemory } from "prototype/creep";
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep";
 
 interface WorkerSquadMemory extends SquadMemory {
   number_of_workers?: number
@@ -121,7 +120,7 @@ export class WorkerSquad extends Squad {
 
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,

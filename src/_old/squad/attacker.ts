@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { V4CreepMemory } from "prototype/creep"
 
 interface AttackerSquadMemory extends SquadMemory {
   target_room_name: string | undefined
@@ -121,9 +122,8 @@ export class AttackerSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
-
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

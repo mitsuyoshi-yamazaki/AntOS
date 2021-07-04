@@ -1,7 +1,7 @@
 import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
-import { isV4CreepMemory } from "prototype/creep"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
 export interface ResearchTarget {
   readonly id: string
@@ -122,7 +122,7 @@ export class ResearcherSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,

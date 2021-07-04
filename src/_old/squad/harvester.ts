@@ -2,7 +2,7 @@ import { UID, room_link } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 import { Region } from "../region";
-import { isV4CreepMemory } from "prototype/creep";
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep";
 
 export interface HarvesterSquadMemory extends SquadMemory {
   readonly source_id: string
@@ -499,7 +499,7 @@ export class HarvesterSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = body_unit
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,
@@ -558,7 +558,7 @@ export class HarvesterSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,
@@ -604,7 +604,7 @@ export class HarvesterSquad extends Squad {
     // const header: BodyPartConstant[] = [CARRY, CARRY]
     // let body: BodyPartConstant[] = [MOVE]
     // const name = this.generateNewName()
-    // const memory: CreepMemory = {
+    // const memory: V4CreepMemory = {
     //   squad_name: this.name,
     //   status: CreepStatus.NONE,
     //   birth_time: Game.time,

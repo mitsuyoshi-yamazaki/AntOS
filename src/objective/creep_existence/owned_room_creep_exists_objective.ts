@@ -1,5 +1,5 @@
 import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNotAchieved } from "objective/objective"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { CreepInsufficiencyProblem } from "./creep_insufficiency_problem"

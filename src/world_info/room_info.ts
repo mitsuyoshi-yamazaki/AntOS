@@ -1,4 +1,5 @@
-import { CreepRole, hasNecessaryRoles, isV5CreepMemory } from "prototype/creep"
+import { isV5CreepMemory } from "prototype/creep"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName, RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"

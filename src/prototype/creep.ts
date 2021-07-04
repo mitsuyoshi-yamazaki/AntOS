@@ -5,39 +5,11 @@ import { CreepTaskState as V4CreepTaskState } from "game_object_task/creep_task"
 import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { RoomName } from "./room"
+import { CreepRole } from "./creep_role"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
 
-type CreepRoleMover = "mover"
-type CreepRoleHarvester = "harvester"
-type CreepRoleWorker = "worker"
-type CreepRoleEnergyStore = "energy_store"
-type CreepRoleHauler = "hauler"
-
-const creepRoleMover: CreepRoleMover = "mover"
-const creepRoleHarvester: CreepRoleHarvester = "harvester"
-const creepRoleWorker: CreepRoleWorker = "worker"
-const creepRoleEnergyStore: CreepRoleEnergyStore = "energy_store"
-const creepRoleHauler: CreepRoleHauler = "hauler"
-
-export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler
-export const CreepRole = {
-  Mover: creepRoleMover,
-  Harvester: creepRoleHarvester,
-  Worker: creepRoleWorker,
-  EnergyStore: creepRoleEnergyStore,
-  Hauler: creepRoleHauler,
-}
-
-export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
-  if (!isV5CreepMemory(creep.memory)) {
-    return false
-  }
-  const creepRoles = creep.memory.r
-  const missingRoles = roles.some(role => creepRoles.includes(role) !== true)
-  return missingRoles !== true
-}
 
 // ---- Custon Return Code ---- //
 export type FINISHED = 967

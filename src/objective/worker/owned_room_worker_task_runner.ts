@@ -1,5 +1,5 @@
 import { TaskRunner } from "objective/task_runner"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { TransferEnergyApiWrapper } from "task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "task/creep_task/api_wrapper/upgrade_controller_api_wrapper"

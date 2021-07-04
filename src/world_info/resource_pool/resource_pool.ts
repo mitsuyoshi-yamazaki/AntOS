@@ -1,7 +1,8 @@
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
-import { SpawnPool, SpawnPoolSpawnRequest } from "./spawn_resource_pool"
+import { CreepSpawnRequest } from "./creep_specs"
+import { SpawnPool } from "./spawn_resource_pool"
 // Worldをimportしない
 
 type ResourcePoolIdentifier = string
@@ -14,7 +15,7 @@ export interface ResourcePoolType<T> {
 
 const creepResourcePools = new Map<ResourcePoolIdentifier, CreepPool>()
 const spawnResourcePools = new Map<ResourcePoolIdentifier, SpawnPool>()
-const spawnCreepRequests = new Map<ResourcePoolIdentifier, SpawnPoolSpawnRequest[]>()
+const spawnCreepRequests = new Map<ResourcePoolIdentifier, CreepSpawnRequest[]>()
 
 export interface ResourcePoolsInterface {
   // ---- Lifecycle ---- //
@@ -26,7 +27,7 @@ export interface ResourcePoolsInterface {
   assignTasks(roomName: RoomName, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
 
   /** 毎tick呼び出す */
-  addSpawnCreepRequest(roomName: RoomName, request: SpawnPoolSpawnRequest): void
+  addSpawnCreepRequest(roomName: RoomName, request: CreepSpawnRequest): void
 }
 
 /**
@@ -74,14 +75,14 @@ export const ResourcePools: ResourcePoolsInterface = {
     return
   },
 
-  addSpawnCreepRequest: function(roomName: RoomName, request: SpawnPoolSpawnRequest): void {
-    const reqeusts = ((): SpawnPoolSpawnRequest[] => {
+  addSpawnCreepRequest: function(roomName: RoomName, request: CreepSpawnRequest): void {
+    const reqeusts = ((): CreepSpawnRequest[] => {
       const identifier = spawnResourcePoolIdentifier(roomName)
       const stored = spawnCreepRequests.get(identifier)
       if (stored != null) {
         return stored
       }
-      const newRequestList: SpawnPoolSpawnRequest[] = []
+      const newRequestList: CreepSpawnRequest[] = []
       spawnCreepRequests.set(identifier, newRequestList)
       return newRequestList
     })()

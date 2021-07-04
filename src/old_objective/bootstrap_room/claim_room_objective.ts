@@ -1,7 +1,7 @@
 import { ClaimControllerTask } from "game_object_task/creep_task/claim_controller_task"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState, ObjectiveSucceeded } from "old_objective/objective"
 import { SpawnCreepObjective, spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, V4CreepMemory } from "prototype/creep"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
 
@@ -106,7 +106,7 @@ export class ClaimRoomObjective implements Objective {
     if (this.claimerName == null) {
       const creepName = ClaimRoomObjective.generateCreepName()
       const body: BodyPartConstant[] = [MOVE, CLAIM, MOVE]
-      const memory: CreepMemory = {
+      const memory: V4CreepMemory = {
         ts: null,
 
         squad_name: "",

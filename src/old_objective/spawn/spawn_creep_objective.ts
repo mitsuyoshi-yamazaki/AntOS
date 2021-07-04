@@ -1,6 +1,6 @@
 import { SpawnCreepTask } from "game_object_task/spwan_task/spawn_creep_task"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveState } from "old_objective/objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, V4CreepMemory } from "prototype/creep"
 
 interface SpawnCreepObjectiveProgressInfo {
   spawnedCreepNames: CreepName[]
@@ -42,7 +42,7 @@ export interface SpawnCreepQueueItem {
   b: BodyPartConstant[]
 
   /** memory */
-  m: CreepMemory
+  m: V4CreepMemory
 }
 
 export interface SpawnCreepObjectiveState extends ObjectiveState {
@@ -77,7 +77,7 @@ export class SpawnCreepObjective implements Objective {
   }
 
   // ---- Pulbic API ---- //
-  public enqueueCreep(creepName: string, body: BodyPartConstant[], memory: CreepMemory, priority: SpawnPriority): void {
+  public enqueueCreep(creepName: string, body: BodyPartConstant[], memory: V4CreepMemory, priority: SpawnPriority): void {
     this.queue.push({
       t: Game.time,
       p: priority,

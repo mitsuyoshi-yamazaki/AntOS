@@ -3,7 +3,7 @@ import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_ta
 import { SingleCreepProviderObjective } from "old_objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "old_objective/objective"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
-import { CreepName } from "prototype/creep"
+import { CreepName, V4CreepMemory } from "prototype/creep"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { generateUniqueId } from "utility/unique_id"
@@ -190,7 +190,7 @@ export class OldBuildFirstSpawnObjective implements Objective {
 
     const creepName = generateUniqueId("chocolate_parfait")
     const body: BodyPartConstant[] = [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE]
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: "",

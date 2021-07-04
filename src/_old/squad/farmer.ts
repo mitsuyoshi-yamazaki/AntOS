@@ -518,7 +518,7 @@ export class FarmerSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
 
       squad_name: this.name,

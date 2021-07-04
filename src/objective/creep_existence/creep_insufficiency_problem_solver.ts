@@ -1,7 +1,7 @@
 import { ProblemSolver } from "objective/problem_solver"
-import { CreepRole } from "prototype/creep"
+import { CreepRole } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
-import { spawnPoolSpawnRequestPriorityLow } from "world_info/resource_pool/spawn_resource_pool"
+import { creepSpawnRequestPriorityLow } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
 
 export class CreepInsufficiencyProblemSolver implements ProblemSolver {
@@ -15,9 +15,8 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
     World.resourcePools.addSpawnCreepRequest(
       this.roomName,
       {
-        priority: spawnPoolSpawnRequestPriorityLow,
+        priority: creepSpawnRequestPriorityLow,
         numberOfCreeps: 1,  // TODO:
-        body: this.body(),
         roles: this.roles,
         codename: "creep",  // TODO:
       }

@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "types": [
       "./src/@types/global",
       "./node_modules/@types/jest"
