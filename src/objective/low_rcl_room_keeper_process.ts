@@ -5,6 +5,7 @@ import { CreepRole, creepRoleEnergyStore, creepRoleWorker } from "prototype/cree
 import { RoomName } from "prototype/room"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { TransferEnergyApiWrapper } from "task/creep_task/api_wrapper/transfer_energy_api_wrapper"
+import { UpgradeControllerApiWrapper } from "task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { MoveHarvestEnergyTask } from "task/creep_task/conbined_task/move_harvest_energy_task"
 import { MoveToTargetTask } from "task/creep_task/conbined_task/move_to_target_task"
 import { CreepTask } from "task/creep_task/creep_task"
@@ -82,7 +83,7 @@ export class LowRCLRoomKeeperProcess implements Process, Procedural {
       }
     })
 
-    processLog(this, `problems: ${problemSet.map(p => p.identifier)}`)
+    processLog(this, `Room ${roomLink(this.roomName)} has following problems: ${problemSet.map(p => p.identifier)}`)
     problemSet.forEach(problem => {
       problem.problemSolver.run()
     })
@@ -301,11 +302,10 @@ class OwnedRoomWorkTaskRunner implements TaskRunner {
     //   if (constructionSite != null) {
     //     creep.v4Task = new BuildTask(Game.time, constructionSite)
     //   } else {
-    //     creep.v4Task = new UpgradeControllerTask(Game.time, controller)
     //   }
     // }
 
-    return null
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(this.objects.controller))
   }
 
   private getSourceToAssign(position: RoomPosition): Source | null {
@@ -354,7 +354,7 @@ class OwnedRoomWorkTaskRunner implements TaskRunner {
   //   return constructionSite
   // }
 
-  private getRepairStructureToAssign(): AnyStructure | null {
-    return this.objects.damagedStructures[0] ?? null
-  }
+  // private getRepairStructureToAssign(): AnyStructure | null {
+  //   return this.objects.damagedStructures[0] ?? null
+  // }
 }

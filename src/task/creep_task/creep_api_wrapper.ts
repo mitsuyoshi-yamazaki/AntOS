@@ -1,8 +1,9 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ApiWrapper, ApiWrapperState } from "task/api_wrapper"
-import { HarvestEnergyApiWrapper, HarvestEnergyApiWrapperState } from "./api_wrapper/harvest_energy_task"
+import { HarvestEnergyApiWrapper, HarvestEnergyApiWrapperState } from "./api_wrapper/harvest_energy_api_wrapper"
 import { TransferEnergyApiWrapper, TransferEnergyApiWrapperState } from "./api_wrapper/transfer_energy_api_wrapper"
+import { UpgradeControllerApiWrapper, UpgradeControllerApiWrapperState } from "./api_wrapper/upgrade_controller_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -13,12 +14,13 @@ export interface CreepApiWrapper<Result> extends ApiWrapper<Creep, Result> {
   run(creep: Creep): Result
 }
 
-type CreepApiWrapperType = HarvestEnergyApiWrapper | TransferEnergyApiWrapper
+type CreepApiWrapperType = HarvestEnergyApiWrapper | TransferEnergyApiWrapper | UpgradeControllerApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "HarvestEnergyApiWrapper" = (state: CreepApiWrapperState) => HarvestEnergyApiWrapper.decode(state as HarvestEnergyApiWrapperState)
   "TransferEnergyApiWrapper" = (state: CreepApiWrapperState) => TransferEnergyApiWrapper.decode(state as TransferEnergyApiWrapperState)
+  "UpgradeControllerApiWrapper" = (state: CreepApiWrapperState) => UpgradeControllerApiWrapper.decode(state as UpgradeControllerApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

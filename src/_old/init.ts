@@ -6,7 +6,7 @@ import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
 
-const version = '5.1.15'
+const version = '5.1.17'
 
 export function init(): void {
   Game.version = version

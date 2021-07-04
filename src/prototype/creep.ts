@@ -23,11 +23,13 @@ export type CreepRole = CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergySt
 // ---- Custon Return Code ---- //
 export type FINISHED = 967
 export type IN_PROGRESS = 968
-export type ERR_PROGRAMMING_ERROR = 969
+export type ERR_DAMAGED = 969
+export type ERR_PROGRAMMING_ERROR = 970
 
 export const FINISHED: FINISHED = 967
 export const IN_PROGRESS: IN_PROGRESS = 968
-export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 969
+export const ERR_DAMAGED: ERR_DAMAGED = 969
+export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 970
 
 
 // ---- Memory ---- //
