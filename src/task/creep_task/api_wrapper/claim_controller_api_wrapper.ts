@@ -40,7 +40,7 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
     const result = creep.claimController(this.target)
-    creep.signController(this.target, Sign.sign(this.target.room))
+    creep.signController(this.target, Sign.signForOwnedRoom())
 
     switch (result) {
     case OK: {

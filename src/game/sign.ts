@@ -6,9 +6,12 @@ export const Sign = {
       return ""
     }
     if (room.controller.my === true) {
-      return `v${SystemInfo.application.version} at ${Game.time}`
+      return this.signForOwnedRoom()
     } else {
       return `at ${Game.time}`
     }
-  }
+  },
+  signForOwnedRoom: function (): string {
+    return `v${SystemInfo.application.version} at ${Game.time}`
+  },
 }
