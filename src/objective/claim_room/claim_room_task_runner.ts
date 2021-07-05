@@ -1,4 +1,4 @@
-import { TaskRunner } from "objective/task_runner"
+import { TaskRunner, TaskRunnerIdentifier } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 import { MoveClaimControllerTask } from "task/creep_task/combined_task/move_claim_controller_task"
@@ -7,10 +7,14 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
 export class ClaimRoomTaskRunner implements TaskRunner {
+  public readonly taskRunnerIdentifier: TaskRunnerIdentifier
+
   public constructor(
     public readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
-  ) {}
+  ) {
+    this.taskRunnerIdentifier = `${this.constructor.name}_${this.targetRoomName}`
+  }
 
   public run(objects: OwnedRoomObjects): void {
     const roomName = objects.controller.room.name
@@ -18,6 +22,7 @@ export class ClaimRoomTaskRunner implements TaskRunner {
 
     World.resourcePools.assignTasks(
       roomName,
+      this.taskRunnerIdentifier,
       CreepPoolAssignPriority.Low,
       () => {
         return MoveClaimControllerTask.create(this.targetRoomName, this.waypoints)

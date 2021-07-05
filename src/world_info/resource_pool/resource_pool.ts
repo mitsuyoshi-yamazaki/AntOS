@@ -1,3 +1,4 @@
+import { TaskRunnerIdentifier } from "objective/task_runner"
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
@@ -25,8 +26,9 @@ export interface ResourcePoolsInterface {
   afterTick(): void
 
   // ---- Creep ---- //
-  checkCreeps(roomName: RoomName, filter: CreepPoolFilter): number
-  assignTasks(roomName: RoomName, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
+  countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
+  countCreeps(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number
+  assignTasks(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
 
   // ---- Tower ---- //
   addTowerTask(roomName: RoomName, task: TowerTask): void
@@ -68,20 +70,20 @@ export const ResourcePools: ResourcePoolsInterface = {
   },
 
   // ---- Creep ---- //
-  checkCreeps: function(roomName: RoomName, filter: CreepPoolFilter): number {
-    const pool = getCreepPool(roomName)
-    if (pool == null) { // TODO: CreepPoolがない場合はspawn時に生成する
-      return 0
-    }
-    return pool.checkCreeps(filter)
+  countAllCreeps: function(roomName: RoomName, filter: CreepPoolFilter): number {
+    return getCreepPool(roomName)?.countAllCreeps(filter) ?? 0
   },
 
-  assignTasks: function(roomName: RoomName, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
+  countCreeps: function (roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number {
+    return getCreepPool(roomName)?.countCreeps(taskRunnerIdentifier, filter) ?? 0
+  },
+
+  assignTasks: function (roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
     const pool = getCreepPool(roomName)
     if (pool == null) {
       return
     }
-    pool.assignTasks(priority, taskBuilder, filter)
+    pool.assignTasks(taskRunnerIdentifier, priority, taskBuilder, filter)
     return
   },
 

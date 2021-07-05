@@ -44,7 +44,7 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
 
     switch (result) {
     case OK: {
-      return FINISHED_AND_RAN  // 次のtickでsignController()するため // TODO: 同tickでも良いかも
+      return FINISHED_AND_RAN
     }
 
     case ERR_NOT_IN_RANGE:

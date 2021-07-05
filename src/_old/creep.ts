@@ -1,8 +1,7 @@
 import { StructureFilter, room_link } from "../utility"
 import { Squad } from "_old/squad/squad"
 import { ChargeTarget } from "./room"
-import { CreepTaskState } from "game_object_task/creep_task"
-import { isV4CreepMemory, V5CreepMemory } from "prototype/creep"
+import { isV4CreepMemory } from "prototype/creep"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 export enum CreepStatus {  // @todo: add "meta" info to status and keep it on memory, to not change objectives between ticks

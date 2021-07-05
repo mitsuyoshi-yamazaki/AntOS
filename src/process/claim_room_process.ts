@@ -23,7 +23,7 @@ export interface ClaimRoomProcessState extends ProcessState, ObjectiveRunnerStat
   w: RoomName[]
 }
 
-// Game.io("launch ClaimRoomProcess -l target_room_name=W57S27 waypoints=W53S30,W55S29,W56S28")
+// Game.io("launch ClaimRoomProcess -l parent_room_name=W27S26 target_room_name=W24S29 waypoints=W27S28")
 export class ClaimRoomProcess extends ObjectiveRunner implements Process {
   private constructor(
     public readonly launchTime: number,
@@ -61,6 +61,17 @@ export class ClaimRoomProcess extends ObjectiveRunner implements Process {
 
   // ---- ObjectiveRunner ---- //
   public predefinedObjectives(objects: OwnedRoomObjects): Objective[] {
+    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
+    if (targetRoomObjects != null) {
+      if (targetRoomObjects.activeStructures.spawns.length > 0) {
+        this.log(`${roomLink(this.targetRoomName)} successfully bootstraped. Taking over creeps and terminating process...`)
+
+        // TODO: creepの引き継ぎ
+        OperatingSystem.os.killProcess(this.processId)
+        return []
+      }
+    }
+
     return [
       new ClaimRoomObjective(objects, this.targetRoomName, this.waypoints),
     ]
@@ -89,12 +100,6 @@ export class ClaimRoomProcess extends ObjectiveRunner implements Process {
   }
 
   public isWorkingFine(): void {
-    const targetRoom = World.rooms.get(this.targetRoomName)
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true) {
-      this.log(`${roomLink(this.targetRoomName)} successfully claimed. terminating...`)
-      OperatingSystem.os.killProcess(this.processId)
-      return
-    }
     this.log(`${roomLink(this.targetRoomName)} working fine 😀`)
   }
 

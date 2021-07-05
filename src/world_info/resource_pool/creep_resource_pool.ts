@@ -1,4 +1,6 @@
+import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
 import { TaskProgressType } from "task/task"
@@ -34,8 +36,26 @@ export class CreepPool implements ResourcePoolType<Creep> {
     this.creeps.push(creep)
   }
 
-  public checkCreeps(filter: CreepPoolFilter): number {
-    return this.creeps.filter(filter).length
+  public countAllCreeps(filter: CreepPoolFilter): number {
+    return this.creeps
+      .filter(filter)
+      .length
+  }
+
+  public countCreeps(taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number {
+    return this.creeps
+      .filter(creep => {
+        if (!isV5CreepMemory(creep.memory)) {
+          return false
+        }
+        // eslint-disable-next-line eqeqeq
+        if (creep.memory.i != taskRunnerIdentifier) {
+          return false
+        }
+        return true
+      })
+      .filter(filter)
+      .length
   }
 
   /**
@@ -44,18 +64,31 @@ export class CreepPool implements ResourcePoolType<Creep> {
    * @param taskBuilder 必要なだけ新しいCreepTaskを返す
    * @param filter
    */
-  public assignTasks(priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
-    const creeps = ((): Creep[] => {
+  public assignTasks(taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
+    const creeps = this.creeps
+      .filter(creep => {
+        if (!isV5CreepMemory(creep.memory)) {
+          return false
+        }
+        // eslint-disable-next-line eqeqeq
+        if (creep.memory.i != taskRunnerIdentifier) {
+          return false
+        }
+        return true
+      })
+      .filter(filter)
+
+    const filteredCreeps = ((): Creep[] => {
       switch (priority) {
       case creepPoolAssignPriorityLow:
-        return this.creeps.filter(creep => creep.task == null).filter(filter)
+        return creeps.filter(creep => creep.task == null)
       case creepPoolAssignPriorityUrgent:
         PrimitiveLogger.fatal("creepPoolAssignPriorityUrgent not implemented yet")
-        return this.creeps.filter(creep => creep.task == null).filter(filter)
+        return creeps.filter(creep => creep.task == null)
       }
     })()
 
-    for (const creep of creeps) {
+    for (const creep of filteredCreeps) {
       const newTask = taskBuilder(creep)
       if (newTask == null) {
         return

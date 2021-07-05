@@ -1,8 +1,7 @@
 import { ProblemIdentifier } from "objective/problem"
 import { ProblemSolver, ProblemSolverState } from "objective/problem_solver"
-import { CreepRole } from "prototype/creep_role"
+import { TaskRunnerIdentifier } from "objective/task_runner"
 import { RoomName } from "prototype/room"
-import { creepSpawnRequestPriorityLow } from "world_info/resource_pool/creep_specs"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
@@ -16,6 +15,10 @@ export interface TowerInterceptionProblemSolverState extends ProblemSolverState 
 }
 
 export class TowerInterceptionProblemSolver implements ProblemSolver {
+  public get taskRunnerIdentifier(): TaskRunnerIdentifier {
+    return this.problemIdentifier
+  }
+
   private constructor(
     public readonly problemIdentifier: ProblemIdentifier,
     public readonly roomName: RoomName,

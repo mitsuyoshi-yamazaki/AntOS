@@ -1,5 +1,7 @@
+import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
+import { CreepTask } from "task/creep_task/creep_task"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる */
 type CreepSpawnRequestPriorityUrgent = 0
@@ -22,6 +24,9 @@ export interface CreepSpawnRequest {
   /** bodyを設定しない場合、rolesから適切なサイズのCreepを生成する */
   roles: CreepRole[]
   body: BodyPartConstant[] | null
+
+  initialTask: CreepTask | null
+  taskRunnerIdentifier: TaskRunnerIdentifier | null
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {
@@ -49,10 +54,6 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
 
     let mergedRequest: CreepSpawnRequest | null = null
     for (let j = i + 1; j < requests.length; j += 1) {
-      if (request.body != null || requests[j].body != null) {
-        continue
-      }
-
       const requestToMerge = mergedRequest ?? request
       const mergeResult = mergeRequest(requestToMerge, requests[j])
       if (mergeResult != null) {
@@ -67,8 +68,11 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
 }
 
 function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest): CreepSpawnRequest | null {
-  if (request1.body != null || request2.body != null) {
-    PrimitiveLogger.fatal(`Program bug: mergeRequest() arguments have body. arg1: ${request1.roles}, arg2: ${request2.roles}`)
+  if (request1.body != null || request2.body != null || request1.initialTask != null || request2.initialTask != null) {
+    return null
+  }
+  // eslint-disable-next-line eqeqeq
+  if (request1.taskRunnerIdentifier != request2.taskRunnerIdentifier) {
     return null
   }
 
@@ -84,6 +88,8 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     codename: prioritizedRequest.codename,
     roles,
     body: null,
+    initialTask: null,
+    taskRunnerIdentifier: request1.taskRunnerIdentifier,
   }
 }
 

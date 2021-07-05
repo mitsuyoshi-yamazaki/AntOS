@@ -1,11 +1,15 @@
-import { TaskRunner } from "objective/task_runner"
+import { TaskRunner, TaskRunnerIdentifier } from "objective/task_runner"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export class CreateConstructionSiteTaskRunner implements TaskRunner {
+  public readonly taskRunnerIdentifier: TaskRunnerIdentifier
+
   public constructor(
     public readonly objects: OwnedRoomObjects,
   ) {
+    this.taskRunnerIdentifier = `${this.constructor.name}_${this.objects.controller.room.name}`
   }
+
 
   public run(): void {
     if (this.objects.constructionSites.length > 0) {

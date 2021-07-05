@@ -1,4 +1,4 @@
-import { TaskRunner } from "objective/task_runner"
+import { TaskRunner, TaskRunnerIdentifier } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { BuildApiWrapper } from "task/creep_task/api_wrapper/build_api_wrapper"
@@ -13,9 +13,13 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
 export class OwnedRoomWorkTaskRunner implements TaskRunner {
+  public readonly taskRunnerIdentifier: TaskRunnerIdentifier
+
   public constructor(
     public readonly objects: OwnedRoomObjects,
-  ) { }
+  ) {
+    this.taskRunnerIdentifier = `${this.constructor.name}_${this.objects.controller.room.name}`
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public run(objects: OwnedRoomObjects): void {
@@ -23,6 +27,7 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
 
     World.resourcePools.assignTasks(
       this.objects.controller.room.name,
+      null,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep)

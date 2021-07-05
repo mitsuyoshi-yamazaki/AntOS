@@ -6,6 +6,7 @@ import { CreepStatus, CreepType } from "_old/creep"
 import { RoomName } from "./room"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache } from "task/task_target_cache"
+import { TaskRunnerIdentifier } from "objective/task_runner"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -45,6 +46,9 @@ export interface V5CreepMemory {
 
   /** task */
   t: CreepTaskState | null
+
+  /** task runner id */
+  i: TaskRunnerIdentifier | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
