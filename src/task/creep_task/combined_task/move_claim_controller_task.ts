@@ -1,11 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { TaskProgressType } from "task/task"
 import { roomLink } from "utility/log"
 import { ClaimControllerApiWrapper } from "../api_wrapper/claim_controller_api_wrapper"
 import { CreepTask, CreepTaskState } from "../creep_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "../meta_task/move_to_room_task"
+import { MoveToTargetTask } from "./move_to_target_task"
 
 export interface MoveClaimControllerTaskState extends CreepTaskState {
   /** target room name */
@@ -55,19 +55,7 @@ export class MoveClaimControllerTask implements CreepTask {
       return TaskProgressType.Finished
     }
 
-    const result = ClaimControllerApiWrapper.create(creep.room.controller).run(creep)
-    switch (result) {
-    case FINISHED_AND_RAN:
-      return TaskProgressType.Finished
-
-    case IN_PROGRESS:
-    case ERR_NOT_IN_RANGE:
-    case ERR_BUSY:
-      return TaskProgressType.InProgress
-
-    case ERR_DAMAGED:
-    case ERR_PROGRAMMING_ERROR:
-      return TaskProgressType.Finished
-    }
+    const claimControllerApiWrapper = ClaimControllerApiWrapper.create(creep.room.controller)
+    return MoveToTargetTask.create(claimControllerApiWrapper).run(creep)
   }
 }
