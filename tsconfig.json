@@ -4,7 +4,8 @@
     "module": "es2015",
     "target": "es6",
     "lib": [
-      "ES2020"
+      "ES2020",
+      "ES2019.Array"
     ],
     "outDir": "dist",
     "baseUrl": "src/",

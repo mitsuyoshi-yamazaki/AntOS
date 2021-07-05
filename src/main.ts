@@ -1,3 +1,5 @@
+import "ts-polyfill/lib/es2019-array"
+
 import * as ScreepsProfiler from "screeps-profiler"
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
@@ -11,7 +13,7 @@ import { Migration } from "utility/migration"
 import { SystemInfo } from "utility/system_info"
 
 Initializer.init()
-const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot at ${Game.time}`
+const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
 console.log(leveled_colored_text(initializing_message, "warn"))
 
 /* eslint-disable */
