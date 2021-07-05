@@ -1,35 +1,29 @@
-import { createObjectives, isLaunchableObjectiveType, LaunchableObjectiveType, Objective } from "objective/objective"
+import { createObjectives, LaunchableObjectiveType, Objective } from "objective/objective"
+import { ObjectiveRunner, ObjectiveRunnerState } from "objective/objective_runner"
 import { Problem, ProblemIdentifier } from "objective/problem"
 import { decodeProblemSolvers, ProblemSolver, ProblemSolverState } from "objective/problem_solver"
 import { RoomKeeperObjective } from "objective/room_keeper/room_keeper_objective"
 import { TaskRunner } from "objective/task_runner"
-import { Procedural } from "old_objective/procedural"
-import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Process, ProcessId, processLog, ProcessState } from "process/process"
+import { Process, ProcessId, processLog, ProcessState, ProcessTypeIdentifier } from "process/process"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 
-export interface ObjectiveProcessState extends ProcessState {
-  /** objective types */
-  o: LaunchableObjectiveType[]
-
-  /** problem solver state */
-  s: ProblemSolverState[]
-
-  /** room name */
-  r: RoomName
+export interface ObjectiveProcessState extends ProcessState, ObjectiveRunnerState {
+  /** type identifier */
+  t: ProcessTypeIdentifier
 }
 
-export class ObjectiveProcess implements Process, Procedural, MessageObserver {
+export class ObjectiveProcess extends ObjectiveRunner implements Process {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly objectiveTypes: LaunchableObjectiveType[],
-    private problemSolvers: ProblemSolver[],
+    protected readonly objectiveTypes: LaunchableObjectiveType[],
+    protected problemSolvers: ProblemSolver[],
     public readonly roomName: RoomName,
   ) {
+    super(objectiveTypes, problemSolvers, roomName)
   }
 
   public encode(): ObjectiveProcessState {
@@ -52,53 +46,35 @@ export class ObjectiveProcess implements Process, Procedural, MessageObserver {
     return new ObjectiveProcess(Game.time, processId, [], [], roomName)
   }
 
-  public processShortDescription(): string {
-    return roomLink(this.roomName)
+  // ---- ObjectiveRunner ---- //
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public didListupObjectives(objectives: Objective[]): void {
   }
 
-  public runOnTick(): void {
-    const objectives = this.objectives()
-    const [taskRunners, problems] = this.taskRunnersOf(objectives)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public didListupTaskRunners(taskRunners: TaskRunner[]): void {
+  }
 
-    if (problems.length <= 0) {
-      this.problemSolvers = []
-      processLog(this, `Room ${roomLink(this.roomName)} working fine 😀`)
-    } else {
-      this.updateProblemSolvers(problems)
+  public didResolveProblems(resolvedProblemSolvers: ProblemSolver[]): void {
+    if (resolvedProblemSolvers.length <= 0) {
+      return
     }
-
-    // TODO: taskRunnersとも重複を除く
-    this.runTasks(taskRunners, this.problemSolvers)
+    this.log(`Resolved:\n  - ${resolvedProblemSolvers.map(solver => solver.problemIdentifier).join("\n  - ")}`)
   }
 
-  private objectives(): Objective[] {
-    const objects = World.rooms.getOwnedRoomObjects(this.roomName)
-    if (objects == null) {
-      PrimitiveLogger.fatal(`Room ${roomLink(this.roomName)} lost`)
-      return []
+  public didOccurProblems(newProblems: Problem[]): void {
+    if (newProblems.length <= 0) {
+      return
     }
-
-    const result: Objective[] = [new RoomKeeperObjective(objects)]
-    result.push(...createObjectives(this.objectiveTypes, objects))
-    return result
+    this.log(`New problems:\n  - ${newProblems.map(problem => problem.identifier).join("\n  - ")}`)
   }
 
-  private taskRunnersOf(objectives: Objective[]): [TaskRunner[], Problem[]] {
-    const taskRunners: TaskRunner[] = []
-    const problems: Problem[] = []
+  public chooseProblemSolver(problem: Problem): ProblemSolver | null {
+    return problem.getProblemSolvers()[0]
+  }
 
-    objectives.forEach(objective => {
-      taskRunners.push(...objective.taskRunners())
-      const status = objective.currentStatus()
-      switch (status.objectiveStatus) {
-      case "achieved":
-        break
-      case "not achieved":
-        problems.push(...status.problems)
-        break
-      }
-    })
-    return [taskRunners, problems]
+  public log(message: string): void {
+    processLog(this, message)
   }
 
   private updateProblemSolvers(currentProblems: Problem[]): void {
@@ -122,43 +98,5 @@ export class ObjectiveProcess implements Process, Procedural, MessageObserver {
       }
       this.problemSolvers.push(solvers[0])    // TODO: 選択する
     })
-  }
-
-  private runTasks(taskRunners: TaskRunner[], problemSolvers: ProblemSolver[]): void {
-    taskRunners.forEach(taskRunner => taskRunner.run())
-
-    if (problemSolvers.length <= 0) {
-      return
-    }
-    processLog(this, `Room ${roomLink(this.roomName)} has following problems:\n  - ${problemSolvers.map(p => p.problemIdentifier).join("\n  - ")}`)
-    problemSolvers.forEach(solver => solver.run())
-  }
-
-  public didReceiveMessage(message: string): string {
-    const components = message.split(" ")
-    if (components.length < 2) {
-      return `Invalid arguments: <add | remove> <objective type>, (${message})`
-    }
-
-    const objectiveType = components[1]
-    if (!isLaunchableObjectiveType(objectiveType)) {
-      return `Invalid objective type ${objectiveType}`
-    }
-
-    switch (components[0]) {
-    case "add":
-      this.objectiveTypes.push(objectiveType)
-      return `Added ${objectiveType}`
-    case "remove": {
-      const index = this.objectiveTypes.indexOf(objectiveType)
-      if (index < 0) {
-        return `Invalid objective type ${objectiveType} is not in the list. Registered objective types: ${this.objectiveTypes}`
-      }
-      this.objectiveTypes.splice(index, 1)
-      return `Removed ${objectiveType}`
-    }
-    default:
-      return `Invalid command ${components[0]}, available commands: add, remove`
-    }
   }
 }

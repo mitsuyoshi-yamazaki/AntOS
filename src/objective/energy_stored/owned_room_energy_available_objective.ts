@@ -1,5 +1,5 @@
 import { CreepInsufficiencyProblem } from "objective/creep_existence/creep_insufficiency_problem"
-import { Objective, ObjectiveStatus } from "objective/objective"
+import { Objective } from "objective/objective"
 import { Problem } from "objective/problem"
 import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -8,17 +8,21 @@ import { World } from "world_info/world_info"
 import { EnergyInsufficiencyProblem } from "./energy_insufficiency_problem"
 
 export class OwnedRoomEnergyAvailableObjective implements Objective {
+  public readonly children: Objective[]
+
   public constructor(
     public readonly objects: OwnedRoomObjects,
-  ) { }
-
-  public taskRunners(): TaskRunner[] {
-    return []
+  ) {
+    this.children = []
   }
 
-  public currentStatus(): ObjectiveStatus {
+  public taskRunners(): TaskRunner[] {
+    return this.children.flatMap(child => child.taskRunners())
+  }
+
+  public currentProblems(): Problem[] {
     const necessaryRoles: CreepRole[] = [CreepRole.EnergyStore, CreepRole.Mover]
-    const problems: Problem[] = []
+    const problems: Problem[] = this.children.flatMap(child => child.currentProblems())
     const numberOfEnergyStoreCreeps = World.resourcePools.checkCreeps(
       this.objects.controller.room.name,
       creep => hasNecessaryRoles(creep, necessaryRoles),
@@ -29,10 +33,6 @@ export class OwnedRoomEnergyAvailableObjective implements Objective {
     if (numberOfEnergyStoreCreeps <= 0) {
       problems.push(new CreepInsufficiencyProblem(this.objects.controller.room.name, necessaryRoles))
     }
-
-    if (problems.length > 0) {
-      return ObjectiveStatus.NotAchieved(problems)
-    }
-    return ObjectiveStatus.Achieved()
+    return problems
   }
 }

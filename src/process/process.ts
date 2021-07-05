@@ -13,7 +13,7 @@ export type ProcessId = number
 
 export interface ProcessState extends State {
   /** type identifier */
-  t: keyof ProcessTypes
+  t: ProcessTypeIdentifier
 
   /** launch time */
   l: number
@@ -31,6 +31,7 @@ export interface Process extends Stateful {
   encode(): ProcessState
 }
 
+export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as TestProcessState)

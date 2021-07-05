@@ -4,29 +4,11 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { Problem } from "./problem"
 import { TaskRunner } from "./task_runner"
 
-class ObjectiveStatusNotAchieved {
-  public readonly objectiveStatus = "not achieved"
-
-  public constructor(public readonly problems: Problem[]) { }
-}
-
-class ObjectiveStatusAchieved {
-  public readonly objectiveStatus = "achieved"
-}
-
-export type ObjectiveStatus = ObjectiveStatusAchieved | ObjectiveStatusNotAchieved
-export const ObjectiveStatus = {
-  Achieved: function (): ObjectiveStatusAchieved {
-    return new ObjectiveStatusAchieved()
-  },
-  NotAchieved: function (problems: Problem[]): ObjectiveStatusNotAchieved {
-    return new ObjectiveStatusNotAchieved(problems)
-  }
-}
-
 export interface Objective {
+  children: Objective[]
+
   taskRunners(): TaskRunner[]
-  currentStatus(): ObjectiveStatus
+  currentProblems(): Problem[]
 }
 
 export interface LaunchableObjective extends Objective {
@@ -77,13 +59,15 @@ export function createObjectives(types: LaunchableObjectiveType[], objects: Owne
 
 class ExampleLaunchableObjective implements LaunchableObjective {
   public readonly type = "ExampleLaunchableObjective"
+  public readonly children: Objective[] = []
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public constructor(objects: OwnedRoomObjects) { }
 
   public taskRunners(): TaskRunner[] {
     return []
   }
-  public currentStatus(): ObjectiveStatus {
-    return ObjectiveStatus.Achieved()
+  public currentProblems(): Problem[] {
+    return []
   }
 }

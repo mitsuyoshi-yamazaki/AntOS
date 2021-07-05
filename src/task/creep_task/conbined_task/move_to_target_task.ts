@@ -54,7 +54,7 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, {reusePath: 0})
+      creep.moveTo(this.apiWrapper.target, {reusePath: 1})
       return taskProgressTypeInProgress
 
     case ERR_DAMAGED:
