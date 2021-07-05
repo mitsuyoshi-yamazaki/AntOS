@@ -4,6 +4,8 @@ import { Problem } from "objective/problem"
 import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
+import { generateCodename } from "utility/unique_id"
+import { CreepSpawnRequest, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { RoomNotClaimedProblem } from "./room_not_claimed_problem"
@@ -40,7 +42,18 @@ export class ClaimRoomObjective implements Objective {
         return hasNecessaryRoles(creep, necessaryRoles)
       })
       if (claimerCount <= 0) {
-        problems.push(new CreepInsufficiencyProblem(roomName, necessaryRoles, null, null, identifier, null))
+        const request: CreepSpawnRequest = {
+          priority: CreepSpawnRequestPriority.Low,
+          numberOfCreeps: 1,
+          codename: generateCodename(this.constructor.name, 23),
+          roles: necessaryRoles,
+          body: null,
+          initialTask: null,
+          taskRunnerIdentifier: identifier,
+          parentRoomName: null,
+        }
+
+        problems.push(new CreepInsufficiencyProblem(roomName, request))
       }
     }
 

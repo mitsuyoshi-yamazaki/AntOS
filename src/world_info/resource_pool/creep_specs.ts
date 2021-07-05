@@ -2,20 +2,52 @@ import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
-import { CreepTask } from "task/creep_task/creep_task"
+import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "task/creep_task/creep_task"
 
-/** High未満のpriorityのspawnをキャンセルして優先させる */
+/** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0
 type CreepSpawnRequestPriorityHigh = 1
 type CreepSpawnRequestPriorityMedium = 2
 type CreepSpawnRequestPriorityLow = 3
 
-export const creepSpawnRequestPriorityUrgent: CreepSpawnRequestPriorityUrgent = 0
-export const creepSpawnRequestPriorityHigh: CreepSpawnRequestPriorityHigh = 1
-export const creepSpawnRequestPriorityMedium: CreepSpawnRequestPriorityMedium = 2
-export const creepSpawnRequestPriorityLow: CreepSpawnRequestPriorityLow = 3
+const creepSpawnRequestPriorityUrgent: CreepSpawnRequestPriorityUrgent = 0
+const creepSpawnRequestPriorityHigh: CreepSpawnRequestPriorityHigh = 1
+const creepSpawnRequestPriorityMedium: CreepSpawnRequestPriorityMedium = 2
+const creepSpawnRequestPriorityLow: CreepSpawnRequestPriorityLow = 3
 
 export type CreepSpawnRequestPriority = CreepSpawnRequestPriorityUrgent | CreepSpawnRequestPriorityHigh | CreepSpawnRequestPriorityMedium | CreepSpawnRequestPriorityLow
+export const CreepSpawnRequestPriority = {
+  Urgent: creepSpawnRequestPriorityUrgent,
+  High: creepSpawnRequestPriorityHigh,
+  Medium: creepSpawnRequestPriorityMedium,
+  Low: creepSpawnRequestPriorityLow,
+}
+
+export interface CreepSpawnRequestState {
+  /** priority */
+  p: CreepSpawnRequestPriority
+
+  /** number of creeps */
+  n: number
+
+  /** codename */
+  c: string
+
+  /** roles */
+  r: CreepRole[]
+
+  /** body */
+  b: BodyPartConstant[] | null
+
+  /** initial task state */
+  it: CreepTaskState | null
+
+  /** task runner identifier */
+  i: TaskRunnerIdentifier | null
+
+  /** parent room name */
+  pr: RoomName | null
+}
 
 export interface CreepSpawnRequest {
   priority: CreepSpawnRequestPriority
@@ -26,11 +58,44 @@ export interface CreepSpawnRequest {
   roles: CreepRole[]
   body: BodyPartConstant[] | null
 
+  /** 時間経過で消滅する可能性のあるタスクは推奨されない */
   initialTask: CreepTask | null
   taskRunnerIdentifier: TaskRunnerIdentifier | null
 
   /** 他の部屋へ引き継ぐ場合 */
   parentRoomName: RoomName | null
+}
+
+export function encodeCreepSpawnRequest(request: CreepSpawnRequest): CreepSpawnRequestState {
+  return {
+    p: request.priority,
+    n: request.numberOfCreeps,
+    c: request.codename,
+    r: request.roles,
+    b: request.body,
+    it: request.initialTask?.encode() ?? null,
+    i: request.taskRunnerIdentifier,
+    pr: request.parentRoomName,
+  }
+}
+
+export function decodeCreepSpawnRequest(state: CreepSpawnRequestState): CreepSpawnRequest {
+  const initialTask = ((): CreepTask | null => {
+    if (state.it == null) {
+      return null
+    }
+    return decodeCreepTaskFromState(state.it)
+  })()
+  return {
+    priority: state.p,
+    numberOfCreeps: state.n,
+    codename: state.c,
+    roles: state.r,
+    body: state.b,
+    initialTask,
+    taskRunnerIdentifier: state.i,
+    parentRoomName: state.pr,
+  }
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {

@@ -6,10 +6,12 @@ import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 import { MoveToRoomTask } from "task/creep_task/meta_task/move_to_room_task"
+import { generateCodename } from "utility/unique_id"
+import { CreepSpawnRequest, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
-const numberOfWorkers = 10
+const numberOfWorkersRequired = 10
 
 /**
  * - target roomのspawnが建設されたら終了
@@ -43,13 +45,25 @@ export class BootstrapRoomObjective implements Objective {
 
     const problems = this.children.flatMap(child => child.currentProblems())
 
-    const necessaryRoles = [CreepRole.Worker, CreepRole.Mover]
+    const necessaryRoles = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore]
     const newRoomWorkerCreepCount = World.resourcePools.countCreeps(this.targetRoomName, null, creep => {
       return hasNecessaryRoles(creep, necessaryRoles)
     })
-    if (newRoomWorkerCreepCount < numberOfWorkers) {
+    const insufficientWorkerCount = numberOfWorkersRequired - newRoomWorkerCreepCount
+    if (insufficientWorkerCount > 0) {
       const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
-      problems.push(new CreepInsufficiencyProblem(this.roomName, necessaryRoles, null, initialTask, null, this.targetRoomName))
+      const request: CreepSpawnRequest = {
+        priority: CreepSpawnRequestPriority.Low,
+        numberOfCreeps: insufficientWorkerCount,
+        codename: generateCodename(this.constructor.name, 29),
+        roles: necessaryRoles,
+        body: null,
+        initialTask,
+        taskRunnerIdentifier: null,
+        parentRoomName: this.targetRoomName,
+      }
+
+      problems.push(new CreepInsufficiencyProblem(this.roomName, request))
     }
 
     return problems
