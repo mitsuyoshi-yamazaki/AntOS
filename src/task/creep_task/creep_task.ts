@@ -6,6 +6,7 @@ import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./combined_ta
 import { MoveToRoomTask, MoveToRoomTaskState } from "./meta_task/move_to_room_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./combined_task/move_to_target_task"
 import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
+import { MoveClaimControllerTask, MoveClaimControllerTaskState } from "./combined_task/move_claim_controller_task"
 
 export interface CreepTaskState extends TaskState {
   /** type identifier */
@@ -21,13 +22,14 @@ export interface CreepTask extends Task<Creep> {
 
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
-  /** general task */
-  "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as MoveToTargetTaskState)
-
-  /** combined task */
+  // ---- Combined task ---- //
   "MoveHarvestEnergyTask" = (state: CreepTaskState) => MoveHarvestEnergyTask.decode(state as MoveHarvestEnergyTaskState)
-  "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
+  "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as MoveToTargetTaskState)
   "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState)
+  "MoveClaimControllerTask" = (state: CreepTaskState) => MoveClaimControllerTask.decode(state as MoveClaimControllerTaskState)
+
+  // ---- Meta task ---- //
+  "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 

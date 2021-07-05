@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ApiWrapper, ApiWrapperState } from "task/api_wrapper"
 import { BuildApiWrapper, BuildApiWrapperState } from "./api_wrapper/build_api_wrapper"
+import { ClaimControllerApiWrapper, ClaimControllerApiWrapperState } from "./api_wrapper/claim_controller_api_wrapper"
 import { HarvestEnergyApiWrapper, HarvestEnergyApiWrapperState } from "./api_wrapper/harvest_energy_api_wrapper"
 import { RepairApiWrapper, RepairApiWrapperState } from "./api_wrapper/repair_api_wrapper"
 import { TransferEnergyApiWrapper, TransferEnergyApiWrapperState } from "./api_wrapper/transfer_energy_api_wrapper"
@@ -22,6 +23,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | UpgradeControllerApiWrapper
   | BuildApiWrapper
   | RepairApiWrapper
+  | ClaimControllerApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -30,6 +32,7 @@ class CreepApiWrapperDecoderMap {
   "UpgradeControllerApiWrapper" = (state: CreepApiWrapperState) => UpgradeControllerApiWrapper.decode(state as UpgradeControllerApiWrapperState)
   "BuildApiWrapper" = (state: CreepApiWrapperState) => BuildApiWrapper.decode(state as BuildApiWrapperState)
   "RepairApiWrapper" = (state: CreepApiWrapperState) => RepairApiWrapper.decode(state as RepairApiWrapperState)
+  "ClaimControllerApiWrapper" = (state: CreepApiWrapperState) => ClaimControllerApiWrapper.decode(state as ClaimControllerApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

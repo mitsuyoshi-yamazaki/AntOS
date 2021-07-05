@@ -14,7 +14,7 @@ export interface UpgradeControllerApiWrapperState extends CreepApiWrapperState {
 
 export class UpgradeControllerApiWrapper implements ApiWrapper<Creep, UpgradeControllerApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "upgrade"
-  public constructor(
+  private constructor(
     public readonly target: StructureController,
   ) { }
 

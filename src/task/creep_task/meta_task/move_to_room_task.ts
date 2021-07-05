@@ -39,7 +39,7 @@ export class MoveToRoomTask implements CreepTask {
     }
   }
 
-  public static decode(state: MoveToRoomTaskState): MoveToRoomTask | null {
+  public static decode(state: MoveToRoomTaskState): MoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
     return new MoveToRoomTask(state.s, state.d, state.w, exitPosition)
   }
