@@ -1,7 +1,9 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
+import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState } from "./creep_existence/creep_insufficiency_problem_solver"
+import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
 import { ProblemIdentifier } from "./problem"
 import { TaskRunner } from "./task_runner"
 
@@ -17,12 +19,13 @@ export interface ProblemSolver extends Stateful, TaskRunner {
   problemIdentifier: ProblemIdentifier
 
   encode(): ProblemSolverState
-  run(): void
+  run(objects: OwnedRoomObjects): void
 }
 
 class ProblemSolverDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "CreepInsufficiencyProblemSolver" = (state: ProblemSolverState) => CreepInsufficiencyProblemSolver.decode(state as CreepInsufficiencyProblemSolverState)
+  "TowerInterceptionProblemSolver" = (state: ProblemSolverState) => TowerInterceptionProblemSolver.decode(state as TowerInterceptionProblemSolverState)
 }
 const decoderMap = new ProblemSolverDecoderMap()
 

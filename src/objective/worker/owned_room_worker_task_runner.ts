@@ -17,7 +17,8 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
     public readonly objects: OwnedRoomObjects,
   ) { }
 
-  public run(): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public run(objects: OwnedRoomObjects): void {
     const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
 
     World.resourcePools.assignTasks(

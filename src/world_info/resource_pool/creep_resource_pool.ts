@@ -59,7 +59,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
     }
   }
 
-  public executeTask(): void {  // FixMe: 重複して行われてしまう
+  public executeTask(): void {
     this.creeps.forEach(creep => {
       if (creep.task != null) {
         if (creep.task.run(creep) !== taskProgressTypeInProgress) {

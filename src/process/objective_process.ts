@@ -1,14 +1,12 @@
-import { createObjectives, LaunchableObjectiveType, Objective } from "objective/objective"
+import { LaunchableObjectiveType, Objective } from "objective/objective"
 import { ObjectiveRunner, ObjectiveRunnerState } from "objective/objective_runner"
 import { Problem, ProblemIdentifier } from "objective/problem"
-import { decodeProblemSolvers, ProblemSolver, ProblemSolverState } from "objective/problem_solver"
-import { RoomKeeperObjective } from "objective/room_keeper/room_keeper_objective"
+import { decodeProblemSolvers, ProblemSolver } from "objective/problem_solver"
 import { TaskRunner } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Process, ProcessId, processLog, ProcessState, ProcessTypeIdentifier } from "process/process"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
-import { World } from "world_info/world_info"
 
 export interface ObjectiveProcessState extends ProcessState, ObjectiveRunnerState {
   /** type identifier */
@@ -67,6 +65,10 @@ export class ObjectiveProcess extends ObjectiveRunner implements Process {
       return
     }
     this.log(`New problems:\n  - ${newProblems.map(problem => problem.identifier).join("\n  - ")}`)
+  }
+
+  public isWorkingFine(): void {
+    this.log(`${roomLink(this.roomName)} working fine 😀`)
   }
 
   public chooseProblemSolver(problem: Problem): ProblemSolver | null {

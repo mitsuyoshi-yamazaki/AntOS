@@ -32,23 +32,26 @@ export interface OwnedRoomObjects {
 }
 
 const allVisibleRooms: Room[] = []
+const ownedRooms: Room[] = []
 const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
 
 export interface RoomsInterface {
   // ---- Lifecycle ---- //
-  beforeTick(creeps: Map<RoomName, Creep[]>): Room[]
+  beforeTick(creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[]
   afterTick(): void
 
   // ---- Function ---- //
   get(roomName: RoomName): Room | null
+  getAllOwnedRooms(): Room[]
   getAllOwnedRoomObjects(): OwnedRoomObjects[]
   getOwnedRoomObjects(roomName: RoomName): OwnedRoomObjects | null
 }
 
 export const Rooms: RoomsInterface = {
   // ---- Lifecycle ---- //
-  beforeTick: function (creeps: Map<RoomName, Creep[]>): Room[] {
+  beforeTick: function (creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[] {
     allVisibleRooms.splice(0, allVisibleRooms.length)
+    ownedRooms.splice(0, ownedRooms.length)
     ownedRoomObjects.clear()
 
     for (const roomName in Game.rooms) {
@@ -56,20 +59,24 @@ export const Rooms: RoomsInterface = {
       allVisibleRooms.push(room)
 
       if (room.controller != null && room.controller.my === true) {
+        ownedRooms.push(room)
         ownedRoomObjects.set(roomName, enumerateObjects(room.controller, creeps.get(roomName) ?? []))
       }
     }
 
-    return allVisibleRooms.concat([])
+    return Array.from(ownedRoomObjects.values())
   },
 
   afterTick: function (): void {
-
   },
 
   // ---- Function ---- //
   get: function (roomName: RoomName): Room | null {
     return Game.rooms[roomName]
+  },
+
+  getAllOwnedRooms: function (): Room[] {
+    return ownedRooms.concat([])
   },
 
   getAllOwnedRoomObjects: function (): OwnedRoomObjects[] {

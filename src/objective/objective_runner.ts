@@ -1,5 +1,5 @@
 import { createObjectives, isLaunchableObjectiveType, LaunchableObjectiveType, Objective } from "objective/objective"
-import { Problem, ProblemIdentifier } from "objective/problem"
+import { Problem } from "objective/problem"
 import { ProblemSolver, ProblemSolverState } from "objective/problem_solver"
 import { TaskRunner } from "objective/task_runner"
 import { Procedural } from "old_objective/procedural"
@@ -8,6 +8,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
+import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
 export interface ObjectiveRunnerState extends State {
@@ -26,6 +27,7 @@ export interface ObjectiveRunner {
   didListupTaskRunners?(taskRunners: TaskRunner[]): void
   didResolveProblems?(resolvedProblemSolvers: ProblemSolver[]): void
   didOccurProblems?(newProblems: Problem[]): void
+  isWorkingFine?(): void
   chooseProblemSolver?(problem: Problem): ProblemSolver | null
 }
 
@@ -48,9 +50,16 @@ export abstract class ObjectiveRunner implements Stateful, Procedural, MessageOb
 
   // ---- Functions ---- //
   public runOnTick(): void {
-    const objectives = this.listupObjectives()
+    const objects = World.rooms.getOwnedRoomObjects(this.roomName)
+    if (objects == null) {
+      PrimitiveLogger.fatal(`Room ${roomLink(this.roomName)} seems to be lost`)
+      return
+    }
+
+    const objectives = this.listupObjectives(objects)
     if (objectives.length <= 0) {
       this.log("No objectives")
+      return
     }
 
     if (this.didListupObjectives != null) {
@@ -88,6 +97,10 @@ export abstract class ObjectiveRunner implements Stateful, Procedural, MessageOb
       this.didOccurProblems(newProblems)
     }
 
+    if (problems.length <= 0 && this.isWorkingFine != null) {
+      this.isWorkingFine()
+    }
+
     this.problemSolvers = this.problemSolvers.filter(solver => resolvedProblemSolvers.includes(solver) !== true)
     newProblems.forEach(problem => {
       if (this.chooseProblemSolver != null) {
@@ -107,17 +120,11 @@ export abstract class ObjectiveRunner implements Stateful, Procedural, MessageOb
     })
 
     // TODO: taskRunnersとも重複を除く
-    taskRunners.forEach(taskRunner => taskRunner.run())
-    this.problemSolvers.forEach(solver => solver.run())
+    taskRunners.forEach(taskRunner => taskRunner.run(objects))
+    this.problemSolvers.forEach(solver => solver.run(objects))
   }
 
-  private listupObjectives(): Objective[] {
-    const objects = World.rooms.getOwnedRoomObjects(this.roomName)
-    if (objects == null) {
-      PrimitiveLogger.fatal(`Room ${roomLink(this.roomName)} seems to be lost`)
-      return []
-    }
-
+  private listupObjectives(objects: OwnedRoomObjects): Objective[] {
     return createObjectives(this.objectiveTypes, objects)
   }
 

@@ -1,3 +1,4 @@
+import { RoomName } from "prototype/room"
 import { Creeps, CreepsInterface } from "./creep_info"
 import { ResourcePools, ResourcePoolsInterface } from "./resource_pool/resource_pool"
 import { Rooms, RoomsInterface } from "./room_info"
@@ -33,8 +34,10 @@ export const World: WorldInterface = {
     // 呼び出し順序に注意: 基本的に低次の処理から呼び出す
     const allCreeps = this.creeps.beforeTick()
     const allSpawns = this.spawns.beforeTick()
-    this.rooms.beforeTick(allCreeps)
-    this.resourcePools.beforeTick(allCreeps, allSpawns)
+    const ownedRoomObjects = this.rooms.beforeTick(allCreeps)
+    const allTowers = new Map<RoomName, StructureTower[]>()
+    ownedRoomObjects.forEach(objects => allTowers.set(objects.controller.room.name, objects.activeStructures.towers))
+    this.resourcePools.beforeTick(allCreeps, allTowers, allSpawns)
   },
 
   afterTick: function (): void {

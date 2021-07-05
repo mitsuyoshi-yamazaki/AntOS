@@ -3,6 +3,7 @@ import { ProblemSolver, ProblemSolverState } from "objective/problem_solver"
 import { CreepRole } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 import { creepSpawnRequestPriorityLow } from "world_info/resource_pool/creep_specs"
+import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
 export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState {
@@ -43,7 +44,8 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
     return new CreepInsufficiencyProblemSolver(problemIdentifier, roomName, roles, body)
   }
 
-  public run(): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public run(objects: OwnedRoomObjects): void {
     World.resourcePools.addSpawnCreepRequest(
       this.roomName,
       {

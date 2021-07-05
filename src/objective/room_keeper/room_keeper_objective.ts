@@ -1,4 +1,5 @@
 import { CreepInsufficiencyProblem } from "objective/creep_existence/creep_insufficiency_problem"
+import { RoomSafetyObjective } from "objective/defence/room_safety_objective"
 import { LaunchableObjective, Objective } from "objective/objective"
 import { Problem } from "objective/problem"
 import { CreateConstructionSiteTaskRunner } from "objective/room_planning/create_construction_site_task_runner"
@@ -21,6 +22,7 @@ export class RoomKeeperObjective implements LaunchableObjective {
   ) {
     this.children = [
       new UpgradeControllerObjective(this.objects),
+      new RoomSafetyObjective(this.objects),
     ]
 
     this.roomName = this.objects.controller.room.name
