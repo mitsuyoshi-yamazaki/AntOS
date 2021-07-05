@@ -1,6 +1,6 @@
 import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
 import { TargetingApiWrapper, TargetingApiWrapperTargetType } from "task/targeting_api_wrapper"
-import { TaskProgressType, taskProgressTypeFinished, taskProgressTypeInProgress } from "task/task"
+import { TaskProgressType } from "task/task"
 import { CreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
 import { CreepTask, CreepTaskState } from "../creep_task"
 
@@ -50,21 +50,21 @@ export class MoveToTargetTask implements CreepTask {
 
     switch (result) {
     case FINISHED:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
       creep.moveTo(this.apiWrapper.target, {reusePath: 1})
-      return taskProgressTypeInProgress
+      return TaskProgressType.InProgress
 
     case ERR_DAMAGED:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
 
     case ERR_BUSY:
-      return taskProgressTypeInProgress
+      return TaskProgressType.InProgress
 
     case ERR_PROGRAMMING_ERROR:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
     }
   }
 }

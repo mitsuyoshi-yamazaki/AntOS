@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
-import { taskProgressTypeInProgress } from "task/task"
+import { TaskProgressType } from "task/task"
 import { ResourcePoolType } from "./resource_pool"
 // Worldをimportしない
 
@@ -62,7 +62,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
   public executeTask(): void {
     this.creeps.forEach(creep => {
       if (creep.task != null) {
-        if (creep.task.run(creep) !== taskProgressTypeInProgress) {
+        if (creep.task.run(creep) !== TaskProgressType.InProgress) {
           creep.task = null
         }
       }

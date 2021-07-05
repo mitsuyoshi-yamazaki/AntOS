@@ -4,10 +4,14 @@ import { TaskTargetTypeId } from "./task_target_cache"
 export type TaskProgressTypeFinished = 0
 export type TaskProgressTypeInProgress = 1
 
-export const taskProgressTypeFinished: TaskProgressTypeFinished = 0
-export const taskProgressTypeInProgress: TaskProgressTypeInProgress = 1
+const taskProgressTypeFinished: TaskProgressTypeFinished = 0
+const taskProgressTypeInProgress: TaskProgressTypeInProgress = 1
 
 export type TaskProgressType = TaskProgressTypeFinished | TaskProgressTypeInProgress
+export const TaskProgressType = {
+  Finished: taskProgressTypeFinished,
+  InProgress: taskProgressTypeInProgress,
+}
 
 export interface TaskState extends State {
   /** type identifier */

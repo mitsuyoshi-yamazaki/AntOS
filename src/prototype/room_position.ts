@@ -1,6 +1,15 @@
+import { RoomName } from "./room"
+
+export interface RoomPositionState {
+  x: number,
+  y: number,
+  r: RoomName,
+}
+
 declare global {
   interface RoomPosition {
     neighbours(): RoomPosition[]
+    encode(): RoomPositionState
   }
 }
 
@@ -33,4 +42,16 @@ export function init(): void {
       return result
     }, [] as RoomPosition[])
   }
+
+  RoomPosition.prototype.encode = function (): RoomPositionState {
+    return {
+      x: this.x,
+      y: this.y,
+      r: this.roomName,
+    }
+  }
+}
+
+export function decodeRoomPosition(state: RoomPositionState): RoomPosition {
+  return new RoomPosition(state.x, state.y, state.r)
 }

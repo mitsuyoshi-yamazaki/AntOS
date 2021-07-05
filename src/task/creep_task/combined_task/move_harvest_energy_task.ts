@@ -1,6 +1,6 @@
 import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
 import { getCachedPathFor } from "script/pathfinder"
-import { TaskProgressType, taskProgressTypeFinished, taskProgressTypeInProgress } from "task/task"
+import { TaskProgressType } from "task/task"
 import { HarvestEnergyApiWrapper } from "../api_wrapper/harvest_energy_api_wrapper"
 import { CreepTask, CreepTaskState } from "../creep_task"
 
@@ -50,28 +50,28 @@ export class MoveHarvestEnergyTask implements CreepTask {
 
     switch (result) {
     case FINISHED:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
       this.move(creep)
-      return taskProgressTypeInProgress
+      return TaskProgressType.InProgress
 
     case ERR_NOT_ENOUGH_RESOURCES:
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) >= creep.store.getCapacity() * 0.6) {
-        return taskProgressTypeFinished
+        return TaskProgressType.Finished
       }
       this.move(creep)
-      return taskProgressTypeInProgress
+      return TaskProgressType.InProgress
 
     case ERR_BUSY:
-      return taskProgressTypeInProgress
+      return TaskProgressType.InProgress
 
     case ERR_DAMAGED:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
 
     case ERR_PROGRAMMING_ERROR:
-      return taskProgressTypeFinished
+      return TaskProgressType.Finished
     }
   }
 
