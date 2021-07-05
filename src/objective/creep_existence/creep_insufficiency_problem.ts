@@ -10,13 +10,14 @@ export class CreepInsufficiencyProblem implements Problem {
   public constructor(
     public readonly roomName: RoomName,
     public readonly roles: CreepRole[],
+    public readonly body: BodyPartConstant[] | null,
   ) {
     this.identifier = `${this.constructor.name}_${roomName}_${roles.join("_")}`
   }
 
   public getProblemSolvers(): ProblemSolver[] {
     return [
-      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.roles)
+      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.roles, this.body)
     ]
   }
 }

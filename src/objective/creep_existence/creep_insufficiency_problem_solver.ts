@@ -11,6 +11,9 @@ export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState
 
   /** creep roles */
   cr: CreepRole[]
+
+  /** creep body */
+  cb: BodyPartConstant[] | null
 }
 
 export class CreepInsufficiencyProblemSolver implements ProblemSolver {
@@ -18,6 +21,7 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
     public readonly problemIdentifier: ProblemIdentifier,
     public readonly roomName: RoomName,
     public readonly roles: CreepRole[],
+    public readonly body: BodyPartConstant[] | null,
   ) {
   }
 
@@ -27,15 +31,16 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
       p: this.problemIdentifier,
       r: this.roomName,
       cr: this.roles,
+      cb: this.body,
     }
   }
 
   public static decode(state: CreepInsufficiencyProblemSolverState): CreepInsufficiencyProblemSolver {
-    return new CreepInsufficiencyProblemSolver(state.p, state.r, state.cr)
+    return new CreepInsufficiencyProblemSolver(state.p, state.r, state.cr, state.cb)
   }
 
-  public static create(problemIdentifier: ProblemIdentifier, roomName: RoomName, roles: CreepRole[]): CreepInsufficiencyProblemSolver {
-    return new CreepInsufficiencyProblemSolver(problemIdentifier, roomName, roles)
+  public static create(problemIdentifier: ProblemIdentifier, roomName: RoomName, roles: CreepRole[], body: BodyPartConstant[] | null): CreepInsufficiencyProblemSolver {
+    return new CreepInsufficiencyProblemSolver(problemIdentifier, roomName, roles, body)
   }
 
   public run(): void {
@@ -45,6 +50,7 @@ export class CreepInsufficiencyProblemSolver implements ProblemSolver {
         priority: creepSpawnRequestPriorityLow,
         numberOfCreeps: 1,  // TODO:
         roles: this.roles,
+        body: this.body,
         codename: "creep",  // TODO:
       }
     )

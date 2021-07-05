@@ -3,9 +3,11 @@ import { HarvestEnergyTask } from "game_object_task/creep_task/harvest_energy_ta
 import { SingleCreepProviderObjective } from "old_objective/creep_provider/single_creep_provider_objective"
 import { decodeObjectivesFrom, Objective, ObjectiveFailed, ObjectiveInProgress, ObjectiveProgressType, ObjectiveState } from "old_objective/objective"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName, V4CreepMemory } from "prototype/creep"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
+import { ShortVersion } from "utility/system_info"
 import { generateUniqueId } from "utility/unique_id"
 import { CreepStatus, CreepType } from "_old/creep"
 
@@ -163,10 +165,16 @@ export class OldBuildFirstSpawnObjective implements Objective {
 
   // ---- Add creeps ---- //
   private addWorker(creepIdentifier: string, parentRoomName: string): void {
-    if (Migration.isOldRoom(parentRoomName) === true) {
+    switch (Migration.roomVersion(parentRoomName)) {
+    case ShortVersion.v3:
       this.requestToCreepProvider(creepIdentifier, parentRoomName)
-    } else {
+      break
+    case ShortVersion.v4:
       this.addWorkerQueue(creepIdentifier, parentRoomName)
+      break
+    case ShortVersion.v5:
+      PrimitiveLogger.fatal(`Trying to spawn creep in v5 room ${roomLink(parentRoomName)} that is not implemented yet (${this.constructor.name})`)
+      break
     }
   }
 

@@ -10,7 +10,8 @@ import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { SystemInfo } from "utility/system_info"
+import { ShortVersion, SystemInfo } from "utility/system_info"
+import { RoomName } from "prototype/room"
 
 Initializer.init()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
@@ -30,6 +31,7 @@ const mainLoop = () => {
   if (Game.shard.name === "shard2") {
     ErrorMapper.wrapLoop(() => {
       const owned_controllers: StructureController[] = []
+      const roomVersions = new Map<ShortVersion, RoomName[]>()
 
       for (const room_name in Game.rooms) {
         const room = Game.rooms[room_name]
@@ -37,22 +39,38 @@ const mainLoop = () => {
           continue
         }
 
+        const controlVersion = Migration.roomVersion(room.name)
+        const roomNames = ((): RoomName[] => {
+          const stored = roomVersions.get(controlVersion)
+          if (stored != null) {
+            return stored
+          }
+          const newRoomNames: RoomName[] = []
+          roomVersions.set(controlVersion, newRoomNames)
+          return newRoomNames
+        })()
+        roomNames.push(room_name)
+
+        if (controlVersion !== ShortVersion.v3) {
+          return
+        }
+
         if (room.memory && room.memory.is_gcl_farm) {
           continue
         }
 
-        if (Migration.isOldRoom(room.name) !== true) {
-          if (Game.time % 107 === 13) {
-            console.log(`${roomLink(room.name)} is new`)
-          }
-          continue
-        }
         owned_controllers.push(room.controller)
       }
 
       const empire = new Empire(Game.user.name, owned_controllers)
 
       empire.run()
+
+      if (Game.time % 107 === 13) {
+        roomVersions.forEach((roomNames, version) => {
+          console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+        })
+      }
     }, `empire.run`)()
 
     if ((Game.time % 997) == 17) {

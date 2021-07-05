@@ -35,7 +35,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         r: request.roles,
         t: null,
       }
-      spawn.spawnCreep(body, creepName, {memory: memory})
+      spawn.spawnCreep(body, creepName, { memory: memory })
     })
   }
 }

@@ -9,9 +9,12 @@ import {
   ObjectiveSucceeded
 } from "old_objective/objective"
 import { SpawnPriorityHigh, SpawnPriorityLow, SpawnPriorityNormal } from "old_objective/spawn/spawn_creep_objective"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName, V4CreepMemory } from "prototype/creep"
+import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { Result } from "utility/result"
+import { ShortVersion } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 
 export type SingleCreepProviderSpawnPriority = SpawnPriorityHigh | SpawnPriorityNormal | SpawnPriorityLow
@@ -97,14 +100,16 @@ export class SingleCreepProviderObjective implements Objective {
   }
 
   private requestCreep(spawnRoomName: string, bodyParts: BodyPartConstant[], priority: SingleCreepProviderSpawnPriority): Result<void, string> {
-    if (this.isOldRoom(spawnRoomName) === true) {
+    switch (Migration.roomVersion(spawnRoomName)) {
+    case ShortVersion.v3: {
       const spec: CreepProviderObjectiveCreepSpec = {
         creepName: this.creepName,
         priority: 2,
         bodyParts: bodyParts,
       }
       return requestCreep(spec, 1, spawnRoomName)
-    } else {
+    }
+    case ShortVersion.v4: {
       if (Memory.creepRequests[spawnRoomName] == null) {
         Memory.creepRequests[spawnRoomName] = []
       }
@@ -129,9 +134,11 @@ export class SingleCreepProviderObjective implements Objective {
       })
       return Result.Succeeded(undefined)
     }
-  }
-
-  private isOldRoom(spawnRoomName: string): boolean {
-    return Migration.isOldRoom(spawnRoomName) === true
+    case ShortVersion.v5: {
+      const message = `Trying to spawn creep in v5 room ${roomLink(spawnRoomName)} that is not implemented yet (${this.constructor.name})`
+      PrimitiveLogger.fatal(message)
+      return Result.Failed(message)
+    }
+    }
   }
 }

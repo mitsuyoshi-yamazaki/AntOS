@@ -31,7 +31,7 @@ export class OwnedRoomEnergyAvailableObjective implements Objective {
       problems.push(new EnergyInsufficiencyProblem(this.objects.controller.room.name))
     }
     if (numberOfEnergyStoreCreeps <= 0) {
-      problems.push(new CreepInsufficiencyProblem(this.objects.controller.room.name, necessaryRoles))
+      problems.push(new CreepInsufficiencyProblem(this.objects.controller.room.name, necessaryRoles, null))
     }
     return problems
   }

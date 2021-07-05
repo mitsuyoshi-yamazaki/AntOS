@@ -28,7 +28,7 @@ export class OwnedRoomCreepExistsObjective implements Objective {
       creep => hasNecessaryRoles(creep, this.creepRoles),
     )
     if (numberOfCreeps <= this.requiredCreeps) {
-      problems.push(new CreepInsufficiencyProblem(this.objects.controller.room.name, this.creepRoles))
+      problems.push(new CreepInsufficiencyProblem(this.objects.controller.room.name, this.creepRoles, null))
     }
     return problems
   }

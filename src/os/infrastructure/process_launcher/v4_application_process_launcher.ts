@@ -4,10 +4,11 @@ import { OperatingSystem, ProcessInfo } from "os/os"
 import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { Migration } from "utility/migration"
+import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
 import { CreepType } from "_old/creep"
 
-export class ApplicationProcessLauncher {
+export class V4ApplicationProcessLauncher {
   public launchProcess(): void {
     const allProcessInfo = OperatingSystem.os.listAllProcesses()
     this.roomsNeedKeeper(allProcessInfo).forEach(roomName => this.launchRoomKeeperProcess(roomName))
@@ -34,7 +35,7 @@ export class ApplicationProcessLauncher {
       if (room.controller.my !== true) {
         continue
       }
-      if (Migration.isOldRoom(roomName) === true) {
+      if (Migration.roomVersion(roomName) !== ShortVersion.v4) {
         continue
       }
       if (roomsWithKeeperProcess.includes(roomName) === true) {

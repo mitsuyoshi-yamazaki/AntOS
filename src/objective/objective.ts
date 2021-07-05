@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { Problem } from "./problem"
+import { RoomKeeperObjective } from "./room_keeper/room_keeper_objective"
 import { TaskRunner } from "./task_runner"
 
 export interface Objective {
@@ -18,6 +19,7 @@ export interface LaunchableObjective extends Objective {
 class LaunchableObjectiveMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "ExampleLaunchableObjective" = (objects: OwnedRoomObjects) => new ExampleLaunchableObjective(objects)
+  "RoomKeeperObjective" = (objects: OwnedRoomObjects) => new RoomKeeperObjective(objects)
 }
 const objectiveMap = new LaunchableObjectiveMap()
 

@@ -21,7 +21,7 @@ export interface CreepSpawnRequest {
 
   /** bodyを設定しない場合、rolesから適切なサイズのCreepを生成する */
   roles: CreepRole[]
-  body?: BodyPartConstant[]
+  body: BodyPartConstant[] | null
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {
@@ -49,7 +49,7 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
 
     let mergedRequest: CreepSpawnRequest | null = null
     for (let j = i + 1; j < requests.length; j += 1) {
-      if (request.body != null) {
+      if (request.body != null || requests[j].body != null) {
         continue
       }
 
@@ -83,6 +83,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     numberOfCreeps: request1.numberOfCreeps >= request2.numberOfCreeps ? request1.numberOfCreeps : request2.numberOfCreeps,
     codename: prioritizedRequest.codename,
     roles,
+    body: null,
   }
 }
 

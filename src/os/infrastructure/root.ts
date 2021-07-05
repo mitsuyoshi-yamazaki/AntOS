@@ -7,13 +7,14 @@ import { isV5CreepMemory, V4CreepMemory } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
 import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
+import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
-import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
+import { V4ApplicationProcessLauncher } from "./process_launcher/v4_application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
-  private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
+  private readonly applicationProcessLauncher = new V4ApplicationProcessLauncher()
   private shouldCacheTasks = true
 
   public constructor() {
@@ -24,8 +25,6 @@ export class RootProcess {
   }
 
   public runBeforeTick(): void {
-    const ownedRooms = this.getOwnedRooms()
-
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess()
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
@@ -37,10 +36,6 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       World.beforeTick()
     }, "World.beforeTick()")()
-
-    ErrorMapper.wrapLoop((): void => {
-      this.createOwnedRoomObjectsCache(ownedRooms)
-    }, "RootProcess.createOwnedRoomObjectsCache()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.restoreTasks()
@@ -57,21 +52,11 @@ export class RootProcess {
     }, "RootProcess.storeTasks()")()
 
     ErrorMapper.wrapLoop((): void => {
-      OwnedRoomObjectCache.clearCache()
-    }, "OwnedRoomObjectCache.clearCache()")()
-
-    ErrorMapper.wrapLoop((): void => {
       InterShardMemoryManager.store()
     }, "InterShardMemoryManager.store()")()
   }
 
   // ---- Private ---- //
-  private createOwnedRoomObjectsCache(ownedRooms: Room[]): void {
-    ownedRooms.forEach(room => {
-      OwnedRoomObjectCache.createCache(room)
-    })
-  }
-
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
@@ -98,7 +83,7 @@ export class RootProcess {
         spawn._task = decodeSpawnTask(spawn)
       }
     }
-    this.getAllTowers().forEach(tower => {
+    this.getAllV4Towers().forEach(tower => {
       if (this.shouldCacheTasks) {
         tower.task = decodeTowerTask(tower.id as Id<StructureTower>)
       } else {
@@ -125,7 +110,7 @@ export class RootProcess {
       const spawn = Game.spawns[spawnName]
       spawn.memory.ts = spawn.task?.encode() ?? null
     }
-    this.getAllTowers().forEach(tower => {
+    this.getAllV4Towers().forEach(tower => {
       if (Memory.towers[tower.id] == null) {
         Memory.towers[tower.id] = {
           ts: tower.task?.encode() ?? null
@@ -136,28 +121,11 @@ export class RootProcess {
     })
   }
 
-  private getOwnedRooms(): Room[] {
-    const ownedRooms: Room[] = []
-
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
-      if (room.controller == null) {
-        continue
-      }
-      if (room.controller.my !== true) {
-        continue
-      }
-      if (Migration.isOldRoom(roomName) === true) {
-        continue
-      }
-      ownedRooms.push(room)
-    }
-    return ownedRooms
-  }
-
-  private getAllTowers(): StructureTower[] {
-    return OwnedRoomObjectCache.allRoomObjects().reduce((result, current) => {
-      return result.concat(current.activeStructures.towers)
-    }, [] as StructureTower[])
+  private getAllV4Towers(): StructureTower[] {
+    return OwnedRoomObjectCache.allRoomObjects()
+      .filter(objects => Migration.roomVersion(objects.controller.room.name) === ShortVersion.v4)
+      .reduce((result, current) => {
+        return result.concat(current.activeStructures.towers)
+      }, [] as StructureTower[])
   }
 }

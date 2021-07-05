@@ -15,7 +15,7 @@ export class EnergyInsufficiencyProblem implements Problem {
 
   public getProblemSolvers(): ProblemSolver[] {
     return [
-      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, [CreepRole.EnergyStore, CreepRole.Mover])  // TODO: この解法で良いのか
+      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, [CreepRole.EnergyStore, CreepRole.Mover], null)  // TODO: この解法で良いのか
     ]
   }
 }
