@@ -9,9 +9,9 @@ export interface PatrolRoomTaskState extends CreepTaskState {
 
 export class PatrolRoomTask implements CreepTask {
   public readonly shortDescription = "patrol"
-  public get targetId(): RoomName {
-    return this.roomName
-  }
+  // public get targetId(): RoomName {
+  //   return this.roomName
+  // }
 
   public constructor(
     public readonly startTime: number,

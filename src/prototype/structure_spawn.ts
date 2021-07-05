@@ -1,5 +1,5 @@
 import { StructureSpawnTask } from "game_object_task/spawn_task"
-import { TaskTargetCache } from "game_object_task/task_target_cache"
+import { TaskTargetCache } from "task/task_target_cache"
 
 export type SpawnName = string
 

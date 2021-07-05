@@ -1,9 +1,9 @@
-import { RoomName } from "prototype/room"
-import { TargetType, TaskRunnerType } from "./game_object_task"
+export type TaskRunnerType = Creep | StructureSpawn | StructureTower
+export type TaskTargetType = Creep | PowerCreep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
 
 export type TaskRunnerId = Id<TaskRunnerType>
-export type TargetTypeId = Id<TargetType>
-type TaskTargetCacheKey = TargetTypeId | RoomName
+export type TaskTargetTypeId = Id<TaskTargetType>
+type TaskTargetCacheKey = TaskTargetTypeId
 
 const cache = new Map<TaskTargetCacheKey, TaskRunnerId[]>()
 

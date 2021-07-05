@@ -1,9 +1,5 @@
 import { State, Stateful } from "os/infrastructure/state"
-import { RoomName } from "prototype/room"
-
-export type TaskRunnerType = Creep | StructureSpawn | StructureTower
-export type TaskTargetType = Creep | PowerCreep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
-export type TaskTargetIdType = Id<TaskTargetType> | RoomName
+import { TaskTargetTypeId } from "./task_target_cache"
 
 export type TaskProgressTypeFinished = 0
 export type TaskProgressTypeInProgress = 1
@@ -25,7 +21,7 @@ export interface TaskState extends State {
  * - in progress / finished の2値で表せるタスク
  */
 export interface Task<ObjectType> extends Stateful {
-  targetId?: TaskTargetIdType
+  targetId?: TaskTargetTypeId
   startTime: number
 
   encode(): TaskState
