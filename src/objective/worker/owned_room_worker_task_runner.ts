@@ -37,7 +37,7 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
   }
 
   private newTaskFor(creep: Creep): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) < creep.store.getCapacity() / 2
+    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
       const source = this.getSourceToAssign(creep.pos)

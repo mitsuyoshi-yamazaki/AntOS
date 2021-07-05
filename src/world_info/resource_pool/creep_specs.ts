@@ -123,6 +123,10 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
 
     let mergedRequest: CreepSpawnRequest | null = null
     for (let j = i + 1; j < requests.length; j += 1) {
+      if (checkedIndexes.includes(j) === true) {
+        continue
+      }
+
       const requestToMerge = mergedRequest ?? request
       const mergeResult = mergeRequest(requestToMerge, requests[j])
       if (mergeResult != null) {

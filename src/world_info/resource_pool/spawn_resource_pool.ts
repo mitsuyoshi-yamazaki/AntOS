@@ -36,7 +36,11 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         t: request.initialTask?.encode() ?? null,
         i: request.taskRunnerIdentifier,
       }
-      spawn.spawnCreep(body, creepName, { memory: memory })
+      const result = spawn.spawnCreep(body, creepName, { memory: memory })
+      if (result === OK) {
+        const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
+        creep.task = request.initialTask
+      }
     })
   }
 }

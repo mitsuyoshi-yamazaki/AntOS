@@ -21,6 +21,7 @@ export interface BootstrapRoomProcessState extends ProcessState, ObjectiveRunner
   w: RoomName[]
 }
 
+// shard2: Game.io("launch BootstrapRoomProcess -l parent_room_name=W52S28 target_room_name=W57S27 waypoints=W53S30,W55S29")
 // season: Game.io("launch BootstrapRoomProcess -l parent_room_name=W27S26 target_room_name=W24S29 waypoints=W27S28")
 export class BootstrapRoomProcess extends ObjectiveRunner implements Process {
   private constructor(

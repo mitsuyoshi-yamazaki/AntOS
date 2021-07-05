@@ -16,6 +16,9 @@ export class CreepInsufficiencyProblem implements Problem {
       this.request.parentRoomName ?? this.roomName,
       this.request.roles.join(","),
     ]
+    if (this.request.body != null) {
+      descriptions.push(this.request.body.join(","))
+    }
     if (this.request.taskRunnerIdentifier != null) {
       descriptions.push(this.request.taskRunnerIdentifier)
     }
