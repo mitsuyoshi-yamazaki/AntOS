@@ -1,5 +1,5 @@
 import { CreepInsufficiencyProblem } from "objective/creep_existence/creep_insufficiency_problem"
-import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNotAchieved } from "objective/objective"
+import { Objective, ObjectiveStatus } from "objective/objective"
 import { Problem } from "objective/problem"
 import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -31,8 +31,8 @@ export class OwnedRoomEnergyAvailableObjective implements Objective {
     }
 
     if (problems.length > 0) {
-      return new ObjectiveStatusNotAchieved(problems)
+      return ObjectiveStatus.NotAchieved(problems)
     }
-    return new ObjectiveStatusAchieved()
+    return ObjectiveStatus.Achieved()
   }
 }

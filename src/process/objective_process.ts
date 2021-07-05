@@ -1,8 +1,8 @@
 import { createObjectives, isLaunchableObjectiveType, LaunchableObjectiveType, Objective } from "objective/objective"
 import { Problem, ProblemIdentifier } from "objective/problem"
 import { decodeProblemSolvers, ProblemSolver, ProblemSolverState } from "objective/problem_solver"
+import { RoomKeeperObjective } from "objective/room_keeper/room_keeper_objective"
 import { TaskRunner } from "objective/task_runner"
-import { UpgradeControllerObjective } from "objective/upgrade_controller/upgrade_controller_objective"
 import { Procedural } from "old_objective/procedural"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
@@ -78,7 +78,7 @@ export class ObjectiveProcess implements Process, Procedural, MessageObserver {
       return []
     }
 
-    const result: Objective[] = [new UpgradeControllerObjective(objects)]
+    const result: Objective[] = [new RoomKeeperObjective(objects)]
     result.push(...createObjectives(this.objectiveTypes, objects))
     return result
   }

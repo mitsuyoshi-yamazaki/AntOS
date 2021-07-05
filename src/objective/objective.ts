@@ -4,17 +4,25 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { Problem } from "./problem"
 import { TaskRunner } from "./task_runner"
 
-export class ObjectiveStatusNotAchieved {
+class ObjectiveStatusNotAchieved {
   public readonly objectiveStatus = "not achieved"
 
   public constructor(public readonly problems: Problem[]) { }
 }
 
-export class ObjectiveStatusAchieved {
+class ObjectiveStatusAchieved {
   public readonly objectiveStatus = "achieved"
 }
 
 export type ObjectiveStatus = ObjectiveStatusAchieved | ObjectiveStatusNotAchieved
+export const ObjectiveStatus = {
+  Achieved: function (): ObjectiveStatusAchieved {
+    return new ObjectiveStatusAchieved()
+  },
+  NotAchieved: function (problems: Problem[]): ObjectiveStatusNotAchieved {
+    return new ObjectiveStatusNotAchieved(problems)
+  }
+}
 
 export interface Objective {
   taskRunners(): TaskRunner[]
@@ -76,6 +84,6 @@ class ExampleLaunchableObjective implements LaunchableObjective {
     return []
   }
   public currentStatus(): ObjectiveStatus {
-    return new ObjectiveStatusAchieved()
+    return ObjectiveStatus.Achieved()
   }
 }

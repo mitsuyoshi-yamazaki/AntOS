@@ -45,8 +45,10 @@ export function decodeCreepApiWrapperFromState(state: CreepApiWrapperState): Cre
   }, `decodeCreepTaskFromState(), objective type: ${state.t}`)()
 
   if (result == null) {
-    const message = `Decode failed by program bug (API wrapper type identifier: ${state.t})`
-    PrimitiveLogger.fatal(message)
+    if (state.t !== "BuildApiWrapper") {
+      const message = `Decode failed by program bug (API wrapper type identifier: ${state.t})`
+      PrimitiveLogger.fatal(message)
+    }
     return null
   }
   return result

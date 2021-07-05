@@ -1,4 +1,4 @@
-import { Objective, ObjectiveStatus, ObjectiveStatusAchieved, ObjectiveStatusNotAchieved } from "objective/objective"
+import { Objective, ObjectiveStatus } from "objective/objective"
 import { TaskRunner } from "objective/task_runner"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { OwnedRoomObjects } from "world_info/room_info"
@@ -22,8 +22,8 @@ export class OwnedRoomCreepExistsObjective implements Objective {
       creep => hasNecessaryRoles(creep, this.creepRoles),
     )
     if (numberOfCreeps > this.requiredCreeps) {
-      return new ObjectiveStatusAchieved()
+      return ObjectiveStatus.Achieved()
     }
-    return new ObjectiveStatusNotAchieved([new CreepInsufficiencyProblem(this.objects.controller.room.name, this.creepRoles)])
+    return ObjectiveStatus.NotAchieved([new CreepInsufficiencyProblem(this.objects.controller.room.name, this.creepRoles)])
   }
 }
