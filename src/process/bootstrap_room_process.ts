@@ -1,18 +1,16 @@
-import { ClaimRoomObjective } from "objective/claim_room/claim_room_objective"
+import { BootstrapRoomObjective } from "objective/bootstrap_room/bootstrap_room_objective"
 import { LaunchableObjectiveType, Objective } from "objective/objective"
 import { ObjectiveRunner, ObjectiveRunnerState } from "objective/objective_runner"
 import { Problem } from "objective/problem"
 import { decodeProblemSolvers, ProblemSolver } from "objective/problem_solver"
 import { TaskRunner } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OperatingSystem } from "os/os"
 import { Process, ProcessId, processLog, ProcessState, ProcessTypeIdentifier } from "process/process"
 import { RoomName } from "prototype/room"
 import { roomLink } from "utility/log"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { World } from "world_info/world_info"
 
-export interface ClaimRoomProcessState extends ProcessState, ObjectiveRunnerState {
+export interface BootstrapRoomProcessState extends ProcessState, ObjectiveRunnerState {
   /** type identifier */
   t: ProcessTypeIdentifier
 
@@ -23,8 +21,8 @@ export interface ClaimRoomProcessState extends ProcessState, ObjectiveRunnerStat
   w: RoomName[]
 }
 
-// Game.io("launch ClaimRoomProcess -l parent_room_name=W27S26 target_room_name=W24S29 waypoints=W27S28")
-export class ClaimRoomProcess extends ObjectiveRunner implements Process {
+// season: Game.io("launch BootstrapRoomProcess -l parent_room_name=W27S26 target_room_name=W24S29 waypoints=W27S28")
+export class BootstrapRoomProcess extends ObjectiveRunner implements Process {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -37,9 +35,9 @@ export class ClaimRoomProcess extends ObjectiveRunner implements Process {
     super(objectiveTypes, problemSolvers, roomName)
   }
 
-  public encode(): ClaimRoomProcessState {
+  public encode(): BootstrapRoomProcessState {
     return {
-      t: "ClaimRoomProcess",
+      t: "BootstrapRoomProcess",
       l: this.launchTime,
       i: this.processId,
       o: this.objectiveTypes,
@@ -50,30 +48,19 @@ export class ClaimRoomProcess extends ObjectiveRunner implements Process {
     }
   }
 
-  public static decode(state: ClaimRoomProcessState): ClaimRoomProcess {
+  public static decode(state: BootstrapRoomProcessState): BootstrapRoomProcess {
     const problemSolvers = decodeProblemSolvers(state.s)
-    return new ClaimRoomProcess(state.l, state.i, state.o, problemSolvers, state.r, state.tr, state.w)
+    return new BootstrapRoomProcess(state.l, state.i, state.o, problemSolvers, state.r, state.tr, state.w)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): ClaimRoomProcess {
-    return new ClaimRoomProcess(Game.time, processId, [], [], roomName, targetRoomName, waypoints)
+  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): BootstrapRoomProcess {
+    return new BootstrapRoomProcess(Game.time, processId, [], [], roomName, targetRoomName, waypoints)
   }
 
   // ---- ObjectiveRunner ---- //
   public predefinedObjectives(objects: OwnedRoomObjects): Objective[] {
-    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
-    if (targetRoomObjects != null) {
-      if (targetRoomObjects.activeStructures.spawns.length > 0) {
-        this.log(`${roomLink(this.targetRoomName)} successfully bootstraped. Taking over creeps and terminating process...`)
-
-        // TODO: creepの引き継ぎ
-        OperatingSystem.os.killProcess(this.processId)
-        return []
-      }
-    }
-
     return [
-      new ClaimRoomObjective(objects, this.targetRoomName, this.waypoints),
+      new BootstrapRoomObjective(objects, this.targetRoomName, this.waypoints),
     ]
   }
 

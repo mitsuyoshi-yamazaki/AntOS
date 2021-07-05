@@ -31,7 +31,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
       const memory: V5CreepMemory = {
         v: "v5",
-        p: this.parentRoomName,
+        p: request.parentRoomName ?? this.parentRoomName,
         r: request.roles,
         t: request.initialTask?.encode() ?? null,
         i: request.taskRunnerIdentifier,

@@ -10,7 +10,7 @@ import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { ObjectiveProcess } from "process/objective_process"
-import { ClaimRoomProcess } from "process/claim_room_process"
+import { BootstrapRoomProcess } from "process/bootstrap_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -30,8 +30,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "BootstrapL8RoomProcess":
       result = this.launchBootstrapL8RoomProcess()
       break
-    case "ClaimRoomProcess":
-      result = this.launchClaimRoomProcess()
+    case "BootstrapRoomProcess":
+      result = this.launchBootstrapRoomProcess()
       break
     case "InterShardCreepDelivererProcess":
       result = this.launchInterShardCreepDelivererProcess()
@@ -114,7 +114,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchClaimRoomProcess(): LaunchCommandResult {
+  private launchBootstrapRoomProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const targetRoomName = args.get("target_room_name")
@@ -134,7 +134,7 @@ export class LaunchCommand implements ConsoleCommand {
     const waypoints = rawWaypoints.split(",")
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return ClaimRoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
+      return BootstrapRoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }

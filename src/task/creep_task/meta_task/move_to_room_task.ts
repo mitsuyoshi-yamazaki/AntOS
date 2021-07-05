@@ -44,8 +44,8 @@ export class MoveToRoomTask implements CreepTask {
     return new MoveToRoomTask(state.s, state.d, state.w, exitPosition)
   }
 
-  public static create(destinationRoomName: RoomName, waypoints?: RoomName[]): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, waypoints ?? [], null)
+  public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
+    return new MoveToRoomTask(Game.time, destinationRoomName, waypoints, null)
   }
 
   public run(creep: Creep): TaskProgressType {

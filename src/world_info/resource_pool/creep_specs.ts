@@ -1,6 +1,7 @@
 import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
+import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる */
@@ -27,6 +28,9 @@ export interface CreepSpawnRequest {
 
   initialTask: CreepTask | null
   taskRunnerIdentifier: TaskRunnerIdentifier | null
+
+  /** 他の部屋へ引き継ぐ場合 */
+  parentRoomName: RoomName | null
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {
@@ -75,6 +79,10 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
   if (request1.taskRunnerIdentifier != request2.taskRunnerIdentifier) {
     return null
   }
+  // eslint-disable-next-line eqeqeq
+  if (request1.parentRoomName != request2.parentRoomName) {
+    return null
+  }
 
   const roles = mergeRoles(request1.roles, request2.roles)
   if (roles == null) {
@@ -90,6 +98,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     body: null,
     initialTask: null,
     taskRunnerIdentifier: request1.taskRunnerIdentifier,
+    parentRoomName: request1.parentRoomName,
   }
 }
 

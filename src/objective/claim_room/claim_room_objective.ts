@@ -6,12 +6,10 @@ import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
-import { ClaimRoomTaskRunner } from "./claim_room_task_runner"
+import { RoomNotClaimedProblem } from "./room_not_claimed_problem"
 
 export class ClaimRoomObjective implements Objective {
   public readonly children: Objective[]
-
-  private readonly claimRoomTaskRunner: ClaimRoomTaskRunner | null
 
   public constructor(
     public readonly objects: OwnedRoomObjects,
@@ -20,35 +18,29 @@ export class ClaimRoomObjective implements Objective {
   ) {
     this.children = [
     ]
-
-    const targetRoom = World.rooms.get(this.targetRoomName)
-    if (targetRoom == null || targetRoom.controller == null || targetRoom.controller.my !== true) {
-      this.claimRoomTaskRunner = new ClaimRoomTaskRunner(this.targetRoomName, this.waypoints)
-    } else {
-      this.claimRoomTaskRunner = null
-    }
   }
 
   public taskRunners(): TaskRunner[] {
     const taskRunners: TaskRunner[] = this.children.flatMap(child => child.taskRunners())
-    if (this.claimRoomTaskRunner != null) {
-      taskRunners.push(this.claimRoomTaskRunner)
-    }
     return taskRunners
   }
 
   public currentProblems(): Problem[] {
     const problems = this.children.flatMap(child => child.currentProblems())
 
-    if (this.claimRoomTaskRunner != null) {
-      const identifier = this.claimRoomTaskRunner.taskRunnerIdentifier
+    const targetRoom = World.rooms.get(this.targetRoomName)
+    if (targetRoom == null || targetRoom.controller == null || targetRoom.controller.my !== true) {
+      const roomNotClaimedProblem = new RoomNotClaimedProblem(this.objects, this.targetRoomName, this.waypoints)
+      problems.push(roomNotClaimedProblem)
+
+      const identifier = roomNotClaimedProblem.identifier
       const roomName = this.objects.controller.room.name
       const necessaryRoles = [CreepRole.Claimer, CreepRole.Mover]
       const claimerCount = World.resourcePools.countCreeps(roomName, identifier, creep => {
         return hasNecessaryRoles(creep, necessaryRoles)
       })
       if (claimerCount <= 0) {
-        problems.push(new CreepInsufficiencyProblem(roomName, necessaryRoles, null, identifier))
+        problems.push(new CreepInsufficiencyProblem(roomName, necessaryRoles, null, null, identifier, null))
       }
     }
 

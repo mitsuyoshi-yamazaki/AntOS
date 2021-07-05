@@ -1,6 +1,8 @@
+import { LaunchableObjectiveType } from "objective/objective"
 import { RoomKeeperObjective } from "old_objective/room_keeper/room_keeper_objective"
 import { RoomKeeperProcess } from "old_objective/room_keeper/room_keeper_process"
-import { OperatingSystem, ProcessInfo } from "os/os"
+import { OperatingSystem } from "os/os"
+import { ObjectiveProcess } from "process/objective_process"
 import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { Migration } from "utility/migration"
@@ -8,46 +10,43 @@ import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
 import { CreepType } from "_old/creep"
 
-export class V4ApplicationProcessLauncher {
+export class ApplicationProcessLauncher {
   public launchProcess(): void {
     const allProcessInfo = OperatingSystem.os.listAllProcesses()
-    this.roomsNeedKeeper(allProcessInfo).forEach(roomName => this.launchRoomKeeperProcess(roomName))
-  }
-
-  private roomsNeedKeeper(allProcessInfo: ProcessInfo[]): RoomName[] {
-    if (World.isSimulation()) {
-      return []
-    }
-
-    const roomsWithKeeperProcess = allProcessInfo.map(processInfo => {
+    const roomsWithV4KeeperProcess = allProcessInfo.map(processInfo => {
       if (processInfo.process instanceof RoomKeeperProcess) {
         return processInfo.process.roomName
       }
       return null
     })
+    const roomsWithV5KeeperProcess = allProcessInfo.map(processInfo => {
+      if (processInfo.process instanceof ObjectiveProcess) {
+        return processInfo.process.roomName
+      }
+      return null
+    })
 
-    const roomNames: RoomName[] = []
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
-      if (room.controller == null) {
-        continue
+    World.rooms.getAllOwnedRooms().forEach(room => {
+      switch (Migration.roomVersion(room.name)) {
+      case ShortVersion.v3:
+        return
+      case ShortVersion.v4:
+        if (roomsWithV4KeeperProcess.includes(room.name) === true) {
+          return
+        }
+        this.launchV4RoomKeeperProcess(room.name)
+        return
+      case ShortVersion.v5:
+        if (roomsWithV5KeeperProcess.includes(room.name) === true) {
+          return
+        }
+        this.launchV5RoomKeeperProcess(room.name)
+        return
       }
-      if (room.controller.my !== true) {
-        continue
-      }
-      if (Migration.roomVersion(roomName) !== ShortVersion.v4) {
-        continue
-      }
-      if (roomsWithKeeperProcess.includes(roomName) === true) {
-        continue
-      }
-      roomNames.push(roomName)
-    }
-
-    return roomNames
+    })
   }
 
-  private launchRoomKeeperProcess(roomName: RoomName): void {
+  private launchV4RoomKeeperProcess(roomName: RoomName): void {
     const time = Game.time
     const workers = ((): Creep[] => {
       const room = Game.rooms[roomName]
@@ -72,5 +71,11 @@ export class V4ApplicationProcessLauncher {
     const workerNames = workers.map(creep => creep.name)
     const objective = new RoomKeeperObjective(time, [], roomName, workerNames)
     OperatingSystem.os.addProcess(processId => new RoomKeeperProcess(time, processId, objective))
+  }
+
+  private launchV5RoomKeeperProcess(roomName: RoomName): void {
+    const process = OperatingSystem.os.addProcess(processId => ObjectiveProcess.create(processId, roomName))
+    const roomKeeperObjectiveType: LaunchableObjectiveType = "RoomKeeperObjective"
+    process.didReceiveMessage(`add ${roomKeeperObjectiveType}`)
   }
 }

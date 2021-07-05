@@ -29,6 +29,7 @@ export interface ResourcePoolsInterface {
   countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
   countCreeps(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number
   assignTasks(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
+  takeOverCreeps(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void
 
   // ---- Tower ---- //
   addTowerTask(roomName: RoomName, task: TowerTask): void
@@ -79,12 +80,11 @@ export const ResourcePools: ResourcePoolsInterface = {
   },
 
   assignTasks: function (roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
-    const pool = getCreepPool(roomName)
-    if (pool == null) {
-      return
-    }
-    pool.assignTasks(taskRunnerIdentifier, priority, taskBuilder, filter)
-    return
+    getCreepPool(roomName)?.assignTasks(taskRunnerIdentifier, priority, taskBuilder, filter)
+  },
+
+  takeOverCreeps: function(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void {
+    getCreepPool(roomName)?.takeOverCreeps(taskRunnerIdentifier, newIdentifier, newParentRoomName)
   },
 
   addSpawnCreepRequest: function(roomName: RoomName, request: CreepSpawnRequest): void {

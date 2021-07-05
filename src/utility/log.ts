@@ -24,5 +24,6 @@ export function roomLink(roomName: string, opts?: { text?: string, color?: strin
   opts = opts || {}
   const color = opts.color || "#FFFFFF"
   const text = opts.text || roomName
-  return `<a href="https://screeps.com/a/#!/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
+  const path = Game.shard.name === "shardSeason" ? "season" : "a"
+  return `<a href="https://screeps.com/${path}/#!/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
 }

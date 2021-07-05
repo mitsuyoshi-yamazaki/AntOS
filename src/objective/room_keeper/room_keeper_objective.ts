@@ -42,7 +42,9 @@ export class RoomKeeperObjective implements LaunchableObjective {
     let childProblems = this.children.flatMap(child => child.currentProblems())
     if (this.needsMinimumWorkers === true) {
       childProblems = childProblems.filter(problem => !(problem instanceof CreepInsufficiencyProblem))
-      childProblems.push(new CreepInsufficiencyProblem(this.roomName, [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore], [CARRY, WORK, MOVE], null))
+      const roles = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore]
+      const minimumBody = [CARRY, WORK, MOVE]
+      childProblems.push(new CreepInsufficiencyProblem(this.roomName, roles, minimumBody, null, null, null))
     }
     return childProblems
   }

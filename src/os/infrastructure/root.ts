@@ -9,12 +9,12 @@ import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
-import { V4ApplicationProcessLauncher } from "./process_launcher/v4_application_process_launcher"
+import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
-  private readonly applicationProcessLauncher = new V4ApplicationProcessLauncher()
+  private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
   private shouldCacheTasks = true
 
   public constructor() {
@@ -30,12 +30,12 @@ export class RootProcess {
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
-      this.applicationProcessLauncher.launchProcess()
-    }, "RootProcess.applicationProcessLauncher.launchProcess()")()
-
-    ErrorMapper.wrapLoop((): void => {
       World.beforeTick()
     }, "World.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      this.applicationProcessLauncher.launchProcess()
+    }, "RootProcess.applicationProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.restoreTasks()

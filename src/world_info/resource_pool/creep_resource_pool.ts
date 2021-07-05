@@ -97,6 +97,19 @@ export class CreepPool implements ResourcePoolType<Creep> {
     }
   }
 
+  public takeOverCreeps(taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void {
+    this.creeps.forEach(creep => {
+      if (!isV5CreepMemory(creep.memory)) {
+        return
+      }
+      if (creep.memory.i !== taskRunnerIdentifier) {
+        return
+      }
+      creep.memory.i = newIdentifier
+      creep.memory.p = newParentRoomName
+    })
+  }
+
   public executeTask(): void {
     this.creeps.forEach(creep => {
       if (creep.task != null) {
