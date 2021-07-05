@@ -13,7 +13,7 @@ const oldRoomNames: RoomName[] = [
 const v4RoomNames: RoomName[] = [
   // "W51S37",
   "W52S28",
-  "W53S36",
+  // "W53S36",
   "W53S7",
 ]
 

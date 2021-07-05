@@ -49,6 +49,10 @@ export abstract class ObjectiveRunner implements Stateful, Procedural, MessageOb
   // ---- Functions ---- //
   public runOnTick(): void {
     const objectives = this.listupObjectives()
+    if (objectives.length <= 0) {
+      this.log("No objectives")
+    }
+
     if (this.didListupObjectives != null) {
       this.didListupObjectives(objectives)
     }
