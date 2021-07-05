@@ -1,4 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { defaultMoveToOptions } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "task/task"
@@ -14,12 +15,6 @@ export interface MoveToRoomTaskState extends CreepTaskState {
 
   /** exit position */
   e: RoomPositionState | null
-}
-
-const moveToOptions: MoveToOpts = {
-  maxRooms: 1,
-  reusePath: 1,
-  maxOps: 500,
 }
 
 export class MoveToRoomTask implements CreepTask {
@@ -92,7 +87,7 @@ export class MoveToRoomTask implements CreepTask {
 
     if (this.exitPosition != null) {
       if (this.exitPosition.roomName === creep.room.name) {
-        creep.moveTo(this.exitPosition, moveToOptions)
+        creep.moveTo(this.exitPosition, defaultMoveToOptions)
         return TaskProgressType.InProgress
       }
       this.exitPosition = null
@@ -112,15 +107,15 @@ export class MoveToRoomTask implements CreepTask {
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, moveToOptions)
+        creep.moveTo(creep.room.controller, defaultMoveToOptions)
       } else {
-        creep.moveTo(25, 25, moveToOptions)
+        creep.moveTo(25, 25, defaultMoveToOptions)
       }
       return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
     }
 
     this.exitPosition = exitPosition
-    creep.moveTo(exitPosition, moveToOptions) // TODO: エラー処理
+    creep.moveTo(exitPosition, defaultMoveToOptions) // TODO: エラー処理
     return TaskProgressType.InProgress
   }
 }

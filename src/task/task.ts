@@ -1,14 +1,17 @@
 import { State, Stateful } from "os/infrastructure/state"
 import { TaskTargetTypeId } from "./task_target_cache"
 
-export type TaskProgressTypeFinished = 0
-export type TaskProgressTypeInProgress = 1
+export type TaskProgressTypeFinishedAndRan = 0
+export type TaskProgressTypeFinished = 1
+export type TaskProgressTypeInProgress = 2
 
-const taskProgressTypeFinished: TaskProgressTypeFinished = 0
-const taskProgressTypeInProgress: TaskProgressTypeInProgress = 1
+const taskProgressTypeFinishedAndRan: TaskProgressTypeFinishedAndRan = 0
+const taskProgressTypeFinished: TaskProgressTypeFinished = 1
+const taskProgressTypeInProgress: TaskProgressTypeInProgress = 2
 
-export type TaskProgressType = TaskProgressTypeFinished | TaskProgressTypeInProgress
+export type TaskProgressType = TaskProgressTypeFinishedAndRan | TaskProgressTypeFinished | TaskProgressTypeInProgress
 export const TaskProgressType = {
+  FinishedAndRan: taskProgressTypeFinishedAndRan,
   Finished: taskProgressTypeFinished,
   InProgress: taskProgressTypeInProgress,
 }

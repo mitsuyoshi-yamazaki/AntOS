@@ -5,6 +5,7 @@ import { Task, TaskProgressType, TaskState } from "task/task"
 import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./combined_task/move_harvest_energy_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./combined_task/move_to_room_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./combined_task/move_to_target_task"
+import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
 
 export interface CreepTaskState extends TaskState {
   /** type identifier */
@@ -26,6 +27,7 @@ class CreepTaskDecoderMap {
   /** combined task */
   "MoveHarvestEnergyTask" = (state: CreepTaskState) => MoveHarvestEnergyTask.decode(state as MoveHarvestEnergyTaskState)
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
+  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 

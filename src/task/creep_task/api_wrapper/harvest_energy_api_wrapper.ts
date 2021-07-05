@@ -1,11 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { ApiWrapper } from "task/api_wrapper"
 import { TargetingApiWrapper } from "task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 
-type HarvestEnergyApiWrapperResult = FINISHED | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_NOT_ENOUGH_RESOURCES | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
+type HarvestEnergyApiWrapperResult = FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_NOT_ENOUGH_RESOURCES | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
 export interface HarvestEnergyApiWrapperState extends CreepApiWrapperState {
   /** source id */
@@ -48,7 +48,7 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
     case OK: {
       const harvestAmount = creep.body.filter(b => b.type === WORK).length * HARVEST_POWER
       if (creep.store.getFreeCapacity() <= harvestAmount) {
-        return FINISHED
+        return FINISHED_AND_RAN
       } else {
         return IN_PROGRESS
       }

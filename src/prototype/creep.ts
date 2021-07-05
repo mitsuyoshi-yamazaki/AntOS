@@ -10,17 +10,24 @@ import { TaskTargetCache } from "task/task_target_cache"
 // ---- Types and Constants ---- //
 export type CreepName = string
 
+export const defaultMoveToOptions: MoveToOpts = {
+  maxRooms: 1,
+  reusePath: 1,
+  maxOps: 500,
+}
 
 // ---- Custon Return Code ---- //
-export type FINISHED = 967
-export type IN_PROGRESS = 968
-export type ERR_DAMAGED = 969
-export type ERR_PROGRAMMING_ERROR = 970
+export type FINISHED_AND_RAN = 967
+export type FINISHED = 968
+export type IN_PROGRESS = 969
+export type ERR_DAMAGED = 970
+export type ERR_PROGRAMMING_ERROR = 971
 
-export const FINISHED: FINISHED = 967
-export const IN_PROGRESS: IN_PROGRESS = 968
-export const ERR_DAMAGED: ERR_DAMAGED = 969
-export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 970
+export const FINISHED_AND_RAN: FINISHED_AND_RAN = 967
+export const FINISHED: FINISHED = 968
+export const IN_PROGRESS: IN_PROGRESS = 969
+export const ERR_DAMAGED: ERR_DAMAGED = 970
+export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 971
 
 
 // ---- Memory ---- //

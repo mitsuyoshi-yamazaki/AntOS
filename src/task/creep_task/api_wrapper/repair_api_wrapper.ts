@@ -1,11 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { ApiWrapper } from "task/api_wrapper"
 import { TargetingApiWrapper } from "task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 
-type RepairApiWrapperResult = FINISHED | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
+type RepairApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
 export interface RepairApiWrapperState extends CreepApiWrapperState {
   /** target id */
@@ -45,7 +45,7 @@ export class RepairApiWrapper implements ApiWrapper<Creep, RepairApiWrapperResul
     case OK: {
       const consumeAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= consumeAmount) {
-        return FINISHED
+        return FINISHED_AND_RAN
       }
       return IN_PROGRESS
     }

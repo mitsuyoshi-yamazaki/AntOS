@@ -1,4 +1,4 @@
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, IN_PROGRESS } from "prototype/creep"
+import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { getCachedPathFor } from "script/pathfinder"
 import { TaskProgressType } from "task/task"
 import { HarvestEnergyApiWrapper } from "../api_wrapper/harvest_energy_api_wrapper"
@@ -49,8 +49,8 @@ export class MoveHarvestEnergyTask implements CreepTask {
     const result = this.apiWrapper.run(creep)
 
     switch (result) {
-    case FINISHED:
-      return TaskProgressType.Finished
+    case FINISHED_AND_RAN:
+      return TaskProgressType.FinishedAndRan
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
@@ -78,7 +78,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
   private move(creep: Creep): void {
     const cachedPath = getCachedPathFor(this.apiWrapper.source)
     if (cachedPath == null) {
-      creep.moveTo(this.apiWrapper.source, { reusePath: 1 })
+      creep.moveTo(this.apiWrapper.source, defaultMoveToOptions)
       return
     }
     const result = creep.moveByPath(cachedPath)
@@ -91,7 +91,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
       return
 
     case ERR_NOT_FOUND:
-      creep.moveTo(creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0])
+      creep.moveTo((creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0]), defaultMoveToOptions)
       return
 
     case ERR_NOT_OWNER:
