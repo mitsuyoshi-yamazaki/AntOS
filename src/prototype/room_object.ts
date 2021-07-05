@@ -12,13 +12,13 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  try { // FixMe:
+  try { // FixMe: Season3環境でなぜか失敗した
     Object.defineProperty(RoomObject.prototype, "targetedBy", {
       get(): Id<TaskRunnerType>[] {
         return TaskTargetCache.targetingTaskRunnerIds(this.id)
       },
     })
   } catch (error) {
-    //
+    console.log(`RoomObject.defineProperty failed in ${Game.shard.name}`)
   }
 }

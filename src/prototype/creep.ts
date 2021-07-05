@@ -123,6 +123,13 @@ export function init(): void {
     set(task: CreepTask | null): void {
       this.v4Task = null
 
+      if (this._task != null && this._task.targetId != null) {
+        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
+      }
+      if (task != null && task.targetId != null) {
+        TaskTargetCache.didAssignTask(this.id, task.targetId)
+      }
+
       this._task = task
       if (task == null) {
         this.say("idle")
