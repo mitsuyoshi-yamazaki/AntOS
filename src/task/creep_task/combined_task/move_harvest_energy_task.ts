@@ -1,4 +1,4 @@
-import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
+import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { getCachedPathFor } from "script/pathfinder"
 import { TaskProgressType } from "task/task"
 import { HarvestEnergyApiWrapper } from "../api_wrapper/harvest_energy_api_wrapper"

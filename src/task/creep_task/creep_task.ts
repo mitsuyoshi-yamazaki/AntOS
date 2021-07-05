@@ -3,7 +3,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
 import { Task, TaskProgressType, TaskState } from "task/task"
 import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./combined_task/move_harvest_energy_task"
-import { MoveToRoomTask, MoveToRoomTaskState } from "./combined_task/move_to_room_task"
+import { MoveToRoomTask, MoveToRoomTaskState } from "./meta_task/move_to_room_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./combined_task/move_to_target_task"
 import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
 
