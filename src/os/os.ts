@@ -228,7 +228,7 @@ export class OperatingSystem {
     Memory.os.p.forEach(processStateMemory => {
       const process = decodeProcessFrom(processStateMemory.s)
       if (process == null) {
-        this.sendOSError(`Unrecognized stateful process type ${processStateMemory}`)
+        this.sendOSError(`Unrecognized stateful process type ${processStateMemory.s.t}, ${processStateMemory.s.i}`)
         return
       }
       const processInfo: InternalProcessInfo = {

@@ -82,13 +82,16 @@ export class OldClaimRoomObjective implements Objective {
   public progress(): OldClaimRoomObjectiveProgressType {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
-      return new ObjectiveFailed(`No target room ${this.targetRoomName} visibility`)
-    }
-    if (targetRoom.controller == null) {
-      return new ObjectiveFailed(`Target room ${this.targetRoomName} has no controller`)
-    }
-    if (targetRoom.controller.my) {
-      return new ObjectiveSucceeded(targetRoom.controller)
+      if (Game.shard.name !== "shardSeason") {
+        return new ObjectiveFailed(`No target room ${this.targetRoomName} visibility`)
+      }
+    } else {
+      if (targetRoom.controller == null) {
+        return new ObjectiveFailed(`Target room ${this.targetRoomName} has no controller`)
+      }
+      if (targetRoom.controller.my) {
+        return new ObjectiveSucceeded(targetRoom.controller)
+      }
     }
 
     const parentRoom = this.activeParentRoom()
@@ -101,7 +104,7 @@ export class OldClaimRoomObjective implements Objective {
     }
     const creep = Game.getObjectById(this.claimerCreepId)
     if (creep instanceof Creep) {
-      return this.claim(creep, targetRoom.controller)
+      return this.claim(creep)
     }
     return new ObjectiveFailed(`Claimer creep ${this.claimerCreepId} killed in action`)
   }
@@ -147,7 +150,16 @@ export class OldClaimRoomObjective implements Objective {
     return new ObjectiveInProgress("Claimer creep requested")
   }
 
-  private claim(creep: Creep, controller: StructureController): OldClaimRoomObjectiveProgressType {
+  private claim(creep: Creep): OldClaimRoomObjectiveProgressType {
+    if (creep.room.name !== this.targetRoomName) {
+      creep.moveToRoom(this.targetRoomName)
+      return new ObjectiveInProgress(`Claimer creep heading to target room ${roomLink(this.targetRoomName)}, current: ${roomLink(creep.room.name)}`)
+    }
+    if (creep.room.controller == null) {
+      return new ObjectiveFailed(`Target room ${roomLink(this.targetRoomName)} does not have a controller`)
+    }
+
+    const controller = creep.room.controller
     const result = creep.claimController(controller)
     switch (result) {
     case OK:

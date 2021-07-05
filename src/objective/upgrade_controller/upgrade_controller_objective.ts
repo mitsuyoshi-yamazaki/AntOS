@@ -20,9 +20,13 @@ export class UpgradeControllerObjective implements Objective {
   }
 
   public taskRunners(): TaskRunner[] {
-    return [
+    const taskRunners: TaskRunner[] = [
       new OwnedRoomWorkTaskRunner(this.objects),
     ]
+    this.children.forEach(childObjective => {
+      taskRunners.push(...childObjective.taskRunners())
+    })
+    return taskRunners
   }
 
   public currentStatus(): ObjectiveStatus {

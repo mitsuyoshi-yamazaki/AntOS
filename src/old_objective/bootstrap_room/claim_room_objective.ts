@@ -90,13 +90,16 @@ export class ClaimRoomObjective implements Objective {
   public progress(spawnCreepObjective: SpawnCreepObjective): ClaimRoomObjectiveProgressType {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
-      return new ObjectiveFailed(`No target room ${this.targetRoomName} visibility`)
-    }
-    if (targetRoom.controller == null) {
-      return new ObjectiveFailed(`Target room ${this.targetRoomName} has no controller`)
-    }
-    if (targetRoom.controller.my) {
-      return new ObjectiveSucceeded(targetRoom.controller)
+      if (Game.shard.name !== "shardSeason") {
+        return new ObjectiveFailed(`No target room ${this.targetRoomName} visibility`)
+      }
+    } else {
+      if (targetRoom.controller == null) {
+        return new ObjectiveFailed(`Target room ${this.targetRoomName} has no controller`)
+      }
+      if (targetRoom.controller.my) {
+        return new ObjectiveSucceeded(targetRoom.controller)
+      }
     }
 
     if (this.requestingClaimerCreep === true) {
@@ -105,7 +108,7 @@ export class ClaimRoomObjective implements Objective {
 
     if (this.claimerName == null) {
       const creepName = ClaimRoomObjective.generateCreepName()
-      const body: BodyPartConstant[] = [MOVE, CLAIM, MOVE]
+      const body: BodyPartConstant[] = [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
       const memory: V4CreepMemory = {
         ts: null,
 
@@ -131,12 +134,23 @@ export class ClaimRoomObjective implements Objective {
     if (creep.spawning === true) {
       return new ObjectiveInProgress("")
     }
+    this.runClaimer(creep)
+    return new ObjectiveInProgress("")
+  }
+
+  private runClaimer(creep: Creep): void {
+    if (creep.room.name !== this.targetRoomName) {
+      creep.moveToRoom(this.targetRoomName)
+      return
+    }
+    if (creep.room.controller == null) {
+      return
+    }
     if (creep.v4Task == null) {
-      creep.v4Task = new ClaimControllerTask(Game.time, targetRoom.controller)
+      creep.v4Task = new ClaimControllerTask(Game.time, creep.room.controller)
     }
     if (creep.v4Task?.run(creep) !== "in progress") {
       creep.v4Task = null
     }
-    return new ObjectiveInProgress("")
   }
 }
