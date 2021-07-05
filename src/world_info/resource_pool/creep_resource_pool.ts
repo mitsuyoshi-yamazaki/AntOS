@@ -11,10 +11,15 @@ type CreepPoolAssignPriorityUrgent = 0
 /** タスク実行中でない場合にアサインする */
 type CreepPoolAssignPriorityLow = 1
 
-export const creepPoolAssignPriorityUrgent: CreepPoolAssignPriorityUrgent = 0
-export const creepPoolAssignPriorityLow: CreepPoolAssignPriorityLow = 1
+const creepPoolAssignPriorityUrgent: CreepPoolAssignPriorityUrgent = 0
+const creepPoolAssignPriorityLow: CreepPoolAssignPriorityLow = 1
 
 export type CreepPoolAssignPriority = CreepPoolAssignPriorityUrgent | CreepPoolAssignPriorityLow
+export const CreepPoolAssignPriority = {
+  Urgent: creepPoolAssignPriorityUrgent,
+  Low: creepPoolAssignPriorityLow,
+}
+
 export type CreepPoolFilter = (creep: Creep) => boolean
 export type CreepPoolTaskBuilder = (creep: Creep) => CreepTask | null
 

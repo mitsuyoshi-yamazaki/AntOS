@@ -23,6 +23,7 @@ export interface ObjectiveRunnerState extends State {
 }
 
 export interface ObjectiveRunner {
+  predefinedObjectives?(objects: OwnedRoomObjects): Objective[]
   didListupObjectives?(objectives: Objective[]): void
   didListupTaskRunners?(taskRunners: TaskRunner[]): void
   didResolveProblems?(resolvedProblemSolvers: ProblemSolver[]): void
@@ -125,7 +126,12 @@ export abstract class ObjectiveRunner implements Stateful, Procedural, MessageOb
   }
 
   private listupObjectives(objects: OwnedRoomObjects): Objective[] {
-    return createObjectives(this.objectiveTypes, objects)
+    const objectives: Objective[] = []
+    if (this.predefinedObjectives != null) {
+      objectives.push(...this.predefinedObjectives(objects))
+    }
+    objectives.push(...createObjectives(this.objectiveTypes, objects))
+    return objectives
   }
 
   public didReceiveMessage(message: string): string {

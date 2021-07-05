@@ -7,6 +7,7 @@ type CreepRoleWorker = "worker"
 type CreepRoleEnergyStore = "energy_store"
 type CreepRoleHauler = "hauler"
 type CreepRoleScout = "scout"
+type CreepRoleClaimer = "claimer"
 
 const creepRoleMover: CreepRoleMover = "mover"
 const creepRoleHarvester: CreepRoleHarvester = "harvester"
@@ -14,8 +15,9 @@ const creepRoleWorker: CreepRoleWorker = "worker"
 const creepRoleEnergyStore: CreepRoleEnergyStore = "energy_store"
 const creepRoleHauler: CreepRoleHauler = "hauler"
 const creepRoleScout: CreepRoleScout = "scout"
+const creepRoleClaimer: CreepRoleClaimer = "claimer"
 
-export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout
+export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout | CreepRoleClaimer
 export const CreepRole = {
   Mover: creepRoleMover,
   Harvester: creepRoleHarvester,
@@ -23,6 +25,7 @@ export const CreepRole = {
   EnergyStore: creepRoleEnergyStore,
   Hauler: creepRoleHauler,
   Scout: creepRoleScout,
+  Claimer: creepRoleClaimer,
 }
 
 export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
@@ -60,6 +63,7 @@ const mergeableRoles = new Map<CreepRole, CreepRole[]>([
     CreepRole.Hauler,
   ]],
   [CreepRole.Scout, [CreepRole.Scout]],
+  [CreepRole.Claimer, []],
 ])
 
 export function mergeRoles(roles1: CreepRole[], roles2: CreepRole[]): CreepRole[] | null {

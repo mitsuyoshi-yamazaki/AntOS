@@ -2,8 +2,6 @@ import { Process } from "process/process"
 import { TestProcess } from "old_objective/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { ClaimRoomProcess } from "old_objective/bootstrap_room/old_claim_room_process"
-import { OldClaimRoomObjective } from "old_objective/bootstrap_room/old_claim_room_objective"
 import { BootstrapL8RoomObjective } from "old_objective/bootstrap_room/bootstarp_l8_room_objective"
 import { BootstrapL8RoomProcess } from "old_objective/bootstrap_room/bootstrap_l8_room_proces"
 import { Result, ResultFailed } from "utility/result"
@@ -12,6 +10,7 @@ import { InterShardCreepDelivererObjective } from "old_objective/creep_provider/
 import { generateCodename, generateUniqueId } from "utility/unique_id"
 import { spawnPriorityLow } from "old_objective/spawn/spawn_creep_objective"
 import { ObjectiveProcess } from "process/objective_process"
+import { ClaimRoomProcess } from "process/claim_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -128,11 +127,14 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("parent_room_name")
     }
 
-    const launchTime = Game.time
-    const objective = new OldClaimRoomObjective(launchTime, [], targetRoomName, parentRoomName, null)
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return new ClaimRoomProcess(launchTime, processId, objective)
+      return ClaimRoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }

@@ -4,10 +4,10 @@ import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "old_objective/test/test_process"
 import { BootstrapL8RoomProcess, BootstrapL8RoomProcessState } from "../old_objective/bootstrap_room/bootstrap_l8_room_proces"
-import { ClaimRoomProcess, ClaimRoomProcessState } from "../old_objective/bootstrap_room/old_claim_room_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "../old_objective/room_keeper/room_keeper_process"
 import { InterShardCreepDelivererProcess, InterShardCreepDelivererProcessState } from "../old_objective/creep_provider/inter_shard_creep_deliverer_process"
 import { ObjectiveProcess, ObjectiveProcessState } from "./objective_process"
+import { ClaimRoomProcess, ClaimRoomProcessState } from "./claim_room_process"
 
 export type ProcessId = number
 
@@ -37,12 +37,12 @@ class ProcessTypes {
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as TestProcessState)
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as LoggerProcessState)
   "BootstrapL8RoomProcess" = (state: ProcessState) => BootstrapL8RoomProcess.decode(state as BootstrapL8RoomProcessState)
-  "ClaimRoomProcess" = (state: ProcessState) => ClaimRoomProcess.decode(state as ClaimRoomProcessState)
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
   "InterShardCreepDelivererProcess" = (state: ProcessState) => InterShardCreepDelivererProcess.decode(state as InterShardCreepDelivererProcessState)
 
   // ---- v5 process ---- //
   "ObjectiveProcess" = (state: ProcessState) => ObjectiveProcess.decode(state as ObjectiveProcessState)
+  "ClaimRoomProcess" = (state: ProcessState) => ClaimRoomProcess.decode(state as ClaimRoomProcessState)
 
   // ---- onetime processes ---- //
 }

@@ -39,16 +39,12 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
   }
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
-    if (this.target.my === true) {
-      creep.signController(this.target, Sign.sign(this.target.room))
-      return FINISHED_AND_RAN
-    }
-
     const result = creep.claimController(this.target)
+    creep.signController(this.target, Sign.sign(this.target.room))
 
     switch (result) {
     case OK: {
-      return IN_PROGRESS  // 次のtickでsignController()するため // TODO: 同tickでも良いかも
+      return FINISHED_AND_RAN  // 次のtickでsignController()するため // TODO: 同tickでも良いかも
     }
 
     case ERR_NOT_IN_RANGE:

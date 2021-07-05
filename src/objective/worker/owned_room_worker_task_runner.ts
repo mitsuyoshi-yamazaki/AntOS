@@ -8,7 +8,7 @@ import { UpgradeControllerApiWrapper } from "task/creep_task/api_wrapper/upgrade
 import { MoveHarvestEnergyTask } from "task/creep_task/combined_task/move_harvest_energy_task"
 import { MoveToTargetTask } from "task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "task/creep_task/creep_task"
-import { creepPoolAssignPriorityLow } from "world_info/resource_pool/creep_resource_pool"
+import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 
@@ -23,7 +23,7 @@ export class OwnedRoomWorkTaskRunner implements TaskRunner {
 
     World.resourcePools.assignTasks(
       this.objects.controller.room.name,
-      creepPoolAssignPriorityLow,
+      CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep)
       },

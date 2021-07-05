@@ -1,6 +1,10 @@
 /* eslint-disable */
 
 const scripts = {
+  convertToV5Creeps: () => {
+    Game.rooms["W52S28"].find(FIND_MY_CREEPS).forEach(creep => { creep.memory = { v: "v5", p: "W52S28", r: ["worker", "mover", "energy_store"], t: null } })
+  },
+
   filterCreeps: () => {
     Object.keys(Game.creeps).filter(name => Game.creeps[name].room.name === "W51S29" && name.includes("SignRoomObjective")).map(name => Game.creeps[name]).forEach(creep => creep.say("Hi"))
   },

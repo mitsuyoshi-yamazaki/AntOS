@@ -101,6 +101,12 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
     return [MOVE]
   }
 
+  const cost = (body: BodyPartConstant[]): number => {
+    return body.reduce((result, current) => {
+      return result + BODYPART_COST[current]
+    }, 0)
+  }
+
   const appendMove = ((body: BodyPartConstant[]): BodyPartConstant[] => {
     if (roles.includes(CreepRole.Mover) === true) {
       const length = body.length
@@ -112,10 +118,7 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   })
 
   const multiply = (body: BodyPartConstant[], max: number): BodyPartConstant[] => {
-    const cost = body.reduce((result, current) => {
-      return result + BODYPART_COST[current]
-    }, 0)
-    const count = Math.min(Math.floor(energyCapacityAvailable / cost), max)
+    const count = Math.min(Math.floor(energyCapacityAvailable / cost(body)), max)
     const result: BodyPartConstant[] = []
     for (let i = 0; i < count; i += 1) {
       result.push(...body)
@@ -135,5 +138,14 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   if (roles.includes(CreepRole.EnergyStore) === true) { // ??
     return multiply(appendMove([CARRY]), 10)
   }
+  if (roles.includes(CreepRole.Claimer) === true) {
+    const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
+    if (energyCapacityAvailable >= cost(defaultBody)) {
+      return defaultBody
+    }
+    return [MOVE, CLAIM]
+  }
+
+  PrimitiveLogger.fatal(`Can't construct creep body from role ${roles}`)
   return [MOVE]
 }
