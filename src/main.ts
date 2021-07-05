@@ -52,7 +52,7 @@ const mainLoop = () => {
         roomNames.push(room_name)
 
         if (controlVersion !== ShortVersion.v3) {
-          return
+          continue
         }
 
         if (room.memory && room.memory.is_gcl_farm) {
