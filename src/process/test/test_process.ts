@@ -1,5 +1,6 @@
 import { Procedural } from "process/procedural"
-import { Process, ProcessId, processLog, ProcessState } from "process/process"
+import { Process, ProcessId, ProcessState } from "process/process"
+import { processLog } from "process/process_log"
 
 export interface TestProcessState extends ProcessState {
 }

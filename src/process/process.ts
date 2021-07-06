@@ -1,6 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
-import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
@@ -50,12 +49,4 @@ export function decodeProcessFrom(state: ProcessState): Process | null {
     decoded = maker(state)
   }, `decodeProcessFrom(), process type: ${state.t}`)()
   return decoded
-}
-
-export function processLog(sender: Process, message: string): void {
-  OperatingSystem.os.addProcessLog({
-    processId: sender.processId,
-    processType: sender.constructor.name,
-    message: message
-  })
 }
