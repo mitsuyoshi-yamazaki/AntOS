@@ -5,7 +5,7 @@ import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { RoomName } from "./room"
 import { CreepRole } from "./creep_role"
-import { TaskTargetCache } from "task/task_target_cache"
+import { TaskTargetCache } from "task/object_task_target_cache"
 import { TaskRunnerIdentifier } from "objective/task_runner"
 
 // ---- Types and Constants ---- //

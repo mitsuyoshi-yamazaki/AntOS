@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "prototype/room"
-import { TaskProgressType } from "task/task"
+import { TaskProgressType } from "task/object_task"
 import { roomLink } from "utility/log"
 import { ClaimControllerApiWrapper } from "../api_wrapper/claim_controller_api_wrapper"
 import { CreepTask, CreepTaskState } from "../creep_task"

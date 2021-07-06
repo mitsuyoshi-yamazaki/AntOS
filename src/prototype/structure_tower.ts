@@ -1,4 +1,4 @@
-import { TaskTargetCache } from "task/task_target_cache"
+import { TaskTargetCache } from "task/object_task_target_cache"
 import { StructureTowerTask, StructureTowerTaskState } from "game_object_task/tower_task"
 
 declare global {

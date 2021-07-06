@@ -1,5 +1,5 @@
 import { State, Stateful } from "os/infrastructure/state"
-import { TaskTargetTypeId } from "./task_target_cache"
+import { TaskTargetTypeId } from "./object_task_target_cache"
 
 export type TaskProgressTypeFinishedAndRan = 0
 export type TaskProgressTypeFinished = 1
@@ -16,7 +16,7 @@ export const TaskProgressType = {
   InProgress: taskProgressTypeInProgress,
 }
 
-export interface TaskState extends State {
+export interface ObjectTaskState extends State {
   /** type identifier */
   t: string
 
@@ -27,10 +27,10 @@ export interface TaskState extends State {
 /**
  * - in progress / finished の2値で表せるタスク
  */
-export interface Task<ObjectType> extends Stateful {
+export interface ObjectTask<ObjectType> extends Stateful {
   targetId?: TaskTargetTypeId
   startTime: number
 
-  encode(): TaskState
+  encode(): ObjectTaskState
   run(obj: ObjectType): TaskProgressType
 }

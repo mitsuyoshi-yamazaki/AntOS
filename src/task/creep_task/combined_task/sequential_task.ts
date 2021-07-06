@@ -1,4 +1,4 @@
-import { TaskProgressType } from "task/task"
+import { TaskProgressType } from "task/object_task"
 import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "../creep_task"
 
 export interface SequentialTaskOptions {

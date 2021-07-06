@@ -3,7 +3,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
 import { CreepTask } from "task/creep_task/creep_task"
-import { TaskProgressType } from "task/task"
+import { TaskProgressType } from "task/object_task"
 import { ResourcePoolType } from "./resource_pool"
 // Worldをimportしない
 
