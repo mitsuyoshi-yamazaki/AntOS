@@ -34,7 +34,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         p: request.parentRoomName ?? this.parentRoomName,
         r: request.roles,
         t: request.initialTask?.encode() ?? null,
-        i: request.taskRunnerIdentifier,
+        i: request.taskIdentifier,
       }
       const result = spawn.spawnCreep(body, creepName, { memory: memory })
       if (result === OK) {

@@ -1,20 +1,18 @@
-import { LaunchableObjectiveType } from "objective/objective"
 import { OperatingSystem } from "os/os"
-import { ObjectiveProcess } from "process/objective_process"
-import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
+import { RoomKeeperProcess } from "process/room_keeper_process"
 import { RoomName } from "prototype/room"
+import { RoomKeeperTask } from "task/room_keeper/room_keeper_task"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
-import { CreepType } from "_old/creep"
 import { PrimitiveLogger } from "../primitive_logger"
 
 export class ApplicationProcessLauncher {
   public launchProcess(): void {
     const allProcessInfo = OperatingSystem.os.listAllProcesses()
     const roomsWithV5KeeperProcess = allProcessInfo.map(processInfo => {
-      if (processInfo.process instanceof ObjectiveProcess) {
+      if (processInfo.process instanceof RoomKeeperProcess) {
         return processInfo.process.roomName
       }
       return null
@@ -38,8 +36,7 @@ export class ApplicationProcessLauncher {
   }
 
   private launchV5RoomKeeperProcess(roomName: RoomName): void {
-    const process = OperatingSystem.os.addProcess(processId => ObjectiveProcess.create(processId, roomName))
-    const roomKeeperObjectiveType: LaunchableObjectiveType = "RoomKeeperObjective"
-    process.didReceiveMessage(`add ${roomKeeperObjectiveType}`)
+    const roomKeeperTask = RoomKeeperTask.create(roomName)
+    OperatingSystem.os.addProcess(processId => RoomKeeperProcess.create(processId, roomKeeperTask))
   }
 }

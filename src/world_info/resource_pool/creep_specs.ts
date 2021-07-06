@@ -1,8 +1,8 @@
-import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
 import { RoomName } from "prototype/room"
 import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "object_task/creep_task/creep_task"
+import { TaskIdentifier } from "task/task"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0
@@ -42,8 +42,8 @@ export interface CreepSpawnRequestState {
   /** initial task state */
   it: CreepTaskState | null
 
-  /** task runner identifier */
-  i: TaskRunnerIdentifier | null
+  /** task identifier */
+  i: TaskIdentifier | null
 
   /** parent room name */
   pr: RoomName | null
@@ -60,7 +60,7 @@ export interface CreepSpawnRequest {
 
   /** 時間経過で消滅する可能性のあるタスクは推奨されない */
   initialTask: CreepTask | null
-  taskRunnerIdentifier: TaskRunnerIdentifier | null
+  taskIdentifier: TaskIdentifier | null
 
   /** 他の部屋へ引き継ぐ場合 */
   parentRoomName: RoomName | null
@@ -74,7 +74,7 @@ export function encodeCreepSpawnRequest(request: CreepSpawnRequest): CreepSpawnR
     r: request.roles,
     b: request.body,
     it: request.initialTask?.encode() ?? null,
-    i: request.taskRunnerIdentifier,
+    i: request.taskIdentifier,
     pr: request.parentRoomName,
   }
 }
@@ -93,7 +93,7 @@ export function decodeCreepSpawnRequest(state: CreepSpawnRequestState): CreepSpa
     roles: state.r,
     body: state.b,
     initialTask,
-    taskRunnerIdentifier: state.i,
+    taskIdentifier: state.i,
     parentRoomName: state.pr,
   }
 }
@@ -145,7 +145,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     return null
   }
   // eslint-disable-next-line eqeqeq
-  if (request1.taskRunnerIdentifier != request2.taskRunnerIdentifier) {
+  if (request1.taskIdentifier != request2.taskIdentifier) {
     return null
   }
   // eslint-disable-next-line eqeqeq
@@ -166,7 +166,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     roles,
     body: null,
     initialTask: null,
-    taskRunnerIdentifier: request1.taskRunnerIdentifier,
+    taskIdentifier: request1.taskIdentifier,
     parentRoomName: request1.parentRoomName,
   }
 }

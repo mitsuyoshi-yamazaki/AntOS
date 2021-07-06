@@ -1,6 +1,6 @@
-import { TaskRunnerIdentifier } from "objective/task_runner"
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
+import { TaskIdentifier } from "task/task"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
 import { CreepSpawnRequest } from "./creep_specs"
 import { SpawnPool } from "./spawn_resource_pool"
@@ -27,9 +27,9 @@ export interface ResourcePoolsInterface {
 
   // ---- Creep ---- //
   countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
-  countCreeps(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number
-  assignTasks(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
-  takeOverCreeps(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void
+  countCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number
+  assignTasks(roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
+  takeOverCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void
 
   // ---- Tower ---- //
   addTowerTask(roomName: RoomName, task: TowerTask): void
@@ -75,16 +75,16 @@ export const ResourcePools: ResourcePoolsInterface = {
     return getCreepPool(roomName)?.countAllCreeps(filter) ?? 0
   },
 
-  countCreeps: function (roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number {
-    return getCreepPool(roomName)?.countCreeps(taskRunnerIdentifier, filter) ?? 0
+  countCreeps: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number {
+    return getCreepPool(roomName)?.countCreeps(taskIdentifier, filter) ?? 0
   },
 
-  assignTasks: function (roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
-    getCreepPool(roomName)?.assignTasks(taskRunnerIdentifier, priority, taskBuilder, filter)
+  assignTasks: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
+    getCreepPool(roomName)?.assignTasks(taskIdentifier, priority, taskBuilder, filter)
   },
 
-  takeOverCreeps: function(roomName: RoomName, taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void {
-    getCreepPool(roomName)?.takeOverCreeps(taskRunnerIdentifier, newIdentifier, newParentRoomName)
+  takeOverCreeps: function (roomName: RoomName, taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void {
+    getCreepPool(roomName)?.takeOverCreeps(taskIdentifier, newIdentifier, newParentRoomName)
   },
 
   addSpawnCreepRequest: function(roomName: RoomName, request: CreepSpawnRequest): void {

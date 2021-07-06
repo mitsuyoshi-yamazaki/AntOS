@@ -3,8 +3,7 @@ import { State, Stateful } from "os/infrastructure/state"
 import { OperatingSystem } from "os/os"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
-import { ObjectiveProcess, ObjectiveProcessState } from "./objective_process"
-import { BootstrapRoomProcess, BootstrapRoomProcessState } from "./bootstrap_room_process"
+import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 
 export type ProcessId = number
 
@@ -35,8 +34,7 @@ class ProcessTypes {
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as LoggerProcessState)
 
   // ---- v5 process ---- //
-  "ObjectiveProcess" = (state: ProcessState) => ObjectiveProcess.decode(state as ObjectiveProcessState)
-  "BootstrapRoomProcess" = (state: ProcessState) => BootstrapRoomProcess.decode(state as BootstrapRoomProcessState)
+  "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
 
   // ---- onetime processes ---- //
 }
