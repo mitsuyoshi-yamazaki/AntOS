@@ -49,7 +49,7 @@ export class RoomKeeperObjective implements LaunchableObjective {
       const request: CreepSpawnRequest = {
         priority: CreepSpawnRequestPriority.High,
         numberOfCreeps: insufficientCreepCount,
-        codename: generateCodename(this.constructor.name, 17),
+        codename: generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0)),
         roles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
         body: [CARRY, WORK, MOVE],
         initialTask: null,
@@ -70,7 +70,7 @@ export class RoomKeeperObjective implements LaunchableObjective {
         const request: CreepSpawnRequest = {
           priority: CreepSpawnRequestPriority.Medium,
           numberOfCreeps: insufficientWorkerCount,
-          codename: generateCodename(this.constructor.name, 17),
+          codename: generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0)),
           roles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
           body: null,
           initialTask: null,

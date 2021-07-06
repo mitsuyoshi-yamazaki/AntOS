@@ -55,7 +55,7 @@ export class BootstrapRoomObjective implements Objective {
       const request: CreepSpawnRequest = {
         priority: CreepSpawnRequestPriority.Low,
         numberOfCreeps: insufficientWorkerCount,
-        codename: generateCodename(this.constructor.name, 29),
+        codename: generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0)),
         roles: necessaryRoles,
         body: null,
         initialTask,

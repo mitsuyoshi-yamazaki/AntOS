@@ -45,7 +45,7 @@ export class ClaimRoomObjective implements Objective {
         const request: CreepSpawnRequest = {
           priority: CreepSpawnRequestPriority.Low,
           numberOfCreeps: 1,
-          codename: generateCodename(this.constructor.name, 23),
+          codename: generateCodename(this.constructor.name, this.targetRoomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0)),
           roles: necessaryRoles,
           body: null,
           initialTask: null,

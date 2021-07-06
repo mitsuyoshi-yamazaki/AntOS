@@ -227,8 +227,8 @@ export class Region {
           { id: '59f19ffa82100e1594f35d81', room_name: 'W48S6' }, // center
           { id: '59f19ffa82100e1594f35d82', room_name: 'W48S6' }, // bottom
           { id: '59f1c0ce7d0b3d79de5f0228', room_name: 'W48S6' }, // hydrogen
-          { id: '59f19feb82100e1594f35c03', room_name: 'W49S6' }, // top
-          { id: '59f19feb82100e1594f35c05', room_name: 'W49S6' }, // bottom
+          // { id: '59f19feb82100e1594f35c03', room_name: 'W49S6' }, // top
+          // { id: '59f19feb82100e1594f35c05', room_name: 'W49S6' }, // bottom
         ]
         rooms_need_scout = [
           // 'W49S6',
