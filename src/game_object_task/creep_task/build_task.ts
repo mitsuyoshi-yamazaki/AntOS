@@ -34,7 +34,6 @@ export class BuildTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.build(this.constructionSite)
 
     switch (result) {

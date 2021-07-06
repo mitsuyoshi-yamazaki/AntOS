@@ -1,8 +1,9 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction, TargetSpecifier } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
-interface InvaderMemory extends CreepMemory {
+interface InvaderMemory extends V4CreepMemory {
   pair_id: number
 }
 
@@ -96,6 +97,10 @@ export class InvaderSquad extends Squad {
     }
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
+
       switch (creep.memory.type) {
         case CreepType.WORKER:
           this.leader = creep
@@ -284,7 +289,7 @@ export class InvaderSquad extends Squad {
 
     const memory: InvaderMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -344,7 +349,7 @@ export class InvaderSquad extends Squad {
 
     const memory: InvaderMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -666,6 +671,10 @@ export class InvaderSquad extends Squad {
   }
 
   private runChargerCreep(creep: Creep, target_info: BoostInfo, terminal: StructureTerminal): void {
+    if (!isV4CreepMemory(creep.memory)) {
+      return
+    }
+
     const carry = creep.store.getUsedCapacity()
 
     if ((creep.ticksToLive || 0) < 15) {

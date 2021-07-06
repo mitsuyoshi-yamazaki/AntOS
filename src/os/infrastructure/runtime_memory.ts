@@ -1,4 +1,4 @@
-import { ProcessId } from "objective/process"
+import { ProcessId } from "process/process"
 
 export interface RuntimeMemory {
   processLogs: ProcessLog[]

@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
 interface Pair {
   name: string,
@@ -10,7 +11,7 @@ interface Pair {
   need_healer: boolean,
 }
 
-interface RemoteAttackerSquadMemory extends CreepMemory {
+interface RemoteAttackerSquadMemory extends V4CreepMemory {
   pair_name: string,
 }
 
@@ -41,6 +42,9 @@ export class RemoteAttackerSquad extends Squad {
     })
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       const memory = creep.memory as RemoteAttackerSquadMemory
       let pair: Pair | undefined = this.pairs.get(memory.pair_name || "")
 
@@ -237,7 +241,7 @@ export class RemoteAttackerSquad extends Squad {
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -269,7 +273,7 @@ export class RemoteAttackerSquad extends Squad {
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -301,7 +305,7 @@ export class RemoteAttackerSquad extends Squad {
     const name = this.generateNewName()
     const memory: RemoteAttackerSquadMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

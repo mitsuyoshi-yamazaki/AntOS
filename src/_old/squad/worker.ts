@@ -1,7 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType, WorkerSource } from "_old/creep"
-import { isNewLine } from "../../../node_modules/@types/acorn/index";
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep";
 
 interface WorkerSquadMemory extends SquadMemory {
   number_of_workers?: number
@@ -97,7 +97,13 @@ export class WorkerSquad extends Squad {
         max = 2000
       }
       else {
-        const number_of_carriers = Array.from(this.creeps.values()).filter(c=>c.memory.type == CreepType.CARRIER).length
+        const number_of_carriers = Array.from(this.creeps.values()).filter(c => {
+          if (!isV4CreepMemory(c.memory)) {
+            return false
+          }
+
+          return c.memory.type == CreepType.CARRIER
+        }).length
 
         if ((rcl >= 8) || ((rcl >= 6) && (this.creeps.size > 3) && (number_of_carriers < 2))) {
           body_unit = [CARRY, CARRY, MOVE]
@@ -114,9 +120,9 @@ export class WorkerSquad extends Squad {
 
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -169,6 +175,9 @@ export class WorkerSquad extends Squad {
 
     for (const creep_name of Array.from(this.creeps.keys())) {
       const creep = this.creeps.get(creep_name)!
+      if (!isV4CreepMemory(creep.memory)) {
+        continue
+      }
 
       if (creep.spawning) {
         continue

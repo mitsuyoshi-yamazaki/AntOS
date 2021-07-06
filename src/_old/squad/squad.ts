@@ -1,4 +1,4 @@
-import { UID } from "../../utility"
+import { V4CreepMemory } from "prototype/creep"
 import { CreepStatus, CreepType, ActionResult } from "_old/creep"
 
 export enum SpawnPriority {
@@ -39,7 +39,7 @@ export enum SquadStatus {
 }
 
 export interface SpawnFunction {
-  (body: BodyPartConstant[], name: string, opts?: { memory?: CreepMemory, energyStructures?: Array<(StructureSpawn | StructureExtension)>, dryRun?: boolean }): ScreepsReturnCode
+  (body: BodyPartConstant[], name: string, opts?: { memory?: V4CreepMemory, energyStructures?: Array<(StructureSpawn | StructureExtension)>, dryRun?: boolean }): ScreepsReturnCode
 }
 
 export interface SquadMemory {
@@ -173,13 +173,13 @@ export abstract class Squad {
   }
 
   // --- Utility
-  public addGeneralCreep(spawn_func: SpawnFunction, body: BodyPartConstant[], type: CreepType, opts?: {memory?: CreepMemory, let_thy_live?: boolean}): ScreepsReturnCode {
+  public addGeneralCreep(spawn_func: SpawnFunction, body: BodyPartConstant[], type: CreepType, opts?: {memory?: V4CreepMemory, let_thy_live?: boolean}): ScreepsReturnCode {
     opts = opts || {}
 
     const name = this.generateNewName()
-    const memory: CreepMemory = opts.memory || {
+    const memory: V4CreepMemory = opts.memory || {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -205,7 +205,7 @@ export abstract class Squad {
     return energyAvailable >= energyNeeded
   }
 
-  public addUpgrader(energyAvailable: number, spawnFunc: SpawnFunction, creep_type: CreepType, opts?: {max_energy?: number, memory?: CreepMemory}): void {
+  public addUpgrader(energyAvailable: number, spawnFunc: SpawnFunction, creep_type: CreepType, opts?: {max_energy?: number, memory?: V4CreepMemory}): void {
     opts = opts || {}
 
     const max_energy = opts.max_energy || 2000
@@ -221,9 +221,9 @@ export abstract class Squad {
 
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
-    const memory: CreepMemory = opts.memory || {
+    const memory: V4CreepMemory = opts.memory || {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,

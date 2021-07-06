@@ -1,12 +1,12 @@
-import { ResultFailed, ResultSucceeded, ResultType } from "utility/result"
+import { Result } from "utility/result"
 
-export function parseProcessId(args: string[]): ResultType<number, string> {
+export function parseProcessId(args: string[]): Result<number, string> {
   if (args.length <= 0) {
-    return new ResultFailed("Missing process ID argument")
+    return Result.Failed("Missing process ID argument")
   }
   const processId = parseInt(args[0], 10)
   if (isNaN(processId)) {
-    return new ResultFailed(`Invalid process ID argument ${args[0]}`)
+    return Result.Failed(`Invalid process ID argument ${args[0]}`)
   }
-  return new ResultSucceeded(processId)
+  return Result.Succeeded(processId)
 }

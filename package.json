@@ -32,7 +32,8 @@
   },
   "dependencies": {
     "screeps-profiler": "^2.0.1",
-    "source-map": "~0.6.1"
+    "source-map": "~0.6.1",
+    "ts-polyfill": "^3.8.2"
   },
   "scripts": {
     "test": "jest"

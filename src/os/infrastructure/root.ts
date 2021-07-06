@@ -1,12 +1,16 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeCreepTask } from "game_object_task/creep_task"
+import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
 import { decodeTowerTask } from "game_object_task/tower_task"
-import { OwnedRoomObjectCache } from "objective/room_keeper/owned_room_object_cache"
+import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
+import { isV5CreepMemory, V4CreepMemory } from "prototype/creep"
 import { InterShardMemoryManager } from "prototype/shard"
+import { decodeCreepTask } from "task/creep_task/creep_task"
 import { Migration } from "utility/migration"
-import { ApplicationProcessLauncher } from "./application_process_launcher"
-import { InfrastructureProcessLauncher } from "./infrastructure_process_launcher"
+import { ShortVersion } from "utility/system_info"
+import { World } from "world_info/world_info"
+import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
+import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
@@ -21,15 +25,13 @@ export class RootProcess {
   }
 
   public runBeforeTick(): void {
-    const ownedRooms = this.getOwnedRooms()
-
-    ErrorMapper.wrapLoop((): void => {
-      this.createOwnedRoomObjectsCache(ownedRooms)
-    }, "RootProcess.createOwnedRoomObjectsCache()")()
-
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess()
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      World.beforeTick()
+    }, "World.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.applicationProcessLauncher.launchProcess()
@@ -42,12 +44,12 @@ export class RootProcess {
 
   public runAfterTick(): void {
     ErrorMapper.wrapLoop((): void => {
-      this.storeTasks()
-    }, "RootProcess.storeTasks()")()
+      World.afterTick()
+    }, "World.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
-      OwnedRoomObjectCache.clearCache()
-    }, "OwnedRoomObjectCache.clearCache()")()
+      this.storeTasks()
+    }, "RootProcess.storeTasks()")()
 
     ErrorMapper.wrapLoop((): void => {
       InterShardMemoryManager.store()
@@ -55,19 +57,22 @@ export class RootProcess {
   }
 
   // ---- Private ---- //
-  private createOwnedRoomObjectsCache(ownedRooms: Room[]): void {
-    ownedRooms.forEach(room => {
-      OwnedRoomObjectCache.createCache(room)
-    })
-  }
-
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
+      const task = decodeCreepTask(creep)
       if (this.shouldCacheTasks) {
-        creep.task = decodeCreepTask(creep)
+        if (task != null) {
+          creep.task = task
+        } else {
+          creep.v4Task = decodeV4CreepTask(creep)
+        }
       } else {
-        creep._task = decodeCreepTask(creep)
+        if (task != null) {
+          creep._task = task
+        } else {
+          creep._v4Task = decodeV4CreepTask(creep)
+        }
       }
     }
     for (const spawnName in Game.spawns) {
@@ -78,7 +83,7 @@ export class RootProcess {
         spawn._task = decodeSpawnTask(spawn)
       }
     }
-    this.getAllTowers().forEach(tower => {
+    this.getAllV4Towers().forEach(tower => {
       if (this.shouldCacheTasks) {
         tower.task = decodeTowerTask(tower.id as Id<StructureTower>)
       } else {
@@ -91,13 +96,21 @@ export class RootProcess {
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      creep.memory.ts = creep.task?.encode() ?? null
+      if (creep.task != null && isV5CreepMemory(creep.memory)) {
+        creep.memory.t = creep.task.encode()
+      } else {
+        if (isV5CreepMemory(creep.memory)) {
+          creep.memory.t = null
+        } else {
+          (creep.memory as V4CreepMemory).ts = creep.v4Task?.encode() ?? null
+        }
+      }
     }
     for (const spawnName in Game.spawns) {
       const spawn = Game.spawns[spawnName]
       spawn.memory.ts = spawn.task?.encode() ?? null
     }
-    this.getAllTowers().forEach(tower => {
+    this.getAllV4Towers().forEach(tower => {
       if (Memory.towers[tower.id] == null) {
         Memory.towers[tower.id] = {
           ts: tower.task?.encode() ?? null
@@ -108,28 +121,11 @@ export class RootProcess {
     })
   }
 
-  private getOwnedRooms(): Room[] {
-    const ownedRooms: Room[] = []
-
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
-      if (room.controller == null) {
-        continue
-      }
-      if (room.controller.my !== true) {
-        continue
-      }
-      if (Migration.isOldRoom(roomName) === true) {
-        continue
-      }
-      ownedRooms.push(room)
-    }
-    return ownedRooms
-  }
-
-  private getAllTowers(): StructureTower[] {
-    return OwnedRoomObjectCache.allRoomObjects().reduce((result, current) => {
-      return result.concat(current.activeStructures.towers)
-    }, [] as StructureTower[])
+  private getAllV4Towers(): StructureTower[] {
+    return OwnedRoomObjectCache.allRoomObjects()
+      .filter(objects => Migration.roomVersion(objects.controller.room.name) === ShortVersion.v4)
+      .reduce((result, current) => {
+        return result.concat(current.activeStructures.towers)
+      }, [] as StructureTower[])
   }
 }

@@ -43,7 +43,6 @@ export class WithdrawTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.withdraw(this.target, this.resource)
 
     switch (result) {

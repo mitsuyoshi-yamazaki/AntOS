@@ -38,7 +38,6 @@ export class RangedAttackTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.rangedAttack(this.target)
     creep.heal(creep)
 

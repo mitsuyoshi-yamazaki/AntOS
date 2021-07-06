@@ -20,7 +20,8 @@ import { room_link, room_history_link } from "../utility";
 import { runTowers, RunTowersOpts } from "./tower";
 import { SwarmSquad } from "./squad/swarm";
 import { HarasserSquad } from "./squad/harasser";
-import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "objective/bridging/creep_provider_bridging_squad"
+import { CreepProviderBridgingSquad, CreepProviderBridgingSquadMemory } from "old_objective/bridging/creep_provider_bridging_squad"
+import { SystemInfo } from "utility/system_info"
 
 export enum RegionStatus {
   NORMAL              = 'normal',             // normal
@@ -141,8 +142,8 @@ export class Region {
         send_resources_to: [],
         send_resources_to_excludes: [],
         ancestor,
-        region_version: Game.version,
-        sign: Game.version,
+        region_version: SystemInfo.application.version,
+        sign: SystemInfo.application.version,
       }
 
       ErrorMapper.wrapLoop(() => {
@@ -226,14 +227,14 @@ export class Region {
           { id: '59f19ffa82100e1594f35d81', room_name: 'W48S6' }, // center
           { id: '59f19ffa82100e1594f35d82', room_name: 'W48S6' }, // bottom
           { id: '59f1c0ce7d0b3d79de5f0228', room_name: 'W48S6' }, // hydrogen
-          { id: '59f19feb82100e1594f35c03', room_name: 'W49S6' }, // top
-          { id: '59f19feb82100e1594f35c05', room_name: 'W49S6' }, // bottom
+          // { id: '59f19feb82100e1594f35c03', room_name: 'W49S6' }, // top
+          // { id: '59f19feb82100e1594f35c05', room_name: 'W49S6' }, // bottom
         ]
         rooms_need_scout = [
           // 'W49S6',
           // 'W48S5',
-          'W48S7',
-          'W49S5',
+          // 'W48S7',
+          // 'W49S5',
         ]
         rooms_need_to_be_defended = [
           // 'W49S6',

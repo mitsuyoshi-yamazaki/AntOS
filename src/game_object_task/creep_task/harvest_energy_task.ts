@@ -35,7 +35,6 @@ export class HarvestEnergyTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
 
     // キャッシュされたroute to sourceがあればそれを使う
     const result = creep.harvest(this.source)

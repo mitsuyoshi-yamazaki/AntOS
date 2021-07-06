@@ -3,8 +3,9 @@ import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./s
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
 import { runTowers } from "../tower";
 import { ErrorMapper } from "../../error_mapper/ErrorMapper";
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep";
 
-interface FarmerUpgraderMemory extends CreepMemory {
+interface FarmerUpgraderMemory extends V4CreepMemory {
   // pos: {x: number, y: number}
 }
 
@@ -102,6 +103,10 @@ export class FarmerSquad extends Squad {
     }
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
+
       switch (creep.memory.type) {
         case CreepType.UPGRADER:
           this.upgraders.all.push(creep)
@@ -126,6 +131,10 @@ export class FarmerSquad extends Squad {
     })
 
     this.upgraders.all = this.upgraders.all.sort((lhs, rhs) => {
+      if (!isV4CreepMemory(lhs.memory) || !isV4CreepMemory(rhs.memory)) {
+        return 0
+      }
+
       if ((lhs.memory.status == CreepStatus.WAITING_FOR_RENEW) || rhs.spawning) {
         return -1
       }
@@ -164,12 +173,16 @@ export class FarmerSquad extends Squad {
 
     if ((Game.time % 193) == 1) {
       const renew_upgraders = this.upgraders.sorted.filter((creep) => {
+        if (!isV4CreepMemory(creep.memory)) {
+          return false
+        }
+
         return !creep.memory.let_thy_die
       })
 
       console.log(`FarmerSquad upgrader_max: ${this.upgrader_max}, renew: ${renew_upgraders.length}, ${this.name}`)
 
-      if ((renew_upgraders.length > this.upgrader_max) && renew_upgraders[0]) {
+      if ((renew_upgraders.length > this.upgrader_max) && renew_upgraders[0] && isV4CreepMemory(renew_upgraders[0].memory)) {
         renew_upgraders[0].memory.let_thy_die = true
         console.log(`FarmerSquad let_thy_die: ${renew_upgraders[0].name}, ${this.name}`)
       }
@@ -249,7 +262,7 @@ export class FarmerSquad extends Squad {
       }
 
       const oldest_upgrader = this.upgraders.renew
-      if (oldest_upgrader && ((oldest_upgrader.spawning) || (oldest_upgrader.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((oldest_upgrader.ticksToLive || 0) < 160))) {
+      if (oldest_upgrader && ((oldest_upgrader.spawning) || (isV4CreepMemory(oldest_upgrader.memory) && (oldest_upgrader.memory.status == CreepStatus.WAITING_FOR_RENEW)) || ((oldest_upgrader.ticksToLive || 0) < 160))) {
         this.stop_upgrader_spawn = true
       }
       else {
@@ -481,7 +494,7 @@ export class FarmerSquad extends Squad {
 
     const memory: FarmerUpgraderMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -505,9 +518,9 @@ export class FarmerSquad extends Squad {
 
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
-    const memory: CreepMemory = {
+    const memory: V4CreepMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -576,8 +589,9 @@ export class FarmerSquad extends Squad {
       // creep.repair(Game.getObjectById('5b7bd895e11abe3f9e43e116') as StructureRampart)
     })
 
-    if (this.upgraders.renew) {
+    if (this.upgraders.renew && isV4CreepMemory(this.upgraders.renew.memory)) {
       const creep = this.upgraders.renew
+      const creepMemory = this.upgraders.renew.memory
       const pos = new RoomPosition(this.renew_position.x, this.renew_position.y, this.room_name)
 
       if ((creep.room.name != this.room_name) || (creep.pos.x != pos.x) || (creep.pos.y != pos.y)) {
@@ -589,7 +603,7 @@ export class FarmerSquad extends Squad {
 
       const dying_tick = 3
       const dying = ((creep.ticksToLive || 1500) <= dying_tick)
-      const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || dying)
+      const needs_renew = !creepMemory.let_thy_die && ((creepMemory.status == CreepStatus.WAITING_FOR_RENEW) || dying)
 
       if (needs_renew) {
         if (((creep.ticksToLive || 1500) == dying_tick) && creep.boosted()) {
@@ -646,10 +660,10 @@ export class FarmerSquad extends Squad {
             }
           }
           creep.say(`RENEWED`)
-          creep.memory.status = CreepStatus.NONE
+          creepMemory.status = CreepStatus.NONE
         }
         else if (this.spawn) {
-          creep.memory.status = CreepStatus.WAITING_FOR_RENEW
+          creepMemory.status = CreepStatus.WAITING_FOR_RENEW
           this.spawn.renewCreep(creep)
           creep.transfer(this.spawn, RESOURCE_ENERGY)
         }

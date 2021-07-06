@@ -1,6 +1,7 @@
 import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 import { StructureSpawnTask, StructureSpawnTaskState } from "game_object_task/spawn_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { V4CreepMemory } from "prototype/creep"
 import { roomLink } from "utility/log"
 
 export interface SpawnCreepTaskState extends StructureSpawnTaskState {
@@ -11,7 +12,7 @@ export interface SpawnCreepTaskState extends StructureSpawnTaskState {
   b: BodyPartConstant[]
 
   /** memory */
-  m: CreepMemory
+  m: V4CreepMemory
 }
 
 export class SpawnCreepTask implements StructureSpawnTask {
@@ -21,7 +22,7 @@ export class SpawnCreepTask implements StructureSpawnTask {
     public readonly startTime: number,
     public readonly creepName: string,
     private readonly body: BodyPartConstant[],
-    private readonly memory: CreepMemory,
+    private readonly memory: V4CreepMemory,
   ) {
     this.bodyCost = body.reduce((result, current) => result + BODYPART_COST[current], 0)
   }

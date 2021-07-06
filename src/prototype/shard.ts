@@ -1,4 +1,4 @@
-import { SingleCreepProviderCreepRequest } from "objective/creep_provider/single_creep_provider_objective"
+import { SingleCreepProviderCreepRequest } from "old_objective/creep_provider/single_creep_provider_objective"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "./creep"
 import { RoomName } from "./room"

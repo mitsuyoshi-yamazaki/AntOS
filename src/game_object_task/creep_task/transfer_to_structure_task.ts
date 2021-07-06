@@ -34,7 +34,6 @@ export class TransferToStructureTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       return "finished"

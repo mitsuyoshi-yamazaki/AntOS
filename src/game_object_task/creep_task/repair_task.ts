@@ -3,18 +3,18 @@ import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
 
 export interface RepairTaskState extends CreepTaskState {
   /** target id */
-  i: Id<AnyOwnedStructure>
+  i: Id<AnyStructure>
 }
 
 export class RepairTask implements CreepTask {
   public readonly shortDescription = "repair"
-  public get targetId(): Id<AnyOwnedStructure> {
+  public get targetId(): Id<AnyStructure> {
     return this.structure.id
   }
 
   public constructor(
     public readonly startTime: number,
-    public readonly structure: AnyOwnedStructure,
+    public readonly structure: AnyStructure,
   ) { }
 
   public encode(): RepairTaskState {
@@ -34,7 +34,6 @@ export class RepairTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const result = creep.repair(this.structure)
 
     switch (result) {

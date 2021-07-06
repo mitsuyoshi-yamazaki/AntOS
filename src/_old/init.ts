@@ -4,12 +4,11 @@ import { init as creepInit } from "_old/creep"
 import { init as spawnInit } from "_old/spawn"
 import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
-import { isSimulation } from "utility/game"
-
-const version = '4.10.15'
+import { World } from "world_info/world_info"
+import { SystemInfo } from "utility/system_info"
+import { isV4CreepMemory } from "prototype/creep"
 
 export function init(): void {
-  Game.version = version
   const now = Game.time
 
   Memory.last_tick = now
@@ -17,9 +16,10 @@ export function init(): void {
   if (!Memory.versions) {
     Memory.versions = []
   }
-  if (Memory.versions.indexOf(Game.version) < 0) {
-    Memory.versions.push(Game.version)
-    console.log(`Updated v${Game.version}`)
+  const version = SystemInfo.application.version
+  if (Memory.versions.indexOf(version) < 0) {
+    Memory.versions.push(version)
+    console.log(`Updated v${version}`)
   }
 
   if (Memory.towers == null) {
@@ -90,8 +90,6 @@ export function init(): void {
 }
 
 export function tick(): void {
-  Game.version = version
-
   const time = Game.time
 
   if ((time % 2099) == 0) {
@@ -118,7 +116,7 @@ export function tick(): void {
 
   Memory.cpu.last_bucket = current_bucket
 
-  if (((Game.time % cpu_ticks) === 0) && (isSimulation() !== true)) {
+  if (((Game.time % cpu_ticks) === 0) && (World.isSimulation() !== true)) {
     const limit = Game.cpu.limit
 
     const info = 'info'
@@ -212,11 +210,6 @@ export function tick(): void {
 
   roomTick()
 
-  if ((Game.time % 89) == 1) {
-    refreshMemory()
-    console.log(`Init refresh memory at ${Game.time}`)
-  }
-
   for (const room_name in Game.rooms) {
     const room = Game.rooms[room_name]
     room.initialize()
@@ -230,6 +223,10 @@ export function tick(): void {
 
   for (const creep_name in Game.creeps) {
     const creep = Game.creeps[creep_name]
+    if (!isV4CreepMemory(creep.memory)) {
+      continue
+    }
+
     const squad_name = creep.memory.squad_name
 
     if (!squad_name) {
@@ -241,16 +238,6 @@ export function tick(): void {
     }
 
     Game.squad_creeps[squad_name].push(creep)
-  }
-}
-
-function refreshMemory() {
-  // @todo: clear spawn, squad memory
-  // Automatically delete memory of missing creeps
-  for (const name in Memory.creeps) {
-    if (!(name in Game.creeps)) {
-      delete Memory.creeps[name]
-    }
   }
 }
 

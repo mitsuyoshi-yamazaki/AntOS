@@ -1,8 +1,9 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
 
-interface ManualMemory extends CreepMemory {
+interface ManualMemory extends V4CreepMemory {
   target_id?: string
   target_ids?: string[]
   target_room?: string
@@ -367,9 +368,9 @@ export class ManualSquad extends Squad {
 
         const name = this.generateNewName()
         let body: BodyPartConstant[] = []
-        const memory: CreepMemory = {
+        const memory: V4CreepMemory = {
           ts: null,
-          tt: 0,
+
           squad_name: this.name,
           status: CreepStatus.NONE,
           birth_time: Game.time,
@@ -587,7 +588,7 @@ export class ManualSquad extends Squad {
     const name = this.generateNewName()
     const memory: ManualMemory = {
       ts: null,
-      tt: 0,
+
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -728,6 +729,9 @@ export class ManualSquad extends Squad {
     const destination = this.base_room.storage
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }
@@ -794,6 +798,9 @@ export class ManualSquad extends Squad {
   // ---
   private renewIfNeeded(): void {
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 350) && (creep.carry.energy > (creep.carryCapacity * 0.8))))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
 
       if (needs_renew) {
@@ -822,6 +829,9 @@ export class ManualSquad extends Squad {
     const before_cpu = Game.cpu.getUsed()
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       if (creep.spawning) {
         return
       }

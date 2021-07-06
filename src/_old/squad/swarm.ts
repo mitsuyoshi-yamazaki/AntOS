@@ -1,6 +1,7 @@
 import { UID } from "../../utility"
 import { Squad, SquadType, SquadMemory, SpawnPriority, SpawnFunction } from "./squad"
 import { CreepStatus, ActionResult, CreepType } from "_old/creep"
+import { isV4CreepMemory } from "prototype/creep"
 
 interface SwarmSquadMemory extends SquadMemory {
   target_room_names: string[]
@@ -28,6 +29,9 @@ export class SwarmSquad extends Squad {
     super(name, base_room)
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       switch (creep.memory.type) {
         case CreepType.ATTACKER:
           this.attackers.push(creep)
@@ -261,6 +265,9 @@ export class SwarmSquad extends Squad {
     const target_room_name = this.current_target_room_name
 
     this.creeps.forEach((creep) => {
+      if (!isV4CreepMemory(creep.memory)) {
+        return
+      }
       const should_escape = creep.hits < (creep.hitsMax * 0.7)
 
       if (should_escape || ((creep.room.name == waypoint.roomName) && (creep.hits < creep.hitsMax))) {

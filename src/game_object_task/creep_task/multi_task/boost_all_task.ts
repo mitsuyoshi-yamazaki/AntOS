@@ -39,7 +39,6 @@ export class BoostAllTask implements CreepTask {
   }
 
   public run(creep: Creep): GameObjectTaskReturnCode {
-    creep.memory.tt = Game.time
     const lab = this.labs[0]
     if (lab == null) {
       return "finished"

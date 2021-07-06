@@ -1,4 +1,5 @@
 import { StructureSpawnTaskState } from "game_object_task/spawn_task";
+import { isV4CreepMemory } from "prototype/creep";
 import { CreepStatus, ActionResult } from "./creep";
 
 declare global {
@@ -40,6 +41,9 @@ export function init() {
   StructureSpawn.prototype.renewSurroundingCreeps = function(): ActionResult {
     const creeps_need_renew = this.pos.findInRange(FIND_MY_CREEPS, 1, {
       filter: (creep: Creep) => {
+        if (!isV4CreepMemory(creep.memory)) {
+          return false
+        }
         return creep.memory.status == CreepStatus.WAITING_FOR_RENEW
       }
     }) as Creep[]
