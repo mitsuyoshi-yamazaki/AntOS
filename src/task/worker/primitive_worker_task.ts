@@ -65,7 +65,8 @@ export class PrimitiveWorkerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const minimumCreepCount = creepCountForSource * objects.sources.length
-    const creepInsufficiencyProblemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const filterTaskIdentifier = null
+    const creepInsufficiencyProblemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
     if (creepInsufficiencyProblemFinder.problemExists() && this.isSolvingProblem(creepInsufficiencyProblemFinder.identifier) !== true) {
       const solver = creepInsufficiencyProblemFinder.getProblemSolvers()[0]
       if (solver instanceof CreepInsufficiencyProblemSolver) {
@@ -78,7 +79,7 @@ export class PrimitiveWorkerTask extends Task {
 
     World.resourcePools.assignTasks(
       objects.controller.room.name,
-      null,
+      filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep, objects)

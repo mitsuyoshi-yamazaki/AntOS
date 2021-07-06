@@ -37,6 +37,9 @@ export class CreepInsufficiencyProblemFinder implements ProblemFinder {
   }
 
   public getProblemSolvers(): ProblemSolver[] {
+    if (this.problemExists() !== true) {
+      return []
+    }
     return [
       CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.necessaryRoles, this.targetTaskIdentifier, this.minimumCreepCount)
     ]
