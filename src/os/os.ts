@@ -1,7 +1,7 @@
 import { Result } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeProcessFrom, Process, ProcessId, ProcessState } from "process/process"
-import { isProcedural } from "old_objective/procedural"
+import { isProcedural } from "process/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
 import { LoggerProcess } from "./process/logger"

@@ -1,4 +1,4 @@
-import { Procedural } from "old_objective/procedural"
+import { Procedural } from "process/procedural"
 import { Process, ProcessId, processLog, ProcessState } from "process/process"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"

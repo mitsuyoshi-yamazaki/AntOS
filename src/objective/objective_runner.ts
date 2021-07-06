@@ -2,7 +2,7 @@ import { createObjectives, isLaunchableObjectiveType, LaunchableObjectiveType, O
 import { Problem } from "objective/problem"
 import { ProblemSolver, ProblemSolverState } from "objective/problem_solver"
 import { TaskRunner } from "objective/task_runner"
-import { Procedural } from "old_objective/procedural"
+import { Procedural } from "process/procedural"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
