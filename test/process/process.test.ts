@@ -1,4 +1,4 @@
-import { isProcedural, Procedural } from "../../src/old_objective/procedural"
+import { isProcedural, Procedural } from "../../src/process/procedural"
 
 class SomeObject { }
 

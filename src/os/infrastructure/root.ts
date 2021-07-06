@@ -1,13 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_task"
 import { decodeSpawnTask } from "game_object_task/spawn_task"
-import { decodeTowerTask } from "game_object_task/tower_task"
-import { OwnedRoomObjectCache } from "old_objective/room_keeper/owned_room_object_cache"
 import { isV5CreepMemory, V4CreepMemory } from "prototype/creep"
-import { InterShardMemoryManager } from "prototype/shard"
 import { decodeCreepTask } from "task/creep_task/creep_task"
-import { Migration } from "utility/migration"
-import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
@@ -50,10 +45,6 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       this.storeTasks()
     }, "RootProcess.storeTasks()")()
-
-    ErrorMapper.wrapLoop((): void => {
-      InterShardMemoryManager.store()
-    }, "InterShardMemoryManager.store()")()
   }
 
   // ---- Private ---- //
@@ -83,13 +74,6 @@ export class RootProcess {
         spawn._task = decodeSpawnTask(spawn)
       }
     }
-    this.getAllV4Towers().forEach(tower => {
-      if (this.shouldCacheTasks) {
-        tower.task = decodeTowerTask(tower.id as Id<StructureTower>)
-      } else {
-        tower._task = decodeTowerTask(tower.id as Id<StructureTower>)
-      }
-    })
     this.shouldCacheTasks = false
   }
 
@@ -110,22 +94,5 @@ export class RootProcess {
       const spawn = Game.spawns[spawnName]
       spawn.memory.ts = spawn.task?.encode() ?? null
     }
-    this.getAllV4Towers().forEach(tower => {
-      if (Memory.towers[tower.id] == null) {
-        Memory.towers[tower.id] = {
-          ts: tower.task?.encode() ?? null
-        }
-      } else {
-        Memory.towers[tower.id].ts = tower.task?.encode() ?? null
-      }
-    })
-  }
-
-  private getAllV4Towers(): StructureTower[] {
-    return OwnedRoomObjectCache.allRoomObjects()
-      .filter(objects => Migration.roomVersion(objects.controller.room.name) === ShortVersion.v4)
-      .reduce((result, current) => {
-        return result.concat(current.activeStructures.towers)
-      }, [] as StructureTower[])
   }
 }

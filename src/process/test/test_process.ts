@@ -1,4 +1,4 @@
-import { Procedural } from "old_objective/procedural"
+import { Procedural } from "process/procedural"
 import { Process, processLog, ProcessState } from "process/process"
 
 export interface TestProcessState extends ProcessState {
