@@ -1,5 +1,5 @@
 import { Process } from "process/process"
-import { TestProcess } from "old_objective/test/test_process"
+import { TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { BootstrapL8RoomObjective } from "old_objective/bootstrap_room/bootstarp_l8_room_objective"
