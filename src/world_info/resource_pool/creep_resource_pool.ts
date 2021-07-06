@@ -2,8 +2,8 @@ import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "prototype/room"
-import { CreepTask } from "task/creep_task/creep_task"
-import { TaskProgressType } from "task/object_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
+import { TaskProgressType } from "object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
 // Worldをimportしない
 

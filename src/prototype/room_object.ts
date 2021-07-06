@@ -1,5 +1,5 @@
 import { TaskRunnerType } from "game_object_task/game_object_task"
-import { TaskTargetCache } from "task/object_task_target_cache"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower  // TODO: まだある
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep

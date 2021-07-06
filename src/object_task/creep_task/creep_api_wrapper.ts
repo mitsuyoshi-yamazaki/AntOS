@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ApiWrapper, ApiWrapperState } from "task/api_wrapper"
+import { ApiWrapper, ApiWrapperState } from "object_task/api_wrapper"
 import { BuildApiWrapper, BuildApiWrapperState } from "./api_wrapper/build_api_wrapper"
 import { ClaimControllerApiWrapper, ClaimControllerApiWrapperState } from "./api_wrapper/claim_controller_api_wrapper"
 import { HarvestEnergyApiWrapper, HarvestEnergyApiWrapperState } from "./api_wrapper/harvest_energy_api_wrapper"

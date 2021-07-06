@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
-import { ApiWrapper } from "task/api_wrapper"
-import { TargetingApiWrapper } from "task/targeting_api_wrapper"
+import { ApiWrapper } from "object_task/api_wrapper"
+import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 

@@ -1,7 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
-import { ObjectTask, ObjectTaskState, TaskProgressType } from "task/object_task"
+import { ObjectTask, ObjectTaskState, TaskProgressType } from "object_task/object_task"
 import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./combined_task/move_harvest_energy_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./meta_task/move_to_room_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./combined_task/move_to_target_task"
