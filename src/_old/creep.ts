@@ -518,6 +518,9 @@ export function init() {
               if (!structure.room.storage) {
                 return false
               }
+              if (structure.room.energyAvailable < structure.room.energyCapacityAvailable / 3) {
+                return false
+              }
               const is_rcl8 = !(!structure.room.controller) && structure.room.controller.my && (structure.room.controller.level == 8)
 
               const energy = 100000//(is_rcl8 && (structure.room.storage.store.energy > 200000)) ? 150000 : 100000
@@ -573,6 +576,9 @@ export function init() {
               else if (structure.structureType == STRUCTURE_TERMINAL) {
                 // structure.store.energyを変更する際はtransferLinkToStorageも
                 if (!structure.room.storage) {
+                  return false
+                }
+                if (structure.room.energyAvailable < structure.room.energyCapacityAvailable / 3) {
                   return false
                 }
                 const is_rcl8 = !(!structure.room.controller) && structure.room.controller.my && (structure.room.controller.level == 8)
