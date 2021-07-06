@@ -10,7 +10,6 @@ import { ActionResult } from "./creep"
 import { populateLOANlist } from "./loanUserList"
 import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
-import { SingleCreepProviderCreepRequest } from "old_objective/creep_provider/single_creep_provider_objective"
 import { SystemInfo } from "utility/system_info"
 import { isV4CreepMemory } from "prototype/creep"
 
@@ -169,8 +168,6 @@ declare global {
     }
 
     towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>
-
-    creepRequests: { [index: string]: SingleCreepProviderCreepRequest[] }  // index: room name
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined

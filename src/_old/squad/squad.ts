@@ -28,7 +28,6 @@ export enum SquadType {
   NUKER_CHARGER_SQUAD = "nuker_charger",
   REMOTE_ATTACKER   = 'remote_attacker',
   FARMER = 'farmer',
-  CREEP_PROVIDER_BRIDGING_SQUAD = 'creep_provider_bridging_squad',
 }
 
 export enum SquadStatus {

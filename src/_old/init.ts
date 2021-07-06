@@ -26,10 +26,6 @@ export function init(): void {
     Memory.towers = {}
   }
 
-  if (Memory.creepRequests == null) {
-    Memory.creepRequests = {}
-  }
-
   if (!Memory.empires) {
     Memory.empires = {}
   }
