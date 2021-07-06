@@ -45,19 +45,22 @@ export function decodeCreepTask(creep: Creep): CreepTask | null {
 }
 
 export function decodeCreepTaskFromState(state: CreepTaskState): CreepTask | null {
-  const result = ErrorMapper.wrapLoop((): CreepTask | null => {
+  const result = ErrorMapper.wrapLoop((): CreepTask | false => {
     const decoder = decoderMap[state.t]
     if (decoder == null) {
       const message = `Decode failed by program bug: missing decoder (task type identifier: ${state.t})`
       PrimitiveLogger.fatal(message)
-      return null
+      return false
     }
-    return decoder(state)
+    return decoder(state) ?? false
   }, `decodeCreepTaskFromState(), objective type: ${state.t}`)()
 
   if (result == null) {
     const message = `Decode failed by program bug (task type identifier: ${state.t})`
     PrimitiveLogger.fatal(message)
+    return null
+  }
+  if (result === false) {
     return null
   }
   return result
