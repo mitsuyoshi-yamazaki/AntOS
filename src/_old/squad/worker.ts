@@ -176,7 +176,7 @@ export class WorkerSquad extends Squad {
     for (const creep_name of Array.from(this.creeps.keys())) {
       const creep = this.creeps.get(creep_name)!
       if (!isV4CreepMemory(creep.memory)) {
-        return
+        continue
       }
 
       if (creep.spawning) {

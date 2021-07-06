@@ -1205,7 +1205,7 @@ export function init() {
           for (const creep_name in Game.creeps) {
             const creep = Game.creeps[creep_name]
             if (!isV4CreepMemory(creep.memory)) {
-              return
+              continue
             }
             if ((creep.room.name == this.room.name) && (creep.memory.type == CreepType.WORKER)) {
               if (creep.memory.status == CreepStatus.CHARGE) {
@@ -1390,7 +1390,7 @@ export function init() {
         for (const creep_name in Game.creeps) {
           const creep = Game.creeps[creep_name]
           if (!isV4CreepMemory(creep.memory)) {
-            return
+            continue
           }
 
           if ((creep.room.name == this.room.name) && (creep.memory.type == CreepType.WORKER)) {

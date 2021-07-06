@@ -975,7 +975,7 @@ export function tick(): void {
       for (const creep_name in Game.creeps) {
         const creep = Game.creeps[creep_name]
         if (!isV4CreepMemory(creep.memory)) {
-          return
+          continue
         }
 
         if (creep.memory.squad_name != squad_name) {
