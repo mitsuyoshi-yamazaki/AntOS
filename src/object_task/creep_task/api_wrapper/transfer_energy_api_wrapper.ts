@@ -6,7 +6,7 @@ import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 
 type TransferEnergyApiWrapperResult = FINISHED | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
-type TransferEnergyApiWrapperTargetType = AnyCreep | StructureContainer | StructureStorage | StructureTerminal | StructureSpawn | StructureExtension | StructureTower
+export type TransferEnergyApiWrapperTargetType = AnyCreep | StructureContainer | StructureStorage | StructureTerminal | StructureSpawn | StructureExtension | StructureTower
 
 export interface TransferEnergyApiWrapperState extends CreepApiWrapperState {
   /** target id */

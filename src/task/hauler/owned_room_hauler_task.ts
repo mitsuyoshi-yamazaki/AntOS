@@ -16,6 +16,7 @@ import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_ener
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "./owned_room_energy_source_task"
 import { EnergySource, EnergyStore } from "prototype/room_object"
+import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -140,12 +141,12 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     if (objects.activeStructures.storage != null) {
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
+      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)
     if (structureToCharge != null) {
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
     creep.say("no storage")
     return null
