@@ -64,10 +64,6 @@ export class WorkerTask extends Task {
 
   // ---- Private ---- //
   private checkPrimitiveWorkerTask(objects: OwnedRoomObjects): void {
-    if (this.roomName !== "W24S29") {
-      return  // FixMe:
-    }
-
     const primitiveWorkerTask = this.children.find(task => task instanceof PrimitiveWorkerTask) as PrimitiveWorkerTask | undefined
     if (primitiveWorkerTask == null) {
       return
