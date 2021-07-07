@@ -39,12 +39,18 @@ export class RemoteRoomManagerTask extends Task {
 
   public static create(roomName: RoomName): RemoteRoomManagerTask {
     const children: Task[] = []
+    const parentRoomStatus = Game.map.getRoomStatus(roomName).status
 
     const exits = Game.map.describeExits(roomName)
     for (const [, neighbourRoomName] of Object.entries(exits)) {
-      if (roomTypeOf(neighbourRoomName) === "normal") {
-        children.push(RemoteRoomKeeperTask.create(roomName, neighbourRoomName))
+      if (roomTypeOf(neighbourRoomName) !== "normal") {
+        continue
       }
+      const roomStatus = Game.map.getRoomStatus(neighbourRoomName)
+      if (roomStatus.status !== parentRoomStatus) {
+        continue
+      }
+      children.push(RemoteRoomKeeperTask.create(roomName, neighbourRoomName))
     }
 
     return new RemoteRoomManagerTask(Game.time, children, roomName)

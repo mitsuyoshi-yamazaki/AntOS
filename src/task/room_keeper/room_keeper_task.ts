@@ -9,6 +9,7 @@ import { decodeTasksFrom } from "task/task_decoder"
 import { WorkerTask } from "task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { RemoteRoomManagerTask } from "task/remote_room_keeper/remote_room_manager_task"
+import { PrimitiveWorkerTask } from "task/worker/primitive_worker_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
