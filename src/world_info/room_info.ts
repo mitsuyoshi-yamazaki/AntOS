@@ -66,10 +66,12 @@ function enumerateObjects(controller: StructureController, creeps: Creep[]): Own
 }
 
 export class OwnedRoomObjects {
-
   public readonly sources: Source[]
   public readonly constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
+
+  /** Decayed structureは含めない */
   public readonly damagedStructures: AnyStructure[]
+  public readonly decayedStructures: AnyStructure[]
   public readonly activeStructures: {
     spawns: StructureSpawn[]
     extensions: StructureExtension[]
@@ -121,6 +123,12 @@ export class OwnedRoomObjects {
     // this.energyStores.push(...energyStoreCreeps)
 
     this.damagedStructures = []
+    this.decayedStructures = [] // TODO: rampartを含める
+    const checkDecayed = ((structure: AnyStructure): void => {
+      if (structure.hits < structure.hitsMax * 0.6) {
+        this.decayedStructures.push(structure)
+      }
+    })
 
     const spawns: StructureSpawn[] = []
     const extensions: StructureExtension[] = []
@@ -167,6 +175,7 @@ export class OwnedRoomObjects {
           this.energySources.push(structure)
           this.energyStores.push(structure)
         }
+        checkDecayed(structure)
         break
       case STRUCTURE_STORAGE:
         storage = structure
@@ -178,6 +187,9 @@ export class OwnedRoomObjects {
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
+        break
+      case STRUCTURE_ROAD:
+        checkDecayed(structure)
         break
       default:
         break // TODO: 全て網羅する
