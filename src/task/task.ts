@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import { isProblemSolver } from "problem/problem_solver"
+import { isProblemSolver, ProblemSolver } from "problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskType } from "./task_decoder"
 
@@ -46,11 +46,24 @@ export abstract class Task implements Stateful {
   abstract runTask(objects: OwnedRoomObjects, finishedTasks: Task[], failedTasks: Task[]): TaskStatus
 
   public description(): string {
-    return this.constructor.name
+    return this.taskIdentifier
   }
 
-  protected isSolvingProblem(problemIdentifier: ProblemIdentifier): boolean {
-    return this.solvingProblemIdentifiers.includes(problemIdentifier)
+  protected checkProblemFinders(problemFinders: ProblemFinder[]): void {
+    problemFinders.forEach(problemFinder => {
+      if (problemFinder.problemExists() !== true) {
+        return
+      }
+      if (this.isSolvingProblem(problemFinder.identifier)) {
+        return
+      }
+      const problemSolvers = problemFinder.getProblemSolvers()
+      const solver = problemSolvers[0]  // TODO: 最適なものを選択する
+      if (solver == null) {
+        return
+      }
+      this.addChildTask(solver)
+    })
   }
 
   protected addChildTask(task: Task): void {
@@ -59,6 +72,15 @@ export abstract class Task implements Stateful {
       return
     }
     this.children.push(task)
+  }
+
+  protected removeChildTask(task: Task): void {
+    const index = this.children.indexOf(task)
+    if (index < 0) {
+      PrimitiveLogger.fatal(`[Program bug] Attempt to remove task ${task.description()} that is not in the list ${this.description()}`)
+      return
+    }
+    this.children.splice(index, 1)
   }
 
   public run(objects: OwnedRoomObjects): TaskStatus {
@@ -95,6 +117,10 @@ export abstract class Task implements Stateful {
 
   // ---- Private ---- //
   private solvingProblemIdentifiers: ProblemIdentifier[] = []
+
+  private isSolvingProblem(problemIdentifier: ProblemIdentifier): boolean {
+    return this.solvingProblemIdentifiers.includes(problemIdentifier)
+  }
 
   private removeChildTasks(tasks: Task[]): void {
     tasks.forEach(task => {

@@ -7,7 +7,6 @@ import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wr
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
-import { MoveHarvestEnergyTask } from "object_task/creep_task/combined_task/move_harvest_energy_task"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
@@ -15,19 +14,20 @@ import { World } from "world_info/world_info"
 import { CreepInsufficiencyProblemFinder } from "problem/creep_insufficiency/creep_insufficiency_problem_finder"
 import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insufficiency_problem_solver"
 import { generateCodename } from "utility/unique_id"
+import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { ProblemFinder } from "problem/problem_finder"
 
-const creepCountForSource = 6
+const creepCount = 6
 
-export interface PrimitiveWorkerTaskState extends TaskState {
+export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
   r: RoomName
 }
 
 /**
- * - harvest, build, upgrade全て行う
+ * - build, upgradeを行う
  */
-export class PrimitiveWorkerTask extends Task {
+export class GeneralWorkerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
   private constructor(
@@ -40,22 +40,22 @@ export class PrimitiveWorkerTask extends Task {
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
   }
 
-  public encode(): PrimitiveWorkerTaskState {
+  public encode(): GeneralWorkerTaskState {
     return {
-      t: "PrimitiveWorkerTask",
+      t: "GeneralWorkerTask",
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
     }
   }
 
-  public static decode(state: PrimitiveWorkerTaskState): PrimitiveWorkerTask {
+  public static decode(state: GeneralWorkerTaskState): GeneralWorkerTask {
     const children = decodeTasksFrom(state.c)
-    return new PrimitiveWorkerTask(state.s, children, state.r)
+    return new GeneralWorkerTask(state.s, children, state.r)
   }
 
-  public static create(roomName: RoomName): PrimitiveWorkerTask {
-    return new PrimitiveWorkerTask(Game.time, [], roomName)
+  public static create(roomName: RoomName): GeneralWorkerTask {
+    return new GeneralWorkerTask(Game.time, [], roomName)
   }
 
   public description(): string {
@@ -63,7 +63,7 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
+    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover] // TODO: 移動距離が短いのでMOVEをひとつ減らす
     const filterTaskIdentifier = null
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
@@ -89,7 +89,7 @@ export class PrimitiveWorkerTask extends Task {
   // ---- Problem Solver ---- //
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
-    const minimumCreepCount = creepCountForSource * objects.sources.length
+    const minimumCreepCount = creepCount * objects.sources.length
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
@@ -115,11 +115,11 @@ export class PrimitiveWorkerTask extends Task {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
-      const source = objects.getSource(creep.pos)
-      if (source == null) {
-        return null
+      const energyStore = objects.getEnergyStore(creep.pos)
+      if (energyStore != null) {
+        return MoveToTargetTask.create(GetEnergyApiWrapper.create(energyStore))
       }
-      return MoveHarvestEnergyTask.create(source)
+      return null
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)

@@ -5,32 +5,6 @@ import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
 // Worldをimportしない
 
-export interface OwnedRoomObjects {
-  controller: StructureController
-  sources: Source[]
-  constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
-  damagedStructures: AnyStructure[]
-  activeStructures: {
-    spawns: StructureSpawn[]
-    extensions: StructureExtension[]
-    towers: StructureTower[]
-
-    chargeableStructures: EnergyChargeableStructure[]
-  }
-  hostiles: {
-    creeps: Creep[]
-    powerCreeps: PowerCreep[]
-  }
-  alliances: {
-    creeps: Creep[]
-    powerCreeps: PowerCreep[]
-  }
-  droppedResources: Resource[]
-  tombStones: Tombstone[]
-  energyStores: EnergyStore[] // TODO: Creepも含める
-  flags: Flag[]
-}
-
 const allVisibleRooms: Room[] = []
 const ownedRooms: Room[] = []
 const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
@@ -90,142 +64,223 @@ export const Rooms: RoomsInterface = {
 
 // ---- Function ---- //
 function enumerateObjects(controller: StructureController, creeps: Creep[]): OwnedRoomObjects {
-  const room = controller.room
+  return new OwnedRoomObjects(controller, creeps)
+}
 
-  const sources = room.find(FIND_SOURCES)
-  const spawns: StructureSpawn[] = []
-  const extensions: StructureExtension[] = []
-  const towers: StructureTower[] = []
-  const damagedStructures: AnyStructure[] = []
-  const chargeableStructures: EnergyChargeableStructure[] = []
-  const constructionSites: ConstructionSite<BuildableStructureConstant>[] = room.find(FIND_MY_CONSTRUCTION_SITES)
-  const droppedResources = room.find(FIND_DROPPED_RESOURCES)
-  const tombStones = room.find(FIND_TOMBSTONES)
-  const energyStores: EnergyStore[] = []
+export class OwnedRoomObjects {
 
-  energyStores.push(...droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
-  energyStores.push(...tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
-  const energyStoreCreeps = creeps.filter(creep => {
-    if (!isV5CreepMemory(creep.memory)) {
-      return false
-    }
-    if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {
-      return false
-    }
-    return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
-  })
-  energyStores.push(...energyStoreCreeps)
+  public readonly sources: Source[]
+  public readonly constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
+  public readonly damagedStructures: AnyStructure[]
+  public readonly activeStructures: {
+    spawns: StructureSpawn[]
+    extensions: StructureExtension[]
+    towers: StructureTower[]
+    storage: StructureStorage | null
 
-  const flags = room.find(FIND_FLAGS)
-
-  const excludedDamagedStructureTypes: StructureConstant[] = [
-    STRUCTURE_WALL,
-    STRUCTURE_RAMPART,
-    STRUCTURE_ROAD,
-    STRUCTURE_CONTAINER,
-  ]
-  const myStructures = room.find(FIND_STRUCTURES)
-  myStructures.forEach(structure => {
-    if (structure.isActive() !== true) {
-      return
-    }
-    if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
-      damagedStructures.push(structure)
-    }
-
-    switch (structure.structureType) {
-    case STRUCTURE_SPAWN:
-      spawns.push(structure)
-      if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        chargeableStructures.push(structure)
-      }
-      break
-    case STRUCTURE_EXTENSION:
-      extensions.push(structure)
-      if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        chargeableStructures.push(structure)
-      }
-      break
-    case STRUCTURE_TOWER:
-      towers.push(structure)
-      if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        chargeableStructures.push(structure)
-      }
-      break
-    case STRUCTURE_CONTAINER:
-      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        energyStores.push(structure)
-      }
-      break
-    case STRUCTURE_STORAGE:
-      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        energyStores.push(structure)
-      }
-      break
-    case STRUCTURE_TERMINAL:
-      if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        energyStores.push(structure)
-      }
-      break
-    default:
-      break // TODO: 全て網羅する
-    }
-  })
-
-  const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
-  const othersPowerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS)
-  const hostileCreeps: Creep[] = []
-  const hostilePowerCreeps: PowerCreep[] = []
-  const allianceCreeps: Creep[] = []
-  const alliancePowerCreeps: PowerCreep[] = []
-
-  othersCreeps.forEach(creep => {
-    if (Game.isEnemy(creep.owner)) {
-      hostileCreeps.push(creep)
-    } else {
-      allianceCreeps.push(creep)
-    }
-  })
-  othersPowerCreeps.forEach(powerCreep => {
-    if (Game.isEnemy(powerCreep.owner)) {
-      hostilePowerCreeps.push(powerCreep)
-    } else {
-      alliancePowerCreeps.push(powerCreep)
-    }
-  })
-
-  if (spawns[0] != null) {
-    calculateSourceRouteIn(room, sources, spawns[0].pos)
-  } else {
-    const spawnConstructionSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
-    if (spawnConstructionSite != null) {
-      calculateSourceRouteIn(room, sources, spawnConstructionSite.pos)
-    }
+    chargeableStructures: EnergyChargeableStructure[]
   }
+  public readonly hostiles: {
+    creeps: Creep[]
+    powerCreeps: PowerCreep[]
+  }
+  public readonly alliances: {
+    creeps: Creep[]
+    powerCreeps: PowerCreep[]
+  }
+  public readonly droppedResources: Resource[]
+  public readonly tombStones: Tombstone[]
+  public readonly energyStores: EnergyStore[] // TODO: Creepも含める
+  public readonly flags: Flag[]
 
-  return {
-    controller,
-    sources,
-    constructionSites,
-    damagedStructures,
-    activeStructures: {
+  public constructor(
+    public readonly controller: StructureController,
+    creeps: Creep[],
+  ) {
+    const room = controller.room
+
+    this.sources = room.find(FIND_SOURCES)
+    this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
+    this.droppedResources = room.find(FIND_DROPPED_RESOURCES)
+    this.tombStones = room.find(FIND_TOMBSTONES)
+    this.flags = room.find(FIND_FLAGS)
+
+    this.energyStores = []
+    this.energyStores.push(...this.droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
+    this.energyStores.push(...this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
+    const energyStoreCreeps = creeps.filter(creep => {
+      if (!isV5CreepMemory(creep.memory)) {
+        return false
+      }
+      if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {
+        return false
+      }
+      return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+    })
+    this.energyStores.push(...energyStoreCreeps)
+
+    this.damagedStructures = []
+
+    const spawns: StructureSpawn[] = []
+    const extensions: StructureExtension[] = []
+    const towers: StructureTower[] = []
+    let storage: StructureStorage | null = null
+    const chargeableStructures: EnergyChargeableStructure[] = []
+
+    const excludedDamagedStructureTypes: StructureConstant[] = [
+      STRUCTURE_WALL,
+      STRUCTURE_RAMPART,
+      STRUCTURE_ROAD,
+      STRUCTURE_CONTAINER,
+    ]
+    const myStructures = room.find(FIND_STRUCTURES)
+    myStructures.forEach(structure => {
+      if (structure.isActive() !== true) {
+        return
+      }
+      if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
+        this.damagedStructures.push(structure)
+      }
+
+      switch (structure.structureType) {
+      case STRUCTURE_SPAWN:
+        spawns.push(structure)
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableStructures.push(structure)
+        }
+        break
+      case STRUCTURE_EXTENSION:
+        extensions.push(structure)
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableStructures.push(structure)
+        }
+        break
+      case STRUCTURE_TOWER:
+        towers.push(structure)
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableStructures.push(structure)
+        }
+        break
+      case STRUCTURE_CONTAINER:
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          this.energyStores.push(structure)
+        }
+        break
+      case STRUCTURE_STORAGE:
+        storage = structure
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          this.energyStores.push(structure)
+        }
+        break
+      case STRUCTURE_TERMINAL:
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          this.energyStores.push(structure)
+        }
+        break
+      default:
+        break // TODO: 全て網羅する
+      }
+    })
+
+    const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
+    const othersPowerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS)
+    const hostileCreeps: Creep[] = []
+    const hostilePowerCreeps: PowerCreep[] = []
+    const allianceCreeps: Creep[] = []
+    const alliancePowerCreeps: PowerCreep[] = []
+
+    othersCreeps.forEach(creep => {
+      if (Game.isEnemy(creep.owner)) {
+        hostileCreeps.push(creep)
+      } else {
+        allianceCreeps.push(creep)
+      }
+    })
+    othersPowerCreeps.forEach(powerCreep => {
+      if (Game.isEnemy(powerCreep.owner)) {
+        hostilePowerCreeps.push(powerCreep)
+      } else {
+        alliancePowerCreeps.push(powerCreep)
+      }
+    })
+
+    if (spawns[0] != null) {
+      calculateSourceRouteIn(room, this.sources, spawns[0].pos)
+    } else {
+      const spawnConstructionSite = this.constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
+      if (spawnConstructionSite != null) {
+        calculateSourceRouteIn(room, this.sources, spawnConstructionSite.pos)
+      }
+    }
+
+    this.activeStructures = {
       spawns,
       extensions,
       towers,
+      storage,
       chargeableStructures,
-    },
-    hostiles: {
+    }
+
+    this.hostiles = {
       creeps: hostileCreeps,
       powerCreeps: hostilePowerCreeps,
-    },
-    alliances: {
+    }
+    this.alliances = {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
-    },
-    droppedResources,
-    tombStones,
-    energyStores,
-    flags,
+    }
+  }
+
+  public getSource(position: RoomPosition): Source | null {
+    if (this.sources.length <= 0) {
+      return null
+    }
+    return this.sources.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getEnergyStore(position: RoomPosition): EnergyStore | null { // TODO: Resource等は量も考慮する
+    const energyStores = this.energyStores
+    if (energyStores.length <= 0) {
+      return null
+    }
+    return energyStores.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getStructureToCharge(position: RoomPosition): EnergyChargeableStructure | null {
+    const chargeableStructures = this.activeStructures.chargeableStructures
+    if (chargeableStructures.length <= 0) {
+      return null
+    }
+    return chargeableStructures.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
+    return this.constructionSites[0]  // TODO: 優先順位づけ
+  }
+
+  public getRepairStructure(): AnyStructure | null {
+    return this.damagedStructures[0]  // TODO: 優先順位づけ
   }
 }
 

@@ -1,9 +1,10 @@
 import { RoomInvadedProblemFinder } from "problem/invasion/room_invaded_problem_finder"
+import { ProblemFinder } from "problem/problem_finder"
 import { RoomName } from "prototype/room"
 import { CreateConstructionSiteTask } from "task/room_planing/create_construction_site_task"
 import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
-import { PrimitiveWorkerTask } from "task/worker/primitive_worker_task"
+import { WorkerTask } from "task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export interface RoomKeeperTaskState extends TaskState {
@@ -41,7 +42,7 @@ export class RoomKeeperTask extends Task {
   public static create(roomName: RoomName): RoomKeeperTask {
     const children: Task[] = [
       CreateConstructionSiteTask.create(roomName),
-      PrimitiveWorkerTask.create(roomName),
+      WorkerTask.create(roomName),
     ]
     return new RoomKeeperTask(Game.time, children, roomName)
   }
@@ -51,13 +52,10 @@ export class RoomKeeperTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const roomInvadedProblemFinder = new RoomInvadedProblemFinder(objects)
-    if (roomInvadedProblemFinder.problemExists() && this.isSolvingProblem(roomInvadedProblemFinder.identifier) === false) {
-      const solver = roomInvadedProblemFinder.getProblemSolvers()[0]  // TODO: 選定する
-      if (solver != null) {
-        this.addChildTask(solver)
-      }
-    }
+    const problemFinders: ProblemFinder[] = [
+      new RoomInvadedProblemFinder(objects),
+    ]
+    this.checkProblemFinders(problemFinders)
 
     return TaskStatus.InProgress
   }

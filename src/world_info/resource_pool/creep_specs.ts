@@ -180,15 +180,15 @@ export function sortRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[]
   })
 }
 
+export function bodyCost(body: BodyPartConstant[]): number {
+  return body.reduce((result, current) => {
+    return result + BODYPART_COST[current]
+  }, 0)
+}
+
 export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: number): BodyPartConstant[] {
   if (roles.includes(CreepRole.Scout) === true) {
     return [MOVE]
-  }
-
-  const cost = (body: BodyPartConstant[]): number => {
-    return body.reduce((result, current) => {
-      return result + BODYPART_COST[current]
-    }, 0)
   }
 
   const appendMove = ((body: BodyPartConstant[]): BodyPartConstant[] => {
@@ -202,7 +202,7 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   })
 
   const multiply = (body: BodyPartConstant[], max: number): BodyPartConstant[] => {
-    const count = Math.min(Math.floor(energyCapacityAvailable / cost(body)), max)
+    const count = Math.min(Math.floor(energyCapacityAvailable / bodyCost(body)), max)
     const result: BodyPartConstant[] = []
     for (let i = 0; i < count; i += 1) {
       result.push(...body)
@@ -224,7 +224,7 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   }
   if (roles.includes(CreepRole.Claimer) === true) {
     const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
-    if (energyCapacityAvailable >= cost(defaultBody)) {
+    if (energyCapacityAvailable >= bodyCost(defaultBody)) {
       return defaultBody
     }
     return [MOVE, CLAIM]
