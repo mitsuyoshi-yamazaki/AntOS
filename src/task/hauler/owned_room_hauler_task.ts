@@ -12,7 +12,7 @@ import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insuffic
 import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "problem/problem_finder"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
-import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "./owned_room_energy_source_task"
 import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
@@ -115,6 +115,7 @@ export class OwnedRoomHaulerTask extends Task {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = initialTask != null ? initialTask() : null
           solver.priority = priority
+          solver.body = this.haulerBody(objects)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -124,6 +125,29 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     return problemFinderWrapper
+  }
+
+  private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
+    const maximumCarryUnitCount = 3 // TODO: 算出する
+    const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
+
+    const constructBody = ((unitCount: number): BodyPartConstant[] => {
+      const result: BodyPartConstant[] = []
+      for (let i = 0; i < unitCount; i += 1) {
+        result.push(...unit)
+      }
+      return result
+    })
+
+    const energyCapacity = objects.controller.room.energyCapacityAvailable
+    for (let i = maximumCarryUnitCount; i >= 1; i -= 1) {
+      const body = constructBody(i)
+      const cost = bodyCost(body)
+      if (cost <= energyCapacity) {
+        return body
+      }
+    }
+    return constructBody(1)
   }
 
   // ---- Creep Task ---- //
