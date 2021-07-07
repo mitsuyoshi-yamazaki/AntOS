@@ -21,6 +21,7 @@ import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { BuildContainerTask } from "task/build/build_container_task"
 import { roomLink } from "utility/log"
+import { placeRoadConstructMarks } from "script/pathfinder"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -198,7 +199,15 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   private checkContainer(objects: OwnedRoomObjects, finishedChildTasks: Task[], source: Source): void {
     const finishedBuildContainerTask = finishedChildTasks.find(task => task instanceof BuildContainerTask) as BuildContainerTask | null
     if (finishedBuildContainerTask != null) {
-      this.containerId = finishedBuildContainerTask.container?.id ?? null
+      const containerId = finishedBuildContainerTask.container?.id ?? null
+      if (containerId == null) {
+        return
+      }
+      this.containerId = containerId
+      const container = Game.getObjectById(containerId)
+      if (container != null) {
+        this.placeRoadConstructMarks(objects, container)
+      }
       return
     }
 
@@ -230,5 +239,16 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     const position = path[path.length - 1]
     this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
     return
+  }
+
+  private placeRoadConstructMarks(objects: OwnedRoomObjects, container: StructureContainer): void {
+    const storage = objects.activeStructures.storage
+    if (storage == null) {
+      return
+    }
+
+    const codename = generateCodename(this.constructor.name, this.startTime)
+    const room = objects.controller.room
+    placeRoadConstructMarks(room, storage, container, codename)
   }
 }

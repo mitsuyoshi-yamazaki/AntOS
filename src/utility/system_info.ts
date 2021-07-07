@@ -19,7 +19,7 @@ export const SystemInfo = {
     name: "AntOS",
   },
   application: {
-    version: "5.7.20",
+    version: "5.7.22",
     shortVersionString: ShortVersion.v5,
     name: "ProblemSolver",
   },

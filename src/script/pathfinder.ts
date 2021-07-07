@@ -1,6 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Result } from "utility/result"
+import { generateUniqueId } from "utility/unique_id"
 
 export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
   const startObject = Game.getObjectById(startObjectId)
@@ -179,4 +180,17 @@ export function getCachedPathFor(source: Source): RoomPosition[] | null {
   const roomPositions = memoryCachedPath.p.map(position => new RoomPosition(position.x, position.y, roomName))
   sourcePathCache.set(source.id, roomPositions)
   return roomPositions
+}
+
+export function placeRoadConstructMarks(room: Room, startObject: RoomObject, goalObject: RoomObject, codename: string): void {
+  const options: FindPathOpts = {
+    ignoreCreeps: true,
+    ignoreDestructibleStructures: true,
+    ignoreRoads: false,
+    maxRooms: 3,
+  }
+  const path = startObject.pos.findPathTo(goalObject.pos, options)
+  path.forEach(position => {
+    room.createFlag(position.x, position.y, generateUniqueId(codename), COLOR_BROWN)
+  })
 }

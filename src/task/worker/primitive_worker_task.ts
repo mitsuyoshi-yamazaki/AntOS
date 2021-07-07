@@ -60,7 +60,7 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
+    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = null
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 

@@ -1,7 +1,9 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, showCachedSourcePath } from "script/pathfinder"
+import { findPath, findPathToSource, placeRoadConstructMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showTargetedBy } from "script/task_target_cache_viewer"
+import { World } from "world_info/world_info"
+import { roomLink } from "utility/log"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -24,6 +26,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.placeOldRoomPlan()
     case "ShowTargetedBy":
       return this.showTargetedBy()
+    case "PlaceRoadConstructMarks":
+      return this.placeRoadConstructMarks()
     default:
       return "Invalid script type"
     }
@@ -178,5 +182,39 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return showTargetedBy(targetIds.split(","))
+  }
+
+  private placeRoadConstructMarks(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const room = World.rooms.get(roomName)
+    if (room == null) {
+      return `No visual for room ${roomLink(roomName)}`
+    }
+
+    const startObjectId = args.get("start_object_id")
+    if (startObjectId == null) {
+      return this.missingArgumentError("start_object_id")
+    }
+    const startObject = Game.getObjectById(startObjectId)
+    if (!(startObject instanceof RoomObject)) {
+      return `${startObject} is not RoomObject ${startObjectId}`
+    }
+
+    const goalObjectId = args.get("goal_object_id")
+    if (goalObjectId == null) {
+      return this.missingArgumentError("goal_object_id")
+    }
+    const goalObject = Game.getObjectById(goalObjectId)
+    if (!(goalObject instanceof RoomObject)) {
+      return `${goalObject} is not RoomObject ${goalObjectId}`
+    }
+
+    placeRoadConstructMarks(room, startObject, goalObject, "manual")
+    return "ok"
   }
 }
