@@ -176,6 +176,29 @@ export class OwnedRoomHaulerTask extends Task {
   }
 
   private getEnergySource(position: RoomPosition, objects: OwnedRoomObjects, energySources: EnergySource[]): EnergyStore | null {
+    const droppedEnergy = objects.droppedResources.find(resource => {
+      if (resource.targetedBy.length > 0) {
+        return false
+      }
+      if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
+        return false
+      }
+      return resource.amount >= 100
+    })
+    if (droppedEnergy != null) {
+      return droppedEnergy
+    }
+
+    const tombstone = objects.tombStones.find(tombstone => {
+      if (tombstone.targetedBy.length > 0) {
+        return false
+      }
+      return tombstone.store.getUsedCapacity(RESOURCE_ENERGY) >= 100  // TODO: その他のリソースも回収する
+    })
+    if (tombstone != null) {
+      return tombstone
+    }
+
     const availableEnergyStores = energySources.filter(source => {
       if (source.targetedBy.length >= 2) {
         return false
