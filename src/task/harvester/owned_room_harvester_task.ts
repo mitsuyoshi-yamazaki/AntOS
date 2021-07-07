@@ -14,7 +14,7 @@ import { MoveToTask } from "object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
-import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
@@ -118,13 +118,10 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   ): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
     const minimumCreepCount = 1 // TODO: lifeが短くなってきたら次をspawnさせる
-    const initialTask = (): CreepTask => {
-      return MoveToTask.create(source.pos, 1)
-    }
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, initialTask, CreepSpawnRequestPriority.High)
+      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source)
     ]
 
     this.checkProblemFinders(problemFinders)
@@ -146,8 +143,7 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     objects: OwnedRoomObjects,
     necessaryRoles: CreepRole[],
     minimumCreepCount: number,
-    initialTask: (() => CreepTask) | null,
-    priority: CreepSpawnRequestPriority,
+    source: Source,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
@@ -159,8 +155,9 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.initialTask = initialTask != null ? initialTask() : null
-          solver.priority = priority
+          solver.initialTask = MoveToTask.create(source.pos, 1)
+          solver.priority = CreepSpawnRequestPriority.High
+          solver.body = this.harvesterBody(source)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -170,6 +167,34 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     }
 
     return problemFinderWrapper
+  }
+
+  private harvesterBody(source: Source): BodyPartConstant[] {
+    const moveSpeed = 0.5
+    const maximumWorkCount = Math.ceil((source.energyCapacity / 300) / HARVEST_POWER)
+
+    const constructBody = ((workCount: number): BodyPartConstant[] => {
+      const result: BodyPartConstant[] = []
+      for (let i = 0; i < workCount; i += 1) {
+        result.push(WORK)
+      }
+      result.push(CARRY)
+      const moveCount = Math.ceil((result.length / 2) * moveSpeed)
+      for (let i = 0; i < moveCount; i += 1) {
+        result.unshift(MOVE)
+      }
+      return result
+    })
+
+    const energyCapacity = source.room.energyCapacityAvailable
+    for (let i = maximumWorkCount; i >= 1; i -= 1) {
+      const body = constructBody(i)
+      const cost = bodyCost(body)
+      if (cost <= energyCapacity) {
+        return body
+      }
+    }
+    return constructBody(1)
   }
 
   // ---- Creep Task ---- //

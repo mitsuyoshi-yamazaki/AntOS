@@ -34,6 +34,9 @@ export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState
 
     /** priority */
     p: CreepSpawnRequestPriority
+
+    /** body */
+    b: BodyPartConstant[] | null
   }
 }
 
@@ -49,6 +52,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     public codename: string,
     public initialTask: CreepTask | null,
     public priority: CreepSpawnRequestPriority,
+    public body: BodyPartConstant[] | null,
   ) {
     super(startTime, children, problemIdentifier)
   }
@@ -67,6 +71,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
         n: this.codename,
         s: this.initialTask?.encode() ?? null,
         p: this.priority,
+        b: this.body,
       },
     }
   }
@@ -78,7 +83,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
       }
       return decodeCreepTaskFromState(state.cr.s)
     })()
-    return new CreepInsufficiencyProblemSolver(state.s, children, state.i, state.r, state.cr.r, state.cr.t, state.cr.c, state.cr.n, initialTask, state.cr.p)
+    return new CreepInsufficiencyProblemSolver(state.s, children, state.i, state.r, state.cr.r, state.cr.t, state.cr.c, state.cr.n, initialTask, state.cr.p, state.cr.b)
   }
 
   public static create(
@@ -100,6 +105,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
       generateCodename("CreepInsufficiencyProblemSolver", time),
       null,
       CreepSpawnRequestPriority.Low,
+      null,
     )
   }
 
@@ -116,7 +122,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
       numberOfCreeps: insufficientCreepCount,
       codename: this.codename,
       roles: this.necessaryRoles,
-      body: null,
+      body: this.body,
       initialTask: this.initialTask,
       taskIdentifier: this.targetTaskIdentifier,
       parentRoomName: null,
