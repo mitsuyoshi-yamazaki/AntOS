@@ -1,5 +1,5 @@
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
-export type TaskTargetType = Creep | PowerCreep | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+export type TaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
 
 export type TaskRunnerId = Id<TaskRunnerType>
 export type TaskTargetTypeId = Id<TaskTargetType>
