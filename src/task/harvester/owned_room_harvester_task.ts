@@ -3,8 +3,6 @@ import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskState, TaskStatus 
 import { decodeTasksFrom } from "task/task_decoder"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
-import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
-import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { World } from "world_info/world_info"

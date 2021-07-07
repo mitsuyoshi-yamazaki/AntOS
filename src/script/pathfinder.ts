@@ -4,7 +4,7 @@ import { Result } from "utility/result"
 
 export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
   const startObject = Game.getObjectById(startObjectId)
-  if (!(startObject instanceof RoomObject)) {
+  if (!(startObject instanceof RoomObject) || startObject.room == null) {
     return `Game object of ${startObject} not found`
   }
   const goalObject = Game.getObjectById(goalObjectId)
@@ -12,13 +12,16 @@ export function findPath(startObjectId: string, goalObjectId: string, goalRange:
     return `Game object of ${goalObject} not found`
   }
 
-  const result = PathFinder.search(startObject.pos, { pos: goalObject.pos, range: goalRange })
-  if (result.incomplete === true) {
-    visualize(result.path, { color: "#ff0000" })
-    return "[INCOMPLETE] Pathfinder failed to find path"
+  const options: FindPathOpts = {
+    ignoreCreeps: true,
+    ignoreDestructibleStructures: true,
+    ignoreRoads: false,
+    maxRooms: 3,
   }
+  const roomName = startObject.room.name
+  const result = startObject.pos.findPathTo(goalObject.pos, options).map(p => new RoomPosition(p.x, p.y, roomName))
 
-  visualize(result.path, { color: "#ffffff" })
+  visualize(result, { color: "#ffffff" })
   return "ok"
 }
 

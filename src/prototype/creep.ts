@@ -13,7 +13,7 @@ export type CreepName = string
 
 export const defaultMoveToOptions: MoveToOpts = {
   maxRooms: 1,
-  reusePath: 1,
+  reusePath: 3,
   maxOps: 500,
 }
 
