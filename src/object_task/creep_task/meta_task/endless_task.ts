@@ -1,5 +1,6 @@
 import { TaskProgressType } from "object_task/object_task"
-import { CreepTask, CreepTaskState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 
 export interface EndlessTaskState extends CreepTaskState {
 }

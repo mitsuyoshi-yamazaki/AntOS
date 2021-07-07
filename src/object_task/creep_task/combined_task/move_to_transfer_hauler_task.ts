@@ -1,6 +1,7 @@
 import { defaultMoveToOptions, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN } from "prototype/creep"
 import { TaskProgressType } from "object_task/object_task"
-import { CreepTask, CreepTaskState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 import { TransferEnergyApiWrapper, TransferEnergyApiWrapperState, TransferEnergyApiWrapperTargetType } from "../api_wrapper/transfer_energy_api_wrapper"
 import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"

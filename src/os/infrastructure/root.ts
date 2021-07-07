@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
 import { isV5CreepMemory } from "prototype/creep"
-import { decodeCreepTask } from "object_task/creep_task/creep_task"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"

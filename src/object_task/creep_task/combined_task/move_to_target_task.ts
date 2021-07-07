@@ -2,7 +2,8 @@ import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FIN
 import { TargetingApiWrapper, TargetingApiWrapperTargetType } from "object_task/targeting_api_wrapper"
 import { TaskProgressType } from "object_task/object_task"
 import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
-import { CreepTask, CreepTaskState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 
 type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
 

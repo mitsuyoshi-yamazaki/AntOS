@@ -1,4 +1,4 @@
-import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "object_task/creep_task/creep_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
 import { ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -8,6 +8,8 @@ import { generateCodename } from "utility/unique_id"
 import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { CreepSpawnRequest, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
+import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
+import { decodeCreepTaskFromState } from "object_task/creep_task/creep_task_decoder"
 
 export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState {
   /** room name */

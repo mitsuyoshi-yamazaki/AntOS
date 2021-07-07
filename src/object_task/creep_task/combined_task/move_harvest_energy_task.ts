@@ -2,7 +2,8 @@ import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED_AND_
 import { getCachedPathFor } from "script/pathfinder"
 import { TaskProgressType } from "object_task/object_task"
 import { HarvestEnergyApiWrapper } from "../api_wrapper/harvest_energy_api_wrapper"
-import { CreepTask, CreepTaskState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 
 export interface MoveHarvestEnergyTaskState extends CreepTaskState {
   /** source ID */

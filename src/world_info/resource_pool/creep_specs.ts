@@ -1,8 +1,10 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
-import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "object_task/creep_task/creep_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
 import { TaskIdentifier } from "task/task"
+import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
+import { decodeCreepTaskFromState } from "object_task/creep_task/creep_task_decoder"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0

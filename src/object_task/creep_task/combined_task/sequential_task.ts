@@ -1,5 +1,6 @@
 import { TaskProgressType } from "object_task/object_task"
-import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 
 export interface SequentialTaskOptions {
   /**
@@ -46,13 +47,12 @@ export class SequentialTask implements CreepTask {
     }
   }
 
-  public static decode(state: SequentialTaskState): SequentialTask | null {
+  public static decode(state: SequentialTaskState, children: (CreepTask | null)[]): SequentialTask | null {
     const ignoreFailure = state.o.i
-    const children: CreepTask[] = []
-    for (const childState of state.c) {
-      const child = decodeCreepTaskFromState(childState)
+    const filteredChildren: CreepTask[] = []
+    for (const child of children) {
       if (child != null) {
-        children.push(child)
+        filteredChildren.push(child)
         continue
       }
       if (ignoreFailure === true) {
@@ -64,7 +64,7 @@ export class SequentialTask implements CreepTask {
       ignoreFailure: state.o.i,
       finishWhenSucceed: state.o.f,
     }
-    return new SequentialTask(state.s, children, options)
+    return new SequentialTask(state.s, filteredChildren, options)
   }
 
   public static create(childTasks: CreepTask[], options: SequentialTaskOptions): SequentialTask {

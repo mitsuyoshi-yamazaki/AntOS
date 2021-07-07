@@ -2,7 +2,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "object_task/object_task"
 import { roomLink } from "utility/log"
-import { CreepTask, CreepTaskState } from "../creep_task"
+import { CreepTask } from "../creep_task"
+import { CreepTaskState } from "../creep_task_state"
 
 export interface MoveToTaskState extends CreepTaskState {
   /** destination position */
