@@ -1,7 +1,7 @@
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver } from "problem/problem_solver"
 import { RoomName } from "prototype/room"
-import { TowerInterceptionProblemSolver } from "task/defence/tower_interception_problem_solver"
+import { TowerRepairProblemSolver } from "task/repair/tower_repair_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export class OwnedRoomDecayedStructureProblemFinder implements ProblemFinder {
@@ -16,7 +16,7 @@ export class OwnedRoomDecayedStructureProblemFinder implements ProblemFinder {
   }
 
   public problemExists(): boolean {
-    return this.objects.hostiles.creeps.length > 0 || this.objects.hostiles.powerCreeps.length > 0
+    return this.objects.decayedStructures.length > 0
   }
 
   public getProblemSolvers(): ProblemSolver[] {
@@ -24,10 +24,8 @@ export class OwnedRoomDecayedStructureProblemFinder implements ProblemFinder {
 
     const towerExists = this.objects.activeStructures.towers.length > 0
     if (towerExists) {
-      problemSolvers.push(TowerInterceptionProblemSolver.create(this.identifier, this.roomName))
+      problemSolvers.push(TowerRepairProblemSolver.create(this.identifier, this.roomName))
     }
-    // TODO: ActivateSafemodeTask入れる
-    // TODO: 低レベルではcreepを退避させる
 
     return problemSolvers
   }

@@ -39,7 +39,6 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
   }
 }
 
-// TODO: repair container
 export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   public readonly taskIdentifier: TaskIdentifier
   public get energySources(): EnergySource[] {

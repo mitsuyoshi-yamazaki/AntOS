@@ -4,6 +4,7 @@ import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState }
 import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
 import { OwnedRoomHarvesterTask, OwnedRoomHarvesterTaskState } from "./harvester/owned_room_harvester_task"
 import { OwnedRoomHaulerTask, OwnedRoomHaulerTaskState } from "./hauler/owned_room_hauler_task"
+import { TowerRepairProblemSolver, TowerRepairProblemSolverState } from "./repair/tower_repair_problem_solver"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
 import { CreateConstructionSiteTask, CreateConstructionSiteTaskState } from "./room_planing/create_construction_site_task"
 import { Task, TaskState } from "./task"
@@ -23,6 +24,7 @@ class TaskMap {
   "GeneralWorkerTask" = (state: TaskState) => GeneralWorkerTask.decode(state as GeneralWorkerTaskState)
   "WorkerTask" = (state: TaskState) => WorkerTask.decode(state as WorkerTaskState)
   "OwnedRoomHaulerTask" = (state: TaskState) => OwnedRoomHaulerTask.decode(state as OwnedRoomHaulerTaskState)
+  "TowerRepairProblemSolver" = (state: TaskState) => TowerRepairProblemSolver.decode(state as TowerRepairProblemSolverState)
 }
 const taskMap = new TaskMap()
 
