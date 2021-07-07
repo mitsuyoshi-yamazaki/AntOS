@@ -8,6 +8,8 @@ import { RepairApiWrapper, RepairApiWrapperState } from "./api_wrapper/repair_ap
 import { TransferEnergyApiWrapper, TransferEnergyApiWrapperState } from "./api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper, UpgradeControllerApiWrapperState } from "./api_wrapper/upgrade_controller_api_wrapper"
 import { GetEnergyApiWrapper, GetEnergyApiWrapperState } from "./api_wrapper/get_energy_api_wrapper"
+import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
+import { DropResourceApiWrapper, DropResourceApiWrapperState } from "./api_wrapper/drop_resource_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -18,6 +20,9 @@ export interface CreepApiWrapper<Result> extends ApiWrapper<Creep, Result> {
   run(creep: Creep): Result
 }
 
+export type CreepApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_NOT_ENOUGH_RESOURCES | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
+export type AnyCreepApiWrapper = CreepApiWrapper<CreepApiWrapperResult>
+
 // generic typeなので型定義必須
 type CreepApiWrapperType = HarvestEnergyApiWrapper
   | TransferEnergyApiWrapper
@@ -26,6 +31,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | RepairApiWrapper
   | ClaimControllerApiWrapper
   | GetEnergyApiWrapper
+  | DropResourceApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -36,6 +42,7 @@ class CreepApiWrapperDecoderMap {
   "RepairApiWrapper" = (state: CreepApiWrapperState) => RepairApiWrapper.decode(state as RepairApiWrapperState)
   "ClaimControllerApiWrapper" = (state: CreepApiWrapperState) => ClaimControllerApiWrapper.decode(state as ClaimControllerApiWrapperState)
   "GetEnergyApiWrapper" = (state: CreepApiWrapperState) => GetEnergyApiWrapper.decode(state as GetEnergyApiWrapperState)
+  "DropResourceApiWrapper" = (state: CreepApiWrapperState) => DropResourceApiWrapper.decode(state as DropResourceApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

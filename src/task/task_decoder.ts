@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState } from "./creep_spawn/creep_insufficiency_problem_solver"
 import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
-import { HarvesterTask, HarvesterTaskState } from "./harvester/harvester_task"
+import { OwnedRoomHarvesterTask, OwnedRoomHarvesterTaskState } from "./harvester/owned_room_harvester_task"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
 import { CreateConstructionSiteTask, CreateConstructionSiteTaskState } from "./room_planing/create_construction_site_task"
 import { Task, TaskState } from "./task"
@@ -18,7 +18,7 @@ class TaskMap {
   "CreateConstructionSiteTask" = (state: TaskState) => CreateConstructionSiteTask.decode(state as CreateConstructionSiteTaskState)
   "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as PrimitiveWorkerTaskState)
   "CreepInsufficiencyProblemSolver" = (state: TaskState) => CreepInsufficiencyProblemSolver.decode(state as CreepInsufficiencyProblemSolverState)
-  "HarvesterTask" = (state: TaskState) => HarvesterTask.decode(state as HarvesterTaskState)
+  "OwnedRoomHarvesterTask" = (state: TaskState) => OwnedRoomHarvesterTask.decode(state as OwnedRoomHarvesterTaskState)
   "GeneralWorkerTask" = (state: TaskState) => GeneralWorkerTask.decode(state as GeneralWorkerTaskState)
   "WorkerTask" = (state: TaskState) => WorkerTask.decode(state as WorkerTaskState)
 }

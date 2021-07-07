@@ -9,6 +9,7 @@ export interface MoveHarvestEnergyTaskState extends CreepTaskState {
   i: Id<Source>
 }
 
+/** @deprecated */
 export class MoveHarvestEnergyTask implements CreepTask {
   public readonly shortDescription: string
   public get targetId(): Id<Source> {

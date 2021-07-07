@@ -16,6 +16,8 @@ import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insuffic
 import { generateCodename } from "utility/unique_id"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { ProblemFinder } from "problem/problem_finder"
+import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 
 const creepCount = 6
 
@@ -99,6 +101,7 @@ export class GeneralWorkerTask extends Task {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+          solver.priority = CreepSpawnRequestPriority.Medium
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -119,6 +122,13 @@ export class GeneralWorkerTask extends Task {
       if (energyStore != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energyStore))
       }
+
+      const source = objects.getSource(creep.pos)
+      if (source != null) {
+        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+      }
+
+      creep.say("no task")
       return null
     }
 

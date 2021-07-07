@@ -2,7 +2,14 @@ import { TaskProgressType } from "object_task/object_task"
 import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "../creep_task"
 
 export interface SequentialTaskOptions {
+  /**
+   * - falseの場合、子タスクの失敗でequentialTask自体を終了する
+   * - ※ 現状ではデコードの失敗のみにしか対応していない
+  */
   ignoreFailure: boolean
+
+  /** 子タスクが成功した場合、SequentialTask自体を終了する */
+  finishWhenSucceed: boolean
 }
 
 export interface SequentialTaskState extends CreepTaskState {
@@ -13,6 +20,9 @@ export interface SequentialTaskState extends CreepTaskState {
   o: {
     /** ignoreFailure */
     i: boolean
+
+    /** finishWhenSucceed */
+    f: boolean
   }
 }
 
@@ -31,6 +41,7 @@ export class SequentialTask implements CreepTask {
       c: this.childTasks.map(task => task.encode()),
       o: {
         i: this.options.ignoreFailure,
+        f: this.options.finishWhenSucceed,
       },
     }
   }
@@ -50,7 +61,8 @@ export class SequentialTask implements CreepTask {
       return null
     }
     const options: SequentialTaskOptions = {
-      ignoreFailure: state.o.i
+      ignoreFailure: state.o.i,
+      finishWhenSucceed: state.o.f,
     }
     return new SequentialTask(state.s, children, options)
   }
@@ -79,11 +91,19 @@ export class SequentialTask implements CreepTask {
 
     switch (result) {
     case TaskProgressType.Finished:
+      if (this.options.finishWhenSucceed === true) {
+        return TaskProgressType.Finished
+      }
       this.childTasks.shift()
       return this.runUntilExecution(creep)
+
     case TaskProgressType.FinishedAndRan:
+      if (this.options.finishWhenSucceed === true) {
+        return TaskProgressType.FinishedAndRan
+      }
       this.childTasks.shift()
       return TaskProgressType.FinishedAndRan
+
     case TaskProgressType.InProgress:
       return TaskProgressType.InProgress
     }

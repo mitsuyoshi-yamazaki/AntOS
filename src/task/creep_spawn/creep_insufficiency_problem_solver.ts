@@ -1,3 +1,4 @@
+import { CreepTask } from "object_task/creep_task/creep_task"
 import { ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -31,6 +32,8 @@ export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState
 
 export class CreepInsufficiencyProblemSolver extends ProblemSolver {
   public codename: string
+  public initialTask: CreepTask | null = null
+  public priority: CreepSpawnRequestPriority = CreepSpawnRequestPriority.Low
 
   private constructor(
     public readonly startTime: number,
@@ -91,7 +94,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
       codename: this.codename,
       roles: this.necessaryRoles,
       body: null,
-      initialTask: null,
+      initialTask: this.initialTask,
       taskIdentifier: this.targetTaskIdentifier,
       parentRoomName: null,
     }

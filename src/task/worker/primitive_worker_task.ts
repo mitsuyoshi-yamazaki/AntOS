@@ -7,7 +7,6 @@ import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wr
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
-import { MoveHarvestEnergyTask } from "object_task/creep_task/combined_task/move_harvest_energy_task"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
@@ -16,6 +15,8 @@ import { CreepInsufficiencyProblemFinder } from "problem/creep_insufficiency/cre
 import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insufficiency_problem_solver"
 import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "problem/problem_finder"
+import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 
 const creepCountForSource = 6
 
@@ -99,6 +100,7 @@ export class PrimitiveWorkerTask extends Task {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+          solver.priority = CreepSpawnRequestPriority.Medium
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -119,7 +121,7 @@ export class PrimitiveWorkerTask extends Task {
       if (source == null) {
         return null
       }
-      return MoveHarvestEnergyTask.create(source)
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)

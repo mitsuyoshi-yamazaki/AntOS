@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import { isProblemSolver, ProblemSolver } from "problem/problem_solver"
+import { isProblemSolver } from "problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskType } from "./task_decoder"
 
