@@ -7,6 +7,8 @@ import { OwnedRoomHaulerTask, OwnedRoomHaulerTaskState } from "./hauler/owned_ro
 import { TowerRepairProblemSolver, TowerRepairProblemSolverState } from "./repair/tower_repair_problem_solver"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
 import { CreateConstructionSiteTask, CreateConstructionSiteTaskState } from "./room_planing/create_construction_site_task"
+import { OwnedRoomScoutTask, OwnedRoomScoutTaskState } from "./scout/owned_room_scout_task"
+import { ScoutRoomTask, ScoutRoomTaskState } from "./scout/scout_room_task"
 import { Task, TaskState } from "./task"
 import { GeneralWorkerTask, GeneralWorkerTaskState } from "./worker/general_worker_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
@@ -25,6 +27,8 @@ class TaskMap {
   "WorkerTask" = (state: TaskState) => WorkerTask.decode(state as WorkerTaskState)
   "OwnedRoomHaulerTask" = (state: TaskState) => OwnedRoomHaulerTask.decode(state as OwnedRoomHaulerTaskState)
   "TowerRepairProblemSolver" = (state: TaskState) => TowerRepairProblemSolver.decode(state as TowerRepairProblemSolverState)
+  "OwnedRoomScoutTask" = (state: TaskState) => OwnedRoomScoutTask.decode(state as OwnedRoomScoutTaskState)
+  "ScoutRoomTask" = (state: TaskState) => ScoutRoomTask.decode(state as ScoutRoomTaskState)
 }
 const taskMap = new TaskMap()
 

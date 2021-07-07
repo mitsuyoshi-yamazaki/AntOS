@@ -9,45 +9,45 @@ import { decodeTasksFrom } from "task/task_decoder"
 import { WorkerTask } from "task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
 
-export interface RoomKeeperTaskState extends TaskState {
+export interface ScoutRoomTaskState extends TaskState {
   /** room name */
   r: RoomName
+
+  /** target room names */
+  tr: RoomName[]
 }
 
-export class RoomKeeperTask extends Task {
+export class ScoutRoomTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
   private constructor(
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
+    public readonly targetRoomNames: RoomName[],
   ) {
     super(startTime, children)
 
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
   }
 
-  public encode(): RoomKeeperTaskState {
+  public encode(): ScoutRoomTaskState {
     return {
-      t: "RoomKeeperTask",
+      t: "ScoutRoomTask",
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
+      tr: this.targetRoomNames,
     }
   }
 
-  public static decode(state: RoomKeeperTaskState): RoomKeeperTask {
+  public static decode(state: ScoutRoomTaskState): ScoutRoomTask {
     const children = decodeTasksFrom(state.c)
-    return new RoomKeeperTask(state.s, children, state.r)
+    return new ScoutRoomTask(state.s, children, state.r, state.tr)
   }
 
-  public static create(roomName: RoomName): RoomKeeperTask {
-    const children: Task[] = [
-      CreateConstructionSiteTask.create(roomName),
-      WorkerTask.create(roomName),
-      OwnedRoomScoutTask.create(roomName),
-    ]
-    return new RoomKeeperTask(Game.time, children, roomName)
+  public static create(roomName: RoomName, targetRoomName: RoomName[]): ScoutRoomTask {
+    return new ScoutRoomTask(Game.time, [], roomName, targetRoomName)
   }
 
   public description(): string {
@@ -55,10 +55,7 @@ export class RoomKeeperTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const problemFinders: ProblemFinder[] = [
-      new RoomInvadedProblemFinder(objects),
-      new OwnedRoomDecayedStructureProblemFinder(objects),
-    ]
+    const problemFinders: ProblemFinder[] = []  // TODO: creep insufficiency
     this.checkProblemFinders(problemFinders)
 
     return TaskStatus.InProgress
