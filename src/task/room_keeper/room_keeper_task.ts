@@ -8,6 +8,7 @@ import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
 import { WorkerTask } from "task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { RemoteRoomManagerTask } from "task/remote_room_keeper/remote_room_manager_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -46,6 +47,7 @@ export class RoomKeeperTask extends Task {
       CreateConstructionSiteTask.create(roomName),
       WorkerTask.create(roomName),
       OwnedRoomScoutTask.create(roomName),
+      RemoteRoomManagerTask.create(roomName),
     ]
     return new RoomKeeperTask(Game.time, children, roomName)
   }
@@ -56,6 +58,10 @@ export class RoomKeeperTask extends Task {
       new OwnedRoomDecayedStructureProblemFinder(objects),
     ]
     this.checkProblemFinders(problemFinders)
+
+    // if (this.children.find(task => task instanceof RemoteRoomManagerTask) == null) {  // TODO: 一時コード
+    //   this.addChildTask(RemoteRoomManagerTask.create(this.roomName))
+    // }
 
     return TaskStatus.InProgress
   }

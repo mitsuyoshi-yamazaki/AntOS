@@ -62,8 +62,11 @@ export class RoomInvisibleProblemSolver extends ProblemSolver {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
     const creepCount = World.resourcePools.countCreeps(roomName, this.taskIdentifier, creepPoolFilter)
 
-    if (creepCount > 0 && World.rooms.get(this.targetRoomName) != null) {
-      return TaskStatus.Finished
+    if (creepCount > 0) {
+      if (World.rooms.get(this.targetRoomName) != null) {
+        return TaskStatus.Finished
+      }
+      return TaskStatus.InProgress
     }
 
     const options: SequentialTaskOptions = {

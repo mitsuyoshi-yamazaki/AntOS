@@ -17,6 +17,7 @@ import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitiv
 import { WorkerTask, WorkerTaskState } from "./worker/worker_task"
 import { RemoteRoomKeeperTask, RemoteRoomKeeperTaskState } from "./remote_room_keeper/remote_room_keeper_task"
 import { RoomInvisibleProblemSolver, RoomInvisibleProblemSolverState } from "./scout/room_invisible_problem_solver"
+import { RemoteRoomManagerTask, RemoteRoomManagerTaskState } from "./remote_room_keeper/remote_room_manager_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -37,6 +38,7 @@ class TaskMap {
   "BuildContainerTask" = (state: TaskState) => BuildContainerTask.decode(state as BuildContainerTaskState)
   "RemoteRoomKeeperTask" = (state: TaskState) => RemoteRoomKeeperTask.decode(state as RemoteRoomKeeperTaskState)
   "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as RoomInvisibleProblemSolverState)
+  "RemoteRoomManagerTask" = (state: TaskState) => RemoteRoomManagerTask.decode(state as RemoteRoomManagerTaskState)
 }
 const taskMap = new TaskMap()
 

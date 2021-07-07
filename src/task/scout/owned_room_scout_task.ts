@@ -1,18 +1,14 @@
-import { RoomInvadedProblemFinder } from "problem/invasion/room_invaded_problem_finder"
 import { ProblemFinder } from "problem/problem_finder"
-import { OwnedRoomDecayedStructureProblemFinder } from "problem/structure/owned_room_decayed_structure_problem_finder"
-import { RoomName } from "utility/room_name"
-import { CreateConstructionSiteTask } from "task/room_planing/create_construction_site_task"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
-import { WorkerTask } from "task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export interface OwnedRoomScoutTaskState extends TaskState {
   /** room name */
   r: RoomName
 
-  /** neighbour room names */
+  /** energy harvestable neighbour room names */
   n: RoomName[]
 }
 
@@ -28,7 +24,7 @@ export class OwnedRoomScoutTask extends Task {
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
-    public readonly neighbourRoomNames: RoomName[],
+    public readonly harvestableNeighbourRoomNames: RoomName[],  // TODO: Remote_系タスクに移す
   ) {
     super(startTime, children)
 
@@ -41,7 +37,7 @@ export class OwnedRoomScoutTask extends Task {
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
-      n: this.neighbourRoomNames,
+      n: this.harvestableNeighbourRoomNames,
     }
   }
 
@@ -54,7 +50,9 @@ export class OwnedRoomScoutTask extends Task {
     const neighbourRoomNames: RoomName[] = []
     const exits = Game.map.describeExits(roomName)
     for (const [, neighbour] of Object.entries(exits)) {
-      neighbourRoomNames.push(neighbour)
+      if (roomTypeOf(neighbour) === "normal") {
+        neighbourRoomNames.push(neighbour)
+      }
     }
     return new OwnedRoomScoutTask(Game.time, [], roomName, neighbourRoomNames)
   }
