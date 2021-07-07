@@ -1,6 +1,5 @@
 import { RoomName } from "utility/room_name"
-import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepTask } from "object_task/creep_task/creep_task"
@@ -22,6 +21,7 @@ import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_
 import { BuildContainerTask } from "task/build/build_container_task"
 import { roomLink } from "utility/log"
 import { placeRoadConstructMarks } from "script/pathfinder"
+import { TaskState } from "task/task_state"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -72,8 +72,7 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     }
   }
 
-  public static decode(state: OwnedRoomHarvesterTaskState): OwnedRoomHarvesterTask | null {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: OwnedRoomHarvesterTaskState, children: Task[]): OwnedRoomHarvesterTask | null {
     return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.i)
   }
 

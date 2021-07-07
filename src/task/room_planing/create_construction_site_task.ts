@@ -1,7 +1,7 @@
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { TaskState } from "task/task_state"
 
 export interface CreateConstructionSiteTaskState extends TaskState {
   /** room name */
@@ -30,8 +30,7 @@ export class CreateConstructionSiteTask extends Task {
     }
   }
 
-  public static decode(state: CreateConstructionSiteTaskState): CreateConstructionSiteTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: CreateConstructionSiteTaskState, children: Task[]): CreateConstructionSiteTask {
     return new CreateConstructionSiteTask(state.s, children, state.r)
   }
 

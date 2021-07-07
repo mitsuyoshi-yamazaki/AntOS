@@ -8,11 +8,11 @@ import { ProblemFinder } from "problem/problem_finder"
 import { CreepRole, hasSomeRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
+import { TaskState } from "task/task_state"
 
 export interface BuildContainerTaskState extends TaskState {
   /** room name */
@@ -64,8 +64,7 @@ export class BuildContainerTask extends Task {
     }
   }
 
-  public static decode(state: BuildContainerTaskState): BuildContainerTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: BuildContainerTaskState, children: Task[]): BuildContainerTask {
     const targetPosition = decodeRoomPosition(state.p)
     return new BuildContainerTask(state.s, children, state.r, targetPosition, state.ct, state.ci)
   }

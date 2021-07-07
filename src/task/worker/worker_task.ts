@@ -2,11 +2,11 @@ import { RoomName } from "utility/room_name"
 import { OwnedRoomHarvesterTask } from "task/harvester/owned_room_harvester_task"
 import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { OwnedRoomHaulerTask } from "task/hauler/owned_room_hauler_task"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralWorkerTask } from "./general_worker_task"
 import { PrimitiveWorkerTask } from "./primitive_worker_task"
+import { TaskState } from "task/task_state"
 
 export interface WorkerTaskState extends TaskState {
   /** room name */
@@ -39,8 +39,7 @@ export class WorkerTask extends Task {
     }
   }
 
-  public static decode(state: WorkerTaskState): WorkerTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: WorkerTaskState, children: Task[]): WorkerTask {
     return new WorkerTask(state.s, children, state.r)
   }
 

@@ -1,6 +1,5 @@
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
@@ -18,6 +17,7 @@ import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_ener
 import { ProblemFinder } from "problem/problem_finder"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { TaskState } from "task/task_state"
 
 const creepCount = 5
 
@@ -51,8 +51,7 @@ export class GeneralWorkerTask extends Task {
     }
   }
 
-  public static decode(state: GeneralWorkerTaskState): GeneralWorkerTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: GeneralWorkerTaskState, children: Task[]): GeneralWorkerTask {
     return new GeneralWorkerTask(state.s, children, state.r)
   }
 

@@ -5,6 +5,7 @@ import { RoomName } from "utility/room_name"
 import { RoomKeeperTask, RoomKeeperTaskState } from "task/room_keeper/room_keeper_task"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
+import { decodeTasksFrom } from "task/task_decoder"
 
 export interface RoomKeeperProcessState extends ProcessState {
   /** task state */
@@ -32,7 +33,7 @@ export class RoomKeeperProcess implements Process, Procedural {
   }
 
   public static decode(state: RoomKeeperProcessState): RoomKeeperProcess {
-    const task = RoomKeeperTask.decode(state.s)
+    const task = RoomKeeperTask.decode(state.s, decodeTasksFrom(state.s.c))
     return new RoomKeeperProcess(state.l, state.i, task)
   }
 

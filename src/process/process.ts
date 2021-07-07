@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { State, Stateful } from "os/infrastructure/state"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
+import { OnetimeTaskProcess, OnetimeTaskProcessState } from "./onetime/onetime_task_process"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 
 export type ProcessId = number
@@ -36,6 +37,7 @@ class ProcessTypes {
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as RoomKeeperProcessState)
 
   // ---- onetime processes ---- //
+  "OnetimeTaskProcess" = (state: ProcessState) => OnetimeTaskProcess.decode(state as OnetimeTaskProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

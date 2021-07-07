@@ -1,10 +1,9 @@
-import { CreepTask } from "object_task/creep_task/creep_task"
+import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "object_task/creep_task/creep_task"
 import { ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
 import { generateCodename } from "utility/unique_id"
 import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { CreepSpawnRequest, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
@@ -27,14 +26,16 @@ export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState
 
     /** codename */
     n: string
+
+    /** initial task state */
+    s: CreepTaskState | null
+
+    /** priority */
+    p: CreepSpawnRequestPriority
   }
 }
 
 export class CreepInsufficiencyProblemSolver extends ProblemSolver {
-  public codename: string
-  public initialTask: CreepTask | null = null
-  public priority: CreepSpawnRequestPriority = CreepSpawnRequestPriority.Low
-
   private constructor(
     public readonly startTime: number,
     public readonly children: Task[],
@@ -43,10 +44,11 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     private readonly necessaryRoles: CreepRole[],
     private readonly targetTaskIdentifier: TaskIdentifier | null,
     private readonly requiredCreepCount: number,
+    public codename: string,
+    public initialTask: CreepTask | null,
+    public priority: CreepSpawnRequestPriority,
   ) {
     super(startTime, children, problemIdentifier)
-
-    this.codename = generateCodename(this.constructor.name, this.startTime)
   }
 
   public encode(): CreepInsufficiencyProblemSolverState {
@@ -61,13 +63,20 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
         t: this.targetTaskIdentifier,
         c: this.requiredCreepCount,
         n: this.codename,
+        s: this.initialTask?.encode() ?? null,
+        p: this.priority,
       },
     }
   }
 
-  public static decode(state: CreepInsufficiencyProblemSolverState): CreepInsufficiencyProblemSolver {
-    const children = decodeTasksFrom(state.c)
-    return new CreepInsufficiencyProblemSolver(state.s, children, state.i, state.r, state.cr.r, state.cr.t, state.cr.c)
+  public static decode(state: CreepInsufficiencyProblemSolverState, children: Task[]): CreepInsufficiencyProblemSolver {
+    const initialTask = ((): CreepTask | null => {
+      if (state.cr.s == null) {
+        return null
+      }
+      return decodeCreepTaskFromState(state.cr.s)
+    })()
+    return new CreepInsufficiencyProblemSolver(state.s, children, state.i, state.r, state.cr.r, state.cr.t, state.cr.c, state.cr.n, initialTask, state.cr.p)
   }
 
   public static create(
@@ -77,7 +86,19 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     targetTaskIdentifier: TaskIdentifier | null,
     requiredCreepCount: number,
   ): CreepInsufficiencyProblemSolver {
-    return new CreepInsufficiencyProblemSolver(Game.time, [], problemIdentifier, roomName, necessaryRoles, targetTaskIdentifier, requiredCreepCount)
+    const time = Game.time
+    return new CreepInsufficiencyProblemSolver(
+      time,
+      [],
+      problemIdentifier,
+      roomName,
+      necessaryRoles,
+      targetTaskIdentifier,
+      requiredCreepCount,
+      generateCodename("CreepInsufficiencyProblemSolver", time),
+      null,
+      CreepSpawnRequestPriority.Low,
+    )
   }
 
   public runTask(): TaskStatus {

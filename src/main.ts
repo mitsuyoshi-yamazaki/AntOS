@@ -1,8 +1,7 @@
 import "ts-polyfill/lib/es2019-array"
 
-import * as ScreepsProfiler from "screeps-profiler"
-
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import * as ScreepsProfiler from "screeps-profiler"
 
 import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"

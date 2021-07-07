@@ -1,9 +1,9 @@
 import { ProblemFinder } from "problem/problem_finder"
 import { RoomInvisibleProblemFinder } from "problem/remote_room/room_invisible_problem_finder"
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { TaskState } from "task/task_state"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -38,8 +38,7 @@ export class RemoteRoomKeeperTask extends Task {
     }
   }
 
-  public static decode(state: RemoteRoomKeeperTaskState): RemoteRoomKeeperTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: RemoteRoomKeeperTaskState, children: Task[]): RemoteRoomKeeperTask {
     return new RemoteRoomKeeperTask(state.s, children, state.r, state.tr)
   }
 

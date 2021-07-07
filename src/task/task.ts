@@ -1,9 +1,9 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { State, Stateful } from "os/infrastructure/state"
+import { Stateful } from "os/infrastructure/state"
 import type { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import { isProblemSolver } from "problem/problem_solver"
+import type { ProblemSolver } from "problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { TaskType } from "./task_decoder"
+import type { TaskState } from "./task_state"
 
 // ---- Types and Constants ---- //
 export type TaskIdentifier = string
@@ -21,6 +21,11 @@ export const TaskStatus = {
   Failed: taskStatusFailed,
 }
 
+export function isProblemSolver(task: Task): task is ProblemSolver {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (task as any).problemIdentifier != null
+}
+
 export interface ChildTaskExecutionResults {
   finishedTasks: Task[]
   failedTasks: Task[]
@@ -28,17 +33,6 @@ export interface ChildTaskExecutionResults {
 }
 
 // ---- Interface ---- //
-export interface TaskState extends State {
-  /** task type identifier */
-  t: TaskType
-
-  /** start time */
-  s: number
-
-  /** child task state */
-  c: TaskState[]
-}
-
 export abstract class Task implements Stateful {
   abstract readonly taskIdentifier: TaskIdentifier
 

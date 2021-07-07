@@ -1,20 +1,22 @@
-import { RoomInvadedProblemFinder } from "problem/invasion/room_invaded_problem_finder"
-import { ProblemFinder } from "problem/problem_finder"
-import { OwnedRoomDecayedStructureProblemFinder } from "problem/structure/owned_room_decayed_structure_problem_finder"
+// import { ProblemFinder } from "problem/problem_finder"
 import { RoomName } from "utility/room_name"
-import { CreateConstructionSiteTask } from "task/room_planing/create_construction_site_task"
-import { OwnedRoomScoutTask } from "task/scout/owned_room_scout_task"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
-import { WorkerTask } from "task/worker/worker_task"
-import { OwnedRoomObjects } from "world_info/room_info"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
+// import { decodeTasksFrom } from "task/task_decoder"
+// import { OwnedRoomObjects } from "world_info/room_info"
+// import { RoomInvisibleProblemFinder } from "problem/remote_room/room_invisible_problem_finder"
+// import { RoomInvisibleProblemSolver } from "./room_invisible_problem_solver"
+// import { generateCodename } from "utility/unique_id"
+import { TaskState } from "task/task_state"
 
 export interface ScoutRoomTaskState extends TaskState {
   /** room name */
   r: RoomName
 
-  /** target room names */
-  tr: RoomName[]
+  /** target room name */
+  tr: RoomName
+
+  /** waypoints */
+  w: RoomName[]
 }
 
 export class ScoutRoomTask extends Task {
@@ -24,11 +26,12 @@ export class ScoutRoomTask extends Task {
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
-    public readonly targetRoomNames: RoomName[],
+    public readonly targetRoomName: RoomName,
+    public readonly waypoints: RoomName[],
   ) {
     super(startTime, children)
 
-    this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
+    this.taskIdentifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}`
   }
 
   public encode(): ScoutRoomTaskState {
@@ -37,22 +40,39 @@ export class ScoutRoomTask extends Task {
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
-      tr: this.targetRoomNames,
+      tr: this.targetRoomName,
+      w: this.waypoints,
     }
   }
 
-  public static decode(state: ScoutRoomTaskState): ScoutRoomTask {
-    const children = decodeTasksFrom(state.c)
-    return new ScoutRoomTask(state.s, children, state.r, state.tr)
+  public static decode(state: ScoutRoomTaskState, children: Task[]): ScoutRoomTask {
+    // const children = decodeTasksFrom(state.c)
+    return new ScoutRoomTask(state.s, children, state.r, state.tr, state.w)
   }
 
-  public static create(roomName: RoomName, targetRoomName: RoomName[]): ScoutRoomTask {
-    return new ScoutRoomTask(Game.time, [], roomName, targetRoomName)
+  public static create(roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): ScoutRoomTask {
+    return new ScoutRoomTask(Game.time, [], roomName, targetRoomName, waypoints)
   }
 
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const problemFinders: ProblemFinder[] = []  // TODO: creep insufficiency
-    this.checkProblemFinders(problemFinders)
+  public runTask(): TaskStatus {
+    // const roomInvisibleProblemFinder = new RoomInvisibleProblemFinder(objects, this.targetRoomName)
+    // const problemFinderWrapper: ProblemFinder = {
+    //   identifier: roomInvisibleProblemFinder.identifier,
+    //   problemExists: () => roomInvisibleProblemFinder.problemExists(),
+    //   getProblemSolvers: () => {
+    //     const solver = roomInvisibleProblemFinder.getProblemSolvers()[0]
+    //     if (solver instanceof RoomInvisibleProblemSolver) {
+    //       solver.codename = generateCodename(this.constructor.name, this.startTime)
+    //       solver.waypoints = this.waypoints
+    //     }
+    //     return [solver]
+    //   },
+    // }
+
+    // const problemFinders: ProblemFinder[] = [
+    //   problemFinderWrapper
+    // ]
+    // this.checkProblemFinders(problemFinders)
 
     return TaskStatus.InProgress
   }

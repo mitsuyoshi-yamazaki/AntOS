@@ -1,4 +1,5 @@
-import { Task, TaskIdentifier, TaskState } from "task/task"
+import { Task, TaskIdentifier } from "task/task"
+import { TaskState } from "task/task_state"
 import { ProblemIdentifier } from "./problem_finder"
 
 export interface ProblemSolverState extends TaskState {
@@ -24,9 +25,4 @@ export abstract class ProblemSolver extends Task {
     descriptions.push(this.problemIdentifier)
     return descriptions.join("_")
   }
-}
-
-export function isProblemSolver(task: Task): task is ProblemSolver {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (task as any).problemIdentifier != null
 }

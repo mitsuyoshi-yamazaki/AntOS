@@ -1,6 +1,5 @@
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
@@ -18,9 +17,8 @@ import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
-import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { TaskState } from "task/task_state"
 
 export interface RemoteHarvesterTaskState extends TaskState {
   /** room name */
@@ -74,8 +72,7 @@ export class RemoteHarvesterTask extends Task {
     }
   }
 
-  public static decode(state: RemoteHarvesterTaskState): RemoteHarvesterTask | null {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: RemoteHarvesterTaskState, children: Task[]): RemoteHarvesterTask | null {
     return new RemoteHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.c, state.co.i)
   }
 

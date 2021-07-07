@@ -1,6 +1,5 @@
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
@@ -17,6 +16,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "./owned_room_energy_source_task"
 import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
+import { TaskState } from "task/task_state"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -49,8 +49,7 @@ export class OwnedRoomHaulerTask extends Task {
     }
   }
 
-  public static decode(state: OwnedRoomHaulerTaskState): OwnedRoomHaulerTask | null {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: OwnedRoomHaulerTaskState, children: Task[]): OwnedRoomHaulerTask | null {
     return new OwnedRoomHaulerTask(state.s, children, state.r)
   }
 

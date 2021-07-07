@@ -10,35 +10,38 @@ import { TowerRepairProblemSolver, TowerRepairProblemSolverState } from "./repai
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
 import { CreateConstructionSiteTask, CreateConstructionSiteTaskState } from "./room_planing/create_construction_site_task"
 import { OwnedRoomScoutTask, OwnedRoomScoutTaskState } from "./scout/owned_room_scout_task"
-import { ScoutRoomTask, ScoutRoomTaskState } from "./scout/scout_room_task"
-import { Task, TaskState } from "./task"
+import { ScoutRoomsTask, ScoutRoomsTaskState } from "./scout/scout_rooms_task"
+import { Task } from "./task"
 import { GeneralWorkerTask, GeneralWorkerTaskState } from "./worker/general_worker_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
 import { WorkerTask, WorkerTaskState } from "./worker/worker_task"
 import { RemoteRoomKeeperTask, RemoteRoomKeeperTaskState } from "./remote_room_keeper/remote_room_keeper_task"
 import { RoomInvisibleProblemSolver, RoomInvisibleProblemSolverState } from "./scout/room_invisible_problem_solver"
 import { RemoteRoomManagerTask, RemoteRoomManagerTaskState } from "./remote_room_keeper/remote_room_manager_task"
+import { ScoutRoomTask, ScoutRoomTaskState } from "./scout/scout_room_task"
+import type { TaskState } from "./task_state"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
-  "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as RoomKeeperTaskState)
-  "TowerInterceptionProblemSolver" = (state: TaskState) => TowerInterceptionProblemSolver.decode(state as TowerInterceptionProblemSolverState)
-  "CreateConstructionSiteTask" = (state: TaskState) => CreateConstructionSiteTask.decode(state as CreateConstructionSiteTaskState)
-  "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as PrimitiveWorkerTaskState)
-  "CreepInsufficiencyProblemSolver" = (state: TaskState) => CreepInsufficiencyProblemSolver.decode(state as CreepInsufficiencyProblemSolverState)
-  "OwnedRoomHarvesterTask" = (state: TaskState) => OwnedRoomHarvesterTask.decode(state as OwnedRoomHarvesterTaskState)
-  "GeneralWorkerTask" = (state: TaskState) => GeneralWorkerTask.decode(state as GeneralWorkerTaskState)
-  "WorkerTask" = (state: TaskState) => WorkerTask.decode(state as WorkerTaskState)
-  "OwnedRoomHaulerTask" = (state: TaskState) => OwnedRoomHaulerTask.decode(state as OwnedRoomHaulerTaskState)
-  "TowerRepairProblemSolver" = (state: TaskState) => TowerRepairProblemSolver.decode(state as TowerRepairProblemSolverState)
-  "OwnedRoomScoutTask" = (state: TaskState) => OwnedRoomScoutTask.decode(state as OwnedRoomScoutTaskState)
-  "ScoutRoomTask" = (state: TaskState) => ScoutRoomTask.decode(state as ScoutRoomTaskState)
-  "RemoteHarvesterTask" = (state: TaskState) => RemoteHarvesterTask.decode(state as RemoteHarvesterTaskState)
-  "BuildContainerTask" = (state: TaskState) => BuildContainerTask.decode(state as BuildContainerTaskState)
-  "RemoteRoomKeeperTask" = (state: TaskState) => RemoteRoomKeeperTask.decode(state as RemoteRoomKeeperTaskState)
-  "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as RoomInvisibleProblemSolverState)
-  "RemoteRoomManagerTask" = (state: TaskState) => RemoteRoomManagerTask.decode(state as RemoteRoomManagerTaskState)
+  "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as unknown as RoomKeeperTaskState, decodeTasksFrom(state.c))
+  "TowerInterceptionProblemSolver" = (state: TaskState) => TowerInterceptionProblemSolver.decode(state as unknown as TowerInterceptionProblemSolverState, decodeTasksFrom(state.c))
+  "CreateConstructionSiteTask" = (state: TaskState) => CreateConstructionSiteTask.decode(state as unknown as CreateConstructionSiteTaskState, decodeTasksFrom(state.c))
+  "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as unknown as PrimitiveWorkerTaskState, decodeTasksFrom(state.c))
+  "CreepInsufficiencyProblemSolver" = (state: TaskState) => CreepInsufficiencyProblemSolver.decode(state as unknown as CreepInsufficiencyProblemSolverState, decodeTasksFrom(state.c))
+  "OwnedRoomHarvesterTask" = (state: TaskState) => OwnedRoomHarvesterTask.decode(state as unknown as OwnedRoomHarvesterTaskState, decodeTasksFrom(state.c))
+  "GeneralWorkerTask" = (state: TaskState) => GeneralWorkerTask.decode(state as unknown as GeneralWorkerTaskState, decodeTasksFrom(state.c))
+  "WorkerTask" = (state: TaskState) => WorkerTask.decode(state as unknown as WorkerTaskState, decodeTasksFrom(state.c))
+  "OwnedRoomHaulerTask" = (state: TaskState) => OwnedRoomHaulerTask.decode(state as unknown as OwnedRoomHaulerTaskState, decodeTasksFrom(state.c))
+  "TowerRepairProblemSolver" = (state: TaskState) => TowerRepairProblemSolver.decode(state as unknown as TowerRepairProblemSolverState, decodeTasksFrom(state.c))
+  "OwnedRoomScoutTask" = (state: TaskState) => OwnedRoomScoutTask.decode(state as unknown as OwnedRoomScoutTaskState, decodeTasksFrom(state.c))
+  "ScoutRoomsTask" = (state: TaskState) => ScoutRoomsTask.decode(state as unknown as ScoutRoomsTaskState, decodeTasksFrom(state.c))
+  "ScoutRoomTask" = (state: TaskState) => ScoutRoomTask.decode(state as unknown as ScoutRoomTaskState, decodeTasksFrom(state.c))
+  "RemoteHarvesterTask" = (state: TaskState) => RemoteHarvesterTask.decode(state as unknown as RemoteHarvesterTaskState, decodeTasksFrom(state.c))
+  "BuildContainerTask" = (state: TaskState) => BuildContainerTask.decode(state as unknown as BuildContainerTaskState, decodeTasksFrom(state.c))
+  "RemoteRoomKeeperTask" = (state: TaskState) => RemoteRoomKeeperTask.decode(state as unknown as RemoteRoomKeeperTaskState, decodeTasksFrom(state.c))
+  "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as unknown as RoomInvisibleProblemSolverState, decodeTasksFrom(state.c))
+  "RemoteRoomManagerTask" = (state: TaskState) => RemoteRoomManagerTask.decode(state as unknown as RemoteRoomManagerTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

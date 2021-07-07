@@ -1,8 +1,8 @@
 import { ProblemFinder } from "problem/problem_finder"
 import { RoomName, roomTypeOf } from "utility/room_name"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
-import { decodeTasksFrom } from "task/task_decoder"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { TaskState } from "task/task_state"
 
 export interface OwnedRoomScoutTaskState extends TaskState {
   /** room name */
@@ -41,8 +41,7 @@ export class OwnedRoomScoutTask extends Task {
     }
   }
 
-  public static decode(state: OwnedRoomScoutTaskState): OwnedRoomScoutTask {
-    const children = decodeTasksFrom(state.c)
+  public static decode(state: OwnedRoomScoutTaskState, children: Task[]): OwnedRoomScoutTask {
     return new OwnedRoomScoutTask(state.s, children, state.r, state.n)
   }
 
