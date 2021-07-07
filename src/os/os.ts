@@ -1,6 +1,6 @@
 import { Result } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeProcessFrom, Process, ProcessId, ProcessState } from "process/process"
+import type { Process, ProcessId } from "process/process"
 import { isProcedural } from "process/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
@@ -9,6 +9,8 @@ import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
+import type { ProcessState } from "process/process_state"
+import { decodeProcessFrom } from "process/process_decoder"
 
 interface ProcessMemory {
   /** running */
