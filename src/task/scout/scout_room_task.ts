@@ -1,7 +1,7 @@
 import { RoomInvadedProblemFinder } from "problem/invasion/room_invaded_problem_finder"
 import { ProblemFinder } from "problem/problem_finder"
 import { OwnedRoomDecayedStructureProblemFinder } from "problem/structure/owned_room_decayed_structure_problem_finder"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { CreateConstructionSiteTask } from "task/room_planing/create_construction_site_task"
 import { OwnedRoomScoutTask } from "task/scout/owned_room_scout_task"
 import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"

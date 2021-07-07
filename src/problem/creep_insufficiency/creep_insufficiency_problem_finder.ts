@@ -1,7 +1,7 @@
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver } from "problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insufficiency_problem_solver"
 import { TaskIdentifier } from "task/task"
 import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"

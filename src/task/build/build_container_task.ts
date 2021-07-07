@@ -6,7 +6,7 @@ import { MoveToRoomTask } from "object_task/creep_task/meta_task/move_to_room_ta
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProblemFinder } from "problem/problem_finder"
 import { CreepRole, hasSomeRoles } from "prototype/creep_role"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"

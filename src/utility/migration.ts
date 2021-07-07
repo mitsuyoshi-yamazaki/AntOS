@@ -1,4 +1,4 @@
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { ShortVersion } from "./system_info"
 
 const oldShardName = "shard2"

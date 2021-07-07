@@ -1,6 +1,6 @@
 // import { CreepTask, CreepTaskState } from "game_object_task/creep_task"
 // import { GameObjectTaskReturnCode } from "game_object_task/game_object_task"
-// import { RoomName } from "prototype/room"
+// import { RoomName } from "utility/room_name"
 
 // export interface PatrolRoomTaskState extends CreepTaskState {
 //   /** target room name */

@@ -1,4 +1,4 @@
-import { RoomName } from "./room"
+import { RoomName } from "utility/room_name"
 
 export interface RoomPositionState {
   x: number,

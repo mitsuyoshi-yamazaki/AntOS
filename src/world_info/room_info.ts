@@ -1,6 +1,7 @@
-import { RoomName, RoomPathMemory } from "prototype/room"
+import { RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
+import { RoomName } from "utility/room_name"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []

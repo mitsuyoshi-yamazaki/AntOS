@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions } from "prototype/creep"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "object_task/object_task"
 import { roomLink } from "utility/log"

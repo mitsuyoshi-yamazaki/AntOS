@@ -1,6 +1,6 @@
 import { OperatingSystem } from "os/os"
 import { RoomKeeperProcess } from "process/room_keeper_process"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { RoomKeeperTask } from "task/room_keeper/room_keeper_task"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"

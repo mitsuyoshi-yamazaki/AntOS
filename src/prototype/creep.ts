@@ -3,10 +3,10 @@ import { CreepTask, CreepTaskState } from "object_task/creep_task/creep_task"
 import { CreepTaskState as V4CreepTaskState } from "game_object_task/creep_task"
 import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
-import { RoomName } from "./room"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache } from "object_task/object_task_target_cache"
 import { TaskIdentifier } from "task/task"
+import { RoomName } from "utility/room_name"
 
 // ---- Types and Constants ---- //
 export type CreepName = string

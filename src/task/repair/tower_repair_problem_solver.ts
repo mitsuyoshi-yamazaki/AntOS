@@ -1,6 +1,6 @@
 import { ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { Task, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"

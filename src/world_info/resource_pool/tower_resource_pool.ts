@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { ResourcePoolType } from "./resource_pool"
 
 /** 別タスクの実行中であっても上書きする */

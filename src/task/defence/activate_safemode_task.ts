@@ -1,7 +1,7 @@
 // TODO: There is another room in safe mode already などが考慮されていない
 
 // import { ProblemIdentifier } from "problem/problem_finder"
-// import { RoomName } from "prototype/room"
+// import { RoomName } from "utility/room_name"
 // import { Task, TaskState, TaskStatus } from "task/task"
 // import { decodeTasksFrom } from "task/task_decoder"
 // import { OwnedRoomObjects } from "world_info/room_info"

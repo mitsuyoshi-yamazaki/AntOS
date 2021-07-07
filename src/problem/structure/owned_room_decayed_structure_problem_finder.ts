@@ -1,6 +1,6 @@
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver } from "problem/problem_solver"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { TowerRepairProblemSolver } from "task/repair/tower_repair_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 

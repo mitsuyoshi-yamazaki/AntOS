@@ -1,5 +1,5 @@
 import { V5CreepMemory } from "prototype/creep"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { generateUniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
 import { ResourcePoolType } from "./resource_pool"
