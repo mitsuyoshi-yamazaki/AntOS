@@ -1,5 +1,7 @@
 import { RoomName } from "prototype/room"
 import { OwnedRoomHarvesterTask } from "task/harvester/owned_room_harvester_task"
+import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
+import { OwnedRoomHaulerTask } from "task/hauler/owned_room_hauler_task"
 import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
 import { OwnedRoomObjects } from "world_info/room_info"
@@ -77,8 +79,7 @@ export class WorkerTask extends Task {
     this.removeChildTask(primitiveWorkerTask)
 
     this.addChildTask(GeneralWorkerTask.create(this.roomName))
-    objects.sources.forEach(source => {
-      this.addChildTask(OwnedRoomHarvesterTask.create(this.roomName, source))
-    })
+    const energySources: OwnedRoomEnergySourceTask[] = objects.sources.map(source => OwnedRoomHarvesterTask.create(this.roomName, source))
+    this.addChildTask(OwnedRoomHaulerTask.create(this.roomName, energySources))
   }
 }

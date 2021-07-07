@@ -4,7 +4,6 @@ import { decodeTasksFrom } from "task/task_decoder"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
-import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
@@ -19,10 +18,9 @@ import { MoveToTask } from "object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
-import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
-import { RunApisTask, RunApisTaskOptions } from "object_task/creep_task/combined_task/run_apis_task"
-import { AnyCreepApiWrapper } from "object_task/creep_task/creep_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
+import { EnergySource } from "prototype/room_object"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -42,8 +40,14 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
 }
 
 // TODO: repair container
-export class OwnedRoomHarvesterTask extends Task {
+export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   public readonly taskIdentifier: TaskIdentifier
+  public get energySources(): EnergySource[] {
+    if (this.container == null) {
+      return []
+    }
+    return [this.container]
+  }
 
   private constructor(
     public readonly startTime: number,
@@ -107,7 +111,6 @@ export class OwnedRoomHarvesterTask extends Task {
 
     const problemFinders: ProblemFinder[] = []
     problemFinders.push(...this.runHarvester(objects))
-    problemFinders.push(...this.runHauler(objects))
 
     return TaskStatus.InProgress
   }
@@ -156,7 +159,7 @@ export class OwnedRoomHarvesterTask extends Task {
   }
 
   private runHarvester(objects: OwnedRoomObjects): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover]
+    const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
     const minimumCreepCount = 1 // TODO: lifeが短くなってきたら次をspawnさせる
     const initialTask = (): CreepTask => {
@@ -183,31 +186,6 @@ export class OwnedRoomHarvesterTask extends Task {
     return problemFinders
   }
 
-  private runHauler(objects: OwnedRoomObjects): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
-    const filterTaskIdentifier = null
-    const minimumCreepCount = 2 * objects.sources.length // TODO: 算出する
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
-
-    const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
-    ]
-
-    this.checkProblemFinders(problemFinders)
-
-    World.resourcePools.assignTasks(
-      objects.controller.room.name,
-      filterTaskIdentifier,
-      CreepPoolAssignPriority.Low,
-      (creep: Creep): CreepTask | null => {
-        return this.newTaskForHauler(creep, objects)
-      },
-      creepPoolFilter,
-    )
-
-    return problemFinders
-  }
-
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
     necessaryRoles: CreepRole[],
@@ -225,7 +203,7 @@ export class OwnedRoomHarvesterTask extends Task {
       getProblemSolvers: () => {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
-          solver.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+          solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = initialTask != null ? initialTask() : null
           solver.priority = priority
         }
@@ -259,46 +237,6 @@ export class OwnedRoomHarvesterTask extends Task {
       return RunApiTask.create(BuildApiWrapper.create(this.containerConstructionSite))
     }
     return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))  // TODO: dropは他の操作と同時に行える: parallel taskでharvestとdropを同時に行うようにする
-  }
-
-  private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
-
-    if (noEnergy) {
-      const harvestPosition = this.harvestPosition()
-
-      if (harvestPosition != null) {
-        if (creep.pos.isNearTo(harvestPosition) === true) {
-          const droppedResource = creep.pos.findInRange(objects.droppedResources, 1)[0]
-          if (droppedResource != null) {
-            const apiWrappers: AnyCreepApiWrapper[] = [
-              GetEnergyApiWrapper.create(droppedResource),
-            ]
-            if (this.container != null) {
-              apiWrappers.push(GetEnergyApiWrapper.create(this.container))
-            }
-            // TODO: harvesterからも受け取る
-            const options: RunApisTaskOptions = {
-              waitUntilFinishedAll: false,
-              ignoreFailure: false,
-            }
-            return RunApisTask.create(apiWrappers, options)
-          }
-        }
-        return MoveToTask.create(harvestPosition, 1)
-      }
-      return null
-    }
-
-    if (objects.activeStructures.storage != null) {
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
-    }
-
-    const structureToCharge = objects.getStructureToCharge(creep.pos)
-    if (structureToCharge != null) {
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
-    }
-    return null
   }
 
   private harvestPosition(): RoomPosition | null {

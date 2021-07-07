@@ -65,7 +65,7 @@ export class GeneralWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover] // TODO: 移動距離が短いのでMOVEをひとつ減らす
+    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore] // TODO: 移動距離が短いのでMOVEをひとつ減らす
     const filterTaskIdentifier = null
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
@@ -100,7 +100,7 @@ export class GeneralWorkerTask extends Task {
       getProblemSolvers: () => {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
-          solver.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+          solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.priority = CreepSpawnRequestPriority.Medium
         }
         if (solver != null) {

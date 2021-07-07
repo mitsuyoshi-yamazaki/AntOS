@@ -56,16 +56,12 @@ export class RunApiTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
 
     case IN_PROGRESS:
-    case ERR_NOT_IN_RANGE:
-    case ERR_NOT_ENOUGH_RESOURCES:
-      return TaskProgressType.Finished
-
-    case ERR_DAMAGED:
-      return TaskProgressType.Finished
-
     case ERR_BUSY:
       return TaskProgressType.InProgress
 
+    case ERR_NOT_IN_RANGE:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_DAMAGED:
     case ERR_PROGRAMMING_ERROR:
       return TaskProgressType.Finished
     }

@@ -99,7 +99,7 @@ export class PrimitiveWorkerTask extends Task {
       getProblemSolvers: () => {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
-          solver.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+          solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.priority = CreepSpawnRequestPriority.Medium
         }
         if (solver != null) {

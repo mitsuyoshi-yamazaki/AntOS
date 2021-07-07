@@ -1,7 +1,5 @@
-import { isV5CreepMemory } from "prototype/creep"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName, RoomPathMemory } from "prototype/room"
-import { EnergyChargeableStructure, EnergyStore } from "prototype/room_object"
+import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
 // Worldをimportしない
 
@@ -90,6 +88,7 @@ export class OwnedRoomObjects {
   }
   public readonly droppedResources: Resource[]
   public readonly tombStones: Tombstone[]
+  public readonly energySources: EnergySource[]
   public readonly energyStores: EnergyStore[] // TODO: Creepも含める
   public readonly flags: Flag[]
 
@@ -105,19 +104,21 @@ export class OwnedRoomObjects {
     this.tombStones = room.find(FIND_TOMBSTONES)
     this.flags = room.find(FIND_FLAGS)
 
-    this.energyStores = []
-    this.energyStores.push(...this.droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
-    this.energyStores.push(...this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0))
-    const energyStoreCreeps = creeps.filter(creep => {
-      if (!isV5CreepMemory(creep.memory)) {
-        return false
-      }
-      if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {
-        return false
-      }
-      return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
-    })
-    this.energyStores.push(...energyStoreCreeps)
+    this.energySources = this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 50)
+    this.energySources.push(...this.droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
+
+    this.energyStores = this.energySources.concat([])
+    // this.energyStores.push(...this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0)) // TODO: Creepを含められるようにする: 互いに食い合わないようにする
+    // const energyStoreCreeps = creeps.filter(creep => {
+    //   if (!isV5CreepMemory(creep.memory)) {
+    //     return false
+    //   }
+    //   if (hasNecessaryRoles(creep, [CreepRole.EnergyStore]) !== true) {
+    //     return false
+    //   }
+    //   return creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+    // })
+    // this.energyStores.push(...energyStoreCreeps)
 
     this.damagedStructures = []
 
@@ -163,6 +164,7 @@ export class OwnedRoomObjects {
         break
       case STRUCTURE_CONTAINER:
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          this.energySources.push(structure)
           this.energyStores.push(structure)
         }
         break
@@ -236,6 +238,21 @@ export class OwnedRoomObjects {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getEnergySource(position: RoomPosition): EnergySource | null { // TODO: Resource等は量も考慮する
+    const energySources = this.energySources
+    if (energySources.length <= 0) {
+      return null
+    }
+    return energySources.reduce((lhs, rhs) => {
       const lTargetedBy = lhs.targetedBy.length
       const rTargetedBy = rhs.targetedBy.length
       if (lTargetedBy === rTargetedBy) {

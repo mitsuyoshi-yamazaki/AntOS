@@ -46,7 +46,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
   ) {
     super(startTime, children, problemIdentifier)
 
-    this.codename = generateCodename(this.constructor.name, this.roomName.split("").reduce((r, c) => r + c.charCodeAt(0), 0))
+    this.codename = generateCodename(this.constructor.name, this.startTime)
   }
 
   public encode(): CreepInsufficiencyProblemSolverState {
