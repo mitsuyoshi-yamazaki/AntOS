@@ -9,6 +9,15 @@ export type EnergyStore = Tombstone | Resource | StructureContainer | StructureS
 /** EnergyをStorageへ回収する対象のオブジェクト */
 export type EnergySource = Tombstone | Resource | StructureContainer
 
+export function getEnergyAmountOf(energySource: EnergySource): number {
+  if (energySource instanceof Resource) {
+    if (energySource.resourceType !== RESOURCE_ENERGY) {
+      return 0
+    }
+    return energySource.amount
+  }
+  return energySource.store.getUsedCapacity(RESOURCE_ENERGY)
+}
 
 declare global {
   interface RoomObject {

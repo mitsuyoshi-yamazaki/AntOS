@@ -15,7 +15,7 @@ import { ProblemFinder } from "problem/problem_finder"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "./owned_room_energy_source_task"
-import { EnergySource, EnergyStore } from "prototype/room_object"
+import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
@@ -167,7 +167,7 @@ export class OwnedRoomHaulerTask extends Task {
         const lTargetedBy = lhs.targetedBy.length
         const rTargetedBy = rhs.targetedBy.length
         if (lTargetedBy === rTargetedBy) {
-          return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+          return getEnergyAmountOf(lhs) > getEnergyAmountOf(rhs) ? lhs : rhs
         }
         return lTargetedBy < rTargetedBy ? lhs : rhs
       })
