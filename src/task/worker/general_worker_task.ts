@@ -60,10 +60,6 @@ export class GeneralWorkerTask extends Task {
     return new GeneralWorkerTask(Game.time, [], roomName)
   }
 
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
-  }
-
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore] // TODO: 移動距離が短いのでMOVEをひとつ減らす
     const filterTaskIdentifier = null

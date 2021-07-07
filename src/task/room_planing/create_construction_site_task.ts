@@ -39,10 +39,6 @@ export class CreateConstructionSiteTask extends Task {
     return new CreateConstructionSiteTask(Game.time, [], roomName)
   }
 
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
-  }
-
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     if (objects.constructionSites.length > 0) {
       return TaskStatus.InProgress

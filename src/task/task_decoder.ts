@@ -1,8 +1,10 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { BuildContainerTask, BuildContainerTaskState } from "./build/build_container_task"
 import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState } from "./creep_spawn/creep_insufficiency_problem_solver"
 import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
 import { OwnedRoomHarvesterTask, OwnedRoomHarvesterTaskState } from "./harvester/owned_room_harvester_task"
+import { RemoteHarvesterTask, RemoteHarvesterTaskState } from "./remote_room_keeper/remote_harvester_task"
 import { OwnedRoomHaulerTask, OwnedRoomHaulerTaskState } from "./hauler/owned_room_hauler_task"
 import { TowerRepairProblemSolver, TowerRepairProblemSolverState } from "./repair/tower_repair_problem_solver"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
@@ -13,6 +15,8 @@ import { Task, TaskState } from "./task"
 import { GeneralWorkerTask, GeneralWorkerTaskState } from "./worker/general_worker_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
 import { WorkerTask, WorkerTaskState } from "./worker/worker_task"
+import { RemoteRoomKeeperTask, RemoteRoomKeeperTaskState } from "./remote_room_keeper/remote_room_keeper_task"
+import { RoomInvisibleProblemSolver, RoomInvisibleProblemSolverState } from "./scout/room_invisible_problem_solver"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -29,6 +33,10 @@ class TaskMap {
   "TowerRepairProblemSolver" = (state: TaskState) => TowerRepairProblemSolver.decode(state as TowerRepairProblemSolverState)
   "OwnedRoomScoutTask" = (state: TaskState) => OwnedRoomScoutTask.decode(state as OwnedRoomScoutTaskState)
   "ScoutRoomTask" = (state: TaskState) => ScoutRoomTask.decode(state as ScoutRoomTaskState)
+  "RemoteHarvesterTask" = (state: TaskState) => RemoteHarvesterTask.decode(state as RemoteHarvesterTaskState)
+  "BuildContainerTask" = (state: TaskState) => BuildContainerTask.decode(state as BuildContainerTaskState)
+  "RemoteRoomKeeperTask" = (state: TaskState) => RemoteRoomKeeperTask.decode(state as RemoteRoomKeeperTaskState)
+  "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as RoomInvisibleProblemSolverState)
 }
 const taskMap = new TaskMap()
 

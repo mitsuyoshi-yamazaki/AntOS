@@ -11,6 +11,7 @@ import { MoveToTask, MoveToTaskState } from "./meta_task/move_to_task"
 import { RunApiTask, RunApiTaskState } from "./combined_task/run_api_task"
 import { RunApisTask, RunApisTaskState } from "./combined_task/run_apis_task"
 import { MoveToTransferHaulerTask, MoveToTransferHaulerTaskState } from "./combined_task/move_to_transfer_hauler_task"
+import { EndlessTask, EndlessTaskState } from "./meta_task/endless_task"
 
 export interface CreepTaskState extends ObjectTaskState {
   /** type identifier */
@@ -38,6 +39,7 @@ class CreepTaskDecoderMap {
   // ---- Meta task ---- //
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
   "MoveToTask" = (state: CreepTaskState) => MoveToTask.decode(state as MoveToTaskState)
+  "EndlessTask" = (state: CreepTaskState) => EndlessTask.decode(state as EndlessTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 

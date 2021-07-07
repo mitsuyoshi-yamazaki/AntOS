@@ -8,7 +8,7 @@ export interface SequentialTaskOptions {
   */
   ignoreFailure: boolean
 
-  /** 子タスクが成功した場合、SequentialTask自体を終了する */
+  /** 子タスクがひとつでも成功した場合、SequentialTask自体を終了する */
   finishWhenSucceed: boolean
 }
 

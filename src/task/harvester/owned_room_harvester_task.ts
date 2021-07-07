@@ -1,5 +1,5 @@
 import { RoomName } from "prototype/room"
-import { Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
+import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskState, TaskStatus } from "task/task"
 import { decodeTasksFrom } from "task/task_decoder"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -21,6 +21,8 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { BuildContainerTask } from "task/build/build_container_task"
+import { roomLink } from "utility/log"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -31,9 +33,6 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
 
   /** container */
   co: {
-    /** construction site id */
-    c: Id<ConstructionSite<STRUCTURE_CONTAINER>> | null
-
     /** id */
     i: Id<StructureContainer> | null
   }
@@ -54,7 +53,6 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     public readonly children: Task[],
     public readonly roomName: RoomName,
     public readonly sourceId: Id<Source>,
-    private containerConstructionSiteId: Id<ConstructionSite<STRUCTURE_CONTAINER>> | null,
     private containerId: Id<StructureContainer> | null,
   ) {
     super(startTime, children)
@@ -70,7 +68,6 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
       r: this.roomName,
       i: this.sourceId,
       co: {
-        c: this.containerConstructionSiteId ?? null,
         i: this.containerId ?? null,
       },
     }
@@ -78,131 +75,50 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
 
   public static decode(state: OwnedRoomHarvesterTaskState): OwnedRoomHarvesterTask | null {
     const children = decodeTasksFrom(state.c)
-    return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.c, state.co.i)
+    return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.i)
   }
 
   public static create(roomName: RoomName, source: Source): OwnedRoomHarvesterTask {
-    return new OwnedRoomHarvesterTask(Game.time, [], roomName, source.id, null, null)
+    return new OwnedRoomHarvesterTask(Game.time, [], roomName, source.id, null)
   }
 
-  public description(): string {
-    return this.taskIdentifier
-  }
-
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
+  public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus { // TODO: finishedTasksからcontainerをとる
     const source = Game.getObjectById(this.sourceId)
     if (source == null) {
       PrimitiveLogger.fatal(`${this.description()} source ${this.sourceId} not found`)
       return TaskStatus.Failed
     }
 
-    const [container, containerConstructionSite] = this.getObjects()
-    this.checkContainer(objects, source, container, containerConstructionSite)
+    const container = ((): StructureContainer | null => {
+      if (this.containerId == null) {
+        return null
+      }
+      const stored = Game.getObjectById(this.containerId)
+      if (stored == null) {
+        this.containerId = null
+        return null
+      }
+      return stored
+    })()
 
     const problemFinders: ProblemFinder[] = []
-    problemFinders.push(...this.runHarvester(objects, source, container, containerConstructionSite))
+
+    if (container != null) {
+      problemFinders.push(...this.runHarvester(objects, source, container))
+    } else {
+      this.checkContainer(objects, childTaskResults.finishedTasks, source)
+    }
 
     return TaskStatus.InProgress
   }
 
   // ---- Run & Check Problem ---- //
-  private getObjects(): [StructureContainer | null, ConstructionSite<STRUCTURE_CONTAINER> | null] {
-    const container = ((): StructureContainer | null => {
-      if (this.containerId == null) {
-        return null
-      }
-      return Game.getObjectById(this.containerId)
-    })()
-    const containerConstructionSite = ((): ConstructionSite<STRUCTURE_CONTAINER> | null => {
-      if (this.containerConstructionSiteId == null) {
-        return null
-      }
-      return Game.getObjectById(this.containerConstructionSiteId)
-    })()
-
-    return [container, containerConstructionSite]
-  }
-
-  private checkContainer(
-    objects: OwnedRoomObjects,
-    source: Source,
-    container: StructureContainer | null,
-    containerConstructionSite: ConstructionSite<STRUCTURE_CONTAINER> | null
-  ): void {
-    if (container != null) {
-      this.containerConstructionSiteId = null
-      return
-    }
-    if (containerConstructionSite != null) {
-      this.containerId = null
-      return
-    }
-    this.containerId = null
-    this.containerConstructionSiteId = null
-    this.createConstructionSite(objects, source)
-  }
-
-  private createConstructionSite(objects: OwnedRoomObjects, source: Source): void {
-    const constructionSite = source.pos.findInRange(FIND_CONSTRUCTION_SITES, 1).find(site => site.structureType === STRUCTURE_CONTAINER)
-    if (constructionSite != null) {
-      this.containerConstructionSiteId = (constructionSite as ConstructionSite<STRUCTURE_CONTAINER>).id
-      return
-    }
-
-    const spawn = objects.activeStructures.spawns[0]
-    if (spawn == null) {
-      PrimitiveLogger.fatal(`No spawns ${this.taskIdentifier}`)
-      return
-    }
-    const resultPath = PathFinder.search(spawn.pos, { pos: source.pos, range: 1 })
-    if (resultPath.incomplete === true) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
-      return  // TODO: 毎tick行わないようにする
-    }
-
-    const path = resultPath.path
-    if (path.length <= 0) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
-      return  // TODO: 毎tick行わないようにする
-    }
-    const position = path[path.length - 1]
-    const result = source.room.createConstructionSite(position.x, position.y, STRUCTURE_CONTAINER)
-    switch (result) {
-    case OK:
-      return
-
-    case ERR_INVALID_TARGET: {
-      const structure = position.lookFor(LOOK_STRUCTURES)[0]
-      if (structure != null && structure instanceof StructureContainer) {
-        this.containerId = structure.id
-        return
-      }
-      const constructionSite = position.lookFor(LOOK_CONSTRUCTION_SITES)[0]
-      if (constructionSite != null && constructionSite.structureType === STRUCTURE_CONTAINER) {
-        this.containerConstructionSiteId = constructionSite.id as Id<ConstructionSite<STRUCTURE_CONTAINER>>
-        return
-      }
-      PrimitiveLogger.fatal(`createConstructionSite returns ERR_INVALID_TARGET ${this.taskIdentifier}`)
-      return
-    }
-    case ERR_NOT_OWNER:
-    case ERR_FULL:
-    case ERR_INVALID_ARGS:
-    case ERR_RCL_NOT_ENOUGH:
-      PrimitiveLogger.fatal(`createConstructionSite failed ${this.taskIdentifier}, ${result}`)
-      return  // TODO: 毎tick行わないようにする
-    }
-    return
-  }
-
   private runHarvester(
     objects: OwnedRoomObjects,
     source: Source,
-    container: StructureContainer | null,
-    containerConstructionSite: ConstructionSite<STRUCTURE_CONTAINER> | null
+    container: StructureContainer,
   ): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
-    const filterTaskIdentifier = this.taskIdentifier
     const minimumCreepCount = 1 // TODO: lifeが短くなってきたら次をspawnさせる
     const initialTask = (): CreepTask => {
       return MoveToTask.create(source.pos, 1)
@@ -210,17 +126,17 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, initialTask, CreepSpawnRequestPriority.High)
+      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, initialTask, CreepSpawnRequestPriority.High)
     ]
 
     this.checkProblemFinders(problemFinders)
 
     World.resourcePools.assignTasks(
       objects.controller.room.name,
-      filterTaskIdentifier,
+      this.taskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskForHarvester(creep, source, container, containerConstructionSite)
+        return this.newTaskForHarvester(creep, source, container)
       },
       creepPoolFilter,
     )
@@ -231,13 +147,12 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
     necessaryRoles: CreepRole[],
-    filterTaskIdentifier: TaskIdentifier | null,
     minimumCreepCount: number,
     initialTask: (() => CreepTask) | null,
     priority: CreepSpawnRequestPriority,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
@@ -263,42 +178,59 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   private newTaskForHarvester(
     creep: Creep,
     source: Source,
-    container: StructureContainer | null,
-    containerConstructionSite: ConstructionSite<STRUCTURE_CONTAINER> | null
+    container: StructureContainer,
   ): CreepTask | null {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
-      const harvestPosition = this.harvestPosition(container, containerConstructionSite)
-
-      if (harvestPosition != null) {
-        if (creep.pos.isEqualTo(harvestPosition) === true) {
-          return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
-        }
-        return MoveToTask.create(harvestPosition, 0)
+      const harvestPosition = container.pos
+      if (creep.pos.isEqualTo(harvestPosition) === true) {
+        return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
       }
-      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+      return MoveToTask.create(harvestPosition, 0)
     }
 
-    if (containerConstructionSite != null) {
-      return RunApiTask.create(BuildApiWrapper.create(containerConstructionSite))
-    }
-    if (container != null && container.hits < container.hitsMax * 0.8) {
+    if (container.hits < container.hitsMax * 0.8) {
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
     return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))  // TODO: dropは他の操作と同時に行える: parallel taskでharvestとdropを同時に行うようにする
   }
 
-  private harvestPosition(
-    container: StructureContainer | null,
-    containerConstructionSite: ConstructionSite<STRUCTURE_CONTAINER> | null
-  ): RoomPosition | null {
-    if (container != null) {
-      return container.pos
+  // ---- Build Container ---- //
+  private checkContainer(objects: OwnedRoomObjects, finishedChildTasks: Task[], source: Source): void {
+    const finishedBuildContainerTask = finishedChildTasks.find(task => task instanceof BuildContainerTask) as BuildContainerTask | null
+    if (finishedBuildContainerTask != null) {
+      this.containerId = finishedBuildContainerTask.container?.id ?? null
+      return
     }
-    if (containerConstructionSite != null) {
-      return containerConstructionSite.pos
+
+    const buildContainerTask = this.children.find(task => task instanceof BuildContainerTask) as BuildContainerTask | null
+    if (buildContainerTask != null) {
+      return
     }
-    return null
+    this.launchBuildContainerTask(objects, source)
+  }
+
+  private launchBuildContainerTask(objects: OwnedRoomObjects, source: Source): void {
+    const roomName = objects.controller.room.name
+    const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
+    if (pathStartPosition == null) {
+      PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
+      return
+    }
+    const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
+    if (resultPath.incomplete === true) {
+      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
+      return  // TODO: 毎tick行わないようにする
+    }
+
+    const path = resultPath.path
+    if (path.length <= 0) {
+      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
+      return  // TODO: 毎tick行わないようにする
+    }
+    const position = path[path.length - 1]
+    this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
+    return
   }
 }

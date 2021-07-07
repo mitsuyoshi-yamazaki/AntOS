@@ -16,6 +16,7 @@ export interface OwnedRoomScoutTaskState extends TaskState {
   n: RoomName[]
 }
 
+// TODO: まずは手動でroom.memoryを編集する
 /**
  * - Owned roomの周辺の情報を取得する斥候の管理タスク
  * - 斥候の常時展開はしない
@@ -56,10 +57,6 @@ export class OwnedRoomScoutTask extends Task {
       neighbourRoomNames.push(neighbour)
     }
     return new OwnedRoomScoutTask(Game.time, [], roomName, neighbourRoomNames)
-  }
-
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {

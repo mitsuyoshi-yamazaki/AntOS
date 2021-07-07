@@ -50,10 +50,6 @@ export class RoomKeeperTask extends Task {
     return new RoomKeeperTask(Game.time, children, roomName)
   }
 
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
-  }
-
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const problemFinders: ProblemFinder[] = [
       new RoomInvadedProblemFinder(objects),

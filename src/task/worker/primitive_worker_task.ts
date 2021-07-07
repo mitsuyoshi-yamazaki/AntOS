@@ -59,10 +59,6 @@ export class PrimitiveWorkerTask extends Task {
     return new PrimitiveWorkerTask(Game.time, [], roomName)
   }
 
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
-  }
-
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
     const filterTaskIdentifier = null

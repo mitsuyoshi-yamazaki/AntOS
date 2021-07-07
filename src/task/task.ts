@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
-import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
+import type { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { isProblemSolver } from "problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskType } from "./task_decoder"
@@ -19,6 +19,12 @@ export const TaskStatus = {
   InProgress: taskStatusInProgress,
   Finished: taskStatusFinished,
   Failed: taskStatusFailed,
+}
+
+export interface ChildTaskExecutionResults {
+  finishedTasks: Task[]
+  failedTasks: Task[]
+  // unresolvableProblems: ProblemFinder[]  // TODO: 集計できていないが、子タスクで解決できなかった問題を上にあげたい
 }
 
 // ---- Interface ---- //
@@ -43,7 +49,7 @@ export abstract class Task implements Stateful {
   }
 
   abstract encode(): TaskState
-  abstract runTask(objects: OwnedRoomObjects, finishedTasks: Task[], failedTasks: Task[]): TaskStatus
+  abstract runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus
 
   public description(): string {
     return this.taskIdentifier
@@ -112,7 +118,12 @@ export abstract class Task implements Stateful {
     this.removeChildTasks(finishedTasks)
     this.removeChildTasks(failedTasks)
 
-    return this.runTask(objects, finishedTasks, failedTasks)
+    const result: ChildTaskExecutionResults = {
+      finishedTasks,
+      failedTasks,
+    }
+
+    return this.runTask(objects, result)
   }
 
   // ---- Private ---- //

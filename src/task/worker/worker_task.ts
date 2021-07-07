@@ -15,6 +15,7 @@ export interface WorkerTaskState extends TaskState {
 
 /**
  * - concrete worker taskを実行する
+ * - PrimitiveWorker系からの更新にはGame.rooms["W27S26"].find(FIND_MY_CREEPS).forEach(c => c.memory.r.push("energy_store"))が必要
  */
 export class WorkerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
@@ -48,10 +49,6 @@ export class WorkerTask extends Task {
       PrimitiveWorkerTask.create(roomName),
     ]
     return new WorkerTask(Game.time, children, roomName)
-  }
-
-  public description(): string {
-    return `${this.constructor.name}_${this.roomName}`
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {

@@ -21,9 +21,7 @@ export abstract class ProblemSolver extends Task {
 
   public description(): string {
     const descriptions: string[] = [this.constructor.name]
-    if (this.problemIdentifier != null) {
-      descriptions.push(this.problemIdentifier)
-    }
+    descriptions.push(this.problemIdentifier)
     return descriptions.join("_")
   }
 }

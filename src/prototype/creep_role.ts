@@ -37,6 +37,14 @@ export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
   return missingRoles !== true
 }
 
+export function hasSomeRoles(creep: Creep, roles: CreepRole[]): boolean {
+  if (!isV5CreepMemory(creep.memory)) {
+    return false
+  }
+  const creepRoles = creep.memory.r
+  return creepRoles.some(role => roles.includes(role) === true)
+}
+
 const workerRoles = [
   CreepRole.Mover,
   CreepRole.Harvester,
