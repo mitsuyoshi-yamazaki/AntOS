@@ -77,6 +77,7 @@ export class OwnedRoomObjects {
     extensions: StructureExtension[]
     towers: StructureTower[]
     storage: StructureStorage | null
+    terminal: StructureTerminal | null
 
     chargeableStructures: EnergyChargeableStructure[]
   }
@@ -134,6 +135,7 @@ export class OwnedRoomObjects {
     const extensions: StructureExtension[] = []
     const towers: StructureTower[] = []
     let storage: StructureStorage | null = null
+    let terminal: StructureTerminal | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
 
     const excludedDamagedStructureTypes: StructureConstant[] = [
@@ -184,6 +186,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_TERMINAL:
+        terminal = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
@@ -232,6 +235,7 @@ export class OwnedRoomObjects {
       extensions,
       towers,
       storage,
+      terminal,
       chargeableStructures,
     }
 
@@ -275,10 +279,18 @@ export class OwnedRoomObjects {
   }
 
   public getEnergyStore(position: RoomPosition): EnergyStore | null { // TODO: Resource等は量も考慮する
+    if (this.activeStructures.storage != null && this.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
+      return this.activeStructures.storage
+    }
+    if (this.activeStructures.terminal != null && this.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
+      return this.activeStructures.terminal
+    }
+
     const energyStores = this.energyStores
     if (energyStores.length <= 0) {
       return null
     }
+
     return energyStores.reduce((lhs, rhs) => {
       const lTargetedBy = lhs.targetedBy.length
       const rTargetedBy = rhs.targetedBy.length
