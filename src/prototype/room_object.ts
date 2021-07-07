@@ -1,5 +1,4 @@
-import { TaskRunnerType } from "game_object_task/game_object_task"
-import { TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskRunnerId, TaskTargetCache } from "object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower  // TODO: まだある
 
@@ -21,7 +20,7 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
 
 declare global {
   interface RoomObject {
-    targetedBy: Id<TaskRunnerType>[]
+    targetedBy: TaskRunnerId[]
   }
 }
 
@@ -29,7 +28,7 @@ declare global {
 export function init(): void {
   try { // FixMe: Season3環境でなぜか失敗した
     Object.defineProperty(RoomObject.prototype, "targetedBy", {
-      get(): Id<TaskRunnerType>[] {
+      get(): TaskRunnerId[] {
         return TaskTargetCache.targetingTaskRunnerIds(this.id)
       },
     })

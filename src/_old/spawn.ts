@@ -1,4 +1,3 @@
-import { StructureSpawnTaskState } from "game_object_task/spawn_task";
 import { isV4CreepMemory } from "prototype/creep";
 import { CreepStatus, ActionResult } from "./creep";
 
@@ -13,9 +12,6 @@ declare global {
   }
 
   interface SpawnMemory {
-    /** task state */
-    ts: StructureSpawnTaskState | null
-
 
     /** @deprecated Old codebase */
     spawning: boolean[]

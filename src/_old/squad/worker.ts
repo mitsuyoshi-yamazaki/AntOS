@@ -121,7 +121,7 @@ export class WorkerSquad extends Squad {
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
     const memory: V4CreepMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

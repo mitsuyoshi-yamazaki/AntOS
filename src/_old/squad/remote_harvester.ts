@@ -541,8 +541,6 @@ export class RemoteHarvesterSquad extends Squad {
     const body: BodyPartConstant[] = energy_available >= 1300 ? [MOVE, MOVE, CLAIM, CLAIM] : [MOVE, CLAIM]
     const name = this.generateNewName()
     const memory: RemoteHarvesterMemory = {
-      ts: null,
-
       squad_name: this.name,
       status: CreepStatus.NONE,
       birth_time: Game.time,
@@ -579,7 +577,7 @@ export class RemoteHarvesterSquad extends Squad {
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
     const memory: RemoteHarvesterMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -613,7 +611,7 @@ export class RemoteHarvesterSquad extends Squad {
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
     const memory: RemoteHarvesterMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -652,7 +650,7 @@ export class RemoteHarvesterSquad extends Squad {
     const name = this.generateNewName()
     let body: BodyPartConstant[] = []
     const memory: RemoteHarvesterMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

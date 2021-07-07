@@ -1,6 +1,4 @@
-import { CreepTask as V4CreepTask } from "game_object_task/creep_task"
 import { CreepTask, CreepTaskState } from "object_task/creep_task/creep_task"
-import { CreepTaskState as V4CreepTaskState } from "game_object_task/creep_task"
 import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
@@ -57,9 +55,6 @@ export function isV5CreepMemory(arg: any): arg is V5CreepMemory {
 }
 
 export interface V4CreepMemory {
-  /** task state */
-  ts: V4CreepTaskState | null
-
   /** @deprecated Old codebase */
   squad_name: string
 
@@ -116,12 +111,6 @@ declare global {
 
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
     _task: CreepTask | null
-
-    /** @deprecated */
-    v4Task: V4CreepTask | null
-
-    /** @deprecated */
-    _v4Task: V4CreepTask | null
   }
 }
 
@@ -132,8 +121,6 @@ export function init(): void {
       return this._task
     },
     set(task: CreepTask | null): void {
-      this.v4Task = null
-
       if (this._task != null && this._task.targetId != null) {
         TaskTargetCache.didFinishTask(this.id, this._task.targetId)
       }
@@ -146,33 +133,6 @@ export function init(): void {
         this.say("idle")
       } else if (task.shortDescription != null) {
         this.say(task.shortDescription)
-      }
-    }
-  })
-
-  Object.defineProperty(Creep.prototype, "v4Task", {
-    get(): V4CreepTask | null {
-      if (this._task != null) {
-        return null
-      }
-      return this._v4Task
-    },
-    set(v4Task: V4CreepTask | null): void {
-      if (this._task != null) {
-        return
-      }
-
-      if (this._v4Task != null && this._v4Task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._v4Task.targetId)
-      }
-      if (v4Task != null && v4Task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, v4Task.targetId)
-      }
-      this._v4Task = v4Task
-      if (v4Task == null) {
-        this.say("idle")
-      } else if (v4Task.shortDescription != null) {
-        this.say(v4Task.shortDescription)
       }
     }
   })
