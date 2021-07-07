@@ -1,10 +1,8 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
-import { RoomName } from "utility/room_name"
-import { CreepTask } from "object_task/creep_task/creep_task"
-import { TaskIdentifier } from "task/task"
-import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
-import { decodeCreepTaskFromState } from "object_task/creep_task/creep_task_decoder"
+import type { RoomName } from "utility/room_name"
+import type { CreepTask } from "object_task/creep_task/creep_task"
+import type { TaskIdentifier } from "task/task"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0
@@ -25,32 +23,6 @@ export const CreepSpawnRequestPriority = {
   Low: creepSpawnRequestPriorityLow,
 }
 
-export interface CreepSpawnRequestState {
-  /** priority */
-  p: CreepSpawnRequestPriority
-
-  /** number of creeps */
-  n: number
-
-  /** codename */
-  c: string
-
-  /** roles */
-  r: CreepRole[]
-
-  /** body */
-  b: BodyPartConstant[] | null
-
-  /** initial task state */
-  it: CreepTaskState | null
-
-  /** task identifier */
-  i: TaskIdentifier | null
-
-  /** parent room name */
-  pr: RoomName | null
-}
-
 export interface CreepSpawnRequest {
   priority: CreepSpawnRequestPriority
   numberOfCreeps: number
@@ -66,38 +38,6 @@ export interface CreepSpawnRequest {
 
   /** 他の部屋へ引き継ぐ場合 */
   parentRoomName: RoomName | null
-}
-
-export function encodeCreepSpawnRequest(request: CreepSpawnRequest): CreepSpawnRequestState {
-  return {
-    p: request.priority,
-    n: request.numberOfCreeps,
-    c: request.codename,
-    r: request.roles,
-    b: request.body,
-    it: request.initialTask?.encode() ?? null,
-    i: request.taskIdentifier,
-    pr: request.parentRoomName,
-  }
-}
-
-export function decodeCreepSpawnRequest(state: CreepSpawnRequestState): CreepSpawnRequest {
-  const initialTask = ((): CreepTask | null => {
-    if (state.it == null) {
-      return null
-    }
-    return decodeCreepTaskFromState(state.it)
-  })()
-  return {
-    priority: state.p,
-    numberOfCreeps: state.n,
-    codename: state.c,
-    roles: state.r,
-    body: state.b,
-    initialTask,
-    taskIdentifier: state.i,
-    parentRoomName: state.pr,
-  }
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {
