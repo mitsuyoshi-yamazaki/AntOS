@@ -47,16 +47,19 @@ class CreepApiWrapperDecoderMap {
 const decoderMap = new CreepApiWrapperDecoderMap()
 
 export function decodeCreepApiWrapperFromState(state: CreepApiWrapperState): CreepApiWrapperType | null {
-  const result = ErrorMapper.wrapLoop((): CreepApiWrapperType | null => {
+  const result = ErrorMapper.wrapLoop((): CreepApiWrapperType | false => {
     const decoder = decoderMap[state.t]
     if (decoder == null) {
       const message = `Decode failed by program bug: missing decoder (API wrapper type identifier: ${state.t})`
       PrimitiveLogger.fatal(message)
-      return null
+      return false
     }
-    return decoder(state)
+    return decoder(state) ?? false
   }, `decodeCreepTaskFromState(), objective type: ${state.t}`)()
 
+  if (result === false) {
+    return null
+  }
   if (result == null) {
     if (state.t !== "BuildApiWrapper") {
       const message = `Decode failed by program bug (API wrapper type identifier: ${state.t})`

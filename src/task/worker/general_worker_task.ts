@@ -19,7 +19,7 @@ import { ProblemFinder } from "problem/problem_finder"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 
-const creepCount = 6
+const creepCount = 5
 
 export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
@@ -91,7 +91,7 @@ export class GeneralWorkerTask extends Task {
   // ---- Problem Solver ---- //
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
-    const minimumCreepCount = creepCount * objects.sources.length
+    const minimumCreepCount = creepCount
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
