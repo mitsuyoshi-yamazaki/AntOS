@@ -1,3 +1,4 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Stateful } from "os/infrastructure/state"
 import type { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
@@ -54,7 +55,7 @@ export abstract class Task implements Stateful {
       if (problemFinder.problemExists() !== true) {
         return
       }
-      if (this.isSolvingProblem(problemFinder.identifier)) {
+      if (this.isSolvingProblem(problemFinder.identifier)) {  // TODO: 上位タスク・下位タスクも調べる
         return
       }
       const problemSolvers = problemFinder.getProblemSolvers()
@@ -84,40 +85,48 @@ export abstract class Task implements Stateful {
   }
 
   public run(objects: OwnedRoomObjects): TaskStatus {
-    this.solvingProblemIdentifiers.splice(0, this.solvingProblemIdentifiers.length)
-    this.solvingProblemIdentifiers = this.children.flatMap(task => {
-      if (!isProblemSolver(task)) {
-        return []
+    const result = ErrorMapper.wrapLoop((): TaskStatus => {
+      this.solvingProblemIdentifiers.splice(0, this.solvingProblemIdentifiers.length)
+      this.solvingProblemIdentifiers = this.children.flatMap(task => {
+        if (!isProblemSolver(task)) {
+          return []
+        }
+        return [task.problemIdentifier]
+      })
+
+      const finishedTasks: Task[] = []
+      const failedTasks: Task[] = []
+
+      this.children.forEach(task => {
+        const status = task.run(objects)
+        switch (status) {
+        case TaskStatus.InProgress:
+          return
+        case TaskStatus.Finished:
+          finishedTasks.push(task)
+          return
+        case TaskStatus.Failed:
+          failedTasks.push(task)
+          return
+        }
+      })
+
+      this.removeChildTasks(finishedTasks)
+      this.removeChildTasks(failedTasks)
+
+      const result: ChildTaskExecutionResults = {
+        finishedTasks,
+        failedTasks,
       }
-      return [task.problemIdentifier]
-    })
 
-    const finishedTasks: Task[] = []
-    const failedTasks: Task[] = []
+      return this.runTask(objects, result)
+    }, `${this.constructor.name}.run()`)()
 
-    this.children.forEach(task => {
-      const status = task.run(objects)
-      switch (status) {
-      case TaskStatus.InProgress:
-        return
-      case TaskStatus.Finished:
-        finishedTasks.push(task)
-        return
-      case TaskStatus.Failed:
-        failedTasks.push(task)
-        return
-      }
-    })
-
-    this.removeChildTasks(finishedTasks)
-    this.removeChildTasks(failedTasks)
-
-    const result: ChildTaskExecutionResults = {
-      finishedTasks,
-      failedTasks,
+    if (result == null) {
+      PrimitiveLogger.fatal(`${this.constructor.name}.run() throwed exception`)
+      return TaskStatus.Failed
     }
-
-    return this.runTask(objects, result)
+    return result
   }
 
   // ---- Private ---- //
