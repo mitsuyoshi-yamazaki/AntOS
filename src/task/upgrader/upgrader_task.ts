@@ -56,20 +56,14 @@
 //   }
 
 //   public static decode(state: UpgraderTaskState, children: Task[]): UpgraderTask | null {
-//     return new UpgraderTask(state.s, children, state.r, state.i, state.co.i)
+//     return new UpgraderTask(state.s, children, state.r, state.co)
 //   }
 
-//   public static create(roomName: RoomName, source: Source): UpgraderTask {
-//     return new UpgraderTask(Game.time, [], roomName, source.id, null)
+//   public static create(roomName: RoomName): UpgraderTask {
+//     return new UpgraderTask(Game.time, [], roomName, null)
 //   }
 
-//   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus { // TODO: finishedTasksからcontainerをとる
-//     const source = Game.getObjectById(this.sourceId)
-//     if (source == null) {
-//       PrimitiveLogger.fatal(`${this.description()} source ${this.sourceId} not found`)
-//       return TaskStatus.Failed
-//     }
-
+//   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
 //     const container = ((): StructureContainer | null => {
 //       if (this.containerId == null) {
 //         return null
@@ -85,7 +79,7 @@
 //     const problemFinders: ProblemFinder[] = []
 
 //     if (container != null) {
-//       problemFinders.push(...this.runHarvester(objects, source, container))
+//       problemFinders.push(...this.runUpgrader(objects, container))
 //     } else {
 //       this.checkContainer(objects, childTaskResults.finishedTasks, source)
 //     }
@@ -94,9 +88,8 @@
 //   }
 
 //   // ---- Run & Check Problem ---- //
-//   private runHarvester(
+//   private runUpgrader(
 //     objects: OwnedRoomObjects,
-//     source: Source,
 //     container: StructureContainer,
 //   ): ProblemFinder[] {
 //     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
@@ -126,7 +119,6 @@
 //     objects: OwnedRoomObjects,
 //     necessaryRoles: CreepRole[],
 //     minimumCreepCount: number,
-//     source: Source,
 //   ): ProblemFinder {
 //     const roomName = objects.controller.room.name
 //     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)

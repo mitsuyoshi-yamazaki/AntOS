@@ -16,10 +16,8 @@ import { generateCodename } from "utility/unique_id"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { ProblemFinder } from "problem/problem_finder"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
-import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "task/task_state"
-
-const creepCount = 5
 
 export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
@@ -86,7 +84,13 @@ export class GeneralWorkerTask extends Task {
   // ---- Problem Solver ---- //
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
-    const minimumCreepCount = creepCount
+    const minimumCreepCount = ((): number => {
+      if (objects.activeStructures.storage == null) {
+        return 5
+      }
+      const energy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
+      return Math.min(Math.max(Math.floor(energy / 10000), 3), 5)
+    })()
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
@@ -97,6 +101,7 @@ export class GeneralWorkerTask extends Task {
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.priority = CreepSpawnRequestPriority.Medium
+          solver.body = this.workerBody(objects)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -106,6 +111,29 @@ export class GeneralWorkerTask extends Task {
     }
 
     return problemFinderWrapper
+  }
+
+  private workerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
+    const maximumCarryUnitCount = 3 // TODO: 算出する
+    const unit: BodyPartConstant[] = [CARRY, CARRY, WORK, WORK, MOVE]
+
+    const constructBody = ((unitCount: number): BodyPartConstant[] => {
+      const result: BodyPartConstant[] = []
+      for (let i = 0; i < unitCount; i += 1) {
+        result.push(...unit)
+      }
+      return result
+    })
+
+    const energyCapacity = objects.controller.room.energyCapacityAvailable
+    for (let i = maximumCarryUnitCount; i >= 1; i -= 1) {
+      const body = constructBody(i)
+      const cost = bodyCost(body)
+      if (cost <= energyCapacity) {
+        return body
+      }
+    }
+    return [WORK, CARRY, MOVE]
   }
 
   // ---- Creep Task ---- //
