@@ -46,13 +46,13 @@ export class TowerRepairProblemSolver extends ProblemSolver {
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const target = ((): AnyStructure | null => {
-      if (this.targetId != null) {
-        const stored = Game.getObjectById(this.targetId)
-        if (stored != null) {
-          return stored
-        }
-        this.targetId = null
-      }
+      // if (this.targetId != null) { // TODO: 終了判定ができていないため
+      //   const stored = Game.getObjectById(this.targetId)
+      //   if (stored != null) {
+      //     return stored
+      //   }
+      //   this.targetId = null
+      // }
       return objects.damagedStructures[0] ?? objects.decayedStructures[0]  // TODO: ターゲット選定
     })()
 
