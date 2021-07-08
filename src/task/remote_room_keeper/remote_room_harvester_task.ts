@@ -264,16 +264,23 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private launchBuildContainerTask(objects: OwnedRoomObjects, source: Source): void {
     const roomName = objects.controller.room.name
+
+    const constructionSite = source.pos.findInRange(FIND_CONSTRUCTION_SITES, 1).find(site => site.structureType === STRUCTURE_CONTAINER)
+    if (constructionSite != null) {
+      this.addChildTask(BuildContainerTask.create(roomName, constructionSite.pos, this.taskIdentifier))
+      return
+    }
+
     const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
     if (pathStartPosition == null) {
       PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
       return
     }
     const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
-    if (resultPath.incomplete === true) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
-      return  // TODO: 毎tick行わないようにする
-    }
+    // if (resultPath.incomplete === true) {
+    //   PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
+    //   return  // TODO: 毎tick行わないようにする
+    // }
 
     const path = resultPath.path
     if (path.length <= 0) {
@@ -281,6 +288,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return  // TODO: 毎tick行わないようにする
     }
     const position = path[path.length - 1]
+    if (position.isNearTo(source.pos) !== true) {
+      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete: ${resultPath.incomplete}, path: ${resultPath.path}`)
+      return  // TODO: 毎tick行わないようにする
+    }
     this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
 
     return

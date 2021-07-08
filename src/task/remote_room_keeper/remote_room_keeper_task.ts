@@ -73,7 +73,7 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    if (this.targetRoomName === "W25S29" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+    if (this.targetRoomName === "W28S26" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
       this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
     }
 
