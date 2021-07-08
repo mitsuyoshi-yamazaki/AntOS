@@ -16,6 +16,12 @@ export const defaultMoveToOptions: MoveToOpts = {
   maxOps: 500,
 }
 
+export const interRoomMoveToOptions: MoveToOpts = {
+  maxRooms: 3,
+  reusePath: 3,
+  maxOps: 500,
+}
+
 // ---- Custon Return Code ---- //
 export type FINISHED_AND_RAN = 967
 export type FINISHED = 968

@@ -183,7 +183,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private harvesterBody(source: Source, spawnRoom: Room): BodyPartConstant[] {
     const moveSpeed = 1.0
-    const terrainCost = 2
+    const terrainCost = 1
     const sourceEnergyCapacity = source.energyCapacity
     const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
 

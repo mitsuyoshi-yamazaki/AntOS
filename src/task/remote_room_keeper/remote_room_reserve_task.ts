@@ -14,6 +14,7 @@ import { MoveToRoomTask } from "object_task/creep_task/meta_task/move_to_room_ta
 import { SequentialTask, SequentialTaskOptions } from "object_task/creep_task/combined_task/sequential_task"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { ReserveControllerApiWrapper } from "object_task/creep_task/api_wrapper/reserve_controller_api_wrapper"
+import { bodyCost } from "world_info/resource_pool/creep_specs"
 
 export interface RemoteRoomReserveTaskState extends TaskState {
   /** room name */
@@ -96,15 +97,20 @@ export class RemoteRoomReserveTask extends Task {
       creepPoolFilter,
     )
 
+    const minimumBody = [MOVE, MOVE, CLAIM, CLAIM]
+    if (bodyCost(minimumBody) <= objects.controller.room.energyCapacityAvailable) {  // TODO: Problem Finderにする
+      return []
+    }
+
     const ticksToEnd = targetController.reservation?.ticksToEnd ?? 0
     if (ticksToEnd < 4000) {
-      return [this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier)]
+      return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
     } else {
       return []
     }
   }
 
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier): ProblemFinder {
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, minimumBody: BodyPartConstant[], necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier): ProblemFinder {
     const roomName = objects.controller.room.name
     const minimumCreepCount = 1
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
@@ -116,6 +122,7 @@ export class RemoteRoomReserveTask extends Task {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
+          solver.body = this.createReserverBody(minimumBody, objects.controller.room.energyCapacityAvailable)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -123,6 +130,15 @@ export class RemoteRoomReserveTask extends Task {
         return [solver]
       },
     }
+  }
+
+  private createReserverBody(minimumBody: BodyPartConstant[], energyCapacity: number): BodyPartConstant[] {
+    const maximumBody = [
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      CLAIM, CLAIM,
+    ]
+
+    return bodyCost(maximumBody) <= energyCapacity ? maximumBody : minimumBody
   }
 
   private newClaimerTaskFor(targetController: StructureController): CreepTask | null {

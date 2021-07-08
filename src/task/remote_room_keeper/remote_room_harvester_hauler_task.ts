@@ -74,12 +74,12 @@ export class RemoteRoomHaulerTask extends Task {
   // ---- Run & Check Problem ---- //
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
-    const filterTaskIdentifier = null
+    const filterTaskIdentifier = this.taskIdentifier
     const minimumCreepCount = energySources.length * 2 // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount)
+      this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount)
     ]
 
     this.checkProblemFinders(problemFinders)
@@ -99,11 +99,12 @@ export class RemoteRoomHaulerTask extends Task {
 
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
+    filterTaskIdentifier: TaskIdentifier,
     necessaryRoles: CreepRole[],
     minimumCreepCount: number,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

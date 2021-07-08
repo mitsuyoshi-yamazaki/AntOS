@@ -1,4 +1,4 @@
-import { defaultMoveToOptions, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN } from "prototype/creep"
+import { defaultMoveToOptions, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, interRoomMoveToOptions } from "prototype/creep"
 import { TaskProgressType } from "object_task/object_task"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
@@ -59,10 +59,12 @@ export class MoveToTransferHaulerTask implements CreepTask {
     case FINISHED_AND_RAN:
       return TaskProgressType.FinishedAndRan
 
-    case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, defaultMoveToOptions)
+    case ERR_NOT_IN_RANGE: {
+      const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions : interRoomMoveToOptions
+      creep.moveTo(this.apiWrapper.target, options)
       this.chargeNearbyChargeableStructure(creep)
       return TaskProgressType.InProgress
+    }
 
     case ERR_BUSY:
       return TaskProgressType.InProgress
