@@ -185,7 +185,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const moveSpeed = 1.0
     const terrainCost = 1
     const sourceEnergyCapacity = source.energyCapacity
-    const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
+    const maximumWorkCount = Math.ceil(((sourceEnergyCapacity / 300) / HARVEST_POWER) * 0.8)  // 2体呼び出しているため
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []

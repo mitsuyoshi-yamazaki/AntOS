@@ -98,7 +98,7 @@ export class RemoteRoomReserveTask extends Task {
     )
 
     const minimumBody = [MOVE, MOVE, CLAIM, CLAIM]
-    if (bodyCost(minimumBody) <= objects.controller.room.energyCapacityAvailable) {  // TODO: Problem Finderにする
+    if (bodyCost(minimumBody) > objects.controller.room.energyCapacityAvailable) {  // TODO: Problem Finderにする
       return []
     }
 

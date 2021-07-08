@@ -62,7 +62,7 @@ export class MoveToTransferHaulerTask implements CreepTask {
     case ERR_NOT_IN_RANGE: {
       const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions : interRoomMoveToOptions
       creep.moveTo(this.apiWrapper.target, options)
-      this.chargeNearbyChargeableStructure(creep)
+      this.runSubTask(creep)
       return TaskProgressType.InProgress
     }
 
@@ -72,6 +72,25 @@ export class MoveToTransferHaulerTask implements CreepTask {
     case ERR_PROGRAMMING_ERROR:
       return TaskProgressType.Finished
     }
+  }
+
+  private runSubTask(creep: Creep): void {
+    if (creep.body.map(b => b.type).includes(WORK) === true) {
+      const roadToRepair = creep.pos.lookFor(LOOK_STRUCTURES).find(structure => {
+        if (structure.structureType !== STRUCTURE_ROAD) {
+          return false
+        }
+        if (structure.hits > structure.hitsMax * 0.85) {
+          return false
+        }
+        return true
+      }) as StructureRoad | null
+      if (roadToRepair != null) {
+        creep.repair(roadToRepair)
+        return
+      }
+    }
+    this.chargeNearbyChargeableStructure(creep)
   }
 
   private chargeNearbyChargeableStructure(creep: Creep): void {
