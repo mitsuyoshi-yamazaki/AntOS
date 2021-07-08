@@ -1,7 +1,10 @@
 import { RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { calculateSourceRoute } from "script/pathfinder"
+import { roomLink } from "utility/log"
+import { Migration } from "utility/migration"
 import { RoomName } from "utility/room_name"
+import { ShortVersion } from "utility/system_info"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []
@@ -27,6 +30,8 @@ export const Rooms: RoomsInterface = {
     ownedRooms.splice(0, ownedRooms.length)
     ownedRoomObjects.clear()
 
+    const roomVersions = new Map<ShortVersion, RoomName[]>()
+
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
       allVisibleRooms.push(room)
@@ -34,7 +39,25 @@ export const Rooms: RoomsInterface = {
       if (room.controller != null && room.controller.my === true) {
         ownedRooms.push(room)
         ownedRoomObjects.set(roomName, enumerateObjects(room.controller, creeps.get(roomName) ?? []))
+
+        const controlVersion = Migration.roomVersion(room.name)
+        const roomNames = ((): RoomName[] => {
+          const stored = roomVersions.get(controlVersion)
+          if (stored != null) {
+            return stored
+          }
+          const newRoomNames: RoomName[] = []
+          roomVersions.set(controlVersion, newRoomNames)
+          return newRoomNames
+        })()
+        roomNames.push(roomName)
       }
+    }
+
+    if (Game.time % 107 === 13) {
+      roomVersions.forEach((roomNames, version) => {
+        console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+      })
     }
 
     return Array.from(ownedRoomObjects.values())

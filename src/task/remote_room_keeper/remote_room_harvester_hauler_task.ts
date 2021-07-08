@@ -75,7 +75,7 @@ export class RemoteRoomHaulerTask extends Task {
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energySources.length * 3 // TODO: 距離等を加味する
+    const minimumCreepCount = energySources.filter(source => getEnergyAmountOf(source) > 500).length * 3 // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -177,13 +177,10 @@ export class RemoteRoomHaulerTask extends Task {
     const targetRoom = World.rooms.get(this.targetRoomName)
     if (targetRoom != null) {
       const droppedEnergy = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => {
-        if (resource.targetedBy.length > 0) {
-          return false
+        if (500 * resource.targetedBy.length < getEnergyAmountOf(resource)) {
+          return true
         }
-        if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
-          return false
-        }
-        return resource.amount >= 100
+        return false
       })
       if (droppedEnergy != null) {
         return droppedEnergy

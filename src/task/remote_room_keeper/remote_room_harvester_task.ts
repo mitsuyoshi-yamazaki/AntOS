@@ -131,7 +131,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source)
+      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, container == null)
     ]
 
     this.checkProblemFinders(problemFinders)
@@ -156,6 +156,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     necessaryRoles: CreepRole[],
     minimumCreepCount: number,
     source: Source,
+    isConstructing: boolean,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
@@ -169,7 +170,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = MoveToTask.create(source.pos, 1)
           solver.priority = CreepSpawnRequestPriority.High
-          solver.body = this.harvesterBody(source, objects.controller.room)
+
+          const energyCapacity = objects.controller.room.energyCapacityAvailable
+          solver.body = isConstructing ? this.builderBody(energyCapacity) : this.harvesterBody(source, energyCapacity)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -181,7 +184,21 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     return problemFinderWrapper
   }
 
-  private harvesterBody(source: Source, spawnRoom: Room): BodyPartConstant[] {
+  private builderBody(energyCapacity: number): BodyPartConstant[] {
+    const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
+    const maxUnits = 4
+    const unitCost = bodyCost(unit)
+    const count = Math.max(Math.min(Math.floor(energyCapacity / unitCost), maxUnits), 1)
+
+    const body: BodyPartConstant[] = []
+
+    for (let i = 0; i < count; i += 1) {
+      body.push(...unit)
+    }
+    return body
+  }
+
+  private harvesterBody(source: Source, energyCapacity: number): BodyPartConstant[] {
     const moveSpeed = 1.0
     const terrainCost = 1
     const sourceEnergyCapacity = source.energyCapacity
@@ -200,7 +217,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return result
     })
 
-    const energyCapacity = spawnRoom.energyCapacityAvailable
     for (let i = maximumWorkCount; i >= 1; i -= 1) {
       const body = constructBody(i)
       const cost = bodyCost(body)

@@ -30,7 +30,6 @@ const mainLoop = () => {
   if (Game.shard.name === "shard2") {
     ErrorMapper.wrapLoop(() => {
       const owned_controllers: StructureController[] = []
-      const roomVersions = new Map<ShortVersion, RoomName[]>()
 
       for (const room_name in Game.rooms) {
         const room = Game.rooms[room_name]
@@ -39,17 +38,6 @@ const mainLoop = () => {
         }
 
         const controlVersion = Migration.roomVersion(room.name)
-        const roomNames = ((): RoomName[] => {
-          const stored = roomVersions.get(controlVersion)
-          if (stored != null) {
-            return stored
-          }
-          const newRoomNames: RoomName[] = []
-          roomVersions.set(controlVersion, newRoomNames)
-          return newRoomNames
-        })()
-        roomNames.push(room_name)
-
         if (controlVersion !== ShortVersion.v3) {
           continue
         }
@@ -64,12 +52,6 @@ const mainLoop = () => {
       const empire = new Empire(Game.user.name, owned_controllers)
 
       empire.run()
-
-      if (Game.time % 107 === 13) {
-        roomVersions.forEach((roomNames, version) => {
-          console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
-        })
-      }
     }, `empire.run`)()
 
     if ((Game.time % 997) == 17) {
