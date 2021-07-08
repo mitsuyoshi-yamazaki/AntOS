@@ -4,7 +4,7 @@ import { BuildContainerTask, BuildContainerTaskState } from "./build/build_conta
 import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState } from "./creep_spawn/creep_insufficiency_problem_solver"
 import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
 import { OwnedRoomHarvesterTask, OwnedRoomHarvesterTaskState } from "./harvester/owned_room_harvester_task"
-import { RemoteHarvesterTask, RemoteHarvesterTaskState } from "./remote_room_keeper/remote_harvester_task"
+import { RemoteRoomHarvesterTask, RemoteRoomHarvesterTaskState } from "./remote_room_keeper/remote_room_harvester_task"
 import { OwnedRoomHaulerTask, OwnedRoomHaulerTaskState } from "./hauler/owned_room_hauler_task"
 import { TowerRepairProblemSolver, TowerRepairProblemSolverState } from "./repair/tower_repair_problem_solver"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
@@ -20,6 +20,7 @@ import { RoomInvisibleProblemSolver, RoomInvisibleProblemSolverState } from "./s
 import { RemoteRoomManagerTask, RemoteRoomManagerTaskState } from "./remote_room_keeper/remote_room_manager_task"
 import { ScoutRoomTask, ScoutRoomTaskState } from "./scout/scout_room_task"
 import type { TaskState } from "./task_state"
+// import { RemoteRoomCreateRoadConstructionSiteTask, RemoteRoomCreateRoadConstructionSiteTaskState } from "./remote_room_keeper/remote_room_create_road_construction_site_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -37,11 +38,12 @@ class TaskMap {
   "OwnedRoomScoutTask" = (state: TaskState) => OwnedRoomScoutTask.decode(state as unknown as OwnedRoomScoutTaskState, decodeTasksFrom(state.c))
   "ScoutRoomsTask" = (state: TaskState) => ScoutRoomsTask.decode(state as unknown as ScoutRoomsTaskState, decodeTasksFrom(state.c))
   "ScoutRoomTask" = (state: TaskState) => ScoutRoomTask.decode(state as unknown as ScoutRoomTaskState, decodeTasksFrom(state.c))
-  "RemoteHarvesterTask" = (state: TaskState) => RemoteHarvesterTask.decode(state as unknown as RemoteHarvesterTaskState, decodeTasksFrom(state.c))
   "BuildContainerTask" = (state: TaskState) => BuildContainerTask.decode(state as unknown as BuildContainerTaskState, decodeTasksFrom(state.c))
   "RemoteRoomKeeperTask" = (state: TaskState) => RemoteRoomKeeperTask.decode(state as unknown as RemoteRoomKeeperTaskState, decodeTasksFrom(state.c))
   "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as unknown as RoomInvisibleProblemSolverState, decodeTasksFrom(state.c))
   "RemoteRoomManagerTask" = (state: TaskState) => RemoteRoomManagerTask.decode(state as unknown as RemoteRoomManagerTaskState, decodeTasksFrom(state.c))
+  "RemoteRoomHarvesterTask" = (state: TaskState) => RemoteRoomHarvesterTask.decode(state as unknown as RemoteRoomHarvesterTaskState, decodeTasksFrom(state.c))
+  // "RemoteRoomCreateRoadConstructionSiteTask" = (state: TaskState) => RemoteRoomCreateRoadConstructionSiteTask.decode(state as unknown as RemoteRoomCreateRoadConstructionSiteTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

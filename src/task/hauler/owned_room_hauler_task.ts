@@ -128,7 +128,7 @@ export class OwnedRoomHaulerTask extends Task {
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 3 // TODO: 算出する
+    const maximumCarryUnitCount = 4 // TODO: 算出する
     const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {

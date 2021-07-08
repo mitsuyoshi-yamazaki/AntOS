@@ -4,6 +4,8 @@ import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "task/task_state"
+import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
+import { World } from "world_info/world_info"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -25,7 +27,7 @@ export class RemoteRoomKeeperTask extends Task {
   ) {
     super(startTime, children)
 
-    this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
+    this.taskIdentifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}`
   }
 
   public encode(): RemoteRoomKeeperTaskState {
@@ -51,6 +53,21 @@ export class RemoteRoomKeeperTask extends Task {
       new RoomInvisibleProblemFinder(objects, this.targetRoomName),
     ]
     this.checkProblemFinders(problemFinders)
+
+    if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
+      const room = World.rooms.get(this.targetRoomName)
+      if (room != null) {
+        const sources = room.find(FIND_SOURCES)
+        sources.forEach(source => {
+          console.log(`RemoteRoomHarvesterTask added ${source}`)
+          this.addChildTask(RemoteRoomHarvesterTask.create(this.roomName, source))
+        })
+      }
+    }
+    // const harvesterTask = this.children.find(task => task instanceof RemoteRoomHarvesterTask)
+    // if (harvesterTask != null) {
+    //   this.removeChildTask(harvesterTask)
+    // }
 
     return TaskStatus.InProgress
   }

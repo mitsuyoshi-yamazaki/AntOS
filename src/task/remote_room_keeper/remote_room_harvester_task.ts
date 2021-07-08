@@ -22,10 +22,15 @@ import { BuildContainerTask } from "task/build/build_container_task"
 import { roomLink } from "utility/log"
 import { TaskState } from "task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
+import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
+import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
 
-export interface OwnedRoomHarvesterTaskState extends TaskState {
+export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
   r: RoomName
+
+  /** target room name */
+  tr: RoomName
 
   /** source id */
   i: Id<Source>
@@ -37,7 +42,7 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
   }
 }
 
-export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
+export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   public readonly taskIdentifier: TaskIdentifier
   public get energySources(): EnergySource[] {
     if (this.containerId == null) {
@@ -51,20 +56,22 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
+    public readonly targetRoomName: RoomName,
     public readonly sourceId: Id<Source>,
     private containerId: Id<StructureContainer> | null,
   ) {
     super(startTime, children)
 
-    this.taskIdentifier = `${this.constructor.name}_${this.roomName}_${this.sourceId}`
+    this.taskIdentifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}_${this.sourceId}`
   }
 
-  public encode(): OwnedRoomHarvesterTaskState {
+  public encode(): RemoteRoomHarvesterTaskState {
     return {
-      t: "OwnedRoomHarvesterTask",
+      t: "RemoteRoomHarvesterTask",
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
+      tr: this.targetRoomName,
       i: this.sourceId,
       co: {
         i: this.containerId ?? null,
@@ -72,19 +79,23 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     }
   }
 
-  public static decode(state: OwnedRoomHarvesterTaskState, children: Task[]): OwnedRoomHarvesterTask | null {
-    return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.i)
+  public static decode(state: RemoteRoomHarvesterTaskState, children: Task[]): RemoteRoomHarvesterTask | null {
+    return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i)
   }
 
-  public static create(roomName: RoomName, source: Source): OwnedRoomHarvesterTask {
-    return new OwnedRoomHarvesterTask(Game.time, [], roomName, source.id, null)
+  public static create(roomName: RoomName, source: Source): RemoteRoomHarvesterTask {
+    const targetRoomName = source.room.name
+    const children: Task[] = [
+      // RemoteRoomCreateRoadConstructionSiteTask.create(roomName, targetRoomName)
+    ]
+    return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const source = Game.getObjectById(this.sourceId)
     if (source == null) {
-      PrimitiveLogger.fatal(`${this.description()} source ${this.sourceId} not found`)
-      return TaskStatus.Failed
+      // TODO: initialTaskにmoveToRoomを入れておく
+      return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
     }
 
     const container = ((): StructureContainer | null => {
@@ -101,11 +112,11 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
 
     const problemFinders: ProblemFinder[] = []
 
-    if (container != null) {  // FixMe: containerがないときでもrunHarvesterを行う
-      problemFinders.push(...this.runHarvester(objects, source, container))
-    } else {
+    if (container == null) {
       this.checkContainer(objects, childTaskResults.finishedTasks, source)
     }
+
+    problemFinders.push(...this.runHarvester(objects, source, container))
 
     return TaskStatus.InProgress
   }
@@ -114,10 +125,10 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   private runHarvester(
     objects: OwnedRoomObjects,
     source: Source,
-    container: StructureContainer,
+    container: StructureContainer | null,
   ): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
-    const minimumCreepCount = 1 // TODO: lifeが短くなってきたら次をspawnさせる
+    const minimumCreepCount = this.containerId == null ? 3 : 2 // TODO: lifeが短くなってきたら次をspawnさせる
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -126,15 +137,17 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
 
     this.checkProblemFinders(problemFinders)
 
-    World.resourcePools.assignTasks(
-      objects.controller.room.name,
-      this.taskIdentifier,
-      CreepPoolAssignPriority.Low,
-      (creep: Creep): CreepTask | null => {
-        return this.newTaskForHarvester(creep, source, container)
-      },
-      creepPoolFilter,
-    )
+    if (container != null) {  // container == nullの場合はBuildContainerTaskがcreepを制御する
+      World.resourcePools.assignTasks(
+        objects.controller.room.name,
+        this.taskIdentifier,
+        CreepPoolAssignPriority.Low,
+        (creep: Creep): CreepTask | null => {
+          return this.newTaskForHarvester(creep, source, container)
+        },
+        creepPoolFilter,
+      )
+    }
 
     return problemFinders
   }
@@ -157,7 +170,7 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = MoveToTask.create(source.pos, 1)
           solver.priority = CreepSpawnRequestPriority.High
-          solver.body = this.harvesterBody(source)
+          solver.body = this.harvesterBody(source, objects.controller.room)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -169,9 +182,11 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     return problemFinderWrapper
   }
 
-  private harvesterBody(source: Source): BodyPartConstant[] {
-    const moveSpeed = 0.5
-    const maximumWorkCount = Math.ceil((source.energyCapacity / 300) / HARVEST_POWER) + 1
+  private harvesterBody(source: Source, spawnRoom: Room): BodyPartConstant[] {
+    const moveSpeed = 1.0
+    const terrainCost = 2
+    const sourceEnergyCapacity = 3000//source.energyCapacity  // TODO: claimタスクを書く
+    const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
@@ -179,14 +194,14 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
         result.push(WORK)
       }
       result.push(CARRY)
-      const moveCount = Math.ceil((result.length / 2) * moveSpeed)
+      const moveCount = Math.ceil((result.length / 2) * terrainCost * moveSpeed)
       for (let i = 0; i < moveCount; i += 1) {
         result.unshift(MOVE)
       }
       return result
     })
 
-    const energyCapacity = source.room.energyCapacityAvailable
+    const energyCapacity = spawnRoom.energyCapacityAvailable
     for (let i = maximumWorkCount; i >= 1; i -= 1) {
       const body = constructBody(i)
       const cost = bodyCost(body)
@@ -216,6 +231,12 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     if (container.hits < container.hitsMax * 0.8) {
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
+
+    const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES)
+    if (constructionSite != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+    }
+
     return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))  // TODO: dropは他の操作と同時に行える: parallel taskでharvestとdropを同時に行うようにする
   }
 
@@ -262,6 +283,7 @@ export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
     }
     const position = path[path.length - 1]
     this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
+
     return
   }
 

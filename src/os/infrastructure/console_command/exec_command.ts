@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, placeRoadConstructMarks, showCachedSourcePath } from "script/pathfinder"
+import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showTargetedBy } from "script/task_target_cache_viewer"
 import { World } from "world_info/world_info"
@@ -26,8 +26,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.placeOldRoomPlan()
     case "ShowTargetedBy":
       return this.showTargetedBy()
-    case "PlaceRoadConstructMarks":
-      return this.placeRoadConstructMarks()
+    case "PlaceRoadConstructionMarks":
+      return this.placeRoadConstructionMarks()
     default:
       return "Invalid script type"
     }
@@ -184,17 +184,8 @@ export class ExecCommand implements ConsoleCommand {
     return showTargetedBy(targetIds.split(","))
   }
 
-  private placeRoadConstructMarks(): CommandExecutionResult {
+  private placeRoadConstructionMarks(): CommandExecutionResult {
     const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const room = World.rooms.get(roomName)
-    if (room == null) {
-      return `No visual for room ${roomLink(roomName)}`
-    }
 
     const startObjectId = args.get("start_object_id")
     if (startObjectId == null) {
@@ -214,7 +205,7 @@ export class ExecCommand implements ConsoleCommand {
       return `${goalObject} is not RoomObject ${goalObjectId}`
     }
 
-    placeRoadConstructMarks(room, startObject, goalObject, "manual")
+    placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual")
     return "ok"
   }
 }
