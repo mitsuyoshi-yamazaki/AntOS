@@ -6,6 +6,7 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "task/task_state"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { World } from "world_info/world_info"
+import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -45,7 +46,9 @@ export class RemoteRoomKeeperTask extends Task {
   }
 
   public static create(roomName: RoomName, targetRoomName: RoomName): RemoteRoomKeeperTask {
-    return new RemoteRoomKeeperTask(Game.time, [], roomName, targetRoomName)
+    const children: Task[] = [
+    ]
+    return new RemoteRoomKeeperTask(Game.time, children, roomName, targetRoomName)
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
@@ -54,20 +57,25 @@ export class RemoteRoomKeeperTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
-    if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
-      const room = World.rooms.get(this.targetRoomName)
-      if (room != null) {
-        const sources = room.find(FIND_SOURCES)
-        sources.forEach(source => {
-          console.log(`RemoteRoomHarvesterTask added ${source}`)
-          this.addChildTask(RemoteRoomHarvesterTask.create(this.roomName, source))
-        })
-      }
-    }
-    // const harvesterTask = this.children.find(task => task instanceof RemoteRoomHarvesterTask)
-    // if (harvesterTask != null) {
-    //   this.removeChildTask(harvesterTask)
+    // if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
+    //   const room = World.rooms.get(this.targetRoomName)
+    //   if (room != null) {
+    //     const sources = room.find(FIND_SOURCES)
+    //     sources.forEach(source => {
+    //       console.log(`RemoteRoomHarvesterTask added ${source}`)
+    //       this.addChildTask(RemoteRoomHarvesterTask.create(this.roomName, source))
+    //     })
+    //   }
     // }
+    const harvesterTask = this.children.find(task => task instanceof RemoteRoomHarvesterTask)
+    if (harvesterTask != null) {
+      this.removeChildTask(harvesterTask)
+    }
+
+    const targetRoom = World.rooms.get(this.targetRoomName)
+    if (this.targetRoomName === "W25S29" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+      this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
+    }
 
     return TaskStatus.InProgress
   }

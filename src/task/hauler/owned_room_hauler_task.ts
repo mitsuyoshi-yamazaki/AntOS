@@ -13,7 +13,7 @@ import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "problem/problem_finder"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { OwnedRoomEnergySourceTask } from "./owned_room_energy_source_task"
+import { EnergySourceTask } from "./owned_room_energy_source_task"
 import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "task/task_state"
@@ -26,8 +26,8 @@ export interface OwnedRoomHaulerTaskState extends TaskState {
 export class OwnedRoomHaulerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
-  private get energySources(): OwnedRoomEnergySourceTask[] {
-    return this.children.filter(task => task instanceof OwnedRoomEnergySourceTask) as OwnedRoomEnergySourceTask[]
+  private get energySources(): EnergySourceTask[] {
+    return this.children.filter(task => task instanceof EnergySourceTask) as EnergySourceTask[]
   }
 
   private constructor(
@@ -53,7 +53,7 @@ export class OwnedRoomHaulerTask extends Task {
     return new OwnedRoomHaulerTask(state.s, children, state.r)
   }
 
-  public static create(roomName: RoomName, energySources: OwnedRoomEnergySourceTask[]): OwnedRoomHaulerTask {
+  public static create(roomName: RoomName, energySources: EnergySourceTask[]): OwnedRoomHaulerTask {
     return new OwnedRoomHaulerTask(Game.time, energySources, roomName)
   }
 

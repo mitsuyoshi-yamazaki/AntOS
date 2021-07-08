@@ -15,7 +15,7 @@ import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
+import { EnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { BuildContainerTask } from "task/build/build_container_task"
@@ -37,7 +37,7 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
   }
 }
 
-export class OwnedRoomHarvesterTask extends OwnedRoomEnergySourceTask {
+export class OwnedRoomHarvesterTask extends EnergySourceTask {
   public readonly taskIdentifier: TaskIdentifier
   public get energySources(): EnergySource[] {
     if (this.containerId == null) {

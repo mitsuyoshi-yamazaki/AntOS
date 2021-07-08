@@ -15,7 +15,7 @@ import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { OwnedRoomEnergySourceTask } from "task/hauler/owned_room_energy_source_task"
+import { EnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { BuildContainerTask } from "task/build/build_container_task"
@@ -24,7 +24,6 @@ import { TaskState } from "task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
-import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -43,7 +42,7 @@ export interface RemoteRoomHarvesterTaskState extends TaskState {
   }
 }
 
-export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
+export class RemoteRoomHarvesterTask extends EnergySourceTask {
   public readonly taskIdentifier: TaskIdentifier
   public get energySources(): EnergySource[] {
     if (this.containerId == null) {
@@ -87,7 +86,6 @@ export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   public static create(roomName: RoomName, source: Source): RemoteRoomHarvesterTask {
     const targetRoomName = source.room.name
     const children: Task[] = [
-      RemoteRoomReserveTask.create(roomName, targetRoomName)
     ]
     return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null)
   }
@@ -226,7 +224,7 @@ export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
       if (creep.pos.isEqualTo(harvestPosition) === true) {
         return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
       }
-      return MoveToTask.create(harvestPosition, 0)
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
     }
 
     if (container.hits < container.hitsMax * 0.8) {
