@@ -1,5 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Task } from "./task"
+import type { TaskState } from "./task_state"
 import { BuildContainerTask, BuildContainerTaskState } from "./build/build_container_task"
 import { CreepInsufficiencyProblemSolver, CreepInsufficiencyProblemSolverState } from "./creep_spawn/creep_insufficiency_problem_solver"
 import { TowerInterceptionProblemSolver, TowerInterceptionProblemSolverState } from "./defence/tower_interception_problem_solver"
@@ -11,7 +13,6 @@ import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_t
 import { CreateConstructionSiteTask, CreateConstructionSiteTaskState } from "./room_planing/create_construction_site_task"
 import { OwnedRoomScoutTask, OwnedRoomScoutTaskState } from "./scout/owned_room_scout_task"
 import { ScoutRoomsTask, ScoutRoomsTaskState } from "./scout/scout_rooms_task"
-import { Task } from "./task"
 import { GeneralWorkerTask, GeneralWorkerTaskState } from "./worker/general_worker_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
 import { WorkerTask, WorkerTaskState } from "./worker/worker_task"
@@ -19,8 +20,7 @@ import { RemoteRoomKeeperTask, RemoteRoomKeeperTaskState } from "./remote_room_k
 import { RoomInvisibleProblemSolver, RoomInvisibleProblemSolverState } from "./scout/room_invisible_problem_solver"
 import { RemoteRoomManagerTask, RemoteRoomManagerTaskState } from "./remote_room_keeper/remote_room_manager_task"
 import { ScoutRoomTask, ScoutRoomTaskState } from "./scout/scout_room_task"
-import type { TaskState } from "./task_state"
-// import { RemoteRoomCreateRoadConstructionSiteTask, RemoteRoomCreateRoadConstructionSiteTaskState } from "./remote_room_keeper/remote_room_create_road_construction_site_task"
+import { RemoteRoomReserveTask, RemoteRoomReserveTaskState } from "./remote_room_keeper/remote_room_reserve_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -43,7 +43,7 @@ class TaskMap {
   "RoomInvisibleProblemSolver" = (state: TaskState) => RoomInvisibleProblemSolver.decode(state as unknown as RoomInvisibleProblemSolverState, decodeTasksFrom(state.c))
   "RemoteRoomManagerTask" = (state: TaskState) => RemoteRoomManagerTask.decode(state as unknown as RemoteRoomManagerTaskState, decodeTasksFrom(state.c))
   "RemoteRoomHarvesterTask" = (state: TaskState) => RemoteRoomHarvesterTask.decode(state as unknown as RemoteRoomHarvesterTaskState, decodeTasksFrom(state.c))
-  // "RemoteRoomCreateRoadConstructionSiteTask" = (state: TaskState) => RemoteRoomCreateRoadConstructionSiteTask.decode(state as unknown as RemoteRoomCreateRoadConstructionSiteTaskState, decodeTasksFrom(state.c))
+  "RemoteRoomReserveTask" = (state: TaskState) => RemoteRoomReserveTask.decode(state as unknown as RemoteRoomReserveTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

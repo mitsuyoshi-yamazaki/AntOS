@@ -24,6 +24,7 @@ import { TaskState } from "task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -86,7 +87,7 @@ export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   public static create(roomName: RoomName, source: Source): RemoteRoomHarvesterTask {
     const targetRoomName = source.room.name
     const children: Task[] = [
-      // RemoteRoomCreateRoadConstructionSiteTask.create(roomName, targetRoomName)
+      RemoteRoomReserveTask.create(roomName, targetRoomName)
     ]
     return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null)
   }
@@ -185,7 +186,7 @@ export class RemoteRoomHarvesterTask extends OwnedRoomEnergySourceTask {
   private harvesterBody(source: Source, spawnRoom: Room): BodyPartConstant[] {
     const moveSpeed = 1.0
     const terrainCost = 2
-    const sourceEnergyCapacity = 3000//source.energyCapacity  // TODO: claimタスクを書く
+    const sourceEnergyCapacity = source.energyCapacity
     const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {

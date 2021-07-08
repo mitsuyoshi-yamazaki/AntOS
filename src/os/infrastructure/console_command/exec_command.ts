@@ -2,8 +2,6 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showTargetedBy } from "script/task_target_cache_viewer"
-import { World } from "world_info/world_info"
-import { roomLink } from "utility/log"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
