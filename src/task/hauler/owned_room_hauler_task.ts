@@ -163,14 +163,15 @@ export class OwnedRoomHaulerTask extends Task {
       return null
     }
 
-    if (objects.activeStructures.storage != null) {
-      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
-    }
-
     const structureToCharge = objects.getStructureToCharge(creep.pos)
     if (structureToCharge != null) {
       return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
+
+    if (objects.activeStructures.storage != null) {
+      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
+    }
+
     creep.say("no storage")
     return null
   }
