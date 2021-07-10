@@ -15,6 +15,8 @@ import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harv
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
 
+const numberOfCreeps = 10
+
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
   r: RoomName
@@ -87,11 +89,11 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     return (creep => hasNecessaryRoles(creep, [CreepRole.Worker, CreepRole.Mover]))
   }
 
-  public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest {
+  public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
       taskIdentifier: this.taskIdentifier,
-      numberOfCreeps: 6,
+      numberOfCreeps,
       codename: this.codename,
       initialTask: MoveToRoomTask.create(this.targetRoomName, this.waypoints),
       priority: CreepSpawnRequestPriority.Low,

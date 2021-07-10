@@ -6,6 +6,7 @@ import { OnetimeTaskProcess, OnetimeTaskProcessState } from "./onetime/onetime_t
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
+import { TaskProcess, TaskProcessState } from "./task_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
@@ -16,6 +17,7 @@ class ProcessTypes {
   // ---- v5 process ---- //
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)
   "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
+  "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
 
   // ---- onetime processes ---- //
   "OnetimeTaskProcess" = (state: ProcessState) => OnetimeTaskProcess.decode(state as unknown as OnetimeTaskProcessState)

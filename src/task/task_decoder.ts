@@ -26,6 +26,7 @@ import { RemoteRoomWorkerTask, RemoteRoomWorkerTaskState } from "./remote_room_k
 import { ClaimRoomTask, ClaimRoomTaskState } from "./bootstrap_room/claim_room_task"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "./bootstrap_room/bootstrap_room_task"
 import { UpgradeToRcl3Task, UpgradeToRcl3TaskState } from "./bootstrap_room/upgrade_to_rcl3_task"
+import { RouteCheckTask, RouteCheckTaskState } from "./scout/route_check_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -54,6 +55,7 @@ class TaskMap {
   "ClaimRoomTask" = (state: TaskState) => ClaimRoomTask.decode(state as unknown as ClaimRoomTaskState, decodeTasksFrom(state.c))
   "BootstrapRoomTask" = (state: TaskState) => BootstrapRoomTask.decode(state as unknown as BootstrapRoomTaskState, decodeTasksFrom(state.c))
   "UpgradeToRcl3Task" = (state: TaskState) => UpgradeToRcl3Task.decode(state as unknown as UpgradeToRcl3TaskState, decodeTasksFrom(state.c))
+  "RouteCheckTask" = (state: TaskState) => RouteCheckTask.decode(state as unknown as RouteCheckTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

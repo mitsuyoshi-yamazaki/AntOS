@@ -1,7 +1,6 @@
 import { ProblemFinder } from "problem/problem_finder"
 import { RoomName } from "utility/room_name"
-import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "task/task"
-import { OwnedRoomObjects } from "world_info/room_info"
+import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { TaskState } from "task/task_state"
 import { ClaimRoomTask } from "./claim_room_task"
 import { UpgradeToRcl3Task } from "./upgrade_to_rcl3_task"

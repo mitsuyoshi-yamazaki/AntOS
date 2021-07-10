@@ -3,6 +3,8 @@ import { TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
+import { RouteCheckTask } from "task/scout/route_check_task"
+import { TaskProcess } from "process/task_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -23,6 +25,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "OnetimeTaskProcess":
       result = this.launchOnetimeTaskProcess()
+      break
+    case "RouteCheckTask":
+      result = this.launchRouteCheckTask()
       break
     default:
       break
@@ -103,5 +108,29 @@ export class LaunchCommand implements ConsoleCommand {
     // })
     // return Result.Succeeded(process)
     return Result.Failed("")
+  }
+
+  private launchRouteCheckTask(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const task = RouteCheckTask.create(roomName, targetRoomName, waypoints)
+    const process = OperatingSystem.os.addProcess(processId => {
+      return TaskProcess.create(processId, task)
+    })
+    return Result.Succeeded(process)
   }
 }

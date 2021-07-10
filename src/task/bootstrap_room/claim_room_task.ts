@@ -78,7 +78,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
     return (creep => hasNecessaryRoles(creep, [CreepRole.Claimer]))
   }
 
-  public creepRequest(): GeneralCreepWorkerTaskCreepRequest {
+  public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
     const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints)
 
     return {
