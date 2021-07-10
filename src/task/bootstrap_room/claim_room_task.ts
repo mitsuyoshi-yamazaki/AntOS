@@ -87,7 +87,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       numberOfCreeps: 1,
       codename: this.codename,
       initialTask: creepTask,
-      priority: CreepSpawnRequestPriority.Low,
+      priority: CreepSpawnRequestPriority.Medium,
       body: null
     }
   }

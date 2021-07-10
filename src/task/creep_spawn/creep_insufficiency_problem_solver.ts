@@ -118,7 +118,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     }
 
     const request: CreepSpawnRequest = {
-      priority: CreepSpawnRequestPriority.Low,
+      priority: this.priority,
       numberOfCreeps: insufficientCreepCount,
       codename: this.codename,
       roles: this.necessaryRoles,
