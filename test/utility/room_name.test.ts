@@ -1,4 +1,26 @@
-import { isRoomCoordinateDirection, parseRoomCoordinate, roomTypeOf } from "../../src/utility/room_name"
+import { isRoomCoordinateDirection, isRoomName, parseRoomCoordinate, roomTypeOf } from "../../src/utility/room_name"
+
+
+test("isRoomName()", () => {
+  expect(isRoomName("W0N0")).toBe(true)
+  expect(isRoomName("E1S1")).toBe(true)
+
+  expect(isRoomName("")).toBe(false)
+
+  expect(isRoomName("W0W0")).toBe(false)
+  expect(isRoomName("W0E0")).toBe(false)
+  expect(isRoomName("E0W0")).toBe(false)
+  expect(isRoomName("E0E0")).toBe(false)
+  expect(isRoomName("N0N0")).toBe(false)
+  expect(isRoomName("N0S0")).toBe(false)
+  expect(isRoomName("S0N0")).toBe(false)
+  expect(isRoomName("S0S0")).toBe(false)
+
+  expect(isRoomName("N0W0")).toBe(false)
+  expect(isRoomName("N0E0")).toBe(false)
+  expect(isRoomName("S0W0")).toBe(false)
+  expect(isRoomName("S0E0")).toBe(false)
+})
 
 test("isRoomCoordinateDirection()", () => {
   expect(isRoomCoordinateDirection("NE")).toBe(true)

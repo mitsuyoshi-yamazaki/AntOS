@@ -1,24 +1,19 @@
-import { RoomInvadedProblemFinder } from "problem/invasion/room_invaded_problem_finder"
 import { ProblemFinder } from "problem/problem_finder"
-import { OwnedRoomDecayedStructureProblemFinder } from "problem/structure/owned_room_decayed_structure_problem_finder"
 import { RoomName } from "utility/room_name"
-import { CreateConstructionSiteTask } from "task/room_planing/create_construction_site_task"
-import { OwnedRoomScoutTask } from "task/scout/owned_room_scout_task"
-import { Task, TaskIdentifier, TaskStatus } from "task/task"
-import { WorkerTask } from "task/worker/worker_task"
+import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { RemoteRoomManagerTask } from "task/remote_room_keeper/remote_room_manager_task"
 import { TaskState } from "task/task_state"
-import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
-import { CreepSpawnRequest, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepInsufficiencyProblemFinder } from "problem/creep_insufficiency/creep_insufficiency_problem_finder"
-import { CreepRole } from "prototype/creep_role"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insufficiency_problem_solver"
 import { CreepTask } from "object_task/creep_task/creep_task"
+import { World } from "world_info/world_info"
 
 export interface GeneralCreepWorkerTaskCreepRequest {
   necessaryRoles: CreepRole[]
-  taskIdentifier: TaskIdentifier
+  taskIdentifier: TaskIdentifier | null
   numberOfCreeps: number
   codename: string | null
   initialTask: CreepTask
@@ -38,7 +33,7 @@ export interface GeneralCreepWorkerTaskState extends TaskState {
 export abstract class GeneralCreepWorkerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
-  private constructor(
+  protected constructor(
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
@@ -49,11 +44,13 @@ export abstract class GeneralCreepWorkerTask extends Task {
   }
 
   abstract encode(): GeneralCreepWorkerTaskState
-  abstract creepFilter(): CreepPoolFilter
-  abstract creepRequest(): GeneralCreepWorkerTaskCreepRequest
+  abstract creepFileter(): CreepPoolFilter
+  abstract creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest
+  abstract newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null
 
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const request = this.creepRequest()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
+    const request = this.creepRequest(objects)
     const problemFinder = new CreepInsufficiencyProblemFinder(this.roomName, request.necessaryRoles, request.taskIdentifier, request.numberOfCreeps)
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
@@ -66,6 +63,13 @@ export abstract class GeneralCreepWorkerTask extends Task {
         if (request.codename != null) {
           solver.codename = request.codename
         }
+        if (request.initialTask != null) {
+          solver.initialTask = request.initialTask
+        }
+        if (request.body != null) {
+          solver.body = request.body
+        }
+        solver.priority = request.priority
 
         return [solver]
       }
@@ -75,6 +79,16 @@ export abstract class GeneralCreepWorkerTask extends Task {
       problemFinderWrapper,
     ]
     this.checkProblemFinders(problemFinders)
+
+    World.resourcePools.assignTasks(
+      objects.controller.room.name,
+      this.taskIdentifier,
+      CreepPoolAssignPriority.Low,
+      (creep: Creep): CreepTask | null => {
+        return this.newTaskFor(creep, objects)
+      },
+      creep => this.creepFileter()(creep),
+    )
 
     return TaskStatus.InProgress
   }

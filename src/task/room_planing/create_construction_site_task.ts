@@ -2,6 +2,33 @@ import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "task/task_state"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
+import { World } from "world_info/world_info"
+
+const colorMap = new Map<ColorConstant, StructureConstant>([
+  [COLOR_BROWN, STRUCTURE_ROAD],
+  [COLOR_GREEN, STRUCTURE_STORAGE],
+  [COLOR_PURPLE, STRUCTURE_TERMINAL],
+  [COLOR_ORANGE, STRUCTURE_LINK],
+  [COLOR_BLUE, STRUCTURE_LAB],
+  [COLOR_RED, STRUCTURE_TOWER],
+  [COLOR_GREY, STRUCTURE_SPAWN],
+  [COLOR_CYAN, STRUCTURE_NUKER],
+  [COLOR_WHITE, STRUCTURE_EXTENSION],
+])
+
+const structurePriority: StructureConstant[] = [
+  STRUCTURE_TOWER,
+  STRUCTURE_SPAWN,
+  STRUCTURE_EXTENSION,
+  STRUCTURE_LINK,
+  STRUCTURE_STORAGE,
+  STRUCTURE_ROAD,
+  STRUCTURE_TERMINAL,
+  STRUCTURE_LAB,
+  STRUCTURE_NUKER,
+]
 
 export interface CreateConstructionSiteTaskState extends TaskState {
   /** room name */
@@ -51,19 +78,35 @@ export class CreateConstructionSiteTask extends Task {
   }
 
   private placeConstructionSite(room: Room, flags: Flag[]): void {
-    const colorMap = new Map<ColorConstant, StructureConstant>([
-      [COLOR_BROWN, STRUCTURE_ROAD],
-      [COLOR_GREEN, STRUCTURE_STORAGE],
-      [COLOR_PURPLE, STRUCTURE_TERMINAL],
-      [COLOR_ORANGE, STRUCTURE_LINK],
-      [COLOR_BLUE, STRUCTURE_LAB],
-      [COLOR_RED, STRUCTURE_TOWER],
-      [COLOR_GREY, STRUCTURE_SPAWN],
-      [COLOR_CYAN, STRUCTURE_NUKER],
-      [COLOR_WHITE, STRUCTURE_EXTENSION],
-    ])
+    if (room.controller == null) {
+      PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
+      return
+    }
+    if (World.rooms.getAllOwnedRooms().length > 1 && room.controller.level <= 2) {
+      return
+    }
 
-    for (const flag of flags) {
+    const sortedFlags = flags.sort((lhs, rhs) => {
+      const lStructureType = colorMap.get(lhs.color)
+      if (lStructureType == null) {
+        return 1
+      }
+      const rStructureType = colorMap.get(rhs.color)
+      if (rStructureType == null) {
+        return -1
+      }
+      const lPriority = structurePriority.indexOf(lStructureType)
+      if (lPriority < 0) {
+        return 1
+      }
+      const rPriority = structurePriority.indexOf(rStructureType)
+      if (rPriority < 0) {
+        return -1
+      }
+      return lPriority < rPriority ? -1 : 1
+    })
+
+    for (const flag of sortedFlags) {
       const structureType = colorMap.get(flag.color)
       if (structureType == null) {
         continue

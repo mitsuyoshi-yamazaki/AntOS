@@ -78,23 +78,23 @@ export class LaunchCommand implements ConsoleCommand {
   }
 
   private launchOnetimeTaskProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
+    // const args = this.parseProcessArguments()
 
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
+    // const roomName = args.get("room_name")
+    // if (roomName == null) {
+    //   return this.missingArgumentError("room_name")
+    // }
 
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
+    // const targetRoomName = args.get("target_room_name")
+    // if (targetRoomName == null) {
+    //   return this.missingArgumentError("target_room_name")
+    // }
 
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
+    // const rawWaypoints = args.get("waypoints")
+    // if (rawWaypoints == null) {
+    //   return this.missingArgumentError("waypoints")
+    // }
+    // const waypoints = rawWaypoints.split(",")
 
     // const task = ScoutRoomTask.create(roomName, targetRoomName, waypoints)
 

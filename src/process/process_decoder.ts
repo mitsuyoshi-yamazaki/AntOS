@@ -1,6 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
+import { BootstrapRoomManagerProcess, BootstrapRoomManagerProcessState } from "./bootstrap_room_manager_process"
 import { OnetimeTaskProcess, OnetimeTaskProcessState } from "./onetime/onetime_task_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
@@ -14,6 +15,7 @@ class ProcessTypes {
 
   // ---- v5 process ---- //
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)
+  "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
 
   // ---- onetime processes ---- //
   "OnetimeTaskProcess" = (state: ProcessState) => OnetimeTaskProcess.decode(state as unknown as OnetimeTaskProcessState)

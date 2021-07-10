@@ -5,6 +5,11 @@ export type RoomType = "normal" | "highway" | "highway_crossing" | "source_keepe
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
+export const isRoomName = (obj: string): obj is RoomName => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return parseRoomCoordinate(obj) != null
+}
+
 export const isRoomCoordinateDirection = (obj: string): obj is RoomCoordinateDirection => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return RoomCoordinateDirection.includes(obj as any)
