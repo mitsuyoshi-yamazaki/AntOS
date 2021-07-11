@@ -1,61 +1,61 @@
-// TODO: There is another room in safe mode already などが考慮されていない
+import { ProblemIdentifier } from "problem/problem_finder"
+import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
+import { RoomName } from "utility/room_name"
+import { Task, TaskStatus } from "task/task"
+import { OwnedRoomObjects } from "world_info/room_info"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
 
-// import { ProblemIdentifier } from "problem/problem_finder"
-// import { RoomName } from "utility/room_name"
-// import { Task, TaskState, TaskStatus } from "task/task"
-// import { decodeTasksFrom } from "task/task_decoder"
-// import { OwnedRoomObjects } from "world_info/room_info"
+export interface ActivateSafemodeProblemSolverState extends ProblemSolverState {
+  /** room name */
+  r: RoomName
+}
 
-// export interface ActivateSafemodeTaskState extends TaskState {
-//   /** room name */
-//   r: RoomName
-// }
+export class ActivateSafemodeProblemSolver extends ProblemSolver {
+  private constructor(
+    public readonly startTime: number,
+    public readonly children: Task[],
+    public readonly problemIdentifier: ProblemIdentifier,
+    public readonly roomName: RoomName,
+  ) {
+    super(startTime, children, problemIdentifier)
+  }
 
-// export class ActivateSafemodeTask extends Task {
-//   private constructor(
-//     public readonly startTime: number,
-//     public readonly children: Task[],
-//     public readonly problemIdentifier: ProblemIdentifier | null,
-//     public readonly roomName: RoomName,
-//   ) {
-//     super(startTime, children, problemIdentifier)
-//   }
+  public encode(): ActivateSafemodeProblemSolverState {
+    return {
+      t: "ActivateSafemodeProblemSolver",
+      s: this.startTime,
+      c: this.children.map(task => task.encode()),
+      i: this.problemIdentifier,
+      r: this.roomName,
+    }
+  }
 
-//   public encode(): ActivateSafemodeTaskState {
-//     return {
-//       t: "ActivateSafemodeTask",
-//       s: this.startTime,
-//       c: this.children.map(task => task.encode()),
-//       r: this.roomName,
-//     }
-//   }
+  public static decode(state: ActivateSafemodeProblemSolverState, children: Task[]): ActivateSafemodeProblemSolver {
+    return new ActivateSafemodeProblemSolver(state.s, children, state.i, state.r)
+  }
 
-//   public static decode(state: ActivateSafemodeTaskState): ActivateSafemodeTask {
-//     const children = decodeTasksFrom(state.c)
-//     return new ActivateSafemodeTask(state.s, children, state.i, state.r)
-//   }
+  public static create(problemIdentifier: ProblemIdentifier, roomName: RoomName): ActivateSafemodeProblemSolver {
+    return new ActivateSafemodeProblemSolver(Game.time, [], problemIdentifier, roomName)
+  }
 
-//   public static create(roomName: RoomName, problemIdentifier: ProblemIdentifier | null): ActivateSafemodeTask {
-//     return new ActivateSafemodeTask(Game.time, [], problemIdentifier, roomName)
-//   }
+  public runTask(objects: OwnedRoomObjects): TaskStatus {
+    const controller = objects.controller
+    const result = controller.activateSafeMode()
 
-//   public runTask(objects: OwnedRoomObjects): TaskStatus {
-//     const controller = objects.controller
-//     const isActivatedSafemode = controller.safeMode != null
-//     if (isActivatedSafemode) {
-//       return TaskStatus.Finished
-//     }
-//     if (controller.safeModeAvailable <= 0) {
-//       return TaskStatus.Failed
-//     }
-//     const cooldown = controller.safeModeCooldown
-//     if (cooldown != null) {
-//       if (cooldown > 150) {
-//         return TaskStatus.Failed
-//       }
-//     }
-//     controller.activateSafeMode()
+    switch (result) {
+    case OK:
+      return TaskStatus.Finished
 
-//     return TaskStatus.InProgress
-//   }
-// }
+    case ERR_BUSY:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_TIRED:
+      return TaskStatus.Failed
+
+    case ERR_NOT_OWNER:
+    default:
+      PrimitiveLogger.fatal(`[Program bug] controller.activateSafeMode() returns ${result} at ${roomLink(this.roomName)}`)
+      return TaskStatus.Failed
+    }
+  }
+}

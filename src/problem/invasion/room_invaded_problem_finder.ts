@@ -3,6 +3,8 @@ import { ProblemSolver } from "problem/problem_solver"
 import { RoomName } from "utility/room_name"
 import { TowerInterceptionProblemSolver } from "task/defence/tower_interception_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { ActivateSafemodeProblemSolver } from "task/defence/activate_safemode_task"
+import { World } from "world_info/world_info"
 
 // TODO: プレイヤーによる攻撃をroom_attacked_problem_finderに分離する
 export class RoomInvadedProblemFinder implements ProblemFinder {
@@ -27,7 +29,10 @@ export class RoomInvadedProblemFinder implements ProblemFinder {
     if (towerExists) {
       problemSolvers.push(TowerInterceptionProblemSolver.create(this.identifier, this.roomName))
     }
-    // TODO: ActivateSafemodeTask入れる
+    const roomObjects = World.rooms.getOwnedRoomObjects(this.roomName)
+    if (roomObjects != null && roomObjects.controller.safeMode == null) {
+      problemSolvers.push(ActivateSafemodeProblemSolver.create(this.identifier, this.roomName))
+    }
     // TODO: 低レベルではcreepを退避させる
 
     return problemSolvers
