@@ -56,7 +56,9 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
     case ERR_NO_BODYPART:
       return ERR_DAMAGED
 
+    case ERR_GCL_NOT_ENOUGH:
     case ERR_INVALID_TARGET:
+    case ERR_FULL:
     default:
       PrimitiveLogger.fatal(`creep.claimController() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
