@@ -2,7 +2,6 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { generateUniqueId } from "utility/unique_id"
-import { World } from "world_info/world_info"
 
 export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
   const startObject = Game.getObjectById(startObjectId)
@@ -202,8 +201,8 @@ export function getCachedPathFor(source: Source): RoomPosition[] | null {
  * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
  */
 export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string): Result<void, string> {
-  const startRoom = World.rooms.get(startPosition.roomName)
-  const goalRoom = World.rooms.get(goalPosition.roomName)
+  const startRoom = Game.rooms[startPosition.roomName]
+  const goalRoom = Game.rooms[goalPosition.roomName]
 
   if (startRoom == null || goalRoom == null) {
     return Result.Failed(`No visual: ${startRoom}, ${goalRoom}`)

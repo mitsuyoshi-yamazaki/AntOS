@@ -172,7 +172,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
         return 1
       }
       // const storedEnergy =   // TODO:
-      return 1
+      return 2
     })()
 
     return [body, numberOfCreeps]
