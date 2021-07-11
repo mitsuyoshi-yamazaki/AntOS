@@ -14,6 +14,9 @@ import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_t
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
+import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
+import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 
 const numberOfCreeps = 10
 
@@ -102,16 +105,30 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public newTaskFor(creep: Creep): CreepTask | null {
-    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
-    if (targetRoomObjects == null) {
-      return null
-    }
-
     if (creep.room.name !== this.targetRoomName) {
       return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
     }
 
+    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
+    if (targetRoomObjects == null) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+        const sources = creep.room.find(FIND_SOURCES)
+        if (sources.length > 0) {
+          const source = sources[Game.time % sources.length]
+          return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+        }
+      } else {
+        return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+      }
+      return null
+    }
+
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const droppedEnergy = this.getDroppedEnergy(creep.pos, targetRoomObjects)
+      if (droppedEnergy != null) {
+        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
+      }
+
       const source = targetRoomObjects.getSource(creep.pos)
       if (source != null) {
         return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
@@ -126,6 +143,24 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     }
 
     return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller))
+  }
+
+  private getDroppedEnergy(position: RoomPosition, targetRoomObjects: OwnedRoomObjects): Resource | null {
+    const droppedResources = targetRoomObjects.droppedResources.filter(resource => {
+      if (resource.resourceType !== RESOURCE_ENERGY) {
+        return false
+      }
+      if (resource.targetedBy.length > 0) {
+        return false
+      }
+      return true
+    })
+    if (droppedResources.length <= 0) {
+      return null
+    }
+    return droppedResources.reduce((lhs, rhs) => {
+      return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+    })
   }
 
   // ---- Creep Body ---- //
