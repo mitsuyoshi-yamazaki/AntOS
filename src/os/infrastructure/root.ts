@@ -1,5 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
+import type { ProcessLauncher } from "os/os_process_launcher"
+import type { Process } from "process/process"
 import { isV5CreepMemory } from "prototype/creep"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
@@ -17,9 +19,9 @@ export class RootProcess {
   public setup(): void {
   }
 
-  public runBeforeTick(): void {
+  public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {
     ErrorMapper.wrapLoop((): void => {
-      this.infrastructureProcessLauncher.launchProcess()
+      this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
@@ -27,7 +29,7 @@ export class RootProcess {
     }, "World.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
-      this.applicationProcessLauncher.launchProcess()
+      this.applicationProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.applicationProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {

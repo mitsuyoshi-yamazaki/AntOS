@@ -5,7 +5,6 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "task/general/general_creep_worker_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepRole } from "prototype/creep_role"
-import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { generateCodename } from "utility/unique_id"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
@@ -63,7 +62,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     const objects = World.rooms.getOwnedRoomObjects(roomName)
     if (objects != null) {
       const controller = objects.controller
-      const container = controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_CONTAINER) as StructureContainer | null
+      const container = objects.roomInfo.upgrader?.container ?? controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_CONTAINER) as StructureContainer | null
       const link = controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_LINK) as StructureLink | null
       objects.roomInfo.upgrader = {
         container,

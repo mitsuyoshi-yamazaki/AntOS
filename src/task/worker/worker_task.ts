@@ -89,11 +89,11 @@ export class WorkerTask extends Task {
 
     // TODO: creepがいなくなった場合の処理
 
-    if (this.roomName === "W24S29" && this.children.some(task => task instanceof UpgraderTask) !== true) {  // FixMe: 一時コード
-      this.addChildTask(UpgraderTask.create(this.roomName))
-    }
+    // if (this.roomName === "W27S26" && this.children.some(task => task instanceof UpgraderTask) !== true) {  // FixMe: 一時コード
+    //   this.addChildTask(UpgraderTask.create(this.roomName))
+    // }
     // const upgraderTask = this.children.find(task => task instanceof UpgraderTask)
-    // if (upgraderTask != null) {
+    // if (this.roomName === "W27S26" && upgraderTask != null) {
     //   this.removeChildTask(upgraderTask)
     // }
 
@@ -144,7 +144,7 @@ export class WorkerTask extends Task {
   }
 
   private checkGeneralWorkerTask(generalWorkerTask: GeneralWorkerTask, objects: OwnedRoomObjects): void {
-    if (this.roomName !== "W24S29") { // FixMe:
+    if (["W24S29", "W27S26"].includes(this.roomName) !== true) { // FixMe:
       return
     }
 
@@ -157,5 +157,6 @@ export class WorkerTask extends Task {
     this.removeChildTask(generalWorkerTask)
 
     this.addChildTask(SpecializedWorkerTask.create(this.roomName))
+    this.addChildTask(UpgraderTask.create(this.roomName))
   }
 }
