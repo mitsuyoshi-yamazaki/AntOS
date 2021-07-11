@@ -7,10 +7,8 @@ import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
-import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { ShortVersion, SystemInfo } from "utility/system_info"
-import { RoomName } from "utility/room_name"
 
 Initializer.init()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`

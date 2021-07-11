@@ -170,8 +170,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (objects.activeStructures.storage == null) {
         return 1
       }
-      // const storedEnergy =   // TODO:
-      return 2
+      const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
+      return storedEnergy < 100000 ? 1 : 3
     })()
 
     return [body, numberOfCreeps]

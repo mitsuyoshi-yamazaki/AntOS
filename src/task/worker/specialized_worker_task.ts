@@ -8,7 +8,6 @@ import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/tra
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
-import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { generateCodename } from "utility/unique_id"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
@@ -17,7 +16,7 @@ import { TaskState } from "task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "task/general/general_creep_worker_task"
 import { createCreepBody } from "utility/creep_body"
 
-const numberOfCreeps = 3
+const numberOfCreeps = 4
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */

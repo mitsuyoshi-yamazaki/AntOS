@@ -144,7 +144,7 @@ export class WorkerTask extends Task {
   }
 
   private checkGeneralWorkerTask(generalWorkerTask: GeneralWorkerTask, objects: OwnedRoomObjects): void {
-    if (["W24S29", "W27S26"].includes(this.roomName) !== true) { // FixMe:
+    if (Game.shard.name !== "shardSeason") { // FixMe:
       return
     }
 
