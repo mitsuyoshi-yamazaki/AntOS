@@ -7,9 +7,20 @@ import { CreepTaskState } from "../creep_task_state"
 
 type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
 
+export interface MoveToTargetTaskOptions {
+  ignoreSwamp: boolean
+}
+
+const defaultOptions: MoveToTargetTaskOptions = {
+  ignoreSwamp: false
+}
+
 export interface MoveToTargetTaskState extends CreepTaskState {
   /** api warpper state */
   as: CreepApiWrapperState
+
+  /** ignore swamp */
+  is: boolean
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -21,6 +32,7 @@ export class MoveToTargetTask implements CreepTask {
   private constructor(
     public readonly startTime: number,
     private readonly apiWrapper: MoveToTargetTaskApiWrapper,
+    private readonly options: MoveToTargetTaskOptions,
   ) {
     this.shortDescription = apiWrapper.shortDescription
   }
@@ -30,6 +42,7 @@ export class MoveToTargetTask implements CreepTask {
       s: this.startTime,
       t: "MoveToTargetTask",
       as: this.apiWrapper.encode(),
+      is: this.options.ignoreSwamp,
     }
   }
 
@@ -38,11 +51,14 @@ export class MoveToTargetTask implements CreepTask {
     if (wrapper == null) {
       return null
     }
-    return new MoveToTargetTask(state.s, wrapper as MoveToTargetTaskApiWrapper)
+    const options: MoveToTargetTaskOptions = {
+      ignoreSwamp: state.is ?? false  // migration
+    }
+    return new MoveToTargetTask(state.s, wrapper as MoveToTargetTaskApiWrapper, options)
   }
 
-  public static create(apiWrapper: MoveToTargetTaskApiWrapper): MoveToTargetTask {
-    return new MoveToTargetTask(Game.time, apiWrapper)
+  public static create(apiWrapper: MoveToTargetTaskApiWrapper, options?: MoveToTargetTaskOptions): MoveToTargetTask {
+    return new MoveToTargetTask(Game.time, apiWrapper, options ?? defaultOptions)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -57,7 +73,7 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, defaultMoveToOptions)
+      creep.moveTo(this.apiWrapper.target, this.moveToOpts())
       return TaskProgressType.InProgress
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -70,5 +86,14 @@ export class MoveToTargetTask implements CreepTask {
     case ERR_PROGRAMMING_ERROR:
       return TaskProgressType.Finished
     }
+  }
+
+  private moveToOpts(): MoveToOpts {
+    const options = defaultMoveToOptions
+    if (this.options.ignoreSwamp === true) {
+      options.ignoreRoads = true
+      options.swampCost = 1
+    }
+    return options
   }
 }

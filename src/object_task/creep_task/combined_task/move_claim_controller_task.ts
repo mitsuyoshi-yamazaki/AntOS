@@ -57,6 +57,22 @@ export class MoveClaimControllerTask implements CreepTask {
     }
 
     const claimControllerApiWrapper = ClaimControllerApiWrapper.create(creep.room.controller)
-    return MoveToTargetTask.create(claimControllerApiWrapper).run(creep)
+    return MoveToTargetTask.create(claimControllerApiWrapper, {ignoreSwamp: this.canIgnoreSwamp(creep)}).run(creep)
+  }
+
+  private canIgnoreSwamp(creep: Creep): boolean {
+    const body = creep.body.map(b => b.type)
+    let moveCount = 0
+    let bodyCount = 0
+    const swampCost = 5
+    for (const bodyPart of body) {
+      if (bodyPart === MOVE) {
+        moveCount += 1
+      } else {
+        bodyCount += 1
+      }
+    }
+
+    return bodyCount * swampCost <= moveCount
   }
 }
