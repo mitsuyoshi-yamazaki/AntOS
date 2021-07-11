@@ -12,12 +12,18 @@ const cache = new Map<TaskTargetCacheKey, TaskRunnerId[]>()
 
 // TODO: Process適合にする
 export const TaskTargetCache = {
+  clearCache(): void {
+    cache.clear()
+  },
+
   didAssignTask(taskRunnerId: TaskRunnerId, targetId: TaskTargetCacheKey): void {
     addTaskRunner(taskRunnerId, targetId)
   },
+
   didFinishTask(taskRunnerId: TaskRunnerId, targetId: TaskTargetCacheKey): void {
     removeTaskRunner(taskRunnerId, targetId)
   },
+
   targetingTaskRunnerIds(targetId: TaskTargetCacheKey): TaskRunnerId[] {
     return cache.get(targetId) ?? []
   },

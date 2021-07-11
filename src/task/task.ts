@@ -50,6 +50,10 @@ export abstract class Task implements Stateful {
     return this.taskIdentifier
   }
 
+  protected paused(): boolean {
+    return false
+  }
+
   protected checkProblemFinders(problemFinders: ProblemFinder[]): void {
     problemFinders.forEach(problemFinder => {
       if (problemFinder.problemExists() !== true) {
@@ -86,6 +90,10 @@ export abstract class Task implements Stateful {
 
   public run(objects: OwnedRoomObjects): TaskStatus {
     const result = ErrorMapper.wrapLoop((): TaskStatus => {
+      if (this.paused() === true) {
+        return TaskStatus.InProgress
+      }
+
       this.solvingProblemIdentifiers.splice(0, this.solvingProblemIdentifiers.length)
       this.solvingProblemIdentifiers = this.children.flatMap(task => {
         if (!isProblemSolver(task)) {

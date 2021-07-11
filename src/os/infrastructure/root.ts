@@ -1,5 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
 import type { ProcessLauncher } from "os/os_process_launcher"
 import type { Process } from "process/process"
 import { isV5CreepMemory } from "prototype/creep"
@@ -20,6 +21,10 @@ export class RootProcess {
   }
 
   public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {
+    ErrorMapper.wrapLoop((): void => {
+      TaskTargetCache.clearCache()
+    }, "TaskTargetCache.clearCache()")()
+
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()

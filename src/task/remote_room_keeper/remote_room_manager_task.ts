@@ -1,7 +1,6 @@
 import { ProblemFinder } from "problem/problem_finder"
 import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "task/task"
-import { OwnedRoomObjects } from "world_info/room_info"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "task/task_state"
 
