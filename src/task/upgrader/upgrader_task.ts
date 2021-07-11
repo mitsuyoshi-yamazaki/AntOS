@@ -4,17 +4,18 @@ import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "tas
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "task/general/general_creep_worker_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
+import { CreepRole } from "prototype/creep_role"
 import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { generateCodename } from "utility/unique_id"
-import { MoveClaimControllerTask } from "object_task/creep_task/combined_task/move_claim_controller_task"
-import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
-import { EnergySource } from "prototype/room_object"
 import { TRANSFER_RESOURCE_RANGE, UPGRADE_CONTROLLER_RANGE } from "utility/constants"
-
-type UpgraderTaskEnergySource = StructureContainer | StructureLink
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { TargetToPositionTask } from "object_task/creep_task/meta_task/target_to_position_task"
+import type { AnyCreepApiWrapper } from "object_task/creep_task/creep_api_wrapper"
+import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
+import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -98,23 +99,90 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public creepFileter(): CreepPoolFilter {
-    return (creep => hasNecessaryRoles(creep, [CreepRole.Claimer])) // TODO:
+    return () => true
   }
 
-  public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
-    return null
-    // return {
-    //   necessaryRoles: [CreepRole.Claimer],
-    //   taskIdentifier: this.taskIdentifier,
-    //   numberOfCreeps: 1,
-    //   codename: this.codename,
-    //   initialTask: creepTask,
-    //   priority: CreepSpawnRequestPriority.Medium,
-    //   body: null
-    // }
+  public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const container = objects.roomInfo.upgrader?.container
+    if (container == null) {
+      return null
+    }
+
+    const [body, numberOfCreeps] = this.upgraderBody(objects)
+
+    return {
+      necessaryRoles: [CreepRole.Worker, CreepRole.Mover],
+      taskIdentifier: this.taskIdentifier,
+      numberOfCreeps,
+      codename: this.codename,
+      initialTask: null,
+      priority: CreepSpawnRequestPriority.Low,
+      body,
+    }
   }
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
-    return null
+    const container = objects.roomInfo.upgrader?.container
+    if (container == null) {
+      return null
+    }
+
+    const emptyPosition = this.emptyPosition()
+    if (emptyPosition == null) {
+      creep.say("no dest")
+      return null
+    }
+    const apiWrappers: AnyCreepApiWrapper[] = [
+      GetEnergyApiWrapper.create(container),
+      UpgradeControllerApiWrapper.create(objects.controller),
+    ]
+    return TargetToPositionTask.create(emptyPosition, apiWrappers)
+  }
+
+  // ---- Private ---- //
+  /**
+   * @return body, numberOfCreeps
+   */
+  private upgraderBody(objects: OwnedRoomObjects): [BodyPartConstant[], number] {
+    const isRcl8 = objects.controller.level === 8
+
+    const bodyUnit = [WORK, WORK, WORK, MOVE]
+    const unitCost = bodyCost(bodyUnit)
+    const body: BodyPartConstant[] = [CARRY]
+
+    const energyCapacity = objects.controller.room.energyCapacityAvailable
+    const maxBodyCount = ((): number => {
+      const max = Math.floor((energyCapacity - bodyCost(body)) / unitCost)
+      if (isRcl8 === true) {
+        return Math.min(max, 5)
+      }
+      return max
+    })()
+
+    for (let i = 0; i < maxBodyCount; i += 1) {
+      body.push(...bodyUnit)
+    }
+
+    const numberOfCreeps = ((): number => {
+      if (isRcl8 === true) {
+        return 1
+      }
+      if (objects.activeStructures.storage == null) {
+        return 1
+      }
+      // const storedEnergy =   // TODO:
+      return 1
+    })()
+
+    return [body, numberOfCreeps]
+  }
+
+  private emptyPosition(): RoomPosition | null {
+    const emptyPositions = this.upgraderPositions.filter(position => position.targetedBy.length <= 0)
+    if (emptyPositions[0] == null) {
+      PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
+      return null
+    }
+    return emptyPositions[0]
   }
 }
