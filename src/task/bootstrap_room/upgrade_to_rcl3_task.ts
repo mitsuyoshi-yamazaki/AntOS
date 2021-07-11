@@ -17,6 +17,8 @@ import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wr
 import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
+import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
+import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 
 const numberOfCreeps = 10
 
@@ -135,6 +137,16 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       }
       creep.say("no source")
       return null
+    }
+
+    const structureToCharge = targetRoomObjects.getStructureToCharge(creep.pos)
+    if (structureToCharge != null) {
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+    }
+
+    const damagedStructure = targetRoomObjects.getRepairStructure()
+    if (damagedStructure != null) {
+      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
 
     const constructionSite = targetRoomObjects.getConstructionSite()
