@@ -9,27 +9,39 @@ import { World } from "world_info/world_info"
 
 export class CreepInsufficiencyProblemFinder implements ProblemFinder {
   public readonly identifier: ProblemIdentifier
+  public readonly creepCount: number
 
   private readonly insufficientCreepCount: number
 
   public constructor(
     public readonly roomName: RoomName,
-    public readonly necessaryRoles: CreepRole[],
+    public readonly necessaryRoles: CreepRole[] | null,
+    public readonly creepRoles: CreepRole[],
     public readonly targetTaskIdentifier: TaskIdentifier | null,
     public readonly minimumCreepCount: number,
   ) {
     const components: string[] = [
       this.constructor.name,
-      this.necessaryRoles.join(","),
     ]
+    if (this.necessaryRoles != null) {
+      components.push(this.necessaryRoles.join(","))
+    } else {
+      components.push("null")
+    }
     if (this.targetTaskIdentifier != null) {
       components.push(this.targetTaskIdentifier)
     }
     this.identifier = components.join("_")
 
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, this.necessaryRoles)
-    const creepCount = World.resourcePools.countCreeps(this.roomName, this.targetTaskIdentifier, creepPoolFilter)
-    this.insufficientCreepCount = this.minimumCreepCount - creepCount
+    const creepPoolFilter = ((): CreepPoolFilter => {
+      if (this.necessaryRoles != null) {
+        const roles = this.necessaryRoles
+        return (creep => hasNecessaryRoles(creep, roles))
+      }
+      return () => true
+    })()
+    this.creepCount = World.resourcePools.countCreeps(this.roomName, this.targetTaskIdentifier, creepPoolFilter)
+    this.insufficientCreepCount = this.minimumCreepCount - this.creepCount
   }
 
   public problemExists(): boolean {
@@ -41,7 +53,7 @@ export class CreepInsufficiencyProblemFinder implements ProblemFinder {
       return []
     }
     return [
-      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.necessaryRoles, this.targetTaskIdentifier, this.minimumCreepCount)
+      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.creepRoles, this.targetTaskIdentifier, this.minimumCreepCount)
     ]
   }
 }

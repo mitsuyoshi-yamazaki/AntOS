@@ -9,7 +9,7 @@ import { World } from "world_info/world_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { MoveToRoomTask } from "object_task/creep_task/meta_task/move_to_room_task"
 import { generateCodename } from "utility/unique_id"
-import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
@@ -19,6 +19,7 @@ import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { bodyCost } from "utility/creep_body"
 
 const numberOfCreeps = 10
 
@@ -90,8 +91,8 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     return TaskStatus.InProgress
   }
 
-  public creepFileter(): CreepPoolFilter {
-    return (creep => hasNecessaryRoles(creep, [CreepRole.Worker, CreepRole.Mover]))
+  public creepFileterRoles(): CreepRole[] | null {
+    return [CreepRole.Worker, CreepRole.Mover]
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {

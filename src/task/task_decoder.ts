@@ -29,6 +29,7 @@ import { UpgradeToRcl3Task, UpgradeToRcl3TaskState } from "./bootstrap_room/upgr
 import { RouteCheckTask, RouteCheckTaskState } from "./scout/route_check_task"
 import { ActivateSafemodeProblemSolver, ActivateSafemodeProblemSolverState } from "./defence/activate_safemode_task"
 import { UpgraderTask, UpgraderTaskState } from "./upgrader/upgrader_task"
+import { SpecializedWorkerTask, SpecializedWorkerTaskState } from "./worker/specialized_worker_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -60,6 +61,7 @@ class TaskMap {
   "RouteCheckTask" = (state: TaskState) => RouteCheckTask.decode(state as unknown as RouteCheckTaskState, decodeTasksFrom(state.c))
   "UpgraderTask" = (state: TaskState) => UpgraderTask.decode(state as unknown as UpgraderTaskState, decodeTasksFrom(state.c))
   "ActivateSafemodeProblemSolver" = (state: TaskState) => ActivateSafemodeProblemSolver.decode(state as unknown as ActivateSafemodeProblemSolverState, decodeTasksFrom(state.c))
+  "SpecializedWorkerTask" = (state: TaskState) => SpecializedWorkerTask.decode(state as unknown as SpecializedWorkerTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

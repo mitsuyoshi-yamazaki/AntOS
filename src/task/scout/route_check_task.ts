@@ -86,8 +86,8 @@ export class RouteCheckTask extends GeneralCreepWorkerTask implements Launchable
     return TaskStatus.InProgress
   }
 
-  public creepFileter(): CreepPoolFilter {
-    return (creep => hasNecessaryRoles(creep, [CreepRole.Scout]))
+  public creepFileterRoles(): CreepRole[] | null {
+    return [CreepRole.Scout]
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {

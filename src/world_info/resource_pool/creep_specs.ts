@@ -3,6 +3,7 @@ import { CreepRole, mergeRoles } from "prototype/creep_role"
 import type { RoomName } from "utility/room_name"
 import type { CreepTask } from "object_task/creep_task/creep_task"
 import type { TaskIdentifier } from "task/task"
+import { bodyCost } from "utility/creep_body"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0
@@ -122,12 +123,7 @@ export function sortRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[]
   })
 }
 
-export function bodyCost(body: BodyPartConstant[]): number {
-  return body.reduce((result, current) => {
-    return result + BODYPART_COST[current]
-  }, 0)
-}
-
+/** @deprecated */
 export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: number): BodyPartConstant[] {
   if (roles.includes(CreepRole.Scout) === true) {
     return [MOVE]

@@ -12,11 +12,12 @@ import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insuffic
 import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "problem/problem_finder"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
-import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "./owned_room_energy_source_task"
 import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "task/task_state"
+import { bodyCost } from "utility/creep_body"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -72,7 +73,7 @@ export class OwnedRoomHaulerTask extends Task {
   // ---- Run & Check Problem ---- //
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
-    const filterTaskIdentifier = null
+    const filterTaskIdentifier = this.taskIdentifier
     const minimumCreepCount = energySources.length * 1 // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
@@ -104,7 +105,7 @@ export class OwnedRoomHaulerTask extends Task {
     priority: CreepSpawnRequestPriority,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

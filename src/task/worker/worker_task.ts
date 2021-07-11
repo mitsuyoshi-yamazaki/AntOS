@@ -8,6 +8,26 @@ import { GeneralWorkerTask } from "./general_worker_task"
 import { PrimitiveWorkerTask } from "./primitive_worker_task"
 import { TaskState } from "task/task_state"
 import { UpgraderTask } from "task/upgrader/upgrader_task"
+import { SpecializedWorkerTask } from "./specialized_worker_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
+
+interface WorkerTaskStateUnknown {
+  workerTaskStateType: "unknown"
+}
+interface WorkerTaskStatePrimitive {
+  workerTaskStateType: "primitive"
+  task: PrimitiveWorkerTask
+}
+interface WorkerTaskStateGeneral {
+  workerTaskStateType: "general"
+  task: GeneralWorkerTask
+}
+interface WorkerTaskStateSpecialized {
+  workerTaskStateType: "specialized"
+  task: SpecializedWorkerTask
+}
+type WorkerTaskStatus = WorkerTaskStateUnknown | WorkerTaskStatePrimitive | WorkerTaskStateGeneral | WorkerTaskStateSpecialized
 
 export interface WorkerTaskState extends TaskState {
   /** room name */
@@ -52,7 +72,20 @@ export class WorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    this.checkPrimitiveWorkerTask(objects)
+    const status = this.status()
+    switch (status.workerTaskStateType) {
+    case "primitive":
+      this.checkPrimitiveWorkerTask(status.task, objects)
+      break
+    case "general":
+      this.checkGeneralWorkerTask(status.task, objects)
+      break
+    case "specialized":
+      break
+    case "unknown":
+      PrimitiveLogger.fatal(`No concrete worker task in ${this.taskIdentifier} at ${roomLink(this.roomName)}`)
+      break
+    }
 
     // TODO: creepがいなくなった場合の処理
 
@@ -67,13 +100,39 @@ export class WorkerTask extends Task {
     return TaskStatus.InProgress
   }
 
-  // ---- Private ---- //
-  private checkPrimitiveWorkerTask(objects: OwnedRoomObjects): void {
+  // ---- Status ---- //
+  private status(): WorkerTaskStatus {
     const primitiveWorkerTask = this.children.find(task => task instanceof PrimitiveWorkerTask) as PrimitiveWorkerTask | undefined
-    if (primitiveWorkerTask == null) {
-      return
+    if (primitiveWorkerTask != null) {
+      return {
+        workerTaskStateType: "primitive",
+        task: primitiveWorkerTask,
+      }
     }
 
+    const generalWorkerTask = this.children.find(task => task instanceof GeneralWorkerTask) as GeneralWorkerTask | undefined
+    if (generalWorkerTask != null) {
+      return {
+        workerTaskStateType: "general",
+        task: generalWorkerTask,
+      }
+    }
+
+    const specializedWorkerTask = this.children.find(task => task instanceof SpecializedWorkerTask) as SpecializedWorkerTask | undefined
+    if (specializedWorkerTask != null) {
+      return {
+        workerTaskStateType: "specialized",
+        task: specializedWorkerTask,
+      }
+    }
+
+    return {
+      workerTaskStateType: "unknown",
+    }
+  }
+
+  // ---- Private ---- //
+  private checkPrimitiveWorkerTask(primitiveWorkerTask: PrimitiveWorkerTask, objects: OwnedRoomObjects): void {
     if (objects.activeStructures.storage == null) { // TODO: 条件を詰める
       return
     }
@@ -82,5 +141,21 @@ export class WorkerTask extends Task {
     this.addChildTask(GeneralWorkerTask.create(this.roomName))
     const energySources: EnergySourceTask[] = objects.sources.map(source => OwnedRoomHarvesterTask.create(this.roomName, source))
     this.addChildTask(OwnedRoomHaulerTask.create(this.roomName, energySources))
+  }
+
+  private checkGeneralWorkerTask(generalWorkerTask: GeneralWorkerTask, objects: OwnedRoomObjects): void {
+    if (this.roomName !== "W24S29") { // FixMe:
+      return
+    }
+
+    if (objects.activeStructures.storage == null) {
+      return
+    }
+    if (objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {  // TODO: 条件を詰める
+      return
+    }
+    this.removeChildTask(generalWorkerTask)
+
+    this.addChildTask(SpecializedWorkerTask.create(this.roomName))
   }
 }

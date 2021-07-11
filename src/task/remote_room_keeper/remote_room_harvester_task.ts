@@ -14,7 +14,7 @@ import { MoveToTask } from "object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { DropResourceApiWrapper } from "object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
-import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
@@ -24,6 +24,7 @@ import { TaskState } from "task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { bodyCost } from "utility/creep_body"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -159,7 +160,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     isConstructing: boolean,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, this.taskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

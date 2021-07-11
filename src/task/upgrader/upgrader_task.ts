@@ -7,7 +7,7 @@ import { CreepTask } from "object_task/creep_task/creep_task"
 import { CreepRole } from "prototype/creep_role"
 import { CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { generateCodename } from "utility/unique_id"
-import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { TRANSFER_RESOURCE_RANGE, UPGRADE_CONTROLLER_RANGE } from "utility/constants"
@@ -16,6 +16,7 @@ import { TargetToPositionTask } from "object_task/creep_task/meta_task/target_to
 import type { AnyCreepApiWrapper } from "object_task/creep_task/creep_api_wrapper"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
+import { bodyCost } from "utility/creep_body"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -98,8 +99,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     return TaskStatus.InProgress
   }
 
-  public creepFileter(): CreepPoolFilter {
-    return () => true
+  public creepFileterRoles(): CreepRole[] | null {
+    return null
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
@@ -160,7 +161,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     })()
 
     for (let i = 0; i < maxBodyCount; i += 1) {
-      body.push(...bodyUnit)
+      body.unshift(...bodyUnit)
     }
 
     const numberOfCreeps = ((): number => {

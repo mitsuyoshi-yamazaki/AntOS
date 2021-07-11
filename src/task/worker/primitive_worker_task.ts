@@ -86,7 +86,7 @@ export class PrimitiveWorkerTask extends Task {
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
     const minimumCreepCount = creepCountForSource * objects.sources.length
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const noCreeps = problemFinder.creepCount <= 2
     const body: BodyPartConstant[] | null = noCreeps ? [CARRY, WORK, MOVE] : null

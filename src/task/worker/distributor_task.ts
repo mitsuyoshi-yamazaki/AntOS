@@ -78,8 +78,8 @@ export class DistributorTask extends GeneralCreepWorkerTask {
     return TaskStatus.InProgress
   }
 
-  public creepFileter(): CreepPoolFilter {
-    return (creep => hasNecessaryRoles(creep, [CreepRole.Claimer]))
+  public creepFileterRoles(): CreepRole[] | null {
+    return [CreepRole.Claimer]
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {

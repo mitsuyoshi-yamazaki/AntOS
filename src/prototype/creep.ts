@@ -118,6 +118,8 @@ declare global {
 
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
     _task: CreepTask | null
+
+    roles: CreepRole[]
   }
 }
 
@@ -141,6 +143,16 @@ export function init(): void {
       } else if (task.shortDescription != null) {
         this.say(task.shortDescription)
       }
+    }
+  })
+
+  Object.defineProperty(Creep.prototype, "roles", {
+    get(): CreepRole[] {
+      const memory = this.memory
+      if (!isV5CreepMemory(memory)) {
+        return []
+      }
+      return memory.r.concat([])
     }
   })
 }

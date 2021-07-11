@@ -12,7 +12,7 @@ import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insuffic
 import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "problem/problem_finder"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
-import { bodyCost } from "world_info/resource_pool/creep_specs"
+import { bodyCost } from "utility/creep_body"
 import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "task/task_state"
@@ -104,7 +104,7 @@ export class RemoteRoomHaulerTask extends Task {
     minimumCreepCount: number,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

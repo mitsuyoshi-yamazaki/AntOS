@@ -92,7 +92,7 @@ export class GeneralWorkerTask extends Task {
       const energy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
       return Math.min(Math.max(Math.floor(energy / 10000), 3), 5)
     })()
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, roles, filterTaskIdentifier, minimumCreepCount)
 
     const noCreeps = problemFinder.creepCount <= 2
     const body = noCreeps ? [CARRY, WORK, MOVE] : this.workerBody(objects)

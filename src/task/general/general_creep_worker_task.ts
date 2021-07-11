@@ -6,7 +6,7 @@ import { TaskState } from "task/task_state"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepInsufficiencyProblemFinder } from "problem/creep_insufficiency/creep_insufficiency_problem_finder"
-import { CreepRole } from "prototype/creep_role"
+import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepInsufficiencyProblemSolver } from "task/creep_spawn/creep_insufficiency_problem_solver"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { World } from "world_info/world_info"
@@ -44,7 +44,7 @@ export abstract class GeneralCreepWorkerTask extends Task {
   }
 
   abstract encode(): GeneralCreepWorkerTaskState
-  abstract creepFileter(): CreepPoolFilter
+  abstract creepFileterRoles(): CreepRole[] | null
   abstract creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null
   abstract newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null
 
@@ -53,9 +53,10 @@ export abstract class GeneralCreepWorkerTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
+    const creepFileterRoles = this.creepFileterRoles()
     const request = this.creepRequest(objects)
     if (request != null) {
-      const problemFinder = new CreepInsufficiencyProblemFinder(this.roomName, request.necessaryRoles, request.taskIdentifier, request.numberOfCreeps)
+      const problemFinder = new CreepInsufficiencyProblemFinder(this.roomName, creepFileterRoles, request.necessaryRoles, request.taskIdentifier, request.numberOfCreeps)
       const problemFinderWrapper: ProblemFinder = {
         identifier: problemFinder.identifier,
         problemExists: () => problemFinder.problemExists(),
@@ -83,14 +84,22 @@ export abstract class GeneralCreepWorkerTask extends Task {
 
     this.checkProblemFinders(problemFinders)
 
+    const filter = ((): CreepPoolFilter => {
+      if (creepFileterRoles == null) {
+        return () => true
+      }
+      const roles = creepFileterRoles
+      return creep => hasNecessaryRoles(creep, roles)
+    })()
+
     World.resourcePools.assignTasks(
       objects.controller.room.name,
-      this.taskIdentifier,
+      request?.taskIdentifier ?? null,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep, objects)
       },
-      creep => this.creepFileter()(creep),
+      filter,
     )
 
     return TaskStatus.InProgress
