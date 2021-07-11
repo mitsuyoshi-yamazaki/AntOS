@@ -1,5 +1,6 @@
 import { RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { calculateSourceRoute } from "script/pathfinder"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
@@ -11,14 +12,49 @@ const allVisibleRooms: Room[] = []
 const ownedRooms: Room[] = []
 const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
 
+// Memoryに入れずにオンメモリキャッシュでもワークするはず
+export interface RoomInfoMemory {
+  /** distributor */
+  d: {
+    /** distributor position */
+    p: RoomPositionState
+
+    /** link id */
+    l: Id<StructureLink> | null
+  } | null
+
+  /** upgrader */
+  u: {
+    /** link id */
+    l: Id<StructureLink> | null
+
+    /** container id */
+    c: Id<StructureContainer> | null
+  } | null
+}
+
+export interface RoomInfo {
+  distributor: {
+    position: RoomPosition
+    link: StructureLink | null
+  } | null
+
+  upgrader: {
+    link: StructureLink | null
+    container: StructureContainer | null
+  } | null
+}
+
 export interface RoomsInterface {
   // ---- Lifecycle ---- //
   beforeTick(creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[]
   afterTick(): void
 
-  // ---- Function ---- //
+  // ---- Get Rooms ---- //
   get(roomName: RoomName): Room | null
   getAllOwnedRooms(): Room[]
+
+  // ---- Get RoomObjects ---- //
   getAllOwnedRoomObjects(): OwnedRoomObjects[]
   getOwnedRoomObjects(roomName: RoomName): OwnedRoomObjects | null
 }
@@ -64,9 +100,10 @@ export const Rooms: RoomsInterface = {
   },
 
   afterTick: function (): void {
+    saveRoomInfo()
   },
 
-  // ---- Function ---- //
+  // ---- Get Rooms ---- //
   get: function (roomName: RoomName): Room | null {
     return Game.rooms[roomName]
   },
@@ -75,6 +112,7 @@ export const Rooms: RoomsInterface = {
     return ownedRooms.concat([])
   },
 
+  // ---- Get RoomObjects ---- //
   getAllOwnedRoomObjects: function (): OwnedRoomObjects[] {
     return Array.from(ownedRoomObjects.values())
   },
@@ -90,6 +128,8 @@ function enumerateObjects(controller: StructureController, creeps: Creep[]): Own
 }
 
 export class OwnedRoomObjects {
+  public readonly roomInfo: RoomInfo
+
   public readonly sources: Source[]
   public readonly constructionSites: ConstructionSite<BuildableStructureConstant>[] // TODO: 優先順位づけ等
 
@@ -124,6 +164,9 @@ export class OwnedRoomObjects {
     creeps: Creep[],
   ) {
     const room = controller.room
+
+    const roomInfoMemory = Memory.room_info[room.name]
+    this.roomInfo = decodeRoomInfo(roomInfoMemory)
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -161,6 +204,12 @@ export class OwnedRoomObjects {
     let storage: StructureStorage | null = null
     let terminal: StructureTerminal | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
+    if (this.roomInfo.upgrader?.container != null) {
+      const upgraderContainer = this.roomInfo.upgrader.container
+      if (upgraderContainer.store.getFreeCapacity(RESOURCE_ENERGY) > upgraderContainer.store.getCapacity() * 0.3) {
+        chargeableStructures.push(upgraderContainer)
+      }
+    }
 
     const excludedDamagedStructureTypes: StructureConstant[] = [
       STRUCTURE_WALL,
@@ -198,8 +247,10 @@ export class OwnedRoomObjects {
         break
       case STRUCTURE_CONTAINER:
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          this.energySources.push(structure)
-          this.energyStores.push(structure)
+          if (structure !== this.roomInfo.upgrader?.container) {
+            this.energySources.push(structure)
+            this.energyStores.push(structure)
+          }
         }
         checkDecayed(structure)
         break
@@ -382,5 +433,91 @@ function calculateSourceRouteIn(room: Room, sources: Source[], destination: Room
       console.log(`source path cannot found: ${result.reason}`)
       break
     }
+  })
+}
+
+function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
+  return {
+    distributor: (() => {
+      if (roomInfoMemory == null || roomInfoMemory.d == null) {
+        return null
+      }
+      const link = (() => {
+        if (roomInfoMemory.d.l == null) {
+          return null
+        }
+        const stored = Game.getObjectById(roomInfoMemory.d.l)
+        if (stored == null) {
+          roomInfoMemory.d.l = null
+          return null
+        }
+        return stored
+      })()
+      return {
+        position: decodeRoomPosition(roomInfoMemory.d.p),
+        link,
+      }
+    })(),
+
+    upgrader: (() => {
+      if (roomInfoMemory == null || roomInfoMemory.u == null) {
+        return null
+      }
+      const link = (() => {
+        if (roomInfoMemory.u.l == null) {
+          return null
+        }
+        const stored = Game.getObjectById(roomInfoMemory.u.l)
+        if (stored == null) {
+          roomInfoMemory.u.l = null
+          return null
+        }
+        return stored
+      })()
+      const container = (() => {
+        if (roomInfoMemory.u.c == null) {
+          return null
+        }
+        const stored = Game.getObjectById(roomInfoMemory.u.c)
+        if (stored == null) {
+          roomInfoMemory.u.c = null
+          return null
+        }
+        return stored
+      })()
+      return {
+        link,
+        container,
+      }
+    })()
+  }
+}
+
+function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
+  return {
+    d: (() => {
+      if (roomInfo.distributor == null) {
+        return null
+      }
+      return {
+        p: roomInfo.distributor.position.encode(),
+        l: roomInfo.distributor.link?.id ?? null,
+      }
+    })(),
+    u: (() => {
+      if (roomInfo.upgrader == null) {
+        return null
+      }
+      return {
+        l: roomInfo.upgrader.link?.id ?? null,
+        c: roomInfo.upgrader.container?.id ?? null,
+      }
+    })()
+  }
+}
+
+function saveRoomInfo(): void {
+  ownedRoomObjects.forEach((objects, roomName) => {
+    Memory.room_info[roomName] = encodeRoomInfo(objects.roomInfo)
   })
 }

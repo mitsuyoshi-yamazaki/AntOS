@@ -1,4 +1,7 @@
+import { TaskRunnerId, TaskTargetCache } from "object_task/object_task_target_cache"
 import { RoomName } from "utility/room_name"
+
+export type RoomPositionIdentifier = string
 
 export interface RoomPositionState {
   x: number,
@@ -50,6 +53,18 @@ export function init(): void {
       r: this.roomName,
     }
   }
+
+  Object.defineProperty(RoomPosition.prototype, "id", {
+    get(): RoomPositionIdentifier {
+      return `${this.roomName}_${this.x}_${this.y}`
+    },
+  })
+
+  Object.defineProperty(RoomPosition.prototype, "targetedBy", {
+    get(): TaskRunnerId[] {
+      return TaskTargetCache.targetingTaskRunnerIds(this.id)
+    },
+  })
 }
 
 export function decodeRoomPosition(state: RoomPositionState): RoomPosition {

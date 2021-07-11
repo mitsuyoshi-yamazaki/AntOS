@@ -14,17 +14,12 @@ import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { EnergySource } from "prototype/room_object"
 import { UPGRADE_CONTROLLER_RANGE } from "utility/constants"
 
-type UpgraderTaskEnergySource = StructureContainer | StructureLink
-
-export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
+export interface DistributorTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
   r: RoomName
-
-  /** upgrader positions */
-  p: RoomPositionState[]
 }
 
-export class UpgraderTask extends GeneralCreepWorkerTask {
+export class DistributorTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
 
   private readonly codename: string
@@ -33,7 +28,6 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
-    private readonly upgraderPositions: RoomPosition[],
   ) {
     super(startTime, children, roomName)
 
@@ -41,37 +35,37 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
   }
 
-  public encode(): UpgraderTaskState {
+  public encode(): DistributorTaskState {
     return {
-      t: "UpgraderTask",
+      t: "DistributorTask",
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
-      p: this.upgraderPositions.map(position => position.encode()),
     }
   }
 
-  public static decode(state: UpgraderTaskState, children: Task[]): UpgraderTask {
-    const upgraderPositions = state.p.map(positionState => decodeRoomPosition(positionState))
-    return new UpgraderTask(state.s, children, state.r, upgraderPositions)
+  public static decode(state: DistributorTaskState, children: Task[]): DistributorTask {
+    return new DistributorTask(state.s, children, state.r)
   }
 
-  public static create(roomName: RoomName): UpgraderTask {
+  public static create(roomName: RoomName): DistributorTask {
     const upgraderPositions: RoomPosition[] = []
+    const energySources: DistributorTaskEnergySource[] = []
     const objects = World.rooms.getOwnedRoomObjects(roomName)
     if (objects != null) {
       const controller = objects.controller
       const container = controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_CONTAINER) as StructureContainer | null
-      const link = controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_LINK) as StructureLink | null
-      objects.roomInfo.upgrader = {
-        container,
-        link,
+      if (container != null) {
+        energySources.push(container)
       }
-
+      const link = controller.pos.findInRange(FIND_STRUCTURES, UPGRADE_CONTROLLER_RANGE).find(structure => structure.structureType === STRUCTURE_LINK) as StructureLink | null
+      if (link != null) {
+        energySources.push(link)
+      }
       // upgraderPositions =  // TODO:
     }
-
-    return new UpgraderTask(Game.time, [], roomName, [])
+    const energySourceIds = energySources.map(energySource => energySource.id)
+    return new DistributorTask(Game.time, [], roomName, [], energySourceIds)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -85,23 +79,24 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public creepFileter(): CreepPoolFilter {
-    return (creep => hasNecessaryRoles(creep, [CreepRole.Claimer])) // TODO:
+    return (creep => hasNecessaryRoles(creep, [CreepRole.Claimer]))
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
-    return null
-    // return {
-    //   necessaryRoles: [CreepRole.Claimer],
-    //   taskIdentifier: this.taskIdentifier,
-    //   numberOfCreeps: 1,
-    //   codename: this.codename,
-    //   initialTask: creepTask,
-    //   priority: CreepSpawnRequestPriority.Medium,
-    //   body: null
-    // }
+    return {
+      necessaryRoles: [CreepRole.Claimer],
+      taskIdentifier: this.taskIdentifier,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      initialTask: creepTask,
+      priority: CreepSpawnRequestPriority.Medium,
+      body: null
+    }
   }
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
-    return null
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      return a
+    }
   }
 }

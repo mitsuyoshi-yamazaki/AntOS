@@ -87,7 +87,7 @@ export const ResourcePools: ResourcePoolsInterface = {
     getCreepPool(roomName)?.takeOverCreeps(taskIdentifier, newIdentifier, newParentRoomName)
   },
 
-  addSpawnCreepRequest: function(roomName: RoomName, request: CreepSpawnRequest): void {
+  addSpawnCreepRequest: function (roomName: RoomName, request: CreepSpawnRequest): void {
     const reqeusts = ((): CreepSpawnRequest[] => {
       const identifier = resourcePoolIdentifier(roomName)
       const stored = spawnCreepRequests.get(identifier)

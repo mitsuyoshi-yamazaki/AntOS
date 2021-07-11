@@ -12,6 +12,7 @@ import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "utility/system_info"
 import { isV4CreepMemory } from "prototype/creep"
+import type { RoomInfoMemory } from "world_info/room_info"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -167,7 +168,9 @@ declare global {
       last_bucket: number
     }
 
-    towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>
+    towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>  // TODO: 消す
+
+    room_info: {[index: string]: RoomInfoMemory}  // index: RoomName
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined

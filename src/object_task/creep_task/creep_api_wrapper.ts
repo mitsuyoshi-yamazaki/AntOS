@@ -11,6 +11,7 @@ import { GetEnergyApiWrapper, GetEnergyApiWrapperState } from "./api_wrapper/get
 import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { DropResourceApiWrapper, DropResourceApiWrapperState } from "./api_wrapper/drop_resource_api_wrapper"
 import { ReserveControllerApiWrapper, ReserveControllerApiWrapperState } from "./api_wrapper/reserve_controller_api_wrapper"
+import { KeepHarvestingApiWrapper, KeepHarvestingApiWrapperState } from "./api_wrapper/keep_harvesting_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -34,6 +35,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | GetEnergyApiWrapper
   | DropResourceApiWrapper
   | ReserveControllerApiWrapper
+  | KeepHarvestingApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -46,6 +48,7 @@ class CreepApiWrapperDecoderMap {
   "GetEnergyApiWrapper" = (state: CreepApiWrapperState) => GetEnergyApiWrapper.decode(state as GetEnergyApiWrapperState)
   "DropResourceApiWrapper" = (state: CreepApiWrapperState) => DropResourceApiWrapper.decode(state as DropResourceApiWrapperState)
   "ReserveControllerApiWrapper" = (state: CreepApiWrapperState) => ReserveControllerApiWrapper.decode(state as ReserveControllerApiWrapperState)
+  "KeepHarvestingApiWrapper" = (state: CreepApiWrapperState) => KeepHarvestingApiWrapper.decode(state as KeepHarvestingApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

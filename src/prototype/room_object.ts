@@ -1,6 +1,6 @@
 import { TaskRunnerId, TaskTargetCache } from "object_task/object_task_target_cache"
 
-export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower  // TODO: まだある
+export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer  // TODO: まだある
 
 /** Energyを引き出せるオブジェクト */
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep

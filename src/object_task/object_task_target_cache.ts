@@ -1,8 +1,11 @@
+import type { RoomPositionIdentifier } from "prototype/room_position"
+
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
-export type TaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+export type TaskTargetType = IdRepresentableTaskTargetType | RoomPosition
 
 export type TaskRunnerId = Id<TaskRunnerType>
-export type TaskTargetTypeId = Id<TaskTargetType>
+export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionIdentifier
 type TaskTargetCacheKey = TaskTargetTypeId
 
 const cache = new Map<TaskTargetCacheKey, TaskRunnerId[]>()

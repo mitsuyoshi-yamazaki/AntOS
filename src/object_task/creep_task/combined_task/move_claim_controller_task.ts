@@ -7,6 +7,7 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { MoveToRoomTask, MoveToRoomTaskState } from "../meta_task/move_to_room_task"
 import { MoveToTargetTask } from "./move_to_target_task"
+import { SWAMP_COST } from "utility/constants"
 
 export interface MoveClaimControllerTaskState extends CreepTaskState {
   /** target room name */
@@ -64,7 +65,6 @@ export class MoveClaimControllerTask implements CreepTask {
     const body = creep.body.map(b => b.type)
     let moveCount = 0
     let bodyCount = 0
-    const swampCost = 5
     for (const bodyPart of body) {
       if (bodyPart === MOVE) {
         moveCount += 1
@@ -73,6 +73,6 @@ export class MoveClaimControllerTask implements CreepTask {
       }
     }
 
-    return bodyCount * swampCost <= moveCount
+    return bodyCount * SWAMP_COST <= moveCount
   }
 }

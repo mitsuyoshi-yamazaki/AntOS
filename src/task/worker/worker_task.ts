@@ -7,6 +7,7 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralWorkerTask } from "./general_worker_task"
 import { PrimitiveWorkerTask } from "./primitive_worker_task"
 import { TaskState } from "task/task_state"
+import { UpgraderTask } from "task/upgrader/upgrader_task"
 
 export interface WorkerTaskState extends TaskState {
   /** room name */
@@ -54,6 +55,10 @@ export class WorkerTask extends Task {
     this.checkPrimitiveWorkerTask(objects)
 
     // TODO: creepがいなくなった場合の処理
+
+    if (this.roomName === "W24S29" && this.children.some(task => task instanceof UpgraderTask) !== true) {
+      this.addChildTask(UpgraderTask.create(this.roomName))
+    }
 
     return TaskStatus.InProgress
   }

@@ -22,6 +22,10 @@ export function init(): void {
     console.log(`Updated v${version}`)
   }
 
+  if (Memory.room_info == null) {
+    Memory.room_info = {}
+  }
+
   if (Memory.towers == null) {
     Memory.towers = {}
   }

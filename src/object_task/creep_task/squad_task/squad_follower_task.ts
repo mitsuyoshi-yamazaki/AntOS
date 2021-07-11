@@ -3,8 +3,6 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
 export interface SquadFollowerTaskState extends CreepTaskState {
-  /** child task state */
-  c: CreepTaskState
 }
 
 export class SquadFollowerTask implements CreepTask {
