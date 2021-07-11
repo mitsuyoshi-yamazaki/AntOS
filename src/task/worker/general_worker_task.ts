@@ -16,8 +16,9 @@ import { generateCodename } from "utility/unique_id"
 import { GetEnergyApiWrapper } from "object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { ProblemFinder } from "problem/problem_finder"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
-import { bodyCost, CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "task/task_state"
+import { bodyCost } from "utility/creep_body"
 
 export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
@@ -58,12 +59,12 @@ export class GeneralWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore] // TODO: 移動距離が短いのでMOVEをひとつ減らす
+    const roles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.Hauler]
     const filterTaskIdentifier = null
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
+    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, [CreepRole.Worker, CreepRole.Mover])
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier)
+      this.createCreepInsufficiencyProblemFinder(objects, roles, filterTaskIdentifier)
     ]
 
     this.checkProblemFinders(problemFinders)
@@ -82,7 +83,7 @@ export class GeneralWorkerTask extends Task {
   }
 
   // ---- Problem Solver ---- //
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, roles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
     const minimumCreepCount = ((): number => {
       if (objects.activeStructures.storage == null) {
@@ -91,7 +92,11 @@ export class GeneralWorkerTask extends Task {
       const energy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
       return Math.min(Math.max(Math.floor(energy / 10000), 3), 5)
     })()
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, filterTaskIdentifier, minimumCreepCount)
+
+    const noCreeps = problemFinder.creepCount <= 2
+    const body = noCreeps ? [CARRY, WORK, MOVE] : this.workerBody(objects)
+    const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
@@ -100,8 +105,8 @@ export class GeneralWorkerTask extends Task {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.priority = CreepSpawnRequestPriority.Medium
-          solver.body = this.workerBody(objects)
+          solver.priority = priority
+          solver.body = body
         }
         if (solver != null) {
           this.addChildTask(solver)

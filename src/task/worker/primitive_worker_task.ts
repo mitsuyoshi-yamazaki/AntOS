@@ -88,6 +88,10 @@ export class PrimitiveWorkerTask extends Task {
     const minimumCreepCount = creepCountForSource * objects.sources.length
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
+    const noCreeps = problemFinder.creepCount <= 2
+    const body: BodyPartConstant[] | null = noCreeps ? [CARRY, WORK, MOVE] : null
+    const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
+
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
       problemExists: () => problemFinder.problemExists(),
@@ -95,7 +99,10 @@ export class PrimitiveWorkerTask extends Task {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.priority = CreepSpawnRequestPriority.Medium
+          solver.priority = priority
+          if (body != null) {
+            solver.body = body
+          }
         }
         if (solver != null) {
           this.addChildTask(solver)

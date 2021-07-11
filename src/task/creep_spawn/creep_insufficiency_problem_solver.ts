@@ -46,7 +46,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     public readonly children: Task[],
     public readonly problemIdentifier: ProblemIdentifier,
     public readonly roomName: RoomName,
-    private readonly necessaryRoles: CreepRole[],
+    public readonly necessaryRoles: CreepRole[],
     private readonly targetTaskIdentifier: TaskIdentifier | null,
     private readonly requiredCreepCount: number,
     public codename: string,
@@ -129,6 +129,6 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     }
 
     World.resourcePools.addSpawnCreepRequest(this.roomName, request)
-    return TaskStatus.InProgress
+    return TaskStatus.Finished  // 状況が変化してもタスクが残り続くのを防ぐため: process -mで表示されないかも
   }
 }
