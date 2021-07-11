@@ -1,7 +1,6 @@
 import { RoomName } from "utility/room_name"
 import { EnergySourceTask } from "task/hauler/owned_room_energy_source_task"
 import { Task, TaskIdentifier, TaskStatus } from "task/task"
-import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "task/task_state"
 import { RemoteRoomHaulerTask } from "./remote_room_harvester_hauler_task"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"

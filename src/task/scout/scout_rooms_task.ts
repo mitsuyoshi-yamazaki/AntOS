@@ -44,7 +44,7 @@ export class ScoutRoomsTask extends Task {
     return new ScoutRoomsTask(Game.time, [], roomName, targetRoomNames)
   }
 
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
+  public runTask(): TaskStatus {
     const problemFinders: ProblemFinder[] = []  // TODO: creep insufficiency
     this.checkProblemFinders(problemFinders)
 

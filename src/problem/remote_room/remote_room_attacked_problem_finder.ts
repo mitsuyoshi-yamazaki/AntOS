@@ -3,7 +3,6 @@ import { ProblemSolver } from "problem/problem_solver"
 import { RoomName } from "utility/room_name"
 import { RoomInvisibleProblemSolver } from "task/scout/room_invisible_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { World } from "world_info/world_info"
 
 export class RemoteRoomAttackedProblemFinder implements ProblemFinder {
   public readonly roomName: RoomName

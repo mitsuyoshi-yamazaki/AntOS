@@ -3,7 +3,7 @@ import { roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { generateUniqueId } from "utility/unique_id"
 
-export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
+export function findPath(startObjectId: string, goalObjectId: string): string {
   const startObject = Game.getObjectById(startObjectId)
   if (!(startObject instanceof RoomObject) || startObject.room == null) {
     return `Game object of ${startObject} not found`

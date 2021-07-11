@@ -56,7 +56,7 @@ export class OwnedRoomScoutTask extends Task {
     return new OwnedRoomScoutTask(Game.time, [], roomName, neighbourRoomNames)
   }
 
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
+  public runTask(): TaskStatus {
     const problemFinders: ProblemFinder[] = []
     this.checkProblemFinders(problemFinders)
 

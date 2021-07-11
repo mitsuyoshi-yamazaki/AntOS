@@ -55,7 +55,7 @@ export class RemoteRoomManagerTask extends Task {
     return new RemoteRoomManagerTask(Game.time, children, roomName)
   }
 
-  public runTask(objects: OwnedRoomObjects): TaskStatus {
+  public runTask(): TaskStatus {
     const problemFinders: ProblemFinder[] = [
     ]
     this.checkProblemFinders(problemFinders)

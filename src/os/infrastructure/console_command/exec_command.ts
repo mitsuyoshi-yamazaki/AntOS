@@ -67,16 +67,7 @@ export class ExecCommand implements ConsoleCommand {
       return this.missingArgumentError("goal_object_id")
     }
 
-    const rangeString = args.get("range")
-    if (rangeString == null) {
-      return this.missingArgumentError("range")
-    }
-    const range = parseInt(rangeString, 10)
-    if (isNaN(range) === true) {
-      return `Invalid NaN argument range (${range})`
-    }
-
-    return findPath(startObjectId, goalObjectId, range)
+    return findPath(startObjectId, goalObjectId)
   }
 
   private findPathToSource(): CommandExecutionResult {
