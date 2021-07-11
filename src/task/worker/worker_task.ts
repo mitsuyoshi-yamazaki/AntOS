@@ -56,9 +56,13 @@ export class WorkerTask extends Task {
 
     // TODO: creepがいなくなった場合の処理
 
-    if (this.roomName === "W24S29" && this.children.some(task => task instanceof UpgraderTask) !== true) {
+    if (this.roomName === "W24S29" && this.children.some(task => task instanceof UpgraderTask) !== true) {  // FixMe: 一時コード
       this.addChildTask(UpgraderTask.create(this.roomName))
     }
+    // const upgraderTask = this.children.find(task => task instanceof UpgraderTask)
+    // if (upgraderTask != null) {
+    //   this.removeChildTask(upgraderTask)
+    // }
 
     return TaskStatus.InProgress
   }

@@ -10,9 +10,9 @@ import { generateCodename } from "utility/unique_id"
 import { MoveClaimControllerTask } from "object_task/creep_task/combined_task/move_claim_controller_task"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { EnergySource } from "prototype/room_object"
-import { UPGRADE_CONTROLLER_RANGE } from "utility/constants"
+import { TRANSFER_RESOURCE_RANGE, UPGRADE_CONTROLLER_RANGE } from "utility/constants"
 
 type UpgraderTaskEnergySource = StructureContainer | StructureLink
 
@@ -68,10 +68,23 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
         link,
       }
 
-      // upgraderPositions =  // TODO:
+      const options: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeTerrainWalls: true,
+        excludeStructures: true,
+        excludeWalkableStructures: false,
+      }
+      const positions = controller.pos.positionsInRange(UPGRADE_CONTROLLER_RANGE, options)
+        .filter(position => {
+          if (container == null) {
+            return true
+          }
+          return position.getRangeTo(container.pos) <= TRANSFER_RESOURCE_RANGE
+        })
+      upgraderPositions.push(...positions)
     }
 
-    return new UpgraderTask(Game.time, [], roomName, [])
+    return new UpgraderTask(Game.time, [], roomName, upgraderPositions)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
