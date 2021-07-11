@@ -2,6 +2,7 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showTargetedBy } from "script/task_target_cache_viewer"
+import { showPositionsInRange } from "script/room_position_script"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -26,6 +27,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showTargetedBy()
     case "PlaceRoadConstructionMarks":
       return this.placeRoadConstructionMarks()
+    case "ShowPositionsInRange":
+      return this.showPositionsInRange()
     default:
       return "Invalid script type"
     }
@@ -204,6 +207,43 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual")
+    return "ok"
+  }
+
+  private showPositionsInRange(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const xString = args.get("x")
+    if (xString == null) {
+      return this.missingArgumentError("x")
+    }
+    const x = parseInt(xString)
+    if (isNaN(x) === true) {
+      return `x is not a number (${xString})`
+    }
+    const yString = args.get("y")
+    if (yString == null) {
+      return this.missingArgumentError("y")
+    }
+    const y = parseInt(yString)
+    if (isNaN(y) === true) {
+      return `x is not a number (${yString})`
+    }
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const rangeString = args.get("range")
+    if (rangeString == null) {
+      return this.missingArgumentError("range")
+    }
+    const range = parseInt(rangeString)
+    if (isNaN(range) === true) {
+      return `x is not a number (${rangeString})`
+    }
+
+    const position = new RoomPosition(x, y, roomName)
+    showPositionsInRange(position, range)
     return "ok"
   }
 }
