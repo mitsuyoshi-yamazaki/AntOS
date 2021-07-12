@@ -14,6 +14,9 @@ const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
 
 // Memoryに入れずにオンメモリキャッシュでもワークするはず
 export interface RoomInfoMemory {
+  /** version */
+  v: ShortVersion
+
   /** distributor */
   d: {
     /** distributor position */
@@ -34,6 +37,8 @@ export interface RoomInfoMemory {
 }
 
 export interface RoomInfo {
+  version: ShortVersion
+
   distributor: {
     position: RoomPosition
     link: StructureLink | null
@@ -166,7 +171,7 @@ export class OwnedRoomObjects {
     const room = controller.room
 
     const roomInfoMemory = Memory.room_info[room.name]
-    this.roomInfo = decodeRoomInfo(roomInfoMemory)
+    this.roomInfo = decodeRoomInfo(room.name, roomInfoMemory)
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -436,8 +441,10 @@ function calculateSourceRouteIn(room: Room, sources: Source[], destination: Room
   })
 }
 
-function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
+function decodeRoomInfo(roomName: RoomName, roomInfoMemory: RoomInfoMemory): RoomInfo {
   return {
+    version: roomInfoMemory.v ?? Migration.roomVersion(roomName),
+
     distributor: (() => {
       if (roomInfoMemory == null || roomInfoMemory.d == null) {
         return null
@@ -495,6 +502,7 @@ function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
 
 function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
   return {
+    v: roomInfo.version,
     d: (() => {
       if (roomInfo.distributor == null) {
         return null
