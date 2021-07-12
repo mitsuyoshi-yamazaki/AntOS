@@ -144,10 +144,6 @@ export class WorkerTask extends Task {
   }
 
   private checkGeneralWorkerTask(generalWorkerTask: GeneralWorkerTask, objects: OwnedRoomObjects): void {
-    if (Game.shard.name !== "shardSeason") { // FixMe:
-      return
-    }
-
     if (objects.activeStructures.storage == null) {
       return
     }
