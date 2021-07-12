@@ -11,7 +11,6 @@ import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
-  private shouldCacheTasks = true
 
   public constructor() {
   }
@@ -57,13 +56,8 @@ export class RootProcess {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       const task = decodeCreepTask(creep)
-      if (this.shouldCacheTasks) {
-        creep.task = task
-      } else {
-        creep._task = task
-      }
+      creep.task = task
     }
-    this.shouldCacheTasks = false
   }
 
   private storeTasks(): void {

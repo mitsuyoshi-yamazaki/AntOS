@@ -54,15 +54,15 @@ export class TargetToPositionTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
+    if (creep.pos.isEqualTo(this.destinationPosition) !== true) {
+      creep.moveTo(this.destinationPosition, defaultMoveToOptions)
+    }
+
     for (const wrapper of this.apiWrappers) {
       const result = wrapper.run(creep)
       if (result === ERR_PROGRAMMING_ERROR) {
         return TaskProgressType.FinishedAndRan
       }
-    }
-
-    if (creep.pos.isEqualTo(this.destinationPosition) !== true) {
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions)
     }
     return TaskProgressType.InProgress
   }
