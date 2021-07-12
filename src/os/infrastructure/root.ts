@@ -4,6 +4,7 @@ import { TaskTargetCache } from "object_task/object_task_target_cache"
 import type { ProcessLauncher } from "os/os_process_launcher"
 import type { Process } from "process/process"
 import { isV5CreepMemory } from "prototype/creep"
+import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
@@ -27,6 +28,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      RoomResources.beforeTick()
+    }, "RoomResources.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       World.beforeTick()

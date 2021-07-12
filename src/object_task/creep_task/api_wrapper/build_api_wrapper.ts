@@ -65,7 +65,7 @@ export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
     default:
-      PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

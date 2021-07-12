@@ -92,6 +92,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
 
     if (creep.roles.includes(CreepRole.Worker) === true) {
+      const structureToCharge = objects.getStructureToCharge(creep.pos)
+      if (structureToCharge != null) {
+        return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      }
+
       const damagedStructure = objects.getRepairStructure()
       if (damagedStructure != null) {
         return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
@@ -100,11 +105,6 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       const constructionSite = objects.getConstructionSite()
       if (constructionSite != null) {
         return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
-      }
-
-      const structureToCharge = objects.getStructureToCharge(creep.pos)
-      if (structureToCharge != null) {
-        return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
       }
 
       return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller))

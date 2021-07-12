@@ -5,6 +5,7 @@ type CreepRoleMover = "mover"
 type CreepRoleHarvester = "harvester"
 type CreepRoleWorker = "worker"
 type CreepRoleEnergyStore = "energy_store"
+type CreepRoleEnergySource = "energy_source"
 type CreepRoleHauler = "hauler"
 type CreepRoleScout = "scout"
 type CreepRoleClaimer = "claimer"
@@ -13,16 +14,18 @@ const creepRoleMover: CreepRoleMover = "mover"
 const creepRoleHarvester: CreepRoleHarvester = "harvester"
 const creepRoleWorker: CreepRoleWorker = "worker"
 const creepRoleEnergyStore: CreepRoleEnergyStore = "energy_store"
+const creepRoleEnergySource: CreepRoleEnergySource = "energy_source"
 const creepRoleHauler: CreepRoleHauler = "hauler"
 const creepRoleScout: CreepRoleScout = "scout"
 const creepRoleClaimer: CreepRoleClaimer = "claimer"
 
-export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout | CreepRoleClaimer
+export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleEnergySource | CreepRoleHauler | CreepRoleScout | CreepRoleClaimer
 export const CreepRole = {
   Mover: creepRoleMover,
   Harvester: creepRoleHarvester,
   Worker: creepRoleWorker,
   EnergyStore: creepRoleEnergyStore,
+  EnergySource: creepRoleEnergySource,
   Hauler: creepRoleHauler,
   Scout: creepRoleScout,
   Claimer: creepRoleClaimer,

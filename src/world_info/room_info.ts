@@ -17,6 +17,12 @@ export interface RoomInfoMemory {
   /** version */
   v: ShortVersion
 
+  /** energySourceStructures */
+  src: Id<EnergySource>[]
+
+  /** energyStoreStructures */
+  str: Id<EnergyStore>[]
+
   /** distributor */
   d: {
     /** distributor position */
@@ -39,11 +45,16 @@ export interface RoomInfoMemory {
 export interface RoomInfo {
   version: ShortVersion
 
+  energySourceStructures: EnergySource[]
+  energyStoreStructures: EnergyStore[]
+
+  /** @deprecated */
   distributor: {
     position: RoomPosition
     link: StructureLink | null
   } | null
 
+  /** @deprecated */
   upgrader: {
     link: StructureLink | null
     container: StructureContainer | null
@@ -171,7 +182,7 @@ export class OwnedRoomObjects {
     const room = controller.room
 
     const roomInfoMemory = Memory.room_info[room.name]
-    this.roomInfo = decodeRoomInfo(room.name, roomInfoMemory)
+    this.roomInfo = decodeRoomInfo(roomInfoMemory)
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -441,9 +452,12 @@ function calculateSourceRouteIn(room: Room, sources: Source[], destination: Room
   })
 }
 
-function decodeRoomInfo(roomName: RoomName, roomInfoMemory: RoomInfoMemory): RoomInfo {
+export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
   return {
-    version: roomInfoMemory.v ?? Migration.roomVersion(roomName),
+    version: roomInfoMemory.v,
+
+    energySourceStructures: roomInfoMemory.src?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
+    energyStoreStructures: roomInfoMemory.str?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
 
     distributor: (() => {
       if (roomInfoMemory == null || roomInfoMemory.d == null) {
@@ -503,6 +517,8 @@ function decodeRoomInfo(roomName: RoomName, roomInfoMemory: RoomInfoMemory): Roo
 function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
   return {
     v: roomInfo.version,
+    src: roomInfo.energySourceStructures.map(obj => obj.id),
+    str: roomInfo.energyStoreStructures.map(obj => obj.id),
     d: (() => {
       if (roomInfo.distributor == null) {
         return null
