@@ -1,4 +1,4 @@
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
 
 export function showOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {

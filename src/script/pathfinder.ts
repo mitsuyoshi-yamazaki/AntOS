@@ -1,24 +1,42 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Result } from "utility/result"
+import { generateUniqueId } from "utility/unique_id"
 
-export function findPath(startObjectId: string, goalObjectId: string, goalRange: number): string {
+export function findPath(startObjectId: string, goalObjectId: string): string {
   const startObject = Game.getObjectById(startObjectId)
-  if (!(startObject instanceof RoomObject)) {
+  if (!(startObject instanceof RoomObject) || startObject.room == null) {
     return `Game object of ${startObject} not found`
   }
   const goalObject = Game.getObjectById(goalObjectId)
-  if (!(goalObject instanceof RoomObject)) {
+  if (!(goalObject instanceof RoomObject) || goalObject.room == null) {
     return `Game object of ${goalObject} not found`
   }
 
-  const result = PathFinder.search(startObject.pos, { pos: goalObject.pos, range: goalRange })
-  if (result.incomplete === true) {
-    visualize(result.path, { color: "#ff0000" })
-    return "[INCOMPLETE] Pathfinder failed to find path"
+  const options: FindPathOpts = {
+    ignoreCreeps: true,
+    ignoreDestructibleStructures: true,
+    ignoreRoads: false,
+    maxRooms: 3,
+  }
+  const startRoomName = startObject.room.name
+  const startRoomPath = startObject.pos.findPathTo(goalObject.pos, options).map(p => {
+    return new RoomPosition(p.x, p.y, startRoomName)
+  })
+  visualize(startRoomPath, { color: "#ffffff" })
+
+  if (startRoomPath.length <= 0) {
+    return "No path"
   }
 
-  visualize(result.path, { color: "#ffffff" })
+  const goalRoomName = goalObject.room.name
+  const edgePosition = startRoomPath[startRoomPath.length - 1]
+  const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoomName)
+  const goalRoomPath = goalObject.pos.findPathTo(edgeRoomPosition, options).map(p => {
+    return new RoomPosition(p.x, p.y, goalRoomName)
+  })
+  visualize(goalRoomPath, { color: "#ffffff" })
+
   return "ok"
 }
 
@@ -176,4 +194,53 @@ export function getCachedPathFor(source: Source): RoomPosition[] | null {
   const roomPositions = memoryCachedPath.p.map(position => new RoomPosition(position.x, position.y, roomName))
   sourcePathCache.set(source.id, roomPositions)
   return roomPositions
+}
+
+/**
+ * - Owned roomにはflagを、そうでなければConstructionSiteを配置する
+ * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
+ */
+export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string): Result<void, string> {
+  const startRoom = Game.rooms[startPosition.roomName]
+  const goalRoom = Game.rooms[goalPosition.roomName]
+
+  if (startRoom == null || goalRoom == null) {
+    return Result.Failed(`No visual: ${startRoom}, ${goalRoom}`)
+  }
+
+  const options: FindPathOpts = {
+    ignoreCreeps: true,
+    ignoreDestructibleStructures: true,
+    ignoreRoads: false,
+    maxRooms: 3,
+  }
+
+  const placeMark = (room: Room, position: {x: number, y: number}): void => {
+    if (room.controller != null && room.controller.my === true) {
+      room.createFlag(position.x, position.y, generateUniqueId(codename), COLOR_BROWN)
+      return
+    }
+    room.createConstructionSite(position.x, position.y, STRUCTURE_ROAD)
+  }
+
+  const startRoomPath = startPosition.findPathTo(goalPosition, options)
+  if (startRoomPath.length <= 0) {
+    return Result.Failed(`No path from ${startPosition} to ${goalPosition}`)
+  }
+
+  if (startPosition.roomName === goalPosition.roomName) {
+    return Result.Succeeded(undefined)
+  }
+
+  startRoomPath.forEach(position => {
+    placeMark(startRoom, position)
+  })
+  const edgePosition = startRoomPath[startRoomPath.length - 1]
+  const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoom.name)
+
+  goalPosition.findPathTo(edgeRoomPosition, options).map(position => {
+    placeMark(goalRoom, position)
+  })
+
+  return Result.Succeeded(undefined)
 }

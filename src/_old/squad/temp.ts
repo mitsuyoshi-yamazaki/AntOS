@@ -196,7 +196,7 @@ export class TempSquad extends Squad {
     let body: BodyPartConstant[] = (energyAvailable >= 850) ? [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM] : [MOVE, MOVE, MOVE, CLAIM]
     const name = this.generateNewName()
     const memory: TempMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

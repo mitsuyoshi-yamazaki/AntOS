@@ -1,5 +1,5 @@
 import { CreepName, isV5CreepMemory } from "prototype/creep"
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { GameObjectInfo } from "./game_object_info"
 // Worldをimportしない
 

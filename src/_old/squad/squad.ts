@@ -177,7 +177,7 @@ export abstract class Squad {
 
     const name = this.generateNewName()
     const memory: V4CreepMemory = opts.memory || {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,
@@ -221,7 +221,7 @@ export abstract class Squad {
     let body: BodyPartConstant[] = []
     const name = this.generateNewName()
     const memory: V4CreepMemory = opts.memory || {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

@@ -3,8 +3,10 @@ import { TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
-import { ObjectiveProcess } from "process/objective_process"
-import { BootstrapRoomProcess } from "process/bootstrap_room_process"
+import { RouteCheckTask } from "task/scout/route_check_task"
+import { TaskProcess } from "process/task_process"
+// import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
+// import { ScoutRoomTask } from "task/scout/scout_room_task"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -21,11 +23,11 @@ export class LaunchCommand implements ConsoleCommand {
     case "TestProcess":
       result = this.launchTestProcess()
       break
-    case "BootstrapRoomProcess":
-      result = this.launchBootstrapRoomProcess()
+    case "OnetimeTaskProcess":
+      result = this.launchOnetimeTaskProcess()
       break
-    case "ObjectiveProcess":
-      result = this.launchObjectiveProcess()
+    case "RouteCheckTask":
+      result = this.launchRouteCheckTask()
       break
     default:
       break
@@ -75,46 +77,59 @@ export class LaunchCommand implements ConsoleCommand {
   // ---- Launcher ---- //
   private launchTestProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
-      return new TestProcess(Game.time, processId)
+      return TestProcess.create(processId)
     })
     return Result.Succeeded(process)
   }
 
-  private launchBootstrapRoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
+  private launchOnetimeTaskProcess(): LaunchCommandResult {
+    // const args = this.parseProcessArguments()
 
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
+    // const roomName = args.get("room_name")
+    // if (roomName == null) {
+    //   return this.missingArgumentError("room_name")
+    // }
 
-    const parentRoomName = args.get("parent_room_name")
-    if (parentRoomName == null) {
-      return this.missingArgumentError("parent_room_name")
-    }
+    // const targetRoomName = args.get("target_room_name")
+    // if (targetRoomName == null) {
+    //   return this.missingArgumentError("target_room_name")
+    // }
 
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
+    // const rawWaypoints = args.get("waypoints")
+    // if (rawWaypoints == null) {
+    //   return this.missingArgumentError("waypoints")
+    // }
+    // const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
-      return BootstrapRoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
-    })
-    return Result.Succeeded(process)
+    // const task = ScoutRoomTask.create(roomName, targetRoomName, waypoints)
+
+    // const process = OperatingSystem.os.addProcess(processId => {
+    //   return OnetimeTaskProcess.create(processId, roomName, task)
+    // })
+    // return Result.Succeeded(process)
+    return Result.Failed("")
   }
 
-  private launchObjectiveProcess(): LaunchCommandResult {
+  private launchRouteCheckTask(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
 
+    const task = RouteCheckTask.create(roomName, targetRoomName, waypoints)
     const process = OperatingSystem.os.addProcess(processId => {
-      return ObjectiveProcess.create(processId, roomName)
+      return TaskProcess.create(processId, task)
     })
     return Result.Succeeded(process)
   }

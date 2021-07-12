@@ -1,20 +1,20 @@
-import { OperatingSystem } from "os/os"
 import { LoggerProcess } from "os/process/logger"
+import type { Process } from "process/process"
+import type { ProcessLauncher } from "os/os_process_launcher"
 
 export class InfrastructureProcessLauncher {
-  public launchProcess(): void {
-    const processInfo = OperatingSystem.os.listAllProcesses()
-    const loggerExists = processInfo.some(info => info.type === "LoggerProcess")
+  public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    const loggerExists = processList.some(process => process instanceof LoggerProcess)
     if (loggerExists !== true) {
-      this.launchLoggerProcess()
+      this.launchLoggerProcess(processLauncher)
     }
   }
 
-  private launchLoggerProcess(): void {
+  private launchLoggerProcess(processLauncher: ProcessLauncher): void {
     const emptyFilter = {
       processIds: [],
       processTypes: [],
     }
-    OperatingSystem.os.addProcess(processId => new LoggerProcess(Game.time, processId, emptyFilter))
+    processLauncher(processId => new LoggerProcess(Game.time, processId, emptyFilter))
   }
 }

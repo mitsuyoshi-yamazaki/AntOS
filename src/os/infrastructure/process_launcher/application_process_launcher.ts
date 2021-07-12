@@ -1,21 +1,23 @@
-import { LaunchableObjectiveType } from "objective/objective"
-import { OperatingSystem } from "os/os"
-import { ObjectiveProcess } from "process/objective_process"
-import { isV4CreepMemory, V4CreepMemory } from "prototype/creep"
-import { RoomName } from "prototype/room"
-import { roomLink } from "utility/log"
+import { RoomKeeperProcess } from "process/room_keeper_process"
+import { RoomName } from "utility/room_name"
+import { RoomKeeperTask } from "task/room_keeper/room_keeper_task"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
-import { CreepType } from "_old/creep"
-import { PrimitiveLogger } from "../primitive_logger"
+import { BootstrapRoomManagerProcess } from "process/bootstrap_room_manager_process"
+import type { Process } from "process/process"
+import type { ProcessLauncher } from "os/os_process_launcher"
 
 export class ApplicationProcessLauncher {
-  public launchProcess(): void {
-    const allProcessInfo = OperatingSystem.os.listAllProcesses()
-    const roomsWithV5KeeperProcess = allProcessInfo.map(processInfo => {
-      if (processInfo.process instanceof ObjectiveProcess) {
-        return processInfo.process.roomName
+  public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    this.checkV5RoomKeeperProcess(processList, processLauncher)
+    this.checkBoostrapRoomManagerProcess(processList, processLauncher)
+  }
+
+  private checkV5RoomKeeperProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    const roomsWithV5KeeperProcess = processList.map(process => {
+      if (process instanceof RoomKeeperProcess) {
+        return process.roomName
       }
       return null
     })
@@ -24,22 +26,25 @@ export class ApplicationProcessLauncher {
       switch (Migration.roomVersion(room.name)) {
       case ShortVersion.v3:
         return
-      case ShortVersion.v4:
-        PrimitiveLogger.fatal(`[Program bug] unexpectedly found v4 room ${roomLink(room.name)}`)
-        return
       case ShortVersion.v5:
         if (roomsWithV5KeeperProcess.includes(room.name) === true) {
           return
         }
-        this.launchV5RoomKeeperProcess(room.name)
+        this.launchV5RoomKeeperProcess(room.name, processLauncher)
         return
       }
     })
   }
 
-  private launchV5RoomKeeperProcess(roomName: RoomName): void {
-    const process = OperatingSystem.os.addProcess(processId => ObjectiveProcess.create(processId, roomName))
-    const roomKeeperObjectiveType: LaunchableObjectiveType = "RoomKeeperObjective"
-    process.didReceiveMessage(`add ${roomKeeperObjectiveType}`)
+  private launchV5RoomKeeperProcess(roomName: RoomName, processLauncher: ProcessLauncher): void {
+    const roomKeeperTask = RoomKeeperTask.create(roomName)
+    processLauncher(processId => RoomKeeperProcess.create(processId, roomKeeperTask))
+  }
+
+  private checkBoostrapRoomManagerProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    if (processList.some(process => process instanceof BootstrapRoomManagerProcess) === true) {
+      return
+    }
+    processLauncher(processId => BootstrapRoomManagerProcess.create(processId))
   }
 }

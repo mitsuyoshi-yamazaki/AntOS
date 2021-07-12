@@ -17,12 +17,12 @@ export const Spawns: SpawnsInterface = {
   // ---- Lifecycle ---- //
   beforeTick: function (): StructureSpawn[] {
     allSpawns.splice(0, allSpawns.length)
-    for (const spawnName in Memory.spawns) {
+    for (const spawnName in Game.spawns) {  // SpawnMemoryがundefideの場合に計上されないため
       const spawn = Game.spawns[spawnName]
-      if (spawn == null) {
-        delete Memory.spawns[spawnName]
-        continue
-      }
+      // if (spawn == null) {
+      //   delete Memory.spawns[spawnName]
+      //   continue
+      // }
       allSpawns.push(spawn)
     }
 

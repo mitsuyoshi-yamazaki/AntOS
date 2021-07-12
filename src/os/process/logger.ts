@@ -3,7 +3,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessLog } from "os/infrastructure/runtime_memory"
 import { OperatingSystem } from "os/os"
 import { Procedural } from "process/procedural"
-import { Process, ProcessId, ProcessState } from "process/process"
+import { Process, ProcessId } from "process/process"
+import { ProcessState } from "process/process_state"
 
 export interface LoggerProcessState extends ProcessState {
   /** message filter (|| statement) */

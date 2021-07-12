@@ -1,7 +1,8 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, showCachedSourcePath } from "script/pathfinder"
+import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showTargetedBy } from "script/task_target_cache_viewer"
+import { showPositionsInRange } from "script/room_position_script"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -24,6 +25,10 @@ export class ExecCommand implements ConsoleCommand {
       return this.placeOldRoomPlan()
     case "ShowTargetedBy":
       return this.showTargetedBy()
+    case "PlaceRoadConstructionMarks":
+      return this.placeRoadConstructionMarks()
+    case "ShowPositionsInRange":
+      return this.showPositionsInRange()
     default:
       return "Invalid script type"
     }
@@ -62,16 +67,7 @@ export class ExecCommand implements ConsoleCommand {
       return this.missingArgumentError("goal_object_id")
     }
 
-    const rangeString = args.get("range")
-    if (rangeString == null) {
-      return this.missingArgumentError("range")
-    }
-    const range = parseInt(rangeString, 10)
-    if (isNaN(range) === true) {
-      return `Invalid NaN argument range (${range})`
-    }
-
-    return findPath(startObjectId, goalObjectId, range)
+    return findPath(startObjectId, goalObjectId)
   }
 
   private findPathToSource(): CommandExecutionResult {
@@ -178,5 +174,67 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return showTargetedBy(targetIds.split(","))
+  }
+
+  private placeRoadConstructionMarks(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const startObjectId = args.get("start_object_id")
+    if (startObjectId == null) {
+      return this.missingArgumentError("start_object_id")
+    }
+    const startObject = Game.getObjectById(startObjectId)
+    if (!(startObject instanceof RoomObject)) {
+      return `${startObject} is not RoomObject ${startObjectId}`
+    }
+
+    const goalObjectId = args.get("goal_object_id")
+    if (goalObjectId == null) {
+      return this.missingArgumentError("goal_object_id")
+    }
+    const goalObject = Game.getObjectById(goalObjectId)
+    if (!(goalObject instanceof RoomObject)) {
+      return `${goalObject} is not RoomObject ${goalObjectId}`
+    }
+
+    placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual")
+    return "ok"
+  }
+
+  private showPositionsInRange(): CommandExecutionResult {
+    const args = this.parseProcessArguments()
+
+    const xString = args.get("x")
+    if (xString == null) {
+      return this.missingArgumentError("x")
+    }
+    const x = parseInt(xString)
+    if (isNaN(x) === true) {
+      return `x is not a number (${xString})`
+    }
+    const yString = args.get("y")
+    if (yString == null) {
+      return this.missingArgumentError("y")
+    }
+    const y = parseInt(yString)
+    if (isNaN(y) === true) {
+      return `x is not a number (${yString})`
+    }
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const rangeString = args.get("range")
+    if (rangeString == null) {
+      return this.missingArgumentError("range")
+    }
+    const range = parseInt(rangeString)
+    if (isNaN(range) === true) {
+      return `x is not a number (${rangeString})`
+    }
+
+    const position = new RoomPosition(x, y, roomName)
+    showPositionsInRange(position, range)
+    return "ok"
   }
 }

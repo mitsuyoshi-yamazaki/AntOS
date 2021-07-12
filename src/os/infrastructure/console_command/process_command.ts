@@ -1,4 +1,5 @@
-import { OperatingSystem, ProcessInfo } from "os/os"
+import { OperatingSystem } from "os/os"
+import { ProcessInfo } from "os/os_process_info"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 const veryLargeTab = 40

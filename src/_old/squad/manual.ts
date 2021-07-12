@@ -369,7 +369,7 @@ export class ManualSquad extends Squad {
         const name = this.generateNewName()
         let body: BodyPartConstant[] = []
         const memory: V4CreepMemory = {
-          ts: null,
+
 
           squad_name: this.name,
           status: CreepStatus.NONE,
@@ -587,7 +587,7 @@ export class ManualSquad extends Squad {
 
     const name = this.generateNewName()
     const memory: ManualMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

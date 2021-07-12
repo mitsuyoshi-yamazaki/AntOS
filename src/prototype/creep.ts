@@ -1,19 +1,24 @@
-import { CreepTask as V4CreepTask } from "game_object_task/creep_task"
-import { CreepTask, CreepTaskState } from "task/creep_task/creep_task"
-import { CreepTaskState as V4CreepTaskState } from "game_object_task/creep_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
 import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
-import { RoomName } from "./room"
 import { CreepRole } from "./creep_role"
-import { TaskTargetCache } from "task/task_target_cache"
-import { TaskRunnerIdentifier } from "objective/task_runner"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskIdentifier } from "task/task"
+import { RoomName } from "utility/room_name"
+import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
 
 export const defaultMoveToOptions: MoveToOpts = {
   maxRooms: 1,
-  reusePath: 1,
+  reusePath: 3,
+  maxOps: 500,
+}
+
+export const interRoomMoveToOptions: MoveToOpts = {
+  maxRooms: 3,
+  reusePath: 3,
   maxOps: 500,
 }
 
@@ -48,7 +53,7 @@ export interface V5CreepMemory {
   t: CreepTaskState | null
 
   /** task runner id */
-  i: TaskRunnerIdentifier | null
+  i: TaskIdentifier | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
@@ -57,9 +62,6 @@ export function isV5CreepMemory(arg: any): arg is V5CreepMemory {
 }
 
 export interface V4CreepMemory {
-  /** task state */
-  ts: V4CreepTaskState | null
-
   /** @deprecated Old codebase */
   squad_name: string
 
@@ -117,11 +119,7 @@ declare global {
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
     _task: CreepTask | null
 
-    /** @deprecated */
-    v4Task: V4CreepTask | null
-
-    /** @deprecated */
-    _v4Task: V4CreepTask | null
+    roles: CreepRole[]
   }
 }
 
@@ -132,8 +130,6 @@ export function init(): void {
       return this._task
     },
     set(task: CreepTask | null): void {
-      this.v4Task = null
-
       if (this._task != null && this._task.targetId != null) {
         TaskTargetCache.didFinishTask(this.id, this._task.targetId)
       }
@@ -142,38 +138,21 @@ export function init(): void {
       }
 
       this._task = task
-      if (task == null) {
-        this.say("idle")
-      } else if (task.shortDescription != null) {
-        this.say(task.shortDescription)
-      }
+      // if (task == null) {
+      //   this.say("idle")
+      // } else if (task.shortDescription != null) {
+      //   this.say(task.shortDescription)
+      // }
     }
   })
 
-  Object.defineProperty(Creep.prototype, "v4Task", {
-    get(): V4CreepTask | null {
-      if (this._task != null) {
-        return null
+  Object.defineProperty(Creep.prototype, "roles", {
+    get(): CreepRole[] {
+      const memory = this.memory
+      if (!isV5CreepMemory(memory)) {
+        return []
       }
-      return this._v4Task
-    },
-    set(v4Task: V4CreepTask | null): void {
-      if (this._task != null) {
-        return
-      }
-
-      if (this._v4Task != null && this._v4Task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._v4Task.targetId)
-      }
-      if (v4Task != null && v4Task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, v4Task.targetId)
-      }
-      this._v4Task = v4Task
-      if (v4Task == null) {
-        this.say("idle")
-      } else if (v4Task.shortDescription != null) {
-        this.say(v4Task.shortDescription)
-      }
+      return memory.r.concat([])
     }
   })
 }

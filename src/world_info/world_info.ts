@@ -1,5 +1,6 @@
-import { RoomName } from "prototype/room"
+import { RoomName } from "utility/room_name"
 import { Creeps, CreepsInterface } from "./creep_info"
+import { RoomMap, RoomMapInterface } from "./room_map_info"
 import { ResourcePools, ResourcePoolsInterface } from "./resource_pool/resource_pool"
 import { Rooms, RoomsInterface } from "./room_info"
 import { Spawns, SpawnsInterface } from "./spawn_info"
@@ -11,6 +12,7 @@ interface WorldInterface {
   spawns: SpawnsInterface
   rooms: RoomsInterface
   resourcePools: ResourcePoolsInterface
+  map: RoomMapInterface
 
   // ---- Lifecycle ---- //
   beforeTick(): void
@@ -29,6 +31,7 @@ export const World: WorldInterface = {
   spawns: Spawns,
   rooms: Rooms,
   resourcePools: ResourcePools,
+  map: RoomMap,
 
   beforeTick: function (): void {
     // 呼び出し順序に注意: 基本的に低次の処理から呼び出す

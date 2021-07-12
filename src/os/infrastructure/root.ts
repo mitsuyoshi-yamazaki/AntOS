@@ -1,8 +1,9 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeCreepTask as decodeV4CreepTask } from "game_object_task/creep_task"
-import { decodeSpawnTask } from "game_object_task/spawn_task"
-import { isV5CreepMemory, V4CreepMemory } from "prototype/creep"
-import { decodeCreepTask } from "task/creep_task/creep_task"
+import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
+import type { ProcessLauncher } from "os/os_process_launcher"
+import type { Process } from "process/process"
+import { isV5CreepMemory } from "prototype/creep"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
@@ -10,7 +11,6 @@ import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
-  private shouldCacheTasks = true
 
   public constructor() {
   }
@@ -19,9 +19,13 @@ export class RootProcess {
   public setup(): void {
   }
 
-  public runBeforeTick(): void {
+  public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {
     ErrorMapper.wrapLoop((): void => {
-      this.infrastructureProcessLauncher.launchProcess()
+      TaskTargetCache.clearCache()
+    }, "TaskTargetCache.clearCache()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
@@ -29,7 +33,7 @@ export class RootProcess {
     }, "World.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
-      this.applicationProcessLauncher.launchProcess()
+      this.applicationProcessLauncher.launchProcess(processList, processLauncher)
     }, "RootProcess.applicationProcessLauncher.launchProcess()")()
 
     ErrorMapper.wrapLoop((): void => {
@@ -52,47 +56,17 @@ export class RootProcess {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
       const task = decodeCreepTask(creep)
-      if (this.shouldCacheTasks) {
-        if (task != null) {
-          creep.task = task
-        } else {
-          creep.v4Task = decodeV4CreepTask(creep)
-        }
-      } else {
-        if (task != null) {
-          creep._task = task
-        } else {
-          creep._v4Task = decodeV4CreepTask(creep)
-        }
-      }
+      creep.task = task
     }
-    for (const spawnName in Game.spawns) {
-      const spawn = Game.spawns[spawnName]
-      if (this.shouldCacheTasks) {
-        spawn.task = decodeSpawnTask(spawn)
-      } else {
-        spawn._task = decodeSpawnTask(spawn)
-      }
-    }
-    this.shouldCacheTasks = false
   }
 
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      if (creep.task != null && isV5CreepMemory(creep.memory)) {
-        creep.memory.t = creep.task.encode()
-      } else {
-        if (isV5CreepMemory(creep.memory)) {
-          creep.memory.t = null
-        } else {
-          (creep.memory as V4CreepMemory).ts = creep.v4Task?.encode() ?? null
-        }
+      if (!isV5CreepMemory(creep.memory)) {
+        continue
       }
-    }
-    for (const spawnName in Game.spawns) {
-      const spawn = Game.spawns[spawnName]
-      spawn.memory.ts = spawn.task?.encode() ?? null
+      creep.memory.t = creep.task?.encode() ?? null
     }
   }
 }

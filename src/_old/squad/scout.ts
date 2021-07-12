@@ -80,7 +80,7 @@ export class ScoutSquad extends Squad {
     const body: BodyPartConstant[] = (this.room_needs_scout == 'W48S33') ? [TOUGH, TOUGH, MOVE] : [MOVE]
     const name = this.generateNewName()
     const memory: ScoutCreepMemory = {
-      ts: null,
+
 
       squad_name: this.name,
       status: CreepStatus.NONE,

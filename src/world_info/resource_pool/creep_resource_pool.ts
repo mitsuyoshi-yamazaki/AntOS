@@ -1,10 +1,10 @@
-import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
-import { RoomName } from "prototype/room"
-import { CreepTask } from "task/creep_task/creep_task"
-import { TaskProgressType } from "task/task"
+import { RoomName } from "utility/room_name"
+import { CreepTask } from "object_task/creep_task/creep_task"
+import { TaskProgressType } from "object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
+import { TaskIdentifier } from "task/task"
 // Worldをimportしない
 
 /** 別タスクの実行中であっても上書きする: 未実装 */
@@ -42,14 +42,14 @@ export class CreepPool implements ResourcePoolType<Creep> {
       .length
   }
 
-  public countCreeps(taskRunnerIdentifier: TaskRunnerIdentifier | null, filter: CreepPoolFilter): number {
+  public countCreeps(taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number {
     return this.creeps
       .filter(creep => {
         if (!isV5CreepMemory(creep.memory)) {
           return false
         }
         // eslint-disable-next-line eqeqeq
-        if (creep.memory.i != taskRunnerIdentifier) {
+        if (creep.memory.i != taskIdentifier) {
           return false
         }
         return true
@@ -64,14 +64,14 @@ export class CreepPool implements ResourcePoolType<Creep> {
    * @param taskBuilder 必要なだけ新しいCreepTaskを返す
    * @param filter
    */
-  public assignTasks(taskRunnerIdentifier: TaskRunnerIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
+  public assignTasks(taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
     const creeps = this.creeps
       .filter(creep => {
         if (!isV5CreepMemory(creep.memory)) {
           return false
         }
         // eslint-disable-next-line eqeqeq
-        if (creep.memory.i != taskRunnerIdentifier) {
+        if (creep.memory.i != taskIdentifier) {
           return false
         }
         return true
@@ -97,12 +97,12 @@ export class CreepPool implements ResourcePoolType<Creep> {
     }
   }
 
-  public takeOverCreeps(taskRunnerIdentifier: TaskRunnerIdentifier, newIdentifier: TaskRunnerIdentifier | null, newParentRoomName: RoomName): void {
+  public takeOverCreeps(taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void {
     this.creeps.forEach(creep => {
       if (!isV5CreepMemory(creep.memory)) {
         return
       }
-      if (creep.memory.i !== taskRunnerIdentifier) {
+      if (creep.memory.i !== taskIdentifier) {
         return
       }
       creep.memory.i = newIdentifier

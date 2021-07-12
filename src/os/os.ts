@@ -1,6 +1,6 @@
 import { Result } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeProcessFrom, Process, ProcessId, ProcessState } from "process/process"
+import type { Process, ProcessId } from "process/process"
 import { isProcedural } from "process/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
@@ -9,6 +9,10 @@ import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
+import type { ProcessState } from "process/process_state"
+import { decodeProcessFrom } from "process/process_decoder"
+import { ProcessInfo } from "./os_process_info"
+import type { ProcessLauncher } from "./os_process_launcher"
 
 interface ProcessMemory {
   /** running */
@@ -19,13 +23,6 @@ interface ProcessMemory {
 }
 
 interface InternalProcessInfo {
-  running: boolean
-  process: Process
-}
-
-export interface ProcessInfo {
-  processId: number
-  type: string
   running: boolean
   process: Process
 }
@@ -44,6 +41,8 @@ function updatePrototypes(): void {
   initCreepPrototype()
   initStructureSpawnPrototype()
 }
+
+const processLauncher: ProcessLauncher = (launcher: (processId: ProcessId) => Process) => OperatingSystem.os.addProcess(launcher)
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
@@ -190,7 +189,8 @@ export class OperatingSystem {
     }
 
     ErrorMapper.wrapLoop(() => {
-      this.rootProcess.runBeforeTick()
+      const processList = this.listAllProcesses().map(processInfo => processInfo.process)
+      this.rootProcess.runBeforeTick(processList, processLauncher)
     }, "OperatingSystem.rootProcess.runBeforeTick()")()
 
     ErrorMapper.wrapLoop(() => {

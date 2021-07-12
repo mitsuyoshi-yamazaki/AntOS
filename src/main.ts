@@ -1,17 +1,14 @@
 import "ts-polyfill/lib/es2019-array"
 
-import * as ScreepsProfiler from "screeps-profiler"
-
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import * as ScreepsProfiler from "screeps-profiler"
 
 import { Empire } from "_old/empire"
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
-import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { ShortVersion, SystemInfo } from "utility/system_info"
-import { RoomName } from "prototype/room"
 
 Initializer.init()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
@@ -31,7 +28,6 @@ const mainLoop = () => {
   if (Game.shard.name === "shard2") {
     ErrorMapper.wrapLoop(() => {
       const owned_controllers: StructureController[] = []
-      const roomVersions = new Map<ShortVersion, RoomName[]>()
 
       for (const room_name in Game.rooms) {
         const room = Game.rooms[room_name]
@@ -40,17 +36,6 @@ const mainLoop = () => {
         }
 
         const controlVersion = Migration.roomVersion(room.name)
-        const roomNames = ((): RoomName[] => {
-          const stored = roomVersions.get(controlVersion)
-          if (stored != null) {
-            return stored
-          }
-          const newRoomNames: RoomName[] = []
-          roomVersions.set(controlVersion, newRoomNames)
-          return newRoomNames
-        })()
-        roomNames.push(room_name)
-
         if (controlVersion !== ShortVersion.v3) {
           continue
         }
@@ -65,12 +50,6 @@ const mainLoop = () => {
       const empire = new Empire(Game.user.name, owned_controllers)
 
       empire.run()
-
-      if (Game.time % 107 === 13) {
-        roomVersions.forEach((roomNames, version) => {
-          console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
-        })
-      }
     }, `empire.run`)()
 
     if ((Game.time % 997) == 17) {

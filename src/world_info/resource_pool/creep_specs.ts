@@ -1,8 +1,9 @@
-import { TaskRunnerIdentifier } from "objective/task_runner"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
-import { RoomName } from "prototype/room"
-import { CreepTask, CreepTaskState, decodeCreepTaskFromState } from "task/creep_task/creep_task"
+import type { RoomName } from "utility/room_name"
+import type { CreepTask } from "object_task/creep_task/creep_task"
+import type { TaskIdentifier } from "task/task"
+import { bodyCost } from "utility/creep_body"
 
 /** High未満のpriorityのspawnをキャンセルして優先させる: 未実装 */
 type CreepSpawnRequestPriorityUrgent = 0
@@ -23,32 +24,6 @@ export const CreepSpawnRequestPriority = {
   Low: creepSpawnRequestPriorityLow,
 }
 
-export interface CreepSpawnRequestState {
-  /** priority */
-  p: CreepSpawnRequestPriority
-
-  /** number of creeps */
-  n: number
-
-  /** codename */
-  c: string
-
-  /** roles */
-  r: CreepRole[]
-
-  /** body */
-  b: BodyPartConstant[] | null
-
-  /** initial task state */
-  it: CreepTaskState | null
-
-  /** task runner identifier */
-  i: TaskRunnerIdentifier | null
-
-  /** parent room name */
-  pr: RoomName | null
-}
-
 export interface CreepSpawnRequest {
   priority: CreepSpawnRequestPriority
   numberOfCreeps: number
@@ -60,42 +35,10 @@ export interface CreepSpawnRequest {
 
   /** 時間経過で消滅する可能性のあるタスクは推奨されない */
   initialTask: CreepTask | null
-  taskRunnerIdentifier: TaskRunnerIdentifier | null
+  taskIdentifier: TaskIdentifier | null
 
   /** 他の部屋へ引き継ぐ場合 */
   parentRoomName: RoomName | null
-}
-
-export function encodeCreepSpawnRequest(request: CreepSpawnRequest): CreepSpawnRequestState {
-  return {
-    p: request.priority,
-    n: request.numberOfCreeps,
-    c: request.codename,
-    r: request.roles,
-    b: request.body,
-    it: request.initialTask?.encode() ?? null,
-    i: request.taskRunnerIdentifier,
-    pr: request.parentRoomName,
-  }
-}
-
-export function decodeCreepSpawnRequest(state: CreepSpawnRequestState): CreepSpawnRequest {
-  const initialTask = ((): CreepTask | null => {
-    if (state.it == null) {
-      return null
-    }
-    return decodeCreepTaskFromState(state.it)
-  })()
-  return {
-    priority: state.p,
-    numberOfCreeps: state.n,
-    codename: state.c,
-    roles: state.r,
-    body: state.b,
-    initialTask,
-    taskRunnerIdentifier: state.i,
-    parentRoomName: state.pr,
-  }
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {
@@ -145,7 +88,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     return null
   }
   // eslint-disable-next-line eqeqeq
-  if (request1.taskRunnerIdentifier != request2.taskRunnerIdentifier) {
+  if (request1.taskIdentifier != request2.taskIdentifier) {
     return null
   }
   // eslint-disable-next-line eqeqeq
@@ -166,7 +109,7 @@ function mergeRequest(request1: CreepSpawnRequest, request2: CreepSpawnRequest):
     roles,
     body: null,
     initialTask: null,
-    taskRunnerIdentifier: request1.taskRunnerIdentifier,
+    taskIdentifier: request1.taskIdentifier,
     parentRoomName: request1.parentRoomName,
   }
 }
@@ -180,15 +123,10 @@ export function sortRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[]
   })
 }
 
+/** @deprecated */
 export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: number): BodyPartConstant[] {
   if (roles.includes(CreepRole.Scout) === true) {
     return [MOVE]
-  }
-
-  const cost = (body: BodyPartConstant[]): number => {
-    return body.reduce((result, current) => {
-      return result + BODYPART_COST[current]
-    }, 0)
   }
 
   const appendMove = ((body: BodyPartConstant[]): BodyPartConstant[] => {
@@ -202,7 +140,7 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   })
 
   const multiply = (body: BodyPartConstant[], max: number): BodyPartConstant[] => {
-    const count = Math.min(Math.floor(energyCapacityAvailable / cost(body)), max)
+    const count = Math.min(Math.floor(energyCapacityAvailable / bodyCost(body)), max)
     const result: BodyPartConstant[] = []
     for (let i = 0; i < count; i += 1) {
       result.push(...body)
@@ -224,7 +162,7 @@ export function createBodyFrom(roles: CreepRole[], energyCapacityAvailable: numb
   }
   if (roles.includes(CreepRole.Claimer) === true) {
     const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
-    if (energyCapacityAvailable >= cost(defaultBody)) {
+    if (energyCapacityAvailable >= bodyCost(defaultBody)) {
       return defaultBody
     }
     return [MOVE, CLAIM]
