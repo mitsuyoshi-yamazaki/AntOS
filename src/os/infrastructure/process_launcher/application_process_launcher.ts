@@ -1,6 +1,6 @@
 import { RoomKeeperProcess } from "process/room_keeper_process"
 import { RoomName } from "utility/room_name"
-import { RoomKeeperTask } from "task/room_keeper/room_keeper_task"
+import { RoomKeeperTask } from "v5_task/room_keeper/room_keeper_task"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"

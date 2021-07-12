@@ -1,5 +1,5 @@
-import { Task, TaskIdentifier } from "task/task"
-import { TaskState } from "task/task_state"
+import { Task, TaskIdentifier } from "v5_task/task"
+import { TaskState } from "v5_task/task_state"
 import { ProblemIdentifier } from "./problem_finder"
 
 export interface ProblemSolverState extends TaskState {

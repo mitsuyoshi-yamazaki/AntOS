@@ -1,7 +1,7 @@
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver } from "problem/problem_solver"
 import { RoomName } from "utility/room_name"
-import { RoomInvisibleProblemSolver } from "task/scout/room_invisible_problem_solver"
+import { RoomInvisibleProblemSolver } from "v5_task/scout/room_invisible_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 
 export class RemoteRoomAttackedProblemFinder implements ProblemFinder {

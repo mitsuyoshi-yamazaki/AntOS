@@ -4,7 +4,7 @@ import { RoomName } from "utility/room_name"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { TaskProgressType } from "object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
-import { TaskIdentifier } from "task/task"
+import { TaskIdentifier } from "v5_task/task"
 // Worldをimportしない
 
 /** 別タスクの実行中であっても上書きする: 未実装 */

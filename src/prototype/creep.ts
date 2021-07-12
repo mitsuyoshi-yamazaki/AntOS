@@ -3,7 +3,7 @@ import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache } from "object_task/object_task_target_cache"
-import { TaskIdentifier } from "task/task"
+import { TaskIdentifier } from "v5_task/task"
 import { RoomName } from "utility/room_name"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 

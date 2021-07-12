@@ -1,9 +1,9 @@
 import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
 import { ProblemSolver } from "problem/problem_solver"
 import { RoomName } from "utility/room_name"
-import { TowerInterceptionProblemSolver } from "task/defence/tower_interception_problem_solver"
+import { TowerInterceptionProblemSolver } from "v5_task/defence/tower_interception_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { ActivateSafemodeProblemSolver } from "task/defence/activate_safemode_task"
+import { ActivateSafemodeProblemSolver } from "v5_task/defence/activate_safemode_task"
 import { World } from "world_info/world_info"
 
 // TODO: プレイヤーによる攻撃をroom_attacked_problem_finderに分離する

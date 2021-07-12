@@ -1,4 +1,4 @@
-import { TaskIdentifier } from "task/task"
+import { TaskIdentifier } from "v5_task/task"
 import { ProblemSolver } from "./problem_solver"
 
 export type ProblemIdentifier = TaskIdentifier
