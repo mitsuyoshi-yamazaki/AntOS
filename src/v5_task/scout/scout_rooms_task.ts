@@ -1,4 +1,4 @@
-import { ProblemFinder } from "problem/problem_finder"
+import { ProblemFinder } from "v5_problem/problem_finder"
 import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"

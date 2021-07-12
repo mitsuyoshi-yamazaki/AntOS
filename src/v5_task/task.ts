@@ -1,8 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Stateful } from "os/infrastructure/state"
-import type { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import type { ProblemSolver } from "problem/problem_solver"
+import type { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
+import type { ProblemSolver } from "v5_problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import type { TaskState } from "./task_state"
 

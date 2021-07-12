@@ -1,5 +1,5 @@
-import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import { ProblemSolver } from "problem/problem_solver"
+import { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
+import { ProblemSolver } from "v5_problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
 import { CreepInsufficiencyProblemSolver } from "v5_task/creep_spawn/creep_insufficiency_problem_solver"

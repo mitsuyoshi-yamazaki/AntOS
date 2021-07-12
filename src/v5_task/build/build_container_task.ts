@@ -4,7 +4,7 @@ import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_t
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "object_task/creep_task/meta_task/move_to_room_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ProblemFinder } from "problem/problem_finder"
+import { ProblemFinder } from "v5_problem/problem_finder"
 import { CreepRole, hasSomeRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"

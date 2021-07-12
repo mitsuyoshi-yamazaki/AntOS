@@ -1,6 +1,6 @@
 import { CreepTask } from "object_task/creep_task/creep_task"
-import { ProblemIdentifier } from "problem/problem_finder"
-import { ProblemSolver, ProblemSolverState } from "problem/problem_solver"
+import { ProblemIdentifier } from "v5_problem/problem_finder"
+import { ProblemSolver, ProblemSolverState } from "v5_problem/problem_solver"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"

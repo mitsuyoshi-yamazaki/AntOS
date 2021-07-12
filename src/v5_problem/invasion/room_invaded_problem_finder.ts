@@ -1,5 +1,5 @@
-import { ProblemFinder, ProblemIdentifier } from "problem/problem_finder"
-import { ProblemSolver } from "problem/problem_solver"
+import { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
+import { ProblemSolver } from "v5_problem/problem_solver"
 import { RoomName } from "utility/room_name"
 import { TowerInterceptionProblemSolver } from "v5_task/defence/tower_interception_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"

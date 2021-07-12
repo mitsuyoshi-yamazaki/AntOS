@@ -5,7 +5,7 @@ import { TaskState } from "v5_task/task_state"
 import { RemoteRoomHaulerTask } from "./remote_room_harvester_hauler_task"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
-import { ProblemFinder } from "problem/problem_finder"
+import { ProblemFinder } from "v5_problem/problem_finder"
 
 export interface RemoteRoomWorkerTaskState extends TaskState {
   /** room name */
