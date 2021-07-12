@@ -150,9 +150,20 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     const unitCost = bodyCost(bodyUnit)
     const body: BodyPartConstant[] = [CARRY]
 
+    const hasEnoughEnergy = ((): boolean => {
+      if (objects.activeStructures.storage == null) {
+        return false
+      }
+      const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
+      return storedEnergy > 100000
+    })()
+
     const energyCapacity = objects.controller.room.energyCapacityAvailable
     const maxBodyCount = ((): number => {
       const max = Math.floor((energyCapacity - bodyCost(body)) / unitCost)
+      if (hasEnoughEnergy !== true) {
+        return Math.min(max, 2)
+      }
       if (isRcl8 === true) {
         return Math.min(max, 5)
       }
@@ -164,14 +175,13 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     }
 
     const numberOfCreeps = ((): number => {
+      if (hasEnoughEnergy !== true) {
+        return 1
+      }
       if (isRcl8 === true) {
         return 1
       }
-      if (objects.activeStructures.storage == null) {
-        return 1
-      }
-      const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
-      return storedEnergy < 100000 ? 1 : 3
+      return 3
     })()
 
     return [body, numberOfCreeps]
