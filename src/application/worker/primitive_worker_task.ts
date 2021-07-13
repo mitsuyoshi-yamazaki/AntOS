@@ -1,9 +1,8 @@
-import { Task } from "application/task"
+import { ChildTask, Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import { TaskStatus } from "application/task_status"
 import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
 import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
@@ -20,34 +19,41 @@ import { createWorkerTaskIdentifier } from "./worker_task_definition"
 const creepCountForSource = 6
 
 export interface PrimitiveWorkerTaskState extends TaskState {
+  /** task type identifier */
+  t: "PrimitiveWorkerTask"
 }
 
-export class PrimitiveWorkerTask extends Task {
+export class PrimitiveWorkerTask extends Task<void, void> {
   public readonly taskType = "PrimitiveWorkerTask"
   public readonly identifier: TaskIdentifier
+  public get children(): ChildTask<void>[] {
+    return []
+  }
 
   protected constructor(
     public readonly startTime: number,
-    public readonly children: Task[],
     public readonly roomName: RoomName,
     protected paused: number | null,
   ) {
-    super(startTime, children, roomName, paused)
+    super(startTime, roomName, paused)
 
     this.identifier = createWorkerTaskIdentifier(this.roomName)
   }
 
-  public encode(): TaskState {
+  public encode(): PrimitiveWorkerTaskState {
     return {
-      ...super.encode(),
+      t: this.taskType,
+      s: this.startTime,
+      r: this.roomName,
+      p: this.paused,
     }
   }
 
-  public static decode(state: PrimitiveWorkerTaskState, children: Task[]): PrimitiveWorkerTask {
-    return new PrimitiveWorkerTask(state.s, children, state.r, state.p)
+  public static decode(state: PrimitiveWorkerTaskState): PrimitiveWorkerTask {
+    return new PrimitiveWorkerTask(state.s, state.r, state.p)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length
 
@@ -74,7 +80,7 @@ export class PrimitiveWorkerTask extends Task {
     })
     requestsFromChildren.creepTaskAssignRequests.push(...taskRequests)
 
-    return TaskStatus.InProgress(requestsFromChildren)
+    return requestsFromChildren
   }
 
   private createBody(energyCapacity: number): BodyPartConstant[] {

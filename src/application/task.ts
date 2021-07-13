@@ -7,12 +7,14 @@ import type { TaskType } from "./task_decoder"
 import type { TaskIdentifier } from "./task_identifier"
 import type { TaskRequests } from "./task_requests"
 import type { TaskState } from "./task_state"
-import { TaskStatus } from "./task_status"
 
-export abstract class Task implements Stateful {
+export interface ChildTask<P> {
+  runTask(roomResource: OwnedRoomResource): TaskRequests<P>
+}
+
+export abstract class Task<T, P> implements Stateful, ChildTask<T> {
   protected constructor(
     public readonly startTime: number,
-    public readonly children: Task[],
     public readonly roomName: RoomName,
     protected paused: number | null,
   ) {
@@ -23,38 +25,19 @@ export abstract class Task implements Stateful {
 
   // ---- API ---- //
   abstract readonly taskType: TaskType
+  abstract readonly children: ChildTask<P>[]
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
-  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus
+  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>): TaskRequests<T>
 
   public encode(): TaskState {
     return {
       t: this.taskType,
       s: this.startTime,
-      c: this.children.map(task => task.encode()),
       r: this.roomName,
       p: this.paused,
     }
-  }
-
-  protected hasChildTask(taskIdentifier: TaskIdentifier): boolean {
-    return this.children.some(task => task.identifier === taskIdentifier)
-  }
-
-  protected addChildTask(task: Task): void {
-    if (this.hasChildTask(task.identifier) === true) {
-      return
-    }
-    this.children.push(task)
-  }
-
-  protected removeChildTask(task: Task): void {
-    const index = this.children.indexOf(task)
-    if (index < 0) {
-      return
-    }
-    this.children.splice(index, 1)
   }
 
   // ---- Private ---- //
@@ -69,60 +52,42 @@ export abstract class Task implements Stateful {
   }
 
   /** TaskRunner以外から直接呼び出さないこと */
-  public runTask(roomResource: OwnedRoomResource): TaskStatus {
-    const result = ErrorMapper.wrapLoop((): TaskStatus => {
+  public runTask(roomResource: OwnedRoomResource): TaskRequests<T> {
+    const result = ErrorMapper.wrapLoop((): TaskRequests<T> => {
       if (this.isPaused() === true) {
-        return TaskStatus.InProgress(emptyTaskRequests())
+        return this.emptyTaskRequests()
       }
 
-      const finishedTasks: Task[] = []
-      const taskRequests: TaskRequests[] = []
+      const taskRequests = this.children.map(task => task.runTask(roomResource))
 
-      this.children.forEach(task => {
-        const status = task.runTask(roomResource)
-        switch (status.taskStatusType) {
-        case "in progress":
-          taskRequests.push(status.taskRequests)
-          return
-        case "finished":
-          finishedTasks.push(task)
-          return
-        case "failed":
-          finishedTasks.push(task)
-          taskRequests.push(status.taskRequests)
-          return
-        }
-      })
-
-      finishedTasks.forEach(task => this.removeChildTask(task))
-
-      return this.run(roomResource, mergeTaskRequests(taskRequests))
+      return this.run(roomResource, this.mergeTaskRequests(taskRequests))
     }, `${this.constructor.name}.run()`)()
 
     if (result == null) {
-      PrimitiveLogger.fatal(`${this.constructor.name}.run() threw exception`)
-      return TaskStatus.InProgress(emptyTaskRequests())
+      PrimitiveLogger.fatal(`${this.constructor.name}.run() threw an exception`)
+      return this.emptyTaskRequests()
     }
     return result
   }
-}
 
-function emptyTaskRequests(): TaskRequests {
-  return {
-    creepTaskAssignRequests: [],
-    spawnRequests: [],
-    towerRequests: [],
-    problems: [],
-    logs: [],
+  private emptyTaskRequests(): TaskRequests<T> {
+    return {
+      creepTaskAssignRequests: [],
+      spawnRequests: [],
+      towerRequests: [],
+      problems: [],
+      logs: [],
+    }
   }
-}
 
-function mergeTaskRequests(taskRequests: TaskRequests[]): TaskRequests {
-  return {
-    creepTaskAssignRequests: taskRequests.flatMap(requests => requests.creepTaskAssignRequests),
-    spawnRequests: taskRequests.flatMap(requests => requests.spawnRequests),
-    towerRequests: taskRequests.flatMap(requests => requests.towerRequests),
-    problems: taskRequests.flatMap(requests => requests.problems),
-    logs: taskRequests.flatMap(requests => requests.logs),
+  private mergeTaskRequests(taskRequests: TaskRequests<P>[]): TaskRequests<P> {
+    return {
+      creepTaskAssignRequests: taskRequests.flatMap(requests => requests.creepTaskAssignRequests),
+      spawnRequests: taskRequests.flatMap(requests => requests.spawnRequests),
+      towerRequests: taskRequests.flatMap(requests => requests.towerRequests),
+      problems: taskRequests.flatMap(requests => requests.problems),
+      logs: taskRequests.flatMap(requests => requests.logs),
+    }
   }
+
 }

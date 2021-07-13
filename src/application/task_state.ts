@@ -9,9 +9,6 @@ export interface TaskState extends State {
   /** start time */
   s: number
 
-  /** child task state */
-  c: TaskState[]
-
   /** room name */
   r: RoomName
 

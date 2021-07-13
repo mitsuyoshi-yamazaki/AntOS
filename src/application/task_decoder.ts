@@ -6,17 +6,21 @@ import type { TaskState } from "./task_state"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
 import { WorkerManagerTask, WorkerManagerTaskState } from "./worker/worker_manager_task"
 
+type AnyTask = RoomKeeperTask
+  | PrimitiveWorkerTask
+  | WorkerManagerTask
+
 export type TaskType = keyof TaskMap
 class TaskMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
-  "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as unknown as RoomKeeperTaskState, decodeTasksFrom(state.c))
-  "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as unknown as PrimitiveWorkerTaskState, decodeTasksFrom(state.c))
-  "WorkerManagerTask" = (state: TaskState) => WorkerManagerTask.decode(state as unknown as WorkerManagerTaskState, decodeTasksFrom(state.c))
+  "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as unknown as RoomKeeperTaskState)
+  "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as unknown as PrimitiveWorkerTaskState)
+  "WorkerManagerTask" = (state: TaskState) => WorkerManagerTask.decode(state as unknown as WorkerManagerTaskState)
 }
 const taskMap = new TaskMap()
 
-export function decodeTaskFrom(state: TaskState): Task | null {
-  const result = ErrorMapper.wrapLoop((): Task | false => {
+export function decodeTaskFrom(state: TaskState): AnyTask | null {
+  const result = ErrorMapper.wrapLoop((): AnyTask | false => {
     const decoder = taskMap[state.t]
     if (decoder == null) {
       const message = `Decode failed by program bug: missing decoder (task type identifier: ${state.t})`
@@ -35,11 +39,4 @@ export function decodeTaskFrom(state: TaskState): Task | null {
     return null
   }
   return result
-}
-
-export function decodeTasksFrom(states: TaskState[]): Task[] {
-  return states.flatMap(state => {
-    const task = decodeTaskFrom(state)
-    return task != null ? [task] : []
-  })
 }
