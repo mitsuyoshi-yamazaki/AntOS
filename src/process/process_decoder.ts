@@ -6,6 +6,7 @@ import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
+import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
@@ -13,12 +14,15 @@ class ProcessTypes {
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as unknown as TestProcessState)
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as unknown as LoggerProcessState)
 
-  // ---- v5 process ---- //
+  // ---- v5 Process ---- //
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)
   "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
   "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
 
-  // ---- onetime processes ---- //
+  // ---- v6 Process ---- //
+  "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
+
+  // ---- Onetime processes ---- //
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

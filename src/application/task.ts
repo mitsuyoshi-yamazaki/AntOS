@@ -4,7 +4,6 @@ import { Stateful } from "os/infrastructure/state"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
 import type { TaskType } from "./task_decoder"
-import type { TaskLogger } from "./task_logger"
 import type { TaskRequests } from "./task_requests"
 import type { TaskState } from "./task_state"
 import { TaskStatus } from "./task_status"
@@ -28,7 +27,7 @@ export abstract class Task implements Stateful {
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
-  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, logger: TaskLogger): TaskStatus
+  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus
 
   public encode(): TaskState {
     return {
@@ -71,7 +70,7 @@ export abstract class Task implements Stateful {
   }
 
   /** TaskRunner以外から直接呼び出さないこと */
-  public runTask(roomResource: OwnedRoomResource, logger: TaskLogger): TaskStatus {
+  public runTask(roomResource: OwnedRoomResource): TaskStatus {
     const result = ErrorMapper.wrapLoop((): TaskStatus => {
       if (this.isPaused() === true) {
         return TaskStatus.InProgress(emptyTaskRequests())
@@ -81,7 +80,7 @@ export abstract class Task implements Stateful {
       const taskRequests: TaskRequests[] = []
 
       this.children.forEach(task => {
-        const status = task.runTask(roomResource, logger)
+        const status = task.runTask(roomResource)
         switch (status.taskStatusType) {
         case "in progress":
           taskRequests.push(status.taskRequests)
@@ -98,7 +97,7 @@ export abstract class Task implements Stateful {
 
       finishedTasks.forEach(task => this.removeChildTask(task))
 
-      return this.run(roomResource, mergeTaskRequests(taskRequests), logger)
+      return this.run(roomResource, mergeTaskRequests(taskRequests))
     }, `${this.constructor.name}.run()`)()
 
     if (result == null) {
@@ -111,16 +110,20 @@ export abstract class Task implements Stateful {
 
 function emptyTaskRequests(): TaskRequests {
   return {
+    creepTaskAssignRequests: [],
     spawnRequests: [],
     towerRequests: [],
     problems: [],
+    logs: [],
   }
 }
 
 function mergeTaskRequests(taskRequests: TaskRequests[]): TaskRequests {
   return {
+    creepTaskAssignRequests: taskRequests.flatMap(requests => requests.creepTaskAssignRequests),
     spawnRequests: taskRequests.flatMap(requests => requests.spawnRequests),
     towerRequests: taskRequests.flatMap(requests => requests.towerRequests),
     problems: taskRequests.flatMap(requests => requests.problems),
+    logs: taskRequests.flatMap(requests => requests.logs),
   }
 }

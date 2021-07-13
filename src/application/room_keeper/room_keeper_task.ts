@@ -1,10 +1,10 @@
 import { Task, TaskIdentifier } from "application/task"
-import { TaskLogger } from "application/task_logger"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { TaskStatus } from "application/task_status"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
+import { TaskRequestHandler } from "./task_request_handler"
 
 export interface RoomKeeperTaskState extends TaskState {
 
@@ -13,6 +13,8 @@ export interface RoomKeeperTaskState extends TaskState {
 export class RoomKeeperTask extends Task {
   public readonly taskType = "RoomKeeperTask"
   public readonly identifier: TaskIdentifier
+
+  private readonly taskRequestHandler = new TaskRequestHandler()
 
   protected constructor(
     public readonly startTime: number,
@@ -35,7 +37,9 @@ export class RoomKeeperTask extends Task {
     return new RoomKeeperTask(state.s, children, state.r, state.p)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, logger: TaskLogger): TaskStatus {
-    return TaskStatus.InProgress(requestsFromChildren)
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus {
+    const unresolvedRequests = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
+
+    return TaskStatus.InProgress(unresolvedRequests)
   }
 }

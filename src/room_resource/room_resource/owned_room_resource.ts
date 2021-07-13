@@ -2,7 +2,6 @@ import { EnergyChargeableStructure } from "prototype/room_object"
 import { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
 
-この部屋に紐づくCreepの情報を含める
 export class OwnedRoomResource extends NormalRoomResource {
   /** Decayed structureは含めない */
   public readonly damagedStructures: AnyStructure[]
@@ -21,6 +20,9 @@ export class OwnedRoomResource extends NormalRoomResource {
 
   public constructor(
     public readonly controller: StructureController,
+
+    /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
+    public readonly ownedCreeps: Creep[],
     roomInfo: RoomInfo,
   ) {
     super(controller, roomInfo)

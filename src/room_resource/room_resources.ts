@@ -1,3 +1,4 @@
+import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
 import { decodeRoomInfo, RoomInfo } from "world_info/room_info"
@@ -20,12 +21,13 @@ export const RoomResources = {
   // ---- Lifecycle ---- //
   beforeTick(): void {
     roomResources.clear()
+    const allCreeps = enumerateCreeps()
 
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
 
       if (room.controller != null && room.controller.my === true) {
-        roomResources.set(roomName, buildOwnedRoomResource(room.controller))
+        roomResources.set(roomName, buildOwnedRoomResource(room.controller, allCreeps.get(roomName) ?? []))
       }
     }
   },
@@ -50,6 +52,34 @@ export const RoomResources = {
   },
 }
 
+function enumerateCreeps(): Map<RoomName, Creep[]> {
+  const allCreeps = new Map < RoomName, Creep[]>()
+
+  for (const creepName in Memory.creeps) {
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      delete Memory.creeps[creepName]
+      continue
+    }
+    if (!isV5CreepMemory(creep.memory)) {
+      continue
+    }
+    const creeps = ((): Creep[] => {
+      const stored = allCreeps.get(creep.memory.p)
+      if (stored != null) {
+        return stored
+      }
+      const newList: Creep[] = []
+      allCreeps.set(creep.memory.p, newList)
+      return newList
+    })()
+
+    creeps.push(creep)
+  }
+
+  return allCreeps
+}
+
 function buildNormalRoomResource(controller: StructureController): NormalRoomResource {
   const roomInfo = ((): RoomInfo | null => {
     const roomInfoMemory = Memory.room_info[controller.room.name]
@@ -61,7 +91,7 @@ function buildNormalRoomResource(controller: StructureController): NormalRoomRes
   return new NormalRoomResource(controller, roomInfo)
 }
 
-function buildOwnedRoomResource(controller: StructureController): OwnedRoomResource {
+function buildOwnedRoomResource(controller: StructureController, creeps: Creep[]): OwnedRoomResource {
   const roomInfo = ((): RoomInfo => {
     const roomInfoMemory = Memory.room_info[controller.room.name]
     if (roomInfoMemory == null) {
@@ -75,5 +105,5 @@ function buildOwnedRoomResource(controller: StructureController): OwnedRoomResou
     }
     return decodeRoomInfo(roomInfoMemory)
   })()
-  return new OwnedRoomResource(controller, roomInfo)
+  return new OwnedRoomResource(controller, [...creeps], roomInfo)
 }

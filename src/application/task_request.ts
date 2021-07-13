@@ -1,3 +1,7 @@
+export interface CreepTaskAssignTaskRequest {
+  taskRequestType: "creep task assign"
+  // TODO:
+}
 
 export interface SpawnCreepTaskRequest {
   taskRequestType: "spawn creep"
@@ -16,6 +20,12 @@ export interface TowerActionTaskRequest {
 export type SpawnTaskRequest = SpawnCreepTaskRequest | RenewCreepTaskRequest
 export type TaskRequest = SpawnTaskRequest | TowerActionTaskRequest
 export const TaskRequest = {
+  CreepTaskAssign(): CreepTaskAssignTaskRequest {
+    return {
+      taskRequestType: "creep task assign",
+    }
+  },
+
   SpawnCreep(): SpawnCreepTaskRequest {
     return {
       taskRequestType: "spawn creep",

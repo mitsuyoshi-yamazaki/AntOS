@@ -1,5 +1,9 @@
 import type { TaskIdentifier } from "./task"
 
-export type TaskLoggerEventType = "task added" | "task finished" | "found problem"
+type TaskLogEventType = "task added" | "task finished" | "found problem"
 
-export type TaskLogger = (taskIdentifier: TaskIdentifier, eventType: TaskLoggerEventType, message: string) => void
+export interface TaskLogRequest {
+  taskIdentifier: TaskIdentifier
+  logEventType: TaskLogEventType
+  message: string
+}
