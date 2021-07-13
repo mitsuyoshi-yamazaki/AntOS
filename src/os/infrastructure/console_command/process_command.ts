@@ -68,7 +68,9 @@ export class ProcessCommand implements ConsoleCommand {
       const result: string[] = []
       sortedKeys(memory).forEach(key => {
         const value = memory[key]
-        if (value instanceof Array) {
+        if (value == null) {
+          result.push(`${getIndent(indent)}- ${key}: null`)
+        } else if (value instanceof Array) {
           if (value.length <= 0) {
             result.push(`${getIndent(indent)}- ${key}: []`)
           } else {
@@ -76,12 +78,10 @@ export class ProcessCommand implements ConsoleCommand {
             result.push(getArrayDescription(value, indent + 1))
             result.push(`${getIndent(indent)}]`)
           }
-        } else if (typeof (value) === "object") {
+        } else if (typeof (value) === "object") { // typeof (null) == "object"
           result.push(`${getIndent(indent)}- ${key}: {`)
           result.push(getMemoryDescription(value, indent + 1))
           result.push(`${getIndent(indent)}}`)
-        } else if (value == null) {
-          result.push(`${getIndent(indent)}- ${key}: null`)
         } else {
           result.push(`${getIndent(indent)}- ${key}: ${value}`)
         }
@@ -95,7 +95,9 @@ export class ProcessCommand implements ConsoleCommand {
       array.concat([])
         .sort((lhs, rhs) => sortIndex(lhs) - sortIndex(rhs))
         .forEach(value => {
-          if (value instanceof Array) {
+          if (value == null) {
+            result.push(`${getIndent(indent)}- null`)
+          } else if (value instanceof Array) {
             if (value.length <= 0) {
               result.push(`${getIndent(indent)}- []`)
             } else {
@@ -107,8 +109,6 @@ export class ProcessCommand implements ConsoleCommand {
             result.push(`${getIndent(indent)}- {`)
             result.push(getMemoryDescription(value, indent + 1))
             result.push(`${getIndent(indent)}}`)
-          } else if (value == null) {
-            result.push(`${getIndent(indent)}- null`)
           } else {
             result.push(`${getIndent(indent)}- ${value}`)
           }
