@@ -1,4 +1,6 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { V5CreepMemory } from "prototype/creep"
+import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { generateUniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
@@ -37,9 +39,16 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         i: request.taskIdentifier,
       }
       const result = spawn.spawnCreep(body, creepName, { memory: memory })
-      if (result === OK) {
+      switch (result) {
+      case OK: {
         const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
         creep.task = request.initialTask
+        break
+      }
+      case ERR_NOT_ENOUGH_ENERGY:
+        break
+      default:
+        PrimitiveLogger.fatal(`${spawn.name} in ${roomLink(this.parentRoomName)} faild to spawn ${result}, task: ${request.taskIdentifier}, creep name: ${creepName}, body(length: ${body.length}): ${body}`)
       }
     })
   }
