@@ -36,6 +36,8 @@ export type CreepRole = CreepRoleMover
 
 export const CreepRole = {
   Mover: creepRoleMover,
+
+  /** @deprecated */
   Harvester: creepRoleHarvester,
   Worker: creepRoleWorker,
   EnergyStore: creepRoleEnergyStore,

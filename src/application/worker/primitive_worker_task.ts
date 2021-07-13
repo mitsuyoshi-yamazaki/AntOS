@@ -1,0 +1,113 @@
+import { Task } from "application/task"
+import { TaskIdentifier } from "application/task_identifier"
+import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
+import { TaskRequests } from "application/task_requests"
+import { TaskState } from "application/task_state"
+import { TaskStatus } from "application/task_status"
+import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { HarvestEnergyApiWrapper } from "object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
+import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
+import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
+import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
+import { CreepRole } from "prototype/creep_role"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { createCreepBody } from "utility/creep_body"
+import { RoomName } from "utility/room_name"
+import { createWorkerTaskIdentifier } from "./worker_task_definition"
+
+const creepCountForSource = 6
+
+export interface PrimitiveWorkerTaskState extends TaskState {
+}
+
+export class PrimitiveWorkerTask extends Task {
+  public readonly taskType = "PrimitiveWorkerTask"
+  public readonly identifier: TaskIdentifier
+
+  protected constructor(
+    public readonly startTime: number,
+    public readonly children: Task[],
+    public readonly roomName: RoomName,
+    protected paused: number | null,
+  ) {
+    super(startTime, children, roomName, paused)
+
+    this.identifier = createWorkerTaskIdentifier(this.roomName)
+  }
+
+  public encode(): TaskState {
+    return {
+      ...super.encode(),
+    }
+  }
+
+  public static decode(state: PrimitiveWorkerTaskState, children: Task[]): PrimitiveWorkerTask {
+    return new PrimitiveWorkerTask(state.s, children, state.r, state.p)
+  }
+
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus {
+    const creepCount = roomResource.countCreeps(this.identifier)
+    const minimumCreepCount = creepCountForSource * roomResource.sources.length
+
+    if (creepCount < minimumCreepCount) {
+      requestsFromChildren.spawnRequests.push(new SpawnCreepTaskRequest(
+        this.identifier,
+        SpawnTaskRequestPriority.Medium,
+        this.createBody(roomResource.room.energyCapacityAvailable),
+        [CreepRole.Worker, CreepRole.Mover],
+      ))
+    }
+
+    const idleCreeps = roomResource.idleCreeps(this.identifier)
+    const taskRequests: CreepTaskAssignTaskRequest[] = idleCreeps.flatMap(([creep, creepMemory]) => {
+      const newTask = this.newTaskFor(creep, creepMemory.r.includes(CreepRole.Hauler), roomResource)
+      if (newTask == null) {
+        return []
+      }
+      return {
+        taskType: "normal",
+        creepName: creep.name,
+        task: newTask,
+      }
+    })
+    requestsFromChildren.creepTaskAssignRequests.push(...taskRequests)
+
+    return TaskStatus.InProgress(requestsFromChildren)
+  }
+
+  private createBody(energyCapacity: number): BodyPartConstant[] {
+    return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
+  }
+
+  // TODO: haulerのタスク
+  private newTaskFor(creep: Creep, isHauler: boolean, roomResource: OwnedRoomResource): CreepTask | null {
+    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+
+    if (noEnergy) {
+      const source = roomResource.getSourceToAssign(creep.pos)
+      if (source == null) {
+        return null
+      }
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+    }
+
+    const structureToCharge = roomResource.getStructureToCharge(creep.pos)
+    if (structureToCharge != null) {
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+    }
+
+    const damagedStructure = roomResource.getRepairStructure()
+    if (damagedStructure != null) {
+      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
+    }
+    const constructionSite = roomResource.getConstructionSite()
+    if (constructionSite != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+    }
+
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller))
+
+  }
+}

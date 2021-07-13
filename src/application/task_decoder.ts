@@ -3,11 +3,15 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
 import { Task } from "./task"
 import type { TaskState } from "./task_state"
+import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
+import { WorkerManagerTask, WorkerManagerTaskState } from "./worker/worker_manager_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as unknown as RoomKeeperTaskState, decodeTasksFrom(state.c))
+  "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as unknown as PrimitiveWorkerTaskState, decodeTasksFrom(state.c))
+  "WorkerManagerTask" = (state: TaskState) => WorkerManagerTask.decode(state as unknown as WorkerManagerTaskState, decodeTasksFrom(state.c))
 }
 const taskMap = new TaskMap()
 

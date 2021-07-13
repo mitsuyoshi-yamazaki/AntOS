@@ -73,8 +73,12 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    if (this.targetRoomName === "W27S27" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
-      this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
+    // if (this.targetRoomName === "W27S27" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+    //   this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
+    // }
+    const task = this.children.find(task => task instanceof RemoteRoomWorkerTask)
+    if (this.targetRoomName === "W27S27" && task != null) {
+      this.removeChildTask(task)
     }
 
     return TaskStatus.InProgress

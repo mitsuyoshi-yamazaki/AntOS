@@ -1,5 +1,7 @@
-import { EnergyChargeableStructure } from "prototype/room_object"
-import { RoomInfo } from "world_info/room_info"
+import { isV5CreepMemory, V5CreepMemory } from "prototype/creep"
+import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import type { TaskIdentifier } from "v5_task/task"
+import type { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
 
 export class OwnedRoomResource extends NormalRoomResource {
@@ -22,7 +24,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     public readonly controller: StructureController,
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
-    public readonly ownedCreeps: Creep[],
+    private readonly ownedCreeps: Creep[],
     roomInfo: RoomInfo,
   ) {
     super(controller, roomInfo)
@@ -103,5 +105,108 @@ export class OwnedRoomResource extends NormalRoomResource {
       terminal,
       chargeableStructures,
     }
+  }
+
+  // ---- Creep ---- //
+  public countCreeps(taskIdentifier: TaskIdentifier): number {
+    return this.ownedCreeps
+      .filter(creep => {
+        const creepMemory = creep.memory
+        if (!isV5CreepMemory(creepMemory)) {
+          return false
+        }
+        return creepMemory.i === taskIdentifier
+      })
+      .length
+  }
+
+  public idleCreeps(taskIdentifier: TaskIdentifier): [Creep, V5CreepMemory][] {
+    return this.ownedCreeps
+      .flatMap(creep => {
+        const creepMemory = creep.memory
+        if (!isV5CreepMemory(creepMemory)) {
+          return []
+        }
+        if (creepMemory.i !== taskIdentifier) {
+          return []
+        }
+        return [[creep, creepMemory]]
+      })
+  }
+
+  // ---- Resource ---- //
+  public getSourceToAssign(position: RoomPosition): Source | null {
+    if (this.sources.length <= 0) {
+      return null
+    }
+    return this.sources.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getEnergySource(position: RoomPosition): EnergySource | null { // TODO: Resource等は量も考慮する
+    const energySources = this.energySources
+    if (energySources.length <= 0) {
+      return null
+    }
+    return energySources.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getEnergyStore(position: RoomPosition): EnergyStore | null { // TODO: Resource等は量も考慮する
+    if (this.activeStructures.storage != null && this.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
+      return this.activeStructures.storage
+    }
+    if (this.activeStructures.terminal != null && this.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
+      return this.activeStructures.terminal
+    }
+
+    const energyStores = this.energyStores
+    if (energyStores.length <= 0) {
+      return null
+    }
+
+    return energyStores.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getStructureToCharge(position: RoomPosition): EnergyChargeableStructure | null {
+    const chargeableStructures = this.activeStructures.chargeableStructures
+    if (chargeableStructures.length <= 0) {
+      return null
+    }
+    return chargeableStructures.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.targetedBy.length
+      const rTargetedBy = rhs.targetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+  }
+
+  public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
+    return this.constructionSites[0]  // TODO: 優先順位づけ
+  }
+
+  public getRepairStructure(): AnyStructure | null {
+    return this.damagedStructures[0]  // TODO: 優先順位づけ
   }
 }

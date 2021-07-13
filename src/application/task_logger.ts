@@ -1,4 +1,4 @@
-import type { TaskIdentifier } from "./task"
+import type { TaskIdentifier } from "./task_identifier"
 
 type TaskLogEventType = "task added" | "task finished" | "found problem"
 

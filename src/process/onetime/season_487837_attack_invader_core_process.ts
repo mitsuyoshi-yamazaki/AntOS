@@ -21,6 +21,8 @@ const numberOfCreeps = 1
 export interface Season487837AttackInvaderCoreProcessState extends ProcessState {
 }
 
+// controller.reservation.username = Invader
+// invaderCore.level = 0
 export class Season487837AttackInvaderCoreProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string

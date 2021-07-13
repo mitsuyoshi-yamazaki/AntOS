@@ -140,7 +140,7 @@ export abstract class Task implements Stateful {
   // ---- Private ---- //
   private solvingProblemIdentifiers: ProblemIdentifier[] = []
 
-  private isSolvingProblem(problemIdentifier: ProblemIdentifier): boolean {
+  public isSolvingProblem(problemIdentifier: ProblemIdentifier): boolean {
     return this.solvingProblemIdentifiers.includes(problemIdentifier)
   }
 

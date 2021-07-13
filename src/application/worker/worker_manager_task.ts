@@ -5,17 +5,17 @@ import { TaskState } from "application/task_state"
 import { TaskStatus } from "application/task_status"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
-import { TaskRequestHandler } from "./task_request_handler"
 
-export interface RoomKeeperTaskState extends TaskState {
+export interface WorkerManagerTaskState extends TaskState {
 
 }
 
-export class RoomKeeperTask extends Task {
-  public readonly taskType = "RoomKeeperTask"
+/**
+ * - エネルギー回収、配分、Upgrade、Buildを行う
+ */
+export class WorkerManagerTask extends Task {
+  public readonly taskType = "WorkerManagerTask"
   public readonly identifier: TaskIdentifier
-
-  private readonly taskRequestHandler = new TaskRequestHandler()
 
   protected constructor(
     public readonly startTime: number,
@@ -34,13 +34,14 @@ export class RoomKeeperTask extends Task {
     }
   }
 
-  public static decode(state: RoomKeeperTaskState, children: Task[]): RoomKeeperTask {
-    return new RoomKeeperTask(state.s, children, state.r, state.p)
+  public static decode(state: WorkerManagerTaskState, children: Task[]): WorkerManagerTask {
+    return new WorkerManagerTask(state.s, children, state.r, state.p)
   }
 
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskStatus {
-    const unresolvedRequests = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
-    return TaskStatus.InProgress(unresolvedRequests)
+
+
+    return TaskStatus.InProgress(requestsFromChildren)
   }
 }

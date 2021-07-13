@@ -1,4 +1,4 @@
-import { SpawnTaskRequest } from "application/task_request"
+import { SpawnTaskRequestType } from "application/task_request"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 export class SpawnRequestHandler {
@@ -6,7 +6,7 @@ export class SpawnRequestHandler {
   /**
    * @returns Unresolved problems
    */
-  public execute(spawnRequests: SpawnTaskRequest[], roomResource: OwnedRoomResource): SpawnTaskRequest[] {
+  public execute(spawnRequests: SpawnTaskRequestType[], roomResource: OwnedRoomResource): SpawnTaskRequestType[] {
     return []
   }
 }

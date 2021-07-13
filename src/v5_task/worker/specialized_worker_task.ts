@@ -16,7 +16,7 @@ import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
 import { createCreepBody } from "utility/creep_body"
 
-const numberOfCreeps = 4
+const numberOfCreeps = 3
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */

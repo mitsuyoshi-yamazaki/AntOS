@@ -4,11 +4,10 @@ import { Stateful } from "os/infrastructure/state"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
 import type { TaskType } from "./task_decoder"
+import type { TaskIdentifier } from "./task_identifier"
 import type { TaskRequests } from "./task_requests"
 import type { TaskState } from "./task_state"
 import { TaskStatus } from "./task_status"
-
-export type TaskIdentifier = string
 
 export abstract class Task implements Stateful {
   protected constructor(
