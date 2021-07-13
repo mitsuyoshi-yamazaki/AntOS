@@ -66,7 +66,7 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
     case ERR_NO_BODYPART:
       return ERR_DAMAGED
 
-    case ERR_NOT_OWNER:
+    case ERR_NOT_OWNER: // TODO: InvaderCoreがいると出る
     case ERR_INVALID_TARGET:
     case ERR_NOT_FOUND:
     case ERR_TIRED:

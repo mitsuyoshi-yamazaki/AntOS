@@ -5,6 +5,7 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
 import { RouteCheckTask } from "v5_task/scout/route_check_task"
 import { TaskProcess } from "process/task_process"
+import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -28,6 +29,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "RouteCheckTask":
       result = this.launchRouteCheckTask()
+      break
+    case "Season487837AttackInvaderCoreProcess":
+      result = this.launchSeason487837AttackInvaderCoreProcess()
       break
     default:
       break
@@ -130,6 +134,13 @@ export class LaunchCommand implements ConsoleCommand {
     const task = RouteCheckTask.create(roomName, targetRoomName, waypoints)
     const process = OperatingSystem.os.addProcess(processId => {
       return TaskProcess.create(processId, task)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season487837AttackInvaderCoreProcess.create(processId)
     })
     return Result.Succeeded(process)
   }
