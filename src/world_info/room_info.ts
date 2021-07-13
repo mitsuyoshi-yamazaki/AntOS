@@ -63,7 +63,7 @@ export interface RoomInfo {
 
 export interface RoomsInterface {
   // ---- Lifecycle ---- //
-  beforeTick(creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[]
+  beforeTick(): OwnedRoomObjects[]
   afterTick(): void
 
   // ---- Get Rooms ---- //
@@ -77,7 +77,7 @@ export interface RoomsInterface {
 
 export const Rooms: RoomsInterface = {
   // ---- Lifecycle ---- //
-  beforeTick: function (creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[] {
+  beforeTick: function (): OwnedRoomObjects[] {
     allVisibleRooms.splice(0, allVisibleRooms.length)
     ownedRooms.splice(0, ownedRooms.length)
     ownedRoomObjects.clear()
@@ -90,7 +90,7 @@ export const Rooms: RoomsInterface = {
 
       if (room.controller != null && room.controller.my === true) {
         ownedRooms.push(room)
-        ownedRoomObjects.set(roomName, enumerateObjects(room.controller, creeps.get(roomName) ?? []))
+        ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
 
         const controlVersion = Migration.roomVersion(room.name)
         const roomNames = ((): RoomName[] => {
@@ -139,8 +139,8 @@ export const Rooms: RoomsInterface = {
 }
 
 // ---- Function ---- //
-function enumerateObjects(controller: StructureController, creeps: Creep[]): OwnedRoomObjects {
-  return new OwnedRoomObjects(controller, creeps)
+function enumerateObjects(controller: StructureController): OwnedRoomObjects {
+  return new OwnedRoomObjects(controller)
 }
 
 export class OwnedRoomObjects {
@@ -177,12 +177,22 @@ export class OwnedRoomObjects {
 
   public constructor(
     public readonly controller: StructureController,
-    creeps: Creep[],
   ) {
     const room = controller.room
 
     const roomInfoMemory = Memory.room_info[room.name]
-    this.roomInfo = decodeRoomInfo(roomInfoMemory)
+    this.roomInfo = ((): RoomInfo => {
+      if (roomInfoMemory == null) { // 新規のRoomの場合
+        return {
+          version: ShortVersion.v6,
+          energySourceStructures: [],
+          energyStoreStructures: [],
+          upgrader: null,
+          distributor: null,
+        }
+      }
+      return decodeRoomInfo(roomInfoMemory)
+    })()
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)

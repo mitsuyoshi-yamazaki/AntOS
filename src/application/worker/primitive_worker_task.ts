@@ -53,6 +53,10 @@ export class PrimitiveWorkerTask extends Task<void, void> {
     return new PrimitiveWorkerTask(state.s, state.r, state.p)
   }
 
+  public static create(roomName: RoomName): PrimitiveWorkerTask {
+    return new PrimitiveWorkerTask(Game.time, roomName, null)
+  }
+
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length

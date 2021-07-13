@@ -61,6 +61,11 @@ export class WorkerManagerTask extends Task<void, void> {
     return new WorkerManagerTask(state.s, state.r, state.p, workerTask)
   }
 
+  public static create(roomName: RoomName): WorkerManagerTask {
+    const workerTask = PrimitiveWorkerTask.create(roomName)
+    return new WorkerManagerTask(Game.time, roomName, null, workerTask)
+  }
+
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
 
     return requestsFromChildren

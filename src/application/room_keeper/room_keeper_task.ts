@@ -50,6 +50,11 @@ export class RoomKeeperTask extends Task<void, void> {
     return new RoomKeeperTask(state.s, state.r, state.p, workerManagerTask)
   }
 
+  public static create(roomName: RoomName): RoomKeeperTask {
+    const workerManagerTask = WorkerManagerTask.create(roomName)
+    return new RoomKeeperTask(Game.time, roomName, null, workerManagerTask)
+  }
+
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const unresolvedRequests = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
