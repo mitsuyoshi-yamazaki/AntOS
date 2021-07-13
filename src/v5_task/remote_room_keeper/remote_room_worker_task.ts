@@ -60,6 +60,10 @@ export class RemoteRoomWorkerTask extends Task {
     const problemFinders: ProblemFinder[] = []
     this.checkProblemFinders(problemFinders)
 
+    if (this.targetRoomName === "W27S27" && this.children.some(task => task instanceof RemoteRoomReserveTask) !== true) {
+      this.addChildTask(RemoteRoomReserveTask.create(this.roomName, this.targetRoomName))
+    }
+
     return TaskStatus.InProgress
   }
 }

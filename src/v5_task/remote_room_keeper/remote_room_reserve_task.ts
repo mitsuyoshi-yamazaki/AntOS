@@ -15,6 +15,7 @@ import { SequentialTask, SequentialTaskOptions } from "object_task/creep_task/co
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { ReserveControllerApiWrapper } from "object_task/creep_task/api_wrapper/reserve_controller_api_wrapper"
 import { bodyCost } from "utility/creep_body"
+import { Invader } from "game/invader"
 
 export interface RemoteRoomReserveTaskState extends TaskState {
   /** room name */
@@ -71,7 +72,8 @@ export class RemoteRoomReserveTask extends Task {
     if (targetController.owner != null) {
       return TaskStatus.Failed // TODO: 攻撃等に対するproblem finder
     }
-    if (targetController.reservation != null && targetController.reservation.username !== Game.user.name) {
+    const excludedUsernames = [Game.user.name, Invader.username]
+    if (targetController.reservation != null && excludedUsernames.includes(targetController.reservation.username) !== true) {
       return TaskStatus.Failed // TODO: 攻撃等に対するproblem finder
     }
 
