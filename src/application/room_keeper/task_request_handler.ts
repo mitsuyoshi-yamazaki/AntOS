@@ -17,13 +17,13 @@ export class TaskRequestHandler {
   /**
    * @returns Unresolved requests
    */
-  public execute(taskRequests: TaskRequests<void>, roomResource: OwnedRoomResource): TaskRequests<void> {
-    return {
-      creepTaskAssignRequests: this.creepTaskAssignRequestHandler.execute(taskRequests.creepTaskAssignRequests, roomResource),
-      spawnRequests: this.spawnRequestHandler.execute(taskRequests.spawnRequests, roomResource),
-      towerRequests: this.towerRequestHandler.execute(taskRequests.towerRequests, roomResource),
-      problems: this.problemSolver.execute(taskRequests.problems, roomResource),
-      logs: this.logAggregator.execute(taskRequests.logs, roomResource),
-    }
+  public execute(taskRequests: TaskRequests<void>, roomResource: OwnedRoomResource): Problem[] {
+    this.creepTaskAssignRequestHandler.execute(taskRequests.creepTaskAssignRequests, roomResource)
+    this.spawnRequestHandler.execute(taskRequests.spawnRequests, roomResource)
+    this.towerRequestHandler.execute(taskRequests.towerRequests, roomResource)
+    this.problemSolver.execute(taskRequests.problems, roomResource)
+    this.logAggregator.execute(taskRequests.logs, roomResource) // TODO:
+
+    return [] // TODO:
   }
 }

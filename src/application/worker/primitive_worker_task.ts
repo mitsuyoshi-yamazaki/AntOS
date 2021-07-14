@@ -10,6 +10,8 @@ import { TransferEnergyApiWrapper } from "object_task/creep_task/api_wrapper/tra
 import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import type { CreepName } from "prototype/creep"
 import { CreepRole } from "prototype/creep_role"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { createCreepBody } from "utility/creep_body"
@@ -67,28 +69,34 @@ export class PrimitiveWorkerTask extends Task<void, void> {
         SpawnTaskRequestPriority.Medium,
         this.createBody(roomResource.room.energyCapacityAvailable),
         [CreepRole.Worker, CreepRole.Mover],
+        "", // FixMe:
       ))
     }
 
     const idleCreeps = roomResource.idleCreeps(this.identifier)
-    const taskRequests: CreepTaskAssignTaskRequest[] = idleCreeps.flatMap(([creep, creepMemory]) => {
+    idleCreeps.forEach(([creep, creepMemory]) => {
       const newTask = this.newTaskFor(creep, creepMemory.r.includes(CreepRole.Hauler), roomResource)
       if (newTask == null) {
-        return []
+        return
       }
-      return {
+      const taskRequest: CreepTaskAssignTaskRequest = {
         taskType: "normal",
-        creepName: creep.name,
         task: newTask,
       }
+
+      requestsFromChildren.creepTaskAssignRequests.set(creep.name, taskRequest) // FixMe: ここでマージ問題が出てくるのでは
     })
-    requestsFromChildren.creepTaskAssignRequests.push(...taskRequests)
 
     return requestsFromChildren
   }
 
   private createBody(energyCapacity: number): BodyPartConstant[] {
     return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
+  }
+
+  public overrideCreepTask(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest {
+    PrimitiveLogger.programError(`${this.identifier} overrideCreepTask() is not implemented yet (${request1.task})`)
+    return request1
   }
 
   // TODO: haulerのタスク

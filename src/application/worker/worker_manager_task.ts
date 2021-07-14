@@ -1,7 +1,10 @@
 import { ChildTask, Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
+import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./primitive_worker_task"
@@ -64,6 +67,11 @@ export class WorkerManagerTask extends Task<void, void> {
   public static create(roomName: RoomName): WorkerManagerTask {
     const workerTask = PrimitiveWorkerTask.create(roomName)
     return new WorkerManagerTask(Game.time, roomName, null, workerTask)
+  }
+
+  public overrideCreepTask(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest {
+    PrimitiveLogger.programError(`${this.identifier} overrideCreepTask() is not implemented yet (${request1.task})`)
+    return request1
   }
 
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {

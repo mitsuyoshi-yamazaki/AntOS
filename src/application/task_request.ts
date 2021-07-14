@@ -1,5 +1,4 @@
 import type { CreepTask } from "object_task/creep_task/creep_task"
-import type { CreepName } from "prototype/creep"
 import type { CreepRole } from "prototype/creep_role"
 import { estimatedRenewDuration } from "utility/constants"
 import type { TaskIdentifier } from "./task_identifier"
@@ -8,11 +7,10 @@ export type TaskRequestCreepTaskType = "normal" | "flee"
 
 export interface CreepTaskAssignTaskRequest {
   taskType: TaskRequestCreepTaskType
-  creepName: CreepName
   task: CreepTask
 }
 
-export type SpawnTaskRequestType = SpawnCreepTaskRequest | RenewCreepTaskRequest
+export type SpawnTaskRequestType = SpawnCreepTaskRequest //| RenewCreepTaskRequest // TODO:
 export type TaskRequest = SpawnTaskRequest | TowerActionTaskRequest
 
 type SpawnTaskRequestPriorityUrgent = 0
@@ -49,6 +47,7 @@ export class SpawnCreepTaskRequest implements SpawnTaskRequest {
     public readonly priority: SpawnTaskRequestPriority,
     public readonly body: BodyPartConstant[],
     public readonly roles: CreepRole[],
+    public readonly codename: string,
   ) {
     this.estimatedDuration = this.body.length * CREEP_SPAWN_TIME
   }

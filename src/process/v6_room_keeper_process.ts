@@ -60,14 +60,14 @@ export class V6RoomKeeperProcess implements Process, Procedural {
   }
 
   private handleUnresolvedRequests(taskRequests: TaskRequests<void>): void {
-    if (taskRequests.creepTaskAssignRequests.length > 0) {
-      PrimitiveLogger.fatal(`[Program bug] Unexpectedly found unresolved creep task assign request ${this.task.identifier} at ${roomLink(this.roomName)}`)
+    if (taskRequests.creepTaskAssignRequests.size > 0) {
+      PrimitiveLogger.programError(`Unexpectedly found unresolved creep task assign request ${this.task.identifier} at ${roomLink(this.roomName)}`)
     }
     if (taskRequests.spawnRequests.length > 0) {
-      PrimitiveLogger.fatal(`[Program bug] Unexpectedly found unresolved spawn request ${this.task.identifier} at ${roomLink(this.roomName)}`)
+      PrimitiveLogger.programError(`Unexpectedly found unresolved spawn request ${this.task.identifier} at ${roomLink(this.roomName)}`)
     }
     if (taskRequests.towerRequests.length > 0) {
-      PrimitiveLogger.fatal(`[Program bug] Unexpectedly found unresolved tower request ${this.task.identifier} at ${roomLink(this.roomName)}`)
+      PrimitiveLogger.programError(`Unexpectedly found unresolved tower request ${this.task.identifier} at ${roomLink(this.roomName)}`)
     }
 
     this.log(taskRequests.logs)

@@ -138,11 +138,6 @@ export function init(): void {
       }
 
       this._task = task
-      // if (task == null) {
-      //   this.say("idle")
-      // } else if (task.shortDescription != null) {
-      //   this.say(task.shortDescription)
-      // }
     }
   })
 

@@ -16,3 +16,15 @@ export function createCreepBody(baseBody: BodyPartConstant[], bodyUnit: BodyPart
   }
   return result
 }
+
+export function bodyDescription(body: BodyPartConstant[]): string {
+  const map = new Map<BodyPartConstant, number>()
+  body.forEach(b => {
+    map.set(b, map.get(b) ?? 0 + 1)
+  })
+  const result: string[] = []
+  map.forEach((value, key) => {
+    result.push(`${value}${key}`)
+  })
+  return result.join("")
+}

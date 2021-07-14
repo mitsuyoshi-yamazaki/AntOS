@@ -1,11 +1,14 @@
 import { Problem } from "application/problem"
 import { ChildTask, Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
-import { TaskRequests } from "application/task_requests"
+import { CreepTaskAssignTaskRequest } from "application/task_request"
+import { emptyTaskRequests, TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { WorkerManagerTask, WorkerManagerTaskState } from "application/worker/worker_manager_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler } from "./task_request_handler"
 
 export interface RoomKeeperTaskState extends TaskState {
@@ -55,10 +58,15 @@ export class RoomKeeperTask extends Task<void, void> {
     return new RoomKeeperTask(Game.time, roomName, null, workerManagerTask)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
-    const unresolvedRequests = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
+  public overrideCreepTask(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest {
+    PrimitiveLogger.programError(`${this.identifier} overrideCreepTask() is not implemented yet (${request1.task})`)
+    return request1
+  }
 
-    return unresolvedRequests
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
+    const unresolvedProblems = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
+
+    return emptyTaskRequests()
   }
 }
 
