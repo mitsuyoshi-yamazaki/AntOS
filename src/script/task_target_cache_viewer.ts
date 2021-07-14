@@ -1,4 +1,4 @@
-import { TaskTargetTypeId, TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskTargetTypeId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export function showTargetedBy(targetIds: string[]): string {
   return targetIds

@@ -1,4 +1,4 @@
-import { TaskRunnerId, TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskRunnerId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer  // TODO: まだある
 

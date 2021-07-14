@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
 import type { RoomName } from "utility/room_name"
-import type { CreepTask } from "object_task/creep_task/creep_task"
+import type { CreepTask } from "v5_object_task/creep_task/creep_task"
 import type { TaskIdentifier } from "v5_task/task"
 import { bodyCost } from "utility/creep_body"
 

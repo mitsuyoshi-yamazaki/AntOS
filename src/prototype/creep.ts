@@ -1,11 +1,11 @@
-import { CreepTask } from "object_task/creep_task/creep_task"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { ShortVersion, ShortVersionV5 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
-import { TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import { TaskIdentifier } from "v5_task/task"
 import { RoomName } from "utility/room_name"
-import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
+import type { CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
 
 // ---- Types and Constants ---- //
 export type CreepName = string

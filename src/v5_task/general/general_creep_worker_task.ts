@@ -8,7 +8,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepInsufficiencyProblemFinder } from "v5_problem/creep_insufficiency/creep_insufficiency_problem_finder"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepInsufficiencyProblemSolver } from "v5_task/creep_spawn/creep_insufficiency_problem_solver"
-import { CreepTask } from "object_task/creep_task/creep_task"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { World } from "world_info/world_info"
 
 export interface GeneralCreepWorkerTaskCreepRequest {
