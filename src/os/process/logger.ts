@@ -6,6 +6,8 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
 
+const logInterval = 20
+
 export interface LoggerProcessState extends ProcessState {
   /** message filter (|| statement) */
   f: {
@@ -88,7 +90,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   private show(log: ProcessLog): void {
     const message = `${log.processId} ${log.processType}: ${log.message}`
     if (message === this.lastLog.message) {
-      if (Game.time - this.lastLog.time < 10) { // TODO: tick数を変更可能にする
+      if (Game.time - this.lastLog.time < logInterval) {
         return
       }
     }

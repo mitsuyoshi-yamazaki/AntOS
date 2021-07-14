@@ -11,6 +11,8 @@ import { MoveToRoomTask } from "object_task/creep_task/meta_task/move_to_room_ta
 import { MoveToTargetTask } from "object_task/creep_task/combined_task/move_to_target_task"
 import { AttackApiWrapper } from "object_task/creep_task/api_wrapper/attack_api_wrapper"
 import { RoomName } from "utility/room_name"
+import { processLog } from "process/process_log"
+import { roomLink } from "utility/log"
 
 const roomNames = new Map<RoomName, RoomName[]>([
   ["W27S26", ["W28S26", "W27S27"]],
@@ -58,26 +60,36 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
   }
 
   public runOnTick(): void {
+    const invadedRoomNames: RoomName[] = []
+
     roomNames.forEach((targetRoomNames, parentRoomName) => {
-      this.runOnRoom(parentRoomName, targetRoomNames)
+      invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
     })
+
+    const message = invadedRoomNames.length > 0 ? `Invaded rooms: ${invadedRoomNames.map(roomName => roomLink(roomName)).join(",")}` : "No invasion"
+    processLog(this, message)
   }
 
-  private runOnRoom(parentRoomName: RoomName, targetRoomNames: RoomName[]): void {
+  private runOnRoom(parentRoomName: RoomName, targetRoomNames: RoomName[]): RoomName[] {
+    const invadedRoomNames: RoomName[] = []
+
     targetRoomNames.forEach(targetRoomName => {
-      this.runOnTargetRoom(parentRoomName, targetRoomName)
+      if (this.runOnTargetRoom(parentRoomName, targetRoomName) === true) {
+        invadedRoomNames.push(targetRoomName)
+      }
     })
+    return invadedRoomNames
   }
 
-  private runOnTargetRoom(parentRoomName: RoomName, targetRoomName: RoomName): void {
+  private runOnTargetRoom(parentRoomName: RoomName, targetRoomName: RoomName): boolean {
     const targetRoom = Game.rooms[targetRoomName]
     if (targetRoom == null) {
-      return
+      return false
     }
 
     const invaderCore = targetRoom.find(FIND_HOSTILE_STRUCTURES).find(structure => structure instanceof StructureInvaderCore) as StructureInvaderCore | null
     if (invaderCore == null) {
-      return
+      return false
     }
 
     const identifier = `${this.constructor.name}_${parentRoomName}_${targetRoomName}`
@@ -93,6 +105,7 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
       creep => this.newAttackerTask(creep, targetRoom, invaderCore),
       () => true,
     )
+    return true
   }
 
   private requestAttacker(parentRoomName: RoomName, identifier: string): void {
