@@ -42,7 +42,7 @@ export class AttackApiWrapper implements ApiWrapper<Creep, AttackApiWrapperResul
   public run(creep: Creep): AttackApiWrapperResult {
     const result = creep.attack(this.target)
 
-    if (result === OK) {
+    if (result !== OK) {
       creep.heal(creep)
     }
 

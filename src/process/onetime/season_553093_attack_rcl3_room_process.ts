@@ -142,11 +142,11 @@ export class Season553093AttackRcl3RoomProcess implements Process, Procedural {
     }
 
     const attackerTarget = ((): AnyCreep | AnyStructure | null => {
-      const storedWall = Game.getObjectById(targetWallId)
-      if (storedWall != null) {
-        this.target = storedWall
-        return storedWall
-      }
+      // const storedWall = Game.getObjectById(targetWallId)
+      // if (storedWall != null) {
+      //   this.target = storedWall
+      //   return storedWall
+      // }
       if (this.targetCreep != null) {
         return this.targetCreep
       }
