@@ -18,6 +18,7 @@ import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_tas
 import { TaskState } from "v5_task/task_state"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
+import { Invader } from "game/invader"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -81,8 +82,15 @@ export class RemoteRoomHaulerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount)
     ]
+
+    const targetRoom = World.rooms.get(this.targetRoomName)
+    if (targetRoom != null) {
+      const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+      if (invaded !== true) {
+        problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
+      }
+    }
 
     this.checkProblemFinders(problemFinders)
 

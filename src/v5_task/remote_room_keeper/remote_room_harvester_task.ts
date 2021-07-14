@@ -25,6 +25,7 @@ import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
+import { Invader } from "game/invader"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -135,8 +136,15 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, container == null)
     ]
+
+    const targetRoom = World.rooms.get(this.targetRoomName)
+    if (targetRoom != null) {
+      const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+      if (invaded !== true) {
+        problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, container == null))
+      }
+    }
 
     this.checkProblemFinders(problemFinders)
 

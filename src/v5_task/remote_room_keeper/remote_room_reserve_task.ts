@@ -105,10 +105,15 @@ export class RemoteRoomReserveTask extends Task {
     }
 
     if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 4400) {
-      return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
-    } else {
-      return []
+      const targetRoom = World.rooms.get(this.targetRoomName)
+      if (targetRoom != null) {
+        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+        if (invaded !== true) {
+          return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
+        }
+      }
     }
+    return []
   }
 
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, minimumBody: BodyPartConstant[], necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier): ProblemFinder {
