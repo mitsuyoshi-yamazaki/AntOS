@@ -5,8 +5,9 @@ import { CreepRole } from "./creep_role"
 import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
 import type { RoomName } from "utility/room_name"
-import type { CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
-import { TaskIdentifier } from "application/task_identifier"
+import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
+import type { TaskIdentifier } from "application/task_identifier"
+import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -51,7 +52,7 @@ export interface V6CreepMemory {
   r: CreepRole[]
 
   /** task */
-  // t: CreepTaskState | null // TODO:
+  t: CreepTaskState | null
 
   /** task runner id */
   i: TaskIdentifier
@@ -73,7 +74,7 @@ export interface V5CreepMemory {
   r: CreepRole[]
 
   /** task */
-  t: CreepTaskState | null
+  t: V5CreepTaskState | null
 
   /** task runner id */
   i: V5TaskIdentifier | null
