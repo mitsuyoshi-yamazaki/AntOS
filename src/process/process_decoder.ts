@@ -3,6 +3,7 @@ import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
 import { BootstrapRoomManagerProcess, BootstrapRoomManagerProcessState } from "./bootstrap_room_manager_process"
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
+import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
@@ -25,6 +26,7 @@ class ProcessTypes {
 
   // ---- Onetime processes ---- //
   "Season487837AttackInvaderCoreProcess" = (state: ProcessState) => Season487837AttackInvaderCoreProcess.decode(state as unknown as Season487837AttackInvaderCoreProcessState)
+  "Season553093AttackRcl3RoomProcess" = (state: ProcessState) => Season553093AttackRcl3RoomProcess.decode(state as unknown as Season553093AttackRcl3RoomProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
