@@ -6,6 +6,12 @@ import { RoomKeeperProblemSolver } from "./task_request_handler/room_keeper_prob
 import { SpawnRequestHandler } from "./task_request_handler/spawn_request_handler"
 import { TowerRequestHandler } from "./task_request_handler/tower_request_handler"
 import type { Problem } from "application/problem"
+import type { TaskLogRequest } from "application/task_logger"
+
+interface TaskRequestHandlerResult {
+  unresolvedProblems: Problem[]
+  logs: TaskLogRequest[]
+}
 
 export class TaskRequestHandler {
   private readonly creepTaskAssignRequestHandler = new CreepTaskAssignRequestHandler()
@@ -17,13 +23,17 @@ export class TaskRequestHandler {
   /**
    * @returns Unresolved requests
    */
-  public execute(taskRequests: TaskRequests<void>, roomResource: OwnedRoomResource): Problem[] {
+  public execute(taskRequests: TaskRequests<void>, roomResource: OwnedRoomResource): TaskRequestHandlerResult {
+    const logs: TaskLogRequest[] = []
+
     this.creepTaskAssignRequestHandler.execute(taskRequests.creepTaskAssignRequests, roomResource)
     this.spawnRequestHandler.execute(taskRequests.spawnRequests, roomResource)
     this.towerRequestHandler.execute(taskRequests.towerRequests, roomResource)
     this.problemSolver.execute(taskRequests.problems, roomResource)
-    this.logAggregator.execute(taskRequests.logs, roomResource) // TODO:
 
-    return [] // TODO:
+    return {
+      unresolvedProblems: [],  // TODO:
+      logs,
+    }
   }
 }

@@ -69,8 +69,3 @@ export class RoomKeeperTask extends Task<void, void> {
     return emptyTaskRequests()
   }
 }
-
-class DummyProblem implements Problem {
-  public readonly identifier = ""
-  public readonly taskIdentifier = ""
-}

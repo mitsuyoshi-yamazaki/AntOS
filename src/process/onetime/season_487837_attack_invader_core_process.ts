@@ -66,8 +66,9 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
       invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
     })
 
-    const message = invadedRoomNames.length > 0 ? `Invaded rooms: ${invadedRoomNames.map(roomName => roomLink(roomName)).join(",")}` : "No invasion"
-    processLog(this, message)
+    if (invadedRoomNames.length > 0) {
+      processLog(this, `Invaded rooms: ${invadedRoomNames.map(roomName => roomLink(roomName)).join(",")}`)
+    }
   }
 
   private runOnRoom(parentRoomName: RoomName, targetRoomNames: RoomName[]): RoomName[] {
