@@ -47,6 +47,9 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     const container = Game.getObjectById(this.containerId)
     return container != null ? [container] : []
   }
+  public get energyCapacity(): number {
+    return Game.getObjectById(this.sourceId)?.energyCapacity ?? 0
+  }
 
   private constructor(
     public readonly startTime: number,

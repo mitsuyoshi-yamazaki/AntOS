@@ -64,18 +64,20 @@ export class RemoteRoomHaulerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const energySources = this.energySources.flatMap(source => source.energySources)
     const problemFinders: ProblemFinder[] = []
-    problemFinders.push(...this.runHauler(objects, energySources))
+    problemFinders.push(...this.runHauler(objects))
 
     return TaskStatus.InProgress
   }
 
   // ---- Run & Check Problem ---- //
-  private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
+  private runHauler(objects: OwnedRoomObjects): ProblemFinder[] {
+    const energySources = this.energySources.flatMap(source => source.energySources)
+    const energyCapacity = this.energySources.reduce((result, current) => result + current.energyCapacity, 0)
+
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energySources.filter(source => getEnergyAmountOf(source) > 500).length * 3 // TODO: 距離等を加味する
+    const minimumCreepCount = energyCapacity / 1000 // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
