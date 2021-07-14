@@ -1,11 +1,12 @@
-import { CreepTask } from "v5_object_task/creep_task/creep_task"
-import { ShortVersion, ShortVersionV5 } from "utility/system_info"
+import { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
+import { ShortVersion, ShortVersionV5, ShortVersionV6 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
-import { TaskIdentifier } from "v5_task/task"
-import { RoomName } from "utility/room_name"
+import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
+import type { RoomName } from "utility/room_name"
 import type { CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
+import { TaskIdentifier } from "application/task_identifier"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -37,7 +38,29 @@ export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 971
 
 
 // ---- Memory ---- //
-export type CreepMemory = V5CreepMemory | V4CreepMemory
+export type CreepMemory = V6CreepMemory | V5CreepMemory | V4CreepMemory
+
+export interface V6CreepMemory {
+  /** system version */
+  v: ShortVersionV6
+
+  /** parent room name */
+  p: RoomName
+
+  /** roles */
+  r: CreepRole[]
+
+  /** task */
+  // t: CreepTaskState | null // TODO:
+
+  /** task runner id */
+  i: TaskIdentifier
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isV6CreepMemory(arg: any): arg is V6CreepMemory {
+  return arg.v === ShortVersion.v6
+}
 
 export interface V5CreepMemory {
   /** system version */
@@ -53,7 +76,7 @@ export interface V5CreepMemory {
   t: CreepTaskState | null
 
   /** task runner id */
-  i: TaskIdentifier | null
+  i: V5TaskIdentifier | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
@@ -114,10 +137,10 @@ export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
 // ---- Prototype ---- //
 declare global {
   interface Creep {
-    task: CreepTask | null
+    v5task: V5CreepTask | null
 
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-    _task: CreepTask | null
+    _v5task: V5CreepTask | null
 
     roles: CreepRole[]
   }
@@ -125,19 +148,19 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(Creep.prototype, "task", {
-    get(): CreepTask | null {
-      return this._task
+  Object.defineProperty(Creep.prototype, "v5task", {
+    get(): V5CreepTask | null {
+      return this._v5task
     },
-    set(task: CreepTask | null): void {
-      if (this._task != null && this._task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
+    set(v5task: V5CreepTask | null): void {
+      if (this._v5task != null && this._v5task.targetId != null) {
+        TaskTargetCache.didFinishTask(this.id, this._v5task.targetId)
       }
-      if (task != null && task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, task.targetId)
+      if (v5task != null && v5task.targetId != null) {
+        TaskTargetCache.didAssignTask(this.id, v5task.targetId)
       }
 
-      this._task = task
+      this._v5task = v5task
     }
   })
 

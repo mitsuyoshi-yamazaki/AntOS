@@ -81,10 +81,10 @@ export class CreepPool implements ResourcePoolType<Creep> {
     const filteredCreeps = ((): Creep[] => {
       switch (priority) {
       case creepPoolAssignPriorityLow:
-        return creeps.filter(creep => creep.task == null)
+        return creeps.filter(creep => creep.v5task == null)
       case creepPoolAssignPriorityUrgent:
         PrimitiveLogger.fatal("creepPoolAssignPriorityUrgent not implemented yet")
-        return creeps.filter(creep => creep.task == null)
+        return creeps.filter(creep => creep.v5task == null)
       }
     })()
 
@@ -93,7 +93,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
       if (newTask == null) {
         return
       }
-      creep.task = newTask
+      creep.v5task = newTask
     }
   }
 
@@ -112,9 +112,9 @@ export class CreepPool implements ResourcePoolType<Creep> {
 
   public executeTask(): void {
     this.creeps.forEach(creep => {
-      if (creep.task != null) {
-        if (creep.task.run(creep) !== TaskProgressType.InProgress) {
-          creep.task = null
+      if (creep.v5task != null) {
+        if (creep.v5task.run(creep) !== TaskProgressType.InProgress) {
+          creep.v5task = null
         }
       }
     })

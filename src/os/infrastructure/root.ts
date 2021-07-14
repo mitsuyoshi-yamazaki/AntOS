@@ -60,8 +60,8 @@ export class RootProcess {
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      const task = decodeCreepTask(creep)
-      creep.task = task
+      const v5task = decodeCreepTask(creep)
+      creep.v5task = v5task
     }
   }
 
@@ -71,7 +71,7 @@ export class RootProcess {
       if (!isV5CreepMemory(creep.memory)) {
         continue
       }
-      creep.memory.t = creep.task?.encode() ?? null
+      creep.memory.t = creep.v5task?.encode() ?? null
     }
   }
 }

@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole, mergeRoles } from "prototype/creep_role"
 import type { RoomName } from "utility/room_name"
-import type { CreepTask } from "v5_object_task/creep_task/creep_task"
+import type { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
 import type { TaskIdentifier } from "v5_task/task"
 import { bodyCost } from "utility/creep_body"
 
@@ -34,7 +34,7 @@ export interface CreepSpawnRequest {
   body: BodyPartConstant[] | null
 
   /** 時間経過で消滅する可能性のあるタスクは推奨されない */
-  initialTask: CreepTask | null
+  initialTask: V5CreepTask | null
   taskIdentifier: TaskIdentifier | null
 
   /** 他の部屋へ引き継ぐ場合 */
