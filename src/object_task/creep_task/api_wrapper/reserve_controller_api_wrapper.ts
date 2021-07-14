@@ -39,7 +39,15 @@ export class ReserveControllerApiWrapper implements ApiWrapper<Creep, ReserveCon
   }
 
   public run(creep: Creep): ReserveControllerApiWrapperResult {
-    const result = creep.reserveController(this.target)
+    const result = (() => {
+      if (this.target.owner != null) {
+        return creep.attackController(this.target)
+      }
+      if (this.target.reservation != null && this.target.reservation.username !== Game.user.name) {
+        return creep.attackController(this.target)
+      }
+      return creep.reserveController(this.target)
+    })()
     creep.signController(this.target, Sign.sign(creep.room))
 
     switch (result) {
