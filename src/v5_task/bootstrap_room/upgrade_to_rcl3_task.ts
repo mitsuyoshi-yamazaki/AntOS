@@ -120,6 +120,11 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
           return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
         }
       } else {
+        const constructionSite = creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES)
+        if (constructionSite != null) {
+          return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+        }
+
         return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
       }
       return null
