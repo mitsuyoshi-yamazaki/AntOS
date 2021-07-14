@@ -1,6 +1,7 @@
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
-import { ERR_PROGRAMMING_ERROR } from "prototype/creep"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
+
+const apiWrapperType = "HarvestSourceApiWrapper"
 
 export interface HarvestSourceApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
@@ -12,6 +13,7 @@ export interface HarvestSourceApiWrapperState extends CreepApiWrapperState {
 
 export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
   public readonly shortDescription = "h-source"
+  public readonly range = 1
 
   private constructor(
     public readonly target: Source,
@@ -20,7 +22,7 @@ export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWra
 
   public encode(): HarvestSourceApiWrapperState {
     return {
-      t: "HarvestSourceApiWrapper",
+      t: apiWrapperType,
       i: this.target.id,
     }
   }
@@ -61,13 +63,11 @@ export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWra
 
     case ERR_NO_BODYPART:
     case ERR_NOT_OWNER: // roomをclaim/reserveしていない場合
-      return CreepApiWrapperProgress.Failed("harvest", creep.name, result)
-
     case ERR_INVALID_TARGET:
     case ERR_NOT_FOUND:
     case ERR_TIRED:
     default:
-      return CreepApiWrapperProgress.Failed("harvest", creep.name, ERR_PROGRAMMING_ERROR, `${result}`)
+      return CreepApiWrapperProgress.Failed(apiWrapperType, creep.name, result)
     }
   }
 }

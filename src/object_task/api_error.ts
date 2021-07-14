@@ -4,6 +4,9 @@ export type ApiErrorCode = ERR_PROGRAMMING_ERROR
   | ERR_NO_BODYPART
   | ERR_NOT_OWNER
   | ERR_INVALID_TARGET
+  | ERR_NO_PATH
+  | ERR_NOT_FOUND
+  | ERR_TIRED
 
 /**
  * - 解決に必要な情報
@@ -17,5 +20,4 @@ export interface ApiError<Api, ObjectIdentifier> {
   api: Api
   objectIdentifier: ObjectIdentifier  // 位置などを参照する
   error: ApiErrorCode
-  detail: string | null
 }

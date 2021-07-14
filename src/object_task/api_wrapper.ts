@@ -28,14 +28,13 @@ export const ApiWrapperProgress = {
       executed,
     }
   },
-  Failed<Api, ObjectIdentifier>(api: Api, objectIdentifier: ObjectIdentifier, errorCode: ApiErrorCode, detail?: string): ApiWrapperProgressFailed<Api, ObjectIdentifier> {
+  Failed<Api, ObjectIdentifier>(api: Api, objectIdentifier: ObjectIdentifier, errorCode: ApiErrorCode): ApiWrapperProgressFailed<Api, ObjectIdentifier> {
     return {
       apiWrapperProgressType: "failed",
       error: {
         api,
         objectIdentifier,
         error: errorCode,
-        detail: detail ?? null,
       },
     }
   }

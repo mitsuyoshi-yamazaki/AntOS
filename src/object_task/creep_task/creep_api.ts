@@ -1,6 +1,5 @@
 import type { ApiError } from "object_task/api_error"
 import type { CreepName } from "prototype/creep"
+import type { CreepApiWrapperType } from "./creep_api_wrapper"
 
-export type CreepApi = "harvest" | "build"
-
-export type CreepApiError = ApiError<CreepApi, CreepName>
+export type CreepApiError = ApiError<CreepApiWrapperType, CreepName>
