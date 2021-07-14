@@ -1,8 +1,10 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import type { CreepApiError } from "object_task/creep_task/creep_api"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Stateful } from "os/infrastructure/state"
 import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "utility/room_name"
 import type { TaskType } from "./task_decoder"
 import type { TaskIdentifier } from "./task_identifier"
@@ -37,7 +39,9 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
-  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>): TaskRequests<T>
+
+  // FixMe: creepApiErrorsがハンドリングされなかった場合にわかるようにする
+  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>, creepApiErrors: CreepApiError[]): TaskRequests<T>
 
   public encode(): TaskState {
     return {
@@ -67,8 +71,9 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
       }
 
       const taskRequests = this.children.map(task => task.runTask(roomResource))
+      const creepApiErrors = RoomResources.getCreepApiError(this.identifier)
 
-      return this.run(roomResource, this.mergeTaskRequests(taskRequests))
+      return this.run(roomResource, this.mergeTaskRequests(taskRequests), creepApiErrors)
     }, `${this.constructor.name}.run()`)()
 
     if (result == null) {

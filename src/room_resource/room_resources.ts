@@ -1,4 +1,6 @@
-import { isV5CreepMemory } from "prototype/creep"
+import { TaskIdentifier } from "application/task_identifier"
+import { CreepApiError } from "object_task/creep_task/creep_api"
+import { CreepName, isV6CreepMemory } from "prototype/creep"
 import { RoomName } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
 import { decodeRoomInfo, RoomInfo } from "world_info/room_info"
@@ -11,17 +13,22 @@ interface RoomResources {
   beforeTick(): void
   afterTick(): void
 
-  // ---- Function ---- //
+  // ---- Room Resource ---- //
   getRoomResource(roomName: RoomName): RoomResource | null
+
+  // ---- Creep ---- //
+  getCreepApiError(taskIdentifier: TaskIdentifier): CreepApiError[]
 }
 
 const roomResources = new Map<RoomName, RoomResource>()
+const allCreeps = new Map<RoomName, Creep[]>()
+const creepApiErrors = new Map<TaskIdentifier, CreepApiError[]>()
 
 export const RoomResources = {
   // ---- Lifecycle ---- //
   beforeTick(): void {
     roomResources.clear()
-    const allCreeps = enumerateCreeps()
+    enumerateCreeps()
 
     for (const roomName in Game.rooms) {
       const room = Game.rooms[roomName]
@@ -33,10 +40,10 @@ export const RoomResources = {
   },
 
   afterTick(): void {
-
+    runCreepTasks()
   },
 
-  // ---- Function ---- //
+  // ---- Room Resource ---- //
   getRoomResource(roomName: RoomName): RoomResource | null {
     const stored = roomResources.get(roomName)
     if (stored != null) {
@@ -50,10 +57,15 @@ export const RoomResources = {
     roomResources.set(roomName, roomResource)
     return roomResource
   },
+
+  // ---- Creep ---- //
+  getCreepApiError(taskIdentifier: TaskIdentifier): CreepApiError[] {
+    return creepApiErrors.get(taskIdentifier) ?? []
+  },
 }
 
-function enumerateCreeps(): Map<RoomName, Creep[]> {
-  const allCreeps = new Map < RoomName, Creep[]>()
+function enumerateCreeps(): void {
+  allCreeps.clear()
 
   for (const creepName in Memory.creeps) {
     const creep = Game.creeps[creepName]
@@ -61,7 +73,7 @@ function enumerateCreeps(): Map<RoomName, Creep[]> {
       delete Memory.creeps[creepName]
       continue
     }
-    if (!isV5CreepMemory(creep.memory)) {
+    if (!isV6CreepMemory(creep.memory)) {
       continue
     }
     const creeps = ((): Creep[] => {
@@ -76,8 +88,6 @@ function enumerateCreeps(): Map<RoomName, Creep[]> {
 
     creeps.push(creep)
   }
-
-  return allCreeps
 }
 
 function buildNormalRoomResource(controller: StructureController): NormalRoomResource {
@@ -106,4 +116,52 @@ function buildOwnedRoomResource(controller: StructureController, creeps: Creep[]
     return decodeRoomInfo(roomInfoMemory)
   })()
   return new OwnedRoomResource(controller, [...creeps], roomInfo)
+}
+
+function runCreepTasks(): void {
+  creepApiErrors.clear()
+
+  allCreeps.forEach(creeps => {
+    creeps.forEach(creep => {
+      if (creep.task == null) {
+        return
+      }
+      const result = creep.task.run(creep)
+      const apiErrors: CreepApiError[] = []
+      switch (result.progress) {
+      case "in progress":
+        apiErrors.push(...result.apiErrors)
+        break
+
+      case "finished":
+        apiErrors.push(...result.apiErrors)
+        creep.task = null
+        break
+      }
+
+      if (apiErrors.length <= 0) {
+        return
+      }
+      const creepMemory = creep.memory
+      if (!isV6CreepMemory(creepMemory)) {
+        return
+      }
+      const taskIdentifier = creepMemory.i
+      if (taskIdentifier == null) {
+        return
+      }
+
+      const creepApiErrorMap = ((): CreepApiError[] => {
+        const stored = creepApiErrors.get(taskIdentifier)
+        if (stored != null) {
+          return stored
+        }
+        const newList: CreepApiError[] = []
+        creepApiErrors.set(taskIdentifier, newList)
+        return newList
+      })()
+
+      creepApiErrorMap.push(...apiErrors)
+    })
+  })
 }

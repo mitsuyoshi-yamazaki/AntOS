@@ -1,4 +1,4 @@
-import type { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { CreepTask } from "object_task/creep_task/creep_task"
 import type { CreepRole } from "prototype/creep_role"
 import { estimatedRenewDuration } from "utility/constants"
 import type { TaskIdentifier } from "./task_identifier"

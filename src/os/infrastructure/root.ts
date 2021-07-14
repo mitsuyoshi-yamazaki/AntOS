@@ -1,13 +1,14 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { decodeCreepTask } from "v5_object_task/creep_task/creep_task_decoder"
+import { decodeCreepTask as v5DecodeCreepTask } from "v5_object_task/creep_task/creep_task_decoder"
 import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { ProcessLauncher } from "os/os_process_launcher"
 import type { Process } from "process/process"
-import { isV5CreepMemory } from "prototype/creep"
+import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
+import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
@@ -52,6 +53,10 @@ export class RootProcess {
     }, "World.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
+      RoomResources.afterTick()
+    }, "RoomResources.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
       this.storeTasks()
     }, "RootProcess.storeTasks()")()
   }
@@ -60,18 +65,19 @@ export class RootProcess {
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      const v5task = decodeCreepTask(creep)
-      creep.v5task = v5task
+      creep.task = decodeCreepTask(creep)
+      creep.v5task = v5DecodeCreepTask(creep)
     }
   }
 
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      if (!isV5CreepMemory(creep.memory)) {
-        continue
+      if (isV6CreepMemory(creep.memory)) {
+        creep.memory.t = creep.task?.encode() ?? null
+      } else if (isV5CreepMemory(creep.memory)) {
+        creep.memory.t = creep.v5task?.encode() ?? null
       }
-      creep.memory.t = creep.v5task?.encode() ?? null
     }
   }
 }

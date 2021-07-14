@@ -7,16 +7,16 @@ import { roomLink } from "utility/log"
 // TODO: creepのtask実行
 export class CreepTaskAssignRequestHandler {
   public execute(creepTaskAssignRequests: Map<CreepName, CreepTaskAssignTaskRequest>, roomResource: OwnedRoomResource): void {
-    // creepTaskAssignRequests.forEach((request, creepName) => {
-    //   const creep = Game.creeps[creepName]
-    //   if (creep == null) {
-    //     PrimitiveLogger.programError(`No creep to assign task ${creepName} at ${roomLink(roomResource.room.name)}`)
-    //     return
-    //   }
-    //   creep.task = request.task
-    //   if (request.task.shortDescription != null) {
-    //     creep.say(request.task.shortDescription)
-    //   }
-    // })
+    creepTaskAssignRequests.forEach((request, creepName) => {
+      const creep = Game.creeps[creepName]
+      if (creep == null) {
+        PrimitiveLogger.programError(`No creep to assign task ${creepName} at ${roomLink(roomResource.room.name)}`)
+        return
+      }
+      creep.task = request.task
+      if (request.task.shortDescription != null) {
+        creep.say(request.task.shortDescription)
+      }
+    })
   }
 }

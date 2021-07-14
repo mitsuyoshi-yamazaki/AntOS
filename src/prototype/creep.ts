@@ -8,6 +8,7 @@ import type { RoomName } from "utility/room_name"
 import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
 import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
+import { CreepTask } from "object_task/creep_task/creep_task"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -138,6 +139,12 @@ export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
 // ---- Prototype ---- //
 declare global {
   interface Creep {
+    task: CreepTask | null
+
+    /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
+    _task: CreepTask | null
+
+    /** @deprecated */
     v5task: V5CreepTask | null
 
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
@@ -149,6 +156,22 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
+  Object.defineProperty(Creep.prototype, "task", {
+    get(): CreepTask | null {
+      return this._task
+    },
+    set(task: CreepTask | null): void {
+      if (this._task != null && this._task.targetId != null) {
+        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
+      }
+      if (task != null && task.targetId != null) {
+        TaskTargetCache.didAssignTask(this.id, task.targetId)
+      }
+
+      this._task = task
+    }
+  })
+
   Object.defineProperty(Creep.prototype, "v5task", {
     get(): V5CreepTask | null {
       return this._v5task
@@ -168,10 +191,13 @@ export function init(): void {
   Object.defineProperty(Creep.prototype, "roles", {
     get(): CreepRole[] {
       const memory = this.memory
-      if (!isV5CreepMemory(memory)) {
-        return []
+      if (isV5CreepMemory(memory)) {
+        return memory.r.concat([])
       }
-      return memory.r.concat([])
+      if (isV6CreepMemory(memory)) {
+        return memory.r.concat([])
+      }
+      return []
     }
   })
 }

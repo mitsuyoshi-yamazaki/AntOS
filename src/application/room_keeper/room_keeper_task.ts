@@ -5,6 +5,7 @@ import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { emptyTaskRequests, TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { WorkerManagerTask, WorkerManagerTaskState } from "application/worker/worker_manager_task"
+import { CreepApiError } from "object_task/creep_task/creep_api"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
@@ -63,7 +64,7 @@ export class RoomKeeperTask extends Task<void, void> {
     return request1
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>, creepApiErrors: CreepApiError[]): TaskRequests<void> {
     const unresolvedProblems = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
     return emptyTaskRequests()

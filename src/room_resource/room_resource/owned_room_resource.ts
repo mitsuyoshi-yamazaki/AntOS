@@ -1,4 +1,4 @@
-import { isV5CreepMemory, isV6CreepMemory, V6CreepMemory } from "prototype/creep"
+import { isV6CreepMemory, V6CreepMemory } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import type { TaskIdentifier } from "v5_task/task"
 import type { RoomInfo } from "world_info/room_info"
@@ -112,7 +112,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     return this.ownedCreeps
       .filter(creep => {
         const creepMemory = creep.memory
-        if (!isV5CreepMemory(creepMemory)) {
+        if (!isV6CreepMemory(creepMemory)) {
           return false
         }
         return creepMemory.i === taskIdentifier

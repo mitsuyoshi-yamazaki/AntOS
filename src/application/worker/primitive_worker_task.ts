@@ -15,6 +15,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { createCreepBody } from "utility/creep_body"
 import { RoomName } from "utility/room_name"
 import { createWorkerTaskIdentifier } from "./worker_task_definition"
+import { CreepApiError } from "object_task/creep_task/creep_api"
 
 const creepCountForSource = 6
 
@@ -57,7 +58,7 @@ export class PrimitiveWorkerTask extends Task<void, void> {
     return new PrimitiveWorkerTask(Game.time, roomName, null)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>, creepApiErrors: CreepApiError[]): TaskRequests<void> {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length
 
@@ -71,19 +72,19 @@ export class PrimitiveWorkerTask extends Task<void, void> {
       ))
     }
 
-    const idleCreeps = roomResource.idleCreeps(this.identifier)
-    idleCreeps.forEach(([creep, creepMemory]) => {
-      const newTask = this.newTaskFor(creep, creepMemory.r.includes(CreepRole.Hauler), roomResource)
-      if (newTask == null) {
-        return
-      }
-      const taskRequest: CreepTaskAssignTaskRequest = {
-        taskType: "normal",
-        task: newTask,
-      }
+    // const idleCreeps = roomResource.idleCreeps(this.identifier)
+    // idleCreeps.forEach(([creep, creepMemory]) => {
+    //   const newTask = this.newTaskFor(creep, creepMemory.r.includes(CreepRole.Hauler), roomResource)
+    //   if (newTask == null) {
+    //     return
+    //   }
+    //   const taskRequest: CreepTaskAssignTaskRequest = {
+    //     taskType: "normal",
+    //     task: newTask,
+    //   }
 
-      requestsFromChildren.creepTaskAssignRequests.set(creep.name, taskRequest) // FixMe: ここでマージ問題が出てくるのでは
-    })
+    //   requestsFromChildren.creepTaskAssignRequests.set(creep.name, taskRequest) // FixMe: ここでマージ問題が出てくるのでは
+    // })
 
     return requestsFromChildren
   }
