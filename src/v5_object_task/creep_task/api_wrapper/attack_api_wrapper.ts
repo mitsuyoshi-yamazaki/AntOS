@@ -42,6 +42,10 @@ export class AttackApiWrapper implements ApiWrapper<Creep, AttackApiWrapperResul
   public run(creep: Creep): AttackApiWrapperResult {
     const result = creep.attack(this.target)
 
+    if (result === OK) {
+      creep.heal(creep)
+    }
+
     switch (result) {
     case OK:
       return FINISHED_AND_RAN
