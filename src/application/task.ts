@@ -11,6 +11,11 @@ import type { CreepTaskAssignTaskRequest, SpawnTaskRequestType, TowerActionTaskR
 import { emptyTaskRequests, TaskRequests } from "./task_requests"
 import type { TaskState } from "./task_state"
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface Task<T, P> {
+  overrideCreepTask?(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest
+}
+
 export interface ChildTask<P> {
   runTask(roomResource: OwnedRoomResource): TaskRequests<P>
 }
@@ -33,7 +38,6 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
   abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>): TaskRequests<T>
-  abstract overrideCreepTask(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest
 
   public encode(): TaskState {
     return {
@@ -86,8 +90,12 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
         if (storedTaskRequest == null) {
           creepTaskAssignRequests.set(creepName, creepTaskRequest)
         } else {
-          const overridedTaskRequest = this.overrideCreepTask(creepName, creepTaskRequest, storedTaskRequest)
-          creepTaskAssignRequests.set(creepName, overridedTaskRequest)
+          if (this.overrideCreepTask != null) {
+            const overridedTaskRequest = this.overrideCreepTask(creepName, creepTaskRequest, storedTaskRequest)
+            creepTaskAssignRequests.set(creepName, overridedTaskRequest)
+          } else {
+            // do nothing
+          }
         }
       })
       spawnRequests.push(...request.spawnRequests)

@@ -15,7 +15,7 @@ import { AttackApiWrapper } from "object_task/creep_task/api_wrapper/attack_api_
 import { OperatingSystem } from "os/os"
 
 const roomName = "W27S26"
-const targetRoomName = "W27S27"
+const targetRoomName = "W28S26"
 const numberOfCreeps = 1
 
 export interface Season487837AttackInvaderCoreProcessState extends ProcessState {
@@ -28,10 +28,10 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
   private readonly codename: string
   private readonly roles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
   private readonly body: BodyPartConstant[] = [
-    MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
     ATTACK, ATTACK, ATTACK, ATTACK,
     ATTACK, ATTACK, ATTACK, ATTACK,
-    MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
   ]
 
   private constructor(

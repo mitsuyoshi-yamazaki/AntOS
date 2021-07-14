@@ -76,11 +76,25 @@ export class RemoteRoomKeeperTask extends Task {
     // if (this.targetRoomName === "W27S27" && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
     //   this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
     // }
-    const task = this.children.find(task => task instanceof RemoteRoomWorkerTask)
-    if (this.targetRoomName === "W27S27" && task != null) {
-      this.removeChildTask(task)
-    }
+    // const task = this.children.find(task => task instanceof RemoteRoomWorkerTask)
+    // if (this.targetRoomName === "W27S27" && task != null) {
+    //   this.removeChildTask(task)
+    // }
+
+    // this.checkInvasion()
 
     return TaskStatus.InProgress
   }
+
+  // private checkInvasion(): void {
+  //   if (this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+  //     return
+  //   }
+  //   const targetRoom = Game.rooms[this.targetRoomName]
+  //   if (targetRoom == null) {
+  //     return
+  //   }
+  //   const invaderCreeps = targetRoom.find(FIND_HOSTILE_CREEPS)
+
+  // }
 }
