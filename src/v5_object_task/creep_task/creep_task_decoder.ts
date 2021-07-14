@@ -13,7 +13,6 @@ import { MoveToTransferHaulerTask, MoveToTransferHaulerTaskState } from "./combi
 import { EndlessTask, EndlessTaskState } from "./meta_task/endless_task"
 import { CreepTaskState } from "./creep_task_state"
 import { CreepTask } from "./creep_task"
-import { SquadFollowerTask, SquadFollowerTaskState } from "./squad_task/squad_follower_task"
 import { TargetToPositionTask, TargetToPositionTaskState } from "./meta_task/target_to_position_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
@@ -36,9 +35,6 @@ class CreepTaskDecoderMap {
   "MoveToTask" = (state: CreepTaskState) => MoveToTask.decode(state as unknown as MoveToTaskState)
   "EndlessTask" = (state: CreepTaskState) => EndlessTask.decode(state as unknown as EndlessTaskState)
   "TargetToPositionTask" = (state: CreepTaskState) => TargetToPositionTask.decode(state as unknown as TargetToPositionTaskState)
-
-  // ---- Squad task ---- //
-  "SquadFollowerTask" = (state: CreepTaskState) => SquadFollowerTask.decode(state as unknown as SquadFollowerTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 
