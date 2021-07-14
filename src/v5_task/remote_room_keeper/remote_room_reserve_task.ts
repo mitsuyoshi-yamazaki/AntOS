@@ -104,8 +104,7 @@ export class RemoteRoomReserveTask extends Task {
       return []
     }
 
-    const ticksToEnd = targetController.reservation?.ticksToEnd ?? 0
-    if (ticksToEnd < 4400) {
+    if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 4400) {
       return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
     } else {
       return []
