@@ -14,9 +14,9 @@ import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_a
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 
-const targetWallId = "60ee3b19a19fa507e2abab13" as Id<StructureWall>
+// const targetWallId = "60ee3b19a19fa507e2abab13" as Id<StructureWall>
 
-const numberOfAttackers = 0//3
+const numberOfAttackers = 3
 
 export interface Season553093AttackRcl3RoomProcessState extends ProcessState {
   /** parent room name */

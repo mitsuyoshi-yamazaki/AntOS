@@ -16,6 +16,7 @@ import { createCreepBody } from "utility/creep_body"
 import { RoomName } from "utility/room_name"
 import { createWorkerTaskIdentifier } from "./worker_task_definition"
 import { CreepApiError } from "object_task/creep_task/creep_api"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 const creepCountForSource = 6
 
@@ -58,7 +59,11 @@ export class PrimitiveWorkerTask extends Task<void, void> {
     return new PrimitiveWorkerTask(Game.time, roomName, null)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>, creepApiErrors: CreepApiError[]): TaskRequests<void> {
+  public problemOf(creepApiError: CreepApiError): void {
+    PrimitiveLogger.programError(`${this.identifier} unexpectedly found creep API erorr: ${creepApiError.api}, ${creepApiError.error}`)
+  }
+
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length
 

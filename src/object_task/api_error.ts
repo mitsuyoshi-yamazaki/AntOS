@@ -15,7 +15,7 @@ export type ApiErrorCode = ERR_PROGRAMMING_ERROR
  */
 export interface ApiError<Api, ObjectIdentifier> {
   api: Api
-  objectIdentifier: ObjectIdentifier
+  objectIdentifier: ObjectIdentifier  // 位置などを参照する
   error: ApiErrorCode
   detail: string | null
 }

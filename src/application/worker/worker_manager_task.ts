@@ -2,6 +2,8 @@ import { ChildTask, Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
+import { CreepApiError } from "object_task/creep_task/creep_api"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./primitive_worker_task"
@@ -64,6 +66,10 @@ export class WorkerManagerTask extends Task<void, void> {
   public static create(roomName: RoomName): WorkerManagerTask {
     const workerTask = PrimitiveWorkerTask.create(roomName)
     return new WorkerManagerTask(Game.time, roomName, null, workerTask)
+  }
+
+  public problemOf(creepApiError: CreepApiError): void {
+    PrimitiveLogger.programError(`${this.identifier} unexpectedly found creep API erorr: ${creepApiError.api}, ${creepApiError.error}`)
   }
 
   public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {

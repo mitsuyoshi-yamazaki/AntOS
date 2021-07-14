@@ -64,7 +64,11 @@ export class RoomKeeperTask extends Task<void, void> {
     return request1
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>, creepApiErrors: CreepApiError[]): TaskRequests<void> {
+  public problemOf(creepApiError: CreepApiError): void {
+    PrimitiveLogger.programError(`${this.identifier} unexpectedly found creep API erorr: ${creepApiError.api}, ${creepApiError.error}`)
+  }
+
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const unresolvedProblems = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
     return emptyTaskRequests()

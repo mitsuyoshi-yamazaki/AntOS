@@ -119,7 +119,7 @@ function buildOwnedRoomResource(controller: StructureController, creeps: Creep[]
 }
 
 function runCreepTasks(): void {
-  creepApiErrors.clear()
+  const allErrors = new Map<TaskIdentifier, CreepApiError[]>()
 
   allCreeps.forEach(creeps => {
     creeps.forEach(creep => {
@@ -152,16 +152,28 @@ function runCreepTasks(): void {
       }
 
       const creepApiErrorMap = ((): CreepApiError[] => {
-        const stored = creepApiErrors.get(taskIdentifier)
+        const stored = allErrors.get(taskIdentifier)
         if (stored != null) {
           return stored
         }
         const newList: CreepApiError[] = []
-        creepApiErrors.set(taskIdentifier, newList)
+        allErrors.set(taskIdentifier, newList)
         return newList
       })()
 
       creepApiErrorMap.push(...apiErrors)
     })
+  })
+
+  creepApiErrors.clear()
+  allErrors.forEach((errors, taskIdentifier) => {
+    const filteredErrors: CreepApiError[] = []
+    errors.forEach(error => {
+      if (filteredErrors.some(e => e.api === error.api && e.error === error.error && e.detail === error.detail) !== true) {
+        filteredErrors.push(error)
+      }
+    })
+
+    creepApiErrors.set(taskIdentifier, filteredErrors)
   })
 }

@@ -170,7 +170,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   private builderBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    return createCreepBody([], [CARRY, WORK, MOVE], objects.controller.room.energyCapacityAvailable, 5)
+    return createCreepBody([], [CARRY, WORK, MOVE], objects.controller.room.energyCapacityAvailable, 7)
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {

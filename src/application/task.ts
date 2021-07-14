@@ -39,9 +39,8 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
-
-  // FixMe: creepApiErrorsがハンドリングされなかった場合にわかるようにする
-  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>, creepApiErrors: CreepApiError[]): TaskRequests<T>
+  abstract problemOf(creepApiError: CreepApiError): T | null
+  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>): TaskRequests<T>
 
   public encode(): TaskState {
     return {
@@ -71,9 +70,10 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
       }
 
       const taskRequests = this.children.map(task => task.runTask(roomResource))
-      const creepApiErrors = RoomResources.getCreepApiError(this.identifier)
-
-      return this.run(roomResource, this.mergeTaskRequests(taskRequests), creepApiErrors)
+      const requests = this.run(roomResource, this.mergeTaskRequests(taskRequests))
+      const creepProblems: T[] = RoomResources.getCreepApiError(this.identifier).flatMap(error => this.problemOf(error) ?? [])
+      requests.problems.push(...creepProblems)
+      return requests
     }, `${this.constructor.name}.run()`)()
 
     if (result == null) {
