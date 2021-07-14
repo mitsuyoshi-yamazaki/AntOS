@@ -105,7 +105,7 @@ export class RemoteRoomReserveTask extends Task {
     }
 
     const ticksToEnd = targetController.reservation?.ticksToEnd ?? 0
-    if (ticksToEnd < 4000) {
+    if (ticksToEnd < 4400) {
       return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
     } else {
       return []
