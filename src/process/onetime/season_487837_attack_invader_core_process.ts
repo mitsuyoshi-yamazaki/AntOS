@@ -13,12 +13,8 @@ import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_a
 import { RoomName } from "utility/room_name"
 import { processLog } from "process/process_log"
 import { roomLink } from "utility/log"
+import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
 
-const roomNames = new Map<RoomName, RoomName[]>([
-  ["W27S26", ["W28S26", "W27S27"]],
-  ["W24S29", ["W25S29", "W23S29"]],
-  ["W14S28", ["W15S28"]],
-])
 const numberOfAttackers = 1
 
 export interface Season487837AttackInvaderCoreProcessState extends ProcessState {
@@ -62,7 +58,7 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
   public runOnTick(): void {
     const invadedRoomNames: RoomName[] = []
 
-    roomNames.forEach((targetRoomNames, parentRoomName) => {
+    remoteRoomNamesToDefend.forEach((targetRoomNames, parentRoomName) => {
       invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
     })
 

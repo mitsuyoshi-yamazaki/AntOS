@@ -7,6 +7,7 @@ import { TaskState } from "v5_task/task_state"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { World } from "world_info/world_info"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
+import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -73,13 +74,12 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    if (["W8S24", "W9S25"].includes(this.targetRoomName) === true && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
-      this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
+    const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
+    if (remoteRooms != null) {
+      if (remoteRooms.includes(this.targetRoomName) === true && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+        this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
+      }
     }
-    // const task = this.children.find(task => task instanceof RemoteRoomWorkerTask)
-    // if (this.targetRoomName === "W27S27" && task != null) {
-    //   this.removeChildTask(task)
-    // }
 
     // this.checkInvasion()
 
