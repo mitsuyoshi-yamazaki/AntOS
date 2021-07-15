@@ -1,10 +1,10 @@
-import { ChildTask, Task } from "application/task"
+import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import { CreepApiError } from "object_task/creep_task/creep_api"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { CreepProblemMap } from "room_resource/room_resources"
 import { RoomName } from "utility/room_name"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./primitive_worker_task"
 
@@ -29,10 +29,10 @@ export interface WorkerManagerTaskState extends TaskState {
 /**
  * - エネルギー回収、配分、Upgrade、Buildを行う
  */
-export class WorkerManagerTask extends Task<void, void> {
+export class WorkerManagerTask extends Task {
   public readonly taskType = "WorkerManagerTask"
   public readonly identifier: TaskIdentifier
-  public get children(): ChildTask<void>[] {
+  public get children(): Task[] {
     return [
       this.workerTask,
     ]
@@ -68,11 +68,10 @@ export class WorkerManagerTask extends Task<void, void> {
     return new WorkerManagerTask(Game.time, roomName, null, workerTask)
   }
 
-  public problemOf(creepApiError: CreepApiError): void {
-    PrimitiveLogger.programError(`${this.identifier} unexpectedly found creep API erorr: ${creepApiError.api}, ${creepApiError.error}`)
-  }
-
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests {
+    if (creepProblems != null && creepProblems.size > 0) {
+      PrimitiveLogger.programError(`${this.identifier} Unexpectedly found ${creepProblems.size} creep problems`)
+    }
 
     return requestsFromChildren
   }

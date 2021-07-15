@@ -21,9 +21,9 @@ const colorMap = new Map<ColorConstant, StructureConstant>([
 const structurePriority: StructureConstant[] = [
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
+  STRUCTURE_STORAGE,
   STRUCTURE_EXTENSION,
   STRUCTURE_LINK,
-  STRUCTURE_STORAGE,
   STRUCTURE_ROAD,
   STRUCTURE_TERMINAL,
   STRUCTURE_LAB,

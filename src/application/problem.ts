@@ -4,5 +4,5 @@ export type ProblemIdentifier = string
 
 export interface Problem {
   identifier: ProblemIdentifier
-  taskIdentifier: TaskIdentifier
+  // taskIdentifier: TaskIdentifier
 }

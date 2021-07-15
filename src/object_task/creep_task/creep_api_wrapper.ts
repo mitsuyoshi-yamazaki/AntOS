@@ -1,17 +1,19 @@
+import type { Problem } from "application/problem"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import type { ApiErrorCode } from "object_task/api_error"
 import { ApiWrapper, ApiWrapperProgress, ApiWrapperState } from "object_task/api_wrapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import type { CreepName } from "prototype/creep"
+import { V6Creep } from "prototype/creep"
 import { HarvestSourceApiWrapper, HarvestSourceApiWrapperState } from "./api_wrapper/harvest_source_api_wrapper"
 import { MoveToApiWrapper, MoveToApiWrapperState } from "./api_wrapper/move_to_api_wrapper"
+import { RepairApiWrapper, RepairApiWrapperState } from "./api_wrapper/repair_api_wrapper"
+import { TransferApiWrapper, TransferApiWrapperState } from "./api_wrapper/transfer_api_wrapper"
 
-export type CreepApiWrapperProgress = ApiWrapperProgress<CreepApiWrapperType, CreepName>
+export type CreepApiWrapperProgress = ApiWrapperProgress
 export const CreepApiWrapperProgress = {
   InProgress: ApiWrapperProgress.InProgress,
   Finished: ApiWrapperProgress.Finished,
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  Failed: (api: CreepApiWrapperType, creepName: CreepName, errorCode: ApiErrorCode) => ApiWrapperProgress.Failed(api, creepName, errorCode),
+  Failed: (problem: Problem) => ApiWrapperProgress.Failed(problem),
 }
 
 export interface CreepApiWrapperState extends ApiWrapperState {
@@ -19,11 +21,11 @@ export interface CreepApiWrapperState extends ApiWrapperState {
   t: CreepApiWrapperType
 }
 
-export interface CreepApiWrapper extends ApiWrapper<Creep, CreepApiWrapperType, CreepName> {
+export interface CreepApiWrapper extends ApiWrapper<Creep> {
   shortDescription: string
 
   encode(): CreepApiWrapperState
-  run(creep: Creep): CreepApiWrapperProgress
+  run(creep: V6Creep): CreepApiWrapperProgress
 }
 
 export type CreepApiWrapperType = keyof CreepApiWrapperDecoderMap
@@ -31,6 +33,8 @@ class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "HarvestSourceApiWrapper" = (state: CreepApiWrapperState) => HarvestSourceApiWrapper.decode(state as HarvestSourceApiWrapperState)
   "MoveToApiWrapper" = (state: CreepApiWrapperState) => MoveToApiWrapper.decode(state as MoveToApiWrapperState)
+  "TransferApiWrapper" = (state: CreepApiWrapperState) => TransferApiWrapper.decode(state as TransferApiWrapperState)
+  "RepairApiWrapper" = (state: CreepApiWrapperState) => RepairApiWrapper.decode(state as RepairApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

@@ -1,4 +1,5 @@
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
+import { V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
 import { CreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
@@ -59,7 +60,7 @@ export class MoveToTargetTask implements CreepTask {
     return new MoveToTargetTask(Game.time, targetingApiWrapper, moveToApiWrapper)
   }
 
-  public run(creep: Creep): CreepTaskProgress {
+  public run(creep: V6Creep): CreepTaskProgress {
     const result = this.targetingApiWrapper.run(creep)
     switch (result.apiWrapperProgressType) {
     case "in progress":
@@ -72,18 +73,18 @@ export class MoveToTargetTask implements CreepTask {
       return CreepTaskProgress.Finished([])
 
     case "failed":
-      return CreepTaskProgress.Finished([result.error])
+      return CreepTaskProgress.Finished([result.problem])
     }
   }
 
-  private move(creep: Creep): CreepTaskProgress {
+  private move(creep: V6Creep): CreepTaskProgress {
     const result = this.moveToApiWrapper.run(creep)
     switch (result.apiWrapperProgressType) {
     case "in progress":
     case "finished":
       return CreepTaskProgress.InProgress([])
     case "failed":
-      return CreepTaskProgress.InProgress([result.error])
+      return CreepTaskProgress.InProgress([result.problem])
     }
   }
 }

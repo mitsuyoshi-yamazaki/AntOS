@@ -5,6 +5,8 @@ export const OBSTACLE_COST = 255
 // ---- Creep Action ---- //
 export const UPGRADE_CONTROLLER_RANGE = 3
 export const TRANSFER_RESOURCE_RANGE = 1
+export const REPAIR_RANGE = 3
+export const HARVEST_RANGE = 1
 
 // ---- Spawn ---- //
 export function estimatedRenewDuration(bodySize: number, ticksToLive: number): number {

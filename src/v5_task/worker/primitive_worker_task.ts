@@ -18,7 +18,7 @@ import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/h
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 
-const creepCountForSource = 6
+const creepCountForSource = 4
 
 export interface PrimitiveWorkerTaskState extends TaskState {
   /** room name */

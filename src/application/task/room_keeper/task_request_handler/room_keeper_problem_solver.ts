@@ -6,7 +6,7 @@ export class RoomKeeperProblemSolver {
   /**
    * @returns Unresolved problems
    */
-  public execute(problems: void[], roomResource: OwnedRoomResource): void[] {
+  public execute(problems: Problem[], roomResource: OwnedRoomResource): Problem[] {
     return []
   }
 }

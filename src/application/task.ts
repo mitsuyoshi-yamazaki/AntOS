@@ -1,11 +1,11 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import type { CreepApiError } from "object_task/creep_task/creep_api"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Stateful } from "os/infrastructure/state"
 import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { RoomResources } from "room_resource/room_resources"
+import { CreepProblemMap, RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "utility/room_name"
+import { Problem } from "./problem"
 import type { TaskType } from "./task_decoder"
 import type { TaskIdentifier } from "./task_identifier"
 import type { TaskLogRequest } from "./task_logger"
@@ -13,16 +13,11 @@ import type { CreepTaskAssignTaskRequest, SpawnTaskRequestType, TowerActionTaskR
 import { emptyTaskRequests, TaskRequests } from "./task_requests"
 import type { TaskState } from "./task_state"
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface Task<T, P> {
+export interface Task {
   overrideCreepTask?(creepName: CreepName, request1: CreepTaskAssignTaskRequest, request2: CreepTaskAssignTaskRequest): CreepTaskAssignTaskRequest
 }
 
-export interface ChildTask<P> {
-  runTask(roomResource: OwnedRoomResource): TaskRequests<P>
-}
-
-export abstract class Task<T, P> implements Stateful, ChildTask<T> {
+export abstract class Task implements Stateful {
   protected constructor(
     public readonly startTime: number,
     public readonly roomName: RoomName,
@@ -35,12 +30,11 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
 
   // ---- API ---- //
   abstract readonly taskType: TaskType
-  abstract readonly children: ChildTask<P>[]
+  abstract readonly children: Task[]
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
-  abstract problemOf(creepApiError: CreepApiError): T | null
-  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<P>): TaskRequests<T>
+  abstract run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests
 
   public encode(): TaskState {
     return {
@@ -63,16 +57,17 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
   }
 
   /** TaskRunner以外から直接呼び出さないこと */
-  public runTask(roomResource: OwnedRoomResource): TaskRequests<T> {
-    const result = ErrorMapper.wrapLoop((): TaskRequests<T> => {
+  public runTask(roomResource: OwnedRoomResource): TaskRequests {
+    const result = ErrorMapper.wrapLoop((): TaskRequests => {
       if (this.isPaused() === true) {
         return emptyTaskRequests()
       }
 
       const taskRequests = this.children.map(task => task.runTask(roomResource))
-      const requests = this.run(roomResource, this.mergeTaskRequests(taskRequests))
-      const creepProblems: T[] = RoomResources.getCreepApiError(this.identifier).flatMap(error => this.problemOf(error) ?? [])
-      requests.problems.push(...creepProblems)
+      const requestsFromChildren = this.mergeTaskRequests(taskRequests)
+      const creepProblems = RoomResources.getCreepProblems(this.identifier)
+
+      const requests = this.run(roomResource, requestsFromChildren, creepProblems)
       return requests
     }, `${this.constructor.name}.run()`)()
 
@@ -83,11 +78,11 @@ export abstract class Task<T, P> implements Stateful, ChildTask<T> {
     return result
   }
 
-  private mergeTaskRequests(taskRequests: TaskRequests<P>[]): TaskRequests<P> {
+  private mergeTaskRequests(taskRequests: TaskRequests[]): TaskRequests {
     const creepTaskAssignRequests = new Map<CreepName, CreepTaskAssignTaskRequest>()
     const spawnRequests: SpawnTaskRequestType[] = []
     const towerRequests: TowerActionTaskRequest[] = []
-    const problems: P[] = []
+    const problems: Problem[] = []
     const logs: TaskLogRequest[] = []
     taskRequests.forEach(request => {
       request.creepTaskAssignRequests.forEach((creepTaskRequest, creepName) => {

@@ -1,22 +1,22 @@
+import { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
 import type { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
-import type { ApiError } from "./api_error"
 
-export interface TaskProgress<Api, ObjectIdentifier> {
+export interface TaskProgress {
   progress: "finished" | "in progress"
-  apiErrors: ApiError<Api, ObjectIdentifier>[]
+  problems: Problem[]
 }
 export const TaskProgress = {
-  InProgress<Api, ObjectIdentifier>(apiErrors: ApiError<Api, ObjectIdentifier>[]): TaskProgress<Api, ObjectIdentifier> {
+  InProgress(problems: Problem[]): TaskProgress {
     return {
       progress: "in progress",
-      apiErrors,
+      problems,
     }
   },
-  Finished<Api, ObjectIdentifier>(apiErrors: ApiError<Api, ObjectIdentifier>[]): TaskProgress<Api, ObjectIdentifier> {
+  Finished(problems: Problem[]): TaskProgress {
     return {
       progress: "finished",
-      apiErrors,
+      problems,
     }
   },
 }
@@ -29,10 +29,10 @@ export interface ObjectTaskState extends State {
   s: number
 }
 
-export interface ObjectTask<ObjectType, Api, ObjectIdentifier> extends Stateful {
+export interface ObjectTask<ObjectType> extends Stateful {
   targetId?: TaskTargetTypeId
   startTime: number
 
   encode(): ObjectTaskState
-  run(obj: ObjectType): TaskProgress<Api, ObjectIdentifier>
+  run(obj: ObjectType): TaskProgress
 }

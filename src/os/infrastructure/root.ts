@@ -3,7 +3,7 @@ import { decodeCreepTask as v5DecodeCreepTask } from "v5_object_task/creep_task/
 import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { ProcessLauncher } from "os/os_process_launcher"
 import type { Process } from "process/process"
-import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
+import { isV5CreepMemory, isV6Creep } from "prototype/creep"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
@@ -65,7 +65,9 @@ export class RootProcess {
   private restoreTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      creep.task = decodeCreepTask(creep)
+      if (isV6Creep(creep)) {
+        creep.task = decodeCreepTask(creep)
+      }
       creep.v5task = v5DecodeCreepTask(creep)
     }
   }
@@ -73,7 +75,7 @@ export class RootProcess {
   private storeTasks(): void {
     for (const creepName in Game.creeps) {
       const creep = Game.creeps[creepName]
-      if (isV6CreepMemory(creep.memory)) {
+      if (isV6Creep(creep)) {
         creep.memory.t = creep.task?.encode() ?? null
       } else if (isV5CreepMemory(creep.memory)) {
         creep.memory.t = creep.v5task?.encode() ?? null

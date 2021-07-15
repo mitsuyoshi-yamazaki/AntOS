@@ -94,7 +94,7 @@ export class GeneralWorkerTask extends Task {
     })()
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, roles, filterTaskIdentifier, minimumCreepCount)
 
-    const noCreeps = problemFinder.creepCount <= 2
+    const noCreeps = problemFinder.creepCount < 2
     const body = noCreeps ? [CARRY, WORK, MOVE] : this.workerBody(objects)
     const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
 

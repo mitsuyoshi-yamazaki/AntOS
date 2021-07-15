@@ -1,23 +1,9 @@
-import type { ERR_PROGRAMMING_ERROR } from "prototype/creep"
+// export type ApiErrorCode = ScreepsReturnCode
 
-export type ApiErrorCode = ERR_PROGRAMMING_ERROR
-  | ERR_NO_BODYPART
-  | ERR_NOT_OWNER
-  | ERR_INVALID_TARGET
-  | ERR_NO_PATH
-  | ERR_NOT_FOUND
-  | ERR_TIRED
+// export type ApiTargetType = "creep" | "spawn"
 
-/**
- * - 解決に必要な情報
- *   - API種別
- *   - Object識別子
- *   - エラー内容(ERR_XXXX)
- * - 期待した出力が得られなかった場合もここで表現する
- *   - "期待した出力"は計算してStateに保管する
- */
-export interface ApiError<Api, ObjectIdentifier> {
-  api: Api
-  objectIdentifier: ObjectIdentifier  // 位置などを参照する
-  error: ApiErrorCode
-}
+// export interface ApiError<ApiWrapperType, T = ApiTargetType> {
+//   targetType: T
+//   apiType: ApiWrapperType
+//   rawError: ApiErrorCode
+// }

@@ -1,10 +1,10 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomKeeperTask, RoomKeeperTaskState } from "./room_keeper/room_keeper_task"
+import { RoomKeeperTask, RoomKeeperTaskState } from "./task/room_keeper/room_keeper_task"
 import { Task } from "./task"
 import type { TaskState } from "./task_state"
-import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./worker/primitive_worker_task"
-import { WorkerManagerTask, WorkerManagerTaskState } from "./worker/worker_manager_task"
+import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./task/worker/primitive_worker_task"
+import { WorkerManagerTask, WorkerManagerTaskState } from "./task/worker/worker_manager_task"
 
 type AnyTask = RoomKeeperTask
   | PrimitiveWorkerTask

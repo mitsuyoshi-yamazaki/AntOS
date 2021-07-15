@@ -4,7 +4,7 @@ import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "./process_state"
-import { RoomKeeperTask, RoomKeeperTaskState } from "application/room_keeper/room_keeper_task"
+import { RoomKeeperTask, RoomKeeperTaskState } from "application/task/room_keeper/room_keeper_task"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { TaskRequests } from "application/task_requests"
@@ -59,7 +59,7 @@ export class V6RoomKeeperProcess implements Process, Procedural {
     this.handleUnresolvedRequests(unresolvedRequests)
   }
 
-  private handleUnresolvedRequests(taskRequests: TaskRequests<void>): void {
+  private handleUnresolvedRequests(taskRequests: TaskRequests): void {
     if (taskRequests.creepTaskAssignRequests.size > 0) {
       PrimitiveLogger.programError(`Unexpectedly found unresolved creep task assign request ${this.task.identifier} at ${roomLink(this.roomName)}`)
     }
@@ -71,9 +71,9 @@ export class V6RoomKeeperProcess implements Process, Procedural {
     }
 
     this.log(taskRequests.logs)
-    // taskRequests.problems.forEach(problem => {
-    //   PrimitiveLogger.fatal(`Unresolved problem ${problem.identifier}, ${this.task.identifier} at ${roomLink(this.roomName)}`)
-    // })
+    taskRequests.problems.forEach(problem => {
+      PrimitiveLogger.fatal(`Unresolved problem ${problem.identifier}, ${this.task.identifier} at ${roomLink(this.roomName)}`)
+    })
   }
 
   private log(logs: TaskLogRequest[]): void {

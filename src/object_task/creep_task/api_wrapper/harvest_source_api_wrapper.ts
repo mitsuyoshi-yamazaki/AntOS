@@ -1,4 +1,9 @@
+import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
+import { HarvestingRoomLostProblem } from "application/problem/creep/harvesting_room_lost_problem"
+import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
+import { V6Creep } from "prototype/creep"
+import { HARVEST_RANGE } from "utility/constants"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
 const apiWrapperType = "HarvestSourceApiWrapper"
@@ -13,7 +18,7 @@ export interface HarvestSourceApiWrapperState extends CreepApiWrapperState {
 
 export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
   public readonly shortDescription = "h-source"
-  public readonly range = 1
+  public readonly range = HARVEST_RANGE
 
   private constructor(
     public readonly target: Source,
@@ -39,7 +44,7 @@ export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWra
     return new HarvestSourceApiWrapper(target)
   }
 
-  public run(creep: Creep): CreepApiWrapperProgress {
+  public run(creep: V6Creep): CreepApiWrapperProgress {
     const result = creep.harvest(this.target)
 
     switch (result) {
@@ -62,12 +67,16 @@ export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWra
       return CreepApiWrapperProgress.InProgress(false)
 
     case ERR_NO_BODYPART:
-    case ERR_NOT_OWNER: // roomをclaim/reserveしていない場合
+      return CreepApiWrapperProgress.Failed(new CreepDamagedProblem(creep.memory.p, creep.room.name))
+
+    case ERR_NOT_OWNER: // roomが他プレイヤーによりclaim/reserveされている場合
+      return CreepApiWrapperProgress.Failed(new HarvestingRoomLostProblem(this.target))
+
     case ERR_INVALID_TARGET:
     case ERR_NOT_FOUND:
     case ERR_TIRED:
     default:
-      return CreepApiWrapperProgress.Failed(apiWrapperType, creep.name, result)
+      return CreepApiWrapperProgress.Failed(new UnexpectedCreepProblem(creep.memory.p, creep.room.name, apiWrapperType, result))
     }
   }
 }

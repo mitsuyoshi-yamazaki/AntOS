@@ -1,3 +1,7 @@
+import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
+import { PathNotFoundProblem } from "application/problem/creep/path_not_found_problem"
+import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
@@ -50,7 +54,7 @@ export class MoveToApiWrapper implements CreepApiWrapper {
     return new MoveToApiWrapper(position, options)
   }
 
-  public run(creep: Creep): CreepApiWrapperProgress {
+  public run(creep: V6Creep): CreepApiWrapperProgress {
     const result = creep.moveTo(this.position, this.options)
     if (creep.pos.isEqualTo(this.position) === true) {
       return CreepApiWrapperProgress.Finished(false)
@@ -63,12 +67,16 @@ export class MoveToApiWrapper implements CreepApiWrapper {
       return CreepApiWrapperProgress.InProgress(false)
 
     case ERR_NO_PATH:
+      return CreepApiWrapperProgress.Failed(new PathNotFoundProblem(creep.pos, this.position))
+
+    case ERR_NO_BODYPART:
+      return CreepApiWrapperProgress.Failed(new CreepDamagedProblem(creep.memory.p, creep.room.name))
+
     case ERR_NOT_OWNER:
     case ERR_NOT_FOUND:
     case ERR_INVALID_TARGET:
-    case ERR_NO_BODYPART:
     default:
-      return CreepApiWrapperProgress.Failed(apiWrapperType, creep.name, result)
+      return CreepApiWrapperProgress.Failed(new UnexpectedCreepProblem(creep.memory.p, creep.room.name, apiWrapperType, result))
     }
   }
 }

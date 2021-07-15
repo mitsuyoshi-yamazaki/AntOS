@@ -8,7 +8,7 @@ import { BootstrapRoomManagerProcess } from "process/bootstrap_room_manager_proc
 import type { Process } from "process/process"
 import type { ProcessLauncher } from "os/os_process_launcher"
 import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
-import { RoomKeeperTask } from "application/room_keeper/room_keeper_task"
+import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {

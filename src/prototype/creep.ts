@@ -38,6 +38,27 @@ export const IN_PROGRESS: IN_PROGRESS = 969
 export const ERR_DAMAGED: ERR_DAMAGED = 970
 export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 971
 
+export interface V6Creep extends Creep {
+  task: CreepTask | null
+
+  /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
+  _task: CreepTask | null
+
+  memory: V6CreepMemory
+}
+
+// ---- Prototype ---- //
+declare global {
+  interface Creep {
+    /** @deprecated */
+    v5task: V5CreepTask | null
+
+    /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
+    _v5task: V5CreepTask | null
+
+    roles: CreepRole[]
+  }
+}
 
 // ---- Memory ---- //
 export type CreepMemory = V6CreepMemory | V5CreepMemory | V4CreepMemory
@@ -57,6 +78,11 @@ export interface V6CreepMemory {
 
   /** task runner id */
   i: TaskIdentifier
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isV6Creep(creep: Creep): creep is V6Creep {
+  return isV6CreepMemory(creep.memory)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
@@ -133,25 +159,6 @@ export interface V4CreepMemory {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
   return arg.v == null
-}
-
-
-// ---- Prototype ---- //
-declare global {
-  interface Creep {
-    task: CreepTask | null
-
-    /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-    _task: CreepTask | null
-
-    /** @deprecated */
-    v5task: V5CreepTask | null
-
-    /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-    _v5task: V5CreepTask | null
-
-    roles: CreepRole[]
-  }
 }
 
 // 毎tick呼び出すこと

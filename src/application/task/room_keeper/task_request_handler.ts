@@ -23,16 +23,15 @@ export class TaskRequestHandler {
   /**
    * @returns Unresolved requests
    */
-  public execute(taskRequests: TaskRequests<void>, roomResource: OwnedRoomResource): TaskRequestHandlerResult {
+  public execute(taskRequests: TaskRequests, roomResource: OwnedRoomResource): TaskRequestHandlerResult {
     const logs: TaskLogRequest[] = []
 
     this.creepTaskAssignRequestHandler.execute(taskRequests.creepTaskAssignRequests, roomResource)
     this.spawnRequestHandler.execute(taskRequests.spawnRequests, roomResource)
     this.towerRequestHandler.execute(taskRequests.towerRequests, roomResource)
-    this.problemSolver.execute(taskRequests.problems, roomResource)
 
     return {
-      unresolvedProblems: [],  // TODO:
+      unresolvedProblems: this.problemSolver.execute(taskRequests.problems, roomResource),
       logs,
     }
   }

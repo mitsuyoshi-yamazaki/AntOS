@@ -166,9 +166,13 @@ export class LaunchCommand implements ConsoleCommand {
   }
 
   private launchSeason570208DismantleRcl2RoomProcess(): LaunchCommandResult {
-    const parentRoomName = "W27S26"
-    const targetRoomName = "W25S22"
-    const waypoints: RoomName[] = ["W26S26", "W26S25", "W24S25", "W24S22"]
+    // const parentRoomName = "W27S26"
+    // const targetRoomName = "W25S22"
+    // const waypoints: RoomName[] = ["W26S26", "W26S25", "W24S25", "W24S22"]
+
+    const parentRoomName = "W9S24"
+    const targetRoomName = "W3S27"
+    const waypoints: RoomName[] = ["W3S25"]
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season570208DismantleRcl2RoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)

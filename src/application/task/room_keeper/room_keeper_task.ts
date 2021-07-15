@@ -1,16 +1,15 @@
-import { Problem } from "application/problem"
-import { ChildTask, Task } from "application/task"
+import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { emptyTaskRequests, TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import { WorkerManagerTask, WorkerManagerTaskState } from "application/worker/worker_manager_task"
-import { CreepApiError } from "object_task/creep_task/creep_api"
+import { WorkerManagerTask, WorkerManagerTaskState } from "application/task/worker/worker_manager_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler } from "./task_request_handler"
+import { CreepProblemMap } from "room_resource/room_resources"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** child task states */
@@ -20,11 +19,13 @@ export interface RoomKeeperTaskState extends TaskState {
   }
 }
 
-export class RoomKeeperTask extends Task<void, void> {
+export class RoomKeeperTask extends Task {
   public readonly taskType = "RoomKeeperTask"
   public readonly identifier: TaskIdentifier
-  public get children(): ChildTask<void>[] {
-    return []
+  public get children(): Task[] {
+    return [
+      this.workerManagerTask
+    ]
   }
 
   private readonly taskRequestHandler = new TaskRequestHandler()
@@ -64,11 +65,11 @@ export class RoomKeeperTask extends Task<void, void> {
     return request1
   }
 
-  public problemOf(creepApiError: CreepApiError): void {
-    PrimitiveLogger.programError(`${this.identifier} unexpectedly found creep API erorr: ${creepApiError.api}, ${creepApiError.error}`)
-  }
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests {
+    if (creepProblems != null && creepProblems.size > 0) {
+      PrimitiveLogger.programError(`${this.identifier} Unexpectedly found ${creepProblems.size} creep problems`)
+    }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests<void>): TaskRequests<void> {
     const unresolvedProblems = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
     return emptyTaskRequests()

@@ -1,5 +1,5 @@
+import type { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
-import type { ApiError, ApiErrorCode } from "./api_error"
 
 interface ApiWrapperProgressInProgress {
   apiWrapperProgressType: "in progress"
@@ -9,12 +9,12 @@ interface ApiWrapperProgressFinished {
   apiWrapperProgressType: "finished"
   executed: boolean
 }
-interface ApiWrapperProgressFailed<Api, ObjectIdentifier> {
+interface ApiWrapperProgressFailed {
   apiWrapperProgressType: "failed"
-  error: ApiError<Api, ObjectIdentifier>
+  problem: Problem
 }
 
-export type ApiWrapperProgress<Api, ObjectIdentifier> = ApiWrapperProgressInProgress | ApiWrapperProgressFinished | ApiWrapperProgressFailed<Api, ObjectIdentifier>
+export type ApiWrapperProgress = ApiWrapperProgressInProgress | ApiWrapperProgressFinished | ApiWrapperProgressFailed
 export const ApiWrapperProgress = {
   InProgress(notInRange: boolean): ApiWrapperProgressInProgress {
     return {
@@ -28,14 +28,10 @@ export const ApiWrapperProgress = {
       executed,
     }
   },
-  Failed<Api, ObjectIdentifier>(api: Api, objectIdentifier: ObjectIdentifier, errorCode: ApiErrorCode): ApiWrapperProgressFailed<Api, ObjectIdentifier> {
+  Failed(problem: Problem): ApiWrapperProgressFailed {
     return {
       apiWrapperProgressType: "failed",
-      error: {
-        api,
-        objectIdentifier,
-        error: errorCode,
-      },
+      problem,
     }
   }
 }
@@ -43,7 +39,7 @@ export const ApiWrapperProgress = {
 export interface ApiWrapperState extends State {
 }
 
-export interface ApiWrapper<ObjectType, Api, ObjectIdentifier> extends Stateful {
+export interface ApiWrapper<ObjectType> extends Stateful {
   encode(): ApiWrapperState
-  run(obj: ObjectType): ApiWrapperProgress<Api, ObjectIdentifier>
+  run(obj: ObjectType): ApiWrapperProgress
 }

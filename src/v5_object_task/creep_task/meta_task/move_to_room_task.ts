@@ -121,7 +121,7 @@ export class MoveToRoomTask implements CreepTask {
           return
         }
         positionsToAvoid.forEach(position => {
-          creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+          // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
           costMatrix.set(position.x, position.y, OBSTACLE_COST)
         })
         return costMatrix
