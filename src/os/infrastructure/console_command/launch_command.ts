@@ -8,6 +8,7 @@ import { TaskProcess } from "process/task_process"
 import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess } from "process/onetime/season_553093_attack_rcl3_room_process"
 import { RoomName } from "utility/room_name"
+import { Season570208DismantleRcl2RoomProcess } from "process/onetime/season_570208_dismantle_rcl2_room_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -37,6 +38,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season553093AttackRcl3RoomProcess":
       result = this.launchSeason553093AttackRcl3RoomProcess()
+      break
+    case "Season570208DismantleRcl2RoomProcess":
+      result = this.launchSeason570208DismantleRcl2RoomProcess()
       break
     default:
       break
@@ -159,5 +163,17 @@ export class LaunchCommand implements ConsoleCommand {
       return Season553093AttackRcl3RoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
+  }
+
+  private launchSeason570208DismantleRcl2RoomProcess(): LaunchCommandResult {
+    const parentRoomName = "W27S26"
+    const targetRoomName = "W25S22"
+    const waypoints: RoomName[] = ["W26S26", "W26S25", "W24S25", "W24S22"]
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season570208DismantleRcl2RoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+
   }
 }

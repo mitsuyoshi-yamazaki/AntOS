@@ -7,6 +7,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
+import { OBSTACLE_COST } from "utility/constants"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */
@@ -87,9 +88,42 @@ export class MoveToRoomTask implements CreepTask {
       return nextWaypoint
     })()
 
+    const options: MoveToOpts = { ...defaultMoveToOptions }
+    if (roomTypeOf(creep.room.name) === "source_keeper") {
+      creep.say("SK room")
+      // 保存されたパスがあれば計算はスキップする
+
+      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeTerrainWalls: false,
+        excludeStructures: false,
+        excludeWalkableStructures: false,
+      }
+
+      options.maxOps = 2000
+      options.reusePath = 20
+      const sourceKeepers = creep.room.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => creep.owner.username === SourceKeeper.username)
+      const positionsToAvoid = sourceKeepers
+        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
+      console.log(`SK Room creep pos: ${sourceKeepers.map(creep => creep.pos)}, ${positionsToAvoid.length} positions`)
+
+      options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
+        if (roomName !== creep.room.name) {
+          return
+        }
+        console.log("calculate cost matrix")
+        positionsToAvoid.forEach(position => {
+          creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+          costMatrix.set(position.x, position.y, OBSTACLE_COST)
+        })
+        return costMatrix
+      }
+    }
+
     if (this.exitPosition != null) {
       if (this.exitPosition.roomName === creep.room.name) {
-        creep.moveTo(this.exitPosition, defaultMoveToOptions)
+        creep.moveTo(this.exitPosition, options)
         return TaskProgressType.InProgress
       }
       this.exitPosition = null
@@ -114,21 +148,6 @@ export class MoveToRoomTask implements CreepTask {
         creep.moveTo(25, 25, defaultMoveToOptions)
       }
       return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
-    }
-
-    const options: MoveToOpts = { ...defaultMoveToOptions }
-    if (roomTypeOf(creep.room.name) === "source_keeper") {
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-
-      options.reusePath = 20
-      options.avoid = creep.room.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-        .flatMap(creep => creep.pos.positionsInRange(3, roomPositionFilteringOptions))
     }
 
     this.exitPosition = exitPosition

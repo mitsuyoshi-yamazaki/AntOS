@@ -1,5 +1,6 @@
 // ---- Pathfinding ---- //
 export const SWAMP_COST = 5
+export const OBSTACLE_COST = 255
 
 // ---- Creep Action ---- //
 export const UPGRADE_CONTROLLER_RANGE = 3

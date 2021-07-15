@@ -162,7 +162,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     const initialTask = MoveToRoomTask.create(dummyDestination, this.waypoints)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.Low,
+      priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Scout],
