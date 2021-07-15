@@ -14,3 +14,12 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
   const increases = Math.floor(600 / bodySize)
   return Math.floor(remainingTime / increases)
 }
+
+export const GameConstants = {
+  room: {
+    edgePosition: {
+      min: 0,
+      max: 49,
+    },
+  },
+}

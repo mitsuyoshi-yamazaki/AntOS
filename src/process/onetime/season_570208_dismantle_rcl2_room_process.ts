@@ -13,10 +13,10 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
-import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 
-const numberOfDismantlers = 0
+const numberOfDismantlers = 1
 
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -207,7 +207,25 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
-    const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES) //.filter(site => site.id !== "60ef8df4a19fa56a05ac18a4")
+    const constructionSitePriority = (structureType: StructureConstant): number => {
+      const priority: StructureConstant[] = [
+        STRUCTURE_TOWER,
+        STRUCTURE_SPAWN,
+        STRUCTURE_STORAGE,
+        STRUCTURE_TERMINAL,
+        STRUCTURE_LAB,
+        STRUCTURE_EXTENSION,
+      ]
+      const index = priority.indexOf(structureType)
+      if (index < 0) {
+        return 100
+      }
+      return index
+    }
+
+    const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES) //.sort((lhs, rhs))
+
+
     const spawnSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
     if (spawnSite != null) {
       return spawnSite

@@ -7,7 +7,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
-import { OBSTACLE_COST } from "utility/constants"
+import { GameConstants, OBSTACLE_COST } from "utility/constants"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */
@@ -149,7 +149,35 @@ export class MoveToRoomTask implements CreepTask {
       return TaskProgressType.InProgress  // 代替できる行動がなく、状況が変わるかもしれないので
     }
 
-    const exitPosition = creep.pos.findClosestByPath(exit)
+    const exitFlag = creep.room.find(FIND_FLAGS).find(flag => {
+      switch (exit) {
+      case FIND_EXIT_TOP:
+        if (flag.pos.y === GameConstants.room.edgePosition.min) {
+          return true
+        }
+        break
+      case FIND_EXIT_BOTTOM:
+        if (flag.pos.y === GameConstants.room.edgePosition.max) {
+          return true
+        }
+        break
+      case FIND_EXIT_LEFT:
+        if (flag.pos.x === GameConstants.room.edgePosition.min) {
+          return true
+        }
+        break
+      case FIND_EXIT_RIGHT:
+        if (flag.pos.x === GameConstants.room.edgePosition.max) {
+          return true
+        }
+        break
+      default:
+        break
+      }
+      return false
+    })
+
+    const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit)
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
