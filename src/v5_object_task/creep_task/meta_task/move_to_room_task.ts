@@ -88,8 +88,18 @@ export class MoveToRoomTask implements CreepTask {
       return nextWaypoint
     })()
 
-    const options: MoveToOpts = { ...defaultMoveToOptions }
-    if (roomTypeOf(creep.room.name) === "source_keeper") {
+    const reusePath = 20
+    const noPathFindingOptions: MoveToOpts = {
+      noPathFinding: true,
+      reusePath,
+    }
+
+    const moveToOptions = ((): MoveToOpts => {
+      const options: MoveToOpts = { ...defaultMoveToOptions }
+      options.reusePath = reusePath
+      if (roomTypeOf(creep.room.name) !== "source_keeper") {
+        return options
+      }
       creep.say("SK room")
       // 保存されたパスがあれば計算はスキップする
 
@@ -101,29 +111,29 @@ export class MoveToRoomTask implements CreepTask {
       }
 
       options.maxOps = 2000
-      options.reusePath = 20
       const sourceKeepers = creep.room.find(FIND_HOSTILE_CREEPS)
         .filter(creep => creep.owner.username === SourceKeeper.username)
       const positionsToAvoid = sourceKeepers
-        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
-      console.log(`SK Room creep pos: ${sourceKeepers.map(creep => creep.pos)}, ${positionsToAvoid.length} positions`)
+        .flatMap(creep => creep.pos.positionsInRange(4, roomPositionFilteringOptions))
 
       options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
         if (roomName !== creep.room.name) {
           return
         }
-        console.log("calculate cost matrix")
         positionsToAvoid.forEach(position => {
           creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
           costMatrix.set(position.x, position.y, OBSTACLE_COST)
         })
         return costMatrix
       }
-    }
+      return options
+    })
 
     if (this.exitPosition != null) {
       if (this.exitPosition.roomName === creep.room.name) {
-        creep.moveTo(this.exitPosition, options)
+        if (creep.moveTo(this.exitPosition, noPathFindingOptions) === ERR_NOT_FOUND) {
+          creep.moveTo(this.exitPosition, moveToOptions())
+        }
         return TaskProgressType.InProgress
       }
       this.exitPosition = null
@@ -151,7 +161,10 @@ export class MoveToRoomTask implements CreepTask {
     }
 
     this.exitPosition = exitPosition
-    creep.moveTo(exitPosition, options) // TODO: エラー処理
+    if (creep.moveTo(exitPosition, noPathFindingOptions) === ERR_NOT_FOUND) {
+      creep.moveTo(exitPosition, moveToOptions())
+    }
+
     return TaskProgressType.InProgress
   }
 }
