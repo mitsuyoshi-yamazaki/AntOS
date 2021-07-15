@@ -1,11 +1,12 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions } from "prototype/creep"
-import { RoomName } from "utility/room_name"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { RoomName, roomTypeOf } from "utility/room_name"
+import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
+import { SourceKeeper } from "game/source_keeper"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */
@@ -115,8 +116,23 @@ export class MoveToRoomTask implements CreepTask {
       return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
     }
 
+    const options: MoveToOpts = { ...defaultMoveToOptions }
+    if (roomTypeOf(creep.room.name) === "source_keeper") {
+      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeTerrainWalls: false,
+        excludeStructures: false,
+        excludeWalkableStructures: false,
+      }
+
+      options.reusePath = 20
+      options.avoid = creep.room.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => creep.owner.username === SourceKeeper.username)
+        .flatMap(creep => creep.pos.positionsInRange(3, roomPositionFilteringOptions))
+    }
+
     this.exitPosition = exitPosition
-    creep.moveTo(exitPosition, defaultMoveToOptions) // TODO: エラー処理
+    creep.moveTo(exitPosition, options) // TODO: エラー処理
     return TaskProgressType.InProgress
   }
 }
