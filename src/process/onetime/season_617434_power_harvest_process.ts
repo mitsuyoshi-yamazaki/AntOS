@@ -49,6 +49,8 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W9S24 target_room_name=W10S24")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W25S30")
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W26S30 waypoints=W24S30")
+// 9589 power (2688 in terminal)
 export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string
@@ -61,6 +63,8 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly attackerSpec: Season617434PowerHarvestProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Attacker, CreepRole.Mover],
+    // 570 hits/tick = 2M/3510ticks
+    // 2470E = RCL6
     body: [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -75,9 +79,14 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly haulerSpec: Season617434PowerHarvestProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Hauler, CreepRole.Mover],
+    // 1500 capacity
+    // 2250E = RCL6
     body: [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      CARRY, CARRY, CARRY, CARRY, CARRY,
+      CARRY, CARRY, CARRY, CARRY, CARRY,
       CARRY, CARRY, CARRY, CARRY, CARRY,
       CARRY, CARRY, CARRY, CARRY, CARRY,
       CARRY, CARRY, CARRY, CARRY, CARRY,
@@ -161,7 +170,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
         }
       }
 
-      const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 3)
+      const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 2)
       if (powerResource != null || almost) {
         if (haulerCount < this.haulerSpec.maxCount) {
           this.addHauler()
@@ -307,7 +316,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
       finishWhenSucceed: false,
     }
     const tasks: CreepTask[] = [
-      MoveToRoomTask.create(this.targetRoomName, []),
+      MoveToRoomTask.create(this.targetRoomName, this.waypoints),
       MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 10),
       EndlessTask.create(),
     ]
