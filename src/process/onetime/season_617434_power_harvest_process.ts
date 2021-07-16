@@ -50,6 +50,7 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W9S24 target_room_name=W10S24")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W25S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W26S30 waypoints=W24S30")
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W23S30 waypoints=W24S30")
 // 9589 power (2688 in terminal)
 export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly identifier: string

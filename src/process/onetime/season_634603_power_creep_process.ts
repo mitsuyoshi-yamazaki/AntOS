@@ -5,9 +5,9 @@ import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
-import { generateCodename } from "utility/unique_id"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
+import { OwnedRoomObjects } from "world_info/room_info"
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */
@@ -20,12 +20,11 @@ export interface Season634603PowerCreepProcessState extends ProcessState {
 /*
 PowerCreep.create("power_creep_0000", POWER_CLASS.OPERATOR)
 Game.powerCreeps["power_creep_0000"].spawn(Game.getObjectById("60ec7853cb384f1559d71ae7"))
-Game.powerCreeps["power_creep_0000"].upgrade(PWR_GENERATE_OPS)
+Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
 */
 export class Season634603PowerCreepProcess implements Process, Procedural {
   private readonly identifier: string
-  private readonly codename: string
 
   private constructor(
     public readonly launchTime: number,
@@ -34,7 +33,6 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     private readonly powerCreepName: PowerCreepName,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.powerCreepName}`
-    this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
   public encode(): Season634603PowerCreepProcessState {
@@ -71,9 +69,57 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       return
     }
 
+    this.runPowerCreep(powerCreep, objects)
+  }
+
+  private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
     const powerSpawn = objects.activeStructures.powerSpawn
+    let isMoving = false
     if (powerSpawn != null && powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
       this.renewPowerCreep(powerCreep, powerSpawn)
+      isMoving = true
+    }
+
+    const store = ((): StructureTerminal | StructureStorage | null => {
+      const terminal = objects.activeStructures.terminal
+      if (terminal != null && terminal.store.getFreeCapacity() > 100000) {
+        return terminal
+      }
+      const storage = objects.activeStructures.storage
+      if (storage != null && storage.store.getFreeCapacity() > 100000) {
+        return storage
+      }
+      return null
+    })()
+
+    if (store != null) {
+      this.runGenerateOps(powerCreep, isMoving, store)
+    }
+  }
+
+  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage): void {
+    const result = powerCreep.usePower(PWR_GENERATE_OPS)
+
+    switch (result) {
+    case OK:
+      break
+
+    case ERR_TIRED:
+      if (powerCreep.transfer(store, RESOURCE_OPS) === ERR_NOT_IN_RANGE && isMoving !== true) {
+        powerCreep.moveTo(store, defaultMoveToOptions)
+      }
+      break
+
+    case ERR_NOT_IN_RANGE:
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_INVALID_TARGET:
+    case ERR_FULL:
+    case ERR_INVALID_ARGS:
+    case ERR_NO_BODYPART:
+      PrimitiveLogger.programError(`powerCreep.renew() returns ${result} in ${roomLink(this.parentRoomName)}`)
+      break
     }
   }
 

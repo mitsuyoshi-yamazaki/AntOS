@@ -90,6 +90,8 @@ export class PrimitiveWorkerTask extends Task {
 
       // }
 
+      // // problem identifierをキーにしてMapに格納する
+
       // const newTask = this.newTaskFor(creepInfo.creep, roomResource)
 
       // const creepName = creepInfo.creep.name
@@ -103,16 +105,16 @@ export class PrimitiveWorkerTask extends Task {
     return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
   }
 
-  private problemSolverTask(creep: Creep, problems: Problem[]): CreepTask | null {
+  private problemSolverTask(creep: Creep, creepProblems: Problem[]): CreepTask | null {
+    for (const creepProblem of creepProblems) {
+      if (creepProblem instanceof PathNotFoundProblem) {
+        return TalkTask.create(RandomMoveTask.create(creep.pos), ["no path"])
+      }
+    }
     return null
   }
 
   private newTaskFor(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
-    // for (const creepProblem of creepProblems) {
-    //   if (creepProblem instanceof PathNotFoundProblem) {
-    //     return TalkTask.create(RandomMoveTask.create(creep.pos), ["no path"])
-    //   }
-    // }
 
     // creepProblems.forEach(problem => {
     //   if (problem instanceof CreepDamagedProblem) {
