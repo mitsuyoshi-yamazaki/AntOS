@@ -14,6 +14,8 @@ import { ReserveControllerApiWrapper, ReserveControllerApiWrapperState } from ".
 import { KeepHarvestingApiWrapper, KeepHarvestingApiWrapperState } from "./api_wrapper/keep_harvesting_api_wrapper"
 import { DismantleApiWrapper, DismantleApiWrapperState } from "./api_wrapper/dismantle_api_wrapper"
 import { AttackApiWrapper, AttackApiWrapperState } from "./api_wrapper/attack_api_wrapper"
+import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "./api_wrapper/transfer_resource_api_wrapper"
+import { WithdrawResourceApiWrapper, WithdrawResourceApiWrapperState } from "./api_wrapper/withdraw_resource_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -40,6 +42,8 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | KeepHarvestingApiWrapper
   | DismantleApiWrapper
   | AttackApiWrapper
+  | TransferResourceApiWrapper
+  | WithdrawResourceApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -55,6 +59,8 @@ class CreepApiWrapperDecoderMap {
   "KeepHarvestingApiWrapper" = (state: CreepApiWrapperState) => KeepHarvestingApiWrapper.decode(state as KeepHarvestingApiWrapperState)
   "DismantleApiWrapper" = (state: CreepApiWrapperState) => DismantleApiWrapper.decode(state as DismantleApiWrapperState)
   "AttackApiWrapper" = (state: CreepApiWrapperState) => AttackApiWrapper.decode(state as AttackApiWrapperState)
+  "TransferResourceApiWrapper" = (state: CreepApiWrapperState) => TransferResourceApiWrapper.decode(state as TransferResourceApiWrapperState)
+  "WithdrawResourceApiWrapper" = (state: CreepApiWrapperState) => WithdrawResourceApiWrapper.decode(state as WithdrawResourceApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 
