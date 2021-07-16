@@ -44,6 +44,7 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 
 /**
  * - [ ] energyCapacityAvailableとPowerBank周囲の空きからAttackerのサイズを算出
+ * - [ ] haulerが揃うまでdestroyしない
  */
 
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W9S24 target_room_name=W10S24")
@@ -64,11 +65,11 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK,
+      ATTACK, ATTACK, ATTACK, ATTACK,
     ],
   }
   private readonly haulerSpec: Season617434PowerHarvestProcessCreepSpec = {
@@ -111,7 +112,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
   }
 
   public static decode(state: Season617434PowerHarvestProcessState): Season617434PowerHarvestProcess | null {
-    return new Season617434PowerHarvestProcess(state.l, state.i, state.p, state.tr, state.w, state.pa, state.f ?? false)
+    return new Season617434PowerHarvestProcess(state.l, state.i, state.p, state.tr, state.w, state.pa, state.f)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season617434PowerHarvestProcess {
@@ -132,12 +133,15 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     attackerCount = this.countCreep(this.attackerSpec.roles)
     haulerCount = this.countCreep(this.haulerSpec.roles)
 
+    let powerBank: StructurePowerBank | null = null
+    let powerResource: Resource | Ruin | null = null
+
     if (targetRoom == null) {
       if (this.pickupFinished !== true && scoutCount <= this.scoutSpec.maxCount) {
         this.addScout()
       }
     } else {
-      const powerBank = targetRoom.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_BANK) as StructurePowerBank | null
+      powerBank = targetRoom.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_BANK) as StructurePowerBank | null
 
       if (powerBank != null) {
         if (this.powerAmount == null) {
@@ -148,11 +152,13 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
           this.addAttacker()
         }
         this.runAttackers(powerBank)
-      }
-
-      const powerResource = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => resource.resourceType === RESOURCE_POWER) ?? null
-      if (powerBank == null && powerResource == null) {
-        this.pickupFinished = true
+      } else {
+        powerResource = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => resource.resourceType === RESOURCE_POWER)
+          ?? targetRoom.find(FIND_RUINS).find(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK)
+          ?? null
+        if (powerBank == null && powerResource == null) { // FixMe: 一度ruinになる
+          this.pickupFinished = true
+        }
       }
 
       const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 3)
@@ -161,11 +167,10 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
           this.addHauler()
         }
       }
-
-      this.runHauler(powerResource)
     }
 
     this.runScout()
+    this.runHauler(powerBank, powerResource)
 
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers`)
@@ -185,17 +190,17 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     })
   }
 
-  private runHauler(powerResource: Resource | null): void {
+  private runHauler(powerBank: StructurePowerBank | null, powerResource: Resource | Ruin | null): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerResource),
+      creep => this.haulerTask(creep, powerBank, powerResource),
       creep => hasNecessaryRoles(creep, this.haulerSpec.roles),
     )
   }
 
-  private haulerTask(creep: Creep, powerResource: Resource | null): CreepTask | null {
+  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResource: Resource | Ruin | null): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
       if (creep.room.name !== this.parentRoomName) {
         const waypoints = [...this.waypoints].reverse()
@@ -227,6 +232,10 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
 
     if (powerResource != null) {
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER))
+    }
+
+    if (powerBank != null) {
+      return MoveToTask.create(powerBank.pos, 4)
     }
 
     creep.say("nothing to do")
@@ -262,15 +271,10 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
       return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
     }
 
-    const options: SequentialTaskOptions = {
-      ignoreFailure: true,
-      finishWhenSucceed: false,
+    if (powerBank != null) {
+      return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
     }
-    const tasks: CreepTask[] = [
-      MoveToTargetTask.create(AttackApiWrapper.create(powerBank)),
-      MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 4), // TODO: Controller付近にでも行かせる
-    ]
-    return SequentialTask.create(tasks, options)
+    return MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 4)
   }
 
   // ---- Scout ---- //

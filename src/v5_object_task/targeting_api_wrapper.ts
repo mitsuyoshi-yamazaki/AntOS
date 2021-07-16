@@ -1,4 +1,4 @@
-export type TargetingApiWrapperTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+export type TargetingApiWrapperTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant> | Ruin
 
 export interface TargetingApiWrapper {
   target: TargetingApiWrapperTargetType

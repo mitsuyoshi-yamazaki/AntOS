@@ -7,7 +7,7 @@ import { CreepApiWrapperState } from "../creep_api_wrapper"
 import { EnergyStore } from "prototype/room_object"
 
 type WithdrawResourceApiWrapperResult = FINISHED | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
-type WithdrawResourceApiWrapperTargetType = EnergyStore
+type WithdrawResourceApiWrapperTargetType = EnergyStore | Ruin
 
 export interface WithdrawResourceApiWrapperState extends CreepApiWrapperState {
   /** target id */
