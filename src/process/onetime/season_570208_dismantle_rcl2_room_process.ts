@@ -13,8 +13,9 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
-
-const numberOfDismantlers = 1
+import { processLog } from "process/process_log"
+import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
@@ -29,6 +30,9 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
 
   /** target structure id */
   ti: Id<AnyStructure> | null
+
+  /** number of creeps */
+  n: number
 }
 
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
@@ -53,6 +57,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private target: AnyStructure | null,
+    private numberOfCreeps: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -67,6 +72,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       tr: this.targetRoomName,
       w: this.waypoints,
       ti: this.target?.id ?? null,
+      n: this.numberOfCreeps,
     }
   }
 
@@ -77,11 +83,11 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target)
+    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null)
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 5)
   }
 
   public processShortDescription(): string {
@@ -89,18 +95,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   public runOnTick(): void {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    const insufficientCreepCount = numberOfDismantlers - creepCount
-    if (insufficientCreepCount > 0) {
-      this.sendScout()
-    }
-    World.resourcePools.assignTasks(
-      this.parentRoomName,
-      this.identifier,
-      CreepPoolAssignPriority.Low,
-      creep => this.removeConstructionSiteTask(creep),
-      () => true,
-    )
+    this.runScout()
 
 
     // if (insufficientCreepCount > 0) {
@@ -166,6 +161,28 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     return road ?? null
   }
 
+  private runScout(): void {
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const insufficientCreepCount = this.numberOfCreeps - creepCount
+    if (insufficientCreepCount > 0) {
+      this.sendScout()
+    }
+    World.resourcePools.assignTasks(
+      this.parentRoomName,
+      this.identifier,
+      CreepPoolAssignPriority.Low,
+      creep => this.scoutTask(creep),
+      () => true,
+    )
+
+    if (this.numberOfCreeps > 0) {
+      if (this.checkScoutAttacked() === true) {
+        processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
+        this.numberOfCreeps = 0
+      }
+    }
+  }
+
   private sendScout(): void {
     // const childTasks: CreepTask[] = [
     //   MoveToRoomTask.create("W25S25", []),
@@ -190,6 +207,47 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
+  }
+
+  private scoutTask(creep: Creep): CreepTask | null {
+    if (creep.room.name !== this.targetRoomName) {
+      return MoveToRoomTask.create(this.targetRoomName, [])
+    }
+
+    const targetedBy = (position: RoomPosition): number => {
+      return World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => {
+        if (creep.v5task == null) {
+          return false
+        }
+        if (!(creep.v5task instanceof SequentialTask)) {
+          return false
+        }
+        const moveToTask = creep.v5task.childTasks.find(task => task instanceof MoveToTask) as MoveToTask | undefined
+        if (moveToTask == null) {
+          return false
+        }
+        if (moveToTask.destinationPosition.isEqualTo(position)) {
+          return true
+        }
+        return false
+      })
+    }
+
+    const flags = creep.room.find(FIND_FLAGS).sort((lhs, rhs) => {
+      return targetedBy(lhs.pos) < targetedBy(rhs.pos) ? -1 : 1
+    })
+    const targetFlag = flags[0]
+
+    const tasks: CreepTask[] = [
+      MoveToTask.create(targetFlag.pos, 0),
+      EndlessTask.create(),
+    ]
+    const options: SequentialTaskOptions = {
+      ignoreFailure: false,
+      finishWhenSucceed: false,
+    }
+
+    return SequentialTask.create(tasks, options)
   }
 
   private removeConstructionSiteTask(creep: Creep): CreepTask | null {
@@ -235,5 +293,15 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       return targetSite
     }
     return null
+  }
+
+  private checkScoutAttacked(): boolean {
+    const targetRoom = Game.rooms[this.targetRoomName]
+    if (targetRoom == null) {
+      return false
+    }
+
+    const hasMyTombstone = targetRoom.find(FIND_TOMBSTONES).some(tomb => tomb.creep.my === true && (tomb.creep.ticksToLive ?? 0) > 1)
+    return hasMyTombstone
   }
 }

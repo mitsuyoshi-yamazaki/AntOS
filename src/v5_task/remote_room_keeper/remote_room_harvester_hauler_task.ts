@@ -19,6 +19,7 @@ import { TaskState } from "v5_task/task_state"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Invader } from "game/invader"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -168,6 +169,9 @@ export class RemoteRoomHaulerTask extends Task {
     if (noEnergy) {
       const energySource = this.getEnergySource(energySources)
       if (energySource != null) {
+        if (this.targetRoomName === "W8S24" && creep.room.name === "W9S24") {
+          return MoveToTask.create(new RoomPosition(49, 19, creep.room.name), 0)
+        }
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
       }
       creep.say("no source")

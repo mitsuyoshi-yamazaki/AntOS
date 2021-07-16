@@ -30,7 +30,7 @@ export interface SequentialTaskState extends CreepTaskState {
 export class SequentialTask implements CreepTask {
   private constructor(
     public readonly startTime: number,
-    private readonly childTasks: CreepTask[],
+    public readonly childTasks: CreepTask[],
     public readonly options: SequentialTaskOptions,
   ) {
   }
