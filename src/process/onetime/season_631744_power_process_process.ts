@@ -31,7 +31,7 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    private readonly powerSpawn: StructurePowerSpawn,
+    private readonly powerSpawnId: Id<StructurePowerSpawn>,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -43,20 +43,16 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       r: this.parentRoomName,
-      p: this.powerSpawn.id,
+      p: this.powerSpawnId,
     }
   }
 
   public static decode(state: Season631744PowerProcessProcessState): Season631744PowerProcessProcess | null {
-    const powerSpawn = Game.getObjectById(state.p)
-    if (powerSpawn == null) {
-      return null
-    }
-    return new Season631744PowerProcessProcess(state.l, state.i, state.r, powerSpawn)
+    return new Season631744PowerProcessProcess(state.l, state.i, state.r, state.p)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, powerSpawn: StructurePowerSpawn): Season631744PowerProcessProcess {
-    return new Season631744PowerProcessProcess(Game.time, processId, roomName, powerSpawn)
+  public static create(processId: ProcessId, roomName: RoomName, powerSpawnId: Id<StructurePowerSpawn>): Season631744PowerProcessProcess {
+    return new Season631744PowerProcessProcess(Game.time, processId, roomName, powerSpawnId)
   }
 
   public processShortDescription(): string {
@@ -67,6 +63,11 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
     const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
     if (objects == null) {
       PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+      return
+    }
+    const powerSpawn = Game.getObjectById(this.powerSpawnId)
+    if (powerSpawn == null) {
+      PrimitiveLogger.fatal(`Power spawn in ${roomLink(this.parentRoomName)} not found`)
       return
     }
 
@@ -86,27 +87,27 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       })
     }
 
-    this.runHauler(objects.activeStructures.terminal)
-    this.powerSpawn.processPower()
+    this.runHauler(powerSpawn, objects.activeStructures.terminal)
+    powerSpawn.processPower()
   }
 
-  private runHauler(terminal: StructureTerminal | null): void {
+  private runHauler(powerSpawn: StructurePowerSpawn, terminal: StructureTerminal | null): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, terminal),
+      creep => this.haulerTask(creep, powerSpawn, terminal),
       () => true,
     )
   }
 
-  private haulerTask(creep: Creep, terminal: StructureTerminal | null): CreepTask | null {
+  private haulerTask(creep: Creep, powerSpawn: StructurePowerSpawn, terminal: StructureTerminal | null): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0) {
-      if ((creep.ticksToLive ?? 0) < 100) {
+      if (creep.ticksToLive != null && creep.ticksToLive < 100) {
         return EndlessTask.create()
       }
 
-      if (this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
+      if (powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
         if (terminal != null) {
           return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_POWER))
         }
@@ -117,6 +118,6 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       return null
     }
 
-    return MoveToTargetTask.create(TransferResourceApiWrapper.create(this.powerSpawn, RESOURCE_POWER))
+    return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
   }
 }

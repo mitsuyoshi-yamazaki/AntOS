@@ -85,7 +85,10 @@ export class PrimitiveWorkerTask extends Task {
 
     const idleCreeps = roomResource.idleCreeps(this.identifier)
     idleCreeps.forEach(creepInfo => {
+      // const problemSolverTask = this.problemSolverTask(creepInfo.creep, creepInfo.problems)
+      // if () {
 
+      // }
 
       // const newTask = this.newTaskFor(creepInfo.creep, roomResource)
 
@@ -100,7 +103,7 @@ export class PrimitiveWorkerTask extends Task {
     return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
   }
 
-  private newTaskFromProblems(creep: Creep, problems: Problem[]): CreepTask | null {
+  private problemSolverTask(creep: Creep, problems: Problem[]): CreepTask | null {
     return null
   }
 

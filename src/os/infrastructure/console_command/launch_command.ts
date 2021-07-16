@@ -13,6 +13,7 @@ import { Season617434PowerHarvestProcess } from "process/onetime/season_617434_p
 import { Season631744PowerProcessProcess } from "process/onetime/season_631744_power_process_process"
 import { World } from "world_info/world_info"
 import { roomLink } from "utility/log"
+import { Season634603PowerCreepProcess } from "process/onetime/season_634603_power_creep_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -51,6 +52,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season631744PowerProcessProcess":
       result = this.launchSeason631744PowerProcessProcess()
+      break
+    case "Season634603PowerCreepProcess":
+      result = this.launchSeason634603PowerCreepProcess()
       break
     default:
       break
@@ -243,7 +247,25 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn)
+      return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn.id)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason634603PowerCreepProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const powerCreepName = args.get("power_creep_name")
+    if (powerCreepName == null) {
+      return this.missingArgumentError("power_creep_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season634603PowerCreepProcess.create(processId, roomName, powerCreepName)
     })
     return Result.Succeeded(process)
   }
