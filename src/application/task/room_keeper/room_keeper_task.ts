@@ -9,7 +9,6 @@ import type { CreepName } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler } from "./task_request_handler"
-import { CreepProblemMap } from "room_resource/room_resources"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** child task states */
@@ -65,11 +64,7 @@ export class RoomKeeperTask extends Task {
     return request1
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests {
-    if (creepProblems != null && creepProblems.size > 0) {
-      PrimitiveLogger.programError(`${this.identifier} Unexpectedly found ${creepProblems.size} creep problems`)
-    }
-
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
     const unresolvedProblems = this.taskRequestHandler.execute(requestsFromChildren, roomResource)
 
     return emptyTaskRequests()

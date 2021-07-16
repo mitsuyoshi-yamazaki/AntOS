@@ -2,9 +2,7 @@ import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { TaskRequests } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { CreepProblemMap } from "room_resource/room_resources"
 import { RoomName } from "utility/room_name"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./primitive_worker_task"
 
@@ -68,10 +66,7 @@ export class WorkerManagerTask extends Task {
     return new WorkerManagerTask(Game.time, roomName, null, workerTask)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests {
-    if (creepProblems != null && creepProblems.size > 0) {
-      PrimitiveLogger.programError(`${this.identifier} Unexpectedly found ${creepProblems.size} creep problems`)
-    }
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
 
     return requestsFromChildren
   }

@@ -13,8 +13,15 @@ import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_tas
 import { HarvestSourceApiWrapper } from "object_task/creep_task/api_wrapper/harvest_source_api_wrapper"
 import { defaultMoveToOptions } from "prototype/creep"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
-import { CreepProblemMap } from "room_resource/room_resources"
 import { generateCodename } from "utility/unique_id"
+import { Problem } from "application/problem"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
+import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
+import { HarvestingRoomLostProblem } from "application/problem/creep/harvesting_room_lost_problem"
+import { PathNotFoundProblem } from "application/problem/creep/path_not_found_problem"
 
 const creepCountForSource = 6
 
@@ -60,7 +67,7 @@ export class PrimitiveWorkerTask extends Task {
     return new PrimitiveWorkerTask(Game.time, roomName, null)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests, creepProblems: CreepProblemMap | null): TaskRequests {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length
 
@@ -75,8 +82,8 @@ export class PrimitiveWorkerTask extends Task {
     }
 
     const idleCreeps = roomResource.idleCreeps(this.identifier)
-    idleCreeps.forEach(([creep, creepMemory]) => {
-      const newTask = this.newTaskFor(creep, creepMemory.r.includes(CreepRole.Hauler), roomResource)
+    idleCreeps.forEach(creepInfo => {
+      const newTask = this.newTaskFor(creepInfo.creep, creepInfo.problems, roomResource)
       if (newTask == null) {
         return
       }
@@ -85,7 +92,11 @@ export class PrimitiveWorkerTask extends Task {
         task: newTask,
       }
 
-      requestsFromChildren.creepTaskAssignRequests.set(creep.name, taskRequest) // FixMe: ここでマージ問題が出てくるのでは
+      const creepName = creepInfo.creep.name
+      if (requestsFromChildren.creepTaskAssignRequests.has(creepName) === true) {
+        PrimitiveLogger.programError(`${this.identifier}`)
+      }
+      requestsFromChildren.creepTaskAssignRequests.set(creepName, taskRequest)
     })
 
     return requestsFromChildren
@@ -95,8 +106,19 @@ export class PrimitiveWorkerTask extends Task {
     return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
   }
 
-  // TODO: haulerのタスク
-  private newTaskFor(creep: Creep, isHauler: boolean, roomResource: OwnedRoomResource): CreepTask | null {
+  private newTaskFor(creep: Creep, creepProblems: Problem[], roomResource: OwnedRoomResource): CreepTask | null {
+    creepProblems.forEach(problem => {
+      if (problem instanceof CreepDamagedProblem) {
+
+      } else if (problem instanceof HarvestingRoomLostProblem) {
+
+      } else if (problem instanceof PathNotFoundProblem) {
+
+      } else {
+
+      }
+    })
+
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
@@ -112,16 +134,15 @@ export class PrimitiveWorkerTask extends Task {
       return MoveToTargetTask.create(TransferApiWrapper.create(structureToCharge, RESOURCE_ENERGY), defaultMoveToOptions)
     }
 
-    // const damagedStructure = roomResource.getRepairStructure()
-    // if (damagedStructure != null) {
-    //   return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
-    // }
-    // const constructionSite = roomResource.getConstructionSite()
-    // if (constructionSite != null) {
-    //   return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
-    // }
+    const damagedStructure = roomResource.getRepairStructure()
+    if (damagedStructure != null) {
+      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure), defaultMoveToOptions)
+    }
+    const constructionSite = roomResource.getConstructionSite()
+    if (constructionSite != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), defaultMoveToOptions)
+    }
 
-    // return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller))
-    return null
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller), defaultMoveToOptions)
   }
 }

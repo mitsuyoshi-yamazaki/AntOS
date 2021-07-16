@@ -1,58 +1,54 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
-import { REPAIR_RANGE } from "utility/constants"
+import { GameConstants } from "utility/constants"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
-const apiWrapperType = "RepairApiWrapper"
+const apiWrapperType = "BuildApiWrapper"
 
-export interface RepairApiWrapperState extends CreepApiWrapperState {
+export interface BuildApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
-  t: "RepairApiWrapper"
+  t: "BuildApiWrapper"
 
   /** target id */
-  i: Id<AnyStructure>
+  i: Id<ConstructionSite<BuildableStructureConstant>>
 }
 
-export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
-  public readonly shortDescription = "repair"
-  public readonly range = REPAIR_RANGE
+export class BuildApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
+  public readonly shortDescription = "build"
+  public readonly range = GameConstants.creep.actionRange.build
 
   private constructor(
-    public readonly target: AnyStructure,
+    public readonly target: ConstructionSite<BuildableStructureConstant>,
   ) {
   }
 
-  public encode(): RepairApiWrapperState {
+  public encode(): BuildApiWrapperState {
     return {
       t: apiWrapperType,
       i: this.target.id,
     }
   }
 
-  public static decode(state: RepairApiWrapperState): RepairApiWrapper | null {
+  public static decode(state: BuildApiWrapperState): BuildApiWrapper | null {
     const target = Game.getObjectById(state.i)
     if (target == null) {
       return null
     }
-    return new RepairApiWrapper(target)
+    return new BuildApiWrapper(target)
   }
 
-  public static create(target: AnyStructure): RepairApiWrapper {
-    return new RepairApiWrapper(target)
+  public static create(target: ConstructionSite<BuildableStructureConstant>): BuildApiWrapper {
+    return new BuildApiWrapper(target)
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {
-    if (this.target.hits >= this.target.hitsMax) {
-      return CreepApiWrapperProgress.Finished(false)
-    }
-
-    const result = creep.repair(this.target)
+    const result = creep.build(this.target)
 
     switch (result) {
     case OK: {
-      const repairAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= repairAmount) {
+      const buildAmount = creep.body.filter(b => b.type === WORK).length * GameConstants.creep.actionPower.build
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= buildAmount) {
         return CreepApiWrapperProgress.Finished(true)
       } else {
         return CreepApiWrapperProgress.InProgress(false)

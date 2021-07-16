@@ -1,8 +1,14 @@
-import { isV6CreepMemory, V6CreepMemory } from "prototype/creep"
+import { Problem } from "application/problem"
+import { V6Creep } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import type { TaskIdentifier } from "v5_task/task"
 import type { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
+
+export interface OwnedRoomCreepInfo {
+  creep: V6Creep
+  problems: Problem[]
+}
 
 export class OwnedRoomResource extends NormalRoomResource {
   /** Decayed structureは含めない */
@@ -24,7 +30,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     public readonly controller: StructureController,
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
-    private readonly ownedCreeps: Creep[],
+    private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
     roomInfo: RoomInfo,
   ) {
     super(controller, roomInfo)
@@ -109,28 +115,21 @@ export class OwnedRoomResource extends NormalRoomResource {
 
   // ---- Creep ---- //
   public countCreeps(taskIdentifier: TaskIdentifier): number {
-    return this.ownedCreeps
-      .filter(creep => {
-        const creepMemory = creep.memory
-        if (!isV6CreepMemory(creepMemory)) {
-          return false
-        }
-        return creepMemory.i === taskIdentifier
-      })
+    return this.ownedCreepInfo
+      .filter(info => info.creep.memory.i === taskIdentifier)
       .length
   }
 
-  public idleCreeps(taskIdentifier: TaskIdentifier): [Creep, V6CreepMemory][] {
-    return this.ownedCreeps
-      .flatMap(creep => {
-        const creepMemory = creep.memory
-        if (!isV6CreepMemory(creepMemory)) {
-          return []
+  public idleCreeps(taskIdentifier: TaskIdentifier): OwnedRoomCreepInfo[] {
+    return this.ownedCreepInfo
+      .filter(info => {
+        if (info.creep.memory.i !== taskIdentifier) {
+          return false
         }
-        if (creepMemory.i !== taskIdentifier) {
-          return []
+        if (info.creep.task != null) {
+          return false
         }
-        return [[creep, creepMemory]]
+        return true
       })
   }
 

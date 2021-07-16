@@ -1,5 +1,4 @@
 import { Problem } from "application/problem"
-import { TaskIdentifier } from "application/task_identifier"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { TaskProgress } from "object_task/object_task"
 import { CreepName, isV6Creep, V6Creep } from "prototype/creep"
@@ -7,7 +6,7 @@ import { RoomName } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
 import { decodeRoomInfo, RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
-import { OwnedRoomResource } from "./room_resource/owned_room_resource"
+import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource/room_resource"
 
 interface RoomResourcesInterface {
@@ -17,16 +16,11 @@ interface RoomResourcesInterface {
 
   // ---- Room Resource ---- //
   getRoomResource(roomName: RoomName): RoomResource | null
-
-  // ---- Creep ---- //
-  getCreepProblems(taskIdentifier: TaskIdentifier): CreepProblemMap | null
 }
-
-export type CreepProblemMap = Map<CreepName, Problem[]>
 
 const roomResources = new Map<RoomName, RoomResource>()
 const allCreeps = new Map<RoomName, V6Creep[]>()
-const creepProblems = new Map<TaskIdentifier, CreepProblemMap>()
+const creepProblems = new Map<CreepName, Problem[]>()
 
 export const RoomResources: RoomResourcesInterface = {
   // ---- Lifecycle ---- //
@@ -38,7 +32,14 @@ export const RoomResources: RoomResourcesInterface = {
       const room = Game.rooms[roomName]
 
       if (room.controller != null && room.controller.my === true) {
-        roomResources.set(roomName, buildOwnedRoomResource(room.controller, allCreeps.get(roomName) ?? []))
+        const creepInfo: OwnedRoomCreepInfo[] = (allCreeps.get(roomName) ?? []).map(creep => {
+          return {
+            creep,
+            problems: creepProblems.get(creep.name) ?? [],
+          }
+        })
+
+        roomResources.set(roomName, buildOwnedRoomResource(room.controller, creepInfo))
       }
     }
   },
@@ -60,11 +61,6 @@ export const RoomResources: RoomResourcesInterface = {
     const roomResource = buildNormalRoomResource(room.controller)
     roomResources.set(roomName, roomResource)
     return roomResource
-  },
-
-  // ---- Creep ---- //
-  getCreepProblems(taskIdentifier: TaskIdentifier): CreepProblemMap | null {
-    return creepProblems.get(taskIdentifier) ?? null
   },
 }
 
@@ -105,7 +101,7 @@ function buildNormalRoomResource(controller: StructureController): NormalRoomRes
   return new NormalRoomResource(controller, roomInfo)
 }
 
-function buildOwnedRoomResource(controller: StructureController, creeps: Creep[]): OwnedRoomResource {
+function buildOwnedRoomResource(controller: StructureController, creepInfo: OwnedRoomCreepInfo[]): OwnedRoomResource {
   const roomInfo = ((): RoomInfo => {
     const roomInfoMemory = Memory.room_info[controller.room.name]
     if (roomInfoMemory == null) {
@@ -119,7 +115,7 @@ function buildOwnedRoomResource(controller: StructureController, creeps: Creep[]
     }
     return decodeRoomInfo(roomInfoMemory)
   })()
-  return new OwnedRoomResource(controller, [...creeps], roomInfo)
+  return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
 
 function runCreepTasks(): void {
@@ -155,19 +151,7 @@ function runCreepTasks(): void {
         if (problems.length <= 0) {
           return
         }
-        const taskIdentifier = creep.memory.i
-
-        const creepProblemMap = ((): CreepProblemMap => {
-          const stored = creepProblems.get(taskIdentifier)
-          if (stored != null) {
-            return stored
-          }
-          const newMap = new Map<CreepName, Problem[]>()
-          creepProblems.set(taskIdentifier, newMap)
-          return newMap
-        })()
-
-        creepProblemMap.set(creep.name, problems)
+        creepProblems.set(creep.name, problems)
       }, "Run creep tasks")()
     })
   })

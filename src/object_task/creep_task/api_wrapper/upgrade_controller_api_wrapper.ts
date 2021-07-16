@@ -1,58 +1,54 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
-import { REPAIR_RANGE } from "utility/constants"
+import { GameConstants } from "utility/constants"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
-const apiWrapperType = "RepairApiWrapper"
+const apiWrapperType = "UpgradeControllerApiWrapper"
 
-export interface RepairApiWrapperState extends CreepApiWrapperState {
+export interface UpgradeControllerApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
-  t: "RepairApiWrapper"
+  t: "UpgradeControllerApiWrapper"
 
   /** target id */
-  i: Id<AnyStructure>
+  i: Id<StructureController>
 }
 
-export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
-  public readonly shortDescription = "repair"
-  public readonly range = REPAIR_RANGE
+export class UpgradeControllerApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
+  public readonly shortDescription = "upgrade"
+  public readonly range = GameConstants.creep.actionRange.upgradeController
 
   private constructor(
-    public readonly target: AnyStructure,
+    public readonly target: StructureController,
   ) {
   }
 
-  public encode(): RepairApiWrapperState {
+  public encode(): UpgradeControllerApiWrapperState {
     return {
       t: apiWrapperType,
       i: this.target.id,
     }
   }
 
-  public static decode(state: RepairApiWrapperState): RepairApiWrapper | null {
+  public static decode(state: UpgradeControllerApiWrapperState): UpgradeControllerApiWrapper | null {
     const target = Game.getObjectById(state.i)
     if (target == null) {
       return null
     }
-    return new RepairApiWrapper(target)
+    return new UpgradeControllerApiWrapper(target)
   }
 
-  public static create(target: AnyStructure): RepairApiWrapper {
-    return new RepairApiWrapper(target)
+  public static create(target: StructureController): UpgradeControllerApiWrapper {
+    return new UpgradeControllerApiWrapper(target)
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {
-    if (this.target.hits >= this.target.hitsMax) {
-      return CreepApiWrapperProgress.Finished(false)
-    }
-
-    const result = creep.repair(this.target)
+    const result = creep.upgradeController(this.target)
 
     switch (result) {
     case OK: {
-      const repairAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= repairAmount) {
+      const upgradeAmount = creep.body.filter(b => b.type === WORK).length * GameConstants.creep.actionPower.upgradeController
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= upgradeAmount) {
         return CreepApiWrapperProgress.Finished(true)
       } else {
         return CreepApiWrapperProgress.InProgress(false)

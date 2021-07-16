@@ -1,3 +1,4 @@
+import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { TRANSFER_RESOURCE_RANGE } from "utility/constants"
@@ -70,13 +71,11 @@ export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper 
     case ERR_BUSY:
       return CreepApiWrapperProgress.InProgress(false)
 
-    // case ERR_NOT_OWNER:
-    // case ERR_INVALID_TARGET:
-    // case ERR_INVALID_ARGS:
-    // default:
-    //   return CreepApiWrapperProgress.Failed(apiWrapperType, creep.name, result)
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_TARGET:
+    case ERR_INVALID_ARGS:
+    default:
+      return CreepApiWrapperProgress.Failed(new UnexpectedCreepProblem(creep.memory.p, creep.room.name, apiWrapperType, result))
     }
-    return CreepApiWrapperProgress.InProgress(false) // FixMe:
-
   }
 }
