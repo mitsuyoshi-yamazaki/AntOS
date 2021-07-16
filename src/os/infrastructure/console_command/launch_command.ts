@@ -10,6 +10,9 @@ import { Season553093AttackRcl3RoomProcess } from "process/onetime/season_553093
 import { RoomName } from "utility/room_name"
 import { Season570208DismantleRcl2RoomProcess } from "process/onetime/season_570208_dismantle_rcl2_room_process"
 import { Season617434PowerHarvestProcess } from "process/onetime/season_617434_power_harvest_process"
+import { Season631744PowerProcessProcess } from "process/onetime/season_631744_power_process_process"
+import { World } from "world_info/world_info"
+import { roomLink } from "utility/log"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -45,6 +48,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season617434PowerHarvestProcess":
       result = this.launchSeason617434PowerHarvestProcess()
+      break
+    case "Season631744PowerProcessProcess":
+      result = this.launchSeason631744PowerProcessProcess()
       break
     default:
       break
@@ -220,6 +226,24 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season617434PowerHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason631744PowerProcessProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const powerSpawn = World.rooms.getOwnedRoomObjects(roomName)?.activeStructures.powerSpawn
+    if (powerSpawn == null) {
+      return Result.Failed(`No power spawn in ${roomLink(roomName)}`)
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn)
     })
     return Result.Succeeded(process)
   }

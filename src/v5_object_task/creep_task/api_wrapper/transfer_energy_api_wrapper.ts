@@ -4,9 +4,10 @@ import { ApiWrapper } from "v5_object_task/api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
+import { EnergyChargeableStructure } from "prototype/room_object"
 
 type TransferEnergyApiWrapperResult = FINISHED | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
-export type TransferEnergyApiWrapperTargetType = AnyCreep | StructureContainer | StructureStorage | StructureTerminal | StructureSpawn | StructureExtension | StructureTower
+export type TransferEnergyApiWrapperTargetType = AnyCreep | StructureStorage | StructureTerminal | EnergyChargeableStructure
 
 export interface TransferEnergyApiWrapperState extends CreepApiWrapperState {
   /** target id */

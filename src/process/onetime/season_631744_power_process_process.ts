@@ -1,0 +1,117 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Procedural } from "process/procedural"
+import { Process, ProcessId } from "process/process"
+import { RoomName } from "utility/room_name"
+import { roomLink } from "utility/log"
+import { World } from "world_info/world_info"
+import { ProcessState } from "process/process_state"
+import { generateCodename } from "utility/unique_id"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepRole } from "prototype/creep_role"
+import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+
+export interface Season631744PowerProcessProcessState extends ProcessState {
+  /** parent room name */
+  r: RoomName
+
+  /** power spawn id */
+  p: Id<StructurePowerSpawn>
+}
+
+export class Season631744PowerProcessProcess implements Process, Procedural {
+  private readonly identifier: string
+  private readonly codename: string
+
+  private constructor(
+    public readonly launchTime: number,
+    public readonly processId: ProcessId,
+    public readonly parentRoomName: RoomName,
+    private readonly powerSpawn: StructurePowerSpawn,
+  ) {
+    this.identifier = `${this.constructor.name}_${this.parentRoomName}`
+    this.codename = generateCodename(this.identifier, this.launchTime)
+  }
+
+  public encode(): Season631744PowerProcessProcessState {
+    return {
+      t: "Season631744PowerProcessProcess",
+      l: this.launchTime,
+      i: this.processId,
+      r: this.parentRoomName,
+      p: this.powerSpawn.id,
+    }
+  }
+
+  public static decode(state: Season631744PowerProcessProcessState): Season631744PowerProcessProcess | null {
+    const powerSpawn = Game.getObjectById(state.p)
+    if (powerSpawn == null) {
+      return null
+    }
+    return new Season631744PowerProcessProcess(state.l, state.i, state.r, powerSpawn)
+  }
+
+  public static create(processId: ProcessId, roomName: RoomName, powerSpawn: StructurePowerSpawn): Season631744PowerProcessProcess {
+    return new Season631744PowerProcessProcess(Game.time, processId, roomName, powerSpawn)
+  }
+
+  public processShortDescription(): string {
+    return roomLink(this.parentRoomName)
+  }
+
+  public runOnTick(): void {
+    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
+    if (objects == null) {
+      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+      return
+    }
+
+    const powerAmount = objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_POWER) ?? 0
+
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    if (creepCount <= 0 && powerAmount > 0) {
+      World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
+        priority: CreepSpawnRequestPriority.Low,
+        numberOfCreeps: 1,
+        codename: this.codename,
+        roles: [CreepRole.Hauler, CreepRole.Mover],
+        body: [MOVE, CARRY],
+        initialTask: null,
+        taskIdentifier: this.identifier,
+        parentRoomName: null,
+      })
+    }
+
+    this.runHauler(objects.activeStructures.terminal)
+    this.powerSpawn.processPower()
+  }
+
+  private runHauler(terminal: StructureTerminal | null): void {
+    World.resourcePools.assignTasks(
+      this.parentRoomName,
+      this.identifier,
+      CreepPoolAssignPriority.Low,
+      creep => this.haulerTask(creep, terminal),
+      () => true,
+    )
+  }
+
+  private haulerTask(creep: Creep, terminal: StructureTerminal | null): CreepTask | null {
+    if (creep.store.getUsedCapacity() <= 0) {
+      if (this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
+        if (terminal != null) {
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_POWER))
+        }
+        creep.say("no terminal")
+        return null
+      }
+      creep.say("waiting..")
+      return null
+    }
+
+    return MoveToTargetTask.create(TransferResourceApiWrapper.create(this.powerSpawn, RESOURCE_POWER))
+  }
+}

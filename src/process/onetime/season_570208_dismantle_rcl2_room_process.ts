@@ -265,21 +265,21 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
-    const constructionSitePriority = (structureType: StructureConstant): number => {
-      const priority: StructureConstant[] = [
-        STRUCTURE_TOWER,
-        STRUCTURE_SPAWN,
-        STRUCTURE_STORAGE,
-        STRUCTURE_TERMINAL,
-        STRUCTURE_LAB,
-        STRUCTURE_EXTENSION,
-      ]
-      const index = priority.indexOf(structureType)
-      if (index < 0) {
-        return 100
-      }
-      return index
-    }
+    // const constructionSitePriority = (structureType: StructureConstant): number => {
+    //   const priority: StructureConstant[] = [
+    //     STRUCTURE_TOWER,
+    //     STRUCTURE_SPAWN,
+    //     STRUCTURE_STORAGE,
+    //     STRUCTURE_TERMINAL,
+    //     STRUCTURE_LAB,
+    //     STRUCTURE_EXTENSION,
+    //   ]
+    //   const index = priority.indexOf(structureType)
+    //   if (index < 0) {
+    //     return 100
+    //   }
+    //   return index
+    // }
 
     const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES) //.sort((lhs, rhs))
 

@@ -158,6 +158,7 @@ export class OwnedRoomObjects {
     towers: StructureTower[]
     storage: StructureStorage | null
     terminal: StructureTerminal | null
+    powerSpawn: StructurePowerSpawn | null
 
     chargeableStructures: EnergyChargeableStructure[]
   }
@@ -229,6 +230,7 @@ export class OwnedRoomObjects {
     const towers: StructureTower[] = []
     let storage: StructureStorage | null = null
     let terminal: StructureTerminal | null = null
+    let powerSpawn: StructurePowerSpawn | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
       const upgraderContainer = this.roomInfo.upgrader.container
@@ -292,6 +294,12 @@ export class OwnedRoomObjects {
           this.energyStores.push(structure)
         }
         break
+      case STRUCTURE_POWER_SPAWN:
+        powerSpawn = structure
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableStructures.push(structure)
+        }
+        break
       case STRUCTURE_ROAD:
         checkDecayed(structure)
         break
@@ -337,6 +345,7 @@ export class OwnedRoomObjects {
       towers,
       storage,
       terminal,
+      powerSpawn,
       chargeableStructures,
     }
 
