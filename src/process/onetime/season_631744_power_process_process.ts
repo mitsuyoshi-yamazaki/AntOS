@@ -13,6 +13,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
 export interface Season631744PowerProcessProcessState extends ProcessState {
   /** parent room name */
@@ -101,6 +102,10 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
 
   private haulerTask(creep: Creep, terminal: StructureTerminal | null): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0) {
+      if ((creep.ticksToLive ?? 0) < 100) {
+        return EndlessTask.create()
+      }
+
       if (this.powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
         if (terminal != null) {
           return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_POWER))
