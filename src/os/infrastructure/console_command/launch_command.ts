@@ -212,9 +212,14 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season617434PowerHarvestProcess.create(processId, roomName, targetRoomName)
+      return Season617434PowerHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
