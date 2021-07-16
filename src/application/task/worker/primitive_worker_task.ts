@@ -22,6 +22,8 @@ import { UpgradeControllerApiWrapper } from "object_task/creep_task/api_wrapper/
 import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
 import { HarvestingRoomLostProblem } from "application/problem/creep/harvesting_room_lost_problem"
 import { PathNotFoundProblem } from "application/problem/creep/path_not_found_problem"
+import { TalkTask } from "object_task/creep_task/combined_task/talk_task"
+import { RandomMoveTask } from "object_task/creep_task/task/random_move_task"
 
 const creepCountForSource = 6
 
@@ -83,7 +85,9 @@ export class PrimitiveWorkerTask extends Task {
 
     const idleCreeps = roomResource.idleCreeps(this.identifier)
     idleCreeps.forEach(creepInfo => {
-      // const [newTask, problems] = this.newTaskFor(creepInfo.creep, creepInfo.problems, roomResource)
+
+
+      // const newTask = this.newTaskFor(creepInfo.creep, roomResource)
 
       // const creepName = creepInfo.creep.name
       // this.addCreepTaskRequest(creepName, newTask, requestsFromChildren)
@@ -96,45 +100,56 @@ export class PrimitiveWorkerTask extends Task {
     return createCreepBody([], [WORK, CARRY, MOVE, MOVE], energyCapacity, 3)
   }
 
-  // private newTaskFor(creep: Creep, creepProblems: Problem[], roomResource: OwnedRoomResource): [CreepTask, Problem[]] {
-  //   creepProblems.forEach(problem => {
-  //     if (problem instanceof CreepDamagedProblem) {
+  private newTaskFromProblems(creep: Creep, problems: Problem[]): CreepTask | null {
+    return null
+  }
 
-  //     } else if (problem instanceof HarvestingRoomLostProblem) {
+  private newTaskFor(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
+    // for (const creepProblem of creepProblems) {
+    //   if (creepProblem instanceof PathNotFoundProblem) {
+    //     return TalkTask.create(RandomMoveTask.create(creep.pos), ["no path"])
+    //   }
+    // }
 
-  //     } else if (problem instanceof PathNotFoundProblem) {
+    // creepProblems.forEach(problem => {
+    //   if (problem instanceof CreepDamagedProblem) {
 
-  //     } else {
+    //   } else if (problem instanceof HarvestingRoomLostProblem) {
 
-  //     }
-  //   })
+    //   } else if (problem instanceof PathNotFoundProblem) {
 
-  //   const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+    //   } else {
 
-  //   if (noEnergy) {
-  //     const source = roomResource.getSourceToAssign(creep.pos)
-  //     if (source == null) {
-  //       return null
-  //     }
-  //     return MoveToTargetTask.create(HarvestSourceApiWrapper.create(source), defaultMoveToOptions)
-  //   }
+    //   }
+    // })
 
-  //   const structureToCharge = roomResource.getStructureToCharge(creep.pos)
-  //   if (structureToCharge != null) {
-  //     return MoveToTargetTask.create(TransferApiWrapper.create(structureToCharge, RESOURCE_ENERGY), defaultMoveToOptions)
-  //   }
+    // const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
-  //   const damagedStructure = roomResource.getRepairStructure()
-  //   if (damagedStructure != null) {
-  //     return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure), defaultMoveToOptions)
-  //   }
-  //   const constructionSite = roomResource.getConstructionSite()
-  //   if (constructionSite != null) {
-  //     return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), defaultMoveToOptions)
-  //   }
+    // if (noEnergy) {
+    //   const source = roomResource.getSourceToAssign(creep.pos)
+    //   if (source == null) {
+    //     return null
+    //   }
+    //   return MoveToTargetTask.create(HarvestSourceApiWrapper.create(source), defaultMoveToOptions)
+    // }
 
-  //   return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller), defaultMoveToOptions)
-  // }
+    // const structureToCharge = roomResource.getStructureToCharge(creep.pos)
+    // if (structureToCharge != null) {
+    //   return MoveToTargetTask.create(TransferApiWrapper.create(structureToCharge, RESOURCE_ENERGY), defaultMoveToOptions)
+    // }
+
+    // const damagedStructure = roomResource.getRepairStructure()
+    // if (damagedStructure != null) {
+    //   return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure), defaultMoveToOptions)
+    // }
+    // const constructionSite = roomResource.getConstructionSite()
+    // if (constructionSite != null) {
+    //   return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), defaultMoveToOptions)
+    // }
+
+    // return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller), defaultMoveToOptions)
+    return null
+  }
 
   private addCreepTaskRequest(creepName: CreepName, task: CreepTask, requests: TaskRequests): void {
     const taskRequest: CreepTaskAssignTaskRequest = {

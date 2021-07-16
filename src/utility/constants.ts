@@ -46,3 +46,30 @@ export const GameConstants = {
     },
   }
 }
+
+// ---- Direction ---- //
+export function randomDirection(seed: number): DirectionConstant {
+  const rawDirection = (seed % 8) + 1
+  return rawDirection as DirectionConstant
+}
+
+export function directionDescription(direction: DirectionConstant): string {
+  switch (direction) {
+  case TOP:
+    return "top"
+  case TOP_RIGHT:
+    return "top_right"
+  case RIGHT:
+    return "right"
+  case BOTTOM_RIGHT:
+    return "bottom_right"
+  case BOTTOM:
+    return "bottom"
+  case BOTTOM_LEFT:
+    return "bottom_left"
+  case LEFT:
+    return "left"
+  case TOP_LEFT:
+    return "top_left"
+  }
+}

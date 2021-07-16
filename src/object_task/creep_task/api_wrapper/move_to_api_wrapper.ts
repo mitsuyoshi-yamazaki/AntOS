@@ -1,7 +1,7 @@
 import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
 import { PathNotFoundProblem } from "application/problem/creep/path_not_found_problem"
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
-import { V6Creep } from "prototype/creep"
+import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
@@ -50,15 +50,16 @@ export class MoveToApiWrapper implements CreepApiWrapper {
     return new MoveToApiWrapper(position, state.o)
   }
 
-  public static create(position: RoomPosition, options: MoveToApiWrapperOptions): MoveToApiWrapper {
-    return new MoveToApiWrapper(position, options)
+  public static create(position: RoomPosition, options?: MoveToApiWrapperOptions): MoveToApiWrapper {
+    return new MoveToApiWrapper(position, options ?? defaultMoveToOptions)
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {
-    const result = creep.moveTo(this.position, this.options)
     if (creep.pos.isEqualTo(this.position) === true) {
       return CreepApiWrapperProgress.Finished(false)
     }
+
+    const result = creep.moveTo(this.position, this.options)
 
     switch (result) {
     case OK:

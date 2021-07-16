@@ -1,5 +1,5 @@
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
-import { V6Creep } from "prototype/creep"
+import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
 import { CreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
@@ -52,11 +52,12 @@ export class MoveToTargetTask implements CreepTask {
     return new MoveToTargetTask(state.s, targetingApiWrapper, moveToApiWrapper)
   }
 
-  public static create(targetingApiWrapper: MoveToTargetTaskApiWrapper, moveToOptions: MoveToApiWrapperOptions): MoveToTargetTask {
-    if (moveToOptions.range == null) {
-      moveToOptions.range = targetingApiWrapper.range
+  public static create(targetingApiWrapper: MoveToTargetTaskApiWrapper, moveToOptions?: MoveToApiWrapperOptions): MoveToTargetTask {
+    const options: MoveToApiWrapperOptions = moveToOptions ?? defaultMoveToOptions
+    if (options.range == null) {
+      options.range = targetingApiWrapper.range
     }
-    const moveToApiWrapper = MoveToApiWrapper.create(targetingApiWrapper.target.pos, moveToOptions)
+    const moveToApiWrapper = MoveToApiWrapper.create(targetingApiWrapper.target.pos, options)
     return new MoveToTargetTask(Game.time, targetingApiWrapper, moveToApiWrapper)
   }
 
