@@ -4,10 +4,22 @@ import { isV6CreepMemory } from "prototype/creep"
 import { CreepTaskState } from "./creep_task_state"
 import { CreepTask } from "./creep_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./task/move_to_target_task"
+import { TalkTask, TalkTaskState } from "./combined_task/talk_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
+
+  // ---- Combined Task ---- //
+  "TalkTask" = (state: CreepTaskState) => {
+    const childTask = decodeCreepTaskFromState((state as TalkTaskState).st.c)
+    if (childTask == null) {
+      return null
+    }
+    return TalkTask.decode(state as TalkTaskState, childTask)
+  }
+
+  // ---- Task ---- //
   "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as MoveToTargetTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
