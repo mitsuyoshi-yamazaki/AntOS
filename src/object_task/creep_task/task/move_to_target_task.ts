@@ -1,7 +1,8 @@
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
-import { CreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
+import { CreepApiWrapper, CreepApiWrapperState } from "../creep_api_wrapper"
+import { decodeCreepApiWrapperFromState } from "../creep_api_wrapper_decoder"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
