@@ -5,6 +5,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
 import { TaskIdentifier } from "v5_task/task"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 // Worldをimportしない
 
 /** 別タスクの実行中であっても上書きする: 未実装 */
@@ -113,7 +114,12 @@ export class CreepPool implements ResourcePoolType<Creep> {
   public executeTask(): void {
     this.creeps.forEach(creep => {
       if (creep.v5task != null) {
-        if (creep.v5task.run(creep) !== TaskProgressType.InProgress) {
+        const v5Task = creep.v5task
+        const result = ErrorMapper.wrapLoop((): TaskProgressType => {
+          return v5Task.run(creep)
+        }, "creep.v5task.run()")()
+
+        if (result !== TaskProgressType.InProgress) {
           creep.v5task = null
         }
       }
