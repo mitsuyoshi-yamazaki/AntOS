@@ -54,6 +54,7 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W26S30 waypoints=W24S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W23S30 waypoints=W24S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W24S30 waypoints=W24S30")
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W22S30 waypoints=W24S30")
 // 9589 power (2688 in terminal)
 export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly identifier: string
@@ -166,10 +167,11 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     let scoutCount = 0
     let attackerCount = 0
     let haulerCount = 0
+    const haulerSpec = this.haulerSpec
 
     scoutCount = this.countCreep(this.scoutSpec.roles)
     attackerCount = this.countCreep(this.attackerSpec.roles)
-    haulerCount = this.countCreep(this.haulerSpec.roles)
+    haulerCount = this.countCreep(haulerSpec.roles)
 
     let powerBank: StructurePowerBank | null = null
     let powerResource: Resource | Ruin | null = null
@@ -201,7 +203,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
 
       const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 2)
       if (powerResource != null || almost) {
-        if (haulerCount < this.haulerSpec.maxCount) {
+        if (haulerCount < haulerSpec.maxCount) {
           this.addHauler()
         }
       }
@@ -211,7 +213,9 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     this.runHauler(powerBank, powerResource)
 
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
-    processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers`)
+    const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
+    const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
+    processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
   }
 
   // ---- Hauler ---- //
