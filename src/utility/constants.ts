@@ -39,10 +39,12 @@ export const GameConstants = {
       harvest: HARVEST_RANGE,
       transferResource: TRANSFER_RESOURCE_RANGE,
       upgradeController: UPGRADE_CONTROLLER_RANGE,
+      attack: 1,
     },
     actionPower: {
       build: BUILD_POWER,
       upgradeController: UPGRADE_CONTROLLER_POWER,
+      carryCapacity: CARRY_CAPACITY,
     },
   }
 }
@@ -71,5 +73,26 @@ export function directionDescription(direction: DirectionConstant): string {
     return "left"
   case TOP_LEFT:
     return "top_left"
+  }
+}
+
+export function oppositeDirection(direction: DirectionConstant): DirectionConstant {
+  switch (direction) {
+  case TOP:
+    return BOTTOM
+  case TOP_RIGHT:
+    return BOTTOM_LEFT
+  case RIGHT:
+    return LEFT
+  case BOTTOM_RIGHT:
+    return TOP_LEFT
+  case BOTTOM:
+    return TOP
+  case BOTTOM_LEFT:
+    return TOP_RIGHT
+  case LEFT:
+    return RIGHT
+  case TOP_LEFT:
+    return BOTTOM_RIGHT
   }
 }

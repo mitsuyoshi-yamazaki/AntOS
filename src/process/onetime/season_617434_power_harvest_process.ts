@@ -18,6 +18,8 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { GameConstants } from "utility/constants"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 
 interface Season617434PowerHarvestProcessCreepSpec {
   maxCount: number
@@ -51,6 +53,7 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W25S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W26S30 waypoints=W24S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W23S30 waypoints=W24S30")
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W24S30 waypoints=W24S30")
 // 9589 power (2688 in terminal)
 export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly identifier: string
@@ -77,22 +80,47 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
       ATTACK, ATTACK, ATTACK, ATTACK,
     ],
   }
-  private readonly haulerSpec: Season617434PowerHarvestProcessCreepSpec = {
-    maxCount: 3,
-    roles: [CreepRole.Hauler, CreepRole.Mover],
+  private get haulerSpec(): Season617434PowerHarvestProcessCreepSpec {
+    const roles = [CreepRole.Hauler, CreepRole.Mover]
+
+    if (this.powerAmount == null) {
+      return {
+        maxCount: 0,
+        roles,
+        body: [MOVE, CARRY],
+      }
+    }
+
+    // max:
     // 1500 capacity
     // 2250E = RCL6
-    body: [
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-    ],
+    const requiredCarryCount = Math.ceil(this.powerAmount / GameConstants.creep.actionPower.carryCapacity)
+    const creepMaxCarryCount = 30
+    const creepMaxCount = 4
+    const requiredCreepCount = Math.min(Math.ceil(requiredCarryCount / creepMaxCarryCount), creepMaxCount)
+
+    const creepCarryCount = ((): number => {
+      const estimatedCarryCount = requiredCreepCount * creepMaxCarryCount
+      if (estimatedCarryCount * 0.9 > requiredCarryCount) {
+        return Math.ceil(requiredCarryCount / requiredCreepCount)
+      }
+      return creepMaxCarryCount
+    })()
+    const bodyUnitCount = Math.ceil(creepCarryCount / 2)
+    const body: BodyPartConstant[] = []
+
+    for (let i = 0; i < bodyUnitCount; i += 1) {
+      body.unshift(MOVE)
+      body.push(...[CARRY, CARRY])
+    }
+
+    // console.log(`requiredCarryCount: ${requiredCarryCount}, requiredCreepCount: ${requiredCreepCount}, creepCarryCount: ${creepCarryCount}, body: ${body.length}`)
+
+    return {
+      maxCount: requiredCreepCount,
+      roles,
+      body,
+    }
   }
 
   private constructor(
@@ -147,7 +175,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     let powerResource: Resource | Ruin | null = null
 
     if (targetRoom == null) {
-      if (this.pickupFinished !== true && scoutCount <= this.scoutSpec.maxCount) {
+      if (scoutCount <= this.scoutSpec.maxCount) {
         this.addScout()
       }
     } else {
@@ -188,6 +216,9 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
 
   // ---- Hauler ---- //
   private addHauler(): void {
+    if (this.pickupFinished === true) {
+      return
+    }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Medium,
       numberOfCreeps: this.haulerSpec.maxCount,
@@ -212,15 +243,16 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
 
   private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResource: Resource | Ruin | null): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+
       if (creep.room.name !== this.parentRoomName) {
         const waypoints = [...this.waypoints].reverse()
         return MoveToRoomTask.create(this.parentRoomName, waypoints)
       }
 
-      const powerSpawn = creep.room.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_SPAWN) as StructurePowerSpawn | null
-      if (powerSpawn != null && powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > 0) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
-      }
+      // const powerSpawn = creep.room.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_SPAWN) as StructurePowerSpawn | null
+      // if (powerSpawn != null && powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > 0) {
+      //   return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
+      // }
       if (creep.room.terminal != null) {
         return MoveToTargetTask.create(TransferResourceApiWrapper.create(creep.room.terminal, RESOURCE_POWER))
       }
@@ -254,8 +286,11 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
 
   // ---- Attacker ---- //
   private addAttacker(): void {
+    if (this.pickupFinished === true) {
+      return
+    }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.Medium,
+      priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: this.attackerSpec.maxCount,
       codename: this.codename,
       roles: this.attackerSpec.roles,
@@ -277,6 +312,11 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
   }
 
   private attackerTask(creep: Creep, powerBank: StructurePowerBank): CreepTask | null {
+    const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)[0]
+    if (hostileCreep != null) {
+      return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
+    }
+
     if (creep.room.name !== this.targetRoomName) {
       return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
     }
@@ -284,11 +324,15 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     if (powerBank != null) {
       return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
     }
+
     return MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 4)
   }
 
   // ---- Scout ---- //
   private addScout(): void {
+    if (this.pickupFinished === true) {
+      return
+    }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: this.scoutSpec.maxCount,
