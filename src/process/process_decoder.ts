@@ -8,11 +8,12 @@ import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProc
 import { Season617434PowerHarvestProcess, Season617434PowerHarvestProcessState } from "./onetime/season_617434_power_harvest_process"
 import { Season631744PowerProcessProcess, Season631744PowerProcessProcessState } from "./onetime/season_631744_power_process_process"
 import { Season634603PowerCreepProcess, Season634603PowerCreepProcessState } from "./onetime/season_634603_power_creep_process"
+import { Season687888RunHaulerTestProcess, Season687888RunHaulerTestProcessState } from "./onetime/season_687888_run_hauler_test_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
-import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
+// import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
@@ -26,7 +27,7 @@ class ProcessTypes {
   "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
 
   // ---- v6 Process ---- //
-  "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
+  // "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
 
   // ---- Onetime processes ---- //
   "Season487837AttackInvaderCoreProcess" = (state: ProcessState) => Season487837AttackInvaderCoreProcess.decode(state as unknown as Season487837AttackInvaderCoreProcessState)
@@ -35,6 +36,7 @@ class ProcessTypes {
   "Season617434PowerHarvestProcess" = (state: ProcessState) => Season617434PowerHarvestProcess.decode(state as unknown as Season617434PowerHarvestProcessState)
   "Season631744PowerProcessProcess" = (state: ProcessState) => Season631744PowerProcessProcess.decode(state as unknown as Season631744PowerProcessProcessState)
   "Season634603PowerCreepProcess" = (state: ProcessState) => Season634603PowerCreepProcess.decode(state as unknown as Season634603PowerCreepProcessState)
+  "Season687888RunHaulerTestProcess" = (state: ProcessState) => Season687888RunHaulerTestProcess.decode(state as unknown as Season687888RunHaulerTestProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

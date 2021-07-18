@@ -14,6 +14,7 @@ import { Season631744PowerProcessProcess } from "process/onetime/season_631744_p
 import { World } from "world_info/world_info"
 import { roomLink } from "utility/log"
 import { Season634603PowerCreepProcess } from "process/onetime/season_634603_power_creep_process"
+import { Season687888RunHaulerTestProcess } from "process/onetime/season_687888_run_hauler_test_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -55,6 +56,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season634603PowerCreepProcess":
       result = this.launchSeason634603PowerCreepProcess()
+      break
+    case "Season687888RunHaulerTestProcess":
+      result = this.launchSeason687888RunHaulerTestProcess()
       break
     default:
       break
@@ -266,6 +270,38 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season634603PowerCreepProcess.create(processId, roomName, powerCreepName)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason687888RunHaulerTestProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const x = args.get("x")
+    if (x == null) {
+      return this.missingArgumentError("x")
+    }
+    const parsedX = parseInt(x, 10)
+    if (isNaN(parsedX)) {
+      return Result.Failed(`x is not a number (${x})`)
+    }
+    const y = args.get("y")
+    if (y == null) {
+      return this.missingArgumentError("y")
+    }
+    const parsedY = parseInt(y, 10)
+    if (isNaN(parsedY)) {
+      return Result.Failed(`y is not a number (${y})`)
+    }
+
+    const destination = new RoomPosition(parsedX, parsedY, roomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season687888RunHaulerTestProcess.create(processId, roomName, destination)
     })
     return Result.Succeeded(process)
   }
