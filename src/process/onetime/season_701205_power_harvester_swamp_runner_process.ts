@@ -326,7 +326,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         return null
       } else {
         creep.say("error")
-        PrimitiveLogger.fatal(`${this.constructor.name} no resource but pickupFinished = false`)
+        PrimitiveLogger.fatal(`${this.constructor.name} no visual to ${roomLink(this.targetRoomName)}`)
+        this.pickupFinished = true
         return null
       }
     }

@@ -1,4 +1,4 @@
-import { defaultMoveToOptions, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN } from "prototype/creep"
+import { ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, interRoomMoveToOptions } from "prototype/creep"
 import { TargetingApiWrapperTargetType } from "v5_object_task/targeting_api_wrapper"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
@@ -7,6 +7,7 @@ import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "../
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { GameConstants } from "utility/constants"
 
 export interface SwampRunnerTransferTaskState extends CreepTaskState {
   /** api warpper state */
@@ -14,12 +15,17 @@ export interface SwampRunnerTransferTaskState extends CreepTaskState {
 
   /** dropped resource location */
   d: RoomPositionState | null
+
+  /** last tick position */
+  p: RoomPositionState | null
 }
 
 /**
  * - 2体が協力して動けばdecayなしに1square/tickで運べる
  *   - 32 CARRY, 16 MOVE * 2 => 3200
  *   - 47 CARRY, 1 MOVE * 2 => 2350 (73%)
+ * - [ ] waypointを設定できない
+ * - [ ] 正常にtransferできない
  */
 export class SwampRunnerTransferTask implements CreepTask {
   public readonly shortDescription = "s-runner"
@@ -31,6 +37,7 @@ export class SwampRunnerTransferTask implements CreepTask {
     public readonly startTime: number,
     private readonly transferResourceApiWrapper: TransferResourceApiWrapper,
     private droppedResourceLocation: RoomPosition | null,
+    private lastTickPosition: RoomPosition | null,
   ) {
   }
 
@@ -40,6 +47,7 @@ export class SwampRunnerTransferTask implements CreepTask {
       t: "SwampRunnerTransferTask",
       as: this.transferResourceApiWrapper.encode(),
       d: this.droppedResourceLocation?.encode() ?? null,
+      p: this.lastTickPosition?.encode() ?? null,
     }
   }
 
@@ -48,20 +56,31 @@ export class SwampRunnerTransferTask implements CreepTask {
     if (wrapper == null) {
       return null
     }
-    const resourceLocation = ((): RoomPosition | null => {
-      if (state.d == null) {
+    const parsePosition = ((roomPositionState: RoomPositionState | null): RoomPosition | null => {
+      if (roomPositionState == null) {
         return null
       }
-      return decodeRoomPosition(state.d)
-    })()
-    return new SwampRunnerTransferTask(state.s, wrapper, resourceLocation)
+      return decodeRoomPosition(roomPositionState)
+    })
+    const resourceLocation = parsePosition(state.d)
+    const lastTickPosition = parsePosition(state.p)
+    return new SwampRunnerTransferTask(state.s, wrapper, resourceLocation, lastTickPosition)
   }
 
   public static create(apiWrapper: TransferResourceApiWrapper): SwampRunnerTransferTask {
-    return new SwampRunnerTransferTask(Game.time, apiWrapper, null)
+    return new SwampRunnerTransferTask(Game.time, apiWrapper, null, null)
   }
 
   public run(creep: Creep): TaskProgressType {
+    const lastTickPosition = this.lastTickPosition ?? creep.pos
+    this.lastTickPosition = creep.pos
+
+    // if (creep.pos.getRangeTo(this.transferResourceApiWrapper.target) <= GameConstants.creep.actionRange.transferResource) {
+    //   if (creep.store.getUsedCapacity(this.transferResourceApiWrapper.resourceType) <= 0) {
+
+    //   }
+    // }
+
     const result = this.transferResourceApiWrapper.run(creep)
 
     switch (result) {
@@ -72,7 +91,7 @@ export class SwampRunnerTransferTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
 
     case ERR_NOT_IN_RANGE:
-      this.move(creep)
+      this.move(creep, lastTickPosition)
       return TaskProgressType.InProgress
 
     case ERR_BUSY:
@@ -92,15 +111,14 @@ export class SwampRunnerTransferTask implements CreepTask {
    *   - 5. pickup
    *   - 6. 動かずRoom Bに戻る
    */
-  private move(creep: Creep): void {
+  private move(creep: Creep, lastTickPosition: RoomPosition): void {
     const resourceType = this.transferResourceApiWrapper.resourceType
 
     if (this.droppedResourceLocation == null) {
       creep.drop(resourceType)
-      creep.moveTo(this.transferResourceApiWrapper.target, defaultMoveToOptions)
+      creep.moveTo(this.transferResourceApiWrapper.target)
       this.droppedResourceLocation = creep.pos
       return
-
     }
 
     if (this.droppedResourceLocation.roomName !== creep.room.name) {
@@ -109,14 +127,30 @@ export class SwampRunnerTransferTask implements CreepTask {
     const droppedResource = this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType)
     if (droppedResource == null) {
       creep.say("no resource")
-      PrimitiveLogger.programError(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation}`)
+      PrimitiveLogger.programError(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
       return
     }
     if (droppedResource.pos.isEqualTo(creep.pos) === true) {
-      creep.moveTo(this.transferResourceApiWrapper.target, defaultMoveToOptions)
-      return
+      const stopped = droppedResource.pos.isEqualTo(lastTickPosition) === true
+      if (stopped === true) {
+        // 静止していた
+        this.pickup(creep, droppedResource)
+        return
+      } else {
+        creep.moveTo(this.transferResourceApiWrapper.target)
+        return
+      }
     }
-    const pickupResult = creep.pickup(droppedResource)
+    this.pickup(creep, droppedResource)
+  }
+
+  // private getDroppedResource(): Resource | null {
+  //   const resourceType = this.transferResourceApiWrapper.resourceType
+  //   return this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType) ? null
+  // }
+
+  private pickup(creep: Creep, resource: Resource): void {
+    const pickupResult = creep.pickup(resource)
     switch (pickupResult) {
     case OK:
       this.droppedResourceLocation = null
@@ -127,9 +161,4 @@ export class SwampRunnerTransferTask implements CreepTask {
       return
     }
   }
-
-  // private borderCrossing(position: RoomPosition): boolean {
-  //   return position.x === GameConstants.room.edgePosition.min || position.x === GameConstants.room.edgePosition.max
-  //     || position.y === GameConstants.room.edgePosition.min || position.y === GameConstants.room.edgePosition.max
-  // }
 }
