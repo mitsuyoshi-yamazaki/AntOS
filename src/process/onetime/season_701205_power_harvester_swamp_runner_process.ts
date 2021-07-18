@@ -23,6 +23,7 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
+import { bodyCost } from "utility/creep_body"
 
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
@@ -53,9 +54,8 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
   f: boolean
 }
 
-/**
- * - [ ] Swamp runnerが落としたresourceと区別する
- */
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name=W17S30 waypoints=W14S30")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name=W10S23 waypoints=W10S24")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string
@@ -81,22 +81,22 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       ATTACK, ATTACK, ATTACK, ATTACK,
     ],
   }
-  // private readonly attackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = { // FixMe:
-  //   maxCount: 2,
-  //   roles: [CreepRole.Attacker, CreepRole.Mover],
-  //   // 570 hits/tick = 2M/3510ticks
-  //   // 2150E max
-  //   body: [
-  //     MOVE, MOVE, MOVE, MOVE, MOVE,
-  //     MOVE, MOVE, MOVE, MOVE, MOVE,
-  //     MOVE, MOVE, MOVE, MOVE, MOVE,
-  //     MOVE,
-  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  //     ATTACK,
-  //   ],
-  // }
+  private readonly smallAttackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
+    maxCount: 3,
+    roles: [CreepRole.Attacker, CreepRole.Mover],
+    // 480 hits/tick = 2M/4200ticks
+    // 2150E max
+    body: [
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      MOVE,
+      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+      ATTACK,
+    ],
+  }
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
     const roles = [CreepRole.Hauler, CreepRole.Mover]
 
@@ -127,7 +127,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const body: BodyPartConstant[] = [MOVE]
 
     for (let i = 0; i < bodyUnitCount; i += 1) {
-      body.unshift(...[CARRY, CARRY])
+      body.unshift(CARRY)
     }
 
     // console.log(`requiredCarryCount: ${requiredCarryCount}, requiredCreepCount: ${requiredCreepCount}, creepCarryCount: ${creepCarryCount}, body: ${body.length}`)
@@ -344,12 +344,23 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (this.pickupFinished === true) {
       return
     }
+    const body = ((): BodyPartConstant[] => {
+      const parentRoom = Game.rooms[this.parentRoomName]
+      if (parentRoom == null) {
+        return this.attackerSpec.body
+      }
+      if (bodyCost(this.attackerSpec.body) > parentRoom.energyCapacityAvailable) {
+        return this.smallAttackerSpec.body  // FixMe: まだ大きい場合
+      }
+      return this.attackerSpec.body
+    })()
+
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: this.attackerSpec.maxCount,
       codename: this.codename,
       roles: this.attackerSpec.roles,
-      body: this.attackerSpec.body,
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
