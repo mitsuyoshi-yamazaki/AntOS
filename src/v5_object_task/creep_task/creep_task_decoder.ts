@@ -15,6 +15,7 @@ import { CreepTaskState } from "./creep_task_state"
 import { CreepTask } from "./creep_task"
 import { TargetToPositionTask, TargetToPositionTaskState } from "./meta_task/target_to_position_task"
 import { TestRunHaulerTask, TestRunHaulerTaskState } from "./meta_task/test_run_hauler_task"
+import { SwampRunnerTransferTask, SwampRunnerTransferTaskState } from "./meta_task/swamp_runner_transfer_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -36,6 +37,7 @@ class CreepTaskDecoderMap {
   "MoveToTask" = (state: CreepTaskState) => MoveToTask.decode(state as unknown as MoveToTaskState)
   "EndlessTask" = (state: CreepTaskState) => EndlessTask.decode(state as unknown as EndlessTaskState)
   "TargetToPositionTask" = (state: CreepTaskState) => TargetToPositionTask.decode(state as unknown as TargetToPositionTaskState)
+  "SwampRunnerTransferTask" = (state: CreepTaskState) => SwampRunnerTransferTask.decode(state as unknown as SwampRunnerTransferTaskState)
 
   // ---- Test Task ---- //
   "TestRunHaulerTask" = (state: CreepTaskState) => TestRunHaulerTask.decode(state as unknown as TestRunHaulerTaskState)
