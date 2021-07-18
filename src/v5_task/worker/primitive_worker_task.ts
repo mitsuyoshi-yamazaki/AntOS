@@ -17,6 +17,8 @@ import { ProblemFinder } from "v5_problem/problem_finder"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
+import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
+import { bodyCost } from "utility/creep_body"
 
 const creepCountForSource = 4
 
@@ -119,6 +121,17 @@ export class PrimitiveWorkerTask extends Task {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
+      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+        const spawn = objects.activeStructures.spawns[0]
+        const room = objects.controller.room
+        if (spawn != null && room.energyAvailable > 150) {
+          const cost = bodyCost(creep.body.map(b => b.type))
+          if (cost > room.energyCapacityAvailable) {
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+          }
+        }
+      }
+
       const source = objects.getSource(creep.pos)
       if (source == null) {
         return null
