@@ -8,7 +8,7 @@ export const Migration = {
     const version = Memory.room_info[roomName]?.v
     if (version == null) {
       PrimitiveLogger.fatal(`Room ${roomLink(roomName)} doesn't have room_info memory`)
-      return ShortVersion.v6
+      return ShortVersion.v5
     }
     return version
   }
