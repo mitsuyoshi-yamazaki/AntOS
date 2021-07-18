@@ -14,16 +14,21 @@ import { processLog } from "./process_log"
 export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */
   s: BootstrapRoomTaskState[]
+
+  /** next GCL */
+  g: number | null
 }
 
 // Game.io("message 34351666000 parent_room_name=W52S28 target_room_name=W52S25 waypoints=W51S28,W51S26")
 // Game.io("message 387872000 parent_room_name=W24S29 target_room_name=W14S28 waypoints=W23S29,W23S30,W14S30")
 // Game.io("message 544054000 parent_room_name=W14S28 target_room_name=W9S24 waypoints=W14S30,W10S30")
+// Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W1S25 waypoints=W8S25")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly tasks: BootstrapRoomTask[],
+    private nextGcl: number | null,
   ) { }
 
   public encode(): BootstrapRoomManagerProcessState {
@@ -32,23 +37,29 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       l: this.launchTime,
       i: this.processId,
       s: this.tasks.map(task => task.encode()),
+      g: this.nextGcl,
     }
   }
 
   public static decode(state: BootstrapRoomManagerProcessState): BootstrapRoomManagerProcess {
     const tasks = state.s.map(taskState => BootstrapRoomTask.decode(taskState, decodeTasksFrom(taskState.c)))
-    return new BootstrapRoomManagerProcess(state.l, state.i, tasks)
+    return new BootstrapRoomManagerProcess(state.l, state.i, tasks, state.g)
   }
 
   public static create(processId: ProcessId): BootstrapRoomManagerProcess {
-    return new BootstrapRoomManagerProcess(Game.time, processId, [])
+    return new BootstrapRoomManagerProcess(Game.time, processId, [], null)
   }
 
   public processShortDescription(): string {
-    return this.tasks.map(task => roomLink(task.targetRoomName)).join(",")
+    const nextLevelDescription = this.shouldRun() ? `${Math.floor(Game.gcl.progressTotal - Game.gcl.progress)}CP left` : ""
+    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")} ${nextLevelDescription}`
   }
 
   public runOnTick(): void {
+    if (this.shouldRun() !== true) {
+      return
+    }
+
     const failedTasks: BootstrapRoomTask[] = []
     const finishedTasks: BootstrapRoomTask[] = []
 
@@ -107,6 +118,15 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
     const waypoints = rawWaypoints.split(",")
 
+    const targetGcl = args.get("target_gcl")
+    if (targetGcl == null) {
+      return missingArgumentError("target_gcl")
+    }
+    const parsedTargetGcl = parseInt(targetGcl, 10)
+    if (isNaN(parsedTargetGcl) === true) {
+      return `target_gcl is not a number (${targetGcl})`
+    }
+
     if (Migration.roomVersion(parentRoomName) === ShortVersion.v3) {
       return `v3 room ${roomLink(parentRoomName)} is not supported`
     }
@@ -121,7 +141,23 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
 
     this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints))
+    this.nextGcl = parsedTargetGcl
     return `Launched BootstrapRoomTask ${roomLink(targetRoomName)} (parent: ${roomLink(parentRoomName)})`
+  }
+
+  // ---- Private ---- //
+  private shouldRun(): boolean {
+    if (this.nextGcl == null) {
+      return false
+    }
+    if (this.nextGcl >= Game.gcl.level) {
+      return true
+    }
+    if (this.nextGcl - 1 !== Game.gcl.level) {
+      return false
+    }
+    const nextLevel = Game.gcl.progressTotal - Game.gcl.progress
+    return nextLevel < 80000
   }
 
   // ---- Task ---- //
