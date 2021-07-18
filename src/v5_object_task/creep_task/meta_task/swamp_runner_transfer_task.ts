@@ -1,4 +1,4 @@
-import { ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, interRoomMoveToOptions } from "prototype/creep"
+import { ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN } from "prototype/creep"
 import { TargetingApiWrapperTargetType } from "v5_object_task/targeting_api_wrapper"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
@@ -7,7 +7,6 @@ import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "../
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
-import { GameConstants } from "utility/constants"
 
 export interface SwampRunnerTransferTaskState extends CreepTaskState {
   /** api warpper state */
@@ -25,7 +24,6 @@ export interface SwampRunnerTransferTaskState extends CreepTaskState {
  *   - 32 CARRY, 16 MOVE * 2 => 3200
  *   - 47 CARRY, 1 MOVE * 2 => 2350 (73%)
  * - [ ] waypointを設定できない
- * - [ ] 正常にtransferできない
  */
 export class SwampRunnerTransferTask implements CreepTask {
   public readonly shortDescription = "s-runner"
@@ -75,31 +73,7 @@ export class SwampRunnerTransferTask implements CreepTask {
     const lastTickPosition = this.lastTickPosition ?? creep.pos
     this.lastTickPosition = creep.pos
 
-    // if (creep.pos.getRangeTo(this.transferResourceApiWrapper.target) <= GameConstants.creep.actionRange.transferResource) {
-    //   if (creep.store.getUsedCapacity(this.transferResourceApiWrapper.resourceType) <= 0) {
-
-    //   }
-    // }
-
-    const result = this.transferResourceApiWrapper.run(creep)
-
-    switch (result) {
-    case FINISHED:
-      return TaskProgressType.Finished
-
-    case FINISHED_AND_RAN:
-      return TaskProgressType.FinishedAndRan
-
-    case ERR_NOT_IN_RANGE:
-      this.move(creep, lastTickPosition)
-      return TaskProgressType.InProgress
-
-    case ERR_BUSY:
-      return TaskProgressType.InProgress
-
-    case ERR_PROGRAMMING_ERROR:
-      return TaskProgressType.Finished
-    }
+    return this.move(creep, lastTickPosition)
   }
 
   /**
@@ -111,43 +85,55 @@ export class SwampRunnerTransferTask implements CreepTask {
    *   - 5. pickup
    *   - 6. 動かずRoom Bに戻る
    */
-  private move(creep: Creep, lastTickPosition: RoomPosition): void {
+  private move(creep: Creep, lastTickPosition: RoomPosition): TaskProgressType {
     const resourceType = this.transferResourceApiWrapper.resourceType
 
     if (this.droppedResourceLocation == null) {
-      creep.drop(resourceType)
-      creep.moveTo(this.transferResourceApiWrapper.target)
-      this.droppedResourceLocation = creep.pos
-      return
+      const result = this.transferResourceApiWrapper.run(creep)
+
+      switch (result) {
+      case FINISHED:
+        return TaskProgressType.Finished
+
+      case FINISHED_AND_RAN:
+        return TaskProgressType.FinishedAndRan
+
+      case ERR_NOT_IN_RANGE:
+        creep.drop(resourceType)
+        creep.moveTo(this.transferResourceApiWrapper.target)
+        this.droppedResourceLocation = creep.pos
+        return TaskProgressType.InProgress
+
+      case ERR_BUSY:
+        return TaskProgressType.InProgress
+
+      case ERR_PROGRAMMING_ERROR:
+        return TaskProgressType.Finished
+      }
     }
 
     if (this.droppedResourceLocation.roomName !== creep.room.name) {
-      return
+      return TaskProgressType.InProgress
     }
     const droppedResource = this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType)
     if (droppedResource == null) {
       creep.say("no resource")
       PrimitiveLogger.programError(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
-      return
+      return TaskProgressType.InProgress
     }
     if (droppedResource.pos.isEqualTo(creep.pos) === true) {
       const stopped = droppedResource.pos.isEqualTo(lastTickPosition) === true
       if (stopped === true) {
         // 静止していた
         this.pickup(creep, droppedResource)
-        return
       } else {
         creep.moveTo(this.transferResourceApiWrapper.target)
-        return
       }
+      return TaskProgressType.InProgress
     }
     this.pickup(creep, droppedResource)
+    return TaskProgressType.InProgress
   }
-
-  // private getDroppedResource(): Resource | null {
-  //   const resourceType = this.transferResourceApiWrapper.resourceType
-  //   return this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType) ? null
-  // }
 
   private pickup(creep: Creep, resource: Resource): void {
     const pickupResult = creep.pickup(resource)
