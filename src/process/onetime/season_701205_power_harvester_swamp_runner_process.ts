@@ -101,20 +101,24 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   }
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
     const roles = [CreepRole.Hauler, CreepRole.Mover]
+    const parentRoom = Game.rooms[this.parentRoomName]
 
-    if (this.powerBankInfo == null) {
+    if (this.powerBankInfo == null || parentRoom == null) {
       return {
-        maxCount: 0,
+        maxCount: 4,
         roles,
-        body: [MOVE, CARRY],
+        body: [CARRY, CARRY, CARRY, CARRY, CARRY, MOVE],
       }
     }
 
     // max:
     // 2450 capacity
     // 2500E = RCL6
+    const body: BodyPartConstant[] = [MOVE]
+    const bodyUnit = [CARRY]
+    const energyCapacity = parentRoom.energyCapacityAvailable
     const requiredCarryCount = Math.ceil(this.powerBankInfo.powerAmount / GameConstants.creep.actionPower.carryCapacity)
-    const creepMaxCarryCount = 49
+    const creepMaxCarryCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), 49)
     const creepMaxCount = 4
     const requiredCreepCount = Math.min(Math.ceil(requiredCarryCount / creepMaxCarryCount), creepMaxCount)
 
@@ -126,10 +130,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return creepMaxCarryCount
     })()
     const bodyUnitCount = creepCarryCount
-    const body: BodyPartConstant[] = [MOVE]
 
     for (let i = 0; i < bodyUnitCount; i += 1) {
-      body.unshift(CARRY)
+      body.unshift(...bodyUnit)
     }
 
     // console.log(`requiredCarryCount: ${requiredCarryCount}, requiredCreepCount: ${requiredCreepCount}, creepCarryCount: ${creepCarryCount}, body: ${body.length}`)
@@ -321,6 +324,10 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       creep.say("no store")
       PrimitiveLogger.fatal(`${this.constructor.name} parent room ${roomLink(this.parentRoomName)} does not have terminal nor storage`)
       return null
+    }
+
+    if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
     }
 
     if (powerResource == null) {
