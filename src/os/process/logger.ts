@@ -19,9 +19,9 @@ export interface LoggerProcessState extends ProcessState {
   }
 }
 
-type LoggerProcessMessageOperation = "add" | "remove"
+type LoggerProcessMessageOperation = "add" | "remove" | "clear"
 function isLoggerProcessMessageOperation(arg: string): arg is LoggerProcessMessageOperation {
-  return ["add", "remove"].includes(arg)
+  return ["add", "remove", "clear"].includes(arg)
 }
 
 type LoggerProcessMessageFilterType = "id" | "type"
@@ -118,13 +118,13 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
    */
   public didReceiveMessage(message: string): string {
     const components = message.split(" ")
-    if (components.length < 3) {
-      return `Lack of components. Expected format: "&ltoperation&gt &ltfilter type&gt &ltfilter value&gt", raw message: ${message}`
-    }
-
     const operation = components[0]
     if (!(isLoggerProcessMessageOperation(operation))) {
-      return `Invalid operation ${operation}. Operation is either "add" or "remove"`
+      return `Invalid operation ${operation}. Operation is either "add", "remove" or "clear"`
+    }
+
+    if (components.length < 3 && operation !== "clear") {
+      return `Lack of components. Expected format: "&ltoperation&gt &ltfilter type&gt &ltfilter value&gt", raw message: ${message}`
     }
 
     const filterType = components[1]
@@ -133,27 +133,31 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     }
 
     switch (filterType) {
-    case "id": {
-      const processId = parseInt(components[2], 10)
-      if (isNaN(processId)) {
-        return `Invalid process ID ${components[2]}`
-      }
-      return this.filterById(operation, processId)
-    }
+    case "id":
+      return this.filterById(operation, components[2])
     case "type":
       return this.filterByType(operation, components[2])
     }
   }
 
-  private filterById(operation: LoggerProcessMessageOperation, processId: number): string {
+  private filterById(operation: LoggerProcessMessageOperation, rawProcessId: string): string {
     switch (operation) {
-    case "add":
+    case "add": {
+      const processId = parseInt(rawProcessId, 10)
+      if (isNaN(processId)) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       if (this.filter.processIds.includes(processId) === true) {
         return `Process ID ${processId} already added to the filter list`
       }
       this.filter.processIds.push(processId)
       return `Added ${processId}`
+    }
     case "remove": {
+      const processId = parseInt(rawProcessId, 10)
+      if (isNaN(processId)) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       const index = this.filter.processIds.indexOf(processId)
       if (index < 0) {
         return `Process ID ${processId} not in the filter list`
@@ -161,6 +165,9 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
       this.filter.processIds.splice(index, 1)
       return `Removed ${processId}`
     }
+    case "clear":
+      this.filter.processIds.splice(0, this.filter.processIds.length)
+      return "Cleared all process IDs"
     }
   }
 
@@ -180,6 +187,9 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
       this.filter.processTypes.splice(index, 1)
       return `Removed ${typeIdentifier}`
     }
+    case "clear":
+      this.filter.processTypes.splice(0, this.filter.processTypes.length)
+      return "Cleared all process types"
     }
   }
 }
