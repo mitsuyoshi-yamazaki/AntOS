@@ -56,6 +56,8 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name=W17S30 waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name=W10S23 waypoints=W10S24")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name=W24S30 waypoints=W24S30")
+// Game.io("launch Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name=W15S30 waypoints=W14S30")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string
@@ -113,12 +115,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     // 2500E = RCL6
     const requiredCarryCount = Math.ceil(this.powerBankInfo.powerAmount / GameConstants.creep.actionPower.carryCapacity)
     const creepMaxCarryCount = 49
-    const creepMaxCount = 3
+    const creepMaxCount = 4
     const requiredCreepCount = Math.min(Math.ceil(requiredCarryCount / creepMaxCarryCount), creepMaxCount)
 
     const creepCarryCount = ((): number => {
       const estimatedCarryCount = requiredCreepCount * creepMaxCarryCount
-      if (estimatedCarryCount * 0.9 > requiredCarryCount) {
+      if (estimatedCarryCount > requiredCarryCount) {
         return Math.ceil(requiredCarryCount / requiredCreepCount)
       }
       return creepMaxCarryCount
@@ -231,7 +233,6 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         if (attackerCount < this.attackerSpec.maxCount) {
           this.addAttacker()
         }
-        this.runAttackers(powerBank)
       } else {
         powerResource = ((): Resource | Ruin | null => {
           if (this.powerBankInfo == null) {
@@ -264,6 +265,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     this.runScout()
+    this.runAttackers(powerBank)
     this.runHauler(powerBank, powerResource)
 
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
@@ -369,7 +371,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runAttackers(powerBank: StructurePowerBank): void {
+  private runAttackers(powerBank: StructurePowerBank | null): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
@@ -379,7 +381,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     )
   }
 
-  private attackerTask(creep: Creep, powerBank: StructurePowerBank): CreepTask | null {
+  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null): CreepTask | null {
     const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)[0]
     if (hostileCreep != null) {
       return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
