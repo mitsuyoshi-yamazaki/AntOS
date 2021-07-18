@@ -150,7 +150,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     if (this.nextGcl == null) {
       return false
     }
-    if (this.nextGcl >= Game.gcl.level) {
+    if (this.nextGcl <= Game.gcl.level) {
       return true
     }
     if (this.nextGcl - 1 !== Game.gcl.level) {
