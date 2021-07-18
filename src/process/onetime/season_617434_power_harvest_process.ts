@@ -55,7 +55,9 @@ export interface Season617434PowerHarvestProcessState extends ProcessState {
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W23S30 waypoints=W24S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W24S30 waypoints=W24S30")
 // Game.io("launch -l Season617434PowerHarvestProcess room_name=W24S29 target_room_name=W22S30 waypoints=W24S30")
-// 9589 power (2688 in terminal)
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W9S24 target_room_name=W10S25 waypoints=W10S24")
+// Game.io("launch Season617434PowerHarvestProcess room_name=W9S24 target_room_name=W10S24 waypoints=W10S24")
+// Game.io("launch -l Season617434PowerHarvestProcess room_name=W14S28 target_room_name=W13S30 waypoints=W13S30")
 export class Season617434PowerHarvestProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string
@@ -81,6 +83,22 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
       ATTACK, ATTACK, ATTACK, ATTACK,
     ],
   }
+  // private readonly attackerSpec: Season617434PowerHarvestProcessCreepSpec = { // FixMe:
+  //   maxCount: 2,
+  //   roles: [CreepRole.Attacker, CreepRole.Mover],
+  //   // 570 hits/tick = 2M/3510ticks
+  //   // 2150E max
+  //   body: [
+  //     MOVE, MOVE, MOVE, MOVE, MOVE,
+  //     MOVE, MOVE, MOVE, MOVE, MOVE,
+  //     MOVE, MOVE, MOVE, MOVE, MOVE,
+  //     MOVE,
+  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  //     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  //     ATTACK,
+  //   ],
+  // }
   private get haulerSpec(): Season617434PowerHarvestProcessCreepSpec {
     const roles = [CreepRole.Hauler, CreepRole.Mover]
 
@@ -159,7 +177,8 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const finishStatus = this.pickupFinished ? "finished" : "working"
+    return `${roomLink(this.targetRoomName)} ${finishStatus}`
   }
 
   public runOnTick(): void {
@@ -196,7 +215,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
         powerResource = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => resource.resourceType === RESOURCE_POWER)
           ?? targetRoom.find(FIND_RUINS).find(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK)
           ?? null
-        if (powerBank == null && powerResource == null) { // FixMe: 一度ruinになる
+        if (powerBank == null && powerResource == null) {
           this.pickupFinished = true
         }
       }
@@ -253,10 +272,6 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
         return MoveToRoomTask.create(this.parentRoomName, waypoints)
       }
 
-      // const powerSpawn = creep.room.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_SPAWN) as StructurePowerSpawn | null
-      // if (powerSpawn != null && powerSpawn.store.getFreeCapacity(RESOURCE_POWER) > 0) {
-      //   return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
-      // }
       if (creep.room.terminal != null) {
         return MoveToTargetTask.create(TransferResourceApiWrapper.create(creep.room.terminal, RESOURCE_POWER))
       }

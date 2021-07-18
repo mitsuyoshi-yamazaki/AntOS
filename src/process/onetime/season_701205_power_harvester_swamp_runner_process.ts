@@ -195,7 +195,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const finishStatus = this.pickupFinished ? "finished" : "working"
+    return `${roomLink(this.targetRoomName)} ${finishStatus}`
   }
 
   public runOnTick(): void {
