@@ -17,6 +17,7 @@ import { Season634603PowerCreepProcess } from "process/onetime/season_634603_pow
 import { Season687888RunHaulerTestProcess } from "process/onetime/season_687888_run_hauler_test_process"
 import { TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
+import { Season812484StealPowerProcess } from "process/onetime/season_812484_steal_power_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -64,6 +65,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season701205PowerHarvesterSwampRunnerProcess":
       result = this.launchSeason701205PowerHarvesterSwampRunnerProcess()
+      break
+    case "Season812484StealPowerProcess":
+      result = this.launchSeason812484StealPowerProcess()
       break
     default:
       break
@@ -316,6 +320,29 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason812484StealPowerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season812484StealPowerProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
