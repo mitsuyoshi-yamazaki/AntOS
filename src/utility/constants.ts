@@ -1,4 +1,7 @@
 // ---- Pathfinding ---- //
+
+import { PowerConstants } from "./power_constants"
+
 /** @deprecated */
 export const SWAMP_COST = 5
 
@@ -52,9 +55,16 @@ export const GameConstants = {
       carryCapacity: CARRY_CAPACITY,
     },
   },
+  source: {
+    regenerationDuration: 300,
+  },
+  power: PowerConstants,
+}
+
+export const ApplicationConstants = {
   performance: {
     measuringPeriod: CREEP_LIFE_TIME,
-  }
+  },
 }
 
 // ---- Direction ---- //

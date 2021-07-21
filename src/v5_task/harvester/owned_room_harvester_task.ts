@@ -23,6 +23,7 @@ import { roomLink } from "utility/log"
 import { TaskState } from "v5_task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { bodyCost } from "utility/creep_body"
+import { GameConstants } from "utility/constants"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -174,8 +175,27 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
   }
 
   private harvesterBody(source: Source): BodyPartConstant[] {
+    const sourceCapacity = ((): number => {
+      const effects = source.effects
+      if (effects == null) {
+        return source.energyCapacity
+      }
+      const regenEffect = effects.find(effect => effect.effect === PWR_REGEN_SOURCE) as PowerEffect | null
+      if (regenEffect == null) {
+        return source.energyCapacity
+      }
+      const powerConstant = GameConstants.power.regenSource
+      const value = powerConstant.value[regenEffect.level]
+      if (value == null) {
+        PrimitiveLogger.programError(`Source ${source.id} in ${roomLink(source.room.name)} has effect with unimplemented level ${regenEffect.level}`)
+        return source.energyCapacity
+      }
+      const additionalCapacity = (GameConstants.source.regenerationDuration / GameConstants.power.regenSource.duration) * value
+      return source.energyCapacity + additionalCapacity
+    })()
+
     const moveSpeed = 0.5
-    const maximumWorkCount = Math.ceil((source.energyCapacity / 300) / HARVEST_POWER) + 1
+    const maximumWorkCount = Math.ceil((sourceCapacity / 300) / HARVEST_POWER) + 1
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
