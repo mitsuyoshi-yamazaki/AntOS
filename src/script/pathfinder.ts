@@ -44,6 +44,9 @@ function visualize(positions: RoomPosition[], options?: { color?: string, text?:
   const text = options?.text ?? "*"
   positions.forEach(position => {
     const room = Game.rooms[position.roomName]
+    if (room == null) {
+      return
+    }
     room.visual.text(text, position, { color: options?.color, align: "center"})
   })
 }
