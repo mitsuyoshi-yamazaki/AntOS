@@ -91,7 +91,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   public processShortDescription(): string {
-    return roomLink(this.parentRoomName)
+    return roomLink(this.targetRoomName)
   }
 
   public runOnTick(): void {
