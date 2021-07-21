@@ -13,8 +13,6 @@ import { SourceKeeper } from "game/source_keeper"
 import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
-const numberOfCreeps = 2
-
 interface Season845677Attack1TowerProcessSquad {
   leaderCreepName: CreepName
   followerCreepName: CreepName
@@ -44,6 +42,9 @@ export interface Season845677Attack1TowerProcessState extends ProcessState {
     /** squads */
     s: Season845677Attack1TowerProcessSquad[]
   }
+
+  /** number of creeps */
+  n: number
 }
 
 // Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W11S23 waypoints=W14S30,W10S30")
@@ -52,19 +53,20 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   private readonly codename: string
 
   private readonly attackerRoles: CreepRole[] = [CreepRole.Attacker, CreepRole.Healer, CreepRole.Mover]
-  private readonly attackerBody: BodyPartConstant[] = [
-    MOVE,
-  ]
   // private readonly attackerBody: BodyPartConstant[] = [
-  //   TOUGH, TOUGH, TOUGH,
-  //   MOVE, MOVE, MOVE,
-  //   ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
-  //   ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
-  //   MOVE, MOVE, MOVE, MOVE, MOVE,
-  //   MOVE, MOVE,
-  //   HEAL, HEAL, HEAL, HEAL, HEAL,
-  //   HEAL, HEAL,
+  //   MOVE,
   // ]
+  private readonly attackerBody: BodyPartConstant[] = [
+    TOUGH, TOUGH, TOUGH,
+    MOVE, MOVE, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL,
+  ]
 
   private constructor(
     public readonly launchTime: number,
@@ -76,6 +78,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     private target: AnyStructure | null,
     private waitingCreepNames: CreepName[],
     private readonly squads: Season845677Attack1TowerProcessSquad[],
+    private numberOfCreeps: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -95,6 +98,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
         w: this.waitingCreepNames,
         s: this.squads,
       },
+      n: this.numberOfCreeps,
     }
   }
 
@@ -106,11 +110,11 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       return Game.getObjectById(state.ti)
     })()
     const waitingPosition = decodeRoomPosition(state.wp)
-    return new Season845677Attack1TowerProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.c.w, state.c.s)
+    return new Season845677Attack1TowerProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.c.w, state.c.s, state.n)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], waitingPosition: RoomPosition): Season845677Attack1TowerProcess {
-    return new Season845677Attack1TowerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, [], [])
+    return new Season845677Attack1TowerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, [], [], 2)
   }
 
   public processShortDescription(): string {
@@ -118,8 +122,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    const insufficientCreepCount = numberOfCreeps - creepCount
+    const insufficientCreepCount = this.numberOfCreeps
 
     if (insufficientCreepCount > 0) {
       const priority: CreepSpawnRequestPriority = insufficientCreepCount > 1 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
@@ -184,13 +187,8 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     if (leaderCreep.room.name !== followerCreep.room.name) {
       this.moveIntoRoom(leaderCreep)
       followerCreep.moveTo(leaderCreep.pos)
-      leaderCreep.heal(leaderCreep)
-      followerCreep.heal(followerCreep)
-      return
-    }
-
-    if (leaderCreep.pos.isNearTo(followerCreep.pos) !== true) {
-      followerCreep.moveTo(leaderCreep.pos)
+      this.attackNearbyCreeps(leaderCreep, followerCreep)
+      leaderCreep.rangedAttack
       leaderCreep.heal(leaderCreep)
       followerCreep.heal(followerCreep)
       return
@@ -200,18 +198,109 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       this.attackSquad(leaderCreep, followerCreep)
       return
     }
-    this.moveToRoom(leaderCreep)
+
+    if (this.healSquad(leaderCreep, followerCreep) !== true) {
+      if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
+        this.moveToRoom(leaderCreep)
+      }
+    }
     followerCreep.moveTo(leaderCreep.pos)
-    this.healSquad(leaderCreep, followerCreep)
+    this.attackNearbyCreeps(leaderCreep, followerCreep)
   }
 
   private attackSquad(leaderCreep: Creep, followerCreep: Creep): void {
-    // const room = leaderCreep.room
-    // const structures =
-    // const tower =
+    const attacked = this.attackNearbyCreeps(leaderCreep, followerCreep)
+
+    const room = leaderCreep.room
+    const structures = room.find(FIND_HOSTILE_STRUCTURES)
+    const tower = structures.find(structure => structure.structureType === STRUCTURE_TOWER) as StructureTower | null
+    if (tower != null) {
+      if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        this.drainTower(tower, leaderCreep, followerCreep)
+        return
+      }
+      if (attacked !== true) {
+        this.attack(tower, leaderCreep, followerCreep)
+      }
+      return
+    }
+
+    if (attacked !== true) {
+      const spawn = structures.find(structure => structure.structureType === STRUCTURE_SPAWN) as StructureSpawn | null
+      if (spawn != null) {
+        this.attack(spawn, leaderCreep, followerCreep)
+        return
+      }
+    }
+
+    // TODO:
   }
 
-  private healSquad(leaderCreep: Creep, followerCreep: Creep): void {
+  private drainTower(tower: StructureTower, leaderCreep: Creep, followerCreep: Creep): void {
+    if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
+      leaderCreep.rangedAttack(tower)
+      followerCreep.rangedAttack(tower)
+    }
+    this.healSquad(leaderCreep, followerCreep)
+
+    if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
+      const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
+      if (exitPosition == null) {
+        leaderCreep.say("no exit")  // TODO:
+        return
+      }
+
+      if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
+        leaderCreep.moveTo(exitPosition)
+      } else {
+        const shouldExit = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
+        if (shouldExit) {
+          leaderCreep.moveTo(exitPosition)
+        }
+      }
+    }
+    followerCreep.moveTo(leaderCreep.pos)
+  }
+
+  private attack(target: AnyStructure, leaderCreep: Creep, followerCreep: Creep): void {
+    if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
+      if (leaderCreep.pos.getRangeTo(target) <= 3) {
+        leaderCreep.rangedAttack(target)
+        followerCreep.rangedAttack(target)
+      } else {
+        leaderCreep.rangedMassAttack()
+        followerCreep.rangedMassAttack()
+      }
+    }
+
+    this.healSquad(leaderCreep, followerCreep)
+    if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
+      leaderCreep.moveTo(target)
+    }
+    followerCreep.moveTo(leaderCreep)
+  }
+
+  private attackNearbyCreeps(leaderCreep: Creep, followerCreep: Creep): boolean {
+    const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+    const enemyCreep1 = leaderCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => creep.body.map(b => b.type).some(body => attackBodyParts.includes(body)))[0]
+    const enemyCreep2 = followerCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => creep.body.map(b => b.type).some(body => attackBodyParts.includes(body)))[0]
+
+    const attacked = enemyCreep1 != null || enemyCreep2 != null
+
+    if (enemyCreep1 != null) {
+      leaderCreep.rangedAttack(enemyCreep1)
+    } else if (attacked === true) {
+      leaderCreep.rangedMassAttack()
+    }
+    if (enemyCreep2 != null) {
+      followerCreep.rangedAttack(enemyCreep2)
+    } else if (attacked === true) {
+      followerCreep.rangedMassAttack()
+    }
+    return attacked
+  }
+
+  private healSquad(leaderCreep: Creep, followerCreep: Creep): boolean {
     const healableHits = HEAL_POWER * 7
     const leaderDamage = leaderCreep.hitsMax - leaderCreep.hits
     const followerDamage = followerCreep.hitsMax - followerCreep.hits
@@ -219,31 +308,38 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     if (leaderDamage <= 0 && followerDamage <= 0) {
       leaderCreep.heal(leaderCreep)
       followerCreep.heal(followerCreep)
-      return
+      return false
     }
     if (leaderDamage <= 0) {
       leaderCreep.heal(followerCreep)
       followerCreep.heal(followerCreep)
-      return
+      return true
     }
     if (followerDamage <= 0) {
       leaderCreep.heal(leaderCreep)
       followerCreep.heal(leaderCreep)
-      return
+      return true
     }
     if (leaderDamage <= healableHits && followerDamage <= healableHits) {
       leaderCreep.heal(leaderCreep)
       followerCreep.heal(followerCreep)
-      return
+      return true
     }
     const healTarget = leaderDamage > followerDamage ? leaderCreep : followerCreep
     leaderCreep.heal(healTarget)
     followerCreep.heal(healTarget)
-    return
+    return true
+  }
+
+  private leaderCanMove(leaderCreep: Creep, followerCreep: Creep): boolean {
+    if (leaderCreep.pos.isNearTo(followerCreep.pos) !== true) {
+      return false
+    }
+    return followerCreep.fatigue <= 0
   }
 
   private runCollapsedSquad(creep: Creep): void {
-
+    creep.say("alone")
   }
 
   private moveIntoRoom(creep: Creep): void {
@@ -271,6 +367,8 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       }
       return true
     })
+
+    this.numberOfCreeps -= unassignedCreeps.length
 
     const unassignedCreep = unassignedCreeps[0]
     if (unassignedCreep == null) {
