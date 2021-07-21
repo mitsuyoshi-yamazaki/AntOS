@@ -137,6 +137,10 @@ export class Season831595DismantleRcl2RoomProcess implements Process, Procedural
     })()
 
     if (attackerTarget == null) {
+      const removeConstructionSiteTask = this.removeConstructionSiteTask(creep)
+      if (removeConstructionSiteTask != null) {
+        return removeConstructionSiteTask
+      }
       if (creep.room.controller != null) {
         return MoveToTask.create(creep.room.controller.pos, 2)
       }
