@@ -33,6 +33,11 @@ export const GameConstants = {
     },
   },
   creep: {
+    life: {
+      spawnTime: CREEP_SPAWN_TIME,
+      lifeTime: CREEP_LIFE_TIME,
+      claimLifeTime: CREEP_CLAIM_LIFE_TIME,
+    },
     actionRange: {
       build: 3,
       repair: REPAIR_RANGE,
@@ -46,6 +51,9 @@ export const GameConstants = {
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
     },
+  },
+  performance: {
+    measuringPeriod: CREEP_LIFE_TIME,
   }
 }
 
