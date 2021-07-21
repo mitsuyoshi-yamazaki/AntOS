@@ -18,6 +18,9 @@ import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_obj
 import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "v5_task/task_state"
 import { bodyCost } from "utility/creep_body"
+import { GameConstants } from "utility/constants"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -129,7 +132,31 @@ export class OwnedRoomHaulerTask extends Task {
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 4 // TODO: 算出する
+    const sourceCapacity = ((): number => {
+      let result = 0
+
+      objects.sources.forEach((source: Source): void => {
+        result += source.energyCapacity
+        const effects = source.effects
+        if (effects == null) {
+          return
+        }
+        const regenEffect = effects.find(effect => effect.effect === PWR_REGEN_SOURCE) as PowerEffect | null
+        if (regenEffect == null) {
+          return
+        }
+        const powerConstant = GameConstants.power.regenSource
+        const value = powerConstant.value[regenEffect.level]
+        if (value == null) {
+          PrimitiveLogger.programError(`Source ${source.id} in ${roomLink(source.room.name)} has effect with unimplemented level ${regenEffect.level}`)
+          return
+        }
+        result += (GameConstants.source.regenerationDuration / GameConstants.power.regenSource.duration) * value
+      })
+      return result
+    })()
+
+    const maximumCarryUnitCount = Math.floor(sourceCapacity / 1500)
     const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {
