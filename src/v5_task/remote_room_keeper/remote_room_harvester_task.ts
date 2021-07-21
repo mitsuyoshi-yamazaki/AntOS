@@ -142,7 +142,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     if (targetRoom != null) {
       const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
       if (invaded !== true) {
-        problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, container == null))
+        const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
+        problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
       }
     }
 
@@ -198,7 +199,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private builderBody(energyCapacity: number): BodyPartConstant[] {
     const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
-    const maxUnits = 4
+    const maxUnits = 5
     const unitCost = bodyCost(unit)
     const count = Math.max(Math.min(Math.floor(energyCapacity / unitCost), maxUnits), 1)
 
