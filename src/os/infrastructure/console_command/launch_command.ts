@@ -18,6 +18,7 @@ import { Season687888RunHaulerTestProcess } from "process/onetime/season_687888_
 import { TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { Season812484StealPowerProcess } from "process/onetime/season_812484_steal_power_process"
+import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
 // import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
 // import { ScoutRoomTask } from "task/scout/scout_room_task"
 
@@ -68,6 +69,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season812484StealPowerProcess":
       result = this.launchSeason812484StealPowerProcess()
+      break
+    case "Season831595DismantleRcl2RoomProcess":
+      result = this.launchSeason831595DismantleRcl2RoomProcess()
       break
     default:
       break
@@ -345,5 +349,29 @@ export class LaunchCommand implements ConsoleCommand {
       return Season812484StealPowerProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
+  }
+
+  private launchSeason831595DismantleRcl2RoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+
   }
 }
