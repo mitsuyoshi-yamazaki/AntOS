@@ -80,9 +80,13 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       isMoving = true
     }
 
-    const spawn = objects.activeStructures.spawns[0]
-    if (spawn != null) {
-      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
+    // const spawn = objects.activeStructures.spawns[0]
+    // if (spawn != null) {
+    //   isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
+    // }
+
+    if (isMoving !== true) {
+      isMoving = this.runRegenSource(powerCreep, objects.sources)
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
@@ -99,6 +103,41 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     if (store != null) {
       this.runGenerateOps(powerCreep, isMoving, store)
+    }
+  }
+
+  private runRegenSource(powerCreep: PowerCreep, sources: Source[]): boolean {
+    const regenSource = sources.find(source => {
+      if (source.effects == null) {
+        return true
+      }
+      return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+    })
+    if (regenSource == null) {
+      return false
+    }
+
+    const result = powerCreep.usePower(PWR_REGEN_SOURCE, regenSource)
+
+    switch (result) {
+    case OK:
+    case ERR_TIRED:
+      return false
+
+    case ERR_NOT_IN_RANGE:
+      powerCreep.moveTo(regenSource, defaultMoveToOptions)
+      return true
+
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_INVALID_TARGET:
+    case ERR_FULL:
+    case ERR_INVALID_ARGS:
+    case ERR_NO_BODYPART:
+    default:
+      PrimitiveLogger.programError(`powerCreep.usePower(PWR_OPERATE_SPAWN) returns ${result} in ${roomLink(this.parentRoomName)}`)
+      return false
     }
   }
 
