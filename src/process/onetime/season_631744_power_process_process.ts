@@ -14,6 +14,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
+import { OwnedRoomObjects } from "world_info/room_info"
 
 export interface Season631744PowerProcessProcessState extends ProcessState {
   /** parent room name */
@@ -87,29 +88,32 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       })
     }
 
-    this.runHauler(powerSpawn, objects.activeStructures.terminal)
+    this.runHauler(powerSpawn, objects)
     powerSpawn.processPower()
   }
 
-  private runHauler(powerSpawn: StructurePowerSpawn, terminal: StructureTerminal | null): void {
+  private runHauler(powerSpawn: StructurePowerSpawn, objects: OwnedRoomObjects): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerSpawn, terminal),
+      creep => this.haulerTask(creep, powerSpawn, objects),
       () => true,
     )
   }
 
-  private haulerTask(creep: Creep, powerSpawn: StructurePowerSpawn, terminal: StructureTerminal | null): CreepTask | null {
+  private haulerTask(creep: Creep, powerSpawn: StructurePowerSpawn, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0) {
       if (creep.ticksToLive != null && creep.ticksToLive < 100) {
         return EndlessTask.create()
       }
 
       if (powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
-        if (terminal != null) {
-          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_POWER))
+        const container = objects.controller.room.find(FIND_STRUCTURES)
+          .find(structure => structure.structureType === STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_POWER) > 0) as StructureContainer | null
+        const powerStore: StructureContainer | StructureTerminal | null = container ?? objects.activeStructures.terminal
+        if (powerStore != null) {
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerStore, RESOURCE_POWER))
         }
         creep.say("no terminal")
         return null
