@@ -1,3 +1,4 @@
+import { ObjectTaskTarget } from "object_task/object_task"
 import { V6Creep } from "prototype/creep"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
@@ -18,6 +19,7 @@ export interface TalkTaskState extends CreepTaskState {
 
 export class TalkTask implements CreepTask {
   public readonly shortDescription: string
+  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,

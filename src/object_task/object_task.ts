@@ -1,6 +1,6 @@
 import { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
-import { TaskTargetTypeId } from "./object_task_target_cache"
+import type { TaskTargetCacheTaskType, TaskTargetTypeId } from "./object_task_target_cache"
 
 export interface TaskProgress {
   progress: "finished" | "in progress"
@@ -21,6 +21,11 @@ export const TaskProgress = {
   },
 }
 
+export interface ObjectTaskTarget {
+  targetId: TaskTargetTypeId
+  taskTypes: TaskTargetCacheTaskType[]
+}
+
 export interface ObjectTaskState extends State {
   /** type identifier */
   t: string
@@ -30,7 +35,7 @@ export interface ObjectTaskState extends State {
 }
 
 export interface ObjectTask<ObjectType> extends Stateful {
-  targetId?: TaskTargetTypeId
+  targets: ObjectTaskTarget[]
   startTime: number
 
   encode(): ObjectTaskState

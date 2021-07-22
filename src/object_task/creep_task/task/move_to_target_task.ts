@@ -1,3 +1,4 @@
+import { ObjectTaskTarget } from "object_task/object_task"
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
@@ -24,6 +25,7 @@ export interface MoveToTargetTaskState extends CreepTaskState {
 
 export class MoveToTargetTask implements CreepTask {
   public readonly shortDescription: string
+  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,

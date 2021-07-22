@@ -1,3 +1,4 @@
+import { ObjectTaskTarget } from "object_task/object_task"
 import { V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
@@ -21,6 +22,7 @@ export interface MoveToPositionTaskState extends CreepTaskState {
 
 export class MoveToPositionTask implements CreepTask {
   public readonly shortDescription: string
+  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,
