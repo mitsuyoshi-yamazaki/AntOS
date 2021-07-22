@@ -370,8 +370,8 @@ export class OwnedRoomObjects {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -385,8 +385,8 @@ export class OwnedRoomObjects {
       return null
     }
     return energySources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -408,8 +408,8 @@ export class OwnedRoomObjects {
     }
 
     return energyStores.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -423,8 +423,8 @@ export class OwnedRoomObjects {
       return null
     }
     return chargeableStructures.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }

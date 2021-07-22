@@ -206,7 +206,7 @@ export class OwnedRoomHaulerTask extends Task {
 
   private getEnergySource(position: RoomPosition, objects: OwnedRoomObjects, energySources: EnergySource[]): EnergyStore | null {
     const droppedEnergy = objects.droppedResources.find(resource => {
-      if (resource.targetedBy.length > 0) {
+      if (resource.v5TargetedBy.length > 0) {
         return false
       }
       if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
@@ -219,7 +219,7 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     const tombstone = objects.tombStones.find(tombstone => {
-      if (tombstone.targetedBy.length > 0) {
+      if (tombstone.v5TargetedBy.length > 0) {
         return false
       }
       return tombstone.store.getUsedCapacity(RESOURCE_ENERGY) >= 100  // TODO: その他のリソースも回収する
@@ -229,7 +229,7 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     const availableEnergyStores = energySources.filter(source => {
-      if (source.targetedBy.length >= 2) {
+      if (source.v5TargetedBy.length >= 2) {
         return false
       }
       if (source instanceof Resource) {
@@ -239,8 +239,8 @@ export class OwnedRoomHaulerTask extends Task {
     })
     if (availableEnergyStores.length > 0) {
       return availableEnergyStores.reduce((lhs, rhs) => {
-        const lTargetedBy = lhs.targetedBy.length
-        const rTargetedBy = rhs.targetedBy.length
+        const lTargetedBy = lhs.v5TargetedBy.length
+        const rTargetedBy = rhs.v5TargetedBy.length
         if (lTargetedBy === rTargetedBy) {
           return getEnergyAmountOf(lhs) > getEnergyAmountOf(rhs) ? lhs : rhs
         }

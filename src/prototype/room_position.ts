@@ -1,4 +1,4 @@
-import { TaskRunnerId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import { RoomName } from "utility/room_name"
 
 export type RoomPositionIdentifier = string
@@ -19,7 +19,9 @@ export interface RoomPositionFilteringOptions {
 declare global {
   interface RoomPosition {
     id: RoomPositionIdentifier
-    targetedBy: TaskRunnerId[]
+
+    /** @deprecated */
+    v5TargetedBy: TaskRunnerId[]
 
     encode(): RoomPositionState
     neighbours(): RoomPosition[]
@@ -35,9 +37,9 @@ export function init(): void {
     },
   })
 
-  Object.defineProperty(RoomPosition.prototype, "targetedBy", {
+  Object.defineProperty(RoomPosition.prototype, "v5TargetedBy", {
     get(): TaskRunnerId[] {
-      return TaskTargetCache.targetingTaskRunnerIds(this.id)
+      return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
     },
   })
 

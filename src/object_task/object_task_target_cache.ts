@@ -8,20 +8,20 @@ export type TaskRunnerId = Id<TaskRunnerType>
 export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionIdentifier
 type TaskTargetCacheKey = TaskTargetTypeId
 
+export type TaskTargetCacheTaskType = "build" | "repair"
+
 const cache = new Map<TaskTargetCacheKey, TaskRunnerId[]>()
 
-// TODO: Process適合にする
-/** @deprecated */
 export const TaskTargetCache = {
   clearCache(): void {
     cache.clear()
   },
 
-  didAssignTask(taskRunnerId: TaskRunnerId, targetId: TaskTargetCacheKey): void {
+  didAssignTask(taskRunnerId: TaskRunnerId, taskType: TaskTargetCacheTaskType, targetId: TaskTargetCacheKey): void {
     addTaskRunner(taskRunnerId, targetId)
   },
 
-  didFinishTask(taskRunnerId: TaskRunnerId, targetId: TaskTargetCacheKey): void {
+  didFinishTask(taskRunnerId: TaskRunnerId, taskType: TaskTargetCacheTaskType, targetId: TaskTargetCacheKey): void {
     removeTaskRunner(taskRunnerId, targetId)
   },
 

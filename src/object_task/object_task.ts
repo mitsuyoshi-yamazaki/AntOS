@@ -1,6 +1,6 @@
 import { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
-import type { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
+import { TaskTargetTypeId } from "./object_task_target_cache"
 
 export interface TaskProgress {
   progress: "finished" | "in progress"

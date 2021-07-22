@@ -189,7 +189,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   private emptyPosition(): RoomPosition | null {
-    const emptyPositions = this.upgraderPositions.filter(position => position.targetedBy.length <= 0)
+    const emptyPositions = this.upgraderPositions.filter(position => position.v5TargetedBy.length <= 0)
     if (emptyPositions[0] == null) {
       PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
       return null

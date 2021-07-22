@@ -194,7 +194,7 @@ export class RemoteRoomHaulerTask extends Task {
     const targetRoom = World.rooms.get(this.targetRoomName)
     if (targetRoom != null) {
       const droppedEnergy = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => {
-        if (500 * resource.targetedBy.length < getEnergyAmountOf(resource)) {
+        if (500 * resource.v5TargetedBy.length < getEnergyAmountOf(resource)) {
           return true
         }
         return false
@@ -216,8 +216,8 @@ export class RemoteRoomHaulerTask extends Task {
 
     if (energySources.length > 0) {
       return energySources.reduce((lhs, rhs) => {
-        const lTargetedBy = lhs.targetedBy.length
-        const rTargetedBy = rhs.targetedBy.length
+        const lTargetedBy = lhs.v5TargetedBy.length
+        const rTargetedBy = rhs.v5TargetedBy.length
         if (lTargetedBy === rTargetedBy) {
           return getEnergyAmountOf(lhs) > getEnergyAmountOf(rhs) ? lhs : rhs
         }

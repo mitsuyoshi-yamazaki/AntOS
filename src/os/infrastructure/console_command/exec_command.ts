@@ -1,7 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
-import { showTargetedBy } from "script/task_target_cache_viewer"
 import { showPositionsInRange } from "script/room_position_script"
 
 export class ExecCommand implements ConsoleCommand {
@@ -23,8 +22,6 @@ export class ExecCommand implements ConsoleCommand {
       return this.showOldRoomPlan()
     case "PlaceOldRoomPlan":
       return this.placeOldRoomPlan()
-    case "ShowTargetedBy":
-      return this.showTargetedBy()
     case "PlaceRoadConstructionMarks":
       return this.placeRoadConstructionMarks()
     case "ShowPositionsInRange":
@@ -163,17 +160,6 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
-  }
-
-  private showTargetedBy(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
-
-    const targetIds = args.get("target_ids")
-    if (targetIds == null) {
-      return this.missingArgumentError("target_ids")
-    }
-
-    return showTargetedBy(targetIds.split(","))
   }
 
   private placeRoadConstructionMarks(): CommandExecutionResult {

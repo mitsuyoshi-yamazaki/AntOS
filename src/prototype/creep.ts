@@ -2,7 +2,7 @@ import { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
 import { ShortVersion, ShortVersionV5, ShortVersionV6 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
-import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
 import type { RoomName } from "utility/room_name"
 import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
@@ -172,10 +172,10 @@ export function init(): void {
     },
     set(task: CreepTask | null): void {
       if (this._task != null && this._task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
+        V5TaskTargetCache.didFinishTask(this.id, this._task.targetId) // TODO: v6系に切り替え
       }
       if (task != null && task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, task.targetId)
+        V5TaskTargetCache.didAssignTask(this.id, task.targetId) // TODO: v6系に切り替え
       }
 
       this._task = task
@@ -188,10 +188,10 @@ export function init(): void {
     },
     set(v5task: V5CreepTask | null): void {
       if (this._v5task != null && this._v5task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._v5task.targetId)
+        V5TaskTargetCache.didFinishTask(this.id, this._v5task.targetId)
       }
       if (v5task != null && v5task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, v5task.targetId)
+        V5TaskTargetCache.didAssignTask(this.id, v5task.targetId)
       }
 
       this._v5task = v5task

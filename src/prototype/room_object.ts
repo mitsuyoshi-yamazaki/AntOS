@@ -1,4 +1,4 @@
-import { TaskRunnerId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer | StructurePowerSpawn | StructureTerminal  // TODO: まだある
 
@@ -20,19 +20,16 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
 
 declare global {
   interface RoomObject {
-    targetedBy: TaskRunnerId[]
+    /** @deprecated */
+    v5TargetedBy: TaskRunnerId[]
   }
 }
 
 // 毎tick呼び出すこと
 export function init(): void {
-  try { // FixMe: Season3環境でなぜか失敗した
-    Object.defineProperty(RoomObject.prototype, "targetedBy", {
-      get(): TaskRunnerId[] {
-        return TaskTargetCache.targetingTaskRunnerIds(this.id)
-      },
-    })
-  } catch (error) {
-    console.log(`RoomObject.defineProperty failed in ${Game.shard.name}`)
-  }
+  Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
+    get(): TaskRunnerId[] {
+      return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
+    },
+  })
 }

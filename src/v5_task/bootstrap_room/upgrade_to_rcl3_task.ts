@@ -167,7 +167,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       if (resource.resourceType !== RESOURCE_ENERGY) {
         return false
       }
-      if (resource.targetedBy.length > 0) {
+      if (resource.v5TargetedBy.length > 0) {
         return false
       }
       return true
