@@ -35,6 +35,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     public readonly processId: ProcessId,
     private readonly filter: { processIds: ProcessId[] }
   ) {
+    this.filter.processIds = this.filter.processIds.filter(processId => OperatingSystem.os.processOf(processId) != null)
   }
 
   public encode(): LoggerProcessState {
