@@ -47,22 +47,16 @@ export interface Season3FindPowerBankTaskState extends TaskState {
   readonly pf: ObserveTaskPerformanceState
 
   /** room routes */
-  readonly rr: {
+  readonly routes: {
     /** scout routes */
-    readonly s: {
-      /** routeToHighway */
-      h: RoomName[]
-
-      /** targetRoomNames */
-      t: RoomName[]
-    }[]
+    readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
 
     /** observe target rooms */
-    readonly o: RoomName[]
+    readonly observeTargetRooms: RoomName[]
   }
 
   /** power bank info */
-  readonly pb: Season3FindPowerBankTaskPowerBankInfo[]
+  readonly powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[]
 }
 
 // - 探索する部屋を算出、保存
@@ -112,27 +106,16 @@ export class Season3FindPowerBankTask
       ss: this.sessionStartTime,
       r: this.roomName,
       pf: this.performanceState,
-      rr: {
-        s: this.scoutRoutes.map(route => {
-          return {
-            h: route.routeToHighway,
-            t: route.targetRoomNames,
-          }
-        }),
-        o: this.observeTargetRooms,
+      routes: {
+        scoutRoutes: this.scoutRoutes,
+        observeTargetRooms: this.observeTargetRooms,
       },
-      pb: this.powerBankInfo,
+      powerBankInfo: this.powerBankInfo,
     }
   }
 
   public static decode(state: Season3FindPowerBankTaskState): Season3FindPowerBankTask {
-    const routes: Season3FindPowerBankTaskScoutRoute[] = state.rr.s.map(route => {
-      return {
-        routeToHighway: route.h,
-        targetRoomNames: route.t,
-      }
-    })
-    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, routes, state.rr.o, state.pb)
+    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.routes.scoutRoutes, state.routes.observeTargetRooms, state.powerBankInfo)
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
@@ -342,12 +325,11 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
       return
     }
     const highwayRoomName = route[route.length - 1]
-    observeTargetRooms.push(highwayRoomName)
-
     const roomCoordinate = RoomCoordinate.parse(highwayRoomName)
     if (roomCoordinate == null) {
       return
     }
+    observeTargetRooms.push(highwayRoomName)
 
     const isVertical = roomCoordinate.x % 10 === 0
     const scoutRoute: Season3FindPowerBankTaskScoutRoute = {
@@ -359,7 +341,7 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
       const roomName = createRoomCoordinate(i, isVertical, roomCoordinate).roomName
 
       if (observeTargetRooms.includes(roomName) === true) {
-        return
+        continue
       }
       observeTargetRooms.push(roomName)
       if (i === -searchRange || i === searchRange) {
