@@ -5,11 +5,12 @@ import { OperatingSystem } from "os/os"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
+import type { Timestamp } from "utility/timestamp"
 
 const logInterval = 50
 
 export interface LoggerProcessState extends ProcessState {
-  /** message filter (|| statement) */
+  /** message filter */
   f: {
     /** filter by process ID */
     p: ProcessId[]
@@ -27,13 +28,10 @@ function isLoggerProcessMessageFilterType(arg: string): arg is LoggerProcessMess
 }
 
 export class LoggerProcess implements Process, Procedural, MessageObserver {
-  private lastLog: { time: number, message: string } = {
-    time: 0,
-    message: "",
-  }
+  private lastLogs = new Map<ProcessId, { time: Timestamp, message: string }>()
 
   public constructor(
-    public readonly launchTime: number,
+    public readonly launchTime: Timestamp,
     public readonly processId: ProcessId,
     private readonly filter: { processIds: ProcessId[] }
   ) {
@@ -81,15 +79,16 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
 
   private show(log: ProcessLog): void {
     const message = `${log.processId} ${log.processType}: ${log.message}`
-    if (message === this.lastLog.message) {
-      if (Game.time - this.lastLog.time < logInterval) {
+    const lastLog = this.lastLogs.get(log.processId)
+    if (lastLog != null && message === lastLog.message) {
+      if (Game.time - lastLog.time < logInterval) {
         return
       }
     }
-    this.lastLog = {
+    this.lastLogs.set(log.processId, {
       time: Game.time,
       message,
-    }
+    })
     PrimitiveLogger.log(message)
   }
 
