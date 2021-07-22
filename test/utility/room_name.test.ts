@@ -1,4 +1,4 @@
-import { isRoomCoordinateDirection, isRoomName, parseRoomCoordinate, roomTypeOf } from "../../src/utility/room_name"
+import { isRoomCoordinateDirection, isRoomName, RoomCoordinate, roomTypeOf } from "../../src/utility/room_name"
 
 
 test("isRoomName()", () => {
@@ -38,20 +38,20 @@ test("isRoomCoordinateDirection()", () => {
 })
 
 test("parseRoomCoordinate()", () => {
-  expect(parseRoomCoordinate("W43S12")?.direction).toBe("SW")
-  expect(parseRoomCoordinate("W43S12")?.latitude).toBe(12)
-  expect(parseRoomCoordinate("W43S12")?.longitude).toBe(43)
+  expect(RoomCoordinate.parse("W43S12")?.direction).toBe("SW")
+  expect(RoomCoordinate.parse("W43S12")?.y).toBe(12)
+  expect(RoomCoordinate.parse("W43S12")?.x).toBe(43)
 
-  expect(parseRoomCoordinate("E3N1")?.direction).toBe("NE")
-  expect(parseRoomCoordinate("E3N1")?.latitude).toBe(1)
-  expect(parseRoomCoordinate("E3N1")?.longitude).toBe(3)
+  expect(RoomCoordinate.parse("E3N1")?.direction).toBe("NE")
+  expect(RoomCoordinate.parse("E3N1")?.y).toBe(1)
+  expect(RoomCoordinate.parse("E3N1")?.x).toBe(3)
 
-  expect(parseRoomCoordinate("E0S0")?.direction).toBe("SE")
-  expect(parseRoomCoordinate("E0S0")?.latitude).toBe(0)
-  expect(parseRoomCoordinate("E0S0")?.longitude).toBe(0)
+  expect(RoomCoordinate.parse("E0S0")?.direction).toBe("SE")
+  expect(RoomCoordinate.parse("E0S0")?.y).toBe(0)
+  expect(RoomCoordinate.parse("E0S0")?.x).toBe(0)
 
-  expect(parseRoomCoordinate("")).toBeNull()
-  expect(parseRoomCoordinate("123")).toBeNull()
+  expect(RoomCoordinate.parse("")).toBeNull()
+  expect(RoomCoordinate.parse("123")).toBeNull()
 })
 
 test("roomTypeOf()", () => {
