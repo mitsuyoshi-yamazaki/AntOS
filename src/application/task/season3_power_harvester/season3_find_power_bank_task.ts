@@ -24,7 +24,8 @@ type Season3FindPowerBankTaskProblemTypes = UnexpectedProblem
 
 interface Season3FindPowerBankTaskScoutRoute {
   routeToHighway: RoomName[]
-  targetRoomNames: RoomName[]
+  highwayRoute: RoomName[]
+  observeTargetRoomNames: RoomName[]
 }
 
 interface Season3FindPowerBankTaskPowerBankInfo {
@@ -46,16 +47,7 @@ export interface Season3FindPowerBankTaskState extends TaskState {
   /** performance */
   readonly pf: ObserveTaskPerformanceState
 
-  /** room routes */
-  readonly routes: {
-    /** scout routes */
-    readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
-
-    /** observe target rooms */
-    readonly observeTargetRooms: RoomName[]
-  }
-
-  /** power bank info */
+  readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
   readonly powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[]
 }
 
@@ -82,6 +74,7 @@ export class Season3FindPowerBankTask
 
   private readonly codename: string
   private readonly creepIdentifiers: number[]
+  private readonly observeTargetRooms: RoomName[]
 
   protected constructor(
     startTime: number,
@@ -89,7 +82,6 @@ export class Season3FindPowerBankTask
     roomName: RoomName,
     public readonly performanceState: ObserveTaskPerformanceState,
     private readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[],
-    private readonly observeTargetRooms: RoomName[],
     private powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[],
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
@@ -97,6 +89,7 @@ export class Season3FindPowerBankTask
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
     this.creepIdentifiers = this.scoutRoutes.map((route, index) => index)
+    this.observeTargetRooms = this.scoutRoutes.flatMap(route => route.observeTargetRoomNames)
   }
 
   public encode(): Season3FindPowerBankTaskState {
@@ -106,16 +99,13 @@ export class Season3FindPowerBankTask
       ss: this.sessionStartTime,
       r: this.roomName,
       pf: this.performanceState,
-      routes: {
-        scoutRoutes: this.scoutRoutes,
-        observeTargetRooms: this.observeTargetRooms,
-      },
+      scoutRoutes: this.scoutRoutes,
       powerBankInfo: this.powerBankInfo,
     }
   }
 
   public static decode(state: Season3FindPowerBankTaskState): Season3FindPowerBankTask {
-    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.routes.scoutRoutes, state.routes.observeTargetRooms, state.powerBankInfo)
+    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.scoutRoutes, state.powerBankInfo)
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
@@ -123,8 +113,8 @@ export class Season3FindPowerBankTask
       PrimitiveLogger.programError(`${this.constructor.name} is not supported in ${Environment.world}`)
       return null
     }
-    const routes = calculateRoomRoutes(roomName)
-    if (routes == null) {
+    const scoutRoutes = calculateRoomRoutes(roomName)
+    if (scoutRoutes == null) {
       return null
     }
 
@@ -133,8 +123,7 @@ export class Season3FindPowerBankTask
       Game.time,
       roomName,
       emptyObserveTaskPerformanceState(),
-      routes.scoutRoutes,
-      routes.observeTargetRooms,
+      scoutRoutes,
       [],
     )
   }
@@ -194,7 +183,7 @@ export class Season3FindPowerBankTask
         return
       }
 
-      const route = this.scoutRoutes.find(route => route.targetRoomNames.includes(roomName) === true)
+      const route = this.scoutRoutes.find(route => route.observeTargetRoomNames.includes(roomName) === true)
       if (route == null) {
         PrimitiveLogger.programError(`${this.identifier} no route for ${roomLink(roomName)} found`)
         return
@@ -242,18 +231,18 @@ export class Season3FindPowerBankTask
       return null
     }
 
-    if (route.targetRoomNames.length <= 0) {
-      PrimitiveLogger.programError(`${this.constructor.name} no target room found`)
+    if (route.highwayRoute.length <= 0) {
+      PrimitiveLogger.programError(`${this.constructor.name} no highway route found`)
       return null
     }
-    const destinationRoomName = route.targetRoomNames[route.targetRoomNames.length - 1]
+    const destinationRoomName = route.highwayRoute[route.highwayRoute.length - 1]
     if (isInHighway === true) {
-      const waypoints = [...route.targetRoomNames]
+      const waypoints = [...route.highwayRoute]
       waypoints.splice(waypoints.length - 1, 1)
       return MoveToRoomTask.create(destinationRoomName, waypoints)
     }
 
-    const waypoints = [...route.targetRoomNames]
+    const waypoints = [...route.highwayRoute]
     waypoints.splice(waypoints.length - 1, 1)
     waypoints.unshift(...route.routeToHighway)
     return MoveToRoomTask.create(destinationRoomName, waypoints)
@@ -297,7 +286,7 @@ export class Season3FindPowerBankTask
 }
 
 // TODO: 探索が未完成
-function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowerBankTaskScoutRoute[], observeTargetRooms: RoomName[]} | null {
+function calculateRoomRoutes(roomName: RoomName): Season3FindPowerBankTaskScoutRoute[] | null {
   const roomCoordinate = RoomCoordinate.parse(roomName)
   if (roomCoordinate == null) {
     return null
@@ -305,7 +294,6 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
   const sector = new RoomSector(roomCoordinate)
   const highwayRoutes = sector.getNearestHighwayRoutes(roomName)
 
-  const observeTargetRooms: RoomName[] = []
   const scoutRoutes: Season3FindPowerBankTaskScoutRoute[] = []
 
   const searchRange = 5
@@ -329,30 +317,27 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
     if (roomCoordinate == null) {
       return
     }
-    observeTargetRooms.push(highwayRoomName)
 
     const isVertical = roomCoordinate.x % 10 === 0
     const scoutRoute: Season3FindPowerBankTaskScoutRoute = {
       routeToHighway: route,
-      targetRoomNames: [],
+      highwayRoute: [],
+      observeTargetRoomNames: [highwayRoomName],
     }
 
     for (let i = -searchRange; i <= searchRange; i += 1) {
       const roomName = createRoomCoordinate(i, isVertical, roomCoordinate).roomName
 
-      if (observeTargetRooms.includes(roomName) === true) {
+      if (scoutRoute.observeTargetRoomNames.includes(roomName) === true) {
         continue
       }
-      observeTargetRooms.push(roomName)
+      scoutRoute.observeTargetRoomNames.push(roomName)
       if (i === -searchRange || i === searchRange) {
-        scoutRoute.targetRoomNames.push(roomName)
+        scoutRoute.highwayRoute.push(roomName)
       }
     }
     scoutRoutes.push(scoutRoute)
   })
 
-  return {
-    scoutRoutes,
-    observeTargetRooms,
-  }
+  return scoutRoutes
 }
