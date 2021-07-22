@@ -5,7 +5,6 @@ import { TaskState } from "application/task_state"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler, TaskRequestHandlerInputs } from "./task_request_handler"
-import { emptyOwnedRoomPerformanceState, OwnedRoomPerformance, OwnedRoomPerformanceState } from "application/task_profit/owned_room_performance"
 import { Timestamp } from "utility/timestamp"
 import { GameConstants } from "utility/constants"
 import { Season3FindPowerBankTask, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
@@ -19,6 +18,7 @@ import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_problem_solver"
 import { AnyTaskProblem } from "application/any_problem"
 import { roomLink } from "utility/log"
+import { emptyRoomKeeperPerformanceState, RoomKeeperPerformance, RoomKeeperPerformanceState } from "application/task_profit/owned_room_performance"
 
 const config = {
   powerHarvestingEnabled: true
@@ -32,7 +32,7 @@ export interface RoomKeeperTaskState extends TaskState {
   readonly t: "RoomKeeperTask"
 
   /** performance */
-  readonly pf: OwnedRoomPerformanceState
+  readonly pf: RoomKeeperPerformanceState
 
   /** child task states */
   c: {
@@ -45,7 +45,7 @@ export interface RoomKeeperTaskState extends TaskState {
  * - [ ] タスクの開始
  * - [ ] タスクの終了条件（親が決める
  */
-export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes, OwnedRoomPerformance, OwnedRoomPerformanceState> {
+export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes, RoomKeeperPerformance, RoomKeeperPerformanceState> {
   public readonly taskType = "RoomKeeperTask"
   public readonly identifier: TaskIdentifier
 
@@ -56,7 +56,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: OwnedRoomPerformanceState,
+    public readonly performanceState: RoomKeeperPerformanceState,
     private readonly children: {
       findPowerBank: Season3FindPowerBankTask | null,
     },
@@ -97,7 +97,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const children = {
       findPowerBank: null,
     }
-    return new RoomKeeperTask(Game.time, Game.time, roomName, emptyOwnedRoomPerformanceState(), children)
+    return new RoomKeeperTask(Game.time, Game.time, roomName, emptyRoomKeeperPerformanceState(), children)
   }
 
   public run(roomResource: OwnedRoomResource): RoomKeeperTaskOutputs {
@@ -191,7 +191,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   // ---- Profit ---- //
-  public estimate(): OwnedRoomPerformance {
+  public estimate(): RoomKeeperPerformance {
     const resourceCost = new Map<ResourceConstant, number>()
 
     return {
@@ -203,7 +203,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
   }
 
-  public performance(period: Timestamp): OwnedRoomPerformance {
+  public performance(period: Timestamp): RoomKeeperPerformance {
     const timeSpent = Math.min(Game.time - this.startTime, period)
     const fromTimestamp = Game.time - timeSpent
     const state = this.performanceState
