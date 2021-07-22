@@ -12,10 +12,12 @@ import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } f
 import { SourceKeeper } from "game/source_keeper"
 import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { processLog } from "process/process_log"
 
 interface Season845677Attack1TowerProcessSquad {
   leaderCreepName: CreepName
   followerCreepName: CreepName
+  waypoints: RoomName[]
 }
 
 export interface Season845677Attack1TowerProcessState extends ProcessState {
@@ -47,7 +49,7 @@ export interface Season845677Attack1TowerProcessState extends ProcessState {
   n: number
 }
 
-// Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W11S23 waypoints=W14S30,W10S30")
+// Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W11S23 waypoints=W14S30,W10S30,W10S24")
 export class Season845677Attack1TowerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -59,9 +61,9 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   private readonly attackerBody: BodyPartConstant[] = [
     TOUGH, TOUGH, TOUGH,
     MOVE, MOVE, MOVE,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE,
     HEAL, HEAL, HEAL, HEAL, HEAL,
@@ -121,6 +123,20 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     return roomLink(this.targetRoomName)
   }
 
+  // waypointを共有しているため後続のsquadはwaypointを使用できない
+  // public didReceiveMessage(message: string): string {
+  //   const additions = parseInt(message, 10)
+  //   if (isNaN(additions) === true) {
+  //     return `${message} is not a number`
+  //   }
+  //   if (additions > 2) {
+  //     return `Number too large (${additions})`
+  //   }
+  //   this.numberOfCreeps += additions
+
+  //   return `Number of creeps: ${this.numberOfCreeps}`
+  // }
+
   public runOnTick(): void {
     const insufficientCreepCount = this.numberOfCreeps
 
@@ -173,7 +189,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       const leaderCreep = Game.creeps[squad.leaderCreepName]
       const followerCreep = Game.creeps[squad.followerCreepName]
       if (leaderCreep != null && followerCreep != null) {
-        this.runSquad(leaderCreep, followerCreep)
+        this.runSquad(leaderCreep, followerCreep, squad.waypoints)
       } else if (leaderCreep == null && followerCreep == null) {
         deadSquadIndexes.push(index)
       } else {
@@ -183,7 +199,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     })
   }
 
-  private runSquad(leaderCreep: Creep, followerCreep: Creep): void {
+  private runSquad(leaderCreep: Creep, followerCreep: Creep, waypoints: RoomName[]): void {
     if (leaderCreep.room.name !== followerCreep.room.name) {
       this.moveIntoRoom(leaderCreep)
       followerCreep.moveTo(leaderCreep.pos)
@@ -201,7 +217,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
 
     if (this.healSquad(leaderCreep, followerCreep) !== true) {
       if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
-        this.moveToRoom(leaderCreep)
+        this.moveToRoom(leaderCreep, waypoints)
       }
     }
     followerCreep.moveTo(leaderCreep.pos)
@@ -212,7 +228,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     const attacked = this.attackNearbyCreeps(leaderCreep, followerCreep)
 
     const room = leaderCreep.room
-    const structures = room.find(FIND_HOSTILE_STRUCTURES)
+    const structures = room.find(FIND_HOSTILE_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_CONTROLLER)
     const tower = structures.find(structure => structure.structureType === STRUCTURE_TOWER) as StructureTower | null
     if (tower != null) {
       if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
@@ -233,10 +249,17 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       }
     }
 
-    // TODO:
+    const structure = leaderCreep.pos.findClosestByPath(structures)
+    if (structure != null) {
+      this.attack(structure, leaderCreep, followerCreep)
+      return
+    }
+
+    leaderCreep.say("done")
   }
 
   private drainTower(tower: StructureTower, leaderCreep: Creep, followerCreep: Creep): void {
+    processLog(this, `Drain tower ${Math.ceil(tower.store.getUsedCapacity(RESOURCE_ENERGY) / 100) * 100}`)
     if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
       leaderCreep.rangedAttack(tower)
       followerCreep.rangedAttack(tower)
@@ -244,18 +267,22 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     this.healSquad(leaderCreep, followerCreep)
 
     if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
-      const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
-      if (exitPosition == null) {
-        leaderCreep.say("no exit")  // TODO:
-        return
-      }
-
-      if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
-        leaderCreep.moveTo(exitPosition)
+      const shouldFlee = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
+      if (shouldFlee !== true) {
+        leaderCreep.moveTo(44, 24)
       } else {
-        const shouldExit = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
-        if (shouldExit) {
+        const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
+        if (exitPosition == null) {
+          leaderCreep.say("no exit")  // TODO:
+          return
+        }
+
+        if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
           leaderCreep.moveTo(exitPosition)
+        } else {
+          if (shouldFlee) {
+            leaderCreep.moveTo(exitPosition)
+          }
         }
       }
     }
@@ -263,6 +290,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   }
 
   private attack(target: AnyStructure, leaderCreep: Creep, followerCreep: Creep): void {
+    processLog(this, `Attack ${target}`)
     if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
       if (leaderCreep.pos.getRangeTo(target) <= 3) {
         leaderCreep.rangedAttack(target)
@@ -282,8 +310,23 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
 
   private attackNearbyCreeps(leaderCreep: Creep, followerCreep: Creep): boolean {
     const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
-    const enemyCreep1 = leaderCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => creep.body.map(b => b.type).some(body => attackBodyParts.includes(body)))[0]
-    const enemyCreep2 = followerCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => creep.body.map(b => b.type).some(body => attackBodyParts.includes(body)))[0]
+    const findCreep = ((position: RoomPosition): Creep | null => {
+      const creeps = position.findInRange(FIND_HOSTILE_CREEPS, 3)
+      if (creeps.length <= 0) {
+        return null
+      }
+      return creeps.reduce((lhs, rhs) => {
+        if (lhs.body.map(b => b.type).some(body => attackBodyParts.includes(body))) {
+          return lhs
+        }
+        if (rhs.body.map(b => b.type).some(body => attackBodyParts.includes(body))) {
+          return rhs
+        }
+        return lhs
+      })
+    })
+    const enemyCreep1 = findCreep(leaderCreep.pos)
+    const enemyCreep2 = findCreep(followerCreep.pos)
 
     const attacked = enemyCreep1 != null || enemyCreep2 != null
 
@@ -347,10 +390,14 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
 
     if (creep.pos.x === 0) {
       creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex])
+    } else if (creep.pos.x === 1 || creep.pos.x === 48) {
+      creep.move([TOP, BOTTOM, TOP][directionIndex])
     } else if (creep.pos.x === 49) {
       creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex])
     } else if (creep.pos.y === 0) {
       creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex])
+    } else if (creep.pos.y === 1 || creep.pos.y === 48) {
+      creep.move([LEFT, RIGHT, LEFT][directionIndex])
     } else if (creep.pos.y === 49) {
       creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex])
     }
@@ -380,13 +427,14 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
       this.squads.push({
         leaderCreepName: waitingCreepName,
         followerCreepName: unassignedCreep.name,
+        waypoints: [...this.waypoints]
       })
     } else {
       this.waitingCreepNames.push(unassignedCreep.name)
     }
   }
 
-  private moveToRoom(creep: Creep): void {
+  private moveToRoom(creep: Creep, waypoints: RoomName[]): void {
     const directionIndex = (Game.time + this.launchTime) % 3
 
     if (creep.pos.x === 0) {
@@ -412,13 +460,13 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     }
 
     const destinationRoomName = ((): RoomName => {
-      const nextWaypoint = this.waypoints[0]
+      const nextWaypoint = waypoints[0]
       if (nextWaypoint == null) {
         return this.targetRoomName
       }
       if (nextWaypoint === creep.room.name) {
-        this.waypoints.shift()
-        return this.waypoints[0] ?? this.targetRoomName
+        waypoints.shift()
+        return waypoints[0] ?? this.targetRoomName
       }
       return nextWaypoint
     })()
