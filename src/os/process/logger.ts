@@ -13,9 +13,6 @@ export interface LoggerProcessState extends ProcessState {
   f: {
     /** filter by process ID */
     p: ProcessId[]
-
-    /** filter by process type */
-    t: string[]
   }
 }
 
@@ -24,9 +21,9 @@ function isLoggerProcessMessageOperation(arg: string): arg is LoggerProcessMessa
   return ["add", "remove", "clear"].includes(arg)
 }
 
-type LoggerProcessMessageFilterType = "id" | "type"
+type LoggerProcessMessageFilterType = "id"
 function isLoggerProcessMessageFilterType(arg: string): arg is LoggerProcessMessageFilterType {
-  return ["id", "type"].includes(arg)
+  return ["id"].includes(arg)
 }
 
 export class LoggerProcess implements Process, Procedural, MessageObserver {
@@ -38,7 +35,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   public constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly filter: { processIds: ProcessId[], processTypes: string[] }
+    private readonly filter: { processIds: ProcessId[] }
   ) {
   }
 
@@ -49,7 +46,6 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
       i: this.processId,
       f: {
         p: this.filter.processIds,
-        t: this.filter.processTypes,
       }
     }
   }
@@ -57,13 +53,12 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   public static decode(state: LoggerProcessState): LoggerProcess {
     const filter = {
       processIds: state.f.p,
-      processTypes: state.f.t,
     }
     return new LoggerProcess(state.l, state.i, filter)
   }
 
   public processDescription(): string {
-    return `- filters:\n  - process ID: ${this.filter.processIds}\n  - process types: ${this.filter.processTypes}`
+    return `- filters:\n  - process ID: ${this.filter.processIds}`
   }
 
   // ---- Procedural ---- //
@@ -79,9 +74,6 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
 
   private shouldShow(log: ProcessLog): boolean {
     if (this.filter.processIds.includes(log.processId)) {
-      return true
-    }
-    if (this.filter.processTypes.includes(log.processType)) {
       return true
     }
     return false
@@ -109,9 +101,8 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
    *   - "remove": remove filter condition
    * - filter type
    *   - "id": filter by process ID
-   *   - "type": filter by process type
    * - filter value
-   *   - process ID or process type
+   *   - process ID
    * - example:
    *   - add id 12345
    *   - remove type TestProcess
@@ -135,8 +126,6 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     switch (filterType) {
     case "id":
       return this.filterById(operation, components[2])
-    case "type":
-      return this.filterByType(operation, components[2])
     }
   }
 
@@ -168,28 +157,6 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     case "clear":
       this.filter.processIds.splice(0, this.filter.processIds.length)
       return "Cleared all process IDs"
-    }
-  }
-
-  private filterByType(operation: LoggerProcessMessageOperation, typeIdentifier: string): string {
-    switch (operation) {
-    case "add":
-      if (this.filter.processTypes.includes(typeIdentifier) === true) {
-        return `Process type identifier ${typeIdentifier} already added to the filter list`
-      }
-      this.filter.processTypes.push(typeIdentifier)
-      return `Added ${typeIdentifier}`
-    case "remove": {
-      const index = this.filter.processTypes.indexOf(typeIdentifier)
-      if (index < 0) {
-        return `Process type identifier ${typeIdentifier} not in the filter list`
-      }
-      this.filter.processTypes.splice(index, 1)
-      return `Removed ${typeIdentifier}`
-    }
-    case "clear":
-      this.filter.processTypes.splice(0, this.filter.processTypes.length)
-      return "Cleared all process types"
     }
   }
 }
