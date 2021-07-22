@@ -185,7 +185,7 @@ export class OwnedRoomObjects {
     this.roomInfo = ((): RoomInfo => {
       if (roomInfoMemory == null) { // 新規のRoomの場合
         return {
-          version: ShortVersion.v6,
+          version: ShortVersion.v5,
           energySourceStructures: [],
           energyStoreStructures: [],
           upgrader: null,

@@ -47,10 +47,12 @@ export class OwnedRoomScoutTask extends Task {
   public static create(roomName: RoomName): OwnedRoomScoutTask {
     const neighbourRoomNames: RoomName[] = []
     const exits = Game.map.describeExits(roomName)
-    for (const [, neighbour] of Object.entries(exits)) {
-      if (roomTypeOf(neighbour) === "normal") {
-        neighbourRoomNames.push(neighbour)
-      }
+    if (exits != null) { // sim環境ではundefinedが返る
+      Object.entries(exits).forEach(([, neighbour]) => {
+        if (roomTypeOf(neighbour) === "normal") {
+          neighbourRoomNames.push(neighbour)
+        }
+      })
     }
     return new OwnedRoomScoutTask(Game.time, [], roomName, neighbourRoomNames)
   }
