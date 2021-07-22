@@ -1,4 +1,4 @@
-import { ObjectTaskTarget } from "object_task/object_task"
+import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { randomDirection } from "utility/constants"

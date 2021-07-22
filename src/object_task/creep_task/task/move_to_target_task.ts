@@ -1,4 +1,4 @@
-import { ObjectTaskTarget } from "object_task/object_task"
+import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"

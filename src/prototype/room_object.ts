@@ -1,4 +1,5 @@
-import { TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
+import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer | StructurePowerSpawn | StructureTerminal  // TODO: まだある
 
@@ -21,15 +22,31 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
 declare global {
   interface RoomObject {
     /** @deprecated */
-    v5TargetedBy: TaskRunnerId[]
+    v5TargetedBy: V5TaskRunnerId[]
+
+    targetedBy(taskType?: TaskTargetCacheTaskType): TaskRunnerId[]
   }
 }
 
 // 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
-    get(): TaskRunnerId[] {
-      return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
+    get(): V5TaskRunnerId[] {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const id = (this as any).id // FlagにはIDがない
+      if (id == null) {
+        return []
+      }
+      return V5TaskTargetCache.targetingTaskRunnerIds(id)
     },
   })
+
+  RoomObject.prototype.targetedBy = function (taskType?: TaskTargetCacheTaskType): TaskRunnerId[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const id = (this as any).id // FlagにはIDがない
+    if (id == null) {
+      return []
+    }
+    return TaskTargetCache.targetingTaskRunnerIds(id, taskType)
+  }
 }

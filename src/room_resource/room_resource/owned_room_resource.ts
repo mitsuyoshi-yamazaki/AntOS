@@ -150,8 +150,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.v5TargetedBy.length // TODO: v6系に切り替え
-      const rTargetedBy = rhs.v5TargetedBy.length // TODO: v6系に切り替え
+      const lTargetedBy = lhs.targetedBy().length
+      const rTargetedBy = rhs.targetedBy().length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -165,8 +165,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return energySources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.v5TargetedBy.length // TODO: v6系に切り替え
-      const rTargetedBy = rhs.v5TargetedBy.length // TODO: v6系に切り替え
+      const lTargetedBy = lhs.targetedBy().length
+      const rTargetedBy = rhs.targetedBy().length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -188,8 +188,8 @@ export class OwnedRoomResource extends NormalRoomResource {
     }
 
     return energyStores.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.v5TargetedBy.length // TODO: v6系に切り替え
-      const rTargetedBy = rhs.v5TargetedBy.length // TODO: v6系に切り替え
+      const lTargetedBy = lhs.targetedBy().length
+      const rTargetedBy = rhs.targetedBy().length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -203,8 +203,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return chargeableStructures.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.v5TargetedBy.length // TODO: v6系に切り替え
-      const rTargetedBy = rhs.v5TargetedBy.length // TODO: v6系に切り替え
+      const lTargetedBy = lhs.targetedBy().length
+      const rTargetedBy = rhs.targetedBy().length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }

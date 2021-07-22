@@ -1,7 +1,7 @@
 import { ExitNotFoundProblem } from "application/problem/creep/exit_not_found_problem"
 import { ExitToRoomNotFoundProblem } from "application/problem/creep/exit_to_room_not_found_problem"
 import { SourceKeeper } from "game/source_keeper"
-import { ObjectTaskTarget } from "object_task/object_task"
+import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"

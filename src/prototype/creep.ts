@@ -9,6 +9,7 @@ import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_ta
 import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 import { CreepTask } from "object_task/creep_task/creep_task"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -171,13 +172,14 @@ export function init(): void {
       return this._task
     },
     set(task: CreepTask | null): void {
-      if (this._task != null && this._task.targetId != null) {
-        V5TaskTargetCache.didFinishTask(this.id, this._task.targetId) // TODO: v6系に切り替え
+      const id = this.id as Id<Creep>
+      const storedTask = this._task as CreepTask | null
+      if (storedTask != null) {
+        TaskTargetCache.didFinishTask(id, storedTask.targets)
       }
-      if (task != null && task.targetId != null) {
-        V5TaskTargetCache.didAssignTask(this.id, task.targetId) // TODO: v6系に切り替え
+      if (task != null) {
+        TaskTargetCache.didAssignTask(id, task.targets)
       }
-
       this._task = task
     }
   })

@@ -1,5 +1,6 @@
-import { TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import { RoomName } from "utility/room_name"
+import { TaskRunnerId, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 
 export type RoomPositionIdentifier = string
 
@@ -21,9 +22,10 @@ declare global {
     id: RoomPositionIdentifier
 
     /** @deprecated */
-    v5TargetedBy: TaskRunnerId[]
+    v5TargetedBy: V5TaskRunnerId[]
 
     encode(): RoomPositionState
+    targetedBy(taskType?: TaskTargetCacheTaskType): TaskRunnerId[]
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
   }
@@ -38,7 +40,7 @@ export function init(): void {
   })
 
   Object.defineProperty(RoomPosition.prototype, "v5TargetedBy", {
-    get(): TaskRunnerId[] {
+    get(): V5TaskRunnerId[] {
       return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
     },
   })
@@ -49,6 +51,10 @@ export function init(): void {
       y: this.y,
       r: this.roomName,
     }
+  }
+
+  RoomPosition.prototype.targetedBy = function (taskType?: TaskTargetCacheTaskType): TaskRunnerId[] {
+    return TaskTargetCache.targetingTaskRunnerIds(this.id, taskType)
   }
 
   RoomPosition.prototype.neighbours = function (clockwise?: boolean): RoomPosition[] {
