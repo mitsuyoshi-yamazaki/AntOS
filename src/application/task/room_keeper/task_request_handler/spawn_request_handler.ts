@@ -53,6 +53,9 @@ export class SpawnRequestHandler {
           }
           return futureRequest
         }
+        if (futureRequest == null) {
+          return currentRequest
+        }
         if (currentRequest.spawnTimeCost < futureRequest.neededIn) {
           return currentRequest
         }
