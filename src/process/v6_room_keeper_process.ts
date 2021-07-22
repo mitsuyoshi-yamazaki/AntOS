@@ -76,6 +76,9 @@ export class V6RoomKeeperProcess implements Process, Procedural {
   }
 
   private log(logs: TaskLogRequest[]): void {
+    if (logs.length <= 0) {
+      return
+    }
     const messages: string[] = logs.map(log => `${log.taskIdentifier} ${log.logEventType}: ${log.message}`) // TODO: みやすくフォーマットする
     processLog(this, messages.join("\n"))
   }
