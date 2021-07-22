@@ -1,17 +1,22 @@
 import { State } from "os/infrastructure/state"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "utility/room_name"
+import type { Timestamp } from "utility/timestamp"
 import type { TaskType } from "./task_decoder"
+import type { TaskPerformanceState } from "./task_profit"
 
 export interface TaskState extends State {
   /** task type identifier */
-  t: TaskType
+  readonly t: TaskType
 
   /** start time */
-  s: number
+  readonly s: Timestamp
+
+  /** session start time */
+  readonly ss: Timestamp
 
   /** room name */
-  r: RoomName
+  readonly r: RoomName
 
-  /** paused */
-  p: number | null
+  /** performance */
+  readonly pf: TaskPerformanceState
 }

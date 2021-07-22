@@ -1,6 +1,7 @@
 import { Problem } from "application/problem"
 import { V6Creep } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
 import type { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
@@ -8,6 +9,11 @@ import { NormalRoomResource } from "./normal_room_resource"
 export interface OwnedRoomCreepInfo {
   creep: V6Creep
   problems: Problem[]
+}
+
+export interface RunningCreepInfo {
+  ticksToLive: Timestamp | null
+  creepIdentifier: string | null
 }
 
 export class OwnedRoomResource extends NormalRoomResource {
@@ -114,10 +120,15 @@ export class OwnedRoomResource extends NormalRoomResource {
   }
 
   // ---- Creep ---- //
-  public countCreeps(taskIdentifier: TaskIdentifier): number {
+  public runningCreepInfo(taskIdentifier: TaskIdentifier): RunningCreepInfo[] {
     return this.ownedCreepInfo
       .filter(info => info.creep.memory.i === taskIdentifier)
-      .length
+      .map(info => {
+        return {
+          ticksToLive: info.creep.ticksToLive ?? null,
+          creepIdentifier: info.creep.memory.ci,
+        }
+      })
   }
 
   public idleCreeps(taskIdentifier: TaskIdentifier): OwnedRoomCreepInfo[] {

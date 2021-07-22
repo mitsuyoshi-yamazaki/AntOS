@@ -103,6 +103,9 @@ export class CreateConstructionSiteTask extends Task {
       if (rPriority < 0) {
         return -1
       }
+      if (lPriority === rPriority) {
+        return -1
+      }
       return lPriority < rPriority ? -1 : 1
     })
 

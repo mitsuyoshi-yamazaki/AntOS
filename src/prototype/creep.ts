@@ -78,6 +78,9 @@ export interface V6CreepMemory {
 
   /** task runner id */
   i: TaskIdentifier
+
+  /** creep identifier */
+  ci: string | null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types

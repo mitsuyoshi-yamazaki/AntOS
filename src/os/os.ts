@@ -9,6 +9,7 @@ import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
+import { init as initRoomPrototype } from "prototype/room"
 import type { ProcessState } from "process/process_state"
 import { decodeProcessFrom } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
@@ -40,6 +41,7 @@ function updatePrototypes(): void {
   initRoomObjectPrototype()
   initCreepPrototype()
   initStructureSpawnPrototype()
+  initRoomPrototype()
 }
 
 const processLauncher: ProcessLauncher = (launcher: (processId: ProcessId) => Process) => OperatingSystem.os.addProcess(launcher)

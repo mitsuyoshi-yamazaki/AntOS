@@ -1,7 +1,7 @@
 import { Problem } from "application/problem"
 import type { ProblemIdentifier } from "application/problem"
 import type { RoomName } from "utility/room_name"
-import type { CreepApiWrapperType } from "object_task/creep_task/creep_api_wrapper"
+import { CreepApiWrapperType } from "object_task/creep_task/creep_api_wrapper_decoder"
 
 export class UnexpectedCreepProblem implements Problem {
   public readonly identifier: ProblemIdentifier

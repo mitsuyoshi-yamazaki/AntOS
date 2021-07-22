@@ -19,8 +19,9 @@ import { TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { Season812484StealPowerProcess } from "process/onetime/season_812484_steal_power_process"
 import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
-// import { OnetimeTaskProcess } from "process/onetime/onetime_task_process"
-// import { ScoutRoomTask } from "task/scout/scout_room_task"
+import { Season845677Attack1TowerProcess } from "process/onetime/season_845677_attack_1tower_process"
+import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
+import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -36,9 +37,6 @@ export class LaunchCommand implements ConsoleCommand {
     switch (this.args[0]) {
     case "TestProcess":
       result = this.launchTestProcess()
-      break
-    case "OnetimeTaskProcess":
-      result = this.launchOnetimeTaskProcess()
       break
     case "RouteCheckTask":
       result = this.launchRouteCheckTask()
@@ -72,6 +70,12 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season831595DismantleRcl2RoomProcess":
       result = this.launchSeason831595DismantleRcl2RoomProcess()
+      break
+    case "Season845677Attack1TowerProcess":
+      result = this.launchSeason845677Attack1TowerProcess()
+      break
+    case "V6RoomKeeperProcess":
+      result = this.launchV6RoomKeeperProcess()
       break
     default:
       break
@@ -124,34 +128,6 @@ export class LaunchCommand implements ConsoleCommand {
       return TestProcess.create(processId)
     })
     return Result.Succeeded(process)
-  }
-
-  private launchOnetimeTaskProcess(): LaunchCommandResult {
-    // const args = this.parseProcessArguments()
-
-    // const roomName = args.get("room_name")
-    // if (roomName == null) {
-    //   return this.missingArgumentError("room_name")
-    // }
-
-    // const targetRoomName = args.get("target_room_name")
-    // if (targetRoomName == null) {
-    //   return this.missingArgumentError("target_room_name")
-    // }
-
-    // const rawWaypoints = args.get("waypoints")
-    // if (rawWaypoints == null) {
-    //   return this.missingArgumentError("waypoints")
-    // }
-    // const waypoints = rawWaypoints.split(",")
-
-    // const task = ScoutRoomTask.create(roomName, targetRoomName, waypoints)
-
-    // const process = OperatingSystem.os.addProcess(processId => {
-    //   return OnetimeTaskProcess.create(processId, roomName, task)
-    // })
-    // return Result.Succeeded(process)
-    return Result.Failed("")
   }
 
   private launchRouteCheckTask(): LaunchCommandResult {
@@ -372,6 +348,46 @@ export class LaunchCommand implements ConsoleCommand {
       return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
+  }
 
+  private launchSeason845677Attack1TowerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const waitingPosition = new RoomPosition(10, 48, roomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season845677Attack1TowerProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchV6RoomKeeperProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const task = RoomKeeperTask.create(roomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return V6RoomKeeperProcess.create(processId, task)
+    })
+    return Result.Succeeded(process)
   }
 }

@@ -59,6 +59,21 @@ export class CreepPool implements ResourcePoolType<Creep> {
       .length
   }
 
+  public getCreeps(taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[] {
+    return this.creeps
+      .filter(creep => {
+        if (!isV5CreepMemory(creep.memory)) {
+          return false
+        }
+        // eslint-disable-next-line eqeqeq
+        if (creep.memory.i != taskIdentifier) {
+          return false
+        }
+        return true
+      })
+      .filter(filter)
+  }
+
   /**
    *
    * @param priority

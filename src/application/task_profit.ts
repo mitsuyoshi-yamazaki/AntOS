@@ -1,28 +1,47 @@
+import type { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import type { Timestamp } from "utility/timestamp"
+
+export type TaskPerformancePeriodType = "one time" | "continuous"
+
 export interface TaskPerformance {
-  readonly timeSpent: number
-  readonly spawnTime: number
+  readonly periodType: TaskPerformancePeriodType
+  readonly timeSpent: Timestamp
+  readonly spawnTime: Timestamp
   readonly numberOfCreeps: number
   readonly resourceCost: Map<ResourceConstant, number>
 }
 
-export interface TaskProfit<Performance extends TaskPerformance> {
-  readonly estimate: Performance
-  readonly performance: Performance
+/**
+ * - performance()を実装したい
+ *   - 具象のTaskPerformanceStateを参照する必要がある
+ *   - 具象のTaskPerformanceStateをどのように抽象クラスで指定するか
+ */
+export interface TaskProfit<Performance extends TaskPerformance, PerformanceState extends TaskPerformanceState> {
+  performanceState: PerformanceState
+
+  estimate(roomResource: OwnedRoomResource): Performance
+  performance(period: Timestamp): Performance
 }
 
 export interface TaskPerformanceState {
-  /** start time */
-  readonly s: number
+  /** spawn time */
+  s: {
+    /** timestamp */
+    t: Timestamp
 
-  /** performance state */
-  readonly p: {
     /** spawn time */
-    s: number
+    st: number
+  }[]
 
-    /** number of creeps */
-    n: number
+  /** resource cost */
+  r: {
+    /** timestamp */
+    t: Timestamp
 
-    /** resource cost */
-    r: {[index: string]: number}
-  }
+    /** resource type */
+    r: ResourceConstant
+
+    /** amount */
+    a: number
+  }[]
 }

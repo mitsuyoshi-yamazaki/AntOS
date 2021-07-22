@@ -1,6 +1,6 @@
 import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
-import { TaskRequests } from "application/task_requests"
+import { TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomName } from "utility/room_name"
@@ -66,7 +66,7 @@ export class WorkerManagerTask extends Task {
     return new WorkerManagerTask(Game.time, roomName, null, workerTask)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskOutputs): TaskOutputs {
 
     return requestsFromChildren
   }

@@ -1,7 +1,7 @@
 import { Task } from "application/task"
 import type { TaskIdentifier } from "application/task_identifier"
 import { CreepTaskAssignTaskRequest } from "application/task_request"
-import { TaskRequests } from "application/task_requests"
+import { TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import type { CreepName } from "prototype/creep"
@@ -36,13 +36,6 @@ export interface Season3PowerManagerTaskState extends TaskState {
 export class Season3PowerManagerTask extends Task {
   public readonly taskType = "Season3PowerManagerTask"
   public readonly identifier: TaskIdentifier
-  public get children(): Task[] {
-    return [
-      this.findPowerBankTask,
-      ...this.harvestPowerTasks,
-      this.processPowerTask,
-    ]
-  }
 
   protected constructor(
     public readonly startTime: number,
@@ -90,7 +83,7 @@ export class Season3PowerManagerTask extends Task {
     return request1
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskOutputs): TaskOutputs {
 
     return requestsFromChildren
   }

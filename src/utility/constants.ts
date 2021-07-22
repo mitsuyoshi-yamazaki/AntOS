@@ -29,6 +29,12 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
 }
 
 export const GameConstants = {
+  pathFinder: {
+    costs: {
+      swamp: SWAMP_COST,
+      obstacle: OBSTACLE_COST,
+    }
+  },
   room: {
     edgePosition: {
       min: 0,

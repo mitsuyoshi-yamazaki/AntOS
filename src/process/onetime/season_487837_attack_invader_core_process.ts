@@ -25,7 +25,7 @@ export interface Season487837AttackInvaderCoreProcessState extends ProcessState 
 export class Season487837AttackInvaderCoreProcess implements Process, Procedural {
   private readonly codename: string
   private readonly roles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
-  private readonly body: BodyPartConstant[] = [ // costs 1040
+  private readonly body: BodyPartConstant[] = [ // costs 1040 >= RCL4
     MOVE, MOVE, MOVE, MOVE,
     ATTACK, ATTACK, ATTACK, ATTACK,
     ATTACK, ATTACK, ATTACK, ATTACK,

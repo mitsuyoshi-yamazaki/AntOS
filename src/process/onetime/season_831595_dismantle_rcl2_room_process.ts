@@ -1,5 +1,3 @@
-831595
-
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
@@ -15,9 +13,6 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
-import { processLog } from "process/process_log"
-import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
-import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
 const numberOfCreeps = 2
 

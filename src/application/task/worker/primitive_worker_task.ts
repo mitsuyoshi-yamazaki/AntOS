@@ -1,7 +1,7 @@
 import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
-import { TaskRequests } from "application/task_requests"
+import { TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import { CreepRole } from "prototype/creep_role"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
@@ -69,7 +69,7 @@ export class PrimitiveWorkerTask extends Task {
     return new PrimitiveWorkerTask(Game.time, roomName, null)
   }
 
-  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskRequests): TaskRequests {
+  public run(roomResource: OwnedRoomResource, requestsFromChildren: TaskOutputs): TaskOutputs {
     const creepCount = roomResource.countCreeps(this.identifier)
     const minimumCreepCount = creepCountForSource * roomResource.sources.length
 
@@ -156,7 +156,7 @@ export class PrimitiveWorkerTask extends Task {
     return null
   }
 
-  private addCreepTaskRequest(creepName: CreepName, task: CreepTask, requests: TaskRequests): void {
+  private addCreepTaskRequest(creepName: CreepName, task: CreepTask, requests: TaskOutputs): void {
     const taskRequest: CreepTaskAssignTaskRequest = {
       taskType: "normal",
       task: task,
