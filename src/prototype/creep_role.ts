@@ -5,27 +5,48 @@ type CreepRoleMover = "mover"
 type CreepRoleHarvester = "harvester"
 type CreepRoleWorker = "worker"
 type CreepRoleEnergyStore = "energy_store"
+type CreepRoleEnergySource = "energy_source"
 type CreepRoleHauler = "hauler"
 type CreepRoleScout = "scout"
 type CreepRoleClaimer = "claimer"
+type CreepRoleAttacker = "attacker"
+type CreepRoleHealer = "healer"
 
 const creepRoleMover: CreepRoleMover = "mover"
 const creepRoleHarvester: CreepRoleHarvester = "harvester"
 const creepRoleWorker: CreepRoleWorker = "worker"
 const creepRoleEnergyStore: CreepRoleEnergyStore = "energy_store"
+const creepRoleEnergySource: CreepRoleEnergySource = "energy_source"
 const creepRoleHauler: CreepRoleHauler = "hauler"
 const creepRoleScout: CreepRoleScout = "scout"
 const creepRoleClaimer: CreepRoleClaimer = "claimer"
+const creepRoleAttacker: CreepRoleAttacker = "attacker"
+const creepRoleHealer: CreepRoleHealer = "healer"
 
-export type CreepRole = CreepRoleMover | CreepRoleHarvester | CreepRoleWorker | CreepRoleEnergyStore | CreepRoleHauler | CreepRoleScout | CreepRoleClaimer
+export type CreepRole = CreepRoleMover
+  | CreepRoleHarvester
+  | CreepRoleWorker
+  | CreepRoleEnergyStore
+  | CreepRoleEnergySource
+  | CreepRoleHauler
+  | CreepRoleScout
+  | CreepRoleClaimer
+  | CreepRoleAttacker
+  | CreepRoleHealer
+
 export const CreepRole = {
   Mover: creepRoleMover,
+
+  /** @deprecated */
   Harvester: creepRoleHarvester,
   Worker: creepRoleWorker,
   EnergyStore: creepRoleEnergyStore,
+  EnergySource: creepRoleEnergySource,
   Hauler: creepRoleHauler,
   Scout: creepRoleScout,
   Claimer: creepRoleClaimer,
+  Attacker: creepRoleAttacker,
+  Healer: creepRoleHealer,
 }
 
 export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {

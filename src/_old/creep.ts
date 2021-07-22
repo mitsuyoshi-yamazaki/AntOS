@@ -334,6 +334,12 @@ export function init() {
       else if (["W27S26", "W27S27", "W27S28", "W26S28", "W26S29"].includes(this.room.name) === true && destination_room_name === "W24S29") {
         destination_room_name = "W26S30"
       }
+      else if (["W14S28", "W14S29"].includes(this.room.name) === true && destination_room_name === "W11S23") {
+        destination_room_name = "W14S30"
+      }
+      else if (["W14S30", "W13S30", "W12S30", "W11S30"].includes(this.room.name) === true && destination_room_name === "W11S23") {
+        destination_room_name = "W10S30"
+      }
     }
 
     const exit = ((): FindConstant => {

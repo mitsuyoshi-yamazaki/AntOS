@@ -1,19 +1,24 @@
+import { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
-import { TaskTargetTypeId } from "./object_task_target_cache"
+import type { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 
-export type TaskProgressTypeFinishedAndRan = 0
-export type TaskProgressTypeFinished = 1
-export type TaskProgressTypeInProgress = 2
-
-const taskProgressTypeFinishedAndRan: TaskProgressTypeFinishedAndRan = 0
-const taskProgressTypeFinished: TaskProgressTypeFinished = 1
-const taskProgressTypeInProgress: TaskProgressTypeInProgress = 2
-
-export type TaskProgressType = TaskProgressTypeFinishedAndRan | TaskProgressTypeFinished | TaskProgressTypeInProgress
-export const TaskProgressType = {
-  FinishedAndRan: taskProgressTypeFinishedAndRan,
-  Finished: taskProgressTypeFinished,
-  InProgress: taskProgressTypeInProgress,
+export interface TaskProgress {
+  progress: "finished" | "in progress"
+  problems: Problem[]
+}
+export const TaskProgress = {
+  InProgress(problems: Problem[]): TaskProgress {
+    return {
+      progress: "in progress",
+      problems,
+    }
+  },
+  Finished(problems: Problem[]): TaskProgress {
+    return {
+      progress: "finished",
+      problems,
+    }
+  },
 }
 
 export interface ObjectTaskState extends State {
@@ -24,13 +29,10 @@ export interface ObjectTaskState extends State {
   s: number
 }
 
-/**
- * - in progress / finished の2値で表せるタスク
- */
 export interface ObjectTask<ObjectType> extends Stateful {
   targetId?: TaskTargetTypeId
   startTime: number
 
   encode(): ObjectTaskState
-  run(obj: ObjectType): TaskProgressType
+  run(obj: ObjectType): TaskProgress
 }

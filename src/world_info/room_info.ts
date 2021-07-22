@@ -1,3 +1,4 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
@@ -14,6 +15,15 @@ const ownedRoomObjects = new Map<RoomName, OwnedRoomObjects>()
 
 // Memoryに入れずにオンメモリキャッシュでもワークするはず
 export interface RoomInfoMemory {
+  /** version */
+  v: ShortVersion
+
+  /** energySourceStructures */
+  src: Id<EnergySource>[]
+
+  /** energyStoreStructures */
+  str: Id<EnergyStore>[]
+
   /** distributor */
   d: {
     /** distributor position */
@@ -34,11 +44,18 @@ export interface RoomInfoMemory {
 }
 
 export interface RoomInfo {
+  version: ShortVersion
+
+  energySourceStructures: EnergySource[]
+  energyStoreStructures: EnergyStore[]
+
+  /** @deprecated */
   distributor: {
     position: RoomPosition
     link: StructureLink | null
   } | null
 
+  /** @deprecated */
   upgrader: {
     link: StructureLink | null
     container: StructureContainer | null
@@ -47,7 +64,7 @@ export interface RoomInfo {
 
 export interface RoomsInterface {
   // ---- Lifecycle ---- //
-  beforeTick(creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[]
+  beforeTick(): OwnedRoomObjects[]
   afterTick(): void
 
   // ---- Get Rooms ---- //
@@ -61,7 +78,7 @@ export interface RoomsInterface {
 
 export const Rooms: RoomsInterface = {
   // ---- Lifecycle ---- //
-  beforeTick: function (creeps: Map<RoomName, Creep[]>): OwnedRoomObjects[] {
+  beforeTick: function (): OwnedRoomObjects[] {
     allVisibleRooms.splice(0, allVisibleRooms.length)
     ownedRooms.splice(0, ownedRooms.length)
     ownedRoomObjects.clear()
@@ -74,7 +91,7 @@ export const Rooms: RoomsInterface = {
 
       if (room.controller != null && room.controller.my === true) {
         ownedRooms.push(room)
-        ownedRoomObjects.set(roomName, enumerateObjects(room.controller, creeps.get(roomName) ?? []))
+        ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
 
         const controlVersion = Migration.roomVersion(room.name)
         const roomNames = ((): RoomName[] => {
@@ -123,8 +140,8 @@ export const Rooms: RoomsInterface = {
 }
 
 // ---- Function ---- //
-function enumerateObjects(controller: StructureController, creeps: Creep[]): OwnedRoomObjects {
-  return new OwnedRoomObjects(controller, creeps)
+function enumerateObjects(controller: StructureController): OwnedRoomObjects {
+  return new OwnedRoomObjects(controller)
 }
 
 export class OwnedRoomObjects {
@@ -142,6 +159,7 @@ export class OwnedRoomObjects {
     towers: StructureTower[]
     storage: StructureStorage | null
     terminal: StructureTerminal | null
+    powerSpawn: StructurePowerSpawn | null
 
     chargeableStructures: EnergyChargeableStructure[]
   }
@@ -161,12 +179,22 @@ export class OwnedRoomObjects {
 
   public constructor(
     public readonly controller: StructureController,
-    creeps: Creep[],
   ) {
     const room = controller.room
 
     const roomInfoMemory = Memory.room_info[room.name]
-    this.roomInfo = decodeRoomInfo(roomInfoMemory)
+    this.roomInfo = ((): RoomInfo => {
+      if (roomInfoMemory == null) { // 新規のRoomの場合
+        return {
+          version: ShortVersion.v6,
+          energySourceStructures: [],
+          energyStoreStructures: [],
+          upgrader: null,
+          distributor: null,
+        }
+      }
+      return decodeRoomInfo(roomInfoMemory)
+    })()
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -203,11 +231,17 @@ export class OwnedRoomObjects {
     const towers: StructureTower[] = []
     let storage: StructureStorage | null = null
     let terminal: StructureTerminal | null = null
+    let powerSpawn: StructurePowerSpawn | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
       const upgraderContainer = this.roomInfo.upgrader.container
       if (upgraderContainer.store.getFreeCapacity(RESOURCE_ENERGY) > upgraderContainer.store.getCapacity() * 0.3) {
         chargeableStructures.push(upgraderContainer)
+      }
+    }
+    if (chargeableStructures.length <= 0) {
+      if (room.terminal != null && room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000 && room.terminal.store.getFreeCapacity() > 10000) {
+        chargeableStructures.push(room.terminal)
       }
     }
 
@@ -266,6 +300,12 @@ export class OwnedRoomObjects {
           this.energyStores.push(structure)
         }
         break
+      case STRUCTURE_POWER_SPAWN:
+        powerSpawn = structure
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableStructures.push(structure)
+        }
+        break
       case STRUCTURE_ROAD:
         checkDecayed(structure)
         break
@@ -311,6 +351,7 @@ export class OwnedRoomObjects {
       towers,
       storage,
       terminal,
+      powerSpawn,
       chargeableStructures,
     }
 
@@ -401,43 +442,50 @@ export class OwnedRoomObjects {
 }
 
 function calculateSourceRouteIn(room: Room, sources: Source[], destination: RoomPosition): void {
-  const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
-  if (room.memory.p == null) {
-    room.memory.p = pathInMemory
-  }
+  ErrorMapper.wrapLoop((): void => {
+    const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
+    if (room.memory.p == null) {
+      room.memory.p = pathInMemory
+    }
 
-  sources.forEach(source => {
-    const sourcePath = pathInMemory.s[source.id]
-    if (sourcePath === "no path") {
-      return
-    }
-    if (sourcePath != null) {
-      return
-    }
-    const result = calculateSourceRoute(source.id, destination)
-    switch (result.resultType) {
-    case "succeeded": {
-      const path = result.value.path.path
-        .map(position => ({ x: position.x, y: position.y }))
-        .splice(3, result.value.path.path.length - 3)
-      path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
-      pathInMemory.s[source.id] = {
-        p: path,
-        d: { x: destination.x, y: destination.y },
+    sources.forEach(source => {
+      const sourcePath = pathInMemory.s[source.id]
+      if (sourcePath === "no path") {
+        return
       }
-      console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
-      break
-    }
-    case "failed":
-      pathInMemory.s[source.id] = "no path"
-      console.log(`source path cannot found: ${result.reason}`)
-      break
-    }
-  })
+      if (sourcePath != null) {
+        return
+      }
+      const result = calculateSourceRoute(source.id, destination)
+      switch (result.resultType) {
+      case "succeeded": {
+        const path = result.value.path.path
+          .map(position => ({ x: position.x, y: position.y }))
+          .splice(3, result.value.path.path.length - 3)
+        path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
+        pathInMemory.s[source.id] = {
+          p: path,
+          d: { x: destination.x, y: destination.y },
+        }
+        console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
+        break
+      }
+      case "failed":
+        pathInMemory.s[source.id] = "no path"
+        console.log(`source path cannot found: ${result.reason}`)
+        break
+      }
+    })
+  }, "calculateSourceRouteIn()")()
 }
 
-function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
+export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
   return {
+    version: roomInfoMemory.v,
+
+    energySourceStructures: roomInfoMemory.src?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
+    energyStoreStructures: roomInfoMemory.str?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
+
     distributor: (() => {
       if (roomInfoMemory == null || roomInfoMemory.d == null) {
         return null
@@ -495,6 +543,9 @@ function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
 
 function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
   return {
+    v: roomInfo.version,
+    src: roomInfo.energySourceStructures.map(obj => obj.id),
+    str: roomInfo.energyStoreStructures.map(obj => obj.id),
     d: (() => {
       if (roomInfo.distributor == null) {
         return null

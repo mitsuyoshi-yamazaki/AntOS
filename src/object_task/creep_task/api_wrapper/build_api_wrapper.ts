@@ -1,27 +1,31 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
-import { ApiWrapper } from "object_task/api_wrapper"
+import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
-import { roomLink } from "utility/log"
-import { CreepApiWrapperState } from "../creep_api_wrapper"
+import { V6Creep } from "prototype/creep"
+import { GameConstants } from "utility/constants"
+import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
-type BuildApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
+const apiWrapperType = "BuildApiWrapper"
 
 export interface BuildApiWrapperState extends CreepApiWrapperState {
+  /** type identifier */
+  t: "BuildApiWrapper"
+
   /** target id */
   i: Id<ConstructionSite<BuildableStructureConstant>>
 }
 
-export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>, TargetingApiWrapper {
+export class BuildApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
   public readonly shortDescription = "build"
+  public readonly range = GameConstants.creep.actionRange.build
 
   private constructor(
     public readonly target: ConstructionSite<BuildableStructureConstant>,
-  ) { }
+  ) {
+  }
 
   public encode(): BuildApiWrapperState {
     return {
-      t: "BuildApiWrapper",
+      t: apiWrapperType,
       i: this.target.id,
     }
   }
@@ -38,35 +42,33 @@ export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>
     return new BuildApiWrapper(target)
   }
 
-  public run(creep: Creep): BuildApiWrapperResult {
+  public run(creep: V6Creep): CreepApiWrapperProgress {
     const result = creep.build(this.target)
 
     switch (result) {
     case OK: {
-      const consumeAmount = creep.body.filter(b => b.type === WORK).length * BUILD_POWER
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= consumeAmount) {
-        return FINISHED_AND_RAN
+      const buildAmount = creep.body.filter(b => b.type === WORK).length * GameConstants.creep.actionPower.build
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= buildAmount) {
+        return CreepApiWrapperProgress.Finished(true)
+      } else {
+        return CreepApiWrapperProgress.InProgress(false)
       }
-      return IN_PROGRESS
     }
 
-    case ERR_NOT_IN_RANGE:
-      return ERR_NOT_IN_RANGE
-
     case ERR_NOT_ENOUGH_RESOURCES:
-      return FINISHED
+      return CreepApiWrapperProgress.Finished(false)
+
+    case ERR_NOT_IN_RANGE:
+      return CreepApiWrapperProgress.InProgress(true)
 
     case ERR_BUSY:
-      return ERR_BUSY
-
-    case ERR_NO_BODYPART:
-      return ERR_DAMAGED
+      return CreepApiWrapperProgress.InProgress(false)
 
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
+    case ERR_NO_BODYPART:
     default:
-      PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
-      return ERR_PROGRAMMING_ERROR
+      return CreepApiWrapperProgress.Failed(new UnexpectedCreepProblem(creep.memory.p, creep.room.name, apiWrapperType, result))
     }
   }
 }

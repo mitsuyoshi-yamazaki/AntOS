@@ -2,6 +2,7 @@ export type TargetingApiWrapperTargetType = AnyCreep | Resource | Tombstone | An
 
 export interface TargetingApiWrapper {
   target: TargetingApiWrapperTargetType
+  range: number
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types

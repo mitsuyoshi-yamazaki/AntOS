@@ -1,28 +1,15 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "utility/room_name"
+import { roomLink } from "./log"
 import { ShortVersion } from "./system_info"
-
-const oldShardName = "shard2"
-const oldRoomNames: RoomName[] = [
-  "W53S5",
-  "W54S7",
-  "W51S29",
-  "W48S6",
-  "W48S12",
-]
-
 
 export const Migration = {
   roomVersion: function (roomName: RoomName): ShortVersion {
-    if (isOldRoom(roomName) === true) {
-      return ShortVersion.v3
+    const version = Memory.room_info[roomName]?.v
+    if (version == null) {
+      PrimitiveLogger.fatal(`Room ${roomLink(roomName)} doesn't have room_info memory`)
+      return ShortVersion.v5
     }
-    return ShortVersion.v5
+    return version
   }
-}
-
-function isOldRoom(roomName: RoomName): boolean {
-  if (Game.shard.name !== oldShardName) {
-    return false
-  }
-  return oldRoomNames.includes(roomName)
 }

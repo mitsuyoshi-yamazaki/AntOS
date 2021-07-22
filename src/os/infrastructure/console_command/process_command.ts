@@ -48,11 +48,29 @@ export class ProcessCommand implements ConsoleCommand {
     const getIndent = (indent: number): string => spaces.slice(0, indent * 2)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getMemoryDescription = (memory: any, indent: number): string => {
+    const sortIndex = (value: any): number => {
+      if (value instanceof Array) {
+        return 2
+      } else if (typeof (value) === "object") {
+        return 1
+      } else {
+        return 0
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sortedKeys = (memory: any): string[] => {
+      return Object.keys(memory).sort((lhs, rhs) => sortIndex(memory[lhs]) - sortIndex(memory[rhs]))
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getMemoryDescription = (memory: any, indent: number): string => { // TODO: childrenが最後になるようソートする
       const result: string[] = []
-      for (const key in memory) {
+      sortedKeys(memory).forEach(key => {
         const value = memory[key]
-        if (value instanceof Array) {
+        if (value == null) {
+          result.push(`${getIndent(indent)}- ${key}: null`)
+        } else if (value instanceof Array) {
           if (value.length <= 0) {
             result.push(`${getIndent(indent)}- ${key}: []`)
           } else {
@@ -60,41 +78,41 @@ export class ProcessCommand implements ConsoleCommand {
             result.push(getArrayDescription(value, indent + 1))
             result.push(`${getIndent(indent)}]`)
           }
-        } else if (typeof (value) === "object") {
+        } else if (typeof (value) === "object") { // typeof (null) == "object"
           result.push(`${getIndent(indent)}- ${key}: {`)
           result.push(getMemoryDescription(value, indent + 1))
           result.push(`${getIndent(indent)}}`)
-        } else if (value == null) {
-          result.push(`${getIndent(indent)}- ${key}: null`)
         } else {
           result.push(`${getIndent(indent)}- ${key}: ${value}`)
         }
-      }
+      })
       return result.join("\n")
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getArrayDescription = (array: Array<any>, indent: number): string => {
       const result: string[] = []
-      array.forEach(value => {
-        if (value instanceof Array) {
-          if (value.length <= 0) {
-            result.push(`${getIndent(indent)}- []`)
+      array.concat([])
+        .sort((lhs, rhs) => sortIndex(lhs) - sortIndex(rhs))
+        .forEach(value => {
+          if (value == null) {
+            result.push(`${getIndent(indent)}- null`)
+          } else if (value instanceof Array) {
+            if (value.length <= 0) {
+              result.push(`${getIndent(indent)}- []`)
+            } else {
+              result.push(`${getIndent(indent)}- [`)
+              result.push(getArrayDescription(value, indent + 1))
+              result.push(`${getIndent(indent)}]`)
+            }
+          } else if (typeof (value) === "object") {
+            result.push(`${getIndent(indent)}- {`)
+            result.push(getMemoryDescription(value, indent + 1))
+            result.push(`${getIndent(indent)}}`)
           } else {
-            result.push(`${getIndent(indent)}- [`)
-            result.push(getArrayDescription(value, indent + 1))
-            result.push(`${getIndent(indent)}]`)
+            result.push(`${getIndent(indent)}- ${value}`)
           }
-        } else if (typeof (value) === "object") {
-          result.push(`${getIndent(indent)}- {`)
-          result.push(getMemoryDescription(value, indent + 1))
-          result.push(`${getIndent(indent)}}`)
-        } else if (value == null) {
-          result.push(`${getIndent(indent)}- null`)
-        } else {
-          result.push(`${getIndent(indent)}- ${value}`)
-        }
-      })
+        })
       return result.join("\n")
     }
 

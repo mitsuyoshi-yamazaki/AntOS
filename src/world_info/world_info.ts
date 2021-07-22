@@ -37,7 +37,7 @@ export const World: WorldInterface = {
     // 呼び出し順序に注意: 基本的に低次の処理から呼び出す
     const allCreeps = this.creeps.beforeTick()
     const allSpawns = this.spawns.beforeTick()
-    const ownedRoomObjects = this.rooms.beforeTick(allCreeps)
+    const ownedRoomObjects = this.rooms.beforeTick()
     const allTowers = new Map<RoomName, StructureTower[]>()
     ownedRoomObjects.forEach(objects => allTowers.set(objects.controller.room.name, objects.activeStructures.towers))
     this.resourcePools.beforeTick(allCreeps, allTowers, allSpawns)

@@ -1,6 +1,6 @@
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "utility/room_name"
-import { TaskIdentifier } from "task/task"
+import { TaskIdentifier } from "v5_task/task"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
 import { CreepSpawnRequest } from "./creep_specs"
 import { SpawnPool } from "./spawn_resource_pool"
@@ -28,6 +28,9 @@ export interface ResourcePoolsInterface {
   // ---- Creep ---- //
   countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
   countCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number
+
+  /** @deprecated */
+  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[]
   assignTasks(roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
   takeOverCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void
 
@@ -73,6 +76,10 @@ export const ResourcePools: ResourcePoolsInterface = {
   // ---- Creep ---- //
   countAllCreeps: function(roomName: RoomName, filter: CreepPoolFilter): number {
     return getCreepPool(roomName)?.countAllCreeps(filter) ?? 0
+  },
+
+  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[] {
+    return getCreepPool(roomName)?.getCreeps(taskIdentifier, filter) ?? []
   },
 
   countCreeps: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number {

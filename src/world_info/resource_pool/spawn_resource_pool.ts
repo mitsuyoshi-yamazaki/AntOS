@@ -1,4 +1,7 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { V5CreepMemory } from "prototype/creep"
+import { bodyCost } from "utility/creep_body"
+import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { generateUniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
@@ -29,6 +32,11 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       }
       const creepName = generateUniqueId(request.codename)
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
+      const cost = bodyCost(body)
+      if (cost > spawn.room.energyCapacityAvailable) {
+        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)}`)
+        return
+      }
       const memory: V5CreepMemory = {
         v: "v5",
         p: request.parentRoomName ?? this.parentRoomName,
@@ -37,9 +45,16 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         i: request.taskIdentifier,
       }
       const result = spawn.spawnCreep(body, creepName, { memory: memory })
-      if (result === OK) {
+      switch (result) {
+      case OK: {
         const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
-        creep.task = request.initialTask
+        creep.v5task = request.initialTask
+        break
+      }
+      case ERR_NOT_ENOUGH_ENERGY:
+        break
+      default:
+        PrimitiveLogger.programError(`${spawn.name} in ${roomLink(this.parentRoomName)} faild to spawn ${result}, task: ${request.taskIdentifier}, creep name: ${creepName}, body(length: ${body.length}): ${body}`)
       }
     })
   }

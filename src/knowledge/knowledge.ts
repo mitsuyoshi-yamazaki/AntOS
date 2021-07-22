@@ -13,4 +13,7 @@ export const epicScenes: { description: string, url: string }[] = [
 
 /**
  * - 敵のSpawnをCreepで囲うことはできない（敵のCreepが出てくる際に踏まれて死ぬ
+ *   - Safemode下のみの挙動かもしれない
+ * - Creep APIで失敗する際、まずERR_NO_BODYPARTチェックが入る
+ *   - 次にERR_NOT_IN_RANGEが返る = まず近づかなければエラー判定ができない（ものもある
  */

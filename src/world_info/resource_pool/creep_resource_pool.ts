@@ -1,10 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
 import { RoomName } from "utility/room_name"
-import { CreepTask } from "object_task/creep_task/creep_task"
-import { TaskProgressType } from "object_task/object_task"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { TaskProgressType } from "v5_object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
-import { TaskIdentifier } from "task/task"
+import { TaskIdentifier } from "v5_task/task"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 // Worldをimportしない
 
 /** 別タスクの実行中であっても上書きする: 未実装 */
@@ -58,6 +59,21 @@ export class CreepPool implements ResourcePoolType<Creep> {
       .length
   }
 
+  public getCreeps(taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[] {
+    return this.creeps
+      .filter(creep => {
+        if (!isV5CreepMemory(creep.memory)) {
+          return false
+        }
+        // eslint-disable-next-line eqeqeq
+        if (creep.memory.i != taskIdentifier) {
+          return false
+        }
+        return true
+      })
+      .filter(filter)
+  }
+
   /**
    *
    * @param priority
@@ -81,10 +97,10 @@ export class CreepPool implements ResourcePoolType<Creep> {
     const filteredCreeps = ((): Creep[] => {
       switch (priority) {
       case creepPoolAssignPriorityLow:
-        return creeps.filter(creep => creep.task == null)
+        return creeps.filter(creep => creep.v5task == null)
       case creepPoolAssignPriorityUrgent:
         PrimitiveLogger.fatal("creepPoolAssignPriorityUrgent not implemented yet")
-        return creeps.filter(creep => creep.task == null)
+        return creeps.filter(creep => creep.v5task == null)
       }
     })()
 
@@ -93,7 +109,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
       if (newTask == null) {
         return
       }
-      creep.task = newTask
+      creep.v5task = newTask
     }
   }
 
@@ -112,9 +128,14 @@ export class CreepPool implements ResourcePoolType<Creep> {
 
   public executeTask(): void {
     this.creeps.forEach(creep => {
-      if (creep.task != null) {
-        if (creep.task.run(creep) !== TaskProgressType.InProgress) {
-          creep.task = null
+      if (creep.v5task != null) {
+        const v5Task = creep.v5task
+        const result = ErrorMapper.wrapLoop((): TaskProgressType => {
+          return v5Task.run(creep)
+        }, "creep.v5task.run()")()
+
+        if (result !== TaskProgressType.InProgress) {
+          creep.v5task = null
         }
       }
     })
