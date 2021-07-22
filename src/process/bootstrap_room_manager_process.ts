@@ -96,11 +96,11 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   public didReceiveMessage(message: string): string {
     const args = new Map<string, string>()
     for (const keyValue of message.split(" ")) {
-      const values = keyValue.split("=")
-      if (values.length !== 2) {
+      const [key, value] = keyValue.split("=")
+      if (key == null || value == null) {
         return `Invalid argument ${keyValue}`
       }
-      args.set(values[0], values[1])
+      args.set(key, value)
     }
 
     const missingArgumentError = (argumentName: string): string => `Missing argument ${argumentName}`

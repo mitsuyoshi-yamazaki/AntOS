@@ -48,7 +48,9 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       switch (result) {
       case OK: {
         const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
-        creep.v5task = request.initialTask
+        if (creep != null) {
+          creep.v5task = request.initialTask
+        }
         break
       }
       case ERR_NOT_ENOUGH_ENERGY:

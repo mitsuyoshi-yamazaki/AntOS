@@ -93,7 +93,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
       return
 
     case ERR_NOT_FOUND:
-      creep.moveTo((creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0]), defaultMoveToOptions)
+      creep.moveTo((creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0] ?? this.apiWrapper.source), defaultMoveToOptions)
       return
 
     case ERR_NOT_OWNER:

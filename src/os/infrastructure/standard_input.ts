@@ -46,7 +46,7 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
   }
 
   const command = components[0]
-  if (!isConsoleCommand(command)) {
+  if (command == null || !isConsoleCommand(command)) {
     return invalidCommandDescription(`Unknown command ${command}`)
   }
   components.splice(0, 1)
@@ -56,16 +56,9 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   components.forEach(component => {
     if (component.startsWith("-")) {
-      const optionKeyValue = component.split("=")
-      switch (optionKeyValue.length) {
-      case 1:
-        options.set(optionKeyValue[0], "")
-        break
-      case 2:
-        options.set(optionKeyValue[0], optionKeyValue[1])
-        break
-      default:
-        break
+      const [optionKey, optionValue] = component.split("=")
+      if (optionKey != null) {
+        options.set(optionKey, optionValue ?? "")
       }
       return
     }

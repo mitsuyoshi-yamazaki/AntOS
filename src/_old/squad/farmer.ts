@@ -151,7 +151,7 @@ export class FarmerSquad extends Squad {
     })
 
     if (this.upgraders.all.length > 0) {
-      this.upgraders.renew = this.upgraders.all[0]
+      this.upgraders.renew = this.upgraders.all[0]!
       this.upgraders.sorted = this.upgraders.all.slice(1, this.upgraders.all.length)
 
       // console.log(`HGOE renew ${this.upgraders.renew}, sorted: ${this.upgraders.sorted.map(c=>c.name)}, all: ${this.upgraders.all.map(c=>c.name)}`)
@@ -315,7 +315,7 @@ export class FarmerSquad extends Squad {
 
   // --
   public get spawnPriority(): SpawnPriority {
-    const squad_memory = Memory.squads[this.name]
+    const squad_memory = Memory.squads[this.name]!
     if (squad_memory.stop_spawming) {
       return SpawnPriority.NONE
     }
@@ -1080,7 +1080,7 @@ function getDirection(farm_room_name: string, carry_direction: 'withdraw' | 'cha
     return null
   }
 
-  const directional_paths = paths[carry_direction]
+  const directional_paths = paths[carry_direction]!
   const room = directional_paths[pos.roomName]
   if (!room) {
     return null

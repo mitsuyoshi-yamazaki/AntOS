@@ -29,7 +29,7 @@ export class ErrorMapper {
    * @param {Error | string} error The error or original stack trace
    * @returns {string} The source-mapped stack trace
    */
-  public static sourceMappedStackTrace(error: Error | string): string {
+  public static sourceMappedStackTrace(error: Error | string): string | undefined {
     const stack: string = error instanceof Error ? error.stack as string : error
     if (this.cache.hasOwnProperty(stack)) {
       return this.cache[stack]
@@ -38,12 +38,18 @@ export class ErrorMapper {
     const re = /^\s+at\s+(.+?\s+)?\(?([0-z._\-\\\/]+):(\d+):(\d+)\)?$/gm
     let match: RegExpExecArray | null
     let outStack = error.toString()
+    const parseInteger = (rawValue: string | undefined): number => {
+      if (rawValue == null) {
+        return NaN
+      }
+      return parseInt(rawValue, 10)
+    }
 
     while (match = re.exec(stack)) {
       if (match[2] === "main") {
         const pos = this.consumer.originalPositionFor({
-          column: parseInt(match[4], 10),
-          line: parseInt(match[3], 10)
+          column: parseInteger(match[4]),
+          line: parseInteger(match[3])
         })
 
         if (pos.line != null) {

@@ -213,10 +213,10 @@ export class OwnedRoomResource extends NormalRoomResource {
   }
 
   public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
-    return this.constructionSites[0]  // TODO: 優先順位づけ
+    return this.constructionSites[0] ?? null  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {
-    return this.damagedStructures[0]  // TODO: 優先順位づけ
+    return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
 }

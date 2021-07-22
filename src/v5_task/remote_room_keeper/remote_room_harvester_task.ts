@@ -189,8 +189,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -317,8 +318,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return  // TODO: 毎tick行わないようにする
     }
     const position = path[path.length - 1]
-    if (position.isNearTo(source.pos) !== true) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete: ${resultPath.incomplete}, path: ${resultPath.path}`)
+    if (position == null || position.isNearTo(source.pos) !== true) {
+      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete: ${resultPath.incomplete}, path: ${resultPath.path}, pos: ${position}`)
       return  // TODO: 毎tick行わないようにする
     }
     this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))

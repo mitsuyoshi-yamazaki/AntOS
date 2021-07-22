@@ -117,7 +117,11 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         const sources = creep.room.find(FIND_SOURCES)
         if (sources.length > 0) {
           const source = sources[Game.time % sources.length]
-          return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+          if (source != null) {
+            return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+          }
+          creep.say("no source")
+          return null
         }
       } else {
         const constructionSite = creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES)

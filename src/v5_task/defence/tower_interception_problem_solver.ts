@@ -53,7 +53,7 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
         }
         this.targetId = null
       }
-      return objects.hostiles.creeps[0] ?? objects.hostiles.powerCreeps[0]  // TODO: ターゲット選定
+      return objects.hostiles.creeps[0] ?? objects.hostiles.powerCreeps[0] ?? null  // TODO: ターゲット選定
     })()
 
     if (target == null) {

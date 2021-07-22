@@ -28,9 +28,7 @@ export const RoomResources: RoomResourcesInterface = {
     roomResources.clear()
     enumerateCreeps()
 
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
-
+    Object.entries(Game.rooms).forEach(([roomName, room]) => {
       if (room.controller != null && room.controller.my === true) {
         const creepInfo: OwnedRoomCreepInfo[] = (allCreeps.get(roomName) ?? []).map(creep => {
           return {
@@ -41,7 +39,7 @@ export const RoomResources: RoomResourcesInterface = {
 
         roomResources.set(roomName, buildOwnedRoomResource(room.controller, creepInfo))
       }
-    }
+    })
   },
 
   afterTick(): void {

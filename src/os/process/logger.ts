@@ -110,7 +110,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   public didReceiveMessage(message: string): string {
     const components = message.split(" ")
     const operation = components[0]
-    if (!(isLoggerProcessMessageOperation(operation))) {
+    if (operation == null || !(isLoggerProcessMessageOperation(operation))) {
       return `Invalid operation ${operation}. Operation is either "add", "remove" or "clear"`
     }
 
@@ -119,19 +119,22 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     }
 
     const filterType = components[1]
-    if (!(isLoggerProcessMessageFilterType(filterType))) {
+    if (filterType == null || !(isLoggerProcessMessageFilterType(filterType))) {
       return `Invalid filter type ${filterType}. Filter type is either "id" (process ID) or "type" (process Type)`
     }
 
     switch (filterType) {
     case "id":
-      return this.filterById(operation, components[2])
+      return this.filterById(operation, components[2] ?? null)
     }
   }
 
-  private filterById(operation: LoggerProcessMessageOperation, rawProcessId: string): string {
+  private filterById(operation: LoggerProcessMessageOperation, rawProcessId: string | null): string {
     switch (operation) {
     case "add": {
+      if (rawProcessId == null) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       const processId = parseInt(rawProcessId, 10)
       if (isNaN(processId)) {
         return `Invalid process ID ${rawProcessId}`
@@ -143,6 +146,9 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
       return `Added ${processId}`
     }
     case "remove": {
+      if (rawProcessId == null) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       const processId = parseInt(rawProcessId, 10)
       if (isNaN(processId)) {
         return `Invalid process ID ${rawProcessId}`

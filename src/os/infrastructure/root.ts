@@ -63,23 +63,21 @@ export class RootProcess {
 
   // ---- Private ---- //
   private restoreTasks(): void {
-    for (const creepName in Game.creeps) {
-      const creep = Game.creeps[creepName]
+    Object.entries(Game.creeps).forEach(([, creep]) => {
       if (isV6Creep(creep)) {
         creep.task = decodeCreepTask(creep)
       }
       creep.v5task = v5DecodeCreepTask(creep)
-    }
+    })
   }
 
   private storeTasks(): void {
-    for (const creepName in Game.creeps) {
-      const creep = Game.creeps[creepName]
+    Object.entries(Game.creeps).forEach(([, creep]) => {
       if (isV6Creep(creep)) {
         creep.memory.t = creep.task?.encode() ?? null
       } else if (isV5CreepMemory(creep.memory)) {
         creep.memory.t = creep.v5task?.encode() ?? null
       }
-    }
+    })
   }
 }

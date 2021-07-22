@@ -237,6 +237,9 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       return targetedBy(lhs.pos) < targetedBy(rhs.pos) ? -1 : 1
     })
     const targetFlag = flags[0]
+    if (targetFlag == null) {
+      return null
+    }
 
     const tasks: CreepTask[] = [
       MoveToTask.create(targetFlag.pos, 0),

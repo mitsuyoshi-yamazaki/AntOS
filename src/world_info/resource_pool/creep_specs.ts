@@ -45,21 +45,20 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
   const result: CreepSpawnRequest[] = []
   const checkedIndexes: number[] = []
 
-  for (let i = 0; i < requests.length; i += 1) {
+  requests.forEach((request, i) => {
     if (checkedIndexes.includes(i) === true) {
-      continue
+      return
     }
 
-    const request = requests[i]
     if (request.body != null) {
       result.push(request)
       checkedIndexes.push(i)
-      continue
+      return
     }
     if (i >= requests.length - 1) {
       result.push(request)
       checkedIndexes.push(i)
-      continue
+      return
     }
 
     checkedIndexes.push(i)
@@ -69,16 +68,20 @@ export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[
       if (checkedIndexes.includes(j) === true) {
         continue
       }
+      const compareRequest = requests[j]
+      if (compareRequest == null) {
+        continue
+      }
 
       const requestToMerge = mergedRequest ?? request
-      const mergeResult = mergeRequest(requestToMerge, requests[j])
+      const mergeResult = mergeRequest(requestToMerge, compareRequest)
       if (mergeResult != null) {
         mergedRequest = mergeResult
         checkedIndexes.push(j)
       }
     }
     result.push(mergedRequest ?? request)
-  }
+  })
 
   return result
 }

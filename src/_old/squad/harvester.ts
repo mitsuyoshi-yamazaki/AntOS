@@ -253,12 +253,12 @@ export class HarvesterSquad extends Squad {
     // --
     if ((this.source_info.id == '59f19fff82100e1594f35e06') && (this.carriers.length > 0)) {  // W48S47 top right
       const oxygen_container = Game.getObjectById('5af19724b0db053c306cbd30') as StructureContainer
-      if (oxygen_container && (this.carriers.length > 0) && (this.carriers[0].carry.energy == 0) && ((oxygen_container.store[RESOURCE_OXYGEN] || 0) > 400)) {
+      if (oxygen_container && (this.carriers.length > 0) && (this.carriers[0]?.carry.energy == 0) && ((oxygen_container.store[RESOURCE_OXYGEN] || 0) > 400)) {
         this.resource_type = RESOURCE_OXYGEN
         this.container = oxygen_container
       }
       else {
-        const target = this.carriers[0].pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
+        const target = this.carriers[0]?.pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
           filter: (structure) => {
             return ((structure.structureType == STRUCTURE_CONTAINER) && ((structure as StructureContainer).store.energy > 300))
               || ((structure.id == '5aee959afd02f942b0a03361') && ((structure as StructureLink).energy > 0)) // Link
@@ -277,12 +277,12 @@ export class HarvesterSquad extends Squad {
     }
     else if ((this.source_info.id == '59f19ff082100e1594f35c84') && (this.carriers.length > 0)) { // W49S47 top right
       const utrium_container = Game.getObjectById('5b26ef4ad307cc2f4ed53532') as StructureContainer
-      if (utrium_container && (this.carriers.length > 0) && (this.carriers[0].carry.energy == 0) && ((utrium_container.store[RESOURCE_UTRIUM] || 0) > 400)) {
+      if (utrium_container && (this.carriers.length > 0) && (this.carriers[0]?.carry.energy == 0) && ((utrium_container.store[RESOURCE_UTRIUM] || 0) > 400)) {
         this.resource_type = RESOURCE_UTRIUM
         this.container = utrium_container
       }
       else {
-        const target = this.carriers[0].pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
+        const target = this.carriers[0]?.pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
           filter: (structure) => {
             return ((structure.structureType == STRUCTURE_CONTAINER) && ((structure as StructureContainer).store.energy > 600))
               || ((structure.id == '5af1900395fe4569eddba9da') && ((structure as StructureLink).energy > 0)) // link
@@ -301,7 +301,7 @@ export class HarvesterSquad extends Squad {
       }
     }
     else if ((this.source_info.id == '59f19fff82100e1594f35dec') && (this.carriers.length > 0)) {  // W48S39 left
-      const target = this.carriers[0].pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
+      const target = this.carriers[0]?.pos.findClosestByPath(FIND_STRUCTURES, { // Harvest from harvester containers and link
         filter: (structure) => {
           return ((structure.structureType == STRUCTURE_CONTAINER) && ((structure as StructureContainer).store.energy > 300))
         }
@@ -312,7 +312,7 @@ export class HarvesterSquad extends Squad {
       }
     }
     else if ((this.source_info.id == '59f1a01e82100e1594f36174') && (this.carriers.length > 0)) {  // W46S33 bottom left
-      const target = this.carriers[0].pos.findClosestByPath(FIND_STRUCTURES, {
+      const target = this.carriers[0]?.pos.findClosestByPath(FIND_STRUCTURES, {
         filter: (structure) => {
           if (structure.structureType != STRUCTURE_CONTAINER) {
             return false
@@ -367,7 +367,7 @@ export class HarvesterSquad extends Squad {
 
   // --
   public get spawnPriority(): SpawnPriority {
-    const squad_memory = Memory.squads[this.name]
+    const squad_memory = Memory.squads[this.name]!
     if (squad_memory.stop_spawming) {
       return SpawnPriority.NONE
     }
@@ -656,8 +656,8 @@ export class HarvesterSquad extends Squad {
       const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
 
       if (needs_renew) {
-        if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive || 0) < 500)) && !creep.room.spawns[0].spawning) {
-          creep.goToRenew(creep.room.spawns[0])
+        if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive || 0) < 500)) && !creep.room.spawns[0]?.spawning) {
+          creep.goToRenew(creep.room.spawns[0]!)
           return
         }
         else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
@@ -668,7 +668,7 @@ export class HarvesterSquad extends Squad {
       const carry_amount = creep.store.getUsedCapacity()
 
       if (!creep.room.attacker_info().attacked && (creep.room.resourceful_tombstones.length > 0) && ((carry_amount - creep.carry.energy) < (creep.carryCapacity - 100))) {
-        const target = creep.room.resourceful_tombstones[0]
+        const target = creep.room.resourceful_tombstones[0]!
         const resource_amount = target.store.getUsedCapacity() - target.store.energy
         if (resource_amount > 0) {
           const vacancy = creep.carryCapacity - carry_amount
@@ -908,8 +908,8 @@ export function runHarvester(creep: Creep, room_name: string, source: Source | M
   const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
 
   if (needs_renew) {
-    if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive || 0) < 500)) && !creep.room.spawns[0].spawning) {
-      creep.goToRenew(creep.room.spawns[0])
+    if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive || 0) < 500)) && !creep.room.spawns[0]?.spawning) {
+      creep.goToRenew(creep.room.spawns[0]!)
       return
     }
     else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {

@@ -53,7 +53,7 @@ export class TowerRepairProblemSolver extends ProblemSolver {
       //   }
       //   this.targetId = null
       // }
-      return objects.damagedStructures[0] ?? objects.decayedStructures[0]  // TODO: ターゲット選定
+      return objects.damagedStructures[0] ?? objects.decayedStructures[0] ?? null  // TODO: ターゲット選定
     })()
 
     if (target == null) {

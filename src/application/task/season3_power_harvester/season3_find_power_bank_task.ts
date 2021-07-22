@@ -231,11 +231,11 @@ export class Season3FindPowerBankTask
       return null
     }
 
-    if (route.highwayRoute.length <= 0) {
+    const destinationRoomName = route.highwayRoute[route.highwayRoute.length - 1]
+    if (destinationRoomName == null) {
       PrimitiveLogger.programError(`${this.constructor.name} no highway route found`)
       return null
     }
-    const destinationRoomName = route.highwayRoute[route.highwayRoute.length - 1]
     if (isInHighway === true) {
       const waypoints = [...route.highwayRoute]
       waypoints.splice(waypoints.length - 1, 1)
@@ -309,10 +309,10 @@ function calculateRoomRoutes(roomName: RoomName): Season3FindPowerBankTaskScoutR
   })
 
   highwayRoutes.forEach(route => {
-    if (route.length <= 0) {
+    const highwayRoomName = route[route.length - 1]
+    if (highwayRoomName == null) {
       return
     }
-    const highwayRoomName = route[route.length - 1]
     const roomCoordinate = RoomCoordinate.parse(highwayRoomName)
     if (roomCoordinate == null) {
       return

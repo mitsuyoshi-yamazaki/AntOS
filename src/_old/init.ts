@@ -191,11 +191,11 @@ export function tick(): void {
   Game.reactions = {}
 
   for (const resource_type of Object.keys(REACTIONS)) {
-    const reactions = REACTIONS[resource_type]
+    const reactions = REACTIONS[resource_type]!
 
     for (const ingredient_type of Object.keys(reactions)) {
-      const compound_type = reactions[ingredient_type]
-      Game.reactions[compound_type] = {
+      const compound_type = reactions[ingredient_type]!
+      Game.reactions[compound_type]! = {
         lhs: resource_type as ResourceConstant,
         rhs: ingredient_type as ResourceConstant,
       }
@@ -211,7 +211,7 @@ export function tick(): void {
   roomTick()
 
   for (const room_name in Game.rooms) {
-    const room = Game.rooms[room_name]
+    const room = Game.rooms[room_name]!
     room.initialize()
   }
 
@@ -222,7 +222,7 @@ export function tick(): void {
   Game.squad_creeps = {}
 
   for (const creep_name in Game.creeps) {
-    const creep = Game.creeps[creep_name]
+    const creep = Game.creeps[creep_name]!
     if (!isV4CreepMemory(creep.memory)) {
       continue
     }
@@ -237,7 +237,7 @@ export function tick(): void {
       Game.squad_creeps[squad_name] = []
     }
 
-    Game.squad_creeps[squad_name].push(creep)
+    Game.squad_creeps[squad_name]!.push(creep)
   }
 }
 

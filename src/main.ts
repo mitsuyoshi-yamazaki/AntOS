@@ -54,15 +54,15 @@ const mainLoop = () => {
 
     if ((Game.time % 997) == 17) {
       ErrorMapper.wrapLoop(() => {
-        for (const squad_name in Memory.squads) {
-          const squad_memory = Memory.squads[squad_name]
-          const room = Game.rooms[squad_memory.owner_name]
-
+        Object.entries(Memory.squads).forEach(([squadName, squadMemory]) => {
+          const room = Game.rooms[squadMemory.owner_name]
           if (room && room.controller && room.controller.my) {
-            continue
+            return
           }
 
-          delete Memory.squads[squad_name]
+          delete Memory.squads[squadName]
+        })
+        for (const squad_name in Memory.squads) {
         }
         console.log(`Main squads GC at ${Game.time}`)
       }, `Squads.gc`)()
@@ -76,12 +76,9 @@ const mainLoop = () => {
 
   if ((Game.time % 29) == 3) {
     ErrorMapper.wrapLoop(() => {
-      for (const creep_name in Game.creeps) {
-        const creep = Game.creeps[creep_name]
-
+      Object.entries(Game.creeps).forEach(([creepName, creep]) => {
         creep.notifyWhenAttacked(false) // creepsは全て通知を停止
-      }
-      // console.log(`Main creeps GC at ${Game.time}`)
+      })
     }, `Creeps.gc`)()
   }
 

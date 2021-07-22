@@ -61,19 +61,19 @@ export class MoveToRoomTask implements CreepTask {
     const directionIndex = (Game.time + this.startTime) % 3
 
     if (creep.pos.x === 0) {
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex]) === OK) {  // エラーは無視する
+      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT) === OK) {  // エラーは無視する
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex]) === OK) {
+      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex]) === OK) {
+      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     }

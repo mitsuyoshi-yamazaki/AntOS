@@ -57,13 +57,13 @@ export interface TargetSpecifier {
 
 export function getTargets(info: TargetSpecifier): {room_name: string | null, room: Room | null, structure: Structure | null} {
   const target: {room_name: string | null, room: Room | null, structure: Structure | null} = {
-    room_name: info.target_room_names[0],
+    room_name: info.target_room_names[0]!,
     room: null,
     structure: null,
   }
 
   if (target.room_name) {
-    target.room = Game.rooms[target.room_name]
+    target.room = Game.rooms[target.room_name]!
 
     if (target.room) {
       const target_ids = (info.target_ids || {})[target.room_name]
@@ -135,7 +135,7 @@ export abstract class Squad {
   }
 
   public description(): string {
-    const priority = Memory.squads[this.name].stop_spawming ? 'stop' : `${this.spawnPriority}`
+    const priority = Memory.squads[this.name]?.stop_spawming ? 'stop' : `${this.spawnPriority}`
     return `${this.name} ${this.creeps.size} crp, pri: ${priority}`
   }
 

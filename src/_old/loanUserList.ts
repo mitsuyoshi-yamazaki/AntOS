@@ -31,10 +31,10 @@ export function populateLOANlist(LOANuser = "LeagueOfAutomatedNations", LOANsegm
                 }
                 let myUsername = anyRoom.controller.owner.username;
                 for (let iL = (LOANdataKeys.length-1); iL >= 0; iL--) {
-                    if (LOANdata[LOANdataKeys[iL]].indexOf(myUsername) >= 0) {
+                    if (LOANdata[LOANdataKeys[iL]!].indexOf(myUsername) >= 0) {
                         //console.log("Player",myUsername,"found in alliance",LOANdataKeys[iL]);
-                        Game.LOANlist = LOANdata[LOANdataKeys[iL]];
-                        Memory.LOANalliance = LOANdataKeys[iL].toString();
+                        Game.LOANlist = LOANdata[LOANdataKeys[iL]!];
+                        Memory.LOANalliance = LOANdataKeys[iL]!.toString();
                         return true;
                     }
                 }

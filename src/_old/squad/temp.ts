@@ -95,7 +95,7 @@ export class TempSquad extends Squad {
         return SpawnPriority.NORMAL
       }
 
-      if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
+      if ((this.attacker.length == 1) && ((this.attacker[0]?.ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
         return SpawnPriority.NORMAL
       }
     }
@@ -138,7 +138,7 @@ export class TempSquad extends Squad {
           return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
         }
 
-        if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
+        if ((this.attacker.length == 1) && ((this.attacker[0]?.ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
           return this.hasEnoughEnergyForGeneralAttacker(energy_available, capacity)
         }
       }
@@ -177,7 +177,7 @@ export class TempSquad extends Squad {
           return
           }
 
-        if ((this.attacker.length == 1) && ((this.attacker[0].ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
+        if ((this.attacker.length == 1) && ((this.attacker[0]?.ticksToLive || 1500) < this.spawn_attacker_ticks_before)) {
           this.addGeneralAttacker(energy_available, spawn_func)
           return
         }
@@ -221,7 +221,7 @@ export class TempSquad extends Squad {
   }
 
   public description(): string {
-    const addition = this.creeps.size > 0 ? `, ${Array.from(this.creeps.values())[0].pos}` : ''
+    const addition = this.creeps.size > 0 ? `, ${Array.from(this.creeps.values())[0]?.pos}` : ''
     return `${super.description()} ${addition}`
   }
 
@@ -312,7 +312,7 @@ export class TempSquad extends Squad {
       Game.notify(message)
     }
 
-    const target_room = Game.rooms[this.target_room_name]
+    const target_room = Game.rooms[this.target_room_name]!
 
     if (!creep.memory.stop && (creep.claim(target_room_name, true) == ActionResult.DONE)) {
       creep.memory.stop = true

@@ -21,7 +21,7 @@ export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResul
   let status: string = 'run'
 
   for (const i in Memory.migrations.list) {
-    const migration = Memory.migrations.list[i]
+    const migration = Memory.migrations.list[i]!
 
     if (migration.name != name) {
       continue
@@ -40,7 +40,7 @@ export function migrate(name: string, opts?:{dry_run?: boolean}): MigrationResul
   const dry_run_desc = dry_run ? `(${leveled_colored_text('DRY_RUN', 'critical')})` : ''
 
   console.log(`\nMigration ${dry_run_desc} ${status} ${name}\n\n${boundary}`)
-  const result = migrations[name](opts)
+  const result = migrations[name]!(opts)
 
   Memory.migrations.list.push({
     name,
@@ -115,7 +115,7 @@ function add_status_to_region_memory(opts?:{dry_run?: boolean}): MigrationResult
   const dry_run = !(opts.dry_run == false)
 
   for (const region_name of Object.keys(Memory.regions)) {
-    const region_memory = Memory.regions[region_name]
+    const region_memory = Memory.regions[region_name]!
 
     const room = Game.rooms[region_name]
     if (!room) {

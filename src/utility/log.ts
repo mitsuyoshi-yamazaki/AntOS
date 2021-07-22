@@ -12,7 +12,7 @@ const textColors: { [index: string]: string } = {
 
 export type TextColor = "info" | "warn" | "error" | "critical" | "high" | "almost"
 export function textColor(color: TextColor): string {
-  return textColors[color]
+  return textColors[color] ?? "white"
 }
 
 export function coloredText(text: string, color: TextColor): string {

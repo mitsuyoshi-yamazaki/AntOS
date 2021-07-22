@@ -110,8 +110,9 @@ export class GeneralWorkerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 

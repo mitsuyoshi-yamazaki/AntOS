@@ -109,11 +109,11 @@ export class LaunchCommand implements ConsoleCommand {
     args.splice(0, 1)
     const result = new Map<string, string>()
     args.forEach(arg => {
-      const components = arg.split("=")
-      if (components.length !== 2) {
+      const [key, value] = arg.split("=")
+      if (key == null || value == null) {
         return
       }
-      result.set(components[0], components[1])
+      result.set(key, value)
     })
     return result
   }

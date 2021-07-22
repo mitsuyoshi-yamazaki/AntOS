@@ -131,8 +131,9 @@ export class RemoteRoomHaulerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 

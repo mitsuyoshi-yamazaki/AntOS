@@ -192,9 +192,10 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
         this.runSquad(leaderCreep, followerCreep, squad.waypoints)
       } else if (leaderCreep == null && followerCreep == null) {
         deadSquadIndexes.push(index)
-      } else {
-        const creep = leaderCreep ?? followerCreep
-        this.runCollapsedSquad(creep)
+      } else if (leaderCreep != null) {
+        this.runCollapsedSquad(leaderCreep)
+      } else if (followerCreep != null) {
+        this.runCollapsedSquad(followerCreep)
       }
     })
   }
@@ -389,17 +390,17 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     const directionIndex = (Game.time + this.launchTime) % 3
 
     if (creep.pos.x === 0) {
-      creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex])
+      creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT)
     } else if (creep.pos.x === 1 || creep.pos.x === 48) {
-      creep.move([TOP, BOTTOM, TOP][directionIndex])
+      creep.move([TOP, BOTTOM, TOP][directionIndex] ?? TOP)
     } else if (creep.pos.x === 49) {
-      creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex])
+      creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT)
     } else if (creep.pos.y === 0) {
-      creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex])
+      creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM)
     } else if (creep.pos.y === 1 || creep.pos.y === 48) {
-      creep.move([LEFT, RIGHT, LEFT][directionIndex])
+      creep.move([LEFT, RIGHT, LEFT][directionIndex] ?? LEFT)
     } else if (creep.pos.y === 49) {
-      creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex])
+      creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP)
     }
   }
 
@@ -438,19 +439,19 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     const directionIndex = (Game.time + this.launchTime) % 3
 
     if (creep.pos.x === 0) {
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT) === OK) {
         return
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex]) === OK) {
+      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT) === OK) {
         return
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM) === OK) {
         return
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex]) === OK) {
+      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP) === OK) {
         return
       }
     }

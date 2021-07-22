@@ -166,8 +166,9 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -285,7 +286,9 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       return  // TODO: 毎tick行わないようにする
     }
     const position = path[path.length - 1]
-    this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
+    if (position != null) {
+      this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
+    }
     return
   }
 

@@ -85,8 +85,7 @@ export const Rooms: RoomsInterface = {
 
     const roomVersions = new Map<ShortVersion, RoomName[]>()
 
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
+    Object.entries(Game.rooms).forEach(([roomName, room]) => {
       allVisibleRooms.push(room)
 
       if (room.controller != null && room.controller.my === true) {
@@ -105,7 +104,7 @@ export const Rooms: RoomsInterface = {
         })()
         roomNames.push(roomName)
       }
-    }
+    })
 
     if (Game.time % 107 === 13) {
       roomVersions.forEach((roomNames, version) => {
@@ -122,7 +121,7 @@ export const Rooms: RoomsInterface = {
 
   // ---- Get Rooms ---- //
   get: function (roomName: RoomName): Room | null {
-    return Game.rooms[roomName]
+    return Game.rooms[roomName] ?? null
   },
 
   getAllOwnedRooms: function (): Room[] {
@@ -433,11 +432,11 @@ export class OwnedRoomObjects {
   }
 
   public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
-    return this.constructionSites[0]  // TODO: 優先順位づけ
+    return this.constructionSites[0] ?? null  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {
-    return this.damagedStructures[0]  // TODO: 優先順位づけ
+    return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
 }
 
