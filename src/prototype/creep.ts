@@ -57,6 +57,7 @@ declare global {
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
     _v5task: V5CreepTask | null
 
+    /** @deprecated */
     roles: CreepRole[]
   }
 }
@@ -70,9 +71,6 @@ export interface V6CreepMemory {
 
   /** parent room name */
   p: RoomName
-
-  /** roles */
-  r: CreepRole[]
 
   /** task */
   t: CreepTaskState | null
@@ -204,9 +202,6 @@ export function init(): void {
     get(): CreepRole[] {
       const memory = this.memory
       if (isV5CreepMemory(memory)) {
-        return memory.r.concat([])
-      }
-      if (isV6CreepMemory(memory)) {
         return memory.r.concat([])
       }
       return []

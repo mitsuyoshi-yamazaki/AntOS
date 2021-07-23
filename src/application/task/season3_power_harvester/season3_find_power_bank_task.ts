@@ -214,7 +214,6 @@ export class Season3FindPowerBankTask
         this.codename,
         this.identifier,
         `${creepIdentifier}`,
-        [CreepRole.Scout],
         [MOVE],
         initialTask,
         0,

@@ -1,5 +1,4 @@
 import { CreepTask } from "object_task/creep_task/creep_task"
-import type { CreepRole } from "prototype/creep_role"
 import { GameConstants } from "utility/constants"
 import { bodyCost } from "utility/creep_body"
 import { Timestamp } from "utility/timestamp"
@@ -50,7 +49,6 @@ export class SpawnCreepTaskRequest implements SpawnTaskRequest {
     public readonly codename: string,
     public readonly taskIdentifier: TaskIdentifier,
     public readonly creepIdentifier: string | null,
-    public readonly roles: CreepRole[],
     public readonly body: BodyPartConstant[],
     public readonly initialTask: CreepTask | null,
     public readonly neededIn: Timestamp,

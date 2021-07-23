@@ -83,7 +83,6 @@ export class SpawnRequestHandler {
     const memory: V6CreepMemory = {
       v: ShortVersion.v6,
       p: this.roomName,
-      r: request.roles,
       t: request.initialTask?.encode() ?? null,
       i: request.taskIdentifier,
       ci: request.creepIdentifier,
