@@ -6,4 +6,5 @@ export const remoteRoomNamesToDefend = new Map<RoomName, RoomName[]>([
   ["W14S28", ["W15S28", "W14S29"]],
   ["W9S24", ["W9S25", "W8S24"]],
   ["W1S25", ["W2S25", "W1S24"]],
+  ["E5S23", ["E4S23", "E6S23"]],
 ])
