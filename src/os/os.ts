@@ -85,26 +85,24 @@ export class OperatingSystem {
     return this.processes.get(processId)?.process
   }
 
-  public suspendProcess(processId: ProcessId): void {
+  public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      this.sendOSError(`No process with ID ${processId} (suspendProcess())`)
-      return
+      return Result.Failed(`No process with ID ${processId} (suspendProcess())`)
     }
 
     processInfo.running = false
-    this.processes.set(processId, processInfo)
+    return Result.Succeeded(processInfo.process.constructor.name)
   }
 
-  public resumeProcess(processId: ProcessId): void {
+  public resumeProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      this.sendOSError(`No process with ID ${processId} (resumeProcess())`)
-      return
+      return Result.Failed(`No process with ID ${processId} (resumeProcess())`)
     }
 
     processInfo.running = true
-    this.processes.set(processId, processInfo)
+    return Result.Succeeded(processInfo.process.constructor.name)
   }
 
   /**

@@ -10,6 +10,8 @@ import { KillCommand } from "./console_command/kill_command"
 import { LaunchCommand } from "./console_command/launch_command"
 import { MessageCommand } from "./console_command/message_command"
 import { ProcessCommand } from "./console_command/process_command"
+import { ResumeCommand } from "./console_command/resume_command"
+import { SuspendCommand } from "./console_command/suspend_command"
 
 export const standardInput = (rawCommand: string): string => {
   let result: string | null = null
@@ -79,6 +81,12 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   case "kill":
     return Result.Succeeded(new KillCommand(options, args, rawCommand))
+
+  case "suspend":
+    return Result.Succeeded(new SuspendCommand(options, args, rawCommand))
+
+  case "resume":
+    return Result.Succeeded(new ResumeCommand(options, args, rawCommand))
 
   case "launch":
     return Result.Succeeded(new LaunchCommand(options, args, rawCommand))

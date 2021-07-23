@@ -1,6 +1,8 @@
 const consoleCommandTypes = [
   "help",
   "kill",
+  "suspend",
+  "resume",
   "launch",
   "exec",
   "process",
@@ -40,6 +42,18 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
   {
     command: "kill",
     description: "Terminate specified process",
+    options: [],
+    args: "Process ID",
+  },
+  {
+    command: "suspend",
+    description: "Suspend specified process",
+    options: [],
+    args: "Process ID",
+  },
+  {
+    command: "resume",
+    description: "Resume specified process",
     options: [],
     args: "Process ID",
   },
