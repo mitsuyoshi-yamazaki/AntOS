@@ -135,7 +135,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       }
     }
 
-    const findPowerBankOutputs = this.children.findPowerBank.runTask(roomResource)
+    const findPowerBankOutputs = this.children.findPowerBank.runSafely(roomResource)
     this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
     const powerBanks = findPowerBankOutputs.output?.powerBanks ?? []

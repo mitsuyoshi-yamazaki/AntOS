@@ -1,6 +1,6 @@
-import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Task } from "./task"
+// import { ErrorMapper } from "error_mapper/ErrorMapper"
+// import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+// import { Task } from "./task"
 import type { TaskState } from "./task_state"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./task/room_keeper/room_keeper_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./task/worker/primitive_worker_task"
@@ -9,7 +9,7 @@ import { Season3PowerManagerTask, Season3PowerManagerTaskState } from "./task/se
 import { Season3FindPowerBankTask, Season3FindPowerBankTaskState } from "./task/season3_power_harvester/season3_find_power_bank_task"
 import { Season3HarvestPowerTask, Season3HarvestPowerTaskState } from "./task/season3_power_harvester/season3_harvest_power_task"
 import { Season3ProcessPowerTask, Season3ProcessPowerTaskState } from "./task/season3_power_harvester/season3_process_power_task"
-// import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
+import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -21,9 +21,9 @@ class TaskMap {
   "Season3FindPowerBankTask" = (state: TaskState) => Season3FindPowerBankTask.decode(state as unknown as Season3FindPowerBankTaskState)
   "Season3HarvestPowerTask" = (state: TaskState) => Season3HarvestPowerTask.decode(state as unknown as Season3HarvestPowerTaskState)
   "Season3ProcessPowerTask" = (state: TaskState) => Season3ProcessPowerTask.decode(state as unknown as Season3ProcessPowerTaskState)
-  // "V5BridgingTask" = (state: TaskState) => V5BridgingTask.decode(state as unknown as V5BridgingTaskState)
+  "V5BridgingTask" = (state: TaskState) => V5BridgingTask.decode(state as unknown as V5BridgingTaskState)
 }
-const taskMap = new TaskMap()
+// const taskMap = new TaskMap()
 
 // TODO: 汎用Taskをデコードする場面がないので要らんのでは
 // export function decodeTaskFrom(state: TaskState): Task | null {

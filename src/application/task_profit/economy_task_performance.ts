@@ -7,3 +7,10 @@ export interface EconomyTaskPerformance extends TaskPerformance {
 export interface EconomyTaskPerformanceState extends TaskPerformanceState {
 
 }
+
+export function emptyEconomyTaskPerformanceState(): EconomyTaskPerformanceState {
+  return {
+    s: [],
+    r: [],
+  }
+}

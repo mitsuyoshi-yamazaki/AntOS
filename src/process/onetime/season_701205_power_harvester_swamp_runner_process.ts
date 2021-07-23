@@ -54,8 +54,8 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
   f: boolean
 }
 
-// Game.io("launch Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
-// Game.io("launch Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
   private readonly identifier: string

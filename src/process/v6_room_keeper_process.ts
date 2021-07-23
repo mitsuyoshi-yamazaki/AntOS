@@ -54,7 +54,7 @@ export class V6RoomKeeperProcess implements Process, Procedural {
       PrimitiveLogger.fatal(`${roomLink(this.roomName)} lost`)
       return
     }
-    const unresolvedRequests = this.task.runTask(ownedRoomResource)
+    const unresolvedRequests = this.task.runSafely(ownedRoomResource)
     this.handleUnresolvedRequests(unresolvedRequests)
   }
 
