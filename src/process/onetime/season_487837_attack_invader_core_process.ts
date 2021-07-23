@@ -14,6 +14,7 @@ import { RoomName } from "utility/room_name"
 import { processLog } from "process/process_log"
 import { roomLink } from "utility/log"
 import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
+import { bodyCost } from "utility/creep_body"
 
 const numberOfAttackers = 1
 
@@ -106,6 +107,11 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
   }
 
   private requestAttacker(parentRoomName: RoomName, identifier: string): void {
+    const room = Game.rooms[parentRoomName]
+    if (room == null || bodyCost(this.body) > room.energyCapacityAvailable) {
+      return
+    }
+
     World.resourcePools.addSpawnCreepRequest(parentRoomName, {
       priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: numberOfAttackers,
