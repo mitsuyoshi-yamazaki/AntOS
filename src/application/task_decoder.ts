@@ -10,6 +10,7 @@ import { Season3FindPowerBankTask, Season3FindPowerBankTaskState } from "./task/
 import { Season3HarvestPowerTask, Season3HarvestPowerTaskState } from "./task/season3_power_harvester/season3_harvest_power_task"
 import { Season3ProcessPowerTask, Season3ProcessPowerTaskState } from "./task/season3_power_harvester/season3_process_power_task"
 import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
+// import { UpgraderTask, UpgraderTaskState } from "./task/upgrader/upgrader_task"
 
 export type TaskType = keyof TaskMap
 class TaskMap {
@@ -22,6 +23,7 @@ class TaskMap {
   "Season3HarvestPowerTask" = (state: TaskState) => Season3HarvestPowerTask.decode(state as unknown as Season3HarvestPowerTaskState)
   "Season3ProcessPowerTask" = (state: TaskState) => Season3ProcessPowerTask.decode(state as unknown as Season3ProcessPowerTaskState)
   "V5BridgingTask" = (state: TaskState) => V5BridgingTask.decode(state as unknown as V5BridgingTaskState)
+  // "UpgraderTask" = (state: TaskState) => UpgraderTask.decode(state as unknown as UpgraderTaskState)
 }
 // const taskMap = new TaskMap()
 
