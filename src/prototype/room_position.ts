@@ -2,7 +2,8 @@ import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } 
 import { RoomName } from "utility/room_name"
 import { TaskRunnerId, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 
-export type RoomPositionIdentifier = string
+enum RoomPositionIdType { }
+export type RoomPositionId = string & RoomPositionIdType
 
 export interface RoomPositionState {
   x: number,
@@ -19,7 +20,7 @@ export interface RoomPositionFilteringOptions {
 
 declare global {
   interface RoomPosition {
-    id: RoomPositionIdentifier
+    id: RoomPositionId
 
     /** @deprecated */
     v5TargetedBy: V5TaskRunnerId[]
@@ -34,8 +35,8 @@ declare global {
 // 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(RoomPosition.prototype, "id", {
-    get(): RoomPositionIdentifier {
-      return `${this.roomName}_${this.x}_${this.y}`
+    get(): RoomPositionId {
+      return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
     },
   })
 

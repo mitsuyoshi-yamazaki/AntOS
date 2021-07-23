@@ -1,4 +1,4 @@
-import type { RoomPositionIdentifier } from "prototype/room_position"
+import type { RoomPositionId } from "prototype/room_position"
 import { ValuedArrayMap } from "utility/valued_map"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
@@ -6,7 +6,7 @@ type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStruct
 export type TaskTargetType = IdRepresentableTaskTargetType | RoomPosition
 
 export type TaskRunnerId = Id<TaskRunnerType>
-export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionIdentifier
+export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionId
 
 export type TaskTargetCacheTaskType = "build" | "repair"
 
