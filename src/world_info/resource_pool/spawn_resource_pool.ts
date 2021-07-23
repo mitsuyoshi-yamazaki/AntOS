@@ -34,7 +34,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
       const cost = bodyCost(body)
       if (cost > spawn.room.energyCapacityAvailable) {
-        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)}`)
+        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
         return
       }
       const memory: V5CreepMemory = {
