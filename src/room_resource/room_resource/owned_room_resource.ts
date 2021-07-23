@@ -1,9 +1,9 @@
 import { Problem } from "application/problem"
 import { V6Creep } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { RoomInfo } from "room_resource/room_info"
 import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
-import type { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
 
 export interface OwnedRoomCreepInfo {

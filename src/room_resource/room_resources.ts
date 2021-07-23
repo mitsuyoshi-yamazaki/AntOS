@@ -4,10 +4,10 @@ import { TaskProgress } from "object_task/object_task"
 import { CreepName, isV6Creep, V6Creep } from "prototype/creep"
 import { RoomName } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
-import { decodeRoomInfo, RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
-import { RoomResource } from "./room_resource/room_resource"
+import { RoomResource } from "./room_resource"
+import { RoomInfo } from "./room_info"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -44,6 +44,7 @@ export const RoomResources: RoomResourcesInterface = {
 
   afterTick(): void {
     runCreepTasks()
+    saveRoomInfo()
   },
 
   // ---- Room Resource ---- //
@@ -89,30 +90,17 @@ function enumerateCreeps(): void {
 }
 
 function buildNormalRoomResource(controller: StructureController): NormalRoomResource {
-  const roomInfo = ((): RoomInfo | null => {
-    const roomInfoMemory = Memory.room_info[controller.room.name]
-    if (roomInfoMemory == null) {
-      return null
-    }
-    return decodeRoomInfo(roomInfoMemory)
-  })()
+  const roomInfo = Memory.v6RoomInfo[controller.room.name] ?? null
   return new NormalRoomResource(controller, roomInfo)
 }
 
 function buildOwnedRoomResource(controller: StructureController, creepInfo: OwnedRoomCreepInfo[]): OwnedRoomResource {
-  const roomInfo = ((): RoomInfo => {
-    const roomInfoMemory = Memory.room_info[controller.room.name]
-    if (roomInfoMemory == null) {
-      return {
-        version: ShortVersion.v6,
-        energySourceStructures: [],
-        energyStoreStructures: [],
-        upgrader: null,
-        distributor: null,
-      }
-    }
-    return decodeRoomInfo(roomInfoMemory)
-  })()
+  const roomInfo = Memory.v6RoomInfo[controller.room.name] ?? {
+    v: ShortVersion.v6,
+    chargeStructureIds: [],
+    energySourceStructureIds: [],
+    energyStoreStructureIds: [],
+  }
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
 
@@ -152,5 +140,21 @@ function runCreepTasks(): void {
         creepProblems.set(creep.name, problems)
       }, "Run creep tasks")()
     })
+  })
+}
+
+function saveRoomInfo(): void {
+  roomResources.forEach((roomResource, roomName) => {
+    const roomInfo = ((): RoomInfo | null => {
+      if (roomResource instanceof NormalRoomResource) {
+        return roomResource.roomInfo
+      }
+      return null
+    })()
+
+    if (roomInfo == null) {
+      return
+    }
+    Memory.v6RoomInfo[roomName] = roomInfo
   })
 }

@@ -50,3 +50,21 @@ export function init(): void {
     return TaskTargetCache.targetingTaskRunnerIds(id, taskType)
   }
 }
+
+/**
+ * - parse IDs and remove inexist IDs from argument array
+ */
+export function parseIds<T>(ids: Id<T>[]): T[] {
+  const removeIndexes: number[] = []
+  const result = ids.flatMap((id, index) => {
+    const obj = Game.getObjectById(id)
+    if (obj == null) {
+      removeIndexes.push(index)
+      return []
+    }
+    return obj
+  })
+  removeIndexes.reverse()
+  removeIndexes.forEach(index => ids.splice(index, 1))
+  return result
+}

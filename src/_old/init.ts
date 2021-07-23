@@ -26,6 +26,10 @@ export function init(): void {
     Memory.room_info = {}
   }
 
+  if (Memory.v6RoomInfo == null) {
+    Memory.v6RoomInfo = {}
+  }
+
   if (Memory.towers == null) {
     Memory.towers = {}
   }
