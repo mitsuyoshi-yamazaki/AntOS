@@ -8,6 +8,8 @@ import { TalkTask, TalkTaskState } from "./combined_task/talk_task"
 import { MoveToPositionTask, MoveToPositionTaskState } from "./task/move_to_position_task"
 import { RandomMoveTask, RandomMoveTaskState } from "./task/random_move_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./task/move_to_room_task"
+import { ScoutRoomsTask, ScoutRoomsTaskState } from "./task/scout_rooms_task"
+import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -27,6 +29,8 @@ class CreepTaskDecoderMap {
   "MoveToPositionTask" = (state: CreepTaskState) => MoveToPositionTask.decode(state as MoveToPositionTaskState)
   "RandomMoveTask" = (state: CreepTaskState) => RandomMoveTask.decode(state as RandomMoveTaskState)
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
+  "ScoutRoomsTask" = (state: CreepTaskState) => ScoutRoomsTask.decode(state as ScoutRoomsTaskState)
+  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState, decodeCreepTasks((state as SequentialTaskState).childTaskStates))
 }
 const decoderMap = new CreepTaskDecoderMap()
 
@@ -61,4 +65,8 @@ export function decodeCreepTaskFromState(state: CreepTaskState): CreepTask | nul
     return null
   }
   return result
+}
+
+function decodeCreepTasks(states: CreepTaskState[]): CreepTask[] {
+  return states.flatMap(state => decodeCreepTaskFromState(state) ?? [])
 }

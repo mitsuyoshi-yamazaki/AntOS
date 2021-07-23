@@ -51,6 +51,13 @@ export function init(): void {
   }
 }
 
+export function parseId<T>(id: Id<T> | null): T | null {
+  if (id == null) {
+    return null
+  }
+  return Game.getObjectById(id)
+}
+
 /**
  * - parse IDs and remove inexist IDs from argument array
  */

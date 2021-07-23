@@ -6,8 +6,10 @@ import { calculateObserveTaskPerformance, emptyObserveTaskPerformanceState, Obse
 import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
+import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "object_task/creep_task/task/move_to_room_task"
+import { ScoutRoomsTask } from "object_task/creep_task/task/scout_rooms_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepRole } from "prototype/creep_role"
 import { OwnedRoomResource, RunningCreepInfo } from "room_resource/room_resource/owned_room_resource"
@@ -236,16 +238,23 @@ export class Season3FindPowerBankTask
       PrimitiveLogger.programError(`${this.constructor.name} no highway route found`)
       return null
     }
+    const targetRoomNames = [...route.highwayRoute]
+    targetRoomNames.splice(targetRoomNames.length - 1, 1)
     if (isInHighway === true) {
-      const waypoints = [...route.highwayRoute]
-      waypoints.splice(waypoints.length - 1, 1)
-      return MoveToRoomTask.create(destinationRoomName, waypoints)
+      return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
     }
 
-    const waypoints = [...route.highwayRoute]
-    waypoints.splice(waypoints.length - 1, 1)
-    waypoints.unshift(...route.routeToHighway)
-    return MoveToRoomTask.create(destinationRoomName, waypoints)
+    const highwayEntrance = route.routeToHighway[route.routeToHighway.length - 1]
+    if (highwayEntrance == null) {
+      PrimitiveLogger.programError(`${this.constructor.name} no highway entrance found`)
+      return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
+    }
+
+    const tasks: CreepTask[] = [
+      MoveToRoomTask.create(highwayEntrance, [...route.routeToHighway]),
+      ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
+    ]
+    return SequentialTask.create(tasks)
   }
 
   // ---- Profit ---- //
