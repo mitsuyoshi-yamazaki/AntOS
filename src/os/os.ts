@@ -81,14 +81,17 @@ export class OperatingSystem {
     return process
   }
 
-  public processOf(processId: ProcessId): Process | undefined {
-    return this.processes.get(processId)?.process
+  public processOf(processId: ProcessId): Process | null {
+    return this.processes.get(processId)?.process ?? null
   }
 
   public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      return Result.Failed(`No process with ID ${processId} (suspendProcess())`)
+      return Result.Failed(`No process with ID ${processId}`)
+    }
+    if (processInfo.running !== true) {
+      return Result.Failed(`Process with ID ${processId} already suspended`)
     }
 
     processInfo.running = false
@@ -98,7 +101,10 @@ export class OperatingSystem {
   public resumeProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      return Result.Failed(`No process with ID ${processId} (resumeProcess())`)
+      return Result.Failed(`No process with ID ${processId}`)
+    }
+    if (processInfo.running === true) {
+      return Result.Failed(`Process with ID ${processId} already running`)
     }
 
     processInfo.running = true

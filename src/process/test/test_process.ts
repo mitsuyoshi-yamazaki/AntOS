@@ -33,8 +33,6 @@ export class TestProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    if (Game.time % 13 === 7) {
-      processLog(this, `Test log at ${Game.time}`)
-    }
+    processLog(this, `Test log at ${Game.time}`)
   }
 }
