@@ -209,7 +209,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       })
 
       const decay = powerBankInfo.decayedBy - Game.time
-      if (powerBankInfo.powerAmount < 1000 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
+      if (powerBankInfo.powerAmount < 1500 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
         return
       }
       if (this.isHarvestingPowerBank(powerBankInfo) === true) {
@@ -235,7 +235,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
-    OperatingSystem.os.addProcess(processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints))
+    const process = OperatingSystem.os.addProcess(processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints))
+    const logger = OperatingSystem.os.getLoggerProcess()
+    logger?.didReceiveMessage(`add id ${process.processId}`)
   }
 
   // ---- Request Handling ---- //
