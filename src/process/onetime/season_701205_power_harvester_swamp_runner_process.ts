@@ -57,6 +57,7 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W1S25 target_room_name waypoints=W0S25")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
   private readonly identifier: string
   private readonly codename: string
@@ -85,17 +86,15 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   private readonly smallAttackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Attacker, CreepRole.Mover],
-    // 480 hits/tick = 2M/4200ticks
-    // 2150E max
+    // 450 hits/tick = 2M/4450ticks
+    // 2050E max
     body: [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK,
     ],
   }
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
