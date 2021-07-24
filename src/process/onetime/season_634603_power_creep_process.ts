@@ -142,7 +142,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, isMoving: boolean): boolean {
-    const result = powerCreep.usePower(PWR_OPERATE_SPAWN)
+    const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 
     switch (result) {
     case OK:
