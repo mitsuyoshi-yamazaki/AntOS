@@ -240,11 +240,13 @@ export class OwnedRoomObjects {
     }
     if (chargeableStructures.length <= 0) {
       const terminal = room.terminal
-      if (terminal != null && terminal.store.getFreeCapacity() > 50000) {
-        if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
-          chargeableStructures.push(terminal)
-        } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
-          chargeableStructures.push(terminal)
+      if (terminal != null) {
+        if (terminal.store.getFreeCapacity() > 50000) {
+          if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+            chargeableStructures.push(terminal)
+          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
+            chargeableStructures.push(terminal)
+          }
         }
       }
     }
@@ -300,7 +302,7 @@ export class OwnedRoomObjects {
         break
       case STRUCTURE_TERMINAL:
         terminal = structure
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 20000) {
           this.energyStores.push(structure)
         }
         break

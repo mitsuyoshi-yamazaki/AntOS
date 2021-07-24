@@ -172,10 +172,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const result = terminal.send(RESOURCE_ENERGY, sendAmount, energyInsufficientRoom.roomName)
     const resultDescription: string = result === OK ? "" : `${coloredText("[Failed] ", "error")}`
+    const energyDescription = `Sent ${sendAmount}energy`
     return {
       taskIdentifier: this.identifier,
       logEventType: "event",
-      message: `${resultDescription}Sent ${sendAmount}energy from ${roomLink(this.roomName)} to ${roomLink(energyInsufficientRoom.roomName)}`
+      message: `${resultDescription}${coloredText(energyDescription, "info")} from ${roomLink(this.roomName)} to ${roomLink(energyInsufficientRoom.roomName)}`
     }
   }
 
