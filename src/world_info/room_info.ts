@@ -239,8 +239,13 @@ export class OwnedRoomObjects {
       }
     }
     if (chargeableStructures.length <= 0) {
-      if (room.terminal != null && room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000 && room.terminal.store.getFreeCapacity() > 10000) {
-        chargeableStructures.push(room.terminal)
+      const terminal = room.terminal
+      if (terminal != null && terminal.store.getFreeCapacity() > 50000) {
+        if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+          chargeableStructures.push(terminal)
+        } else if (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
+          chargeableStructures.push(terminal)
+        }
       }
     }
 
