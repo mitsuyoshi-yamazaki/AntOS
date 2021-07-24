@@ -233,7 +233,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     if (noEnergy) {
       const harvestPosition = container.pos
       if (creep.pos.isEqualTo(harvestPosition) === true) {
-        return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
+        return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
       }
       return MoveToTask.create(harvestPosition, 0)
     }

@@ -10,6 +10,8 @@ type HarvestEnergyApiWrapperResult = FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN
 export interface HarvestEnergyApiWrapperState extends CreepApiWrapperState {
   /** source id */
   i: Id<Source>
+
+  shouldKeepHarvesting: boolean
 }
 
 export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyApiWrapperResult>, TargetingApiWrapper {
@@ -20,12 +22,14 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
 
   private constructor(
     public readonly source: Source,
+    private readonly shouldKeepHarvesting: boolean,
   ) { }
 
   public encode(): HarvestEnergyApiWrapperState {
     return {
       t: "HarvestEnergyApiWrapper",
       i: this.source.id,
+      shouldKeepHarvesting: this.shouldKeepHarvesting,
     }
   }
 
@@ -34,11 +38,11 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
     if (source == null) {
       return null
     }
-    return new HarvestEnergyApiWrapper(source)
+    return new HarvestEnergyApiWrapper(source, state.shouldKeepHarvesting ?? false)
   }
 
-  public static create(source: Source): HarvestEnergyApiWrapper {
-    return new HarvestEnergyApiWrapper(source)
+  public static create(source: Source, shouldKeepHarvesting?: boolean): HarvestEnergyApiWrapper {
+    return new HarvestEnergyApiWrapper(source, shouldKeepHarvesting ?? false)
   }
 
   public run(creep: Creep): HarvestEnergyApiWrapperResult {
@@ -46,6 +50,9 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
 
     switch (result) {
     case OK: {
+      if (this.shouldKeepHarvesting === true) {
+        return IN_PROGRESS
+      }
       const harvestAmount = creep.body.filter(b => b.type === WORK).length * HARVEST_POWER
       if (creep.store.getFreeCapacity() <= harvestAmount) {
         return FINISHED_AND_RAN
