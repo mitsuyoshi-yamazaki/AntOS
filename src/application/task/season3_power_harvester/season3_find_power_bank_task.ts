@@ -268,7 +268,6 @@ export class Season3FindPowerBankTask
       return null
     }
     const targetRoomNames = [...route.highwayRoute]
-    targetRoomNames.splice(targetRoomNames.length - 1, 1)
     if (isInHighway === true) {
       return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
     }
