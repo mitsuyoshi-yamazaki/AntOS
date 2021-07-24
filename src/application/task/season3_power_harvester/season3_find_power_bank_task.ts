@@ -11,6 +11,7 @@ import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "object_task/creep_task/task/move_to_room_task"
 import { ScoutRoomsTask } from "object_task/creep_task/task/scout_rooms_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { OwnedRoomResource, RunningCreepInfo } from "room_resource/room_resource/owned_room_resource"
 import { GameConstants } from "utility/constants"
 import { bodyCost } from "utility/creep_body"
@@ -29,10 +30,11 @@ interface Season3FindPowerBankTaskScoutRoute {
   observeTargetRoomNames: RoomName[]
 }
 
-interface Season3FindPowerBankTaskPowerBankInfo {
+export interface Season3FindPowerBankTaskPowerBankInfo {
   roomName: RoomName,
   powerAmount: number,
   decayedBy: Timestamp,
+  nearbySquareCount: number,
   waypoints: RoomName[],
 }
 
@@ -49,7 +51,7 @@ export interface Season3FindPowerBankTaskState extends TaskState {
   readonly pf: ObserveTaskPerformanceState
 
   readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
-  readonly powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[]
+  readonly powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo} // index: RoomName
 }
 
 // - 探索する部屋を算出、保存
@@ -83,7 +85,7 @@ export class Season3FindPowerBankTask
     roomName: RoomName,
     public readonly performanceState: ObserveTaskPerformanceState,
     private readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[],
-    private powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[],
+    private powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo },
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
 
@@ -125,17 +127,21 @@ export class Season3FindPowerBankTask
       roomName,
       emptyObserveTaskPerformanceState(),
       scoutRoutes,
-      [],
+      {},
     )
   }
 
   public run(roomResource: OwnedRoomResource): TaskOutputs<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes> {
     this.refreshPowerBankInfo()
+    const foundPowerBankInfo = this.foundPowerBankInfo()
+    foundPowerBankInfo.forEach(powerBankInfo => {
+      this.powerBankInfo[powerBankInfo.roomName] = powerBankInfo
+    })
 
     const outputs: TaskOutputs<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes> = emptyTaskOutputs()
     outputs.output = {
       highwayTooFar: false,
-      powerBanks: [...this.powerBankInfo],
+      powerBanks: Array.from(foundPowerBankInfo.values()),
     }
 
     if (this.scoutRoutes.length <= 0) {
@@ -168,8 +174,22 @@ export class Season3FindPowerBankTask
   }
 
   private refreshPowerBankInfo(): void {
-    this.powerBankInfo = this.powerBankInfo.filter(info => info.decayedBy > Game.time)
-    const checkedRooms = this.powerBankInfo.map(info => info.roomName)
+    const roomNames = Object.keys(this.powerBankInfo)
+    roomNames.forEach(roomName => {
+      const powerBankInfo = this.powerBankInfo[roomName]
+      if (powerBankInfo == null) {
+        return
+      }
+      if (powerBankInfo.decayedBy < Game.time) {
+        return
+      }
+      delete this.powerBankInfo[roomName]
+    })
+  }
+
+  private foundPowerBankInfo(): Season3FindPowerBankTaskPowerBankInfo[] {
+    const foundPowerBankInfo: Season3FindPowerBankTaskPowerBankInfo[] = []
+    const checkedRooms = Object.values(this.powerBankInfo).map(info => info.roomName)
 
     this.observeTargetRooms.forEach(roomName => {
       if (checkedRooms.includes(roomName) === true) {
@@ -190,13 +210,24 @@ export class Season3FindPowerBankTask
         return
       }
 
-      this.powerBankInfo.push({
+      const options: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeTerrainWalls: true,
+        excludeStructures: true,
+        excludeWalkableStructures: false,
+      }
+      const nearbySquareCount = powerBank.pos.positionsInRange(1, options).length
+
+      foundPowerBankInfo.push({
         roomName,
         powerAmount: powerBank.power,
         decayedBy: Game.time + powerBank.ticksToDecay,
+        nearbySquareCount,
         waypoints: route.routeToHighway,
       })
     })
+
+    return foundPowerBankInfo
   }
 
   private spawnRequests(creepInfo: RunningCreepInfo[]): SpawnCreepTaskRequest[] {

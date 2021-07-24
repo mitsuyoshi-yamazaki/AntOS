@@ -7,7 +7,7 @@ import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler, TaskRequestHandlerInputs } from "./task_request_handler"
 import { Timestamp } from "utility/timestamp"
 import { GameConstants } from "utility/constants"
-import { Season3FindPowerBankTask, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
+import { Season3FindPowerBankTask, Season3FindPowerBankTaskPowerBankInfo, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
 import { TaskPrioritizer, TaskPrioritizerPrioritizedTasks, TaskPrioritizerTaskEstimation } from "./task_prioritizer"
 import { ObserveTaskPerformance, ObserveTaskPerformanceState } from "application/task_profit/observe_task_performance"
 import { EconomyTaskPerformance, EconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
@@ -22,6 +22,8 @@ import { emptyRoomKeeperPerformanceState, RoomKeeperPerformance, RoomKeeperPerfo
 import { ResourceInsufficiencyPriority } from "room_resource/room_info"
 import { RoomResources } from "room_resource/room_resources"
 import { TaskLogRequest } from "application/task_logger"
+import { OperatingSystem } from "os/os"
+import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 
 const config = {
   powerHarvestingEnabled: true
@@ -205,7 +207,35 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         logEventType: "event",
         message: `Power bank found in ${roomLink(powerBankInfo.roomName)}`
       })
+
+      const decay = powerBankInfo.decayedBy - Game.time
+      if (powerBankInfo.powerAmount < 1000 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
+        return
+      }
+      if (this.isHarvestingPowerBank(powerBankInfo) === true) {
+        return
+      }
+      this.launchPowerBankHarvestProcess(powerBankInfo)
+      requestHandlerInputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `Launched power bank harvester process ${roomLink(powerBankInfo.roomName)}, amount: ${powerBankInfo.powerAmount}, decay: ${decay}, nearby squares: ${powerBankInfo.nearbySquareCount}`
+      })
     })
+  }
+
+  private isHarvestingPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): boolean {
+    const harvestPowerBankProcessInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
+        return false
+      }
+      return processInfo.process.targetRoomName === powerBankInfo.roomName
+    })
+    return harvestPowerBankProcessInfo != null
+  }
+
+  private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
+    OperatingSystem.os.addProcess(processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints))
   }
 
   // ---- Request Handling ---- //
