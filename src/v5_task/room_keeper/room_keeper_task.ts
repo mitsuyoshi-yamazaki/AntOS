@@ -9,6 +9,7 @@ import { WorkerTask } from "v5_task/worker/worker_task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { RemoteRoomManagerTask } from "v5_task/remote_room_keeper/remote_room_manager_task"
 import { TaskState } from "v5_task/task_state"
+import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/owned_room_damaged_creep_problem_finder"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -55,6 +56,7 @@ export class RoomKeeperTask extends Task {
     const problemFinders: ProblemFinder[] = [
       new RoomInvadedProblemFinder(objects),
       new OwnedRoomDecayedStructureProblemFinder(objects),
+      new OwnedRoomDamagedCreepProblemFinder(objects),
     ]
     this.checkProblemFinders(problemFinders)
 

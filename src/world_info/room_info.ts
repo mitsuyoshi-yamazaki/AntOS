@@ -170,6 +170,7 @@ export class OwnedRoomObjects {
     creeps: Creep[]
     powerCreeps: PowerCreep[]
   }
+  public readonly damagedCreeps: AnyCreep[]
   public readonly droppedResources: Resource[]
   public readonly tombStones: Tombstone[]
   public readonly energySources: EnergySource[]
@@ -369,6 +370,9 @@ export class OwnedRoomObjects {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
     }
+
+    this.damagedCreeps = room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
+    this.damagedCreeps.push(...room.find(FIND_MY_POWER_CREEPS).filter(creep => creep.hits < creep.hitsMax))
   }
 
   public getSource(position: RoomPosition): Source | null {
