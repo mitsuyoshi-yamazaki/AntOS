@@ -19,6 +19,7 @@ import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_p
 import { AnyTaskProblem } from "application/any_problem"
 import { roomLink } from "utility/log"
 import { emptyRoomKeeperPerformanceState, RoomKeeperPerformance, RoomKeeperPerformanceState } from "application/task_profit/owned_room_performance"
+import { ResourceInsufficiencyPriority } from "room_resource/room_info"
 
 const config = {
   powerHarvestingEnabled: true
@@ -101,6 +102,8 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   public run(roomResource: OwnedRoomResource): RoomKeeperTaskOutputs {
+    this.checkResourceInsufficiency(roomResource)
+
     const requestHandlerInputs: TaskRequestHandlerInputs = {
       creepTaskAssignRequests: new Map<CreepName, CreepTaskAssignTaskRequest>(),
       spawnRequests: [],
@@ -118,6 +121,27 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     taskOutputs.logs.push(...logs)
     taskOutputs.problems.push(...unresolvedProblems)
     return taskOutputs
+  }
+
+  // ---- Check Resource Insufficiency ---- //
+  private checkResourceInsufficiency(roomResource: OwnedRoomResource): void {
+    if (roomResource.controller.level >= 8) {
+      if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+        delete roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY]
+      }
+      return
+    }
+    if (roomResource.activeStructures.terminal == null) {
+      const keys = Object.keys(roomResource.roomInfo.resourceInsufficiencies) as (keyof typeof roomResource.roomInfo.resourceInsufficiencies)[]
+      keys.forEach(key => {
+        delete roomResource.roomInfo.resourceInsufficiencies[key]
+      })
+      return
+    }
+    const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 160000
+    if (canReceiveEnergy === true) {
+      roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = ResourceInsufficiencyPriority.Optional
+    }
   }
 
   // ---- Power Bank ---- //
