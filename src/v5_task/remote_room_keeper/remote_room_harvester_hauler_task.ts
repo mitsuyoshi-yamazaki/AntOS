@@ -79,7 +79,7 @@ export class RemoteRoomHaulerTask extends Task {
 
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energyCapacity / 1000 // TODO: 距離等を加味する
+    const minimumCreepCount = Math.ceil(energyCapacity / 2000) // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -141,7 +141,7 @@ export class RemoteRoomHaulerTask extends Task {
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 5 // TODO: 算出する
+    const maximumCarryUnitCount = 10 // TODO: 算出する
     const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {
