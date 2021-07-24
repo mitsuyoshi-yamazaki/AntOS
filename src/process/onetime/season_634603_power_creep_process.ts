@@ -85,7 +85,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
 
     const spawn = objects.activeStructures.spawns[0]
-    if (spawn != null) {
+    if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
       isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
     }
 
