@@ -324,6 +324,14 @@ export class Season3FindPowerBankTask
 
 // TODO: 探索が未完成
 function calculateRoomRoutes(roomName: RoomName): Season3FindPowerBankTaskScoutRoute[] | null {
+  if (roomName === "W1S25") { // FixMe:
+    return [{
+      routeToHighway: ["W0S25"],
+      highwayRoute: ["E0S24", "E0S21", "W0S21", "W0S24"],
+      observeTargetRoomNames: ["E0S24", "E0S23", "E0S22", "E0S21", "W0S21", "W0S22", "W0S23", "W0S24"],
+    }]
+  }
+
   const roomCoordinate = RoomCoordinate.parse(roomName)
   if (roomCoordinate == null) {
     return null
