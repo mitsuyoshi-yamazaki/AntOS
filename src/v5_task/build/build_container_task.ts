@@ -13,6 +13,7 @@ import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_po
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { TaskState } from "v5_task/task_state"
+import { roomLink } from "utility/log"
 
 export interface BuildContainerTaskState extends TaskState {
   /** room name */
@@ -162,7 +163,9 @@ export class BuildContainerTask extends Task {
     case ERR_FULL:
     case ERR_INVALID_ARGS:
     case ERR_RCL_NOT_ENOUGH:
-      PrimitiveLogger.fatal(`createConstructionSite failed ${this.taskIdentifier}, ${result}`)
+      if ((Game.time % 19) === 5) {
+        PrimitiveLogger.fatal(`createConstructionSite failed ${this.taskIdentifier}, ${result} in ${roomLink(targetRoom.name)}`)
+      }
       return
     }
     return

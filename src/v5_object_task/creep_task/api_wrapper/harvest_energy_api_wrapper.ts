@@ -78,7 +78,9 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
     case ERR_NOT_FOUND:
     case ERR_TIRED:
     default:
-      PrimitiveLogger.fatal(`creep.harvest() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      if ((Game.time % 19) === 7) {
+        PrimitiveLogger.fatal(`creep.harvest() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      }
       return ERR_PROGRAMMING_ERROR
     }
   }
