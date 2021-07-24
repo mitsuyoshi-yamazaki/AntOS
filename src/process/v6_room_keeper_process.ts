@@ -49,8 +49,8 @@ export class V6RoomKeeperProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    const ownedRoomResource = RoomResources.getRoomResource(this.roomName)
-    if (!(ownedRoomResource instanceof OwnedRoomResource)) {
+    const ownedRoomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (ownedRoomResource == null) {
       PrimitiveLogger.fatal(`${roomLink(this.roomName)} lost`)
       return
     }

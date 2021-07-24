@@ -1,7 +1,7 @@
 import { Problem } from "application/problem"
 import { V6Creep } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
-import { RoomInfo } from "room_resource/room_info"
+import { OwnedRoomInfo } from "room_resource/room_info"
 import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
 import { NormalRoomResource } from "./normal_room_resource"
@@ -37,7 +37,7 @@ export class OwnedRoomResource extends NormalRoomResource {
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
     private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
-    roomInfo: RoomInfo,
+    public readonly roomInfo: OwnedRoomInfo,
   ) {
     super(controller, roomInfo)
 

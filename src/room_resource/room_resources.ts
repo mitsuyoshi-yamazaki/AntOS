@@ -3,11 +3,10 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { TaskProgress } from "object_task/object_task"
 import { CreepName, isV6Creep, V6Creep } from "prototype/creep"
 import { RoomName } from "utility/room_name"
-import { ShortVersion } from "utility/system_info"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
-import { RoomInfo } from "./room_info"
+import { buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiencyPriority, RoomInfoType } from "./room_info"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -15,9 +14,14 @@ interface RoomResourcesInterface {
   afterTick(): void
 
   // ---- Room Resource ---- //
+  getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
+
+  // ---- Inter Room Resource ---- //
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority}[]
 }
 
+const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
 const roomResources = new Map<RoomName, RoomResource>()
 const allCreeps = new Map<RoomName, V6Creep[]>()
 const creepProblems = new Map<CreepName, Problem[]>()
@@ -37,7 +41,9 @@ export const RoomResources: RoomResourcesInterface = {
           }
         })
 
-        roomResources.set(roomName, buildOwnedRoomResource(room.controller, creepInfo))
+        const ownedRoomResource = buildOwnedRoomResource(room.controller, creepInfo)
+        ownedRoomResources.set(roomName, ownedRoomResource)
+        roomResources.set(roomName, ownedRoomResource)
       }
     })
   },
@@ -48,6 +54,10 @@ export const RoomResources: RoomResourcesInterface = {
   },
 
   // ---- Room Resource ---- //
+  getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null {
+    return ownedRoomResources.get(roomName) ?? null
+  },
+
   getRoomResource(roomName: RoomName): RoomResource | null {
     const stored = roomResources.get(roomName)
     if (stored != null) {
@@ -60,6 +70,22 @@ export const RoomResources: RoomResourcesInterface = {
     const roomResource = buildNormalRoomResource(room.controller)
     roomResources.set(roomName, roomResource)
     return roomResource
+  },
+
+  // ---- Inter Room Resource ---- //
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] {
+    const result: { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] = []
+    ownedRoomResources.forEach((ownedRoomResource, roomName) => {
+      const insufficientResourcePriority = ownedRoomResource.roomInfo.resourceInsufficiencies[resourceType]
+      if (insufficientResourcePriority == null) {
+        return
+      }
+      result.push({
+        roomName,
+        priority: insufficientResourcePriority,
+      })
+    })
+    return result
   },
 }
 
@@ -95,12 +121,16 @@ function buildNormalRoomResource(controller: StructureController): NormalRoomRes
 }
 
 function buildOwnedRoomResource(controller: StructureController, creepInfo: OwnedRoomCreepInfo[]): OwnedRoomResource {
-  const roomInfo = Memory.v6RoomInfo[controller.room.name] ?? {
-    v: ShortVersion.v6,
-    chargeStructureIds: [],
-    energySourceStructureIds: [],
-    energyStoreStructureIds: [],
-  }
+  const roomInfo = ((): OwnedRoomInfo => {
+    const stored = Memory.v6RoomInfo[controller.room.name]
+    if (stored != null) {
+      if (stored.roomType === "owned") {
+        return stored
+      }
+      return buildOwnedRoomInfo(stored)
+    }
+    return buildOwnedRoomInfo()
+  })()
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
 
@@ -145,7 +175,7 @@ function runCreepTasks(): void {
 
 function saveRoomInfo(): void {
   roomResources.forEach((roomResource, roomName) => {
-    const roomInfo = ((): RoomInfo | null => {
+    const roomInfo = ((): RoomInfoType | null => {
       if (roomResource instanceof NormalRoomResource) {
         return roomResource.roomInfo
       }

@@ -1,5 +1,5 @@
 import { EnergySource, EnergyStore, parseIds } from "prototype/room_object"
-import { RoomInfo } from "room_resource/room_info"
+import { RoomInfoType } from "room_resource/room_info"
 import { RoomResource } from "room_resource/room_resource"
 
 export class NormalRoomResource implements RoomResource {
@@ -32,7 +32,7 @@ export class NormalRoomResource implements RoomResource {
 
   public constructor(
     public readonly controller: StructureController,
-    public readonly roomInfo: RoomInfo | null,
+    public readonly roomInfo: RoomInfoType | null,
   ) {
     this.room = this.controller.room
 
