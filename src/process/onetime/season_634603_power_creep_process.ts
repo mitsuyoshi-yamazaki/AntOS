@@ -80,13 +80,13 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       isMoving = true
     }
 
-    // const spawn = objects.activeStructures.spawns[0]
-    // if (spawn != null) {
-    //   isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
-    // }
-
     if (isMoving !== true) {
       isMoving = this.runRegenSource(powerCreep, objects.sources)
+    }
+
+    const spawn = objects.activeStructures.spawns[0]
+    if (spawn != null) {
+      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
@@ -179,8 +179,11 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_TIRED:
-      if (powerCreep.transfer(store, RESOURCE_OPS) === ERR_NOT_IN_RANGE && isMoving !== true) {
+      if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
         powerCreep.moveTo(store, defaultMoveToOptions)
+      }
+      if (powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 200) {
+        powerCreep.transfer(store, RESOURCE_OPS, 100)
       }
       break
 
