@@ -1,7 +1,7 @@
 import type { RoomPositionId } from "prototype/room_position"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
-type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant> | Ruin
 export type TaskTargetType = IdRepresentableTaskTargetType | RoomPosition
 
 export type TaskRunnerId = Id<TaskRunnerType>
