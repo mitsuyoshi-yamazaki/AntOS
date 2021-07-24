@@ -9,7 +9,7 @@ import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_ta
 import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 import { CreepTask } from "object_task/creep_task/creep_task"
-import { TaskTargetCache } from "object_task/object_task_target_cache"
+import { TaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -42,9 +42,6 @@ export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 971
 export interface V6Creep extends Creep {
   task: CreepTask | null
 
-  /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-  _task: CreepTask | null
-
   memory: V6CreepMemory
 }
 
@@ -59,6 +56,8 @@ declare global {
 
     /** @deprecated */
     roles: CreepRole[]
+
+    targetedBy(taskType: TaskTargetCacheTaskType): TaskRunnerInfo[]
   }
 }
 
@@ -165,23 +164,6 @@ export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(Creep.prototype, "task", {
-    get(): CreepTask | null {
-      return this._task
-    },
-    set(task: CreepTask | null): void {
-      const id = this.id as Id<Creep>
-      const storedTask = this._task as CreepTask | null
-      if (storedTask != null) {
-        TaskTargetCache.didFinishTask(id, storedTask.targets)
-      }
-      if (task != null) {
-        TaskTargetCache.didAssignTask(id, task.targets)
-      }
-      this._task = task
-    }
-  })
-
   Object.defineProperty(Creep.prototype, "v5task", {
     get(): V5CreepTask | null {
       return this._v5task
@@ -207,4 +189,8 @@ export function init(): void {
       return []
     }
   })
+
+  Creep.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): TaskRunnerInfo[] {
+    return TaskTargetCache.creepTargetingTaskRunnerInfo(this.id, taskType)
+  }
 }

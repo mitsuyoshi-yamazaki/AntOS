@@ -1,4 +1,3 @@
-import { TaskRunnerId, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer | StructurePowerSpawn | StructureTerminal  // TODO: まだある
@@ -23,8 +22,6 @@ declare global {
   interface RoomObject {
     /** @deprecated */
     v5TargetedBy: V5TaskRunnerId[]
-
-    targetedBy(taskType?: TaskTargetCacheTaskType): TaskRunnerId[]
   }
 }
 
@@ -40,15 +37,6 @@ export function init(): void {
       return V5TaskTargetCache.targetingTaskRunnerIds(id)
     },
   })
-
-  RoomObject.prototype.targetedBy = function (taskType?: TaskTargetCacheTaskType): TaskRunnerId[] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const id = (this as any).id // FlagにはIDがない
-    if (id == null) {
-      return []
-    }
-    return TaskTargetCache.targetingTaskRunnerIds(id, taskType)
-  }
 }
 
 export function parseId<T>(id: Id<T> | null): T | null {

@@ -1,4 +1,4 @@
-import { ObjectTaskTarget } from "object_task/object_task_target_cache"
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
@@ -15,14 +15,12 @@ export interface SequentialTaskState extends CreepTaskState {
 
 export class SequentialTask implements CreepTask {
   public readonly shortDescription: string
-  public readonly targets: ObjectTaskTarget[]
 
   private constructor(
     public readonly startTime: number,
     public readonly childTasks: CreepTask[],
   ) {
     this.shortDescription = this.childTasks[0]?.shortDescription ?? ""
-    this.targets = this.childTasks.flatMap(task => task.targets)
   }
 
   public encode(): SequentialTaskState {
@@ -39,6 +37,10 @@ export class SequentialTask implements CreepTask {
 
   public static create(childTasks: CreepTask[]): SequentialTask {
     return new SequentialTask(Game.time, childTasks)
+  }
+
+  public taskTargets(creep: V6Creep): TaskTarget[] {
+    return this.childTasks.flatMap(task => task.taskTargets(creep))
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

@@ -1,6 +1,8 @@
-import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
+import { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
-import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
+import { MoveToApiOptions } from "../api_wrapper/move_to_api_options"
+import { MoveToApiWrapper, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
+import { MoveToPositionApiWrapper, MoveToPositionApiWrapperState } from "../api_wrapper/move_to_position_api_wrapper"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
@@ -16,17 +18,16 @@ export interface MoveToPositionTaskState extends CreepTaskState {
   /** api wrapper states */
   a: {
     /** moveTo api wrapper state */
-    m: MoveToApiWrapperState
+    m: MoveToApiWrapperState | MoveToPositionApiWrapperState
   }
 }
 
 export class MoveToPositionTask implements CreepTask {
   public readonly shortDescription: string
-  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,
-    public readonly moveToApiWrapper: MoveToApiWrapper,
+    public readonly moveToApiWrapper: MoveToApiWrapper | MoveToPositionApiWrapper,
   ) {
     this.shortDescription = this.moveToApiWrapper.shortDescription
   }
@@ -41,14 +42,34 @@ export class MoveToPositionTask implements CreepTask {
     }
   }
 
-  public static decode(state: MoveToPositionTaskState): MoveToPositionTask | null {
-    const moveToApiWrapper = MoveToApiWrapper.decode(state.a.m)
+  public static decode(state: MoveToPositionTaskState): MoveToPositionTask {
+    const moveToApiWrapper = ((): MoveToApiWrapper | MoveToPositionApiWrapper => {
+      switch (state.a.m.t) {
+      case "MoveToApiWrapper":
+        return MoveToApiWrapper.decode(state.a.m)
+      case "MoveToPositionApiWrapper":
+        return MoveToPositionApiWrapper.decode(state.a.m)
+      }
+    })()
     return new MoveToPositionTask(state.s, moveToApiWrapper)
   }
 
-  public static create(destination: RoomPosition, moveToOptions?: MoveToApiWrapperOptions): MoveToPositionTask {
-    const moveToApiWrapper = MoveToApiWrapper.create(destination, moveToOptions)
+  public static create(destination: RoomPosition, range: number, moveToOptions?: MoveToApiOptions): MoveToPositionTask {
+    const moveToApiWrapper = ((): MoveToApiWrapper | MoveToPositionApiWrapper => {
+      if (range <= 0) {
+        return MoveToPositionApiWrapper.create(destination, moveToOptions)
+      } else {
+        return MoveToApiWrapper.create(destination, range, moveToOptions)
+      }
+    })()
     return new MoveToPositionTask(Game.time, moveToApiWrapper)
+  }
+
+  public taskTargets(): TaskTarget[] {
+    if (!(this.moveToApiWrapper instanceof MoveToPositionApiWrapper)) {
+      return []
+    }
+    return [this.moveToApiWrapper.taskTarget()]
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

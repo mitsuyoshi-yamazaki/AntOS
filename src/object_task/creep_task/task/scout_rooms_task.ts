@@ -1,4 +1,4 @@
-import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
 import { RoomName } from "utility/room_name"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
@@ -16,7 +16,6 @@ export interface ScoutRoomsTaskState extends CreepTaskState {
 /** It never finishes */
 export class ScoutRoomsTask implements CreepTask {
   public readonly shortDescription = "scout"
-  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,
@@ -42,6 +41,10 @@ export class ScoutRoomsTask implements CreepTask {
   public static create(destinationRoomName: RoomName, targetRoomNames: RoomName[]): ScoutRoomsTask {
     const moveToRoomTask = MoveToRoomTask.create(destinationRoomName, targetRoomNames)
     return new ScoutRoomsTask(Game.time, targetRoomNames, moveToRoomTask)
+  }
+
+  public taskTargets(): TaskTarget[] {
+    return []
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

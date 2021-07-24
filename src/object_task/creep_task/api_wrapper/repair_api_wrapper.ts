@@ -1,7 +1,9 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { TaskTargetPosition } from "object_task/object_task_target_cache"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { REPAIR_RANGE } from "utility/constants"
+import { bodyPower } from "utility/creep_body"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
 const apiWrapperType = "RepairApiWrapper"
@@ -40,6 +42,16 @@ export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
 
   public static create(target: AnyStructure): RepairApiWrapper {
     return new RepairApiWrapper(target)
+  }
+
+  public taskTarget(creep: V6Creep): TaskTargetPosition {
+    return {
+      taskTargetType: "position",
+      position: this.target.pos,
+      concreteTarget: this.target,
+      taskType: "repair",
+      amount: bodyPower(creep.body, "repair"),
+    }
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {

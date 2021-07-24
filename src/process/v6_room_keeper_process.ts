@@ -6,7 +6,6 @@ import { roomLink } from "utility/log"
 import { ProcessState } from "./process_state"
 import { RoomKeeperTask, RoomKeeperTaskOutputs, RoomKeeperTaskState } from "application/task/room_keeper/room_keeper_task"
 import { RoomResources } from "room_resource/room_resources"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { TaskLogRequest } from "application/task_logger"
 import { processLog } from "./process_log"
 

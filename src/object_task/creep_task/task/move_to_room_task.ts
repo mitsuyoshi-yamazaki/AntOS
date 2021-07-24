@@ -1,7 +1,7 @@
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { ExitNotFoundProblem } from "application/problem/creep/exit_not_found_problem"
 import { ExitToRoomNotFoundProblem } from "application/problem/creep/exit_to_room_not_found_problem"
 import { SourceKeeper } from "game/source_keeper"
-import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
@@ -27,7 +27,6 @@ export interface MoveToRoomTaskState extends CreepTaskState {
 
 export class MoveToRoomTask implements CreepTask {
   public readonly shortDescription: string
-  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,
@@ -55,6 +54,10 @@ export class MoveToRoomTask implements CreepTask {
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
     return new MoveToRoomTask(Game.time, destinationRoomName, waypoints, null)
+  }
+
+  public taskTargets(): TaskTarget[] {
+    return []
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

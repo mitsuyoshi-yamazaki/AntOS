@@ -8,6 +8,7 @@ import { LoggerProcess } from "./process/logger"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
+import { init as initPowerCreepPrototype } from "prototype/power_creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 import { init as initRoomPrototype } from "prototype/room"
 import type { ProcessState } from "process/process_state"
@@ -40,6 +41,7 @@ function updatePrototypes(): void {
   initRoomPositionPrototype()
   initRoomObjectPrototype()
   initCreepPrototype()
+  initPowerCreepPrototype()
   initStructureSpawnPrototype()
   initRoomPrototype()
 }

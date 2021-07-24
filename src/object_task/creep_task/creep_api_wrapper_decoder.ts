@@ -8,6 +8,7 @@ import { MoveToApiWrapper, MoveToApiWrapperState } from "./api_wrapper/move_to_a
 import { RepairApiWrapper, RepairApiWrapperState } from "./api_wrapper/repair_api_wrapper"
 import { TransferApiWrapper, TransferApiWrapperState } from "./api_wrapper/transfer_api_wrapper"
 import { UpgradeControllerApiWrapper, UpgradeControllerApiWrapperState } from "./api_wrapper/upgrade_controller_api_wrapper"
+import { MoveToPositionApiWrapper, MoveToPositionApiWrapperState } from "./api_wrapper/move_to_position_api_wrapper"
 
 export type CreepApiWrapperType = keyof CreepApiWrapperDecoderMap
 class CreepApiWrapperDecoderMap {
@@ -19,6 +20,7 @@ class CreepApiWrapperDecoderMap {
   "BuildApiWrapper" = (state: CreepApiWrapperState) => BuildApiWrapper.decode(state as BuildApiWrapperState)
   "UpgradeControllerApiWrapper" = (state: CreepApiWrapperState) => UpgradeControllerApiWrapper.decode(state as UpgradeControllerApiWrapperState)
   "MoveApiWrapper" = (state: CreepApiWrapperState) => MoveApiWrapper.decode(state as MoveApiWrapperState)
+  "MoveToPositionApiWrapper" = (state: CreepApiWrapperState) => MoveToPositionApiWrapper.decode(state as MoveToPositionApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

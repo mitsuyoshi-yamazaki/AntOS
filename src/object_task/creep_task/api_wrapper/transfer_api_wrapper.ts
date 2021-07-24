@@ -1,4 +1,5 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { TaskTargetPosition } from "object_task/object_task_target_cache"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { TRANSFER_RESOURCE_RANGE } from "utility/constants"
@@ -48,6 +49,16 @@ export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper 
 
   public static create(target: TransferApiWrapperTargetType, resourceType: ResourceConstant): TransferApiWrapper {
     return new TransferApiWrapper(target, resourceType)
+  }
+
+  public taskTarget(creep: V6Creep): TaskTargetPosition {
+    return {
+      taskTargetType: "position",
+      position: this.target.pos,
+      concreteTarget: this.target,
+      taskType: "transfer",
+      amount: creep.store.getUsedCapacity(this.resourceType),
+    }
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {

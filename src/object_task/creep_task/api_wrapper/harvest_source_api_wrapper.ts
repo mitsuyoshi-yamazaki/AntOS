@@ -1,9 +1,11 @@
 import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
 import { HarvestingRoomLostProblem } from "application/problem/creep/harvesting_room_lost_problem"
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { TaskTargetPosition } from "object_task/object_task_target_cache"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { HARVEST_RANGE } from "utility/constants"
+import { bodyPower } from "utility/creep_body"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
 const apiWrapperType = "HarvestSourceApiWrapper"
@@ -42,6 +44,16 @@ export class HarvestSourceApiWrapper implements CreepApiWrapper, TargetingApiWra
 
   public static create(target: Source): HarvestSourceApiWrapper {
     return new HarvestSourceApiWrapper(target)
+  }
+
+  public taskTarget(creep: V6Creep): TaskTargetPosition {
+    return {
+      taskTargetType: "position",
+      position: this.target.pos,
+      concreteTarget: this.target,
+      taskType: "harvest",
+      amount: bodyPower(creep.body, "harvest"),
+    }
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {

@@ -1,18 +1,16 @@
 import { CreepDamagedProblem } from "application/problem/creep/creep_damaged_problem"
 import { PathNotFoundProblem } from "application/problem/creep/path_not_found_problem"
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
+import { MoveToApiOptions } from "./move_to_api_options"
 
 const apiWrapperType = "MoveToApiWrapper"
 
-export interface MoveToApiWrapperOptions {
-  reusePath?: number
-  maxOps?: number
-  maxRooms?: number
-  range?: number
-  swampCost?: number
+interface MoveToApiWrapperOptions extends MoveToApiOptions {
+  range: number
 }
 
 export interface MoveToApiWrapperState extends CreepApiWrapperState {
@@ -29,12 +27,14 @@ export interface MoveToApiWrapperState extends CreepApiWrapperState {
 // TODO: 動いていないことを検出する
 export class MoveToApiWrapper implements CreepApiWrapper {
   public readonly shortDescription: string
+  public readonly range: number
 
   private constructor(
     public readonly position: RoomPosition,
     public readonly options: MoveToApiWrapperOptions,
   ) {
     this.shortDescription = `${this.position.x},${this.position.y}`
+    this.range = this.options.range
   }
 
   public encode(): MoveToApiWrapperState {
@@ -50,8 +50,12 @@ export class MoveToApiWrapper implements CreepApiWrapper {
     return new MoveToApiWrapper(position, state.o)
   }
 
-  public static create(position: RoomPosition, options?: MoveToApiWrapperOptions): MoveToApiWrapper {
-    return new MoveToApiWrapper(position, options ?? defaultMoveToOptions)
+  public static create(position: RoomPosition, range: number, options?: MoveToApiOptions): MoveToApiWrapper {
+    if (range <= 0) {
+      PrimitiveLogger.programError(`${this.constructor.name} Unexpectedly ${range}range. Use MoveToPositionApiWrapper instead.`)
+    }
+    const moveToOptions = options ?? defaultMoveToOptions
+    return new MoveToApiWrapper(position, {...moveToOptions, range})
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {

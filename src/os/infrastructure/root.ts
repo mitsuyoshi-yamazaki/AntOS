@@ -9,6 +9,7 @@ import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
+import { TaskTargetCache } from "object_task/object_task_target_cache"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
@@ -25,6 +26,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       V5TaskTargetCache.clearCache()
     }, "V5TaskTargetCache.clearCache()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      TaskTargetCache.clearCache()
+    }, "TaskTargetCache.clearCache()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
@@ -65,7 +70,11 @@ export class RootProcess {
   private restoreTasks(): void {
     Object.entries(Game.creeps).forEach(([, creep]) => {
       if (isV6Creep(creep)) {
-        creep.task = decodeCreepTask(creep)
+        const task = decodeCreepTask(creep)
+        creep.task = task
+        if (task != null) {
+          TaskTargetCache.didAssignTask(creep.id, task.taskTargets(creep))
+        }
       }
       creep.v5task = v5DecodeCreepTask(creep)
     })

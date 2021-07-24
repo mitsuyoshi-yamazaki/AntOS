@@ -1,11 +1,12 @@
-import type { ObjectTaskTarget } from "object_task/object_task_target_cache"
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { isTargetingApiWrapper, TargetingApiWrapper } from "object_task/targeting_api_wrapper"
-import { defaultMoveToOptions, V6Creep } from "prototype/creep"
-import { MoveToApiWrapper, MoveToApiWrapperOptions, MoveToApiWrapperState } from "../api_wrapper/move_to_api_wrapper"
+import type { V6Creep } from "prototype/creep"
+import { MoveToApiOptions } from "../api_wrapper/move_to_api_options"
 import { CreepApiWrapper, CreepApiWrapperState } from "../creep_api_wrapper"
 import { decodeCreepApiWrapperFromState } from "../creep_api_wrapper_decoder"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
+import { MoveToPositionTask, MoveToPositionTaskState } from "./move_to_position_task"
 
 type MoveToTargetTaskApiWrapper = CreepApiWrapper & TargetingApiWrapper
 
@@ -17,20 +18,18 @@ export interface MoveToTargetTaskState extends CreepTaskState {
   a: {
     /** targeting api wrapper state */
     t: CreepApiWrapperState
-
-    /** moveTo api wrapper state */
-    m: MoveToApiWrapperState
   }
+
+  moveToPositionTaskState: MoveToPositionTaskState
 }
 
 export class MoveToTargetTask implements CreepTask {
   public readonly shortDescription: string
-  public readonly targets: ObjectTaskTarget[] = []
 
   private constructor(
     public readonly startTime: number,
     public readonly targetingApiWrapper: MoveToTargetTaskApiWrapper,
-    public readonly moveToApiWrapper: MoveToApiWrapper,
+    public readonly moveToPositionTask: MoveToPositionTask,
   ) {
     this.shortDescription = this.targetingApiWrapper.shortDescription
   }
@@ -41,8 +40,8 @@ export class MoveToTargetTask implements CreepTask {
       s: this.startTime,
       a: {
         t: this.targetingApiWrapper.encode(),
-        m: this.moveToApiWrapper.encode(),
       },
+      moveToPositionTaskState: this.moveToPositionTask.encode(),
     }
   }
 
@@ -51,17 +50,26 @@ export class MoveToTargetTask implements CreepTask {
     if (targetingApiWrapper == null || !isTargetingApiWrapper(targetingApiWrapper)) {
       return null
     }
-    const moveToApiWrapper = MoveToApiWrapper.decode(state.a.m)
-    return new MoveToTargetTask(state.s, targetingApiWrapper, moveToApiWrapper)
+    const moveToPositionTask = MoveToPositionTask.decode(state.moveToPositionTaskState)
+    return new MoveToTargetTask(state.s, targetingApiWrapper, moveToPositionTask)
   }
 
-  public static create(targetingApiWrapper: MoveToTargetTaskApiWrapper, moveToOptions?: MoveToApiWrapperOptions): MoveToTargetTask {
-    const options: MoveToApiWrapperOptions = moveToOptions ?? defaultMoveToOptions
-    if (options.range == null) {
-      options.range = targetingApiWrapper.range
-    }
-    const moveToApiWrapper = MoveToApiWrapper.create(targetingApiWrapper.target.pos, options)
-    return new MoveToTargetTask(Game.time, targetingApiWrapper, moveToApiWrapper)
+  public static create(targetingApiWrapper: MoveToTargetTaskApiWrapper, moveToOptions?: MoveToApiOptions): MoveToTargetTask {
+    const position = ((): RoomPosition => {
+      if (targetingApiWrapper.target instanceof RoomObject) {
+        return targetingApiWrapper.target.pos
+      }
+      return targetingApiWrapper.target
+    })()
+    const moveToPositionTask = MoveToPositionTask.create(position, targetingApiWrapper.range, moveToOptions)
+    return new MoveToTargetTask(Game.time, targetingApiWrapper, moveToPositionTask)
+  }
+
+  public taskTargets(creep: V6Creep): TaskTarget[] {
+    return [
+      this.targetingApiWrapper.taskTarget(creep),
+      ...this.moveToPositionTask.taskTargets(),
+    ]
   }
 
   public run(creep: V6Creep): CreepTaskProgress {
@@ -82,13 +90,6 @@ export class MoveToTargetTask implements CreepTask {
   }
 
   private move(creep: V6Creep): CreepTaskProgress {
-    const result = this.moveToApiWrapper.run(creep)
-    switch (result.apiWrapperProgressType) {
-    case "in progress":
-    case "finished":
-      return CreepTaskProgress.InProgress([])
-    case "failed":
-      return CreepTaskProgress.InProgress([result.problem])
-    }
+    return this.moveToPositionTask.run(creep)
   }
 }

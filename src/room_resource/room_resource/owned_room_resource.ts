@@ -150,8 +150,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy().length
-      const rTargetedBy = rhs.targetedBy().length
+      const lTargetedBy = lhs.pos.targetedBy("harvest").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("harvest").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -165,8 +165,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return energySources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy().length
-      const rTargetedBy = rhs.targetedBy().length
+      const lTargetedBy = lhs.pos.targetedBy("withdraw").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("withdraw").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -188,8 +188,8 @@ export class OwnedRoomResource extends NormalRoomResource {
     }
 
     return energyStores.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy().length
-      const rTargetedBy = rhs.targetedBy().length
+      const lTargetedBy = lhs.pos.targetedBy("withdraw").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("withdraw").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -203,8 +203,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return chargeableStructures.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy().length
-      const rTargetedBy = rhs.targetedBy().length
+      const lTargetedBy = lhs.pos.targetedBy("transfer").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("transfer").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
