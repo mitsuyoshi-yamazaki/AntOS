@@ -106,9 +106,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   public run(roomResource: OwnedRoomResource): RoomKeeperTaskOutputs {
-    this.checkResourceInsufficiency(roomResource)
-    this.sendSurplusResource(roomResource)
-
     const requestHandlerInputs: TaskRequestHandlerInputs = {
       creepTaskAssignRequests: new Map<CreepName, CreepTaskAssignTaskRequest>(),
       spawnRequests: [],
@@ -125,6 +122,13 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const taskOutputs: RoomKeeperTaskOutputs = emptyTaskOutputs()
     taskOutputs.logs.push(...logs)
     taskOutputs.problems.push(...unresolvedProblems)
+
+    this.checkResourceInsufficiency(roomResource)
+    const sendSurplusResourceLog = this.sendSurplusResource(roomResource)
+    if (sendSurplusResourceLog != null) {
+      taskOutputs.logs.push(sendSurplusResourceLog)
+    }
+
     return taskOutputs
   }
 
@@ -161,7 +165,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     if (energyAmount < 100000) {
       return null
     }
-    const sendAmount = energyAmount - 10000
+    const sendAmount = energyAmount / 2
     const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY).sort((lhs, rhs) => {
       if (lhs.priority === rhs.priority) {
         return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
