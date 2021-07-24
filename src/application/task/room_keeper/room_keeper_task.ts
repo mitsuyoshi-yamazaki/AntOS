@@ -17,9 +17,11 @@ import { CreepName } from "prototype/creep"
 import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_problem_solver"
 import { AnyTaskProblem } from "application/any_problem"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { emptyRoomKeeperPerformanceState, RoomKeeperPerformance, RoomKeeperPerformanceState } from "application/task_profit/owned_room_performance"
 import { ResourceInsufficiencyPriority } from "room_resource/room_info"
+import { RoomResources } from "room_resource/room_resources"
+import { TaskLogRequest } from "application/task_logger"
 
 const config = {
   powerHarvestingEnabled: true
@@ -103,6 +105,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   public run(roomResource: OwnedRoomResource): RoomKeeperTaskOutputs {
     this.checkResourceInsufficiency(roomResource)
+    this.sendSurplusResource(roomResource)
 
     const requestHandlerInputs: TaskRequestHandlerInputs = {
       creepTaskAssignRequests: new Map<CreepName, CreepTaskAssignTaskRequest>(),
@@ -141,6 +144,38 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 160000
     if (canReceiveEnergy === true) {
       roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = ResourceInsufficiencyPriority.Optional
+    }
+  }
+
+  private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
+    if ((Game.time % 1511) !== 73) {
+      return null
+    }
+    const terminal = roomResource.activeStructures.terminal
+    if (terminal == null) {
+      return null
+    }
+    const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+    if (energyAmount < 100000) {
+      return null
+    }
+    const sendAmount = energyAmount - 10000
+    const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY).sort((lhs, rhs) => {
+      if (lhs.priority === rhs.priority) {
+        return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
+      }
+      return lhs.priority - rhs.priority
+    })[0]
+
+    if (energyInsufficientRoom == null) {
+      return null
+    }
+    const result = terminal.send(RESOURCE_ENERGY, sendAmount, energyInsufficientRoom.roomName)
+    const resultDescription: string = result === OK ? "" : `${coloredText("[Failed] ", "error")}`
+    return {
+      taskIdentifier: this.identifier,
+      logEventType: "event",
+      message: `${resultDescription}Sent ${sendAmount}energy from ${roomLink(this.roomName)} to ${roomLink(energyInsufficientRoom.roomName)}`
     }
   }
 
