@@ -22,6 +22,7 @@ import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831
 import { Season845677Attack1TowerProcess } from "process/onetime/season_845677_attack_1tower_process"
 import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
+import { Season989041MovePowerCreepProcess } from "process/onetime/season_989041_move_power_creep_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -76,6 +77,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "V6RoomKeeperProcess":
       result = this.launchV6RoomKeeperProcess()
+      break
+    case "Season989041MovePowerCreepProcess":
+      result = this.launchSeason989041MovePowerCreepProcess()
       break
     default:
       break
@@ -387,6 +391,34 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return V6RoomKeeperProcess.create(processId, task)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason989041MovePowerCreepProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const fromRoomName = args.get("from_room_name")
+    if (fromRoomName == null) {
+      return this.missingArgumentError("from_room_name")
+    }
+    const toRoomName = args.get("to_room_name")
+    if (toRoomName == null) {
+      return this.missingArgumentError("to_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const powerCreepName = args.get("power_creep_name")
+    if (powerCreepName == null) {
+      return this.missingArgumentError("power_creep_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season989041MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreepName)
     })
     return Result.Succeeded(process)
   }
