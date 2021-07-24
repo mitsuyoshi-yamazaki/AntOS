@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "process/process_state"
@@ -11,7 +11,6 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { processLog } from "process/process_log"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
@@ -24,6 +23,7 @@ import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { bodyCost } from "utility/creep_body"
+import { OperatingSystem } from "os/os"
 
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
@@ -273,6 +273,14 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
     const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
     processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+
+    if (this.pickupFinished === true) {
+      const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
+      if (runningCreepCount <= 0) {
+        processLog(this, `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`)
+        OperatingSystem.os.killProcess(this.processId)
+      }
+    }
   }
 
   // ---- Hauler ---- //
@@ -400,7 +408,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
     }
 
-    return MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 4)
+    const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
+    const range = 4
+    if (creep.pos.inRangeTo(waitingPosition, range) === true) {
+      return null
+    }
+    return MoveToTask.create(waitingPosition, range)
   }
 
   // ---- Scout ---- //
@@ -414,7 +427,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       codename: this.codename,
       roles: this.scoutSpec.roles,
       body: this.scoutSpec.body,
-      initialTask: this.scoutTask(),
+      initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
@@ -425,20 +438,26 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      () => this.scoutTask(),
+      creep => this.scoutTask(creep),
       creep => hasNecessaryRoles(creep, this.scoutSpec.roles),
     )
   }
 
-  private scoutTask(): CreepTask {
+  private scoutTask(creep: Creep): CreepTask | null {
     const options: SequentialTaskOptions = {
       ignoreFailure: true,
       finishWhenSucceed: false,
     }
+
+    const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
+    const range = 10
+    if (creep.pos.inRangeTo(waitingPosition, range) === true) {
+      return null
+    }
+
     const tasks: CreepTask[] = [
       MoveToRoomTask.create(this.targetRoomName, this.waypoints),
-      MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 10),
-      EndlessTask.create(),
+      MoveToTask.create(waitingPosition, range),
     ]
     return SequentialTask.create(tasks, options)
   }
