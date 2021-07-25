@@ -216,7 +216,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (powerBankInfo.powerAmount < 1500 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
         return
       }
-      if (this.isHarvestingPowerBank(powerBankInfo) === true) {
+      if (this.canHarvestPowerBank(powerBankInfo) !== true) {
         return
       }
       this.launchPowerBankHarvestProcess(powerBankInfo)
@@ -228,14 +228,19 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     })
   }
 
-  private isHarvestingPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): boolean {
-    const harvestPowerBankProcessInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+  private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): boolean {
+    for (const processInfo of OperatingSystem.os.listAllProcesses()) {
       if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
+        continue
+      }
+      if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
         return false
       }
-      return processInfo.process.targetRoomName === powerBankInfo.roomName
-    })
-    return harvestPowerBankProcessInfo != null
+      if (processInfo.process.parentRoomName === this.roomName) {
+        return false
+      }
+    }
+    return true
   }
 
   private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
