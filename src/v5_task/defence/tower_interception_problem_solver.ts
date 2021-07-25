@@ -46,14 +46,27 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const target = ((): AnyCreep | null => {
+      const hostileCreeps: AnyCreep[] = [
+        ...objects.hostiles.creeps,
+        ...objects.hostiles.powerCreeps,
+      ]
+
       if (this.targetId != null) {
         const stored = Game.getObjectById(this.targetId)
         if (stored != null && stored.room != null && stored.room.name === this.roomName) {
+          if (stored.hits < stored.hitsMax) {
+            return stored
+          }
+          const otherTargets = hostileCreeps.filter(creep => creep.id !== this.targetId)
+          const target = objects.controller.pos.findClosestByRange(otherTargets)
+          if (target != null) {
+            return target
+          }
           return stored
         }
         this.targetId = null
       }
-      return objects.hostiles.creeps[0] ?? objects.hostiles.powerCreeps[0] ?? null  // TODO: ターゲット選定
+      return objects.controller.pos.findClosestByRange(hostileCreeps)
     })()
 
     if (target == null) {
