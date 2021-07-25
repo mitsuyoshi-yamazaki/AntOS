@@ -37,6 +37,10 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   // ---- Inter Room ---- //
 // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiencyPriority }
+
+  readonly config?: {
+    disableUnnecessaryTasks?: boolean
+  }
 }
 
 export type RoomInfoType = NormalRoomInfo | OwnedRoomInfo

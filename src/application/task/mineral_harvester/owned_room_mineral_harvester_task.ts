@@ -81,7 +81,8 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     }
 
     const mineralType = mineral.mineralType
-    const canHarvestMineral = mineral.mineralAmount > 0
+    const canHarvestMineral = roomResource.roomInfo.config?.disableUnnecessaryTasks !== true
+      && mineral.mineralAmount > 0
       && roomResource.activeStructures.terminal != null
       && roomResource.activeStructures.terminal.store.getUsedCapacity(mineralType) < 50000
       && roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) > 50000
