@@ -63,7 +63,7 @@ export class HarvestMineralApiWrapper implements CreepApiWrapper, TargetingApiWr
     switch (result) {
     case OK: {
       const harvestAmount = creep.body.filter(b => b.type === WORK).length * HARVEST_MINERAL_POWER
-      if (creep.store.getFreeCapacity() <= harvestAmount) {
+      if (creep.store.getFreeCapacity(this.target.mineralType) <= harvestAmount) {
         return CreepApiWrapperProgress.Finished(true)
       } else {
         return CreepApiWrapperProgress.InProgress(false)
@@ -71,7 +71,7 @@ export class HarvestMineralApiWrapper implements CreepApiWrapper, TargetingApiWr
     }
 
     case ERR_TIRED:
-      return CreepApiWrapperProgress.Finished(false)
+      return CreepApiWrapperProgress.InProgress(false)
 
     case ERR_NOT_IN_RANGE:
       return CreepApiWrapperProgress.InProgress(true)
