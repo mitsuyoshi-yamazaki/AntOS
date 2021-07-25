@@ -48,7 +48,7 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     const target = ((): AnyCreep | null => {
       if (this.targetId != null) {
         const stored = Game.getObjectById(this.targetId)
-        if (stored != null) {
+        if (stored != null && stored.room != null && stored.room.name === this.roomName) {
           return stored
         }
         this.targetId = null

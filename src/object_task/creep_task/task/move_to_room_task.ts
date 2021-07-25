@@ -63,7 +63,7 @@ export class MoveToRoomTask implements CreepTask {
   public run(creep: V6Creep): CreepTaskProgress {
     const directionIndex = (Game.time + this.startTime) % 3
 
-    if (creep.pos.x === 0) {
+    if (creep.pos.x === 0) {  // 部屋の境界に侵入する際はその座標にとどまらない（隣の部屋の境界へ移動する、x:0 === x:49）ため移動先でのみ発火
       if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT) === OK) {  // エラーは無視する
         return CreepTaskProgress.InProgress([])
       }
