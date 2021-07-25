@@ -94,7 +94,7 @@ export class SpawnRequestHandler {
       return {
         taskIdentifier: request.taskIdentifier,
         logEventType: "event",
-        message: `Spawn ${bodyDescription(body)}`,
+        message: `Spawn ${bodyDescription(body)} at ${roomLink(this.roomName)}`,
       }
     case ERR_BUSY:
     case ERR_NOT_ENOUGH_ENERGY:
