@@ -108,6 +108,9 @@ export class Season3FindPowerBankTask
   }
 
   public static decode(state: Season3FindPowerBankTaskState): Season3FindPowerBankTask {
+    // if (state.r === ) { //W9S24
+
+    // }
     return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.scoutRoutes, state.powerBankInfo)
   }
 

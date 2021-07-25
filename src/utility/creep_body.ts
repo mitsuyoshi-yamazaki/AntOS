@@ -56,7 +56,7 @@ export function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBody
 
 export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType): number {
   const bodyPart = CreepActionToBodyPart[actionType]
-  const actionPower = CreepBodyActionPower[actionType]
+  const actionPower = CreepBodyActionPower[actionType]  // FixMe: Mineral harvestでは値が異なる
 
   return body.reduce((result, current) => {
     if (current.type !== bodyPart) {

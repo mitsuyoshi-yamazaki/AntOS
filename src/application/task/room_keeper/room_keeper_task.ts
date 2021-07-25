@@ -24,6 +24,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { TaskLogRequest } from "application/task_logger"
 import { OperatingSystem } from "os/os"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
+import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
 
 const config = {
   powerHarvestingEnabled: true
@@ -43,6 +44,8 @@ export interface RoomKeeperTaskState extends TaskState {
   c: {
     /** find power bank task state */
     pf: Season3FindPowerBankTaskState | null
+
+    mineralHarvesterTaskState: OwnedRoomMineralHarvesterTaskState | null
   }
 }
 
@@ -64,6 +67,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     public readonly performanceState: RoomKeeperPerformanceState,
     private readonly children: {
       findPowerBank: Season3FindPowerBankTask | null,
+      mineralHarvester: OwnedRoomMineralHarvesterTask | null,
     },
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
@@ -81,6 +85,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       pf: this.performanceState,
       c: {
         pf: this.children.findPowerBank?.encode() ?? null,
+        mineralHarvesterTaskState: this.children.mineralHarvester?.encode() ?? null,
       },
     }
   }
@@ -92,8 +97,15 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       }
       return Season3FindPowerBankTask.decode(state.c.pf)
     })()
+    const mineralHarvester = ((): OwnedRoomMineralHarvesterTask | null => {
+      if (state.c.mineralHarvesterTaskState == null) {
+        return null
+      }
+      return OwnedRoomMineralHarvesterTask.decode(state.c.mineralHarvesterTaskState)
+    })()
     const children = {
       findPowerBank,
+      mineralHarvester,
     }
     return new RoomKeeperTask(state.s, state.ss, state.r, state.pf, children)
   }
@@ -101,6 +113,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   public static create(roomName: RoomName): RoomKeeperTask {
     const children = {
       findPowerBank: null,
+      mineralHarvester: null,
     }
     return new RoomKeeperTask(Game.time, Game.time, roomName, emptyRoomKeeperPerformanceState(), children)
   }
@@ -116,6 +129,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const taskPriority = this.prioritizeTasks(roomResource)
 
     this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
+    this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
 
     const { logs, unresolvedProblems } = this.taskRequestHandler.execute(roomResource, requestHandlerInputs)
 
@@ -130,6 +144,23 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
 
     return taskOutputs
+  }
+
+  // ---- Mineral Harvest ---- //
+  private runMineralHarvestTask(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (roomResource.controller.level < GameConstants.structure.availability.extractor) {
+      return
+    }
+    if (this.children.mineralHarvester == null) {
+      this.children.mineralHarvester = OwnedRoomMineralHarvesterTask.create(this.roomName)
+      requestHandlerInputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `${coloredText("[Launched]", "info")} OwnedRoomMineralHarvesterTask ${roomLink(this.roomName)}`
+      })
+    }
+    const outputs = this.children.mineralHarvester.runSafely(roomResource)
+    this.concatRequests(outputs, this.children.mineralHarvester.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
   }
 
   // ---- Check Resource Insufficiency ---- //
@@ -276,6 +307,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   // ---- Prioritize ---- //
   private prioritizeTasks(roomResource: OwnedRoomResource): TaskPrioritizerPrioritizedTasks {
     const economyTasks: AnyTask<EconomyTaskPerformance, EconomyTaskPerformanceState>[] = []
+    if (this.children.mineralHarvester != null) {
+      economyTasks.push(this.children.mineralHarvester)
+    }
 
     const observeTasks: AnyTask<ObserveTaskPerformance, ObserveTaskPerformanceState>[] = []
     if (this.children.findPowerBank != null) {

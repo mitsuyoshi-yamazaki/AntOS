@@ -16,4 +16,6 @@ export const epicScenes: { description: string, url: string }[] = [
  *   - Safemode下のみの挙動かもしれない
  * - Creep APIで失敗する際、まずERR_NO_BODYPARTチェックが入る
  *   - 次にERR_NOT_IN_RANGEが返る = まず近づかなければエラー判定ができない（ものもある
+ * - Tower距離減衰
+ *   - 30hits/1square
  */

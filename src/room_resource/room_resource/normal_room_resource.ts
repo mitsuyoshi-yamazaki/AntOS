@@ -7,6 +7,7 @@ export class NormalRoomResource implements RoomResource {
 
   public readonly room: Room
   public readonly sources: Source[]
+  public readonly mineral: Mineral | null
   public readonly constructionSites: ConstructionSite<BuildableStructureConstant>[]
 
   public readonly energySources: EnergySource[]
@@ -38,6 +39,7 @@ export class NormalRoomResource implements RoomResource {
 
     // ---- Resources ---- //
     this.sources = this.room.find(FIND_SOURCES)
+    this.mineral = this.room.find(FIND_MINERALS)[0] ?? null
 
     // Construction Sites ---- //
     this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES)

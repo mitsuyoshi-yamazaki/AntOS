@@ -4,9 +4,12 @@ import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
-import { EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
+import { calculateEconomyTaskPerformance, EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
+import { roomLink } from "utility/log"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Timestamp } from "utility/timestamp"
 
 type TemplateTaskOutput = void
 type TemplateTaskProblemTypes = UnexpectedProblem
@@ -56,16 +59,19 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
     return new TemplateTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState())
   }
 
-  public run(): TemplateTaskOutputs {
+  public run(roomResource: OwnedRoomResource): TemplateTaskOutputs {
     const taskOutputs: TemplateTaskOutputs = emptyTaskOutputs()
-
+    taskOutputs.logs.push({
+      taskIdentifier: this.identifier,
+      logEventType: "event",
+      message: `${roomLink(roomResource.room.name)}`
+    })
     return taskOutputs
   }
 
   // ---- Profit ---- //
-  public estimate(): EconomyTaskPerformance {
+  public estimate(roomResource: OwnedRoomResource): EconomyTaskPerformance {
     const resourceCost = new Map<ResourceConstant, number>()
-    const resourceProfit = new Map<ResourceConstant, number>()
 
     return {
       periodType: "continuous",
@@ -73,11 +79,10 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
       spawnTime: 0,
       numberOfCreeps: 0,
       resourceCost,
-      resourceProfit,
     }
   }
 
-  public performance(): EconomyTaskPerformance {
-    return this.estimate()
+  public performance(period: Timestamp): EconomyTaskPerformance {
+    return calculateEconomyTaskPerformance(period, "one time", this.performanceState)
   }
 }

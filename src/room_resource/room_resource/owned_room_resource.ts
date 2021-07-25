@@ -25,6 +25,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     towers: StructureTower[]
     storage: StructureStorage | null
     terminal: StructureTerminal | null
+    extractor: StructureExtractor | null
 
     chargeableStructures: EnergyChargeableStructure[]
   }
@@ -48,6 +49,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     const towers: StructureTower[] = []
     let storage: StructureStorage | null = null
     let terminal: StructureTerminal | null = null
+    let extractor: StructureExtractor | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
 
     this.walls = []
@@ -98,6 +100,9 @@ export class OwnedRoomResource extends NormalRoomResource {
           this.energyStores.push(structure)
         }
         break
+      case STRUCTURE_EXTRACTOR:
+        extractor = structure
+        break
       case STRUCTURE_WALL:
         this.walls.push(structure)
         break
@@ -115,6 +120,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       towers,
       storage,
       terminal,
+      extractor,
       chargeableStructures,
     }
   }

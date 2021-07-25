@@ -11,6 +11,7 @@ import { Season3HarvestPowerTask, Season3HarvestPowerTaskState } from "./task/se
 import { Season3ProcessPowerTask, Season3ProcessPowerTaskState } from "./task/season3_power_harvester/season3_process_power_task"
 import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
 import { TemplateTask, TemplateTaskState } from "./task/template/template_task"
+import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "./task/mineral_harvester/owned_room_mineral_harvester_task"
 // import { UpgraderTask, UpgraderTaskState } from "./task/upgrader/upgrader_task"
 
 export type TaskType = keyof TaskMap
@@ -26,6 +27,7 @@ class TaskMap {
   "V5BridgingTask" = (state: TaskState) => V5BridgingTask.decode(state as unknown as V5BridgingTaskState)
   // "UpgraderTask" = (state: TaskState) => UpgraderTask.decode(state as unknown as UpgraderTaskState)
   "TemplateTask" = (state: TaskState) => TemplateTask.decode(state as unknown as TemplateTaskState)
+  "OwnedRoomMineralHarvesterTask" = (state: TaskState) => OwnedRoomMineralHarvesterTask.decode(state as unknown as OwnedRoomMineralHarvesterTaskState)
 }
 // const taskMap = new TaskMap()
 
