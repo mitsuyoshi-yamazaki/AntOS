@@ -289,7 +289,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return
     }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.Medium,
+      priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.haulerSpec.maxCount,
       codename: "swamp_runner",
       roles: this.haulerSpec.roles,
@@ -373,7 +373,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })()
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.High,
+      priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.attackerSpec.maxCount,
       codename: this.codename,
       roles: this.attackerSpec.roles,
