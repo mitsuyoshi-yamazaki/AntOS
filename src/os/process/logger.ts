@@ -72,7 +72,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
         }
         const newInfo = {
           processType: log.processType,
-          messages: [log.message],
+          messages: [],
         }
         processLogs.set(log.processId, newInfo)
         return newInfo
