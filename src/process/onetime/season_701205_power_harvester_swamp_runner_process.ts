@@ -59,6 +59,10 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W1S25 target_room_name waypoints=W0S25")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
+  public get isPickupFinished(): boolean {
+    return this.pickupFinished
+  }
+
   private readonly identifier: string
   private readonly codename: string
 

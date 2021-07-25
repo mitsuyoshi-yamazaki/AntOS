@@ -205,6 +205,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
     const powerBanks = findPowerBankOutputs.output?.powerBanks ?? []
+    let launched = false
     powerBanks.forEach(powerBankInfo => {
       requestHandlerInputs.logs.push({
         taskIdentifier: this.identifier,
@@ -212,6 +213,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         message: `Power bank found in ${roomLink(powerBankInfo.roomName)}`
       })
 
+      if (launched === true) {
+        return
+      }
       const decay = powerBankInfo.decayedBy - Game.time
       if (powerBankInfo.powerAmount < 1500 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
         return
@@ -219,6 +223,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (this.canHarvestPowerBank(powerBankInfo) !== true) {
         return
       }
+      launched = true
       this.launchPowerBankHarvestProcess(powerBankInfo)
       requestHandlerInputs.logs.push({
         taskIdentifier: this.identifier,
@@ -236,7 +241,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
         return false
       }
-      if (processInfo.process.parentRoomName === this.roomName) {
+      if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
         return false
       }
     }
