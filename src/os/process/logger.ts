@@ -2,9 +2,11 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessLog } from "os/infrastructure/runtime_memory"
 import { OperatingSystem } from "os/os"
+import { ProcessInfo } from "os/os_process_info"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
+import { coloredText } from "utility/log"
 import type { Timestamp } from "utility/timestamp"
 
 const logInterval = 50
@@ -61,10 +63,25 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    const logs = OperatingSystem.os.processLogs()
-    logs.forEach(log => {
-      if (this.shouldShow(log)) {
-        this.show(log)
+    const processLogs = new Map<ProcessId, { processType: string, messages: string[] }>()
+    OperatingSystem.os.processLogs().forEach(log => {
+      const logInfo = ((): { processType: string, messages: string[] } => {
+        const stored = processLogs.get(log.processId)
+        if (stored != null) {
+          return stored
+        }
+        const newInfo = {
+          processType: log.processType,
+          messages: [log.message],
+        }
+        processLogs.set(log.processId, newInfo)
+        return newInfo
+      })()
+      logInfo.messages.push(log.message)
+    })
+    processLogs.forEach((logInfo, processId) => {
+      if (this.shouldShowProcessLog(processId)) {
+        this.show(processId, logInfo)
       }
     })
     OperatingSystem.os.clearProcessLogs()
@@ -74,22 +91,27 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     }
   }
 
-  private shouldShow(log: ProcessLog): boolean {
-    if (this.filter.processIds.includes(log.processId)) {
+  private shouldShowProcessLog(processId: ProcessId): boolean {
+    if (this.filter.processIds.includes(processId)) {
       return true
     }
     return false
   }
 
-  private show(log: ProcessLog): void {
-    const message = `${log.processId} ${log.processType}: ${log.message}`
-    const lastLog = this.lastLogs.get(log.processId)
+  private show(processId: ProcessId, logInfo: { processType: string, messages: string[] }): void {
+    const message = ((): string => {
+      if (logInfo.messages.length > 1) {
+        return `${processId} ${logInfo.processType}${coloredText(":", "info")} \n  ${logInfo.messages.join("\n  ")}`
+      }
+      return `${processId} ${logInfo.processType}${coloredText(":", "info")} ${logInfo.messages[0]}`
+    })()
+    const lastLog = this.lastLogs.get(processId)
     if (lastLog != null && message === lastLog.message) {
       if (Game.time - lastLog.time < logInterval) {
         return
       }
     }
-    this.lastLogs.set(log.processId, {
+    this.lastLogs.set(processId, {
       time: Game.time,
       message,
     })
