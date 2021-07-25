@@ -23,6 +23,7 @@ import { Season845677Attack1TowerProcess } from "process/onetime/season_845677_a
 import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { Season989041MovePowerCreepProcess } from "process/onetime/season_989041_move_power_creep_process"
+import { Season1022818Attack2TowerRoomProcess } from "process/onetime/season_1022818_attack_2tower_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -80,6 +81,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season989041MovePowerCreepProcess":
       result = this.launchSeason989041MovePowerCreepProcess()
+      break
+    case "Season1022818Attack2TowerRoomProcess":
+      result = this.launchSeason1022818Attack2TowerRoomProcess()
       break
     default:
       break
@@ -419,6 +423,31 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season989041MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreepName)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1022818Attack2TowerRoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const waitingPosition = new RoomPosition(10, 48, roomName)
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition)
     })
     return Result.Succeeded(process)
   }
