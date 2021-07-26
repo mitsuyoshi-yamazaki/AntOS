@@ -20,21 +20,23 @@ const targetWallPosition = new RoomPosition(12, 4, "W11S23")
 const dismantlePosition = new RoomPosition(11, 3, "W11S23")
 const nextRoomName = "W11S22"
 
-interface Season1022818Attack2TowerRoomProcessSquadState {
+type SquadState = "spawning" | "moving to target" | "align" | "dismantle" | "escape"
+
+interface Season1022818Dismantle2TowerWallProcessSquadState {
   leader: CreepName
   topRight: CreepName
   topLeft: CreepName
   bottomLeft: CreepName
 }
 
-interface Season1022818Attack2TowerRoomProcessSquad {
+interface Season1022818Dismantle2TowerWallProcessSquad {
   leader: Creep
   topRight: Creep
   topLeft: Creep
   bottomLeft: Creep
 }
 
-export interface Season1022818Attack2TowerRoomProcessState extends ProcessState {
+export interface Season1022818Dismantle2TowerWallProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
@@ -50,16 +52,14 @@ export interface Season1022818Attack2TowerRoomProcessState extends ProcessState 
   /** target structure id */
   ti: Id<AnyStructure> | null
 
-  squad: Season1022818Attack2TowerRoomProcessSquadState | null
-  launched: boolean
-  rampartDestroyed: boolean
+  squad: Season1022818Dismantle2TowerWallProcessSquadState | null
   downgraderWaypoints: RoomName[]
 }
 
-// Game.io("launch -l Season1022818Attack2TowerRoomProcess room_name=W14S28 target_room_name=W12S29 waypoints=W14S30,W12S30")
+// Game.io("launch -l Season1022818Dismantle2TowerWallProcess room_name=W14S28 target_room_name=W12S29 waypoints=W14S30,W12S30")
 
 // for RCL7
-export class Season1022818Attack2TowerRoomProcess implements Process, Procedural {
+export class Season1022818Dismantle2TowerWallProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
@@ -106,7 +106,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     public readonly waypoints: RoomName[],
     private readonly waitingPosition: RoomPosition,
     private target: AnyStructure | null,
-    private squadState: Season1022818Attack2TowerRoomProcessSquadState | null,
+    private squadState: Season1022818Dismantle2TowerWallProcessSquadState | null,
     private launched: boolean,
     private rampartDestroyed: boolean,
     private readonly downgraderWaypoints: RoomName[],
@@ -116,9 +116,9 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     this.healableHits = HEAL_POWER * this.healerBody.filter(body => HEAL).length
   }
 
-  public encode(): Season1022818Attack2TowerRoomProcessState {
+  public encode(): Season1022818Dismantle2TowerWallProcessState {
     return {
-      t: "Season1022818Attack2TowerRoomProcess",
+      t: "Season1022818Dismantle2TowerWallProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -133,7 +133,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     }
   }
 
-  public static decode(state: Season1022818Attack2TowerRoomProcessState): Season1022818Attack2TowerRoomProcess {
+  public static decode(state: Season1022818Dismantle2TowerWallProcessState): Season1022818Dismantle2TowerWallProcess {
     const target = ((): AnyStructure | null => {
       if (state.ti == null) {
         return null
@@ -141,11 +141,11 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
       return Game.getObjectById(state.ti)
     })()
     const waitingPosition = decodeRoomPosition(state.wp)
-    return new Season1022818Attack2TowerRoomProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.squad, state.launched, state.rampartDestroyed, state.downgraderWaypoints)
+    return new Season1022818Dismantle2TowerWallProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.squad, state.launched, state.rampartDestroyed, state.downgraderWaypoints)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], waitingPosition: RoomPosition): Season1022818Attack2TowerRoomProcess {
-    return new Season1022818Attack2TowerRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, null, false, false, [...waypoints])
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], waitingPosition: RoomPosition): Season1022818Dismantle2TowerWallProcess {
+    return new Season1022818Dismantle2TowerWallProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, null, false, false, [...waypoints])
   }
 
   public processShortDescription(): string {
@@ -173,7 +173,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
       PrimitiveLogger.programError(`${this.constructor.name} wrong code`)
     }
 
-    let squad = ((): Season1022818Attack2TowerRoomProcessSquad | null => {
+    let squad = ((): Season1022818Dismantle2TowerWallProcessSquad | null => {
       if (this.squadState == null) {
         return null
       }
@@ -236,7 +236,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     })
   }
 
-  private constructDismantlerSquad(dismantler: Creep | null, healers: Creep[]): Season1022818Attack2TowerRoomProcessSquad | null {
+  private constructDismantlerSquad(dismantler: Creep | null, healers: Creep[]): Season1022818Dismantle2TowerWallProcessSquad | null {
     const topRight = healers[0]
     const topLeft = healers[1]
     const bottomLeft = healers[2]
@@ -260,7 +260,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     })
   }
 
-  private runSquad(squad: Season1022818Attack2TowerRoomProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
+  private runSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
     if (hasNecessaryRoles(squad.leader, this.dismantlerRoles) === true) {
       this.runDismantleSquad(squad, downgrader, canAttack)
       return
@@ -273,7 +273,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     return
   }
 
-  private runDismantleSquad(squad: Season1022818Attack2TowerRoomProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
+  private runDismantleSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
     this.launched = true
     if (this.squadInRoom(squad, this.targetRoomName) !== true) {
       if (downgrader != null) {
@@ -315,18 +315,18 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     // TODO:
   }
 
-  private receiveDowngrader(squad: Season1022818Attack2TowerRoomProcessSquad, downgrader: Creep): void {
+  private receiveDowngrader(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep): void {
     this.debugLog("receiveDowngrader")
     // TODO:
   }
 
-  private runDowngradeSquad(squad: Season1022818Attack2TowerRoomProcessSquad, canAttack: boolean): void {
+  private runDowngradeSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, canAttack: boolean): void {
     this.debugLog("runDowngradeSquad")
 
     // TODO:
   }
 
-  private squadHealerCreeps(squad: Season1022818Attack2TowerRoomProcessSquad): Creep[] {
+  private squadHealerCreeps(squad: Season1022818Dismantle2TowerWallProcessSquad): Creep[] {
     return [
       squad.topRight,
       squad.topLeft,
@@ -334,32 +334,32 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     ]
   }
 
-  private squadCreeps(squad: Season1022818Attack2TowerRoomProcessSquad): Creep[] {
+  private squadCreeps(squad: Season1022818Dismantle2TowerWallProcessSquad): Creep[] {
     return [
       squad.leader,
       ...this.squadHealerCreeps(squad),
     ]
   }
 
-  private squadInRoom(squad: Season1022818Attack2TowerRoomProcessSquad, roomName: RoomName): boolean {
+  private squadInRoom(squad: Season1022818Dismantle2TowerWallProcessSquad, roomName: RoomName): boolean {
     return this.squadCreeps(squad).every(creep => creep.room.name === roomName)
   }
 
-  private squadPosition(squad: Season1022818Attack2TowerRoomProcessSquad): RoomPosition {
+  private squadPosition(squad: Season1022818Dismantle2TowerWallProcessSquad): RoomPosition {
     return squad.leader.pos
   }
 
-  private squadDamage(squad: Season1022818Attack2TowerRoomProcessSquad): number {
+  private squadDamage(squad: Season1022818Dismantle2TowerWallProcessSquad): number {
     return this.squadCreeps(squad).reduce((result, current) => {
       return result + (current.hitsMax - current.hits)
     }, 0)
   }
 
-  private isSquadTired(squad: Season1022818Attack2TowerRoomProcessSquad): boolean {
+  private isSquadTired(squad: Season1022818Dismantle2TowerWallProcessSquad): boolean {
     return this.squadCreeps(squad).some(creep => creep.fatigue > 0)
   }
 
-  private isSquadLined(squad: Season1022818Attack2TowerRoomProcessSquad): boolean {
+  private isSquadLined(squad: Season1022818Dismantle2TowerWallProcessSquad): boolean {
     if (squad.topRight.pos.isNearTo(squad.leader.pos) !== true) {
       return false
     }
@@ -372,7 +372,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     return true
   }
 
-  private moveToTargetRoomSquad(squad: Season1022818Attack2TowerRoomProcessSquad): void {
+  private moveToTargetRoomSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
     this.debugLog("moveToTargetRoomSquad")
     if (this.isSquadTired(squad) === true) {
       return
@@ -399,16 +399,16 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     moveFollowers()
   }
 
-  private escapeSquad(squad: Season1022818Attack2TowerRoomProcessSquad): void {
+  private escapeSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
     this.debugLog("escapeSquad")
     // TODO:
   }
 
-  private moveToPositionSquad(squad: Season1022818Attack2TowerRoomProcessSquad): void {
+  private moveToPositionSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
     // TODO:
   }
 
-  private healSquad(squad: Season1022818Attack2TowerRoomProcessSquad): void {
+  private healSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
     const healableHits = this.healableHits
     const healerCreeps = this.squadHealerCreeps(squad)
     this.squadCreeps(squad)
@@ -447,7 +447,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     })
   }
 
-  private attackNearbyHostile(squad: Season1022818Attack2TowerRoomProcessSquad): boolean {
+  private attackNearbyHostile(squad: Season1022818Dismantle2TowerWallProcessSquad): boolean {
     const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
     const findHostile = ((position: RoomPosition): Creep | null => {
       const creeps = position.findInRange(FIND_HOSTILE_CREEPS, 3)

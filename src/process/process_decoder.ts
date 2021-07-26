@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
 import { BootstrapRoomManagerProcess, BootstrapRoomManagerProcessState } from "./bootstrap_room_manager_process"
-import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessState } from "./onetime/season_1022818_attack_2tower_room_process"
+import { Season1022818Dismantle2TowerWallProcess, Season1022818Dismantle2TowerWallProcessState } from "./onetime/season_1022818_dismantle_2tower_wall_process"
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProcessState } from "./onetime/season_570208_dismantle_rcl2_room_process"
@@ -49,7 +49,7 @@ class ProcessTypes {
   "Season831595DismantleRcl2RoomProcess" = (state: ProcessState) => Season831595DismantleRcl2RoomProcess.decode(state as unknown as Season831595DismantleRcl2RoomProcessState)
   "Season845677Attack1TowerProcess" = (state: ProcessState) => Season845677Attack1TowerProcess.decode(state as unknown as Season845677Attack1TowerProcessState)
   "Season989041MovePowerCreepProcess" = (state: ProcessState) => Season989041MovePowerCreepProcess.decode(state as unknown as Season989041MovePowerCreepProcessState)
-  "Season1022818Attack2TowerRoomProcess" = (state: ProcessState) => Season1022818Attack2TowerRoomProcess.decode(state as unknown as Season1022818Attack2TowerRoomProcessState)
+  "Season1022818Dismantle2TowerWallProcess" = (state: ProcessState) => Season1022818Dismantle2TowerWallProcess.decode(state as unknown as Season1022818Dismantle2TowerWallProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

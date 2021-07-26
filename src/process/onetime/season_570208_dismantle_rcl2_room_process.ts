@@ -51,6 +51,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     WORK, WORK, WORK, WORK, WORK,
   ]
 
+  private readonly scoutBody: BodyPartConstant[] = [
+    MOVE, MOVE, MOVE
+  ]
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -84,7 +88,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n)
+    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, 2)//state.n)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season570208DismantleRcl2RoomProcess {
@@ -177,10 +181,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     )
 
     if (this.numberOfCreeps > 0) {
-      if (this.checkScoutAttacked() === true) {
-        processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
-        this.numberOfCreeps = 0
-      }
+      // if (this.checkScoutAttacked() === true) {
+      //   processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
+      //   this.numberOfCreeps = 0
+      // }
     }
   }
 
@@ -203,7 +207,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Scout],
-      body: [MOVE],
+      body: this.scoutBody,
       initialTask,
       taskIdentifier: this.identifier,
       parentRoomName: null,
