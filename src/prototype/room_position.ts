@@ -29,6 +29,7 @@ declare global {
     targetedBy(taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
+    positionTo(direction: DirectionConstant): RoomPosition | null
   }
 }
 
@@ -135,6 +136,47 @@ export function init(): void {
       }
     }
     return positions
+  }
+
+  RoomPosition.prototype.positionTo = function (direction: DirectionConstant): RoomPosition | null {
+    const i = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case LEFT:
+      case BOTTOM_LEFT:
+        return -1
+      case TOP:
+      case BOTTOM:
+        return 0
+      case TOP_RIGHT:
+      case RIGHT:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+    const j = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case TOP:
+      case TOP_RIGHT:
+        return -1
+      case LEFT:
+      case RIGHT:
+        return 0
+      case BOTTOM_LEFT:
+      case BOTTOM:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+
+    const x = this.x + i
+    const y = this.y + j
+    try {
+      return new RoomPosition(x, y, this.roomName)
+    } catch {
+      return null
+    }
   }
 }
 

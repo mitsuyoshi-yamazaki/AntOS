@@ -19,8 +19,9 @@ const debugLog = true as boolean
 const targetWallPosition = new RoomPosition(12, 4, "W11S23")
 const dismantlePosition = new RoomPosition(11, 3, "W11S23")
 const nextRoomName = "W11S22"
+const alignPosition = new RoomPosition(11, 47, nextRoomName)
 
-type SquadState = "spawning" | "moving to target" | "align" | "dismantle" | "escape"
+type SquadStatus = "spawning" | "moving to target" | "align" | "dismantle" | "escape"
 
 interface Season1022818Dismantle2TowerWallProcessSquadState {
   leader: CreepName
@@ -52,6 +53,7 @@ export interface Season1022818Dismantle2TowerWallProcessState extends ProcessSta
   /** target structure id */
   ti: Id<AnyStructure> | null
 
+  squadStatus: SquadStatus
   squad: Season1022818Dismantle2TowerWallProcessSquadState | null
   downgraderWaypoints: RoomName[]
 }
@@ -63,7 +65,7 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly testBody: BodyPartConstant[] = [MOVE]
+  private readonly testBody: BodyPartConstant[] = [TOUGH, MOVE]
 
   private readonly dismantlerRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
   private readonly dismantlerBody: BodyPartConstant[] = [
@@ -106,9 +108,8 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     public readonly waypoints: RoomName[],
     private readonly waitingPosition: RoomPosition,
     private target: AnyStructure | null,
+    private squadStatus: SquadStatus,
     private squadState: Season1022818Dismantle2TowerWallProcessSquadState | null,
-    private launched: boolean,
-    private rampartDestroyed: boolean,
     private readonly downgraderWaypoints: RoomName[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
@@ -126,9 +127,8 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
       w: this.waypoints,
       wp: this.waitingPosition.encode(),
       ti: this.target?.id ?? null,
+      squadStatus: this.squadStatus,
       squad: this.squadState,
-      launched: this.launched,
-      rampartDestroyed: this.rampartDestroyed,
       downgraderWaypoints: this.downgraderWaypoints,
     }
   }
@@ -141,11 +141,11 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
       return Game.getObjectById(state.ti)
     })()
     const waitingPosition = decodeRoomPosition(state.wp)
-    return new Season1022818Dismantle2TowerWallProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.squad, state.launched, state.rampartDestroyed, state.downgraderWaypoints)
+    return new Season1022818Dismantle2TowerWallProcess(state.l, state.i, state.p, state.tr, state.w, waitingPosition, target, state.squadStatus, state.squad, state.downgraderWaypoints)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], waitingPosition: RoomPosition): Season1022818Dismantle2TowerWallProcess {
-    return new Season1022818Dismantle2TowerWallProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, null, false, false, [...waypoints])
+    return new Season1022818Dismantle2TowerWallProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, waitingPosition, null, "spawning", null, [...waypoints])
   }
 
   public processShortDescription(): string {
@@ -155,17 +155,17 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
   public runOnTick(): void {
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     let dismantler: Creep | null = null
-    let downgrader: Creep | null = null
+    // let downgrader: Creep | null = null
     const healers: Creep[] = []
     for (const creep of creeps) {
       if (hasNecessaryRoles(creep, this.dismantlerRoles) === true) {
         dismantler = creep
         continue
       }
-      if (hasNecessaryRoles(creep, this.downgraderRoles) === true) {
-        downgrader = creep
-        continue
-      }
+      // if (hasNecessaryRoles(creep, this.downgraderRoles) === true) {
+      //   downgrader = creep
+      //   continue
+      // }
       if (hasNecessaryRoles(creep, this.healerRoles) === true) {
         healers.push(creep)
         continue
@@ -193,7 +193,7 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
       }
     })()
 
-    if (squad == null && this.launched !== true) {
+    if (squad == null && this.squadStatus === "spawning") {
       if (dismantler == null) {
         this.requestCreep(this.dismantlerRoles, this.dismantlerBody)
         processLog(this, `${coloredText("[Spawn]", "info")} dismantler`)
@@ -201,21 +201,22 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
         this.requestCreep(this.healerRoles, this.healerBody)
         processLog(this, `${coloredText("[Spawn]", "info")} healer(${healers.length + 1}/3)`)
       }
-    } else {
-      if (this.rampartDestroyed === true && downgrader == null) {
-        this.requestCreep(this.downgraderRoles, this.downgraderBody)
-        processLog(this, `${coloredText("[Spawn]", "info")} downgrader`)
-      }
     }
+    // else {
+    //   if (this.rampartDestroyed === true && downgrader == null) {
+    //     this.requestCreep(this.downgraderRoles, this.downgraderBody)
+    //     processLog(this, `${coloredText("[Spawn]", "info")} downgrader`)
+    //   }
+    // }
 
-    this.debugLog(`dismantler: ${dismantler}, downgrader: ${downgrader}, haulers: ${healers.length}, launched: ${this.launched}, rampart: ${this.rampartDestroyed}`)
+    this.debugLog(`status: ${this.squadStatus}, dismantler: ${dismantler}, haulers: ${healers.length}`)
 
     if (squad == null) {
       squad = this.constructDismantlerSquad(dismantler, healers)
     }
     if (squad != null) {
       const canAttack = this.attackNearbyHostile(squad)
-      this.runSquad(squad, downgrader, canAttack)
+      this.runSquad(squad, canAttack)
       this.healSquad(squad)
     } else {
       this.debugLog("no squad")
@@ -243,6 +244,9 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     if (dismantler == null || topRight == null || topLeft == null || bottomLeft == null) {
       return null
     }
+    if (this.squadStatus === "spawning") {
+      this.squadStatus = "moving to target"
+    }
     return {
       leader: dismantler,
       topRight,
@@ -260,70 +264,34 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     })
   }
 
-  private runSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
+  private runSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, canAttack: boolean): void {
     if (hasNecessaryRoles(squad.leader, this.dismantlerRoles) === true) {
-      this.runDismantleSquad(squad, downgrader, canAttack)
+      this.runDismantleSquad(squad, canAttack)
       return
     }
-    if (hasNecessaryRoles(squad.leader, this.downgraderRoles) === true) {
-      this.runDowngradeSquad(squad, canAttack)
-      return
-    }
-    PrimitiveLogger.programError(`${this.constructor.name} unexpected squad leader roles`)
+    PrimitiveLogger.programError(`${this.constructor.name} unexpected squad leader roles ${squad.leader}`)
     return
   }
 
-  private runDismantleSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
-    this.launched = true
-    if (this.squadInRoom(squad, this.targetRoomName) !== true) {
-      if (downgrader != null) {
-        this.receiveDowngrader(squad, downgrader)
-        return
-      }
+  private runDismantleSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, canAttack: boolean): void {
+    switch (this.squadStatus) {
+    case "moving to target":
+      this.moveToNextRoomSquad(squad)
+      return
 
-      this.moveToTargetRoomSquad(squad)
+    case "align":
+    case "escape":
+      this.alignSquad(squad)
+      return
+
+    case "dismantle":
+      this.dismantleSquad(squad, canAttack)
+      return
+
+    case "spawning":
+      PrimitiveLogger.programError(`${this.constructor.name} unexpected spawning status`)
       return
     }
-
-    const damage = this.squadDamage(squad)
-    if (damage > 800) {
-      this.escapeSquad(squad)
-      return
-    }
-
-    const targetRoom = Game.rooms[this.targetRoomName]
-    if (targetRoom == null) {
-      PrimitiveLogger.programError(`${this.constructor.name} unexpectedly invisible target room`)
-      return
-    }
-    const wallType: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
-    const targetWall = targetWallPosition.findInRange(FIND_STRUCTURES, 0).filter(structure => wallType.includes(structure.structureType))[0] as StructureWall | StructureRampart | null
-
-    if (targetWall == null) {
-      this.rampartDestroyed = true
-
-      if (downgrader != null && downgrader.room.name === nextRoomName) {
-        this.receiveDowngrader(squad, downgrader)
-        return
-      }
-    }
-
-    if (this.squadPosition(squad).isEqualTo(dismantlePosition) !== true) {
-      // TODO:
-    }
-
-    // TODO:
-  }
-
-  private receiveDowngrader(squad: Season1022818Dismantle2TowerWallProcessSquad, downgrader: Creep): void {
-    this.debugLog("receiveDowngrader")
-    // TODO:
-  }
-
-  private runDowngradeSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, canAttack: boolean): void {
-    this.debugLog("runDowngradeSquad")
-
-    // TODO:
   }
 
   private squadHealerCreeps(squad: Season1022818Dismantle2TowerWallProcessSquad): Creep[] {
@@ -341,12 +309,12 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     ]
   }
 
-  private squadInRoom(squad: Season1022818Dismantle2TowerWallProcessSquad, roomName: RoomName): boolean {
+  private everySquadMemberInRoom(squad: Season1022818Dismantle2TowerWallProcessSquad, roomName: RoomName): boolean {
     return this.squadCreeps(squad).every(creep => creep.room.name === roomName)
   }
 
-  private squadPosition(squad: Season1022818Dismantle2TowerWallProcessSquad): RoomPosition {
-    return squad.leader.pos
+  private someSquadMemberInRoom(squad: Season1022818Dismantle2TowerWallProcessSquad, roomName: RoomName): boolean {
+    return this.squadCreeps(squad).some(creep => creep.room.name === roomName)
   }
 
   private squadDamage(squad: Season1022818Dismantle2TowerWallProcessSquad): number {
@@ -372,40 +340,175 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     return true
   }
 
-  private moveToTargetRoomSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
-    this.debugLog("moveToTargetRoomSquad")
+  private moveToNextRoomSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
+    this.debugLog("moveToNextRoomSquad")
+    if (this.everySquadMemberInRoom(squad, nextRoomName) === true) {
+      this.squadStatus = "align"
+      this.alignSquad(squad)
+      return
+    }
+
     if (this.isSquadTired(squad) === true) {
       return
     }
 
-    const moveFollowers = (): void => {
-      squad.topRight.moveTo(squad.leader.pos)
-      squad.bottomLeft.moveTo(squad.topRight.pos)
-      squad.topLeft.moveTo(squad.bottomLeft.pos)
-    }
-
     if (squad.leader.room.name !== squad.topLeft.room.name) {
       moveToRoom(squad.leader, this.targetRoomName, this.waypoints)
-      moveFollowers()
+      this.followerMoveToLeaderSquad(squad)
       return
     }
 
     if (this.isSquadLined(squad) !== true) {
-      moveFollowers()
+      this.followerMoveToLeaderSquad(squad)
       return
     }
 
     moveToRoom(squad.leader, this.targetRoomName, this.waypoints)
-    moveFollowers()
+    this.followerMoveToLeaderSquad(squad)
+  }
+
+  private followerMoveToLeaderSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
+    squad.topRight.moveTo(squad.leader.pos)
+    squad.bottomLeft.moveTo(squad.topRight.pos)
+    squad.topLeft.moveTo(squad.bottomLeft.pos)
+  }
+
+  private alignSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
+    this.debugLog("alignSquad")
+
+    if (squad.leader.pos.isEqualTo(alignPosition) !== true) {
+      if (this.isSquadTired(squad) === true) {
+        return
+      }
+      squad.leader.moveTo(alignPosition)
+      this.followerMoveToLeaderSquad(squad)
+      return
+    }
+
+    const positions = this.squadMemberPositionFor(squad.leader.pos)
+    if (positions == null) {
+      squad.topRight.say("no pos")
+      PrimitiveLogger.fatal(`${this.constructor.name} no member rooms for leader position ${squad.leader.pos}`)
+      return
+    }
+    const {topRight, topLeft, bottomLeft} = positions
+
+    const aligned = ((): boolean => {
+      if (squad.topRight.pos.isEqualTo(topRight) !== true) {
+        return false
+      }
+      if (squad.topLeft.pos.isEqualTo(topLeft) !== true) {
+        return false
+      }
+      if (squad.bottomLeft.pos.isEqualTo(bottomLeft) !== true) {
+        return false
+      }
+      return false
+    })()
+
+    if (aligned === true) {
+      if (this.squadDamage(squad) > 0) {
+        return
+      }
+      this.squadStatus = "dismantle"
+      return
+    }
+
+    squad.topRight.moveTo(topRight)
+    squad.topLeft.moveTo(topLeft)
+    squad.bottomLeft.moveTo(bottomLeft)
+  }
+
+  private dismantleSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, canAttack: boolean): void {
+    const damage = this.squadDamage(squad)
+    if (damage > 800) {
+      this.squadStatus = "escape"
+      this.escapeSquad(squad)
+      return
+    }
+
+    const targetRoom = Game.rooms[this.targetRoomName]
+    if (targetRoom == null) {
+      const exit = squad.leader.room.findExitTo(this.targetRoomName)
+      if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
+        PrimitiveLogger.fatal(`${this.constructor.name} can't find path to room ${roomLink(this.targetRoomName)}`)
+        return
+      }
+      const exitPosition = squad.leader.pos.findClosestByPath(exit)
+      if (exitPosition == null) {
+        PrimitiveLogger.fatal(`${this.constructor.name} can't find exit position to room ${roomLink(this.targetRoomName)}, exit: ${exit}`)
+        return
+      }
+      this.moveToPositionAlignedSquad(squad, exitPosition)
+      return
+    }
+
+    if (squad.leader.pos.isEqualTo(dismantlePosition) !== true) {
+      this.moveToPositionAlignedSquad(squad, dismantlePosition)
+      return
+    }
+
+    const wallType: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    const targetWall = targetWallPosition.findInRange(FIND_STRUCTURES, 0).filter(structure => wallType.includes(structure.structureType))[0] as StructureWall | StructureRampart | null
+
+    if (targetWall == null) {
+      processLog(this, `${coloredText("[Finished]", "info")} wall destroyed`)
+      return
+    }
+
+    squad.leader.dismantle(targetWall)
+    if (canAttack) {
+      this.squadHealerCreeps(squad).forEach(creep => {
+        if (creep.pos.isNearTo(targetWall.pos) === true) {
+          creep.rangedMassAttack()
+        } else {
+          creep.rangedAttack(targetWall)
+        }
+      })
+    }
   }
 
   private escapeSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
-    this.debugLog("escapeSquad")
-    // TODO:
+    this.alignSquad(squad)
   }
 
-  private moveToPositionSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
-    // TODO:
+  private squadMemberPositionFor(leaderPosition: RoomPosition): { topRight: RoomPosition, topLeft: RoomPosition, bottomLeft: RoomPosition } | null {
+    const topRight = leaderPosition.positionTo(TOP)
+    const topLeft = leaderPosition.positionTo(TOP_LEFT)
+    const bottomLeft = leaderPosition.positionTo(LEFT)
+    if (topRight == null || topLeft == null || bottomLeft == null) {
+      return null
+    }
+
+    return {
+      topRight,
+      topLeft,
+      bottomLeft
+    }
+  }
+
+  private moveToPositionAlignedSquad(squad: Season1022818Dismantle2TowerWallProcessSquad, position: RoomPosition): void {
+    const path = PathFinder.search(squad.leader.pos, { pos: position, range: 0 }, { maxRooms: 1 })
+    if (path.incomplete === true) {
+      PrimitiveLogger.fatal(`${this.constructor.name} can't find path to position ${position}, partial path: ${path.path}`)
+      return
+    }
+
+    const leader = path.path[0]
+    if (leader == null) {
+      PrimitiveLogger.programError(`${this.constructor.name} path length is 0 (${position})`)
+      return
+    }
+    const positions = this.squadMemberPositionFor(leader)
+    if (positions == null) {
+      squad.topRight.say("no pos")
+      PrimitiveLogger.fatal(`${this.constructor.name} no member rooms for leader position ${leader}`)
+      return
+    }
+    const { topRight, topLeft, bottomLeft } = positions
+    squad.topRight.moveTo(topRight)
+    squad.topLeft.moveTo(topLeft)
+    squad.bottomLeft.moveTo(bottomLeft)
   }
 
   private healSquad(squad: Season1022818Dismantle2TowerWallProcessSquad): void {
@@ -492,144 +595,5 @@ export class Season1022818Dismantle2TowerWallProcess implements Process, Procedu
     }
     processLog(this, message)
   }
-
-  // // ----
-  // private runSquadddd(leaderCreep: Creep, followerCreep: Creep, waypoints: RoomName[]): void {
-  //   if (leaderCreep.room.name !== followerCreep.room.name) {
-  //     this.moveIntoRoom(leaderCreep)
-  //     followerCreep.moveTo(leaderCreep.pos)
-  //     this.attackNearbyCreeps(leaderCreep, followerCreep)
-  //     leaderCreep.rangedAttack
-  //     leaderCreep.heal(leaderCreep)
-  //     followerCreep.heal(followerCreep)
-  //     return
-  //   }
-
-  //   if (leaderCreep.room.name === this.targetRoomName) {
-  //     this.attackSquad(leaderCreep, followerCreep)
-  //     return
-  //   }
-
-  //   if (this.healSquad(leaderCreep, followerCreep) !== true) {
-  //     if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
-  //       this.moveToRoom(leaderCreep, waypoints)
-  //     }
-  //   }
-  //   followerCreep.moveTo(leaderCreep.pos)
-  //   this.attackNearbyCreeps(leaderCreep, followerCreep)
-  // }
-
-  // private attackSquad(leaderCreep: Creep, followerCreep: Creep): void {
-  //   const attacked = this.attackNearbyCreeps(leaderCreep, followerCreep)
-
-  //   const room = leaderCreep.room
-  //   const structures = room.find(FIND_HOSTILE_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_CONTROLLER)
-  //   const tower = structures.find(structure => structure.structureType === STRUCTURE_TOWER) as StructureTower | null
-  //   if (tower != null) {
-  //     if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-  //       this.drainTower(tower, leaderCreep, followerCreep)
-  //       return
-  //     }
-  //     if (attacked !== true) {
-  //       this.attack(tower, leaderCreep, followerCreep)
-  //     }
-  //     return
-  //   }
-
-  //   if (attacked !== true) {
-  //     const spawn = structures.find(structure => structure.structureType === STRUCTURE_SPAWN) as StructureSpawn | null
-  //     if (spawn != null) {
-  //       this.attack(spawn, leaderCreep, followerCreep)
-  //       return
-  //     }
-  //   }
-
-  //   const structure = leaderCreep.pos.findClosestByPath(structures)
-  //   if (structure != null) {
-  //     this.attack(structure, leaderCreep, followerCreep)
-  //     return
-  //   }
-
-  //   leaderCreep.say("done")
-  // }
-
-  // private drainTower(tower: StructureTower, leaderCreep: Creep, followerCreep: Creep): void {
-  //   processLog(this, `Drain tower ${Math.ceil(tower.store.getUsedCapacity(RESOURCE_ENERGY) / 100) * 100}`)
-  //   if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
-  //     leaderCreep.rangedAttack(tower)
-  //     followerCreep.rangedAttack(tower)
-  //   }
-  //   this.healSquad(leaderCreep, followerCreep)
-
-  //   if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
-  //     const shouldFlee = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
-  //     if (shouldFlee !== true) {
-  //       leaderCreep.moveTo(44, 24)
-  //     } else {
-  //       const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
-  //       if (exitPosition == null) {
-  //         leaderCreep.say("no exit")  // TODO:
-  //         return
-  //       }
-
-  //       if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
-  //         leaderCreep.moveTo(exitPosition)
-  //       } else {
-  //         if (shouldFlee) {
-  //           leaderCreep.moveTo(exitPosition)
-  //         }
-  //       }
-  //     }
-  //   }
-  //   followerCreep.moveTo(leaderCreep.pos)
-  // }
-
-  // private attack(target: AnyStructure, leaderCreep: Creep, followerCreep: Creep): void {
-  //   processLog(this, `Attack ${target}`)
-  //   if (this.attackNearbyCreeps(leaderCreep, followerCreep) !== true) {
-  //     if (leaderCreep.pos.getRangeTo(target) <= 3) {
-  //       leaderCreep.rangedAttack(target)
-  //       followerCreep.rangedAttack(target)
-  //     } else {
-  //       leaderCreep.rangedMassAttack()
-  //       followerCreep.rangedMassAttack()
-  //     }
-  //   }
-
-  //   this.healSquad(leaderCreep, followerCreep)
-  //   if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
-  //     leaderCreep.moveTo(target)
-  //   }
-  //   followerCreep.moveTo(leaderCreep)
-  // }
-
-  // private leaderCanMove(leaderCreep: Creep, followerCreep: Creep): boolean {
-  //   if (leaderCreep.pos.isNearTo(followerCreep.pos) !== true) {
-  //     return false
-  //   }
-  //   return followerCreep.fatigue <= 0
-  // }
-
-  // private runCollapsedSquad(creep: Creep): void {
-  //   creep.say("alone")
-  // }
-
-  // private moveIntoRoom(creep: Creep): void {
-  //   const directionIndex = (Game.time + this.launchTime) % 3
-
-  //   if (creep.pos.x === 0) {
-  //     creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT)
-  //   } else if (creep.pos.x === 1 || creep.pos.x === 48) {
-  //     creep.move([TOP, BOTTOM, TOP][directionIndex] ?? TOP)
-  //   } else if (creep.pos.x === 49) {
-  //     creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT)
-  //   } else if (creep.pos.y === 0) {
-  //     creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM)
-  //   } else if (creep.pos.y === 1 || creep.pos.y === 48) {
-  //     creep.move([LEFT, RIGHT, LEFT][directionIndex] ?? LEFT)
-  //   } else if (creep.pos.y === 49) {
-  //     creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP)
-  //   }
-  // }
 }
 
