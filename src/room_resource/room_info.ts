@@ -39,6 +39,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiencyPriority }
 
   readonly config?: {
+    disablePowerHarvesting?: boolean
     disableUnnecessaryTasks?: boolean
     enableOperateSpawn?: boolean
   }

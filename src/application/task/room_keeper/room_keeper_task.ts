@@ -219,6 +219,13 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Power Bank ---- //
   private runPowerBankTasks(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (roomResource.roomInfo.config?.disablePowerHarvesting === true) {
+      if (this.children.findPowerBank != null) {
+        this.children.findPowerBank = null
+      }
+      return
+    }
+
     if (this.children.findPowerBank == null) {
       if (config.powerHarvestingEnabled !== true) {
         return
