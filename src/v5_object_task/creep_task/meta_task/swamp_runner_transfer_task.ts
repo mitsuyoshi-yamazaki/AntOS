@@ -118,8 +118,8 @@ export class SwampRunnerTransferTask implements CreepTask {
     const droppedResource = this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType)
     if (droppedResource == null) {
       creep.say("no resource")
-      PrimitiveLogger.programError(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
-      return TaskProgressType.InProgress
+      PrimitiveLogger.fatal(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
+      return TaskProgressType.Finished
     }
     if (droppedResource.pos.isEqualTo(creep.pos) === true) {
       const stopped = droppedResource.pos.isEqualTo(lastTickPosition) === true
