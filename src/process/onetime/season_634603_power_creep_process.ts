@@ -106,7 +106,14 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
+  private hasPower(powerCreep: PowerCreep, power: PowerConstant): boolean {
+    return powerCreep.powers[power] != null
+  }
+
   private runRegenSource(powerCreep: PowerCreep, sources: Source[]): boolean {
+    if (this.hasPower(powerCreep, PWR_REGEN_SOURCE) !== true) {
+      return false
+    }
     const regenSource = sources.find(source => {
       if (source.effects == null) {
         return true
@@ -142,6 +149,10 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, isMoving: boolean): boolean {
+    if (this.hasPower(powerCreep, PWR_OPERATE_SPAWN) !== true) {
+      return false
+    }
+
     const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 
     switch (result) {
@@ -172,6 +183,10 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage): void {
+    if (this.hasPower(powerCreep, PWR_GENERATE_OPS) !== true) {
+      return
+    }
+
     const result = powerCreep.usePower(PWR_GENERATE_OPS)
 
     switch (result) {
