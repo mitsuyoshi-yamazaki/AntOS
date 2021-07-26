@@ -13,7 +13,6 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
-import { processLog } from "process/process_log"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
@@ -268,6 +267,15 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       const j = ((Game.time + 1) % 3) - 1
       const position = new RoomPosition(targetSite.pos.x + i, targetSite.pos.y + j, creep.room.name)
       return MoveToTask.create(position, 0)
+    }
+
+    if ((creep.ticksToLive ?? 0) > 10 && creep.pos.isNearTo(targetSite.pos) === true) {
+      if (targetSite.progress < (targetSite.progressTotal / 2)) {
+        const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).some(creep => creep.body.some(body => attackBodyParts.includes(body.type))) !== true) {
+          return null
+        }
+      }
     }
     return MoveToTask.create(targetSite.pos, 0)
   }
