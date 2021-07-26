@@ -31,6 +31,10 @@ interface InternalProcessInfo {
 
 export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
+  config: {
+    /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
+    shouldReadMemory?: boolean
+  }
 }
 
 function init(): void {
@@ -67,7 +71,7 @@ export class OperatingSystem {
   private runtimeMemory: RuntimeMemory = {processLogs: []}
 
   private constructor() {
-    // !!!! 起動処理がOSアクセスを行う場合があるためsetup()内部で実行すること !!!! //
+    // !!!! 起動処理がOSアクセスを行う場合があるため、起動時に一度だけ行う処理はsetup()内部で実行すること !!!! //
   }
 
   // ---- Process ---- //
@@ -194,6 +198,12 @@ export class OperatingSystem {
     if (this.didSetup !== true) {
       this.setup()
       this.didSetup = true
+    } else {
+      if (Memory.os.config.shouldReadMemory === true) {
+        ErrorMapper.wrapLoop(() => {
+          this.restoreProcesses()
+        }, "OperatingSystem.restoreProcesses()")()
+      }
     }
 
     ErrorMapper.wrapLoop(() => {
@@ -224,10 +234,14 @@ export class OperatingSystem {
     if (Memory.os == null) {
       Memory.os = {
         p: [],
+        config: {},
       }
     }
     if (Memory.os.p == null) {
       Memory.os.p = []
+    }
+    if (Memory.os.config == null) {
+      Memory.os.config = {}
     }
   }
 

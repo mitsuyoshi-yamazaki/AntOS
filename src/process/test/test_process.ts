@@ -4,12 +4,14 @@ import { processLog } from "process/process_log"
 import { ProcessState } from "process/process_state"
 
 export interface TestProcessState extends ProcessState {
+  testMemory: string | null
 }
 
 export class TestProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
+    public readonly testMemory: string | null,
   ) {}
 
   public encode(): TestProcessState {
@@ -17,15 +19,16 @@ export class TestProcess implements Process, Procedural {
       t: "TestProcess",
       l: this.launchTime,
       i: this.processId,
+      testMemory: this.testMemory,
     }
   }
 
   public static decode(state: TestProcessState): TestProcess {
-    return new TestProcess(state.l, state.i)
+    return new TestProcess(state.l, state.i, state.testMemory)
   }
 
   public static create(processId: ProcessId): TestProcess {
-    return new TestProcess(Game.time, processId)
+    return new TestProcess(Game.time, processId, null)
   }
 
   public processDescription(): string {
@@ -33,6 +36,6 @@ export class TestProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    processLog(this, `Test log at ${Game.time}`)
+    processLog(this, `Test log at ${Game.time}, ${this.testMemory}`)
   }
 }
