@@ -197,12 +197,14 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       return null
     }
     const sendAmount = energyAmount / 2
-    const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY).sort((lhs, rhs) => {
-      if (lhs.priority === rhs.priority) {
-        return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
-      }
-      return lhs.priority - rhs.priority
-    })[0]
+    const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
+      .filter(room => room.roomName !== this.roomName)
+      .sort((lhs, rhs) => {
+        if (lhs.priority === rhs.priority) {
+          return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
+        }
+        return lhs.priority - rhs.priority
+      })[0]
 
     if (energyInsufficientRoom == null) {
       return null
