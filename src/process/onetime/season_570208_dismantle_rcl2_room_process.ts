@@ -17,7 +17,6 @@ import { processLog } from "process/process_log"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -35,6 +34,8 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
   n: number
 }
 
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -87,7 +88,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 2)
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 5)
   }
 
   public processShortDescription(): string {
@@ -171,7 +172,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.scoutTask(creep),
+      creep => this.removeConstructionSiteTask(creep),
       () => true,
     )
 
@@ -209,7 +210,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     })
   }
 
-  private scoutTask(creep: Creep): CreepTask | null {
+  private scoutMoveToFlagTask(creep: Creep): CreepTask | null {
     if (creep.room.name !== this.targetRoomName) {
       return MoveToRoomTask.create(this.targetRoomName, [])
     }
