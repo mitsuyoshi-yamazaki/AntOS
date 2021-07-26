@@ -224,7 +224,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
       squad = this.constructSquad(leader, healers)
     }
     if (squad != null) {
-      let canAttack = this.attackNearbyHostile(squad)
+      let canAttack = this.attackNearbyHostile(squad) !== true
       canAttack = this.runSquad(squad, canAttack)
       this.healSquad(squad, canAttack)
     } else {

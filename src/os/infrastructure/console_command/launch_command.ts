@@ -452,10 +452,8 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Unsupported attack_type ${attackType}, available: ${["dismantle", "downgrade"]}`)
     }
 
-    const waitingPosition = new RoomPosition(10, 48, roomName)
-
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition, attackType as Season1022818Attack2TowerRoomProcessAttackType)
+      return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, attackType as Season1022818Attack2TowerRoomProcessAttackType)
     })
     return Result.Succeeded(process)
   }
