@@ -16,6 +16,7 @@ import { Season831595DismantleRcl2RoomProcess, Season831595DismantleRcl2RoomProc
 import { Season845677Attack1TowerProcess, Season845677Attack1TowerProcessState } from "./onetime/season_845677_attack_1tower_process"
 import { Season989041MovePowerCreepProcess, Season989041MovePowerCreepProcessState } from "./onetime/season_989041_move_power_creep_process"
 import type { Process } from "./process"
+import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
@@ -27,6 +28,7 @@ class ProcessTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as unknown as TestProcessState)
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as unknown as LoggerProcessState)
+  "BuyPixelProcess" = (state: ProcessState) => BuyPixelProcess.decode(state as unknown as BuyPixelProcessState)
 
   // ---- v5 Process ---- //
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)

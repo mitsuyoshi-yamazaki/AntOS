@@ -24,6 +24,8 @@ import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { Season989041MovePowerCreepProcess } from "process/onetime/season_989041_move_power_creep_process"
 import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessAttackType } from "process/onetime/season_1022818_attack_2tower_room_process"
+import { BuyPixelProcess } from "process/process/buy_pixel_process"
+import { Environment } from "utility/environment"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -84,6 +86,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1022818Attack2TowerRoomProcess":
       result = this.launchSeason1022818Attack2TowerRoomProcess()
+      break
+    case "BuyPixelProcess":
+      result = this.launchBuyPixelProcess()
       break
     default:
       break
@@ -454,6 +459,17 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, attackType as Season1022818Attack2TowerRoomProcessAttackType)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchBuyPixelProcess(): LaunchCommandResult {
+    if (Environment.world !== "persistent world") {
+      return Result.Failed(`Environment ${Environment.world} does not support pixel`)
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return BuyPixelProcess.create(processId)
     })
     return Result.Succeeded(process)
   }

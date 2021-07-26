@@ -115,12 +115,12 @@ export function tick(): void {
   }
 
   const current_bucket = Game.cpu.bucket
-  const diff = current_bucket - (Memory.cpu.last_bucket || 1000)
-  if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
-    const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
-    console.log(leveled_colored_text(message, 'critical'))
-    // Game.notify(message)
-  }
+  // const diff = current_bucket - (Memory.cpu.last_bucket || 1000) // generatePixel() によって消費されるため
+  // if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
+  //   const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
+  //   console.log(leveled_colored_text(message, 'critical'))
+  //   // Game.notify(message)
+  // }
 
   Memory.cpu.last_bucket = current_bucket
 

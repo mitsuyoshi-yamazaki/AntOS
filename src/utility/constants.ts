@@ -30,6 +30,11 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
 }
 
 export const GameConstants = {
+  game: {
+    cpu: {
+      bucketAmountForGeneratingPixel: 10000,
+    },
+  },
   pathFinder: {
     costs: {
       swamp: SWAMP_COST,
