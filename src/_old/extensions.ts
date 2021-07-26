@@ -14,6 +14,7 @@ import { SystemInfo } from "utility/system_info"
 import { isV4CreepMemory } from "prototype/creep"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
 import type { RoomInfoType } from "room_resource/room_info"
+import type { GameInfoMemory } from "game/game_info"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -171,6 +172,7 @@ declare global {
 
     towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>  // TODO: 消す
 
+    gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomNa
 
