@@ -23,7 +23,7 @@ import { Season845677Attack1TowerProcess } from "process/onetime/season_845677_a
 import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { Season989041MovePowerCreepProcess } from "process/onetime/season_989041_move_power_creep_process"
-import { Season1022818Dismantle2TowerWallProcess } from "process/onetime/season_1022818_attack_2tower_room_process"
+import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessAttackType } from "process/onetime/season_1022818_attack_2tower_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -82,8 +82,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season989041MovePowerCreepProcess":
       result = this.launchSeason989041MovePowerCreepProcess()
       break
-    case "Season1022818Dismantle2TowerWallProcess":
-      result = this.launchSeason1022818Dismantle2TowerWallProcess()
+    case "Season1022818Attack2TowerRoomProcess":
+      result = this.launchSeason1022818Attack2TowerRoomProcess()
       break
     default:
       break
@@ -427,7 +427,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1022818Dismantle2TowerWallProcess(): LaunchCommandResult {
+  private launchSeason1022818Attack2TowerRoomProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -444,10 +444,18 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
+    const attackType = args.get("attack_type")
+    if (attackType == null) {
+      return this.missingArgumentError("attack_type")
+    }
+    if (["dismantle", "downgrade"].includes(attackType) !== true) {
+      return Result.Failed(`Unsupported attack_type ${attackType}, available: ${["dismantle", "downgrade"]}`)
+    }
+
     const waitingPosition = new RoomPosition(10, 48, roomName)
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1022818Dismantle2TowerWallProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition)
+      return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition, attackType as Season1022818Attack2TowerRoomProcessAttackType)
     })
     return Result.Succeeded(process)
   }
