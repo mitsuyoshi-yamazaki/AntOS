@@ -10,12 +10,21 @@ import { RandomMoveTask, RandomMoveTaskState } from "./task/random_move_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./task/move_to_room_task"
 import { ScoutRoomsTask, ScoutRoomsTaskState } from "./task/scout_rooms_task"
 import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
+import { SquadMemberTask, SquadMemberTaskState } from "./combined_task/squad_member_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
 
   // ---- Combined Task ---- //
+  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState, decodeCreepTasks((state as SequentialTaskState).childTaskStates))
+  "SquadMemberTask" = (state: CreepTaskState) => {
+    const childTask = decodeCreepTaskFromState((state as SquadMemberTaskState).st.c)
+    if (childTask == null) {
+      return null
+    }
+    return SquadMemberTask.decode(state as SquadMemberTaskState, childTask)
+  }
   "TalkTask" = (state: CreepTaskState) => {
     const childTask = decodeCreepTaskFromState((state as TalkTaskState).st.c)
     if (childTask == null) {
@@ -30,7 +39,6 @@ class CreepTaskDecoderMap {
   "RandomMoveTask" = (state: CreepTaskState) => RandomMoveTask.decode(state as RandomMoveTaskState)
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
   "ScoutRoomsTask" = (state: CreepTaskState) => ScoutRoomsTask.decode(state as ScoutRoomsTaskState)
-  "SequentialTask" = (state: CreepTaskState) => SequentialTask.decode(state as SequentialTaskState, decodeCreepTasks((state as SequentialTaskState).childTaskStates))
 }
 const decoderMap = new CreepTaskDecoderMap()
 
