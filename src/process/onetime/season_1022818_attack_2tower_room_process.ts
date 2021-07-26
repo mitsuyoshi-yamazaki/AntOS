@@ -275,7 +275,7 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
 
   private runDismantleSquad(squad: Season1022818Attack2TowerRoomProcessSquad, downgrader: Creep | null, canAttack: boolean): void {
     this.launched = true
-    if (this.squadInTargetRoom(squad) !== true) {
+    if (this.squadInRoom(squad, this.targetRoomName) !== true) {
       if (downgrader != null) {
         this.receiveDowngrader(squad, downgrader)
         return
@@ -341,8 +341,8 @@ export class Season1022818Attack2TowerRoomProcess implements Process, Procedural
     ]
   }
 
-  private squadInTargetRoom(squad: Season1022818Attack2TowerRoomProcessSquad): boolean {
-    return this.squadCreeps(squad).some(creep => creep.room.name === this.targetRoomName)
+  private squadInRoom(squad: Season1022818Attack2TowerRoomProcessSquad, roomName: RoomName): boolean {
+    return this.squadCreeps(squad).every(creep => creep.room.name === roomName)
   }
 
   private squadPosition(squad: Season1022818Attack2TowerRoomProcessSquad): RoomPosition {
