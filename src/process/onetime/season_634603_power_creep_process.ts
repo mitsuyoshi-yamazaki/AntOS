@@ -152,6 +152,13 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     if (this.hasPower(powerCreep, PWR_OPERATE_SPAWN) !== true) {
       return false
     }
+    const roomInfoMemory = Memory.v6RoomInfo[this.parentRoomName]
+    if (roomInfoMemory == null || roomInfoMemory.roomType !== "owned") {
+      return false
+    }
+    if (roomInfoMemory.config?.enableOperateSpawn !== true) {
+      return false
+    }
 
     const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 

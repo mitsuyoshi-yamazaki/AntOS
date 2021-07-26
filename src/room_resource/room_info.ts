@@ -40,6 +40,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 
   readonly config?: {
     disableUnnecessaryTasks?: boolean
+    enableOperateSpawn?: boolean
   }
 }
 
