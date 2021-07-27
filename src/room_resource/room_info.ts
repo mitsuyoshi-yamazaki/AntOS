@@ -1,3 +1,4 @@
+import { OwnedRoomPlan, RemoteHarvestRoomPlan } from "application/task/worker/room_plan/room_plan"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
 
@@ -22,6 +23,7 @@ export interface BasicRoomInfo {
 
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
+  // roomPlan: RemoteHarvestRoomPlan | null
 }
 
 /**
@@ -30,6 +32,9 @@ export interface NormalRoomInfo extends BasicRoomInfo {
  */
 export interface OwnedRoomInfo extends BasicRoomInfo {
   readonly roomType: "owned"
+
+  // ---- Room Plan ---- //
+  // readonly roomPlan: OwnedRoomPlan
 
   // ---- Structure ---- //
   readonly chargeStructureIds: Id<EnergyChargeableStructure>[]

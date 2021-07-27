@@ -18,4 +18,6 @@ export const epicScenes: { description: string, url: string }[] = [
  *   - 次にERR_NOT_IN_RANGEが返る = まず近づかなければエラー判定ができない（ものもある
  * - Tower距離減衰
  *   - 30hits/1square
+ * - Tombstoneも戦場の霧を晴らす
+ * - Safemode環境下での攻撃行動はERR_NO_BODYPARTを返す
  */
