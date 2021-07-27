@@ -185,7 +185,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
 
     attackers.forEach(creep => this.runAttacker(creep, mineral))
     harvesters.forEach(creep => this.runHarvester(creep, mineral))
-    haulers.forEach(creep => this.runHauler(creep, harvesters, mineral))
+    haulers.forEach(creep => this.runHauler(creep, attackers, harvesters, mineral))
   }
 
   private requestCreep(roles: CreepRole[], body: BodyPartConstant[], priority: CreepSpawnRequestPriority): void {
@@ -261,7 +261,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
   }
 
-  private runHauler(creep: Creep, harvesters: Creep[], mineral: Mineral | null) {
+  private runHauler(creep: Creep, attackers: Creep[], harvesters: Creep[], mineral: Mineral | null) {
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
       this.fleeFrom(closestHostile.pos, creep, 5)
@@ -288,7 +288,26 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     const harvester = harvesters.find(creep => creep.store.getUsedCapacity(mineral.mineralType) > 0)
     if (harvester != null) {
       if (harvester.transfer(creep, mineral.mineralType) === ERR_NOT_IN_RANGE) {
+        if (attackers.length <= 0) {
+          if (creep.store.getUsedCapacity(mineral.mineralType) > 0) {
+            const terminal = Game.rooms[this.parentRoomName]?.terminal
+            if (terminal == null) {
+              PrimitiveLogger.fatal(`${this.identifier} terminal not found in ${roomLink(this.parentRoomName)}`)
+              return
+            }
+            creep.v5task = SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(terminal, mineral.mineralType))
+          }
+        }
         creep.moveTo(harvester, defaultMoveToOptions)
+      }
+    } else {
+      if (creep.store.getUsedCapacity(mineral.mineralType) > 0) {
+        const terminal = Game.rooms[this.parentRoomName]?.terminal
+        if (terminal == null) {
+          PrimitiveLogger.fatal(`${this.identifier} terminal not found in ${roomLink(this.parentRoomName)}`)
+          return
+        }
+        creep.v5task = SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(terminal, mineral.mineralType))
       }
     }
   }
