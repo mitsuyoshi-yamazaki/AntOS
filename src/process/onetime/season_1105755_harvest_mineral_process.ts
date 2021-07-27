@@ -14,6 +14,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions } from "prototype/creep"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { processLog } from "process/process_log"
+import { GameConstants } from "utility/constants"
 
 const testing = false as boolean
 
@@ -28,10 +31,11 @@ export interface Season1105755HarvestMineralProcessState extends ProcessState {
   w: RoomName[]
 
   stopSpawning: boolean
+  squadSpawned: boolean
 }
 
 // Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W26S24 waypoints=W27S25")
-export class Season1105755HarvestMineralProcess implements Process, Procedural {
+export class Season1105755HarvestMineralProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
 
@@ -90,6 +94,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private stopSpawning: boolean,
+    private squadSpawned: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -104,24 +109,37 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
       tr: this.targetRoomName,
       w: this.waypoints,
       stopSpawning: this.stopSpawning,
+      squadSpawned: this.squadSpawned,
     }
   }
 
   public static decode(state: Season1105755HarvestMineralProcessState): Season1105755HarvestMineralProcess {
-    return new Season1105755HarvestMineralProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning)
+    return new Season1105755HarvestMineralProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1105755HarvestMineralProcess {
-    return new Season1105755HarvestMineralProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false)
+    return new Season1105755HarvestMineralProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false)
   }
 
   public processShortDescription(): string {
     return roomLink(this.targetRoomName)
   }
 
+  public didReceiveMessage(message: string): string {
+    const stopSpawning = parseInt(message, 10)
+    if (isNaN(stopSpawning) === true) {
+      return `Stop spawning flag can be either 1 or 0 (${message})`
+    }
+    this.stopSpawning = stopSpawning === 1
+    return "OK"
+  }
+
   public runOnTick(): void {
     const targetRoom = Game.rooms[this.targetRoomName]
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
+    if (mineral != null && mineral.mineralAmount <= 0) {
+      this.stopSpawning = true
+    }
 
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     const attackers: Creep[] = []
@@ -144,7 +162,11 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
       PrimitiveLogger.programError(`${this.identifier} unknown creep type ${creep.name}`)
     })
 
-    if (attackers.length < 1) {
+    if (creeps.length <= 0) {
+      this.squadSpawned = false
+    }
+
+    if (this.stopSpawning !== true && this.squadSpawned !== true && attackers.length < 1) {
       this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
     } else {
       if (harvesters.length < 1) {
@@ -152,9 +174,14 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
       } else {
         if (haulers.length < 1) {
           this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.High)
+        } else {
+          this.squadSpawned = true
         }
       }
     }
+
+    const stopSpawning = this.stopSpawning ? "not-spawning" : ""
+    processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${stopSpawning}`)
 
     attackers.forEach(creep => this.runAttacker(creep, mineral))
     harvesters.forEach(creep => this.runHarvester(creep, mineral))
@@ -162,9 +189,6 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
   }
 
   private requestCreep(roles: CreepRole[], body: BodyPartConstant[], priority: CreepSpawnRequestPriority): void {
-    if (this.stopSpawning === true) {
-      return
-    }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority,
       numberOfCreeps: 1,
@@ -192,40 +216,31 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
       return
     }
 
-    if (closestHostile != null) {
-      creep.rangedAttack(closestHostile)
-
-      if (creep.pos.getRangeTo(closestHostile) <= 2) {
-        const path = PathFinder.search(creep.pos, closestHostile.pos, {
-          flee: true,
-          maxRooms: 1,
-        })
-        creep.moveByPath(path.path)
-        return
-      }
+    if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 2) {
+      this.fleeFrom(closestHostile.pos, creep)
+      return
     }
 
-    if (creep.pos.getRangeTo(mineral) > 2) {
-      creep.moveTo(mineral.pos, defaultMoveToOptions)
+    const keeperLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR} })
+    const target = keeperLair ?? mineral
+
+    if (creep.pos.getRangeTo(target) > 3) {
+      creep.moveTo(target.pos, defaultMoveToOptions)
     }
   }
 
   private runHarvester(creep: Creep, mineral: Mineral | null) {
+    const closestHostile = this.closestHostile(creep.pos)
+    if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
+      this.fleeFrom(closestHostile.pos, creep)
+      return
+    }
+
     if (creep.v5task != null) {
       return
     }
     if (creep.room.name !== this.targetRoomName || mineral == null) {
       creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
-      return
-    }
-
-    const closestHostile = this.closestHostile(creep.pos)
-    if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      const path = PathFinder.search(creep.pos, closestHostile.pos, {
-        flee: true,
-        maxRooms: 1,
-      })
-      creep.moveByPath(path.path)
       return
     }
 
@@ -239,6 +254,12 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
   }
 
   private runHauler(creep: Creep, harvesters: Creep[], mineral: Mineral | null) {
+    const closestHostile = this.closestHostile(creep.pos)
+    if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
+      this.fleeFrom(closestHostile.pos, creep)
+      return
+    }
+
     if (creep.v5task != null) {
       return
     }
@@ -247,17 +268,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
       return
     }
 
-    const closestHostile = this.closestHostile(creep.pos)
-    if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      const path = PathFinder.search(creep.pos, closestHostile.pos, {
-        flee: true,
-        maxRooms: 1,
-      })
-      creep.moveByPath(path.path)
-      return
-    }
-
-    if (creep.store.getFreeCapacity() <= 0) {
+    if (creep.store.getFreeCapacity() <= 0 || (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.35))) {
       const terminal = Game.rooms[this.parentRoomName]?.terminal
       if (terminal == null) {
         PrimitiveLogger.fatal(`${this.identifier} terminal not found in ${roomLink(this.parentRoomName)}`)
@@ -282,5 +293,13 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural {
     return hostiles.reduce((lhs, rhs) => {
       return position.getRangeTo(lhs.pos) < position.getRangeTo(rhs.pos) ? lhs : rhs
     })
+  }
+
+  private fleeFrom(position: RoomPosition, creep: Creep): void {
+    const path = PathFinder.search(creep.pos, { pos: position, range: 3 }, {
+      flee: true,
+      maxRooms: 1,
+    })
+    creep.moveByPath(path.path)
   }
 }
