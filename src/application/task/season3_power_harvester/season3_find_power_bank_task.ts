@@ -160,7 +160,7 @@ export class Season3FindPowerBankTask
       if (targetRoom != null) {
         roomResource.activeStructures.observer.observeRoom(targetRoom)
       } else {
-        PrimitiveLogger.programError(`${this.constructor.name} can't retrieve observe target room (${this.observeTargetRooms.length}) at ${Game.time}`)
+        PrimitiveLogger.programError(`${this.identifier} can't retrieve observe target room (${this.observeTargetRooms.length}) at ${Game.time}`)
       }
     }
 
@@ -270,13 +270,13 @@ export class Season3FindPowerBankTask
     }
     const route = this.scoutRoutes[routeIndex]
     if (route == null) {
-      PrimitiveLogger.programError(`${this.constructor.name} cannot find route with index ${routeIndex}`)
+      PrimitiveLogger.programError(`${this.identifier} cannot find route with index ${routeIndex}`)
       return null
     }
 
     const destinationRoomName = route.highwayRoute[route.highwayRoute.length - 1]
     if (destinationRoomName == null) {
-      PrimitiveLogger.programError(`${this.constructor.name} no highway route found`)
+      PrimitiveLogger.programError(`${this.identifier} no highway route found`)
       return null
     }
     const targetRoomNames = [...route.highwayRoute]
@@ -286,7 +286,7 @@ export class Season3FindPowerBankTask
 
     const highwayEntrance = route.routeToHighway[route.routeToHighway.length - 1]
     if (highwayEntrance == null) {
-      PrimitiveLogger.programError(`${this.constructor.name} no highway entrance found`)
+      PrimitiveLogger.programError(`${this.identifier} no highway entrance found`)
       return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
     }
 
