@@ -26,6 +26,7 @@ import { Season989041MovePowerCreepProcess } from "process/onetime/season_989041
 import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessAttackType } from "process/onetime/season_1022818_attack_2tower_room_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
+import { Season1105755HarvestMineralProcess } from "process/onetime/season_1105755_harvest_mineral_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -89,6 +90,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "BuyPixelProcess":
       result = this.launchBuyPixelProcess()
+      break
+    case "Season1105755HarvestMineralProcess":
+      result = this.launchSeason1105755HarvestMineralProcess()
       break
     default:
       break
@@ -470,6 +474,29 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return BuyPixelProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1105755HarvestMineralProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1105755HarvestMineralProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }

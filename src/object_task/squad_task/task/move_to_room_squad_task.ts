@@ -36,7 +36,7 @@ export class MoveToRoomSquadTask extends SquadTask {
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomSquadTask {
-    return new MoveToRoomSquadTask(Game.time, destinationRoomName, waypoints)
+    return new MoveToRoomSquadTask(Game.time, destinationRoomName, [...waypoints])
   }
 
   public taskTargets(): TaskTarget[] {

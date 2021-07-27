@@ -53,7 +53,7 @@ export class MoveToRoomTask implements CreepTask {
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, waypoints, null)
+    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null)
   }
 
   public taskTargets(): TaskTarget[] {

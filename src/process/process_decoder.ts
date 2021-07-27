@@ -3,6 +3,7 @@ import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
 import { BootstrapRoomManagerProcess, BootstrapRoomManagerProcessState } from "./bootstrap_room_manager_process"
 import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessState } from "./onetime/season_1022818_attack_2tower_room_process"
+import { Season1105755HarvestMineralProcess, Season1105755HarvestMineralProcessState } from "./onetime/season_1105755_harvest_mineral_process"
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProcessState } from "./onetime/season_570208_dismantle_rcl2_room_process"
@@ -52,6 +53,7 @@ class ProcessTypes {
   "Season845677Attack1TowerProcess" = (state: ProcessState) => Season845677Attack1TowerProcess.decode(state as unknown as Season845677Attack1TowerProcessState)
   "Season989041MovePowerCreepProcess" = (state: ProcessState) => Season989041MovePowerCreepProcess.decode(state as unknown as Season989041MovePowerCreepProcessState)
   "Season1022818Attack2TowerRoomProcess" = (state: ProcessState) => Season1022818Attack2TowerRoomProcess.decode(state as unknown as Season1022818Attack2TowerRoomProcessState)
+  "Season1105755HarvestMineralProcess" = (state: ProcessState) => Season1105755HarvestMineralProcess.decode(state as unknown as Season1105755HarvestMineralProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

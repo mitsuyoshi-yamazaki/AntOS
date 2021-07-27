@@ -55,7 +55,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public static create(roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): ClaimRoomTask {
-    return new ClaimRoomTask(Game.time, [], roomName, targetRoomName, waypoints)
+    return new ClaimRoomTask(Game.time, [], roomName, targetRoomName, [...waypoints])
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
