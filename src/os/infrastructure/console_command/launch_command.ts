@@ -7,7 +7,7 @@ import { RouteCheckTask } from "v5_task/scout/route_check_task"
 import { TaskProcess } from "process/task_process"
 import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess } from "process/onetime/season_553093_attack_rcl3_room_process"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { Season570208DismantleRcl2RoomProcess } from "process/onetime/season_570208_dismantle_rcl2_room_process"
 import { Season617434PowerHarvestProcess } from "process/onetime/season_617434_power_harvest_process"
 import { Season631744PowerProcessProcess } from "process/onetime/season_631744_power_process_process"
@@ -489,6 +489,11 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
+    const targetRoomType = roomTypeOf(targetRoomName)
+    if (targetRoomType !== "source_keeper" && targetRoomType !== "sector_center") {
+      return Result.Failed(`Invalid target_room_name ${targetRoomName}, room type: ${targetRoomType}`)
+    }
+
     const rawWaypoints = args.get("waypoints")
     if (rawWaypoints == null) {
       return this.missingArgumentError("waypoints")
