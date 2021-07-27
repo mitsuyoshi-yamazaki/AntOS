@@ -17,6 +17,8 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { processLog } from "process/process_log"
 import { GameConstants } from "utility/constants"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 
 const testing = false as boolean
 
@@ -277,6 +279,10 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (creep.v5task != null) {
+      return
+    }
+    if (creep.room.name === this.parentRoomName && (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3))) {
+      creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
       return
     }
     if (creep.room.name !== this.targetRoomName || mineral == null) {
