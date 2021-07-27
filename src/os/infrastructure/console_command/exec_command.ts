@@ -1,6 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
-import { placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
+import { describeLabs, placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 
 export class ExecCommand implements ConsoleCommand {
@@ -26,13 +26,16 @@ export class ExecCommand implements ConsoleCommand {
       return this.placeRoadConstructionMarks()
     case "ShowPositionsInRange":
       return this.showPositionsInRange()
+    case "DescribeLabs":
+      return this.describeLabs()
     default:
       return "Invalid script type"
     }
   }
 
   // ---- Parse arguments ---- //
-  private parseProcessArguments(): Map<string, string> {
+  /** @deprecated */
+  private _parseProcessArguments(): Map<string, string> {
     const args = this.args.concat([])
     args.splice(0, 1)
     const result = new Map<string, string>()
@@ -52,7 +55,7 @@ export class ExecCommand implements ConsoleCommand {
 
   // ---- Execute ---- //
   private findPath(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const startObjectId = args.get("start_object_id")
     if (startObjectId == null) {
@@ -68,7 +71,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private findPathToSource(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const spawnName = args.get("spawn_name")
     if (spawnName == null) {
@@ -84,7 +87,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private showCachedSourcePath(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const sourceId = args.get("source_id")
     if (sourceId == null) {
@@ -95,7 +98,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private showOldRoomPlan(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const roomName = args.get("room_name")
     if (roomName == null) {
@@ -129,7 +132,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private placeOldRoomPlan(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const roomName = args.get("room_name")
     if (roomName == null) {
@@ -163,7 +166,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private placeRoadConstructionMarks(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const startObjectId = args.get("start_object_id")
     if (startObjectId == null) {
@@ -188,7 +191,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private showPositionsInRange(): CommandExecutionResult {
-    const args = this.parseProcessArguments()
+    const args = this._parseProcessArguments()
 
     const xString = args.get("x")
     if (xString == null) {
@@ -222,5 +225,48 @@ export class ExecCommand implements ConsoleCommand {
     const position = new RoomPosition(x, y, roomName)
     showPositionsInRange(position, range)
     return "ok"
+  }
+
+  // ---- ---- //
+  private parseProcessArguments(...keys: string[]): string[] | string {
+    const args = this.args.concat([])
+    args.splice(0, 1)
+    const argumentMap = new Map<string, string>()
+    args.forEach(arg => {
+      const [key, value] = arg.split("=")
+      if (key == null || value == null) {
+        return
+      }
+      argumentMap.set(key, value)
+    })
+
+    const result: string[] = []
+    const missingKeys: string[] = []
+
+    keys.forEach(key => {
+      const value = argumentMap.get(key)
+      if (value == null) {
+        missingKeys.push(key)
+        return
+      }
+      result.push(value)
+    })
+    if (missingKeys.length > 0) {
+      return `Missing arguments: ${missingKeys}`
+    }
+    return result
+  }
+
+  // ---- ---- //
+  private describeLabs(): CommandExecutionResult {
+    const args = this.parseProcessArguments("room_name")
+    if (typeof args === "string") {
+      return args
+    }
+    const [roomName] = args
+    if (roomName == null) {
+      return "" // FixMe: nullチェック
+    }
+    return describeLabs(roomName)
   }
 }
