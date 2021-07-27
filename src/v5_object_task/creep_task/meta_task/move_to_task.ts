@@ -4,6 +4,7 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
+import { defaultMoveToOptions, interRoomMoveToOptions } from "prototype/creep"
 
 export interface MoveToTaskState extends CreepTaskState {
   /** destination position */
@@ -11,6 +12,8 @@ export interface MoveToTaskState extends CreepTaskState {
 
   /** range */
   r: number
+
+  ignoreSwamp: boolean
 }
 
 export class MoveToTask implements CreepTask {
@@ -20,6 +23,7 @@ export class MoveToTask implements CreepTask {
     public readonly startTime: number,
     public readonly destinationPosition: RoomPosition,
     public readonly range: number,
+    public readonly ignoreSwamp: boolean,
   ) {
     this.shortDescription = `${this.destinationPosition.x},${this.destinationPosition.y}`
   }
@@ -30,15 +34,16 @@ export class MoveToTask implements CreepTask {
       t: "MoveToTask",
       d: this.destinationPosition.encode(),
       r: this.range,
+      ignoreSwamp: this.ignoreSwamp,
     }
   }
 
   public static decode(state: MoveToTaskState): MoveToTask {
-    return new MoveToTask(state.s, decodeRoomPosition(state.d), state.r)
+    return new MoveToTask(state.s, decodeRoomPosition(state.d), state.r, state.ignoreSwamp ?? false)
   }
 
-  public static create(destinationPosition: RoomPosition, range: number): MoveToTask {
-    return new MoveToTask(Game.time, destinationPosition, range)
+  public static create(destinationPosition: RoomPosition, range: number, options?: { ignoreSwamp: boolean}): MoveToTask {
+    return new MoveToTask(Game.time, destinationPosition, range, options?.ignoreSwamp ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -46,7 +51,7 @@ export class MoveToTask implements CreepTask {
       return TaskProgressType.Finished
     }
 
-    const result = creep.moveTo(this.destinationPosition, {reusePath: 1})
+    const result = creep.moveTo(this.destinationPosition, this.moveToOpts())
     switch (result) {
     case OK:
       return TaskProgressType.InProgress
@@ -65,5 +70,14 @@ export class MoveToTask implements CreepTask {
       PrimitiveLogger.fatal(`creep.moveTo() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return TaskProgressType.Finished
     }
+  }
+
+  private moveToOpts(): MoveToOpts {
+    const options = interRoomMoveToOptions
+    if (this.ignoreSwamp === true) {
+      options.ignoreRoads = true
+      options.swampCost = 1
+    }
+    return options
   }
 }

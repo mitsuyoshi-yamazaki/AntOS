@@ -35,6 +35,7 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
 
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W17S29 waypoints=W14S30,W16S29")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -277,7 +278,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
         }
       }
     }
-    return MoveToTask.create(targetSite.pos, 0)
+    return MoveToTask.create(targetSite.pos, 0, {ignoreSwamp: true})
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
@@ -308,7 +309,8 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     if (targetSite != null) {
       return targetSite
     }
-    return null
+
+    return creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
   }
 
   private checkScoutAttacked(): boolean {
