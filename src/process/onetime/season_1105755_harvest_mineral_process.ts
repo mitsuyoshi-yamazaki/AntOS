@@ -294,7 +294,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (creep.store.getFreeCapacity() <= 0 || (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.35))) {
-      creep.say("1")
+      processLog(this, `Storage full. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
       returnToParentRoom()
       return
     }
@@ -303,15 +303,15 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     if (harvester != null) {
       if (harvester.transfer(creep, mineral.mineralType) === ERR_NOT_IN_RANGE) {
         if (attackers.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
-          creep.say("2")
+          processLog(this, `No attackers. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
           returnToParentRoom()
           return
         }
         creep.moveTo(harvester, defaultMoveToOptions)
       }
     } else {
-      if (creep.store.getUsedCapacity(mineral.mineralType) > 0) {
-        creep.say("3")
+      if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
+        processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()
         return
       }
