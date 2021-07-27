@@ -229,26 +229,16 @@ export class OwnedRoomObjects {
     const spawns: StructureSpawn[] = []
     const extensions: StructureExtension[] = []
     const towers: StructureTower[] = []
-    let storage: StructureStorage | null = null
-    let terminal: StructureTerminal | null = null
+    let storage = null as StructureStorage | null
+    let terminal = null as StructureTerminal | null
     let powerSpawn: StructurePowerSpawn | null = null
+    const chargeableLabs: StructureLab[] = []
+
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
       const upgraderContainer = this.roomInfo.upgrader.container
       if (upgraderContainer.store.getFreeCapacity(RESOURCE_ENERGY) > upgraderContainer.store.getCapacity() * 0.3) {
         chargeableStructures.push(upgraderContainer)
-      }
-    }
-    if (chargeableStructures.length <= 0) {
-      const terminal = room.terminal
-      if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
-        if (terminal.store.getFreeCapacity() > 50000) {
-          if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
-            chargeableStructures.push(terminal)
-          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
-            chargeableStructures.push(terminal)
-          }
-        }
       }
     }
 
@@ -313,6 +303,11 @@ export class OwnedRoomObjects {
           chargeableStructures.push(structure)
         }
         break
+      case STRUCTURE_LAB:
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableLabs.push(structure)
+        }
+        break
       case STRUCTURE_ROAD:
         checkDecayed(structure)
         break
@@ -320,6 +315,21 @@ export class OwnedRoomObjects {
         break // TODO: 全て網羅する
       }
     })
+
+    if (chargeableStructures.length <= 0) {
+      if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
+        if (terminal.store.getFreeCapacity() > 50000) {
+          if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+            chargeableStructures.push(terminal)
+          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
+            chargeableStructures.push(terminal)
+          }
+        }
+      }
+    }
+    if (chargeableStructures.length <= 0) {
+      chargeableStructures.push(...chargeableLabs)
+    }
 
     const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
     const othersPowerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS)

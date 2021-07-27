@@ -1,6 +1,12 @@
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
-export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer | StructurePowerSpawn | StructureTerminal  // TODO: まだある
+export type EnergyChargeableStructure = StructureSpawn
+  | StructureExtension
+  | StructureTower
+  | StructureContainer
+  | StructurePowerSpawn
+  | StructureTerminal
+  | StructureLab  // TODO: まだある
 
 /** Energyを引き出せるオブジェクト */
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep
