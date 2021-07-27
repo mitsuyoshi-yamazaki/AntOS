@@ -217,7 +217,15 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 2) {
-      this.fleeFrom(closestHostile.pos, creep)
+      this.fleeFrom(closestHostile.pos, creep, 3)
+      return
+    }
+
+    const sourceKeeper = mineral.pos.findInRange(FIND_HOSTILE_CREEPS, 5)[0]
+    if (sourceKeeper != null) {
+      if (creep.rangedAttack(sourceKeeper) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(sourceKeeper)
+      }
       return
     }
 
@@ -232,7 +240,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
   private runHarvester(creep: Creep, mineral: Mineral | null) {
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      this.fleeFrom(closestHostile.pos, creep)
+      this.fleeFrom(closestHostile.pos, creep, 5)
       return
     }
 
@@ -256,7 +264,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
   private runHauler(creep: Creep, harvesters: Creep[], mineral: Mineral | null) {
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      this.fleeFrom(closestHostile.pos, creep)
+      this.fleeFrom(closestHostile.pos, creep, 5)
       return
     }
 
@@ -295,8 +303,8 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     })
   }
 
-  private fleeFrom(position: RoomPosition, creep: Creep): void {
-    const path = PathFinder.search(creep.pos, { pos: position, range: 3 }, {
+  private fleeFrom(position: RoomPosition, creep: Creep, range: number): void {
+    const path = PathFinder.search(creep.pos, { pos: position, range }, {
       flee: true,
       maxRooms: 1,
     })
