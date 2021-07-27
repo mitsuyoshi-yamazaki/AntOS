@@ -8,6 +8,7 @@ import { ExecCommand } from "./console_command/exec_command"
 import { HelpCommand } from "./console_command/help_command"
 import { KillCommand } from "./console_command/kill_command"
 import { LaunchCommand } from "./console_command/launch_command"
+import { MemoryCommand } from "./console_command/memory_command"
 import { MessageCommand } from "./console_command/message_command"
 import { ProcessCommand } from "./console_command/process_command"
 import { ResumeCommand } from "./console_command/resume_command"
@@ -99,5 +100,8 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   case "message":
     return Result.Succeeded(new MessageCommand(options, args, rawCommand))
+
+  case "memory":
+    return Result.Succeeded(new MemoryCommand(options, args, rawCommand))
   }
 }
