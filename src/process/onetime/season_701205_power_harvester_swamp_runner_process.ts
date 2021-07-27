@@ -227,26 +227,32 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         this.addScout()
       }
     } else {
-      const whitelistedHarvestCreep = ((): Creep | null => {
-        const whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist
-        if (whitelistedUsernames == null || whitelistedUsernames.length <= 0) {
-          return null
-        }
-        const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
-        return targetRoom.find(FIND_HOSTILE_CREEPS).find(creep => {
-          if (whitelistedUsernames.includes(creep.owner.username) !== true) {
-            return false
+      if (this.pickupFinished !== true) {
+        const whitelistedHarvestCreep = ((): Creep | null => {
+          const whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist
+          if (whitelistedUsernames == null || whitelistedUsernames.length <= 0) {
+            return null
           }
-          return creep.body.some(b => attackBodyParts.includes(b.type))
-        }) ?? null
-      })()
-      if (whitelistedHarvestCreep != null) {
-        const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => creep.body.some(b => (b.type === ATTACK)))
-        if (isHarvesting === true) {
-          processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is trying to harvest ${roomLink(this.targetRoomName)} power`)
-        } else {
-          processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
-          this.pickupFinished = true
+          const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+          return targetRoom.find(FIND_HOSTILE_CREEPS).find(creep => {
+            if (whitelistedUsernames.includes(creep.owner.username) !== true) {
+              return false
+            }
+            return creep.body.some(b => attackBodyParts.includes(b.type))
+          }) ?? null
+        })()
+        if (whitelistedHarvestCreep != null) {
+          const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => creep.body.some(b => (b.type === ATTACK)))
+          if (isHarvesting === true) {
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is trying to harvest ${roomLink(this.targetRoomName)} power`)
+          } else {
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
+            this.pickupFinished = true
+
+            World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true).forEach(creep => {
+              creep.v5task = null
+            })
+          }
         }
       }
 
