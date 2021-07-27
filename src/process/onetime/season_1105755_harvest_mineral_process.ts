@@ -2,7 +2,7 @@
 
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -167,7 +167,9 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (this.stopSpawning !== true && this.squadSpawned !== true) {
-      if (attackers.length < 1) {
+      const needsAttacker = roomTypeOf(this.targetRoomName) === "source_keeper"
+
+      if (needsAttacker === true && attackers.length < 1) {
         this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
       } else {
         if (harvesters.length < 1) {
@@ -246,7 +248,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
   private runHarvester(creep: Creep, mineral: Mineral | null) {
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      this.fleeFrom(closestHostile.pos, creep, 5)
+      this.fleeFrom(closestHostile.pos, creep, 6)
       return
     }
 
@@ -270,7 +272,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
   private runHauler(creep: Creep, attackers: Creep[], harvesters: Creep[], mineral: Mineral | null) {
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= 4) {
-      this.fleeFrom(closestHostile.pos, creep, 5)
+      this.fleeFrom(closestHostile.pos, creep, 6)
       return
     }
 

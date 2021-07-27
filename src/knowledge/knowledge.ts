@@ -20,4 +20,5 @@ export const epicScenes: { description: string, url: string }[] = [
  *   - 30hits/1square
  * - Tombstoneも戦場の霧を晴らす
  * - Safemode環境下での攻撃行動はERR_NO_BODYPARTを返す
+ * - Pathfinder.searchオプションのfleeは離れたいrangeを設定しないと値を返さない
  */
