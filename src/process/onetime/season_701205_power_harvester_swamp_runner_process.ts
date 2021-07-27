@@ -24,6 +24,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { bodyCost } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
+import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
@@ -304,6 +306,14 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (this.pickupFinished === true) {
       const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
       if (runningCreepCount <= 0) {
+        World.resourcePools.assignTasks(
+          this.parentRoomName,
+          this.identifier,
+          CreepPoolAssignPriority.Low,
+          () => RunApisTask.create([SuicideApiWrapper.create()], {waitUntilFinishedAll: true, ignoreFailure: true}),
+          creep => (creep.body.length <= 1),
+        )
+
         processLog(this, `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`)
         OperatingSystem.os.killProcess(this.processId)
       }
