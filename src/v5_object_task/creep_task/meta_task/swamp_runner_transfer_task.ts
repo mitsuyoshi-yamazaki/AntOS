@@ -161,6 +161,7 @@ export class SwampRunnerTransferTask implements CreepTask {
     const moveToOptions = ((): MoveToOpts => {
       const options: MoveToOpts = {}
       options.reusePath = reusePath
+      options.swampCost = 1
       if (roomTypeOf(creep.room.name) !== "source_keeper") {
         return options
       }
