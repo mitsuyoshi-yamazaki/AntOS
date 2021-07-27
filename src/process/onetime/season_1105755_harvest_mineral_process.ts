@@ -166,22 +166,25 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
       this.squadSpawned = false
     }
 
-    if (this.stopSpawning !== true && this.squadSpawned !== true && attackers.length < 1) {
-      this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
-    } else {
-      if (harvesters.length < 1) {
-        this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
+    if (this.stopSpawning !== true && this.squadSpawned !== true) {
+      if (attackers.length < 1) {
+        this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
       } else {
-        if (haulers.length < 1) {
-          this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.High)
+        if (harvesters.length < 1) {
+          this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
         } else {
-          this.squadSpawned = true
+          if (haulers.length < 1) {
+            this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.High)
+          } else {
+            this.squadSpawned = true
+          }
         }
       }
     }
 
+    const squad = this.squadSpawned ? "full squad" : "spawning"
     const stopSpawning = this.stopSpawning ? "not-spawning" : ""
-    processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${stopSpawning}`)
+    processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${squad}, ${stopSpawning}`)
 
     attackers.forEach(creep => this.runAttacker(creep, mineral))
     harvesters.forEach(creep => this.runHarvester(creep, mineral))
