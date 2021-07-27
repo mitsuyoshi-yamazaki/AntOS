@@ -241,7 +241,7 @@ export class OwnedRoomObjects {
     }
     if (chargeableStructures.length <= 0) {
       const terminal = room.terminal
-      if (terminal != null) {
+      if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
         if (terminal.store.getFreeCapacity() > 50000) {
           if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
             chargeableStructures.push(terminal)
