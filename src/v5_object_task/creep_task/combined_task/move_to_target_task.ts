@@ -89,7 +89,7 @@ export class MoveToTargetTask implements CreepTask {
   }
 
   private moveToOpts(creep: Creep): MoveToOpts {
-    if (creep.room.name === "W27S25") { // FixMe:
+    if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
       return {
         maxRooms: 1,
         reusePath: 10,
