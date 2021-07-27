@@ -50,6 +50,7 @@ export interface Season845677Attack1TowerProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W11S23 waypoints=W14S30,W10S30,W10S24")
+// Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30")
 export class Season845677Attack1TowerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -58,16 +59,25 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   // private readonly attackerBody: BodyPartConstant[] = [
   //   MOVE,
   // ]
-  private readonly attackerBody: BodyPartConstant[] = [
-    TOUGH, TOUGH, TOUGH,
-    MOVE, MOVE, MOVE,
-    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, MOVE, MOVE,
+  // private readonly attackerBody: BodyPartConstant[] = [  // full
+  //   TOUGH, TOUGH, TOUGH,
+  //   MOVE, MOVE, MOVE,
+  //   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+  //   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+  //   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, MOVE, MOVE,
+  //   MOVE, MOVE, MOVE, MOVE, MOVE,
+  //   MOVE, MOVE,
+  //   HEAL, HEAL, HEAL, HEAL, HEAL,
+  //   HEAL, HEAL,
+  // ]
+  private readonly attackerBody: BodyPartConstant[] = [ // 3ticks / swamp
     MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE,
-    HEAL, HEAL, HEAL, HEAL, HEAL,
-    HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL,
   ]
 
   private constructor(
@@ -269,23 +279,23 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
 
     if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
       const shouldFlee = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
-      if (shouldFlee !== true) {
-        leaderCreep.moveTo(44, 24)
-      } else {
-        const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
-        if (exitPosition == null) {
-          leaderCreep.say("no exit")  // TODO:
-          return
-        }
+      // if (shouldFlee !== true) {
+      //   leaderCreep.moveTo(44, 24)
+      // } else {
+      const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
+      if (exitPosition == null) {
+        leaderCreep.say("no exit")  // TODO:
+        return
+      }
 
-        if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
+      if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
+        leaderCreep.moveTo(exitPosition)
+      } else {
+        if (shouldFlee) {
           leaderCreep.moveTo(exitPosition)
-        } else {
-          if (shouldFlee) {
-            leaderCreep.moveTo(exitPosition)
-          }
         }
       }
+      // }
     }
     followerCreep.moveTo(leaderCreep.pos)
   }
