@@ -153,7 +153,16 @@ export class Season3FindPowerBankTask
     }
 
     const runningCreepInfo = roomResource.runningCreepInfo(this.identifier)
-    outputs.spawnRequests.push(...this.spawnRequests(runningCreepInfo))
+    if (roomResource.activeStructures.observer == null) { // TODO: これもリクエストを出す
+      outputs.spawnRequests.push(...this.spawnRequests(runningCreepInfo))
+    } else {
+      const targetRoom = this.observeTargetRooms[Game.time % this.observeTargetRooms.length]
+      if (targetRoom != null) {
+        roomResource.activeStructures.observer.observeRoom(targetRoom)
+      } else {
+        PrimitiveLogger.programError(`${this.constructor.name} can't retrieve observe target room (${this.observeTargetRooms.length}) at ${Game.time}`)
+      }
+    }
 
     roomResource.idleCreeps(this.identifier).forEach(creepInfo => {
       creepInfo.problems.forEach(problem => { // TODO: 処理できるものは処理する
