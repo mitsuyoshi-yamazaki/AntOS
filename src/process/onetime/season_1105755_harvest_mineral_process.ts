@@ -234,9 +234,12 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
 
     const keeperLair = creep.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR} })
     const target = keeperLair ?? mineral
+    const targetRange = creep.pos.getRangeTo(target)
 
-    if (creep.pos.getRangeTo(target) > 3) {
+    if (targetRange > 3) {
       creep.moveTo(target.pos, defaultMoveToOptions)
+    } else if (targetRange < 3) {
+      this.fleeFrom(target.pos, creep, 4)
     }
   }
 
