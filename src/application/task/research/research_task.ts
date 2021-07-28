@@ -108,7 +108,9 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
 
     const creepCount = roomResource.runningCreepInfo(this.identifier).length
     const ingredients = MineralCompoundIngredients[compound]
-    const resourceAvailable = (terminal.store.getUsedCapacity(ingredients.lhs) > 0) && (terminal.store.getUsedCapacity(ingredients.rhs) > 0)
+    const ingrendient1Available = (terminal.store.getUsedCapacity(ingredients.lhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.lhs) > 0))
+    const ingrendient2Available = (terminal.store.getUsedCapacity(ingredients.rhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.rhs) > 0))
+    const resourceAvailable = ingrendient1Available && ingrendient2Available
     if (resourceAvailable && creepCount < 1) {
       taskOutputs.spawnRequests.push(this.labChargerSpawnRequest(roomResource))
     }
