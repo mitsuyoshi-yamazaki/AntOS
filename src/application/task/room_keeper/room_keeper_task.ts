@@ -303,11 +303,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const powerBanks = findPowerBankOutputs.output?.powerBanks ?? []
     let launched = false
     powerBanks.forEach(powerBankInfo => {
-      requestHandlerInputs.logs.push({
-        taskIdentifier: this.identifier,
-        logEventType: "event",
-        message: `Power bank found in ${roomLink(powerBankInfo.roomName)}`
-      })
+      // requestHandlerInputs.logs.push({
+      //   taskIdentifier: this.identifier,
+      //   logEventType: "event",
+      //   message: `Power bank found in ${roomLink(powerBankInfo.roomName)}`
+      // })
 
       if (launched === true) {
         return

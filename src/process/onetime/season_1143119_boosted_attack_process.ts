@@ -15,8 +15,9 @@ import { CreepName } from "prototype/creep"
 import { processLog } from "process/process_log"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { moveToRoom } from "script/move_to_room"
+import { GameConstants } from "utility/constants"
 
-const testing = true as boolean
+const testing = false as boolean
 
 type State = "spawning" | "launched"
 
@@ -62,6 +63,8 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   private readonly attackerRoles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
   private readonly attackerBody: BodyPartConstant[] = [
     TOUGH, TOUGH, TOUGH,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
     RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     MOVE, MOVE, MOVE,
@@ -85,7 +88,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
     private squadState: SquadState | null,
     private state: State,
   ) {
-    this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
+    this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -164,7 +167,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
   private requestAttacker(priority: CreepSpawnRequestPriority, numberOfCreeps: number, labs: StructureLab[]): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority,
+      priority: testing ? CreepSpawnRequestPriority.Urgent : priority,
       numberOfCreeps,
       codename: this.codename,
       roles: this.attackerRoles,
@@ -229,7 +232,11 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   }
 
   private runSingleAttacker(creep: Creep): void {
-    // TODO:
+    const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    if (target == null) {
+      return
+    }
+
   }
 
   // ---- Squad ---- //
@@ -291,7 +298,12 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
   private leaderCanMove(leaderCreep: Creep, followerCreep: Creep): boolean {
     if (leaderCreep.pos.isNearTo(followerCreep.pos) !== true) {
-      return false
+      const leaderPos = leaderCreep.pos
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      if (leaderCreep.room.name === followerCreep.room.name || (leaderPos.x !== min && leaderPos.x !== max && leaderPos.y !== min && leaderPos.y !== max)) {
+        return false
+      }
     }
     return followerCreep.fatigue <= 0
   }
