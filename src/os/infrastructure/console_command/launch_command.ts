@@ -14,11 +14,8 @@ import { Season631744PowerProcessProcess } from "process/onetime/season_631744_p
 import { World } from "world_info/world_info"
 import { roomLink } from "utility/log"
 import { Season634603PowerCreepProcess } from "process/onetime/season_634603_power_creep_process"
-import { Season687888RunHaulerTestProcess } from "process/onetime/season_687888_run_hauler_test_process"
-import { TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { Season812484StealPowerProcess } from "process/onetime/season_812484_steal_power_process"
-import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
 import { Season845677Attack1TowerProcess } from "process/onetime/season_845677_attack_1tower_process"
 import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
@@ -65,17 +62,11 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season634603PowerCreepProcess":
       result = this.launchSeason634603PowerCreepProcess()
       break
-    case "Season687888RunHaulerTestProcess":
-      result = this.launchSeason687888RunHaulerTestProcess()
-      break
     case "Season701205PowerHarvesterSwampRunnerProcess":
       result = this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       break
     case "Season812484StealPowerProcess":
       result = this.launchSeason812484StealPowerProcess()
-      break
-    case "Season831595DismantleRcl2RoomProcess":
-      result = this.launchSeason831595DismantleRcl2RoomProcess()
       break
     case "Season845677Attack1TowerProcess":
       result = this.launchSeason845677Attack1TowerProcess()
@@ -284,24 +275,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason687888RunHaulerTestProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const transferTargetId = args.get("transfer_target_id")
-    if (transferTargetId == null) {
-      return this.missingArgumentError("transfer_target_id")
-    }
-
-    const process = OperatingSystem.os.addProcess(processId => {
-      return Season687888RunHaulerTestProcess.create(processId, roomName, transferTargetId as Id<TransferResourceApiWrapperTargetType>)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchSeason701205PowerHarvesterSwampRunnerProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -344,29 +317,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season812484StealPowerProcess.create(processId, roomName, targetRoomName, waypoints)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason831595DismantleRcl2RoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const process = OperatingSystem.os.addProcess(processId => {
-      return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
