@@ -45,12 +45,12 @@ export const MineralCompoundConstant: MineralCompoundConstant[] = [
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralBoostConstant(arg: string): arg is MineralBoostConstant {
-  return arg in MineralBoostConstant
+  return (MineralBoostConstant as string[]).includes(arg)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralCompoundConstant(arg: string): arg is MineralCompoundConstant {
-  return arg in MineralCompoundConstant
+  return (MineralCompoundConstant as string[]).includes(arg)
 }
 
 type IngredientType = MineralConstant | MineralCompoundConstant

@@ -1,5 +1,6 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TaskTargetPosition } from "object_task/object_task_target_cache"
+import { ResourceOperationApiWrapper } from "object_task/resource_operation_api_wrapper"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { EnergyChargeableStructure } from "prototype/room_object"
@@ -21,8 +22,9 @@ export interface TransferApiWrapperState extends CreepApiWrapperState {
   r: ResourceConstant
 }
 
-export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
+export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper, ResourceOperationApiWrapper {
   public readonly shortDescription: string
+  public readonly resourceOperationDescription = "transfer"
   public readonly range = TRANSFER_RESOURCE_RANGE
 
   private constructor(
