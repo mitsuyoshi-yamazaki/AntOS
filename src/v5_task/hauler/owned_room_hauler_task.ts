@@ -21,6 +21,8 @@ import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -181,9 +183,31 @@ export class OwnedRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.store.getFreeCapacity() > 0) {
+        const resourcefulTombstones = objects.tombStones.filter(tomb => tomb.store.getUsedCapacity() > 0)
+        const resourcefulTombstone = creep.pos.findClosestByRange(resourcefulTombstones)
+        if (resourcefulTombstone != null) {
+          const resourceTypes = Object.keys(resourcefulTombstone.store) as ResourceConstant[]
+          const mineral = resourceTypes.filter(resourceType => resourceType !== RESOURCE_ENERGY)[0]
 
-    if (noEnergy) {
+          if (mineral != null) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, mineral))
+          }
+          if (resourceTypes.includes(RESOURCE_ENERGY) === true) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, RESOURCE_ENERGY))
+          }
+        }
+      }
+
+      if (creep.store.getUsedCapacity() > 0) {
+        const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
+        const storageObject = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        if (resourceType != null && storageObject != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(storageObject, resourceType))
+        }
+      }
+
       const energySource = this.getEnergySource(creep.pos, objects, energySources)
       if (energySource != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
