@@ -236,16 +236,15 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         }
       }
 
-      const outputLab = labs.outputLabs.find(lab => {
-        if (lab.store.getFreeCapacity(compound) < (lab.store.getCapacity(compound) * 0.2)) {
-          return true
-        }
-        return false
-      })
-      if (outputLab != null) {
-        return {
-          creepName: creep.name,
-          task: MoveToTargetTask.create(WithdrawApiWrapper.create(outputLab, compound)),
+      if (labs.outputLabs.length > 0) {
+        const outputLab = labs.outputLabs.reduce((lhs, rhs) => {
+          return lhs.store.getUsedCapacity(compound) > rhs.store.getUsedCapacity(compound) ? lhs : rhs
+        })
+        if (outputLab.store.getUsedCapacity(compound) > 0) {
+          return {
+            creepName: creep.name,
+            task: MoveToTargetTask.create(WithdrawApiWrapper.create(outputLab, compound)),
+          }
         }
       }
       return []
