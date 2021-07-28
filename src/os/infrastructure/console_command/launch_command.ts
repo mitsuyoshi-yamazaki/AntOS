@@ -27,6 +27,7 @@ import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProc
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1105755HarvestMineralProcess } from "process/onetime/season_1105755_harvest_mineral_process"
+import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_lab_charger_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -93,6 +94,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1105755HarvestMineralProcess":
       result = this.launchSeason1105755HarvestMineralProcess()
+      break
+    case "Season1143119LabChargerProcess":
+      result = this.launchSeason1143119LabChargerProcess()
       break
     default:
       break
@@ -502,6 +506,14 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1105755HarvestMineralProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  // ----
+  private launchSeason1143119LabChargerProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1143119LabChargerProcess.create(processId)
     })
     return Result.Succeeded(process)
   }
