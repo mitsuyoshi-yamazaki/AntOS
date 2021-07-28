@@ -301,6 +301,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES) //.sort((lhs, rhs))
 
 
+    const towerSite = constructionSites.find(site => site.structureType === STRUCTURE_TOWER)
+    if (towerSite != null) {
+      return towerSite
+    }
     const spawnSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
     if (spawnSite != null) {
       return spawnSite
