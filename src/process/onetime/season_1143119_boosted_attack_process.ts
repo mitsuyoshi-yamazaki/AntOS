@@ -21,10 +21,10 @@ const testing = false as boolean
 
 type State = "spawning" | "launched"
 
-// const boosts: MineralBoostConstant[] = [
-//   RESOURCE_LEMERGIUM_ALKALIDE,
-//   RESOURCE_KEANIUM_OXIDE,
-// ]
+const boosts: ResourceConstant[] = [
+  RESOURCE_LEMERGIUM_ALKALIDE,
+  RESOURCE_KEANIUM_OXIDE,
+]
 
 const healBoost = 3
 
@@ -160,7 +160,8 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       this.state = "launched"
       return
     }
-    const labs = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+    const labs = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
+      .filter(lab => (lab.mineralType != null && boosts.includes(lab.mineralType)))
     const priority = creeps.length > 0 ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Low
     this.requestAttacker(priority, 1, labs)
   }
@@ -207,6 +208,21 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       return
     }
 
+    const squadDamage = this.squadDamage(squad)
+    if (squadDamage > 1000) {
+      const exit = squad.leader.room.findExitTo(this.targetRoomName)
+      if (exit !== ERR_NO_PATH && exit !== ERR_INVALID_ARGS) {
+        const exitPosition = squad.leader.pos.findClosestByPath(exit)
+        if (exitPosition != null) {
+          if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+            squad.leader.moveTo(exitPosition)
+          }
+          squad.follower.moveTo(squad.leader)
+          return
+        }
+      }
+    }
+
     const target = ((): AnyStructure | null => {
       if (this.targetId != null) {
         const stored = Game.getObjectById(this.targetId)
@@ -237,6 +253,13 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       return
     }
 
+    this.rangedAttack(creep, target)
+    creep.heal(creep)
+    if (target.getActiveBodyparts(ATTACK) > 0 && target.pos.getRangeTo(creep.pos) <= 2) {
+      this.fleeFrom(target.pos, creep, 4)
+    } else {
+      creep.moveTo(target)
+    }
   }
 
   // ---- Squad ---- //
@@ -317,6 +340,10 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
     return hostiles.reduce((lhs, rhs) => {
       return position.getRangeTo(lhs.pos) < position.getRangeTo(rhs.pos) ? lhs : rhs
     })
+  }
+
+  private squadDamage(squad: Squad): number {
+    return squad.leader.hitsMax + squad.follower.hitsMax - squad.leader.hits - squad.follower.hits
   }
 
   private targetStructure(room: Room): AnyStructure | null {
