@@ -20,6 +20,8 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Invader } from "game/invader"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -177,6 +179,13 @@ export class RemoteRoomHaulerTask extends Task {
       }
       creep.say("no source")
       return MoveToRoomTask.create(this.targetRoomName, [])
+    }
+
+    if (creep.store.getFreeCapacity() > 0) {
+      const container = creep.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
+      if (container != null) {
+        return RunApiTask.create(WithdrawResourceApiWrapper.create(container, RESOURCE_ENERGY))
+      }
     }
 
     if (objects.activeStructures.storage != null) {

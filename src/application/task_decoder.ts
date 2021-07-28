@@ -12,6 +12,7 @@ import { Season3ProcessPowerTask, Season3ProcessPowerTaskState } from "./task/se
 import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
 import { TemplateTask, TemplateTaskState } from "./task/template/template_task"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "./task/mineral_harvester/owned_room_mineral_harvester_task"
+import { ResearchTask, ResearchTaskState } from "./task/research/research_task"
 // import { UpgraderTask, UpgraderTaskState } from "./task/upgrader/upgrader_task"
 
 export type TaskType = keyof TaskMap
@@ -28,6 +29,7 @@ class TaskMap {
   // "UpgraderTask" = (state: TaskState) => UpgraderTask.decode(state as unknown as UpgraderTaskState)
   "TemplateTask" = (state: TaskState) => TemplateTask.decode(state as unknown as TemplateTaskState)
   "OwnedRoomMineralHarvesterTask" = (state: TaskState) => OwnedRoomMineralHarvesterTask.decode(state as unknown as OwnedRoomMineralHarvesterTaskState)
+  "ResearchTask" = (state: TaskState) => ResearchTask.decode(state as unknown as ResearchTaskState)
 }
 // const taskMap = new TaskMap()
 

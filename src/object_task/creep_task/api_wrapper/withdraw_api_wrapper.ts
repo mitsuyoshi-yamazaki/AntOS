@@ -6,33 +6,33 @@ import { EnergyChargeableStructure } from "prototype/room_object"
 import { TRANSFER_RESOURCE_RANGE } from "utility/constants"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
-const apiWrapperType = "TransferApiWrapper"
+const apiWrapperType = "WithdrawApiWrapper"
 
-type TransferApiWrapperTargetType = AnyCreep | StructureStorage | EnergyChargeableStructure
+type WithdrawApiWrapperTargetType = StructureStorage | EnergyChargeableStructure
 
-export interface TransferApiWrapperState extends CreepApiWrapperState {
+export interface WithdrawApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
-  t: "TransferApiWrapper"
+  t: "WithdrawApiWrapper"
 
   /** target id */
-  i: Id<TransferApiWrapperTargetType>
+  i: Id<WithdrawApiWrapperTargetType>
 
   /** resource type */
   r: ResourceConstant
 }
 
-export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
+export class WithdrawApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
   public readonly shortDescription: string
   public readonly range = TRANSFER_RESOURCE_RANGE
 
   private constructor(
-    public readonly target: TransferApiWrapperTargetType,
+    public readonly target: WithdrawApiWrapperTargetType,
     public readonly resourceType: ResourceConstant,
   ) {
-    this.shortDescription = `t-${this.resourceType}`
+    this.shortDescription = `w-${this.resourceType}`
   }
 
-  public encode(): TransferApiWrapperState {
+  public encode(): WithdrawApiWrapperState {
     return {
       t: apiWrapperType,
       i: this.target.id,
@@ -40,16 +40,16 @@ export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper 
     }
   }
 
-  public static decode(state: TransferApiWrapperState): TransferApiWrapper | null {
+  public static decode(state: WithdrawApiWrapperState): WithdrawApiWrapper | null {
     const target = Game.getObjectById(state.i)
     if (target == null) {
       return null
     }
-    return new TransferApiWrapper(target, state.r)
+    return new WithdrawApiWrapper(target, state.r)
   }
 
-  public static create(target: TransferApiWrapperTargetType, resourceType: ResourceConstant): TransferApiWrapper {
-    return new TransferApiWrapper(target, resourceType)
+  public static create(target: WithdrawApiWrapperTargetType, resourceType: ResourceConstant): WithdrawApiWrapper {
+    return new WithdrawApiWrapper(target, resourceType)
   }
 
   public taskTarget(creep: V6Creep): TaskTargetPosition {
@@ -57,17 +57,17 @@ export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper 
       taskTargetType: "position",
       position: this.target.pos,
       concreteTarget: this.target,
-      taskType: "transfer",
-      amount: creep.store.getUsedCapacity(this.resourceType),
+      taskType: "withdraw",
+      amount: creep.store.getCapacity(),
     }
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {
-    if (creep.store.getUsedCapacity(this.resourceType) <= 0) {
+    if (creep.store.getFreeCapacity(this.resourceType) <= 0) {
       return CreepApiWrapperProgress.Finished(false)
     }
 
-    const result = creep.transfer(this.target, this.resourceType)
+    const result = creep.withdraw(this.target, this.resourceType)
 
     switch (result) {
     case OK:

@@ -10,6 +10,7 @@ import { TransferApiWrapper, TransferApiWrapperState } from "./api_wrapper/trans
 import { UpgradeControllerApiWrapper, UpgradeControllerApiWrapperState } from "./api_wrapper/upgrade_controller_api_wrapper"
 import { MoveToPositionApiWrapper, MoveToPositionApiWrapperState } from "./api_wrapper/move_to_position_api_wrapper"
 import { HarvestMineralApiWrapper, HarvestMineralApiWrapperState } from "./api_wrapper/harvest_mineral_api_wrapper"
+import { WithdrawApiWrapper, WithdrawApiWrapperState } from "./api_wrapper/withdraw_api_wrapper"
 
 export type CreepApiWrapperType = keyof CreepApiWrapperDecoderMap
 class CreepApiWrapperDecoderMap {
@@ -23,6 +24,7 @@ class CreepApiWrapperDecoderMap {
   "MoveApiWrapper" = (state: CreepApiWrapperState) => MoveApiWrapper.decode(state as MoveApiWrapperState)
   "MoveToPositionApiWrapper" = (state: CreepApiWrapperState) => MoveToPositionApiWrapper.decode(state as MoveToPositionApiWrapperState)
   "HarvestMineralApiWrapper" = (state: CreepApiWrapperState) => HarvestMineralApiWrapper.decode(state as HarvestMineralApiWrapperState)
+  "WithdrawApiWrapper" = (state: CreepApiWrapperState) => WithdrawApiWrapper.decode(state as WithdrawApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

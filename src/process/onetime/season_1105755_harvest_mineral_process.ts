@@ -299,8 +299,13 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
       creep.v5task = SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(terminal, mineral.mineralType))
     }
 
-    if (creep.store.getFreeCapacity() <= 0 || (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.35))) {
+    if (creep.store.getFreeCapacity() <= 0) {
       processLog(this, `Storage full. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
+      returnToParentRoom()
+      return
+    }
+    if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.35)) {
+      processLog(this, `No lifetime left. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
       returnToParentRoom()
       return
     }

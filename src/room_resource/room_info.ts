@@ -1,4 +1,4 @@
-import { OwnedRoomPlan, RemoteHarvestRoomPlan } from "application/task/worker/room_plan/room_plan"
+// import { OwnedRoomPlan, RemoteHarvestRoomPlan } from "application/task/worker/room_plan/room_plan"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
 
@@ -38,6 +38,11 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 
   // ---- Structure ---- //
   readonly chargeStructureIds: Id<EnergyChargeableStructure>[]
+  researchLab?: {
+    readonly inputLab1: Id<StructureLab>
+    readonly inputLab2: Id<StructureLab>
+    readonly outputLabs: Id<StructureLab>[]
+  }
 
   // ---- Inter Room ---- //
 // TODO: 同様にCreepも送れるようにする
@@ -47,6 +52,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     disablePowerHarvesting?: boolean
     disableUnnecessaryTasks?: boolean
     enableOperateSpawn?: boolean
+    researchCompounds?: { [index in MineralCompoundConstant]?: number }
   }
 }
 

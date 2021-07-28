@@ -25,6 +25,8 @@ import { TaskLogRequest } from "application/task_logger"
 import { OperatingSystem } from "os/os"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
+import { ResearchTask, ResearchTaskState } from "../research/research_task"
+import { parseLabs } from "script/room_plan"
 
 const config = {
   powerHarvestingEnabled: true
@@ -46,6 +48,7 @@ export interface RoomKeeperTaskState extends TaskState {
     pf: Season3FindPowerBankTaskState | null
 
     mineralHarvesterTaskState: OwnedRoomMineralHarvesterTaskState | null
+    researchTaskState: ResearchTaskState | null
   }
 }
 
@@ -68,6 +71,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     private readonly children: {
       findPowerBank: Season3FindPowerBankTask | null,
       mineralHarvester: OwnedRoomMineralHarvesterTask | null,
+      research: ResearchTask | null,
     },
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
@@ -86,6 +90,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       c: {
         pf: this.children.findPowerBank?.encode() ?? null,
         mineralHarvesterTaskState: this.children.mineralHarvester?.encode() ?? null,
+        researchTaskState: this.children.research?.encode() ?? null,
       },
     }
   }
@@ -103,9 +108,16 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       }
       return OwnedRoomMineralHarvesterTask.decode(state.c.mineralHarvesterTaskState)
     })()
+    const research = ((): ResearchTask | null => {
+      if (state.c.researchTaskState == null) {
+        return null
+      }
+      return ResearchTask.decode(state.c.researchTaskState)
+    })()
     const children = {
       findPowerBank,
       mineralHarvester,
+      research,
     }
     return new RoomKeeperTask(state.s, state.ss, state.r, state.pf, children)
   }
@@ -114,6 +126,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const children = {
       findPowerBank: null,
       mineralHarvester: null,
+      research: null,
     }
     return new RoomKeeperTask(Game.time, Game.time, roomName, emptyRoomKeeperPerformanceState(), children)
   }
@@ -130,6 +143,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
     this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
     this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
+    this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
 
     const { logs, unresolvedProblems } = this.taskRequestHandler.execute(roomResource, requestHandlerInputs)
 
@@ -144,6 +158,39 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
 
     return taskOutputs
+  }
+
+  // ---- Research ---- //
+  private runResearchTask(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    const researchCompounds = roomResource.roomInfo.config?.researchCompounds
+    if (researchCompounds == null) {
+      this.children.research = null
+      return
+    }
+
+    if (roomResource.roomInfo.researchLab == null) {
+      const placedLabs = parseLabs(roomResource.room)
+      if (placedLabs == null) {
+        return
+      }
+
+      roomResource.roomInfo.researchLab = {
+        inputLab1: placedLabs.inputLab1.id,
+        inputLab2: placedLabs.inputLab2.id,
+        outputLabs: placedLabs.outputLabs.map(lab => lab.id),
+      }
+    }
+
+    if (this.children.research == null) {
+      this.children.research = ResearchTask.create(this.roomName)
+      requestHandlerInputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `${coloredText("[Launched]", "info")} ResearchTask ${roomLink(this.roomName)}`
+      })
+    }
+    const outputs = this.children.research.runSafely(roomResource)
+    this.concatRequests(outputs, this.children.research.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
   }
 
   // ---- Mineral Harvest ---- //

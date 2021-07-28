@@ -6,6 +6,12 @@ import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
 import { NormalRoomResource } from "./normal_room_resource"
 
+export type ResearchLabs = {
+  inputLab1: StructureLab
+  inputLab2: StructureLab
+  outputLabs: StructureLab[]
+}
+
 export interface OwnedRoomCreepInfo {
   creep: V6Creep
   problems: Problem[]
@@ -29,6 +35,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     observer: StructureObserver | null
 
     chargeableStructures: EnergyChargeableStructure[]
+    researchLabs: ResearchLabs | null
   }
 
   public readonly walls: StructureWall[]
@@ -53,6 +60,27 @@ export class OwnedRoomResource extends NormalRoomResource {
     let extractor: StructureExtractor | null = null
     let observer: StructureObserver | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
+    const researchLabs = ((): ResearchLabs | null => {
+      if (roomInfo.researchLab == null) {
+        return null
+      }
+      const inputLab1 = Game.getObjectById(roomInfo.researchLab.inputLab1)
+      const inputLab2 = Game.getObjectById(roomInfo.researchLab.inputLab2)
+      const outputLabs = roomInfo.researchLab.outputLabs.flatMap(id => Game.getObjectById(id) ?? [])
+      if (inputLab1 == null || inputLab2 == null || outputLabs.length <= 0) {
+        roomInfo.researchLab = undefined
+        return null
+      }
+      if (inputLab1.isActive() !== true || inputLab2.isActive() !== true || outputLabs.some(lab => lab.isActive() !== true)) {
+        roomInfo.researchLab = undefined
+        return null
+      }
+      return {
+        inputLab1,
+        inputLab2,
+        outputLabs,
+      }
+    })()
 
     this.walls = []
     this.ramparts = []
@@ -128,6 +156,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       extractor,
       observer,
       chargeableStructures,
+      researchLabs,
     }
   }
 
