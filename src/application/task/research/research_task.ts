@@ -17,6 +17,7 @@ import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
+import { roomLink } from "utility/log"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -105,7 +106,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
     const creepCount = roomResource.runningCreepInfo(this.identifier).length
     const ingredient1 = RESOURCE_HYDROGEN // TODO:
     const ingredient2 = RESOURCE_OXYGEN
-    const resourceAvailable = terminal.store.getUsedCapacity(ingredient1) > 0 && terminal.store.getUsedCapacity(ingredient2) > 0
+    const resourceAvailable = (terminal.store.getUsedCapacity(ingredient1) > 0) && (terminal.store.getUsedCapacity(ingredient2) > 0)
     if (resourceAvailable && creepCount < 1) {
       taskOutputs.spawnRequests.push(this.labChargerSpawnRequest(roomResource))
     }

@@ -68,7 +68,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     sessionStartTime: number,
     roomName: RoomName,
     public readonly performanceState: RoomKeeperPerformanceState,
-    private readonly children: {
+    private readonly children: {  // TODO: economyTasks: {[index: string]: EconomyTask} などの形式にしてprioritize忘れがないようにする
       findPowerBank: Season3FindPowerBankTask | null,
       mineralHarvester: OwnedRoomMineralHarvesterTask | null,
       research: ResearchTask | null,
@@ -377,6 +377,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const economyTasks: AnyTask<EconomyTaskPerformance, EconomyTaskPerformanceState>[] = []
     if (this.children.mineralHarvester != null) {
       economyTasks.push(this.children.mineralHarvester)
+    }
+    if (this.children.research != null) {
+      economyTasks.push(this.children.research)
     }
 
     const observeTasks: AnyTask<ObserveTaskPerformance, ObserveTaskPerformanceState>[] = []
