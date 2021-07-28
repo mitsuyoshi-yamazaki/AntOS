@@ -21,6 +21,7 @@ export interface RoomPositionFilteringOptions {
 declare global {
   interface RoomPosition {
     id: RoomPositionId
+    pos: RoomPosition
 
     /** @deprecated */
     v5TargetedBy: V5TaskRunnerId[]
@@ -38,6 +39,12 @@ export function init(): void {
   Object.defineProperty(RoomPosition.prototype, "id", {
     get(): RoomPositionId {
       return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
+    },
+  })
+
+  Object.defineProperty(RoomPosition.prototype, "pos", {
+    get(): RoomPosition {
+      return this
     },
   })
 

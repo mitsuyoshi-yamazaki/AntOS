@@ -18,6 +18,8 @@ import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
 import { isMineralCompoundConstant, MineralCompoundIngredients } from "utility/resource"
+import { roomLink } from "utility/log"
+import { ParallelResourceOperationTask } from "object_task/creep_task/task/parallel_resource_operation_task"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -111,9 +113,30 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       taskOutputs.spawnRequests.push(this.labChargerSpawnRequest(roomResource))
     }
 
+    let runReactionError = null as string | null
     labs.outputLabs.forEach(lab => {
-      lab.runReaction(labs.inputLab1, labs.inputLab2)
+      const result = lab.runReaction(labs.inputLab1, labs.inputLab2)
+      switch (result) {
+      case OK:
+      case ERR_TIRED:
+      case ERR_FULL:
+      case ERR_NOT_ENOUGH_RESOURCES:
+        break
+      case ERR_NOT_OWNER:
+      case ERR_INVALID_TARGET:
+      case ERR_NOT_IN_RANGE:
+      case ERR_INVALID_ARGS:
+      case ERR_RCL_NOT_ENOUGH:
+        runReactionError = `Lab.runReaction() returns ${result} in ${roomLink(this.roomName)}`
+      }
     })
+    if (runReactionError != null) {
+      taskOutputs.logs.push({ // 本来ここで解決すべきエラーなのでProblemは上げない
+        taskIdentifier: this.identifier,
+        logEventType: "found problem",
+        message: runReactionError,
+      })
+    }
 
     return taskOutputs
   }
@@ -134,8 +157,8 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         return []
       }
 
-      if (creep.store.getUsedCapacity(ingredients.lhs) > 0) { // TODO: 以前のMineralの回収
-        if (labs.inputLab1.store.getFreeCapacity(ingredients.lhs) > 0) {
+      if (creep.store.getUsedCapacity(ingredients.lhs) > 0) {
+        if ((labs.inputLab1.mineralType === ingredients.lhs || labs.inputLab1.mineralType == null) && labs.inputLab1.store.getFreeCapacity(ingredients.lhs) > 0) {
           return {
             creepName: creep.name,
             task: MoveToTargetTask.create(TransferApiWrapper.create(labs.inputLab1, ingredients.lhs)),
@@ -147,8 +170,8 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         }
       }
 
-      if (creep.store.getUsedCapacity(ingredients.rhs) > 0) { // TODO: 以前のMineralの回収
-        if (labs.inputLab2.store.getFreeCapacity(ingredients.rhs) > 0) {
+      if (creep.store.getUsedCapacity(ingredients.rhs) > 0) {
+        if ((labs.inputLab2.mineralType === ingredients.rhs || labs.inputLab2.mineralType == null) && labs.inputLab2.store.getFreeCapacity(ingredients.rhs) > 0) {
           return {
             creepName: creep.name,
             task: MoveToTargetTask.create(TransferApiWrapper.create(labs.inputLab2, ingredients.rhs)),
@@ -164,6 +187,39 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         return {
           creepName: creep.name,
           task: MoveToTargetTask.create(TransferApiWrapper.create(terminal, compound)),
+        }
+      }
+
+      if (creep.store.getUsedCapacity() > 0) {
+        const resourceTypes = Object.keys(creep.store) as ResourceConstant[]
+        return {
+          creepName: creep.name,
+          task: ParallelResourceOperationTask.create(resourceTypes, resourceType => TransferApiWrapper.create(terminal, resourceType)),
+        }
+      }
+
+      if (labs.inputLab1.mineralType != null && labs.inputLab1.mineralType !== ingredients.lhs) {
+        return {
+          creepName: creep.name,
+          task: MoveToTargetTask.create(WithdrawApiWrapper.create(labs.inputLab1, labs.inputLab1.mineralType)),
+        }
+      }
+      if (labs.inputLab2.mineralType != null && labs.inputLab2.mineralType !== ingredients.rhs) {
+        return {
+          creepName: creep.name,
+          task: MoveToTargetTask.create(WithdrawApiWrapper.create(labs.inputLab2, labs.inputLab2.mineralType)),
+        }
+      }
+      const resourceIncompatibleOutputLab = labs.outputLabs.find(lab => {
+        if (lab.mineralType != null && lab.mineralType !== compound) {
+          return true
+        }
+        return false
+      })
+      if (resourceIncompatibleOutputLab != null && resourceIncompatibleOutputLab.mineralType != null) {
+        return {
+          creepName: creep.name,
+          task: MoveToTargetTask.create(WithdrawApiWrapper.create(resourceIncompatibleOutputLab, resourceIncompatibleOutputLab.mineralType)),
         }
       }
 
@@ -203,7 +259,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       this.codename,
       this.identifier,
       null,
-      createCreepBody([], [MOVE, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 1),
+      createCreepBody([], [MOVE, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 2),
       null,
       0,
     )
