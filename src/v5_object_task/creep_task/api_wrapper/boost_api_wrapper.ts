@@ -5,7 +5,7 @@ import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 
-type BoostApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
+type BoostApiWrapperResult = FINISHED | IN_PROGRESS | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
 export interface BoostApiWrapperState extends CreepApiWrapperState {
   /** target id */
@@ -39,6 +39,10 @@ export class BoostApiWrapper implements ApiWrapper<Creep, BoostApiWrapperResult>
   }
 
   public run(creep: Creep): BoostApiWrapperResult {
+    if (creep.spawning === true) {
+      return IN_PROGRESS
+    }
+
     const result = this.target.boostCreep(creep)
 
     switch (result) {
@@ -54,7 +58,7 @@ export class BoostApiWrapper implements ApiWrapper<Creep, BoostApiWrapperResult>
     case ERR_INVALID_TARGET:
     case ERR_RCL_NOT_ENOUGH:
     default:
-      PrimitiveLogger.fatal(`lab.boostCreep() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`lab.boostCreep() returns ${result}, ${creep.name}, lab ${this.target} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }
