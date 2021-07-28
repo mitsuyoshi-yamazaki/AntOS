@@ -489,8 +489,20 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
+    const towerCount = args.get("tower_count")
+    if (towerCount == null) {
+      return this.missingArgumentError("tower_count")
+    }
+    const parsedTowerCount = parseInt(towerCount, 10)
+    if (isNaN(parsedTowerCount) === true) {
+      return Result.Failed(`tower_count is not a number (${towerCount})`)
+    }
+    if ([0, 1, 2].includes(parsedTowerCount) !== true) {
+      return Result.Failed(`Not supported tower_count ${parsedTowerCount}`)
+    }
+
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints)
+      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2))
     })
     return Result.Succeeded(process)
   }

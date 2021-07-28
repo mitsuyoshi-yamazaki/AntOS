@@ -225,13 +225,13 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         }
       }
 
-      if (labs.inputLab1.store.getUsedCapacity(ingredients.lhs) < (labs.inputLab1.store.getCapacity(ingredients.lhs) / 2)) {
+      if ((labs.inputLab1.store.getUsedCapacity(ingredients.lhs) < (labs.inputLab1.store.getCapacity(ingredients.lhs) / 2)) && terminal.store.getUsedCapacity(ingredients.lhs) > 0) {
         return {
           creepName: creep.name,
           task: MoveToTargetTask.create(WithdrawApiWrapper.create(terminal, ingredients.lhs)),
         }
       }
-      if (labs.inputLab2.store.getUsedCapacity(ingredients.rhs) < (labs.inputLab2.store.getCapacity(ingredients.rhs) / 2)) {
+      if ((labs.inputLab2.store.getUsedCapacity(ingredients.rhs) < (labs.inputLab2.store.getCapacity(ingredients.rhs) / 2)) && terminal.store.getUsedCapacity(ingredients.rhs) > 0) {
         return {
           creepName: creep.name,
           task: MoveToTargetTask.create(WithdrawApiWrapper.create(terminal, ingredients.rhs)),
