@@ -25,6 +25,7 @@ import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1105755HarvestMineralProcess } from "process/onetime/season_1105755_harvest_mineral_process"
 import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_lab_charger_process"
+import { Season1143119BoostedAttackProcess } from "process/onetime/season_1143119_boosted_attack_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -88,6 +89,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1143119LabChargerProcess":
       result = this.launchSeason1143119LabChargerProcess()
+      break
+    case "Season1143119BoostedAttackProcess":
+      result = this.launchSeason1143119BoostedAttackProcess()
       break
     default:
       break
@@ -460,10 +464,33 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  // ----
   private launchSeason1143119LabChargerProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1143119LabChargerProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1143119BoostedAttackProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }

@@ -18,6 +18,7 @@ import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "./a
 import { WithdrawResourceApiWrapper, WithdrawResourceApiWrapperState } from "./api_wrapper/withdraw_resource_api_wrapper"
 import { TempRenewApiWrapper, TempRenewApiWrapperState } from "./api_wrapper/temp_renew_api_wrapper"
 import { SuicideApiWrapper } from "./api_wrapper/suicide_api_wrapper"
+import { BoostApiWrapper, BoostApiWrapperState } from "./api_wrapper/boost_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -48,6 +49,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | WithdrawResourceApiWrapper
   | TempRenewApiWrapper
   | SuicideApiWrapper
+  | BoostApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -68,6 +70,7 @@ class CreepApiWrapperDecoderMap {
   "TempRenewApiWrapper" = (state: CreepApiWrapperState) => TempRenewApiWrapper.decode(state as TempRenewApiWrapperState)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   "SuicideApiWrapper" = (state: CreepApiWrapperState) => SuicideApiWrapper.decode()
+  "BoostApiWrapper" = (state: CreepApiWrapperState) => BoostApiWrapper.decode(state as BoostApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 
