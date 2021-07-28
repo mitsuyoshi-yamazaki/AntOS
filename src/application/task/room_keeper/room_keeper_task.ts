@@ -145,9 +145,10 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
     this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
 
-    const { logs, unresolvedProblems } = this.taskRequestHandler.execute(roomResource, requestHandlerInputs)
-
     const taskOutputs: RoomKeeperTaskOutputs = emptyTaskOutputs()
+    taskOutputs.spawnRequests.push(...requestHandlerInputs.spawnRequests)
+
+    const { logs, unresolvedProblems } = this.taskRequestHandler.execute(roomResource, requestHandlerInputs)
     taskOutputs.logs.push(...logs)
     taskOutputs.problems.push(...unresolvedProblems)
 
