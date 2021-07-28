@@ -36,7 +36,11 @@ export interface Season1105755HarvestMineralProcessState extends ProcessState {
   squadSpawned: boolean
 }
 
+// L
 // Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W26S24 waypoints=W27S25")
+
+// Z
+// Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W25S25 waypoints=W27S25")
 export class Season1105755HarvestMineralProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -61,12 +65,11 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
 
   private readonly harvesterRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover]
   private readonly harvesterBody: BodyPartConstant[] = [
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    WORK, WORK, WORK, WORK, WORK,
     WORK, WORK, WORK, WORK, WORK,
     WORK, WORK, WORK, WORK, WORK,
     WORK, WORK, WORK, WORK, WORK,
