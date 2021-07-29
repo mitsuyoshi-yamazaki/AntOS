@@ -19,6 +19,8 @@ import { processLog } from "process/process_log"
 import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { OperatingSystem } from "os/os"
+import { Season701205PowerHarvesterSwampRunnerProcess } from "./season_701205_power_harvester_swamp_runner_process"
 
 const testing = false as boolean
 
@@ -172,18 +174,29 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (this.stopSpawning !== true && this.squadSpawned !== true) {
-      const needsAttacker = roomTypeOf(this.targetRoomName) === "source_keeper"
+      const harvestingPower = OperatingSystem.os.listAllProcesses().some(processInfo => {
+        if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
+          return false
+        }
+        if (processInfo.process.parentRoomName === this.parentRoomName && processInfo.process.isPickupFinished !== true) {
+          return true
+        }
+      })
 
-      if (needsAttacker === true && attackers.length < 1) {
-        this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
-      } else {
-        if (harvesters.length < 1) {
-          this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
+      if (harvestingPower !== true) {
+        const needsAttacker = roomTypeOf(this.targetRoomName) === "source_keeper"
+
+        if (needsAttacker === true && attackers.length < 1) {
+          this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
         } else {
-          if (haulers.length < 1) {
-            this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.High)
+          if (harvesters.length < 1) {
+            this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
           } else {
-            this.squadSpawned = true
+            if (haulers.length < 1) {
+              this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.High)
+            } else {
+              this.squadSpawned = true
+            }
           }
         }
       }
