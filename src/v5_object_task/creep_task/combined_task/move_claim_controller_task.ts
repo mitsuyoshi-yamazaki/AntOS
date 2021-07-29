@@ -41,8 +41,8 @@ export class MoveClaimControllerTask implements CreepTask {
     return new MoveClaimControllerTask(state.s, state.r, moveToRoomTask)
   }
 
-  public static create(targetRoomName: RoomName, waypoints: RoomName[]): MoveClaimControllerTask {
-    const moveToRoomTask = MoveToRoomTask.create(targetRoomName, waypoints)
+  public static create(targetRoomName: RoomName, waypoints: RoomName[], canIgnoreSwamp: boolean): MoveClaimControllerTask {
+    const moveToRoomTask = MoveToRoomTask.create(targetRoomName, waypoints, canIgnoreSwamp)
     return new MoveClaimControllerTask(Game.time, targetRoomName, moveToRoomTask)
   }
 

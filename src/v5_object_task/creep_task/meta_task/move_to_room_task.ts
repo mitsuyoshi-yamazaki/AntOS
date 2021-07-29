@@ -18,6 +18,8 @@ export interface MoveToRoomTaskState extends CreepTaskState {
 
   /** exit position */
   e: RoomPositionState | null
+
+  ignoreSwamp: boolean
 }
 
 export class MoveToRoomTask implements CreepTask {
@@ -27,7 +29,8 @@ export class MoveToRoomTask implements CreepTask {
     public readonly startTime: number,
     public readonly destinationRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private exitPosition: RoomPosition | null
+    private exitPosition: RoomPosition | null,
+    private readonly ignoreSwamp: boolean,
   ) {
     this.shortDescription = this.destinationRoomName
   }
@@ -39,16 +42,17 @@ export class MoveToRoomTask implements CreepTask {
       d: this.destinationRoomName,
       w: this.waypoints,
       e: this.exitPosition?.encode() ?? null,
+      ignoreSwamp: this.ignoreSwamp,
     }
   }
 
   public static decode(state: MoveToRoomTaskState): MoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
-    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition)
+    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition, state.ignoreSwamp ?? false)
   }
 
-  public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null)
+  public static create(destinationRoomName: RoomName, waypoints: RoomName[], ignoreSwamp?: boolean): MoveToRoomTask {
+    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, ignoreSwamp ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -93,9 +97,15 @@ export class MoveToRoomTask implements CreepTask {
       noPathFinding: true,
       reusePath,
     }
+    if (this.ignoreSwamp) {
+      noPathFindingOptions.swampCost = 1
+    }
 
     const moveToOptions = ((): MoveToOpts => {
       const options: MoveToOpts = defaultMoveToOptions()
+      if (this.ignoreSwamp) {
+        options.swampCost = 1
+      }
       options.reusePath = reusePath
       if (roomTypeOf(creep.room.name) !== "source_keeper") {
         return options

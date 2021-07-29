@@ -78,7 +78,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
-    const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints)
+    const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
 
     return {
       necessaryRoles: [CreepRole.Claimer],
@@ -87,11 +87,11 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       codename: this.codename,
       initialTask: creepTask,
       priority: CreepSpawnRequestPriority.Medium,
-      body: null
+      body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
     }
   }
 
   public newTaskFor(): CreepTask | null {
-    return MoveClaimControllerTask.create(this.targetRoomName, this.waypoints)
+    return MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
   }
 }
