@@ -22,35 +22,29 @@ export function coloredText(text: string, color: TextColor): string {
   return `<span style='color:${colorValue}'>${text}</span>`
 }
 
-function roomBaseUrl(): string {
-  switch (Environment.world) {
-  case "persistent world":
-  case "simulation":
-    return "https://screeps.com/a/#!/"
-  case "season 3":
-    return "https://screeps.com/shardSeason/#!"
-  }
+function baseUrl(): string {
+  const path = ((): string => {
+    switch (Environment.world) {
+    case "persistent world":
+    case "simulation":
+      return "a"
+    case "season 3":
+      return "season"
+    }
+  })()
+  return `https://screeps.com/${path}/#!`
 }
 
 export function roomLink(roomName: string, opts?: { text?: string, color?: string }): string {
   opts = opts || {}
   const color = opts.color || "#FFFFFF"
   const text = opts.text || roomName
-  return `<a href="${roomBaseUrl()}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
+  return `<a href="${baseUrl()}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
 }
 
-function profileBaseUrl(): string {
-  switch (Environment.world) {
-  case "persistent world":
-  case "simulation":
-    return "https://screeps.com/a/#!/"
-  case "season 3":
-    return "https://screeps.com/season/#!"
-  }
-}
 export function profileLink(username: string, colorCode?: string): string {
   const color = colorCode || "#FFFFFF"
-  return `<a href="${profileBaseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`
+  return `<a href="${baseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`
 }
 
 export function coloredResourceType(resourceType: ResourceConstant): string {
