@@ -43,6 +43,9 @@ export interface Season1105755HarvestMineralProcessState extends ProcessState {
 
 // Z
 // Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W25S25 waypoints=W27S25")
+
+// H
+// Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W26S25 waypoints=W27S25")
 export class Season1105755HarvestMineralProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -338,6 +341,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
         creep.moveTo(harvester, defaultMoveToOptions())
       }
     } else {
+      creep.moveTo(mineral, {range: 3})
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
         processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()
