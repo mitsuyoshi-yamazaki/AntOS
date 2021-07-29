@@ -14,6 +14,7 @@ export interface BoostApiWrapperState extends CreepApiWrapperState {
 
 export class BoostApiWrapper implements ApiWrapper<Creep, BoostApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "boost"
+  public readonly range = 1
 
   private constructor(
     public readonly target: StructureLab,

@@ -19,6 +19,7 @@ export interface WithdrawResourceApiWrapperState extends CreepApiWrapperState {
 
 export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawResourceApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription: string
+  public readonly range = 1
 
   private constructor(
     public readonly target: WithdrawResourceApiWrapperTargetType,

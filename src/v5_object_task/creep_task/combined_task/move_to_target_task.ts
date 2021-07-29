@@ -73,7 +73,7 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, this.moveToOpts(creep))
+      creep.moveTo(this.apiWrapper.target, this.moveToOpts(creep, this.apiWrapper.range))
       return TaskProgressType.InProgress
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -88,15 +88,17 @@ export class MoveToTargetTask implements CreepTask {
     }
   }
 
-  private moveToOpts(creep: Creep): MoveToOpts {
+  private moveToOpts(creep: Creep, range: number): MoveToOpts {
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
       return {
         maxRooms: 1,
         reusePath: 10,
         maxOps: 4000,
+        range,
       }
     }
     const options = defaultMoveToOptions
+    options.range = range
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

@@ -261,6 +261,20 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       return
     }
 
+    if (this.targetRoomName === "W19S24") { // FixMe:
+      const position = new RoomPosition(5, 15, this.targetRoomName)
+      const towers = squad.leader.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }) as StructureTower[]
+      const towerEnergy = towers.length <= 0 ? 0 : towers.reduce((result, current) => (result + current.store.getUsedCapacity(RESOURCE_ENERGY)), 0)
+
+      if (towerEnergy > 0) {
+        if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+          squad.leader.moveTo(position, { swampCost: 1 })
+        }
+        squad.follower.moveTo(squad.leader)
+        return
+      }
+    }
+
     const squadDamage = this.squadDamage(squad)
     if (squadDamage > 1000) {
       const exit = squad.leader.room.findExitTo(this.targetRoomName)

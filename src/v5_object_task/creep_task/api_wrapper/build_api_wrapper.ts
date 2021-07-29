@@ -14,6 +14,7 @@ export interface BuildApiWrapperState extends CreepApiWrapperState {
 
 export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "build"
+  public readonly range = 1
 
   private constructor(
     public readonly target: ConstructionSite<BuildableStructureConstant>,

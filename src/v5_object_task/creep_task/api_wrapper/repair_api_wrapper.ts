@@ -14,6 +14,7 @@ export interface RepairApiWrapperState extends CreepApiWrapperState {
 
 export class RepairApiWrapper implements ApiWrapper<Creep, RepairApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "repair"
+  public readonly range = 1
 
   private constructor(
     public readonly target: AnyStructure,

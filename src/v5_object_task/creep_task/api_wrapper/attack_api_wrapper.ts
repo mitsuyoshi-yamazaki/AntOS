@@ -15,6 +15,7 @@ export interface AttackApiWrapperState extends CreepApiWrapperState {
 
 export class AttackApiWrapper implements ApiWrapper<Creep, AttackApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "attack"
+  public readonly range = 1
 
   private constructor(
     public readonly target: AttackApiWrapperTarget,

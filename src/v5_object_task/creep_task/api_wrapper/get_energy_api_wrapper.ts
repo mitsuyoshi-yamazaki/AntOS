@@ -16,6 +16,7 @@ export interface GetEnergyApiWrapperState extends CreepApiWrapperState {
 
 export class GetEnergyApiWrapper implements ApiWrapper<Creep, GetEnergyApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription: string
+  public readonly range = 0
 
   private constructor(
     public readonly target: GetEnergyApiWrapperTargetType,
