@@ -61,22 +61,20 @@ export class MoveToRoomTask implements CreepTask {
   }
 
   public run(creep: V6Creep): CreepTaskProgress {
-    const directionIndex = (Game.time + this.startTime) % 3
-
     if (creep.pos.x === 0) {  // 部屋の境界に侵入する際はその座標にとどまらない（隣の部屋の境界へ移動する、x:0 === x:49）ため移動先でのみ発火
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT) === OK) {  // エラーは無視する
+      if (creep.move(RIGHT) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT) === OK) {
+      if (creep.move(LEFT) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM) === OK) {
+      if (creep.move(BOTTOM) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP) === OK) {
+      if (creep.move(TOP) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     }
