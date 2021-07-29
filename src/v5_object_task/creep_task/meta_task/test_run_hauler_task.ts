@@ -58,7 +58,7 @@ export class TestRunHaulerTask implements CreepTask {
         return TaskProgressType.InProgress
 
       case ERR_NOT_IN_RANGE:
-        creep.moveTo(this.storage, defaultMoveToOptions)
+        creep.moveTo(this.storage, defaultMoveToOptions())
         return TaskProgressType.InProgress
 
       case ERR_BUSY:
@@ -71,13 +71,13 @@ export class TestRunHaulerTask implements CreepTask {
     }
 
     if (creep.pos.getRangeTo(this.storage.pos) < 5) {
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions)
+      creep.moveTo(this.destinationPosition, defaultMoveToOptions())
       return TaskProgressType.InProgress
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       creep.drop(RESOURCE_ENERGY)
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions)
+      creep.moveTo(this.destinationPosition, defaultMoveToOptions())
       // const droppedResource = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 0)[0]
       // const talk = droppedResource == null ? "no" : "!"  // no
       // creep.say(talk)
@@ -85,7 +85,7 @@ export class TestRunHaulerTask implements CreepTask {
       const droppedResource = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
       if (droppedResource != null) {
         if (droppedResource.pos.isEqualTo(creep.pos) === true) {
-          creep.moveTo(this.destinationPosition, defaultMoveToOptions)
+          creep.moveTo(this.destinationPosition, defaultMoveToOptions())
           return TaskProgressType.InProgress
         }
         creep.pickup(droppedResource)

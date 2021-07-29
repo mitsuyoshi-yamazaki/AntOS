@@ -14,16 +14,20 @@ import { TaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object
 // ---- Types and Constants ---- //
 export type CreepName = string
 
-export const defaultMoveToOptions: MoveToOpts = {
-  maxRooms: 1,
-  reusePath: 3,
-  maxOps: 500,
+export function defaultMoveToOptions(): MoveToOpts {
+  return {
+    maxRooms: 1,
+    reusePath: 3,
+    maxOps: 500,
+  }
 }
 
-export const interRoomMoveToOptions: MoveToOpts = {
-  maxRooms: 3,
-  reusePath: 3,
-  maxOps: 500,
+export function interRoomMoveToOptions(): MoveToOpts {
+  return {
+    maxRooms: 3,
+    reusePath: 3,
+    maxOps: 500,
+  }
 }
 
 // ---- Custon Return Code ---- //

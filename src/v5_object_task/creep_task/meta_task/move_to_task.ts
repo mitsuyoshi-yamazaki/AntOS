@@ -4,7 +4,7 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
-import { defaultMoveToOptions, interRoomMoveToOptions } from "prototype/creep"
+import { interRoomMoveToOptions } from "prototype/creep"
 
 export interface MoveToTaskState extends CreepTaskState {
   /** destination position */
@@ -73,7 +73,7 @@ export class MoveToTask implements CreepTask {
   }
 
   private moveToOpts(): MoveToOpts {
-    const options = interRoomMoveToOptions
+    const options = interRoomMoveToOptions()
     if (this.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

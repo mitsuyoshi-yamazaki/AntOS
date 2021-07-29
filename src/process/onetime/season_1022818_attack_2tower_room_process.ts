@@ -21,7 +21,7 @@ const downgradePosition = new RoomPosition(12, 4, "W11S23")
 const nextRoomName = "W11S22"
 const alignPosition = new RoomPosition(11, 47, nextRoomName)
 
-const moveToOptions = {...defaultMoveToOptions}
+const moveToOptions = defaultMoveToOptions()
 
 type SquadStatus = "spawning" | "moving to target" | "align" | "attack" | "escape"
 export type Season1022818Attack2TowerRoomProcessAttackType = "dismantle" | "downgrade"

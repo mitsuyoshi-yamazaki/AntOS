@@ -118,7 +118,7 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_NOT_IN_RANGE:
-      powerCreep.moveTo(powerSpawn, defaultMoveToOptions)
+      powerCreep.moveTo(powerSpawn, defaultMoveToOptions())
       break
 
     case ERR_NOT_OWNER:

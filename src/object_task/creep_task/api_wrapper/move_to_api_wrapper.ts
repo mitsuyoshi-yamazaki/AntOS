@@ -54,7 +54,7 @@ export class MoveToApiWrapper implements CreepApiWrapper {
     if (range <= 0) {
       PrimitiveLogger.programError(`${this.constructor.name} Unexpectedly ${range}range. Use MoveToPositionApiWrapper instead.`)
     }
-    const moveToOptions = options ?? defaultMoveToOptions
+    const moveToOptions = options ?? defaultMoveToOptions()
     return new MoveToApiWrapper(position, {...moveToOptions, range})
   }
 

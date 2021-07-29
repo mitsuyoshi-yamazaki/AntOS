@@ -97,7 +97,7 @@ export class MoveToTargetTask implements CreepTask {
         range,
       }
     }
-    const options = defaultMoveToOptions
+    const options = defaultMoveToOptions()
     options.range = range
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true

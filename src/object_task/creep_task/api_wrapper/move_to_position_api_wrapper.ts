@@ -48,7 +48,7 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
   }
 
   public static create(position: RoomPosition, options?: MoveToApiOptions): MoveToPositionApiWrapper {
-    return new MoveToPositionApiWrapper(position, options ?? defaultMoveToOptions)
+    return new MoveToPositionApiWrapper(position, options ?? defaultMoveToOptions())
   }
 
   public taskTarget(): TaskTargetPosition {

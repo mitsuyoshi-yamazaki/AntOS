@@ -244,7 +244,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     const targetRange = creep.pos.getRangeTo(target)
 
     if (targetRange > 3) {
-      creep.moveTo(target.pos, defaultMoveToOptions)
+      creep.moveTo(target.pos, defaultMoveToOptions())
     } else if (targetRange < 3) {
       this.fleeFrom(target.pos, creep, 4)
     }
@@ -270,7 +270,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     }
 
     if (creep.harvest(mineral) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(mineral.pos, defaultMoveToOptions)
+      creep.moveTo(mineral.pos, defaultMoveToOptions())
     }
   }
 
@@ -321,7 +321,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
           returnToParentRoom()
           return
         }
-        creep.moveTo(harvester, defaultMoveToOptions)
+        creep.moveTo(harvester, defaultMoveToOptions())
       }
     } else {
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {

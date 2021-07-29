@@ -56,7 +56,7 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
   }
 
   const moveToOptions = ((): MoveToOpts => {
-    const options: MoveToOpts = { ...defaultMoveToOptions }
+    const options: MoveToOpts = defaultMoveToOptions()
     options.reusePath = reusePath
     if (roomTypeOf(creepRoom.name) !== "source_keeper") {
       return options
@@ -132,9 +132,9 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
   if (exitPosition == null) {
     creep.say("no path")
     if (creepRoom.controller != null) {
-      creep.moveTo(creepRoom.controller, defaultMoveToOptions)
+      creep.moveTo(creepRoom.controller, defaultMoveToOptions())
     } else {
-      creep.moveTo(25, 25, defaultMoveToOptions)
+      creep.moveTo(25, 25, defaultMoveToOptions())
     }
     return
   }

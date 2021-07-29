@@ -80,7 +80,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
   private move(creep: Creep): void {
     const cachedPath = getCachedPathFor(this.apiWrapper.source)
     if (cachedPath == null) {
-      creep.moveTo(this.apiWrapper.source, defaultMoveToOptions)
+      creep.moveTo(this.apiWrapper.source, defaultMoveToOptions())
       return
     }
     const result = creep.moveByPath(cachedPath)
@@ -93,7 +93,7 @@ export class MoveHarvestEnergyTask implements CreepTask {
       return
 
     case ERR_NOT_FOUND:
-      creep.moveTo((creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0] ?? this.apiWrapper.source), defaultMoveToOptions)
+      creep.moveTo((creep.pos.findClosestByRange(cachedPath) ?? cachedPath[0] ?? this.apiWrapper.source), defaultMoveToOptions())
       return
 
     case ERR_NOT_OWNER:

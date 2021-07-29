@@ -489,7 +489,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     }
 
     const moveToOptions = ((): MoveToOpts => {
-      const options: MoveToOpts = { ...defaultMoveToOptions }
+      const options: MoveToOpts = defaultMoveToOptions()
       options.reusePath = reusePath
       if (roomTypeOf(creep.room.name) !== "source_keeper") {
         return options
@@ -565,9 +565,9 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, defaultMoveToOptions)
+        creep.moveTo(creep.room.controller, defaultMoveToOptions())
       } else {
-        creep.moveTo(25, 25, defaultMoveToOptions)
+        creep.moveTo(25, 25, defaultMoveToOptions())
       }
       return
     }

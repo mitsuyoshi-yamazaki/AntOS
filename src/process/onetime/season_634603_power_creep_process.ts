@@ -132,7 +132,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       return false
 
     case ERR_NOT_IN_RANGE:
-      powerCreep.moveTo(regenSource, defaultMoveToOptions)
+      powerCreep.moveTo(regenSource, defaultMoveToOptions())
       return true
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -172,7 +172,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     case ERR_NOT_IN_RANGE:
       if (isMoving !== true) {
-        powerCreep.moveTo(spawn, defaultMoveToOptions)
+        powerCreep.moveTo(spawn, defaultMoveToOptions())
         return true
       }
       return false
@@ -205,7 +205,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     case ERR_TIRED:
       if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
-        powerCreep.moveTo(store, defaultMoveToOptions)
+        powerCreep.moveTo(store, defaultMoveToOptions())
       }
       if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 200) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
         powerCreep.transfer(store, RESOURCE_OPS, 100)
@@ -233,7 +233,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_NOT_IN_RANGE:
-      powerCreep.moveTo(powerSpawn, defaultMoveToOptions)
+      powerCreep.moveTo(powerSpawn, defaultMoveToOptions())
       break
 
     case ERR_NOT_OWNER:
