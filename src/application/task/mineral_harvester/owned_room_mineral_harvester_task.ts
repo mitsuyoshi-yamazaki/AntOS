@@ -19,6 +19,8 @@ import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_tas
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 import { HarvestMineralApiWrapper } from "object_task/creep_task/api_wrapper/harvest_mineral_api_wrapper"
 import { MissingTargetStructureProblem } from "application/problem/creep/missing_target_structure_problem"
+import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
+import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 
 type OwnedRoomMineralHarvesterTaskOutput = void
 type OwnedRoomMineralHarvesterTaskProblemTypes = UnexpectedProblem
@@ -127,6 +129,18 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
         return {
           creepName: creep.name,
           task: MoveToTargetTask.create(TransferApiWrapper.create(transferTarget, mineralType)),
+        }
+      }
+
+      const containers = mineral.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } }) as StructureContainer[]
+      const container = containers.find(c => (c.store.getUsedCapacity(mineral.mineralType) > 0))
+      if (container) {
+        return {
+          creepName: creep.name,
+          task: SequentialTask.create([
+            MoveToTargetTask.create(WithdrawApiWrapper.create(container, mineral.mineralType)),
+            MoveToTargetTask.create(HarvestMineralApiWrapper.create(mineral)),
+          ]),
         }
       }
 
