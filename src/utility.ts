@@ -1,4 +1,4 @@
-import { coloredResourceType, coloredText, resourceColorCode, roomLink, textColor, TextColor } from "utility/log"
+import { coloredResourceType, coloredText, profileLink, resourceColorCode, roomLink, textColor, TextColor } from "utility/log"
 import { generateUniqueId } from "utility/unique_id"
 
 export function room_link(room_name: string, opts?: { text?: string, color?: string }): string {
@@ -54,9 +54,7 @@ export function room_history_link(room_name: string, ticks: number, opts?: {text
 }
 
 export function profile_link(username: string, opts?: {color?: string}) {
-  opts = opts || {}
-  const color = opts.color || '#FFFFFF'
-  return `<a href="https://screeps.com/a/#!/profile/${username}", style='color:${color}'>${username}</a>`
+  return profileLink(username, opts?.color)
 }
 
 export function colored_resource_type(resource_type: ResourceConstant): string {

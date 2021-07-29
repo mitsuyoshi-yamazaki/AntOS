@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { coloredText, roomLink } from "utility/log"
+import { coloredText, profileLink, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "process/process_state"
@@ -244,9 +244,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         if (whitelistedHarvestCreep != null) {
           const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => creep.body.some(b => (b.type === ATTACK)))
           if (isHarvesting === true) {
-            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is trying to harvest ${roomLink(this.targetRoomName)} power`)
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is trying to harvest ${roomLink(this.targetRoomName)} power`)
           } else {
-            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${whitelistedHarvestCreep.owner.username} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
             this.pickupFinished = true
 
             World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true).forEach(creep => {
@@ -307,7 +307,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
     const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
-    processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+    processLog(this, `${this.parentRoomName} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
 
     if (this.pickupFinished === true) {
       const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)

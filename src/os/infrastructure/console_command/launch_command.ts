@@ -26,6 +26,7 @@ import { Environment } from "utility/environment"
 import { Season1105755HarvestMineralProcess } from "process/onetime/season_1105755_harvest_mineral_process"
 import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_lab_charger_process"
 import { Season1143119BoostedAttackProcess } from "process/onetime/season_1143119_boosted_attack_process"
+import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_send_mineral_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -92,6 +93,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1143119BoostedAttackProcess":
       result = this.launchSeason1143119BoostedAttackProcess()
+      break
+    case "Season1200082SendMineralProcess":
+      result = this.launchSeason1200082SendMineralProcess()
       break
     default:
       break
@@ -503,6 +507,24 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2))
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1200082SendMineralProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1200082SendMineralProcess.create(processId, roomName, targetRoomName)
     })
     return Result.Succeeded(process)
   }

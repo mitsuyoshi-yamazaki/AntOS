@@ -1,3 +1,5 @@
+import { Environment } from "./environment"
+
 const textColors: { [index: string]: string } = {
   // Log level
   info: "white",
@@ -20,12 +22,26 @@ export function coloredText(text: string, color: TextColor): string {
   return `<span style='color:${colorValue}'>${text}</span>`
 }
 
+function baseUrl(): string {
+  switch (Environment.world) {
+  case "persistent world":
+  case "simulation":
+    return "https://screeps.com/a/#!/"
+  case "season 3":
+    return "https://screeps.com/shardSeason/#!"
+  }
+}
+
 export function roomLink(roomName: string, opts?: { text?: string, color?: string }): string {
   opts = opts || {}
   const color = opts.color || "#FFFFFF"
   const text = opts.text || roomName
-  const path = Game.shard.name === "shardSeason" ? "season" : "a"
-  return `<a href="https://screeps.com/${path}/#!/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
+  return `<a href="${baseUrl()}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
+}
+
+export function profileLink(username: string, colorCode?: string): string {
+  const color = colorCode || "#FFFFFF"
+  return `<a href="${baseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`
 }
 
 export function coloredResourceType(resourceType: ResourceConstant): string {
