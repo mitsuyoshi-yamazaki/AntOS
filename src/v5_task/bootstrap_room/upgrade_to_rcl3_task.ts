@@ -158,7 +158,8 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
 
-    const constructionSite = targetRoomObjects.getConstructionSite()
+    // const constructionSite = targetRoomObjects.getConstructionSite()
+    const constructionSite = creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
