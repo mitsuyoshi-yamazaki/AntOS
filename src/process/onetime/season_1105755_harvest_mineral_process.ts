@@ -181,6 +181,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
         if (processInfo.process.parentRoomName === this.parentRoomName && processInfo.process.isPickupFinished !== true) {
           return true
         }
+        return false
       })
 
       if (harvestingPower !== true) {
