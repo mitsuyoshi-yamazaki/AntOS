@@ -6,6 +6,7 @@ import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProc
 import { Season1105755HarvestMineralProcess, Season1105755HarvestMineralProcessState } from "./onetime/season_1105755_harvest_mineral_process"
 import { Season1143119BoostedAttackProcess, Season1143119BoostedAttackProcessState } from "./onetime/season_1143119_boosted_attack_process"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessState } from "./onetime/season_1143119_lab_charger_process"
+import { Season1200082SendMineralProcess, Season1200082SendMineralProcessState } from "./onetime/season_1200082_send_mineral_process"
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProcessState } from "./onetime/season_570208_dismantle_rcl2_room_process"
@@ -54,6 +55,7 @@ class ProcessTypes {
   "Season1105755HarvestMineralProcess" = (state: ProcessState) => Season1105755HarvestMineralProcess.decode(state as unknown as Season1105755HarvestMineralProcessState)
   "Season1143119LabChargerProcess" = (state: ProcessState) => Season1143119LabChargerProcess.decode(state as unknown as Season1143119LabChargerProcessState)
   "Season1143119BoostedAttackProcess" = (state: ProcessState) => Season1143119BoostedAttackProcess.decode(state as unknown as Season1143119BoostedAttackProcessState)
+  "Season1200082SendMineralProcess" = (state: ProcessState) => Season1200082SendMineralProcess.decode(state as unknown as Season1200082SendMineralProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
