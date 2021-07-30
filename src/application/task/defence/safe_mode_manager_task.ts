@@ -88,13 +88,16 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
 
         const result = roomResource.controller.activateSafeMode()
         switch (result) {
-        case OK:
+        case OK: {
+          const message = `${roomLink(this.roomName)} activate safe mode (${invader}), attacker: ${profileLink(invader.owner.username)}, hits: ${invader.hits}, hitsMax: ${invader.hitsMax}`
+          PrimitiveLogger.fatal(message)
           taskOutputs.logs.push({
             taskIdentifier: this.identifier,
             logEventType: "event",
-            message: `${roomLink(this.roomName)} activate safe mode (${invader}), attacker: ${profileLink(invader.owner.username)}`
+            message,
           })
           return taskOutputs
+        }
 
         case ERR_BUSY:
         case ERR_NOT_ENOUGH_RESOURCES:
