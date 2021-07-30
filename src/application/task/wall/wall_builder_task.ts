@@ -14,7 +14,7 @@ import { createCreepBody } from "utility/creep_body"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-import { BuildApiWrapper } from "object_task/creep_task/api_wrapper/build_api_wrapper"
+import { BuildWallTask } from "object_task/creep_task/task/build_wall_task"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 
 const wallTypes: StructureConstant[] = [
@@ -140,7 +140,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     const constructionSite: ConstructionSite<STRUCTURE_WALL> | ConstructionSite<STRUCTURE_RAMPART> | null = roomResource.constructionSites
       .find(site => wallTypes.includes(site.structureType)) as ConstructionSite<STRUCTURE_WALL> | ConstructionSite<STRUCTURE_RAMPART> | null
     if (constructionSite != null) {
-      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+      return BuildWallTask.create(constructionSite)
     }
 
     const walls = [
