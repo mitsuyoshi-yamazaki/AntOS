@@ -17,7 +17,7 @@ export type CreepName = string
 export function defaultMoveToOptions(): MoveToOpts {
   return {
     maxRooms: 1,
-    reusePath: 3,
+    reusePath: 5,
     maxOps: 500,
   }
 }
@@ -25,8 +25,8 @@ export function defaultMoveToOptions(): MoveToOpts {
 export function interRoomMoveToOptions(): MoveToOpts {
   return {
     maxRooms: 3,
-    reusePath: 3,
-    maxOps: 500,
+    reusePath: 20,
+    maxOps: 1500,
   }
 }
 
