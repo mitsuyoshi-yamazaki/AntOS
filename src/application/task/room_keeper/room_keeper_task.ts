@@ -27,6 +27,7 @@ import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/se
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
 import { ResearchTask, ResearchTaskState } from "../research/research_task"
 import { parseLabs } from "script/room_plan"
+import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
 
 const config = {
   powerHarvestingEnabled: true
@@ -47,15 +48,12 @@ export interface RoomKeeperTaskState extends TaskState {
     /** find power bank task state */
     pf: Season3FindPowerBankTaskState | null
 
+    safeModeTaskState: SafeModeManagerTaskState
     mineralHarvesterTaskState: OwnedRoomMineralHarvesterTaskState | null
     researchTaskState: ResearchTaskState | null
   }
 }
 
-/**
- * - [ ] タスクの開始
- * - [ ] タスクの終了条件（親が決める
- */
 export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes, RoomKeeperPerformance, RoomKeeperPerformanceState> {
   public readonly taskType = "RoomKeeperTask"
   public readonly identifier: TaskIdentifier
@@ -69,6 +67,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     roomName: RoomName,
     public readonly performanceState: RoomKeeperPerformanceState,
     private readonly children: {  // TODO: economyTasks: {[index: string]: EconomyTask} などの形式にしてprioritize忘れがないようにする
+      safeMode: SafeModeManagerTask,
       findPowerBank: Season3FindPowerBankTask | null,
       mineralHarvester: OwnedRoomMineralHarvesterTask | null,
       research: ResearchTask | null,
@@ -89,6 +88,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       pf: this.performanceState,
       c: {
         pf: this.children.findPowerBank?.encode() ?? null,
+        safeModeTaskState: this.children.safeMode.encode(),
         mineralHarvesterTaskState: this.children.mineralHarvester?.encode() ?? null,
         researchTaskState: this.children.research?.encode() ?? null,
       },
@@ -101,6 +101,12 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         return null
       }
       return Season3FindPowerBankTask.decode(state.c.pf)
+    })()
+    const safeMode = ((): SafeModeManagerTask => {
+      if (state.c.safeModeTaskState == null) {  // Migration
+        return SafeModeManagerTask.create(state.r)
+      }
+      return SafeModeManagerTask.decode(state.c.safeModeTaskState)
     })()
     const mineralHarvester = ((): OwnedRoomMineralHarvesterTask | null => {
       if (state.c.mineralHarvesterTaskState == null) {
@@ -116,6 +122,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     })()
     const children = {
       findPowerBank,
+      safeMode,
       mineralHarvester,
       research,
     }
@@ -125,6 +132,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   public static create(roomName: RoomName): RoomKeeperTask {
     const children = {
       findPowerBank: null,
+      safeMode: SafeModeManagerTask.create(roomName),
       mineralHarvester: null,
       research: null,
     }
@@ -144,6 +152,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
     this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
     this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
+
+    const safeModeOutput = this.children.safeMode.runSafely(roomResource)
+    this.concatRequests(safeModeOutput, this.children.safeMode.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
     const taskOutputs: RoomKeeperTaskOutputs = emptyTaskOutputs()
     taskOutputs.spawnRequests.push(...requestHandlerInputs.spawnRequests)
