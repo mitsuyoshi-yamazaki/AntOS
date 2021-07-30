@@ -19,17 +19,22 @@ import { GameConstants } from "utility/constants"
 
 const testing = false as boolean
 
-type TowerCount = 0 | 1 | 2
+type TowerCount = 0 | 1 | 2 | 3
 
 const tower1boost: ResourceConstant[] = [
   RESOURCE_LEMERGIUM_ALKALIDE,
   RESOURCE_KEANIUM_OXIDE,
 ]
 const tower2boost: ResourceConstant[] = [
-  RESOURCE_LEMERGIUM_ALKALIDE,
-  RESOURCE_KEANIUM_OXIDE,
+  ...tower1boost,
   RESOURCE_GHODIUM_ALKALIDE,
 ]
+const tower3boost: ResourceConstant[] = [
+  ...tower2boost,
+  RESOURCE_ZYNTHIUM_OXIDE,
+]
+
+// Game.rooms["W14S28"].find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }).filter(lab => (lab.mineralType != null && ["LHO2", "KO"].includes(lab.mineralType)))
 
 const healBoost = 3
 
@@ -78,6 +83,19 @@ const tower2AttackerBody: BodyPartConstant[] = [
   HEAL, HEAL, HEAL, HEAL,
 ]
 
+const tower3AttackerBody: BodyPartConstant[] = [
+  TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+  TOUGH, TOUGH, TOUGH, TOUGH,
+  RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL,
+]
+
 export interface Season1143119BoostedAttackProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -95,11 +113,12 @@ export interface Season1143119BoostedAttackProcessState extends ProcessState {
   squadState: SquadState | null
 }
 
-// Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W19S24 waypoints=W14S30,W20S30,W20S25 tower_count=1")
+// Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 tower_count=3")
 export class Season1143119BoostedAttackProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
+  private readonly boost: ResourceConstant[]
   private readonly attackerRoles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
   private readonly attackerBody: BodyPartConstant[]
 
@@ -118,13 +137,20 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
     switch (this.towerCount) {
     case 0:
+      this.boost = []
       this.attackerBody = tower0AttackerBody
       break
     case 1:
+      this.boost = tower1boost
       this.attackerBody = tower1AttackerBody
       break
     case 2:
+      this.boost = tower2boost
       this.attackerBody = tower2AttackerBody
+      break
+    case 3:
+      this.boost = tower3boost
+      this.attackerBody = tower3AttackerBody
       break
     }
   }
@@ -145,7 +171,6 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
   public static decode(state: Season1143119BoostedAttackProcessState): Season1143119BoostedAttackProcess {
     return new Season1143119BoostedAttackProcess(state.l, state.i, state.p, state.tr, state.w, state.ti, state.squadState, state.towerCount)
-    // return new Season1143119BoostedAttackProcess(state.l, state.i, state.p, "W19S24", ["W20S27", "W20S25"], state.ti, state.squadState, state.towerCount)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], towerCount: TowerCount): Season1143119BoostedAttackProcess {
@@ -203,16 +228,13 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
   private requestAttacker(priority: CreepSpawnRequestPriority, numberOfCreeps: number, room: Room): void {
     const initialTask = ((): CreepTask | null => {
-      if (testing === true) {
-        return null
-      }
       switch (this.towerCount) {
       case 0:
         return null
       case 1:
-        return this.boostTask(room, tower1boost)
       case 2:
-        return this.boostTask(room, tower2boost)
+      case 3:
+        return this.boostTask(room, this.boost)
       }
     })()
 
@@ -221,7 +243,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       numberOfCreeps,
       codename: this.codename,
       roles: this.attackerRoles,
-      body: testing ? [TOUGH, MOVE] : this.attackerBody,
+      body: testing ? [MOVE] : this.attackerBody,
       initialTask,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -242,6 +264,12 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   }
 
   private runSquad(squad: Squad): void {
+    if (squad.leader.room.name === this.parentRoomName) {
+      if (this.boostedSquad(squad) !== true) {
+        return
+      }
+    }
+
     const movement = this.attackHostileSquad(squad)
     this.healSquad(squad.leader, squad.follower)
 
@@ -303,7 +331,11 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
     if (target != null) {
       if (this.leaderCanMove(squad.leader, squad.follower) === true) {
-        squad.leader.moveTo(target)
+        if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
+          squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
+        } else {
+          squad.leader.moveTo(target, {range: 1})
+        }
       }
       squad.follower.moveTo(squad.leader)
 
@@ -418,6 +450,19 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   }
 
   // ---- Functions ---- //
+  private boostedSquad(squad: Squad): boolean {
+    return this.boostedCreep(squad.leader) && this.boostedCreep(squad.follower)
+  }
+
+  private boostedCreep(creep: Creep): boolean {
+    if (this.boost.length <= 0) {
+      return true
+    }
+    return this.boost.every(boost => {
+      return creep.body.some(body => body.boost === boost)
+    })
+  }
+
   private closestHostile(position: RoomPosition): Creep | null {
     const hostiles = position.findInRange(FIND_HOSTILE_CREEPS, 4)
     if (hostiles.length <= 0) {
@@ -434,9 +479,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
   private targetStructure(room: Room): AnyStructure | null {
     const structureIds = [
-      "60fac975b85fef71b8cbecb9",
-      "60ff58d7396ad586e4299819",
-      "60fca4365587d36380059e55",
+      "60e666eae0ae927d4999b086",
     ] as Id<AnyStructure>[]
     for (const structureId of structureIds) {
       const structure = Game.getObjectById(structureId)

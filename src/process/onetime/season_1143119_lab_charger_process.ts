@@ -17,10 +17,12 @@ const roomName = "W14S28"
 const labId1 = "61011ce4706bd898698bc8dc" as Id<StructureLab>
 const labId2 = "6100dc7bfdeb8837badf5c0b" as Id<StructureLab>
 const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
+const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
 
 const boost1 = RESOURCE_LEMERGIUM_ALKALIDE
 const boost2 = RESOURCE_KEANIUM_OXIDE
 const boost3 = RESOURCE_GHODIUM_ALKALIDE
+const boost4 = RESOURCE_ZYNTHIUM_OXIDE
 
 type LabInfo = {
   boost: MineralBoostConstant,
@@ -72,7 +74,8 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     const lab1 = Game.getObjectById(labId1)
     const lab2 = Game.getObjectById(labId2)
     const lab3 = Game.getObjectById(labId3)
-    if (lab1 == null || lab2 == null || lab3 == null) {
+    const lab4 = Game.getObjectById(labId4)
+    if (lab1 == null || lab2 == null || lab3 == null || lab4 == null) {
       PrimitiveLogger.fatal(`${this.identifier} target lab not found ${roomLink(roomName)}`)
       return
     }
@@ -83,7 +86,10 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       return
     }
 
-    const hasResource = terminal.store.getUsedCapacity(boost1) > 0 || terminal.store.getUsedCapacity(boost2) > 0 || terminal.store.getUsedCapacity(boost3) > 0
+    const hasResource = terminal.store.getUsedCapacity(boost1) > 0
+      || terminal.store.getUsedCapacity(boost2) > 0
+      || terminal.store.getUsedCapacity(boost3) > 0
+      || terminal.store.getUsedCapacity(boost4) > 0
 
     const creepCount = World.resourcePools.countCreeps(roomName, this.identifier, () => true)
     if (hasResource === true && creepCount < 1) {
@@ -102,6 +108,10 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       {
         boost: boost3,
         lab: lab3,
+      },
+      {
+        boost: boost4,
+        lab: lab4,
       },
     ]
     this.runCreep(terminal, labs)
@@ -134,6 +144,9 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     for (const labInfo of labs) {
       if (creep.store.getUsedCapacity(labInfo.boost) <= 0) {
         continue
+      }
+      if (labInfo.lab.store.getFreeCapacity(labInfo.boost) <= 0) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, labInfo.boost))
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(labInfo.lab, labInfo.boost))
     }
