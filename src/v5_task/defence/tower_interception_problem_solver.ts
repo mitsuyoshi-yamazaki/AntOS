@@ -77,6 +77,18 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
         }
         this.targetId = null
       }
+      if (this.roomName === "W6S29") {
+        const min = GameConstants.room.edgePosition.min + 2
+        const max = GameConstants.room.edgePosition.max - 2
+        const hostileInsideRoom = hostileCreeps.filter(creep => {
+          if (creep.pos.x < (min + 1) || creep.pos.x > (max - 1) || creep.pos.y < min || creep.pos.y > max) {
+            return false
+          }
+          return true
+        })
+        return objects.controller.pos.findClosestByRange(hostileInsideRoom)
+      }
+
       const min = GameConstants.room.edgePosition.min
       const max = GameConstants.room.edgePosition.max
       const hostileInsideRoom = hostileCreeps.filter(creep => {
