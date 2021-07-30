@@ -28,6 +28,8 @@ import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } fro
 import { ResearchTask, ResearchTaskState } from "../research/research_task"
 import { parseLabs } from "script/room_plan"
 import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
+import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
+import { ConsumeTaskPerformance, ConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
 
 const config = {
   powerHarvestingEnabled: true
@@ -51,6 +53,7 @@ export interface RoomKeeperTaskState extends TaskState {
     safeModeTaskState: SafeModeManagerTaskState
     mineralHarvesterTaskState: OwnedRoomMineralHarvesterTaskState | null
     researchTaskState: ResearchTaskState | null
+    wallBuilderTaskState: WallBuilderTaskState | null
   }
 }
 
@@ -71,6 +74,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       findPowerBank: Season3FindPowerBankTask | null,
       mineralHarvester: OwnedRoomMineralHarvesterTask | null,
       research: ResearchTask | null,
+      wallBuilder: WallBuilderTask | null,
     },
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
@@ -91,6 +95,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         safeModeTaskState: this.children.safeMode.encode(),
         mineralHarvesterTaskState: this.children.mineralHarvester?.encode() ?? null,
         researchTaskState: this.children.research?.encode() ?? null,
+        wallBuilderTaskState: this.children.wallBuilder?.encode() ?? null,
       },
     }
   }
@@ -120,11 +125,18 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       }
       return ResearchTask.decode(state.c.researchTaskState)
     })()
+    const wallBuilder = ((): WallBuilderTask | null => {
+      if (state.c.wallBuilderTaskState == null) {
+        return null
+      }
+      return WallBuilderTask.decode(state.c.wallBuilderTaskState)
+    })()
     const children = {
       findPowerBank,
       safeMode,
       mineralHarvester,
       research,
+      wallBuilder,
     }
     return new RoomKeeperTask(state.s, state.ss, state.r, state.pf, children)
   }
@@ -135,6 +147,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       safeMode: SafeModeManagerTask.create(roomName),
       mineralHarvester: null,
       research: null,
+      wallBuilder: null,
     }
     return new RoomKeeperTask(Game.time, Game.time, roomName, emptyRoomKeeperPerformanceState(), children)
   }
@@ -152,6 +165,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
     this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
     this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
+    this.runWallBuilder(roomResource, requestHandlerInputs, taskPriority)
 
     const safeModeOutput = this.children.safeMode.runSafely(roomResource)
     this.concatRequests(safeModeOutput, this.children.safeMode.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
@@ -170,6 +184,18 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
 
     return taskOutputs
+  }
+
+  // ---- Wall ---- //
+  private runWallBuilder(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (roomResource.controller.level <= 4) {
+      return
+    }
+    if (this.children.wallBuilder == null) {
+      this.children.wallBuilder = WallBuilderTask.create(this.roomName)
+    }
+    const outputs = this.children.wallBuilder.runSafely(roomResource)
+    this.concatRequests(outputs, this.children.wallBuilder.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
   }
 
   // ---- Research ---- //
@@ -252,7 +278,10 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    if ((Game.time % 1511) !== 73) {
+    if (((Game.time + this.startTime) % 1511) !== 73) {
+      return null
+    }
+    if (roomResource.controller.level < 8) {
       return null
     }
     if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
@@ -401,6 +430,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       observeTasks.push(this.children.findPowerBank)
     }
 
+    const consumeTasks: AnyTask<ConsumeTaskPerformance, ConsumeTaskPerformanceState>[] = []
+    if (this.children.wallBuilder != null) {
+      consumeTasks.push(this.children.wallBuilder)
+    }
+
     const getEstimations = <Performance extends TaskPerformance, PerformanceState extends TaskPerformanceState>(tasks: AnyTask<Performance, PerformanceState>[]): TaskPrioritizerTaskEstimation<Performance>[] => {
       return tasks.map(task => ({
         taskIdentifier: task.identifier,
@@ -412,6 +446,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       roomResource,
       getEstimations(economyTasks),
       getEstimations(observeTasks),
+      getEstimations(consumeTasks),
     )
   }
 
