@@ -63,7 +63,7 @@ export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
 
     switch (result) {
     case OK: {
-      const repairAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
+      const repairAmount = creep.body.filter(b => b.type === WORK).length * 1 // REPAIR_POWERはhitsの回復量
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= repairAmount) {
         return CreepApiWrapperProgress.Finished(true)
       } else {
