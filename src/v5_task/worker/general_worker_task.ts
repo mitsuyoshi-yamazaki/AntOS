@@ -120,8 +120,8 @@ export class GeneralWorkerTask extends Task {
   }
 
   private workerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 3 // TODO: 算出する
-    const unit: BodyPartConstant[] = [CARRY, CARRY, WORK, WORK, MOVE]
+    const maximumCarryUnitCount = 6 // TODO: 算出する
+    const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
@@ -170,7 +170,7 @@ export class GeneralWorkerTask extends Task {
     if (damagedStructure != null) {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
-    const constructionSite = objects.getConstructionSite()
+    const constructionSite = objects.getConstructionSite(creep.pos)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
