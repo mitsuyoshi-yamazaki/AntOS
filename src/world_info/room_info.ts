@@ -323,10 +323,10 @@ export class OwnedRoomObjects {
 
     if (chargeableStructures.length <= 0) {
       if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
-        if (terminal.store.getFreeCapacity() > 50000) {
+        if (terminal.store.getFreeCapacity() > 30000) {
           if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
             chargeableStructures.push(terminal)
-          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 200000) {
+          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000) {
             chargeableStructures.push(terminal)
           }
         }

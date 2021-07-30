@@ -156,7 +156,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
         return false
       }
       const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-      return storedEnergy > 110000
+      return storedEnergy > 130000
     })()
 
     const energyCapacity = objects.controller.room.energyCapacityAvailable
@@ -168,7 +168,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return Math.min(max, 5)
       }
-      return Math.min(max, 6)
+      return Math.min(max, 8)
     })()
 
     for (let i = 0; i < maxBodyCount; i += 1) {
