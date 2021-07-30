@@ -66,8 +66,11 @@ export class PrimitiveWorkerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier)
     ]
+
+    if (objects.roomInfo.bootstrapping !== true) {
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier))
+    }
 
     this.checkProblemFinders(problemFinders)
 

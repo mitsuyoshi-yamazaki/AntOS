@@ -41,6 +41,8 @@ export interface RoomInfoMemory {
     /** container id */
     c: Id<StructureContainer> | null
   } | null
+
+  bootstrapping: boolean
 }
 
 export interface RoomInfo {
@@ -60,6 +62,8 @@ export interface RoomInfo {
     link: StructureLink | null
     container: StructureContainer | null
   } | null
+
+  bootstrapping: boolean
 }
 
 export interface RoomsInterface {
@@ -191,6 +195,7 @@ export class OwnedRoomObjects {
           energyStoreStructures: [],
           upgrader: null,
           distributor: null,
+          bootstrapping: false,
         }
       }
       return decodeRoomInfo(roomInfoMemory)
@@ -557,7 +562,9 @@ export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
         link,
         container,
       }
-    })()
+    })(),
+
+    bootstrapping: roomInfoMemory.bootstrapping ?? false
   }
 }
 
@@ -583,7 +590,8 @@ function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
         l: roomInfo.upgrader.link?.id ?? null,
         c: roomInfo.upgrader.container?.id ?? null,
       }
-    })()
+    })(),
+    bootstrapping: roomInfo.bootstrapping,
   }
 }
 
