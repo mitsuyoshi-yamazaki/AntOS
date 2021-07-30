@@ -3,7 +3,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName, roomTypeOf } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -34,6 +34,7 @@ export interface Season1105755HarvestMineralProcessState extends ProcessState {
   /** waypoints */
   w: RoomName[]
 
+  mineralType: MineralConstant | null
   stopSpawning: boolean
   squadSpawned: boolean
 }
@@ -105,6 +106,7 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     public readonly waypoints: RoomName[],
     private stopSpawning: boolean,
     private squadSpawned: boolean,
+    private mineralType: MineralConstant | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -120,19 +122,21 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
       w: this.waypoints,
       stopSpawning: this.stopSpawning,
       squadSpawned: this.squadSpawned,
+      mineralType: this.mineralType,
     }
   }
 
   public static decode(state: Season1105755HarvestMineralProcessState): Season1105755HarvestMineralProcess {
-    return new Season1105755HarvestMineralProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true)
+    return new Season1105755HarvestMineralProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true, state.mineralType)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1105755HarvestMineralProcess {
-    return new Season1105755HarvestMineralProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false)
+    return new Season1105755HarvestMineralProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false, null)
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const mineral = this.mineralType ? coloredResourceType(this.mineralType) : ""
+    return `${roomLink(this.targetRoomName)} ${mineral}`
   }
 
   public didReceiveMessage(message: string): string {
@@ -149,6 +153,9 @@ export class Season1105755HarvestMineralProcess implements Process, Procedural, 
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
     if (mineral != null && mineral.mineralAmount <= 0) {
       this.stopSpawning = true
+    }
+    if (mineral != null) {
+      this.mineralType = mineral.mineralType
     }
 
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
