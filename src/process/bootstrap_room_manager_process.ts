@@ -27,6 +27,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
 // Game.io("message 544054000 parent_room_name=W1S25 target_room_name=W3S24 waypoints=W1S24,W2S24,W2S23 target_gcl=6")
 // Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W23S30,W20S30,W20S23 target_gcl=7")
 // Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W24S23 target_gcl=7")
+// Game.io("message 544054000 parent_room_name=W3S24 target_room_name=W6S29 waypoints=W3S25,W5S25,W5S29 target_gcl=7")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
@@ -136,7 +137,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
 
     const targetRoom = World.rooms.get(targetRoomName)
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true) {
+    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
       return `${roomLink(targetRoomName)} is already mine`
     }
     const bootstrappingRoomNames = this.tasks.map(task => task.targetRoomName)
