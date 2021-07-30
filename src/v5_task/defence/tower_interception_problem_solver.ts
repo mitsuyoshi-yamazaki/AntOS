@@ -5,6 +5,7 @@ import { Task, TaskStatus } from "v5_task/task"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
+import { GameConstants } from "utility/constants"
 
 export interface TowerInterceptionProblemSolverState extends ProblemSolverState {
   /** room name */
@@ -57,7 +58,17 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
           if (stored.hits < stored.hitsMax) {
             return stored
           }
-          const otherTargets = hostileCreeps.filter(creep => creep.id !== this.targetId)
+          const min = GameConstants.room.edgePosition.min
+          const max = GameConstants.room.edgePosition.max
+          const otherTargets = hostileCreeps.filter(creep => {
+            if (creep.id === this.targetId) {
+              return false
+            }
+            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+              return false
+            }
+            return true
+          })
           const target = objects.controller.pos.findClosestByRange(otherTargets)
           if (target != null) {
             return target
@@ -66,7 +77,15 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
         }
         this.targetId = null
       }
-      return objects.controller.pos.findClosestByRange(hostileCreeps)
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      const hostileInsideRoom = hostileCreeps.filter(creep => {
+        if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+          return false
+        }
+        return true
+      })
+      return objects.controller.pos.findClosestByRange(hostileInsideRoom)
     })()
 
     if (target == null) {
