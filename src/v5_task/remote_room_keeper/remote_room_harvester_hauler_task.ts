@@ -183,7 +183,7 @@ export class RemoteRoomHaulerTask extends Task {
 
     if (creep.store.getFreeCapacity() > 0) {
       const container = creep.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
-      if (container != null) {
+      if (container != null && container.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(WithdrawResourceApiWrapper.create(container, RESOURCE_ENERGY))
       }
     }
