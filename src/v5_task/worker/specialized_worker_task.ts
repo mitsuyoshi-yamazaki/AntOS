@@ -102,7 +102,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
       }
 
-      const constructionSite = objects.getConstructionSite()
+      const constructionSite = objects.getConstructionSite(creep.pos)
       if (constructionSite != null) {
         return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
       }

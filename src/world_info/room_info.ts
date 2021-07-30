@@ -457,8 +457,8 @@ export class OwnedRoomObjects {
     })
   }
 
-  public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
-    return this.constructionSites[0] ?? null  // TODO: 優先順位づけ
+  public getConstructionSite(position: RoomPosition): ConstructionSite<BuildableStructureConstant> | null {
+    return position.findClosestByPath(this.constructionSites)  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {
