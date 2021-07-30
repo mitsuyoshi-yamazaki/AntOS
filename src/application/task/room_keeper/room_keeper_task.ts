@@ -255,6 +255,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     if ((Game.time % 1511) !== 73) {
       return null
     }
+    if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+      return null
+    }
     const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
       return null
@@ -324,7 +327,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         return
       }
       const decay = powerBankInfo.decayedBy - Game.time
-      if (powerBankInfo.powerAmount < 1500 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
+      if (powerBankInfo.powerAmount < 1200 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
         return
       }
       if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {
