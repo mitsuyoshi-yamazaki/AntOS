@@ -27,6 +27,7 @@ import { Season1105755HarvestMineralProcess } from "process/onetime/season_11057
 import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_lab_charger_process"
 import { Season1143119BoostedAttackProcess } from "process/onetime/season_1143119_boosted_attack_process"
 import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_send_mineral_process"
+import { Season1244215GenericDismantleProcess } from "process/onetime/season_1244215_generic_dismantle_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -501,12 +502,12 @@ export class LaunchCommand implements ConsoleCommand {
     if (isNaN(parsedTowerCount) === true) {
       return Result.Failed(`tower_count is not a number (${towerCount})`)
     }
-    if ([0, 1, 2].includes(parsedTowerCount) !== true) {
+    if ([0, 1, 2, 3].includes(parsedTowerCount) !== true) {
       return Result.Failed(`Not supported tower_count ${parsedTowerCount}`)
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2))
+      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2 | 3))
     })
     return Result.Succeeded(process)
   }
@@ -525,6 +526,33 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1200082SendMineralProcess.create(processId, roomName, targetRoomName)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1244215GenericDismantleProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const targetId = args.get("target_id")
+    if (targetId == null) {
+      return this.missingArgumentError("target_id")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>)
     })
     return Result.Succeeded(process)
   }
