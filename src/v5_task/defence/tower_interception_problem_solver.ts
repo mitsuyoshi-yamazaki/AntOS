@@ -91,12 +91,17 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
 
       const min = GameConstants.room.edgePosition.min
       const max = GameConstants.room.edgePosition.max
-      const hostileInsideRoom = hostileCreeps.filter(creep => {
-        if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
-          return false
+      const hostileInsideRoom = ((): AnyCreep[] => {
+        if ((Game.time % 21) < 7) {
+          return hostileCreeps
         }
-        return true
-      })
+        return hostileCreeps.filter(creep => {
+          if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+            return false
+          }
+          return true
+        })
+      })()
       return objects.controller.pos.findClosestByRange(hostileInsideRoom)
     })()
 
