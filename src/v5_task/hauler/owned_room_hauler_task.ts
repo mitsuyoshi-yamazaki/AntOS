@@ -79,7 +79,8 @@ export class OwnedRoomHaulerTask extends Task {
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energySources.length * 1 // TODO: 距離等を加味する
+    const energyCapacity = objects.sources.reduce((result, current) => result + current.energyCapacity, 0)
+    const minimumCreepCount = Math.ceil(energyCapacity / 3000)
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
