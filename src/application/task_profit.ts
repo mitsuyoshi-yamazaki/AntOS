@@ -1,7 +1,7 @@
 import type { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import type { Timestamp } from "utility/timestamp"
 
-export type TaskPerformancePeriodType = "one time" | "continuous"
+export type TaskPerformancePeriodType = number | "continuous"
 
 export interface TaskPerformance {
   readonly periodType: TaskPerformancePeriodType

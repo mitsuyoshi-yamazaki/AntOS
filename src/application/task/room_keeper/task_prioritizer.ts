@@ -1,5 +1,6 @@
 import type { TaskIdentifier } from "application/task_identifier"
 import type { TaskPerformance } from "application/task_profit"
+import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
 import type { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import type { ObserveTaskPerformance } from "application/task_profit/observe_task_performance"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
@@ -22,6 +23,7 @@ export class TaskPrioritizer {
     roomResource: OwnedRoomResource,
     economyTaskEstimation: TaskPrioritizerTaskEstimation<EconomyTaskPerformance>[],
     observeTaskEstimation: TaskPrioritizerTaskEstimation<ObserveTaskPerformance>[],
+    consumeTaskEstimation: TaskPrioritizerTaskEstimation<ConsumeTaskPerformance>[],
   ): TaskPrioritizerPrioritizedTasks {
 
     const tasks: TaskPrioritizerPrioritizedTasks = {
@@ -29,19 +31,20 @@ export class TaskPrioritizer {
       executableTaskIdentifiers: [],
     }
 
-    let availableSpawnCapacity = GameConstants.creep.life.lifeTime * roomResource.activeStructures.spawns.length
+    // const availableSpawnCapacity = GameConstants.creep.life.lifeTime * roomResource.activeStructures.spawns.length
 
     // TODO: 仮実装
     const checkEstimation = <Performance extends TaskPerformance>(estimation: TaskPrioritizerTaskEstimation<Performance>): void => {
-      tasks.taskIdentifiers.push(estimation.taskIdentifier)
-      if ((availableSpawnCapacity - estimation.estimate.spawnTime) > 0) {
-        tasks.executableTaskIdentifiers.push(estimation.taskIdentifier)
-        availableSpawnCapacity -= estimation.estimate.spawnTime
-      }
+      // tasks.taskIdentifiers.push(estimation.taskIdentifier)
+      // if ((availableSpawnCapacity - estimation.estimate.spawnTime) > 0) {
+      tasks.executableTaskIdentifiers.push(estimation.taskIdentifier)
+      //   availableSpawnCapacity -= estimation.estimate.spawnTime
+      // }
     }
 
     economyTaskEstimation.forEach(estimation => checkEstimation(estimation))
     observeTaskEstimation.forEach(estimation => checkEstimation(estimation))
+    consumeTaskEstimation.forEach(estimation => checkEstimation(estimation))
 
     return tasks
   }

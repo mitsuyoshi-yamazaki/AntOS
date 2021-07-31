@@ -74,7 +74,7 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
     const resourceCost = new Map<ResourceConstant, number>()
 
     return {
-      periodType: "continuous",
+      periodType: 0,
       timeSpent: GameConstants.creep.life.lifeTime,
       spawnTime: 0,
       numberOfCreeps: 0,
@@ -83,6 +83,6 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
   }
 
   public performance(period: Timestamp): EconomyTaskPerformance {
-    return calculateEconomyTaskPerformance(period, "one time", this.performanceState)
+    return calculateEconomyTaskPerformance(period, 0, this.performanceState)
   }
 }
