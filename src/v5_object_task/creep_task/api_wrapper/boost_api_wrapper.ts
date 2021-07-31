@@ -59,7 +59,7 @@ export class BoostApiWrapper implements ApiWrapper<Creep, BoostApiWrapperResult>
     case ERR_INVALID_TARGET:
     case ERR_RCL_NOT_ENOUGH:
     default:
-      PrimitiveLogger.fatal(`lab.boostCreep() returns ${result}, ${creep.name}, lab ${this.target} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`lab.boostCreep() returns ${result}, ${creep.name}, lab ${this.target} in ${roomLink(creep.room.name)} at ${Game.time}`)
       return ERR_PROGRAMMING_ERROR
     }
   }
