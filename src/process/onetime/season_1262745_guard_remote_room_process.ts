@@ -7,7 +7,6 @@ import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
 import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { GameConstants } from "utility/constants"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 export type Season1262745GuardRemoteRoomProcessCreepType = "ranged attacker"
@@ -143,17 +142,18 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       return
     }
 
-    const moved = this.runSingleAttacker(creep)
+    this.runSingleAttacker(creep)
+    // const moved = this.runSingleAttacker(creep)
 
-    if (moved !== true && creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.9)) {
-      const spawn = World.rooms.getOwnedRoomObjects(this.targetRoomName)?.activeStructures.spawns[0]
-      if (spawn != null) {
-        if (spawn.spawning == null && (Game.time % 13) < 6 && spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable) {
-          spawn.renewCreep(creep)
-        }
-        creep.moveTo(spawn, { range: 1 })
-      }
-    }
+    // if (moved !== true && creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.9)) {
+    //   const spawn = World.rooms.getOwnedRoomObjects(this.targetRoomName)?.activeStructures.spawns[0]
+    //   if (spawn != null) {
+    //     if (spawn.spawning == null && (Game.time % 13) < 6 && spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable) {
+    //       spawn.renewCreep(creep)
+    //     }
+    //     creep.moveTo(spawn, { range: 1 })
+    //   }
+    // }
   }
 
   private runSingleAttacker(creep: Creep): boolean {
