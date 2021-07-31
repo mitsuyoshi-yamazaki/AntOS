@@ -9,6 +9,7 @@ import { Season1143119LabChargerProcess, Season1143119LabChargerProcessState } f
 import { Season1200082SendMineralProcess, Season1200082SendMineralProcessState } from "./onetime/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess, Season1244215GenericDismantleProcessState } from "./onetime/season_1244215_generic_dismantle_process"
 import { Season1249418SendHugeCreepProcess, Season1249418SendHugeCreepProcessState } from "./onetime/season_1249418_send_huge_creep_process"
+import { Season1262745GuardRemoteRoomProcess, Season1262745GuardRemoteRoomProcessState } from "./onetime/season_1262745_guard_remote_room_process"
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProcessState } from "./onetime/season_570208_dismantle_rcl2_room_process"
@@ -60,6 +61,7 @@ class ProcessTypes {
   "Season1200082SendMineralProcess" = (state: ProcessState) => Season1200082SendMineralProcess.decode(state as unknown as Season1200082SendMineralProcessState)
   "Season1244215GenericDismantleProcess" = (state: ProcessState) => Season1244215GenericDismantleProcess.decode(state as unknown as Season1244215GenericDismantleProcessState)
   "Season1249418SendHugeCreepProcess" = (state: ProcessState) => Season1249418SendHugeCreepProcess.decode(state as unknown as Season1249418SendHugeCreepProcessState)
+  "Season1262745GuardRemoteRoomProcess" = (state: ProcessState) => Season1262745GuardRemoteRoomProcess.decode(state as unknown as Season1262745GuardRemoteRoomProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
