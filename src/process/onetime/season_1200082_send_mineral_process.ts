@@ -66,6 +66,12 @@ export class Season1200082SendMineralProcess implements Process, Procedural {
       return
     }
 
+    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
+    if (targetRoomObjects == null || targetRoomObjects.activeStructures.terminal == null || targetRoomObjects.activeStructures.terminal.store.getFreeCapacity() < 20000) {
+      processLog(this, `${coloredText("[Warning]", "warn")} No destination terminal in ${roomLink(this.targetRoomName)}`)
+      return
+    }
+
     const resourceTypes = Object.keys(terminal.store) as ResourceConstant[]
     const resourceInfo = ((): { resource: ResourceConstant, amount: number } | null => {
       for (const resourceType of resourceTypes) {
