@@ -4,8 +4,18 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
+import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { Timestamp } from "utility/timestamp"
 
 type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
+type Position = {
+  position: RoomPosition,
+  timestamp: Timestamp
+}
+type PositionState = {
+  position: RoomPositionState,
+  timestamp: Timestamp,
+}
 
 export interface MoveToTargetTaskOptions {
   ignoreSwamp: boolean
@@ -21,6 +31,8 @@ export interface MoveToTargetTaskState extends CreepTaskState {
 
   /** ignore swamp */
   is: boolean
+
+  lastPosition: PositionState | null
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -33,6 +45,7 @@ export class MoveToTargetTask implements CreepTask {
     public readonly startTime: number,
     private readonly apiWrapper: MoveToTargetTaskApiWrapper,
     private readonly options: MoveToTargetTaskOptions,
+    private lastPosition: Position | null,
   ) {
     this.shortDescription = apiWrapper.shortDescription
   }
@@ -43,6 +56,15 @@ export class MoveToTargetTask implements CreepTask {
       t: "MoveToTargetTask",
       as: this.apiWrapper.encode(),
       is: this.options.ignoreSwamp,
+      lastPosition: ((): PositionState | null => {
+        if (this.lastPosition == null) {
+          return null
+        }
+        return {
+          position: this.lastPosition.position.encode(),
+          timestamp: this.lastPosition.timestamp,
+        }
+      })(),
     }
   }
 
@@ -52,13 +74,22 @@ export class MoveToTargetTask implements CreepTask {
       return null
     }
     const options: MoveToTargetTaskOptions = {
-      ignoreSwamp: state.is ?? false  // migration
+      ignoreSwamp: state.is
     }
-    return new MoveToTargetTask(state.s, wrapper as MoveToTargetTaskApiWrapper, options)
+    const lastPosition = ((): Position | null => {
+      if (state.lastPosition == null) {
+        return null
+      }
+      return {
+        position: decodeRoomPosition(state.lastPosition.position),
+        timestamp: state.lastPosition.timestamp,
+      }
+    })()
+    return new MoveToTargetTask(state.s, wrapper as MoveToTargetTaskApiWrapper, options, lastPosition)
   }
 
   public static create(apiWrapper: MoveToTargetTaskApiWrapper, options?: MoveToTargetTaskOptions): MoveToTargetTask {
-    return new MoveToTargetTask(Game.time, apiWrapper, options ?? defaultOptions)
+    return new MoveToTargetTask(Game.time, apiWrapper, options ?? defaultOptions, null)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -73,7 +104,7 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, this.moveToOpts(creep, this.apiWrapper.range))
+      creep.moveTo(this.apiWrapper.target, this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos))
       return TaskProgressType.InProgress
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -88,17 +119,47 @@ export class MoveToTargetTask implements CreepTask {
     }
   }
 
-  private moveToOpts(creep: Creep, range: number): MoveToOpts {
-    if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
-      return {
-        maxRooms: 1,
-        reusePath: 10,
-        maxOps: 4000,
-        range,
+  private moveToOpts(creep: Creep, range: number, targetPosition: RoomPosition): MoveToOpts {
+    if (this.lastPosition != null) {
+      if (this.lastPosition.position.isEqualTo(creep.pos) === true) {
+        if ((Game.time - this.lastPosition.timestamp) > 2) {
+          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+          return {
+            maxRooms,
+            reusePath: 5,
+            maxOps: 4000,
+            range,
+          }
+        }
+      } else {
+        this.lastPosition = {
+          position: creep.pos,
+          timestamp: Game.time
+        }
+      }
+    } else {
+      this.lastPosition = {
+        position: creep.pos,
+        timestamp: Game.time
       }
     }
+
+    if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
+      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+      return {
+        maxRooms,
+        reusePath: 100,
+        maxOps: 4000,
+        range,
+        ignoreCreeps: true,
+      }
+    }
+
     const options = defaultMoveToOptions()
     options.range = range
+    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+    options.reusePath = 100
+    options.ignoreCreeps = true
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

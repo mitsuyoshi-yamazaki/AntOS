@@ -282,7 +282,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_CONTAINER:
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 300) {
           if (structure !== this.roomInfo.upgrader?.container) {
             this.energySources.push(structure)
             this.energyStores.push(structure)
@@ -292,7 +292,7 @@ export class OwnedRoomObjects {
         break
       case STRUCTURE_STORAGE:
         storage = structure
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
           this.energyStores.push(structure)
         }
         break
