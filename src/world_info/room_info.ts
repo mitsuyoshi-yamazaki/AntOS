@@ -458,7 +458,8 @@ export class OwnedRoomObjects {
   }
 
   public getConstructionSite(position: RoomPosition): ConstructionSite<BuildableStructureConstant> | null {
-    return position.findClosestByPath(this.constructionSites)  // TODO: 優先順位づけ
+    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    return position.findClosestByPath(this.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true))  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {

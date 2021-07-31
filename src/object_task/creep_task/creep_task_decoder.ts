@@ -12,6 +12,7 @@ import { ScoutRoomsTask, ScoutRoomsTaskState } from "./task/scout_rooms_task"
 import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
 import { SquadMemberTask, SquadMemberTaskState } from "./combined_task/squad_member_task"
 import { ParallelResourceOperationTask, ParallelResourceOperationTaskState } from "./task/parallel_resource_operation_task"
+import { BuildWallTask, BuildWallTaskState } from "./task/build_wall_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -41,6 +42,7 @@ class CreepTaskDecoderMap {
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as MoveToRoomTaskState)
   "ScoutRoomsTask" = (state: CreepTaskState) => ScoutRoomsTask.decode(state as ScoutRoomsTaskState)
   "ParallelResourceOperationTask" = (state: CreepTaskState) => ParallelResourceOperationTask.decode(state as ParallelResourceOperationTaskState)
+  "BuildWallTask" = (state: CreepTaskState) => BuildWallTask.decode(state as BuildWallTaskState)
 }
 const decoderMap = new CreepTaskDecoderMap()
 

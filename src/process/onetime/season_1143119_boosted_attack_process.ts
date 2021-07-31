@@ -114,6 +114,7 @@ export interface Season1143119BoostedAttackProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 tower_count=3")
+// Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W6S29 waypoints=W14S30, tower_count")
 export class Season1143119BoostedAttackProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -348,6 +349,14 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   }
 
   private runSingleAttacker(creep: Creep): void {
+    const manualTargetId = "60e666eae0ae927d4999b086" as Id<AnyStructure>
+    const manualTarget = Game.getObjectById(manualTargetId)
+    if (manualTarget != null && manualTarget.room.name === creep.room.name) {
+      this.rangedAttack(creep, manualTarget)
+      creep.heal(creep)
+      return
+    }
+
     const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if (target == null) {
       return

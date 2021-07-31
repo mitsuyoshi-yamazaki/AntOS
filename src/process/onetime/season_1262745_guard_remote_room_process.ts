@@ -111,7 +111,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
 
   private requestCreep(): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.High,
+      priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: this.creepRole,

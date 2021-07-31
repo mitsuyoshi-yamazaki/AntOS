@@ -154,23 +154,23 @@ export class Season1249418SendHugeCreepProcess implements Process, Procedural {
       return
     }
 
-    if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.9)) {
+    const moved = this.runSingleAttacker(creep)
+
+    if (moved !== true && creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.9)) {
       const spawn = World.rooms.getOwnedRoomObjects(this.targetRoomName)?.activeStructures.spawns[0]
       if (spawn != null) {
-        if (spawn.spawning == null && spawn.room.energyAvailable > 600) {
+        if (spawn.spawning == null && (Game.time % 13) < 6 && spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable) {
           spawn.renewCreep(creep)
         }
-        creep.moveTo(spawn, {range: 1})
+        creep.moveTo(spawn, { range: 1 })
       }
     }
-
-    this.runSingleAttacker(creep)
   }
 
-  private runSingleAttacker(creep: Creep): void {
+  private runSingleAttacker(creep: Creep): boolean {
     const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if (target == null) {
-      return
+      return false
     }
 
     this.rangedAttack(creep, target)
@@ -180,6 +180,7 @@ export class Season1249418SendHugeCreepProcess implements Process, Procedural {
     } else {
       creep.moveTo(target)
     }
+    return true
   }
 
   private attackNearbyHostile(creep: Creep): { attacked: boolean, moved: boolean } {
