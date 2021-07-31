@@ -255,27 +255,33 @@ export class OwnedRoomObjects {
     ]
     const myStructures = room.find(FIND_STRUCTURES)
     myStructures.forEach(structure => {
-      if (structure.isActive() !== true) {
-        return
-      }
       if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
         this.damagedStructures.push(structure)
       }
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         spawns.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.isActive() !== true) {
+          break
+        }
         extensions.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.isActive() !== true) {
+          break
+        }
         towers.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
@@ -291,24 +297,36 @@ export class OwnedRoomObjects {
         checkDecayed(structure)
         break
       case STRUCTURE_STORAGE:
+        if (structure.isActive() !== true) {
+          break
+        }
         storage = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.isActive() !== true) {
+          break
+        }
         terminal = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 20000) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_POWER_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         powerSpawn = structure
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_LAB:
+        if (structure.isActive() !== true) {
+          break
+        }
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableLabs.push(structure)
         }

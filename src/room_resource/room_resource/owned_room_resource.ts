@@ -92,48 +92,66 @@ export class OwnedRoomResource extends NormalRoomResource {
       STRUCTURE_CONTAINER,
     ]
     this.room.find(FIND_STRUCTURES).forEach(structure => {
-      if (structure.isActive() !== true) {
-        return
-      }
       if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
         this.damagedStructures.push(structure)
       }
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         spawns.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.isActive() !== true) {
+          break
+        }
         extensions.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.isActive() !== true) {
+          break
+        }
         towers.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_STORAGE:
+        if (structure.isActive() !== true) {
+          break
+        }
         storage = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.isActive() !== true) {
+          break
+        }
         terminal = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_EXTRACTOR:
+        if (structure.isActive() !== true) {
+          break
+        }
         extractor = structure
         break
       case STRUCTURE_OBSERVER:
+        if (structure.isActive() !== true) {
+          break
+        }
         observer = structure
         break
       case STRUCTURE_WALL:

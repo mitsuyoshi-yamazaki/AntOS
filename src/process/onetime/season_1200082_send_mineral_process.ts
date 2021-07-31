@@ -86,7 +86,7 @@ export class Season1200082SendMineralProcess implements Process, Procedural {
     const result = terminal.send(resourceInfo.resource, resourceInfo.amount, this.targetRoomName)
     switch (result) {
     case OK:
-      processLog(this, `${coloredResourceType(resourceInfo.resource)} sent ${roomLink(this.parentRoomName)} to ${this.targetRoomName}`)
+      processLog(this, `${coloredResourceType(resourceInfo.resource)} sent ${roomLink(this.parentRoomName)} to ${roomLink(this.targetRoomName)}`)
       break
 
     case ERR_NOT_OWNER:
