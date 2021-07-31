@@ -94,7 +94,8 @@ export class Season1249418SendHugeCreepProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.targetRoomName)} ${this.creepType}`
+    const status = this.creepName != null && Game.creeps[this.creepName] == null ? "dead" : this.creepType
+    return `${roomLink(this.targetRoomName)} ${status}`
   }
 
   public runOnTick(): void {
