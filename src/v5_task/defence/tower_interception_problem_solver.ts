@@ -5,6 +5,7 @@ import { Task, TaskStatus } from "v5_task/task"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
+import { GameConstants } from "utility/constants"
 
 export interface TowerInterceptionProblemSolverState extends ProblemSolverState {
   /** room name */
@@ -46,14 +47,62 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const target = ((): AnyCreep | null => {
+      const hostileCreeps: AnyCreep[] = [
+        ...objects.hostiles.creeps,
+        ...objects.hostiles.powerCreeps,
+      ]
+
       if (this.targetId != null) {
         const stored = Game.getObjectById(this.targetId)
-        if (stored != null) {
+        if (stored != null && stored.room != null && stored.room.name === this.roomName) {
+          if (stored.hits < stored.hitsMax) {
+            return stored
+          }
+          const min = GameConstants.room.edgePosition.min
+          const max = GameConstants.room.edgePosition.max
+          const otherTargets = hostileCreeps.filter(creep => {
+            if (creep.id === this.targetId) {
+              return false
+            }
+            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+              return false
+            }
+            return true
+          })
+          const target = objects.controller.pos.findClosestByRange(otherTargets)
+          if (target != null) {
+            return target
+          }
           return stored
         }
         this.targetId = null
       }
-      return objects.hostiles.creeps[0] ?? objects.hostiles.powerCreeps[0]  // TODO: ターゲット選定
+      if (this.roomName === "W6S29" && (Game.time % 17) < 8) {
+        const min = GameConstants.room.edgePosition.min + 2
+        const max = GameConstants.room.edgePosition.max - 2
+        const hostileInsideRoom = hostileCreeps.filter(creep => {
+          if (creep.pos.x < (min + 2) || creep.pos.x > (max - 2) || creep.pos.y < min || creep.pos.y > max) {
+            return false
+          }
+          return true
+        })
+        return objects.controller.pos.findClosestByRange(hostileInsideRoom)
+      }
+
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      const hostileInsideRoom = ((): AnyCreep[] => {
+        if ((Game.time % 21) < 7) {
+          return hostileCreeps
+        }
+        return hostileCreeps.filter(creep => {
+          if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+            return false
+          }
+          return true
+        })
+      })()
+      return objects.controller.pos.findClosestByRange(hostileInsideRoom)
     })()
 
     if (target == null) {

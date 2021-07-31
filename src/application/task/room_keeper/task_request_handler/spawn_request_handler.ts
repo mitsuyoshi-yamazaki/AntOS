@@ -18,7 +18,7 @@ export class SpawnRequestHandler {
   public execute(spawnRequests: SpawnTaskRequestType[], roomResource: OwnedRoomResource): TaskLogRequest[] {
     const logRequests: TaskLogRequest[] = []
 
-    const idleSpwans = roomResource.activeStructures.spawns.filter(spawn => spawn.spawning == null)
+    const idleSpwans = roomResource.activeStructures.spawns.filter(spawn => spawn.spawning == null || spawn.spawning.remainingTime <= 0)
     if (idleSpwans.length <= 0) {
       return logRequests
     }
@@ -53,6 +53,9 @@ export class SpawnRequestHandler {
           }
           return futureRequest
         }
+        if (futureRequest == null) {
+          return currentRequest
+        }
         if (currentRequest.spawnTimeCost < futureRequest.neededIn) {
           return currentRequest
         }
@@ -80,7 +83,6 @@ export class SpawnRequestHandler {
     const memory: V6CreepMemory = {
       v: ShortVersion.v6,
       p: this.roomName,
-      r: request.roles,
       t: request.initialTask?.encode() ?? null,
       i: request.taskIdentifier,
       ci: request.creepIdentifier,
@@ -92,7 +94,7 @@ export class SpawnRequestHandler {
       return {
         taskIdentifier: request.taskIdentifier,
         logEventType: "event",
-        message: `Spawn ${bodyDescription(body)}`,
+        message: `Spawn ${bodyDescription(body)} at ${roomLink(this.roomName)}`,
       }
     case ERR_BUSY:
     case ERR_NOT_ENOUGH_ENERGY:

@@ -660,7 +660,7 @@ export function tick(): void {
       range: 1,
     }
 
-    const path = from.room.findPath(from.pos, room.sources[0].pos, pathfinder_opts)
+    const path = from.room.findPath(from.pos, room.sources[0]!.pos, pathfinder_opts)
 
     if (!path || (path.length == 0)) {
       console.log(`TEST no path`)
@@ -671,8 +671,8 @@ export function tick(): void {
 
     const last_pos = path[path.length - 1]
     const start_pos: {x: number, y: number} = {
-      x: last_pos.x,
-      y: last_pos.y,
+      x: last_pos!.x,
+      y: last_pos!.y,
     }
 
     if (start_pos.x == 0) {
@@ -713,16 +713,16 @@ export function tick(): void {
 
     for (const flag_name in Game.flags) {
       const flag = Game.flags[flag_name]
-      if (!flag.room) {
+      if (!flag!.room) {
         continue
       }
-      if ((flag.room.name != room.name)) {
+      if ((flag!.room.name != room.name)) {
         continue
       }
 
       let structure_type: StructureConstant | undefined
 
-      switch (flag.color) {
+      switch (flag!.color) {
         case COLOR_RED:
           structure_type = STRUCTURE_TOWER
           break
@@ -764,9 +764,9 @@ export function tick(): void {
         structure_type = STRUCTURE_EXTENSION
       }
 
-      let result = room.createConstructionSite(flag.pos, structure_type)
+      let result = room.createConstructionSite(flag!.pos, structure_type)
       if ((result == ERR_RCL_NOT_ENOUGH) && (structure_type == STRUCTURE_SPAWN)) {
-        result = room.createConstructionSite(flag.pos, STRUCTURE_POWER_SPAWN)
+        result = room.createConstructionSite(flag!.pos, STRUCTURE_POWER_SPAWN)
       }
 
 
@@ -774,8 +774,8 @@ export function tick(): void {
         if (structure_type != STRUCTURE_ROAD) {
           count += 1
         }
-        console.log(`Place ${structure_type} construction site on ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}`)
-        flag.remove()
+        console.log(`Place ${structure_type} construction site on ${flag?.name}, ${flag?.pos}, ${flag?.color}, ${room_link(flag!.pos.roomName)}`)
+        flag?.remove()
 
         if (count > 0) {
 
@@ -784,11 +784,11 @@ export function tick(): void {
         }
       }
       else if (result == ERR_INVALID_TARGET) {
-        message += `ERROR ${structure_type} construction site invalid args: removing ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}\n`
-        flag.remove()
+        message += `ERROR ${structure_type} construction site invalid args: removing ${flag?.name}, ${flag?.pos}, ${flag?.color}, ${room_link(flag!.pos.roomName)}\n`
+        flag?.remove()
       }
       else if (result != ERR_RCL_NOT_ENOUGH) {
-        message += `ERROR Place ${structure_type} construction site failed E${result}: ${flag.name}, ${flag.pos}, ${flag.color}, ${room_link(flag.pos.roomName)}\n`
+        message += `ERROR Place ${structure_type} construction site failed E${result}: ${flag?.name}, ${flag?.pos}, ${flag?.color}, ${room_link(flag!.pos.roomName)}\n`
       }
     }
 
@@ -842,17 +842,17 @@ export function tick(): void {
 
     // }
     // else {
-      const path = from_room.findPath(from_position, room.sources[0].pos, pathfinder_opts)
+      const path = from_room.findPath(from_position, room.sources[0]!.pos, pathfinder_opts)
 
       if (!path || (path.length == 0)) {
-        console.log(`Room.add_remote_harvester cannot find path from ${from_position} to ${room.sources[0].pos}, ${room.name}`)
+        console.log(`Room.add_remote_harvester cannot find path from ${from_position} to ${room.sources[0]!.pos}, ${room.name}`)
         return null
       }
 
       const last_pos = path[path.length - 1]
       const start_pos: {x: number, y: number} = {
-        x: last_pos.x,
-        y: last_pos.y,
+        x: last_pos!.x,
+        y: last_pos!.y,
       }
 
       if (start_pos.x == 0) {
@@ -977,7 +977,7 @@ export function tick(): void {
 
   for (const room_name in Game.rooms) {
     const room = Game.rooms[room_name]
-    room.spawns = []
+    room!.spawns = []
   }
 }
 
@@ -1027,7 +1027,7 @@ function create_cost_matrix_for(room: Room): CostMatrix {
     for (let j = 0; j < room_size; j++) {
       const terrain = Game.map.getTerrainAt(i, j, room.name)
       let cost: number
-      terrains[i].push(terrain)
+      terrains[i]!.push(terrain)
 
       switch (terrain) {
         case 'plain':
@@ -1083,7 +1083,7 @@ function create_cost_matrix_for(room: Room): CostMatrix {
           cost = near_edge_hostile_cost
         }
 
-        const terrain = terrains[i][j]
+        const terrain = terrains[i]![j]!
         if (terrain) {
           if (terrain == 'swamp') {
             cost += 3

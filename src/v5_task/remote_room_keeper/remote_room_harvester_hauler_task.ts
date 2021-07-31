@@ -20,6 +20,9 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Invader } from "game/invader"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -79,7 +82,7 @@ export class RemoteRoomHaulerTask extends Task {
 
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energyCapacity / 1000 // TODO: 距離等を加味する
+    const minimumCreepCount = Math.ceil(energyCapacity / 2000) // TODO: 距離等を加味する
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -131,8 +134,9 @@ export class RemoteRoomHaulerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -140,7 +144,7 @@ export class RemoteRoomHaulerTask extends Task {
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 5 // TODO: 算出する
+    const maximumCarryUnitCount = 10 // TODO: 算出する
     const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {
@@ -178,6 +182,13 @@ export class RemoteRoomHaulerTask extends Task {
       return MoveToRoomTask.create(this.targetRoomName, [])
     }
 
+    if (creep.store.getFreeCapacity() > 0) {
+      const container = creep.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
+      if (container != null && container.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        return RunApiTask.create(WithdrawResourceApiWrapper.create(container, RESOURCE_ENERGY))
+      }
+    }
+
     if (objects.activeStructures.storage != null) {
       return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage)) // TODO: repair
     }
@@ -186,15 +197,31 @@ export class RemoteRoomHaulerTask extends Task {
     if (structureToCharge != null) {
       return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
-    creep.say("no storage")
-    return null
+
+    const spawn = objects.activeStructures.spawns[0]
+    if (spawn == null) {
+      creep.say("no storage")
+      return MoveToRoomTask.create(this.targetRoomName, [])
+    }
+
+    const resource = spawn.pos.findInRange(FIND_DROPPED_RESOURCES, 3)[0]
+    if (resource == null) {
+      if (creep.pos.getRangeTo(spawn.pos) <= 3) {
+        return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+      }
+      return MoveToTask.create(spawn.pos, 3)
+    }
+    if (creep.pos.isEqualTo(resource.pos) === true) {
+      return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+    }
+    return MoveToTask.create(resource.pos, 0)
   }
 
   private getEnergySource(energySources: EnergySource[]): EnergyStore | null {
     const targetRoom = World.rooms.get(this.targetRoomName)
     if (targetRoom != null) {
       const droppedEnergy = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => {
-        if (500 * resource.targetedBy.length < getEnergyAmountOf(resource)) {
+        if (500 * resource.v5TargetedBy.length < getEnergyAmountOf(resource)) {
           return true
         }
         return false
@@ -216,8 +243,8 @@ export class RemoteRoomHaulerTask extends Task {
 
     if (energySources.length > 0) {
       return energySources.reduce((lhs, rhs) => {
-        const lTargetedBy = lhs.targetedBy.length
-        const rTargetedBy = rhs.targetedBy.length
+        const lTargetedBy = lhs.v5TargetedBy.length
+        const rTargetedBy = rhs.v5TargetedBy.length
         if (lTargetedBy === rTargetedBy) {
           return getEnergyAmountOf(lhs) > getEnergyAmountOf(rhs) ? lhs : rhs
         }

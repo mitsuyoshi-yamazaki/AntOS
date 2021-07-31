@@ -50,6 +50,7 @@ export interface Season845677Attack1TowerProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W11S23 waypoints=W14S30,W10S30,W10S24")
+// Game.io("launch -l Season845677Attack1TowerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30")
 export class Season845677Attack1TowerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -58,16 +59,25 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
   // private readonly attackerBody: BodyPartConstant[] = [
   //   MOVE,
   // ]
-  private readonly attackerBody: BodyPartConstant[] = [
-    TOUGH, TOUGH, TOUGH,
-    MOVE, MOVE, MOVE,
-    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, MOVE, MOVE,
+  // private readonly attackerBody: BodyPartConstant[] = [  // full
+  //   TOUGH, TOUGH, TOUGH,
+  //   MOVE, MOVE, MOVE,
+  //   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+  //   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+  //   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, MOVE, MOVE,
+  //   MOVE, MOVE, MOVE, MOVE, MOVE,
+  //   MOVE, MOVE,
+  //   HEAL, HEAL, HEAL, HEAL, HEAL,
+  //   HEAL, HEAL,
+  // ]
+  private readonly attackerBody: BodyPartConstant[] = [ // 3ticks / swamp
     MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE,
-    HEAL, HEAL, HEAL, HEAL, HEAL,
-    HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL,
   ]
 
   private constructor(
@@ -192,9 +202,10 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
         this.runSquad(leaderCreep, followerCreep, squad.waypoints)
       } else if (leaderCreep == null && followerCreep == null) {
         deadSquadIndexes.push(index)
-      } else {
-        const creep = leaderCreep ?? followerCreep
-        this.runCollapsedSquad(creep)
+      } else if (leaderCreep != null) {
+        this.runCollapsedSquad(leaderCreep)
+      } else if (followerCreep != null) {
+        this.runCollapsedSquad(followerCreep)
       }
     })
   }
@@ -268,23 +279,23 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
 
     if (this.leaderCanMove(leaderCreep, followerCreep) === true) {
       const shouldFlee = leaderCreep.hits < (leaderCreep.hitsMax * 0.8) || followerCreep.hits < (followerCreep.hitsMax * 0.8)
-      if (shouldFlee !== true) {
-        leaderCreep.moveTo(44, 24)
-      } else {
-        const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
-        if (exitPosition == null) {
-          leaderCreep.say("no exit")  // TODO:
-          return
-        }
+      // if (shouldFlee !== true) {
+      //   leaderCreep.moveTo(44, 24)
+      // } else {
+      const exitPosition = leaderCreep.pos.findClosestByPath(FIND_EXIT)
+      if (exitPosition == null) {
+        leaderCreep.say("no exit")  // TODO:
+        return
+      }
 
-        if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
+      if (leaderCreep.pos.isNearTo(exitPosition) !== true) {
+        leaderCreep.moveTo(exitPosition)
+      } else {
+        if (shouldFlee) {
           leaderCreep.moveTo(exitPosition)
-        } else {
-          if (shouldFlee) {
-            leaderCreep.moveTo(exitPosition)
-          }
         }
       }
+      // }
     }
     followerCreep.moveTo(leaderCreep.pos)
   }
@@ -389,17 +400,17 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     const directionIndex = (Game.time + this.launchTime) % 3
 
     if (creep.pos.x === 0) {
-      creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex])
+      creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT)
     } else if (creep.pos.x === 1 || creep.pos.x === 48) {
-      creep.move([TOP, BOTTOM, TOP][directionIndex])
+      creep.move([TOP, BOTTOM, TOP][directionIndex] ?? TOP)
     } else if (creep.pos.x === 49) {
-      creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex])
+      creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT)
     } else if (creep.pos.y === 0) {
-      creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex])
+      creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM)
     } else if (creep.pos.y === 1 || creep.pos.y === 48) {
-      creep.move([LEFT, RIGHT, LEFT][directionIndex])
+      creep.move([LEFT, RIGHT, LEFT][directionIndex] ?? LEFT)
     } else if (creep.pos.y === 49) {
-      creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex])
+      creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP)
     }
   }
 
@@ -438,19 +449,19 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     const directionIndex = (Game.time + this.launchTime) % 3
 
     if (creep.pos.x === 0) {
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex] ?? RIGHT) === OK) {
         return
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex]) === OK) {
+      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex] ?? LEFT) === OK) {
         return
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex] ?? BOTTOM) === OK) {
         return
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex]) === OK) {
+      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex] ?? TOP) === OK) {
         return
       }
     }
@@ -478,7 +489,7 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     }
 
     const moveToOptions = ((): MoveToOpts => {
-      const options: MoveToOpts = { ...defaultMoveToOptions }
+      const options: MoveToOpts = defaultMoveToOptions()
       options.reusePath = reusePath
       if (roomTypeOf(creep.room.name) !== "source_keeper") {
         return options
@@ -554,9 +565,9 @@ export class Season845677Attack1TowerProcess implements Process, Procedural {
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, defaultMoveToOptions)
+        creep.moveTo(creep.room.controller, defaultMoveToOptions())
       } else {
-        creep.moveTo(25, 25, defaultMoveToOptions)
+        creep.moveTo(25, 25, defaultMoveToOptions())
       }
       return
     }

@@ -545,7 +545,7 @@ export class ManualSquad extends Squad {
   public description(): string {
     const squad_memory = Memory.squads[this.name] as ManualSquadMemory
 
-    const addition = this.creeps.size > 0 ? `, ${Array.from(this.creeps.values())[0].pos}` : ''
+    const addition = this.creeps.size > 0 ? `, ${Array.from(this.creeps.values())[0]?.pos}` : ''
     const task = squad_memory && squad_memory.task ? `: ${squad_memory.task}, ` : ' '
 
     return `${super.description()}${task}${this.desc || addition}`
@@ -628,7 +628,7 @@ export class ManualSquad extends Squad {
       return
     }
 
-    const target_room_name = squad_memory.target_room_names[0]  // todo: rotate targets
+    const target_room_name = squad_memory.target_room_names[0]!  // todo: rotate targets
 
     this.creeps.forEach(creep=> {
       if (creep.spawning) {
@@ -749,7 +749,7 @@ export class ManualSquad extends Squad {
             }
             else {
               if ((creep.room.spawns.length > 0)) {
-                creep.goToRenew(creep.room.spawns[2] || creep.room.spawns[0])
+                creep.goToRenew(creep.room.spawns[2] || creep.room.spawns[0]!)
                 return
               }
               else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {
@@ -804,8 +804,8 @@ export class ManualSquad extends Squad {
       const needs_renew = !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || (((creep.ticksToLive || 0) < 350) && (creep.carry.energy > (creep.carryCapacity * 0.8))))// !creep.memory.let_thy_die && ((creep.memory.status == CreepStatus.WAITING_FOR_RENEW) || ((creep.ticksToLive || 0) < 300))
 
       if (needs_renew) {
-        if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive ||0) > 400)) && !creep.room.spawns[0].spawning) {
-          creep.goToRenew(creep.room.spawns[0])
+        if ((creep.room.spawns.length > 0) && ((creep.room.energyAvailable > 40) || ((creep.ticksToLive ||0) > 400)) && !creep.room.spawns[0]?.spawning) {
+          creep.goToRenew(creep.room.spawns[0]!)
           return
         }
         else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {

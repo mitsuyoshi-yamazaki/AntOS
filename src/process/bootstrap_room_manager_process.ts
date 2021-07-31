@@ -24,6 +24,10 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
 // Game.io("message 544054000 parent_room_name=W14S28 target_room_name=W9S24 waypoints=W14S30,W10S30")
 // Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W1S25 waypoints=W8S25")
 // Game.io("message 544054000 parent_room_name=W1S25 target_room_name=E5S23 waypoints=E0S25,E0S24,E3S24,E3S23,E5S23 target_gcl=6")
+// Game.io("message 544054000 parent_room_name=W1S25 target_room_name=W3S24 waypoints=W1S24,W2S24,W2S23 target_gcl=6")
+// Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W23S30,W20S30,W20S23 target_gcl=7")
+// Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W24S23 target_gcl=7")
+// Game.io("message 544054000 parent_room_name=W3S24 target_room_name=W6S29 waypoints=W3S25,W5S25,W5S29 target_gcl=7")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
@@ -52,8 +56,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public processShortDescription(): string {
-    const nextLevelDescription = this.shouldRun() ? `${Math.floor(Game.gcl.progressTotal - Game.gcl.progress)}CP left` : ""
-    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")} ${nextLevelDescription}`
+    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")}`
   }
 
   public runOnTick(): void {
@@ -96,11 +99,11 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   public didReceiveMessage(message: string): string {
     const args = new Map<string, string>()
     for (const keyValue of message.split(" ")) {
-      const values = keyValue.split("=")
-      if (values.length !== 2) {
+      const [key, value] = keyValue.split("=")
+      if (key == null || value == null) {
         return `Invalid argument ${keyValue}`
       }
-      args.set(values[0], values[1])
+      args.set(key, value)
     }
 
     const missingArgumentError = (argumentName: string): string => `Missing argument ${argumentName}`
@@ -133,8 +136,11 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
 
     const targetRoom = World.rooms.get(targetRoomName)
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true) {
-      return `${roomLink(targetRoomName)} is already mine`
+    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
+      const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}})
+      if (spawn.length > 0) {
+        return `${roomLink(targetRoomName)} is already mine`
+      }
     }
     const bootstrappingRoomNames = this.tasks.map(task => task.targetRoomName)
     if (bootstrappingRoomNames.includes(targetRoomName) === true) {

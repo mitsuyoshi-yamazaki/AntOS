@@ -1,6 +1,7 @@
 // ---- Pathfinding ---- //
 
-import { PowerConstants } from "./power_constants"
+import { PowerGameConstants } from "./power_constants"
+import { StructureGameConstants } from "./structure_constants"
 
 /** @deprecated */
 export const SWAMP_COST = 5
@@ -29,6 +30,11 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
 }
 
 export const GameConstants = {
+  game: {
+    cpu: {
+      bucketAmountForGeneratingPixel: 10000,
+    },
+  },
   pathFinder: {
     costs: {
       swamp: SWAMP_COST,
@@ -64,7 +70,8 @@ export const GameConstants = {
   source: {
     regenerationDuration: 300,
   },
-  power: PowerConstants,
+  power: PowerGameConstants,
+  structure: StructureGameConstants,
 }
 
 export const ApplicationConstants = {

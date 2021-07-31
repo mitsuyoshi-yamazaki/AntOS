@@ -1,10 +1,16 @@
 import { Problem } from "application/problem"
 import { V6Creep } from "prototype/creep"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { OwnedRoomInfo } from "room_resource/room_info"
 import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
-import type { RoomInfo } from "world_info/room_info"
 import { NormalRoomResource } from "./normal_room_resource"
+
+export type ResearchLabs = {
+  inputLab1: StructureLab
+  inputLab2: StructureLab
+  outputLabs: StructureLab[]
+}
 
 export interface OwnedRoomCreepInfo {
   creep: V6Creep
@@ -25,8 +31,11 @@ export class OwnedRoomResource extends NormalRoomResource {
     towers: StructureTower[]
     storage: StructureStorage | null
     terminal: StructureTerminal | null
+    extractor: StructureExtractor | null
+    observer: StructureObserver | null
 
     chargeableStructures: EnergyChargeableStructure[]
+    researchLabs: ResearchLabs | null
   }
 
   public readonly walls: StructureWall[]
@@ -37,7 +46,7 @@ export class OwnedRoomResource extends NormalRoomResource {
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
     private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
-    roomInfo: RoomInfo,
+    public readonly roomInfo: OwnedRoomInfo,
   ) {
     super(controller, roomInfo)
 
@@ -48,7 +57,30 @@ export class OwnedRoomResource extends NormalRoomResource {
     const towers: StructureTower[] = []
     let storage: StructureStorage | null = null
     let terminal: StructureTerminal | null = null
+    let extractor: StructureExtractor | null = null
+    let observer: StructureObserver | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
+    const researchLabs = ((): ResearchLabs | null => {
+      if (roomInfo.researchLab == null) {
+        return null
+      }
+      const inputLab1 = Game.getObjectById(roomInfo.researchLab.inputLab1)
+      const inputLab2 = Game.getObjectById(roomInfo.researchLab.inputLab2)
+      const outputLabs = roomInfo.researchLab.outputLabs.flatMap(id => Game.getObjectById(id) ?? [])
+      if (inputLab1 == null || inputLab2 == null || outputLabs.length <= 0) {
+        roomInfo.researchLab = undefined
+        return null
+      }
+      if (inputLab1.isActive() !== true || inputLab2.isActive() !== true || outputLabs.some(lab => lab.isActive() !== true)) {
+        roomInfo.researchLab = undefined
+        return null
+      }
+      return {
+        inputLab1,
+        inputLab2,
+        outputLabs,
+      }
+    })()
 
     this.walls = []
     this.ramparts = []
@@ -60,43 +92,67 @@ export class OwnedRoomResource extends NormalRoomResource {
       STRUCTURE_CONTAINER,
     ]
     this.room.find(FIND_STRUCTURES).forEach(structure => {
-      if (structure.isActive() !== true) {
-        return
-      }
       if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
         this.damagedStructures.push(structure)
       }
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         spawns.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.isActive() !== true) {
+          break
+        }
         extensions.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.isActive() !== true) {
+          break
+        }
         towers.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_STORAGE:
+        if (structure.isActive() !== true) {
+          break
+        }
         storage = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.isActive() !== true) {
+          break
+        }
         terminal = structure
         if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
           this.energyStores.push(structure)
         }
+        break
+      case STRUCTURE_EXTRACTOR:
+        if (structure.isActive() !== true) {
+          break
+        }
+        extractor = structure
+        break
+      case STRUCTURE_OBSERVER:
+        if (structure.isActive() !== true) {
+          break
+        }
+        observer = structure
         break
       case STRUCTURE_WALL:
         this.walls.push(structure)
@@ -115,7 +171,10 @@ export class OwnedRoomResource extends NormalRoomResource {
       towers,
       storage,
       terminal,
+      extractor,
+      observer,
       chargeableStructures,
+      researchLabs,
     }
   }
 
@@ -150,8 +209,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.pos.targetedBy("harvest").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("harvest").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -165,8 +224,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return energySources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.pos.targetedBy("withdraw").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("withdraw").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -188,8 +247,8 @@ export class OwnedRoomResource extends NormalRoomResource {
     }
 
     return energyStores.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.pos.targetedBy("withdraw").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("withdraw").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -203,8 +262,8 @@ export class OwnedRoomResource extends NormalRoomResource {
       return null
     }
     return chargeableStructures.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.pos.targetedBy("transfer").taskRunnerInfo.length
+      const rTargetedBy = rhs.pos.targetedBy("transfer").taskRunnerInfo.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -213,10 +272,10 @@ export class OwnedRoomResource extends NormalRoomResource {
   }
 
   public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
-    return this.constructionSites[0]  // TODO: 優先順位づけ
+    return this.constructionSites[0] ?? null  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {
-    return this.damagedStructures[0]  // TODO: 優先順位づけ
+    return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
 }

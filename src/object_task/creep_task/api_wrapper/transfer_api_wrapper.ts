@@ -1,12 +1,15 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { TaskTargetPosition } from "object_task/object_task_target_cache"
+import { ResourceOperationApiWrapper } from "object_task/resource_operation_api_wrapper"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
+import { EnergyChargeableStructure } from "prototype/room_object"
 import { TRANSFER_RESOURCE_RANGE } from "utility/constants"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
 const apiWrapperType = "TransferApiWrapper"
 
-type TransferApiWrapperTargetType = AnyCreep | StructureContainer | StructureStorage | StructureTerminal | StructureSpawn | StructureExtension | StructureTower
+type TransferApiWrapperTargetType = AnyCreep | StructureStorage | EnergyChargeableStructure
 
 export interface TransferApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
@@ -19,8 +22,9 @@ export interface TransferApiWrapperState extends CreepApiWrapperState {
   r: ResourceConstant
 }
 
-export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
+export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper, ResourceOperationApiWrapper {
   public readonly shortDescription: string
+  public readonly resourceOperationDescription = "transfer"
   public readonly range = TRANSFER_RESOURCE_RANGE
 
   private constructor(
@@ -48,6 +52,16 @@ export class TransferApiWrapper implements CreepApiWrapper, TargetingApiWrapper 
 
   public static create(target: TransferApiWrapperTargetType, resourceType: ResourceConstant): TransferApiWrapper {
     return new TransferApiWrapper(target, resourceType)
+  }
+
+  public taskTarget(creep: V6Creep): TaskTargetPosition {
+    return {
+      taskTargetType: "position",
+      position: this.target.pos,
+      concreteTarget: this.target,
+      taskType: "transfer",
+      amount: creep.store.getUsedCapacity(this.resourceType),
+    }
   }
 
   public run(creep: V6Creep): CreepApiWrapperProgress {

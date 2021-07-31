@@ -18,6 +18,8 @@ export interface MoveToRoomTaskState extends CreepTaskState {
 
   /** exit position */
   e: RoomPositionState | null
+
+  ignoreSwamp: boolean
 }
 
 export class MoveToRoomTask implements CreepTask {
@@ -27,7 +29,8 @@ export class MoveToRoomTask implements CreepTask {
     public readonly startTime: number,
     public readonly destinationRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private exitPosition: RoomPosition | null
+    private exitPosition: RoomPosition | null,
+    private readonly ignoreSwamp: boolean,
   ) {
     this.shortDescription = this.destinationRoomName
   }
@@ -39,35 +42,34 @@ export class MoveToRoomTask implements CreepTask {
       d: this.destinationRoomName,
       w: this.waypoints,
       e: this.exitPosition?.encode() ?? null,
+      ignoreSwamp: this.ignoreSwamp,
     }
   }
 
   public static decode(state: MoveToRoomTaskState): MoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
-    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition)
+    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition, state.ignoreSwamp ?? false)
   }
 
-  public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, waypoints, null)
+  public static create(destinationRoomName: RoomName, waypoints: RoomName[], ignoreSwamp?: boolean): MoveToRoomTask {
+    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, ignoreSwamp ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
-    const directionIndex = (Game.time + this.startTime) % 3
-
     if (creep.pos.x === 0) {
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move(RIGHT) === OK) {
         return TaskProgressType.InProgress
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex]) === OK) {
+      if (creep.move(LEFT) === OK) {
         return TaskProgressType.InProgress
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move(BOTTOM) === OK) {
         return TaskProgressType.InProgress
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex]) === OK) {
+      if (creep.move(TOP) === OK) {
         return TaskProgressType.InProgress
       }
     }
@@ -93,9 +95,15 @@ export class MoveToRoomTask implements CreepTask {
       noPathFinding: true,
       reusePath,
     }
+    if (this.ignoreSwamp) {
+      noPathFindingOptions.swampCost = 1
+    }
 
     const moveToOptions = ((): MoveToOpts => {
-      const options: MoveToOpts = { ...defaultMoveToOptions }
+      const options: MoveToOpts = defaultMoveToOptions()
+      if (this.ignoreSwamp) {
+        options.swampCost = 1
+      }
       options.reusePath = reusePath
       if (roomTypeOf(creep.room.name) !== "source_keeper") {
         return options
@@ -181,9 +189,9 @@ export class MoveToRoomTask implements CreepTask {
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, defaultMoveToOptions)
+        creep.moveTo(creep.room.controller, defaultMoveToOptions())
       } else {
-        creep.moveTo(25, 25, defaultMoveToOptions)
+        creep.moveTo(25, 25, defaultMoveToOptions())
       }
       return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
     }

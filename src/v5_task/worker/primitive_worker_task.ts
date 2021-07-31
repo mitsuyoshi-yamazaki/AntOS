@@ -20,8 +20,6 @@ import { TaskState } from "v5_task/task_state"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 
-const creepCountForSource = 4
-
 export interface PrimitiveWorkerTaskState extends TaskState {
   /** room name */
   r: RoomName
@@ -66,8 +64,11 @@ export class PrimitiveWorkerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier)
     ]
+
+    if (objects.roomInfo.bootstrapping !== true) {
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier))
+    }
 
     this.checkProblemFinders(problemFinders)
 
@@ -87,7 +88,7 @@ export class PrimitiveWorkerTask extends Task {
   // ---- Problem Solver ---- //
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const roomName = objects.controller.room.name
-    const minimumCreepCount = creepCountForSource * objects.sources.length
+    const minimumCreepCount = objects.sources.reduce((result, current) => result + current.energyCapacity, 0) / 750
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
 
     const noCreeps = problemFinder.creepCount <= 2
@@ -108,8 +109,9 @@ export class PrimitiveWorkerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -148,7 +150,7 @@ export class PrimitiveWorkerTask extends Task {
     if (damagedStructure != null) {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
-    const constructionSite = objects.getConstructionSite()
+    const constructionSite = objects.getConstructionSite(creep.pos)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }

@@ -23,6 +23,7 @@ const creepRoleClaimer: CreepRoleClaimer = "claimer"
 const creepRoleAttacker: CreepRoleAttacker = "attacker"
 const creepRoleHealer: CreepRoleHealer = "healer"
 
+/** @deprecated */
 export type CreepRole = CreepRoleMover
   | CreepRoleHarvester
   | CreepRoleWorker
@@ -34,6 +35,7 @@ export type CreepRole = CreepRoleMover
   | CreepRoleAttacker
   | CreepRoleHealer
 
+/** @deprecated */
 export const CreepRole = {
   Mover: creepRoleMover,
 

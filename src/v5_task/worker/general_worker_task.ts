@@ -19,6 +19,7 @@ import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/h
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 import { bodyCost } from "utility/creep_body"
+import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
 export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
@@ -110,8 +111,9 @@ export class GeneralWorkerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -119,8 +121,8 @@ export class GeneralWorkerTask extends Task {
   }
 
   private workerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 3 // TODO: 算出する
-    const unit: BodyPartConstant[] = [CARRY, CARRY, WORK, WORK, MOVE]
+    const maximumCarryUnitCount = 6 // TODO: 算出する
+    const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
 
     const constructBody = ((unitCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
@@ -146,6 +148,17 @@ export class GeneralWorkerTask extends Task {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
+      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+        const spawn = objects.activeStructures.spawns[0]
+        const room = objects.controller.room
+        if (spawn != null && room.energyAvailable > 150) {
+          const cost = bodyCost(creep.body.map(b => b.type))
+          if (cost > room.energyCapacityAvailable) {
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+          }
+        }
+      }
+
       const energyStore = objects.getEnergyStore(creep.pos)
       if (energyStore != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energyStore))
@@ -169,7 +182,7 @@ export class GeneralWorkerTask extends Task {
     if (damagedStructure != null) {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
-    const constructionSite = objects.getConstructionSite()
+    const constructionSite = objects.getConstructionSite(creep.pos)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }

@@ -1,14 +1,14 @@
 import { TaskPerformance, TaskPerformanceState } from "application/task_profit"
 
-export interface OwnedRoomPerformanceState extends TaskPerformanceState {
+export interface RoomKeeperPerformanceState extends TaskPerformanceState {
 
 }
 
-export interface OwnedRoomPerformance extends TaskPerformance {
+export interface RoomKeeperPerformance extends TaskPerformance {
 
 }
 
-export function emptyOwnedRoomPerformanceState(): OwnedRoomPerformanceState {
+export function emptyRoomKeeperPerformanceState(): RoomKeeperPerformanceState {
   return {
     s: [],
     r: [],

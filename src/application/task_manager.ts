@@ -1,10 +1,9 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Task } from "./task"
 import { CreepSpawnTaskEvent, isCreepSpawnTaskEventHandler } from "./task_event"
 import { TaskIdentifier } from "./task_identifier"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyTask = Task<any, any, any>
+type AnyTask = {identifier: TaskIdentifier}
 
 interface TaskManagerInterface {
   addTask(task: AnyTask): void

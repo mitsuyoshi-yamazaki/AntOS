@@ -6,10 +6,12 @@ import { calculateObserveTaskPerformance, emptyObserveTaskPerformanceState, Obse
 import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
+import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "object_task/creep_task/task/move_to_room_task"
+import { ScoutRoomsTask } from "object_task/creep_task/task/scout_rooms_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { CreepRole } from "prototype/creep_role"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { OwnedRoomResource, RunningCreepInfo } from "room_resource/room_resource/owned_room_resource"
 import { GameConstants } from "utility/constants"
 import { bodyCost } from "utility/creep_body"
@@ -24,13 +26,15 @@ type Season3FindPowerBankTaskProblemTypes = UnexpectedProblem
 
 interface Season3FindPowerBankTaskScoutRoute {
   routeToHighway: RoomName[]
-  targetRoomNames: RoomName[]
+  highwayRoute: RoomName[]
+  observeTargetRoomNames: RoomName[]
 }
 
-interface Season3FindPowerBankTaskPowerBankInfo {
+export interface Season3FindPowerBankTaskPowerBankInfo {
   roomName: RoomName,
   powerAmount: number,
   decayedBy: Timestamp,
+  nearbySquareCount: number,
   waypoints: RoomName[],
 }
 
@@ -46,23 +50,8 @@ export interface Season3FindPowerBankTaskState extends TaskState {
   /** performance */
   readonly pf: ObserveTaskPerformanceState
 
-  /** room routes */
-  readonly rr: {
-    /** scout routes */
-    readonly s: {
-      /** routeToHighway */
-      h: RoomName[]
-
-      /** targetRoomNames */
-      t: RoomName[]
-    }[]
-
-    /** observe target rooms */
-    readonly o: RoomName[]
-  }
-
-  /** power bank info */
-  readonly pb: Season3FindPowerBankTaskPowerBankInfo[]
+  readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
+  readonly powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo} // index: RoomName
 }
 
 // - 探索する部屋を算出、保存
@@ -88,6 +77,7 @@ export class Season3FindPowerBankTask
 
   private readonly codename: string
   private readonly creepIdentifiers: number[]
+  private readonly observeTargetRooms: RoomName[]
 
   protected constructor(
     startTime: number,
@@ -95,14 +85,14 @@ export class Season3FindPowerBankTask
     roomName: RoomName,
     public readonly performanceState: ObserveTaskPerformanceState,
     private readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[],
-    private readonly observeTargetRooms: RoomName[],
-    private powerBankInfo: Season3FindPowerBankTaskPowerBankInfo[],
+    private powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo },
   ) {
     super(startTime, sessionStartTime, roomName, performanceState)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
     this.creepIdentifiers = this.scoutRoutes.map((route, index) => index)
+    this.observeTargetRooms = this.scoutRoutes.flatMap(route => route.observeTargetRoomNames)
   }
 
   public encode(): Season3FindPowerBankTaskState {
@@ -112,27 +102,16 @@ export class Season3FindPowerBankTask
       ss: this.sessionStartTime,
       r: this.roomName,
       pf: this.performanceState,
-      rr: {
-        s: this.scoutRoutes.map(route => {
-          return {
-            h: route.routeToHighway,
-            t: route.targetRoomNames,
-          }
-        }),
-        o: this.observeTargetRooms,
-      },
-      pb: this.powerBankInfo,
+      scoutRoutes: this.scoutRoutes,
+      powerBankInfo: this.powerBankInfo,
     }
   }
 
   public static decode(state: Season3FindPowerBankTaskState): Season3FindPowerBankTask {
-    const routes: Season3FindPowerBankTaskScoutRoute[] = state.rr.s.map(route => {
-      return {
-        routeToHighway: route.h,
-        targetRoomNames: route.t,
-      }
-    })
-    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, routes, state.rr.o, state.pb)
+    // if (state.r === ) { //W9S24
+
+    // }
+    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.scoutRoutes, state.powerBankInfo)
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
@@ -140,8 +119,8 @@ export class Season3FindPowerBankTask
       PrimitiveLogger.programError(`${this.constructor.name} is not supported in ${Environment.world}`)
       return null
     }
-    const routes = calculateRoomRoutes(roomName)
-    if (routes == null) {
+    const scoutRoutes = calculateRoomRoutes(roomName)
+    if (scoutRoutes == null) {
       return null
     }
 
@@ -150,19 +129,22 @@ export class Season3FindPowerBankTask
       Game.time,
       roomName,
       emptyObserveTaskPerformanceState(),
-      routes.scoutRoutes,
-      routes.observeTargetRooms,
-      [],
+      scoutRoutes,
+      {},
     )
   }
 
   public run(roomResource: OwnedRoomResource): TaskOutputs<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes> {
     this.refreshPowerBankInfo()
+    const foundPowerBankInfo = this.foundPowerBankInfo()
+    foundPowerBankInfo.forEach(powerBankInfo => {
+      this.powerBankInfo[powerBankInfo.roomName] = powerBankInfo
+    })
 
     const outputs: TaskOutputs<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes> = emptyTaskOutputs()
     outputs.output = {
       highwayTooFar: false,
-      powerBanks: [...this.powerBankInfo],
+      powerBanks: Array.from(foundPowerBankInfo.values()),
     }
 
     if (this.scoutRoutes.length <= 0) {
@@ -171,7 +153,16 @@ export class Season3FindPowerBankTask
     }
 
     const runningCreepInfo = roomResource.runningCreepInfo(this.identifier)
-    outputs.spawnRequests.push(...this.spawnRequests(runningCreepInfo))
+    if (roomResource.activeStructures.observer == null) { // TODO: これもリクエストを出す
+      outputs.spawnRequests.push(...this.spawnRequests(runningCreepInfo))
+    } else {
+      const targetRoom = this.observeTargetRooms[Game.time % this.observeTargetRooms.length]
+      if (targetRoom != null) {
+        roomResource.activeStructures.observer.observeRoom(targetRoom)
+      } else {
+        PrimitiveLogger.programError(`${this.identifier} can't retrieve observe target room (${this.observeTargetRooms.length}) at ${Game.time}`)
+      }
+    }
 
     roomResource.idleCreeps(this.identifier).forEach(creepInfo => {
       creepInfo.problems.forEach(problem => { // TODO: 処理できるものは処理する
@@ -195,8 +186,22 @@ export class Season3FindPowerBankTask
   }
 
   private refreshPowerBankInfo(): void {
-    this.powerBankInfo = this.powerBankInfo.filter(info => info.decayedBy > Game.time)
-    const checkedRooms = this.powerBankInfo.map(info => info.roomName)
+    const roomNames = Object.keys(this.powerBankInfo)
+    roomNames.forEach(roomName => {
+      const powerBankInfo = this.powerBankInfo[roomName]
+      if (powerBankInfo == null) {
+        return
+      }
+      if (powerBankInfo.decayedBy < Game.time) {
+        return
+      }
+      delete this.powerBankInfo[roomName]
+    })
+  }
+
+  private foundPowerBankInfo(): Season3FindPowerBankTaskPowerBankInfo[] {
+    const foundPowerBankInfo: Season3FindPowerBankTaskPowerBankInfo[] = []
+    const checkedRooms = Object.values(this.powerBankInfo).map(info => info.roomName)
 
     this.observeTargetRooms.forEach(roomName => {
       if (checkedRooms.includes(roomName) === true) {
@@ -211,19 +216,30 @@ export class Season3FindPowerBankTask
         return
       }
 
-      const route = this.scoutRoutes.find(route => route.targetRoomNames.includes(roomName) === true)
+      const route = this.scoutRoutes.find(route => route.observeTargetRoomNames.includes(roomName) === true)
       if (route == null) {
         PrimitiveLogger.programError(`${this.identifier} no route for ${roomLink(roomName)} found`)
         return
       }
 
-      this.powerBankInfo.push({
+      const options: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeTerrainWalls: true,
+        excludeStructures: true,
+        excludeWalkableStructures: false,
+      }
+      const nearbySquareCount = powerBank.pos.positionsInRange(1, options).length
+
+      foundPowerBankInfo.push({
         roomName,
         powerAmount: powerBank.power,
         decayedBy: Game.time + powerBank.ticksToDecay,
+        nearbySquareCount,
         waypoints: route.routeToHighway,
       })
     })
+
+    return foundPowerBankInfo
   }
 
   private spawnRequests(creepInfo: RunningCreepInfo[]): SpawnCreepTaskRequest[] {
@@ -240,7 +256,6 @@ export class Season3FindPowerBankTask
         this.codename,
         this.identifier,
         `${creepIdentifier}`,
-        [CreepRole.Scout],
         [MOVE],
         initialTask,
         0,
@@ -255,25 +270,31 @@ export class Season3FindPowerBankTask
     }
     const route = this.scoutRoutes[routeIndex]
     if (route == null) {
-      PrimitiveLogger.programError(`${this.constructor.name} cannot find route with index ${routeIndex}`)
+      PrimitiveLogger.programError(`${this.identifier} cannot find route with index ${routeIndex}`)
       return null
     }
 
-    if (route.targetRoomNames.length <= 0) {
-      PrimitiveLogger.programError(`${this.constructor.name} no target room found`)
+    const destinationRoomName = route.highwayRoute[route.highwayRoute.length - 1]
+    if (destinationRoomName == null) {
+      PrimitiveLogger.programError(`${this.identifier} no highway route found`)
       return null
     }
-    const destinationRoomName = route.targetRoomNames[route.targetRoomNames.length - 1]
+    const targetRoomNames = [...route.highwayRoute]
     if (isInHighway === true) {
-      const waypoints = [...route.targetRoomNames]
-      waypoints.splice(waypoints.length - 1, 1)
-      return MoveToRoomTask.create(destinationRoomName, waypoints)
+      return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
     }
 
-    const waypoints = [...route.targetRoomNames]
-    waypoints.splice(waypoints.length - 1, 1)
-    waypoints.unshift(...route.routeToHighway)
-    return MoveToRoomTask.create(destinationRoomName, waypoints)
+    const highwayEntrance = route.routeToHighway[route.routeToHighway.length - 1]
+    if (highwayEntrance == null) {
+      PrimitiveLogger.programError(`${this.identifier} no highway entrance found`)
+      return ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
+    }
+
+    const tasks: CreepTask[] = [
+      MoveToRoomTask.create(highwayEntrance, [...route.routeToHighway]),
+      ScoutRoomsTask.create(destinationRoomName, targetRoomNames)
+    ]
+    return SequentialTask.create(tasks)
   }
 
   // ---- Profit ---- //
@@ -314,7 +335,15 @@ export class Season3FindPowerBankTask
 }
 
 // TODO: 探索が未完成
-function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowerBankTaskScoutRoute[], observeTargetRooms: RoomName[]} | null {
+function calculateRoomRoutes(roomName: RoomName): Season3FindPowerBankTaskScoutRoute[] | null {
+  if (roomName === "W1S25") { // FixMe:
+    return [{
+      routeToHighway: ["W0S25"],
+      highwayRoute: ["E0S24", "E0S21", "W0S21", "W0S24"],
+      observeTargetRoomNames: ["E0S24", "E0S23", "E0S22", "E0S21", "W0S21", "W0S22", "W0S23", "W0S24"],
+    }]
+  }
+
   const roomCoordinate = RoomCoordinate.parse(roomName)
   if (roomCoordinate == null) {
     return null
@@ -322,7 +351,6 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
   const sector = new RoomSector(roomCoordinate)
   const highwayRoutes = sector.getNearestHighwayRoutes(roomName)
 
-  const observeTargetRooms: RoomName[] = []
   const scoutRoutes: Season3FindPowerBankTaskScoutRoute[] = []
 
   const searchRange = 5
@@ -338,12 +366,10 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
   })
 
   highwayRoutes.forEach(route => {
-    if (route.length <= 0) {
+    const highwayRoomName = route[route.length - 1]
+    if (highwayRoomName == null) {
       return
     }
-    const highwayRoomName = route[route.length - 1]
-    observeTargetRooms.push(highwayRoomName)
-
     const roomCoordinate = RoomCoordinate.parse(highwayRoomName)
     if (roomCoordinate == null) {
       return
@@ -352,25 +378,23 @@ function calculateRoomRoutes(roomName: RoomName): { scoutRoutes: Season3FindPowe
     const isVertical = roomCoordinate.x % 10 === 0
     const scoutRoute: Season3FindPowerBankTaskScoutRoute = {
       routeToHighway: route,
-      targetRoomNames: [],
+      highwayRoute: [],
+      observeTargetRoomNames: [highwayRoomName],
     }
 
     for (let i = -searchRange; i <= searchRange; i += 1) {
       const roomName = createRoomCoordinate(i, isVertical, roomCoordinate).roomName
 
-      if (observeTargetRooms.includes(roomName) === true) {
-        return
+      if (scoutRoute.observeTargetRoomNames.includes(roomName) === true) {
+        continue
       }
-      observeTargetRooms.push(roomName)
+      scoutRoute.observeTargetRoomNames.push(roomName)
       if (i === -searchRange || i === searchRange) {
-        scoutRoute.targetRoomNames.push(roomName)
+        scoutRoute.highwayRoute.push(roomName)
       }
     }
     scoutRoutes.push(scoutRoute)
   })
 
-  return {
-    scoutRoutes,
-    observeTargetRooms,
-  }
+  return scoutRoutes
 }

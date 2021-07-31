@@ -80,13 +80,13 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       isMoving = true
     }
 
-    // const spawn = objects.activeStructures.spawns[0]
-    // if (spawn != null) {
-    //   isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
-    // }
-
     if (isMoving !== true) {
       isMoving = this.runRegenSource(powerCreep, objects.sources)
+    }
+
+    const spawn = objects.activeStructures.spawns[0]
+    if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
+      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
@@ -106,7 +106,14 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
+  private hasPower(powerCreep: PowerCreep, power: PowerConstant): boolean {
+    return powerCreep.powers[power] != null
+  }
+
   private runRegenSource(powerCreep: PowerCreep, sources: Source[]): boolean {
+    if (this.hasPower(powerCreep, PWR_REGEN_SOURCE) !== true) {
+      return false
+    }
     const regenSource = sources.find(source => {
       if (source.effects == null) {
         return true
@@ -125,7 +132,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       return false
 
     case ERR_NOT_IN_RANGE:
-      powerCreep.moveTo(regenSource, defaultMoveToOptions)
+      powerCreep.moveTo(regenSource, defaultMoveToOptions())
       return true
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -142,7 +149,21 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, isMoving: boolean): boolean {
-    const result = powerCreep.usePower(PWR_OPERATE_SPAWN)
+    if (this.hasPower(powerCreep, PWR_OPERATE_SPAWN) !== true) {
+      return false
+    }
+    const roomInfoMemory = Memory.v6RoomInfo[this.parentRoomName]
+    if (roomInfoMemory == null || roomInfoMemory.roomType !== "owned") {
+      return false
+    }
+    if (roomInfoMemory.config?.enableOperateSpawn !== true) {
+      return false
+    }
+    if ((Game.time % 2000) < 1000) {
+      return false
+    }
+
+    const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 
     switch (result) {
     case OK:
@@ -151,7 +172,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     case ERR_NOT_IN_RANGE:
       if (isMoving !== true) {
-        powerCreep.moveTo(spawn, defaultMoveToOptions)
+        powerCreep.moveTo(spawn, defaultMoveToOptions())
         return true
       }
       return false
@@ -172,6 +193,10 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage): void {
+    if (this.hasPower(powerCreep, PWR_GENERATE_OPS) !== true) {
+      return
+    }
+
     const result = powerCreep.usePower(PWR_GENERATE_OPS)
 
     switch (result) {
@@ -179,8 +204,11 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_TIRED:
-      if (powerCreep.transfer(store, RESOURCE_OPS) === ERR_NOT_IN_RANGE && isMoving !== true) {
-        powerCreep.moveTo(store, defaultMoveToOptions)
+      if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
+        powerCreep.moveTo(store, defaultMoveToOptions())
+      }
+      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 200) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+        powerCreep.transfer(store, RESOURCE_OPS, 100)
       }
       break
 
@@ -205,7 +233,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_NOT_IN_RANGE:
-      powerCreep.moveTo(powerSpawn, defaultMoveToOptions)
+      powerCreep.moveTo(powerSpawn, defaultMoveToOptions())
       break
 
     case ERR_NOT_OWNER:

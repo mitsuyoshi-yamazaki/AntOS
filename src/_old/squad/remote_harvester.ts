@@ -135,8 +135,8 @@ export class RemoteHarvesterSquad extends Squad {
       let container: StructureContainer | undefined
       const target = Game.getObjectById(id) as Source | Mineral | undefined
 
-      if (squad_memory.sources[id] && squad_memory.sources[id].container_id) {
-        const container_id = squad_memory.sources[id].container_id
+      if (squad_memory.sources[id] && squad_memory.sources[id]?.container_id) {
+        const container_id = squad_memory.sources[id]!.container_id
         if (container_id) {
           container = Game.getObjectById(container_id) as StructureContainer | undefined
         }
@@ -155,7 +155,7 @@ export class RemoteHarvesterSquad extends Squad {
           })[0] as StructureContainer | undefined
 
           if (container && (container.structureType == STRUCTURE_CONTAINER)) {
-            (Memory.squads[this.name] as RemoteHarvesterSquadMemory).sources[id].container_id = container.id
+            (Memory.squads[this.name] as RemoteHarvesterSquadMemory).sources[id]!.container_id = container.id
           }
         }
         else {
@@ -206,7 +206,7 @@ export class RemoteHarvesterSquad extends Squad {
         case CreepType.HARVESTER: {
           this.harvesters.push(creep)
 
-          const source_id: string = memory.source_id || this.source_ids[0]  // Should have memory.source_id
+          const source_id: string = memory.source_id || this.source_ids[0]!  // Should have memory.source_id
           const info = this.source_info.get(source_id)
           if (!info) {
             creep.say(`NO SRC`)
@@ -961,7 +961,7 @@ export class RemoteHarvesterSquad extends Squad {
       const room_memory = Memory.rooms[this.room_name]
 
       if (room_memory && room_memory.cost_matrix) {
-        Memory.rooms[this.room_name].cost_matrix = undefined
+        Memory.rooms[this.room_name]!.cost_matrix = undefined
         console.log(`RemoteHarvesterSquad reset costmatrix ${this.room_name} ${this.name}`)
       }
     }

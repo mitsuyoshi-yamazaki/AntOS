@@ -234,7 +234,7 @@ export class Season617434PowerHarvestProcess implements Process, Procedural {
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
     const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
-    processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+    processLog(this, `${this.parentRoomName} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
   }
 
   // ---- Hauler ---- //

@@ -1,10 +1,13 @@
 const consoleCommandTypes = [
   "help",
   "kill",
+  "suspend",
+  "resume",
   "launch",
   "exec",
   "process",
   "message",
+  "memory",
 ] as const
 type ConsoleCommandType = typeof consoleCommandTypes[number]
 
@@ -44,6 +47,18 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
     args: "Process ID",
   },
   {
+    command: "suspend",
+    description: "Suspend specified process",
+    options: [],
+    args: "Process ID",
+  },
+  {
+    command: "resume",
+    description: "Resume specified process",
+    options: [],
+    args: "Process ID",
+  },
+  {
     command: "launch",
     description: "Launch specified process",
     options: [
@@ -70,5 +85,11 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
     description: "Send message to specified process",
     options: [],
     args: "Process ID, message to send"
-  }
+  },
+  {
+    command: "memory",
+    description: "Edit memory contents",
+    options: [],
+    args: "Operation type name, arguments key1=value1 key2=value2 ..."
+  },
 ]

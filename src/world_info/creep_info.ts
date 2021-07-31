@@ -86,7 +86,7 @@ export const Creeps: CreepsInterface = {
   },
 
   get: function (creepName: CreepName): Creep | null {
-    return Game.creeps[creepName]
+    return Game.creeps[creepName] ?? null
   },
 
   getInfo: function (creepName: CreepName): CreepInfo | null {

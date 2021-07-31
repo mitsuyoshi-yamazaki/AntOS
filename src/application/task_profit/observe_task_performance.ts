@@ -10,15 +10,14 @@ export interface ObserveTaskPerformance extends TaskPerformance {
 }
 
 export interface ObserveTaskPerformanceState extends TaskPerformanceState {
-  /** observed rooms */
-  o: {[index: string]: number}  // [index: RoomName]: last observed time
+  observedRooms: {[index: string]: number}  // [index: RoomName]: last observed time
 }
 
 export function emptyObserveTaskPerformanceState(): ObserveTaskPerformanceState {
   return {
     s: [],
     r: [],
-    o: {},
+    observedRooms: {},
   }
 }
 
@@ -46,13 +45,12 @@ export function calculateObserveTaskPerformance(period: Timestamp, periodType: T
   })
 
   let observedRooms = 0
-  for (const roomName in state.o) {
-    const observedTime = state.o[roomName]
+  Object.entries(state.observedRooms).forEach(([, observedTime]) => {
     if (observedTime < fromTimestamp) {
-      continue
+      return
     }
     observedRooms += 1
-  }
+  })
 
   return {
     periodType,

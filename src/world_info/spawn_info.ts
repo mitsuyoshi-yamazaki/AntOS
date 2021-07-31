@@ -17,14 +17,13 @@ export const Spawns: SpawnsInterface = {
   // ---- Lifecycle ---- //
   beforeTick: function (): StructureSpawn[] {
     allSpawns.splice(0, allSpawns.length)
-    for (const spawnName in Game.spawns) {  // SpawnMemoryがundefideの場合に計上されないため
-      const spawn = Game.spawns[spawnName]
+    Object.entries(Game.spawns).forEach(([, spawn]) => {
       // if (spawn == null) {
       //   delete Memory.spawns[spawnName]
-      //   continue
+      //   return
       // }
       allSpawns.push(spawn)
-    }
+    })
 
     return allSpawns.concat([])
   },
@@ -39,6 +38,6 @@ export const Spawns: SpawnsInterface = {
   },
 
   get: function (spawnName: SpawnName): StructureSpawn | null {
-    return Game.spawns[spawnName]
+    return Game.spawns[spawnName] ?? null
   },
 }

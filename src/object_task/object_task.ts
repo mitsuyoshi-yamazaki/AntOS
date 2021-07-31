@@ -1,6 +1,7 @@
 import { Problem } from "application/problem"
 import { State, Stateful } from "os/infrastructure/state"
-import type { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
+import { V6Creep } from "prototype/creep"
+import type { TaskTarget } from "./object_task_target_cache"
 
 export interface TaskProgress {
   progress: "finished" | "in progress"
@@ -30,9 +31,9 @@ export interface ObjectTaskState extends State {
 }
 
 export interface ObjectTask<ObjectType> extends Stateful {
-  targetId?: TaskTargetTypeId
   startTime: number
 
   encode(): ObjectTaskState
+  taskTargets(creep: V6Creep): TaskTarget[]
   run(obj: ObjectType): TaskProgress
 }

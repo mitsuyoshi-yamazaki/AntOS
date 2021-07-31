@@ -22,8 +22,16 @@ export function init(): void {
     console.log(`Updated v${version}`)
   }
 
+  if (Memory.gameInfo == null) {
+    Memory.gameInfo = {}
+  }
+
   if (Memory.room_info == null) {
     Memory.room_info = {}
+  }
+
+  if (Memory.v6RoomInfo == null) {
+    Memory.v6RoomInfo = {}
   }
 
   if (Memory.towers == null) {
@@ -107,12 +115,12 @@ export function tick(): void {
   }
 
   const current_bucket = Game.cpu.bucket
-  const diff = current_bucket - (Memory.cpu.last_bucket || 1000)
-  if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
-    const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
-    console.log(leveled_colored_text(message, 'critical'))
-    // Game.notify(message)
-  }
+  // const diff = current_bucket - (Memory.cpu.last_bucket || 1000) // generatePixel() によって消費されるため
+  // if (((diff < -480) && (current_bucket < 9500)) || (current_bucket < 5000)) {
+  //   const message = `CPU Bucket ${current_bucket} (was ${Memory.cpu.last_bucket})`
+  //   console.log(leveled_colored_text(message, 'critical'))
+  //   // Game.notify(message)
+  // }
 
   Memory.cpu.last_bucket = current_bucket
 
@@ -191,11 +199,11 @@ export function tick(): void {
   Game.reactions = {}
 
   for (const resource_type of Object.keys(REACTIONS)) {
-    const reactions = REACTIONS[resource_type]
+    const reactions = REACTIONS[resource_type]!
 
     for (const ingredient_type of Object.keys(reactions)) {
-      const compound_type = reactions[ingredient_type]
-      Game.reactions[compound_type] = {
+      const compound_type = reactions[ingredient_type]!
+      Game.reactions[compound_type]! = {
         lhs: resource_type as ResourceConstant,
         rhs: ingredient_type as ResourceConstant,
       }
@@ -211,7 +219,7 @@ export function tick(): void {
   roomTick()
 
   for (const room_name in Game.rooms) {
-    const room = Game.rooms[room_name]
+    const room = Game.rooms[room_name]!
     room.initialize()
   }
 
@@ -222,7 +230,7 @@ export function tick(): void {
   Game.squad_creeps = {}
 
   for (const creep_name in Game.creeps) {
-    const creep = Game.creeps[creep_name]
+    const creep = Game.creeps[creep_name]!
     if (!isV4CreepMemory(creep.memory)) {
       continue
     }
@@ -237,7 +245,7 @@ export function tick(): void {
       Game.squad_creeps[squad_name] = []
     }
 
-    Game.squad_creeps[squad_name].push(creep)
+    Game.squad_creeps[squad_name]!.push(creep)
   }
 }
 

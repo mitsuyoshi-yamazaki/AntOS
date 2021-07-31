@@ -1,3 +1,4 @@
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
@@ -45,6 +46,10 @@ export class TalkTask implements CreepTask {
   public static create(childTask: CreepTask, manuscripts: string[]): TalkTask {
     manuscripts.push(childTask.shortDescription)
     return new TalkTask(Game.time, childTask, manuscripts)
+  }
+
+  public taskTargets(creep: V6Creep): TaskTarget[] {
+    return this.childTask.taskTargets(creep)
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

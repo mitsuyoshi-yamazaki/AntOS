@@ -1,12 +1,13 @@
-import { EnergySource, EnergyStore } from "prototype/room_object"
-import { RoomInfo } from "world_info/room_info"
-import { RoomResource } from "./room_resource"
+import { EnergySource, EnergyStore, parseIds } from "prototype/room_object"
+import { RoomInfoType } from "room_resource/room_info"
+import { RoomResource } from "room_resource/room_resource"
 
 export class NormalRoomResource implements RoomResource {
   public readonly roomType = "normal"
 
   public readonly room: Room
   public readonly sources: Source[]
+  public readonly mineral: Mineral | null
   public readonly constructionSites: ConstructionSite<BuildableStructureConstant>[]
 
   public readonly energySources: EnergySource[]
@@ -32,12 +33,13 @@ export class NormalRoomResource implements RoomResource {
 
   public constructor(
     public readonly controller: StructureController,
-    roomInfo: RoomInfo | null,
+    public readonly roomInfo: RoomInfoType | null,
   ) {
     this.room = this.controller.room
 
     // ---- Resources ---- //
     this.sources = this.room.find(FIND_SOURCES)
+    this.mineral = this.room.find(FIND_MINERALS)[0] ?? null
 
     // Construction Sites ---- //
     this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -51,8 +53,10 @@ export class NormalRoomResource implements RoomResource {
     this.energyStores = []
 
     if (roomInfo != null) {
-      this.energySources.push(...roomInfo.energySourceStructures)
-      this.energyStores.push(...roomInfo.energyStoreStructures)
+      const energySourceStructures = parseIds(roomInfo.energySourceStructureIds)
+      const energyStoreStructures = parseIds(roomInfo.energyStoreStructureIds)
+      this.energySources.push(...energySourceStructures)
+      this.energyStores.push(...energyStoreStructures)
     }
 
     this.decayedStructures = []

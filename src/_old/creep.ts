@@ -235,10 +235,10 @@ export function init() {
   Creep.prototype.hasActiveBodyPart = function(body_part: BodyPartConstant): boolean {
     // https://github.com/screeps/engine/blob/551aa41163c45273d706ce238c6b35f379c0149e/src/game/creeps.js#L20-L28
     for(var i = this.body.length-1; i>=0; i--) {
-      if (this.body[i].hits <= 0) {
+      if (this.body[i]!.hits <= 0) {
         break
       }
-      if (this.body[i].type === body_part) {
+      if (this.body[i]!.type === body_part) {
         return true
       }
     }
@@ -262,22 +262,22 @@ export function init() {
       const index = (Game.time % 3)
 
       if (this.pos.x == 0) {
-        if (this.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][index]) == OK) {
+        if (this.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][index]!) == OK) {
           return ActionResult.IN_PROGRESS
         }
       }
       if (this.pos.x == 49) {
-        if (this.move([LEFT, TOP_LEFT, BOTTOM_LEFT][index]) == OK) {
+        if (this.move([LEFT, TOP_LEFT, BOTTOM_LEFT][index]!) == OK) {
           return ActionResult.IN_PROGRESS
         }
       }
       if (this.pos.y == 0) {
-        if (this.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][index]) == OK) {
+        if (this.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][index]!) == OK) {
           return ActionResult.IN_PROGRESS
         }
       }
       if (this.pos.y == 49) {
-        if (this.move([TOP, TOP_LEFT, TOP_RIGHT][index]) == OK) {
+        if (this.move([TOP, TOP_LEFT, TOP_RIGHT][index]!) == OK) {
           return ActionResult.IN_PROGRESS
         }
       }
@@ -1026,7 +1026,7 @@ export function init() {
             this.transferResources(storage)
           }
           else {
-            const amount = this.room.terminal.store[this.carrying_resources()[0]] || 0
+            const amount = this.room.terminal.store[this.carrying_resources()[0]!] || 0
 
             if (amount < 10000) {
               this.transferResources(this.room.terminal)
@@ -1215,7 +1215,7 @@ export function init() {
           let number = 0
 
           for (const creep_name in Game.creeps) {
-            const creep = Game.creeps[creep_name]
+            const creep = Game.creeps[creep_name]!
             if (!isV4CreepMemory(creep.memory)) {
               continue
             }
@@ -1281,7 +1281,7 @@ export function init() {
         }
 
         if ((sources.length > 0)) {
-          const source = ((sources.length == 1) && (sources[0].store.energy > 0)) ? sources[0] : this.pos.findClosestByPath(sources, {
+          const source = ((sources.length == 1) && (sources[0]!.store.energy > 0)) ? sources[0] : this.pos.findClosestByPath(sources, {
             filter: (s: WorkerSource) => {
               if (s.store.energy == 0) {
                 return false
@@ -1400,7 +1400,7 @@ export function init() {
         let number = 0
 
         for (const creep_name in Game.creeps) {
-          const creep = Game.creeps[creep_name]
+          const creep = Game.creeps[creep_name]!
           if (!isV4CreepMemory(creep.memory)) {
             continue
           }
@@ -1574,7 +1574,7 @@ export function init() {
             }
             return true
           }
-        })[0]
+        })[0]!
       }
 
       const hostile_nearby = !(!hostile_creep) && this.pos.inRangeTo(hostile_creep.pos.x, hostile_creep.pos.y, 4)

@@ -41,6 +41,8 @@ export interface RoomInfoMemory {
     /** container id */
     c: Id<StructureContainer> | null
   } | null
+
+  bootstrapping: boolean
 }
 
 export interface RoomInfo {
@@ -60,6 +62,8 @@ export interface RoomInfo {
     link: StructureLink | null
     container: StructureContainer | null
   } | null
+
+  bootstrapping: boolean
 }
 
 export interface RoomsInterface {
@@ -85,8 +89,7 @@ export const Rooms: RoomsInterface = {
 
     const roomVersions = new Map<ShortVersion, RoomName[]>()
 
-    for (const roomName in Game.rooms) {
-      const room = Game.rooms[roomName]
+    Object.entries(Game.rooms).forEach(([roomName, room]) => {
       allVisibleRooms.push(room)
 
       if (room.controller != null && room.controller.my === true) {
@@ -105,7 +108,7 @@ export const Rooms: RoomsInterface = {
         })()
         roomNames.push(roomName)
       }
-    }
+    })
 
     if (Game.time % 107 === 13) {
       roomVersions.forEach((roomNames, version) => {
@@ -122,7 +125,7 @@ export const Rooms: RoomsInterface = {
 
   // ---- Get Rooms ---- //
   get: function (roomName: RoomName): Room | null {
-    return Game.rooms[roomName]
+    return Game.rooms[roomName] ?? null
   },
 
   getAllOwnedRooms: function (): Room[] {
@@ -171,6 +174,7 @@ export class OwnedRoomObjects {
     creeps: Creep[]
     powerCreeps: PowerCreep[]
   }
+  public readonly damagedCreeps: AnyCreep[]
   public readonly droppedResources: Resource[]
   public readonly tombStones: Tombstone[]
   public readonly energySources: EnergySource[]
@@ -186,11 +190,12 @@ export class OwnedRoomObjects {
     this.roomInfo = ((): RoomInfo => {
       if (roomInfoMemory == null) { // 新規のRoomの場合
         return {
-          version: ShortVersion.v6,
+          version: ShortVersion.v5,
           energySourceStructures: [],
           energyStoreStructures: [],
           upgrader: null,
           distributor: null,
+          bootstrapping: false,
         }
       }
       return decodeRoomInfo(roomInfoMemory)
@@ -229,19 +234,16 @@ export class OwnedRoomObjects {
     const spawns: StructureSpawn[] = []
     const extensions: StructureExtension[] = []
     const towers: StructureTower[] = []
-    let storage: StructureStorage | null = null
-    let terminal: StructureTerminal | null = null
+    let storage = null as StructureStorage | null
+    let terminal = null as StructureTerminal | null
     let powerSpawn: StructurePowerSpawn | null = null
+    const chargeableLabs: StructureLab[] = []
+
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
       const upgraderContainer = this.roomInfo.upgrader.container
       if (upgraderContainer.store.getFreeCapacity(RESOURCE_ENERGY) > upgraderContainer.store.getCapacity() * 0.3) {
         chargeableStructures.push(upgraderContainer)
-      }
-    }
-    if (chargeableStructures.length <= 0) {
-      if (room.terminal != null && room.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000 && room.terminal.store.getFreeCapacity() > 10000) {
-        chargeableStructures.push(room.terminal)
       }
     }
 
@@ -253,34 +255,40 @@ export class OwnedRoomObjects {
     ]
     const myStructures = room.find(FIND_STRUCTURES)
     myStructures.forEach(structure => {
-      if (structure.isActive() !== true) {
-        return
-      }
       if (excludedDamagedStructureTypes.includes(structure.structureType) !== true && structure.hits < structure.hitsMax) {
         this.damagedStructures.push(structure)
       }
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         spawns.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.isActive() !== true) {
+          break
+        }
         extensions.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.isActive() !== true) {
+          break
+        }
         towers.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
         }
         break
       case STRUCTURE_CONTAINER:
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 300) {
           if (structure !== this.roomInfo.upgrader?.container) {
             this.energySources.push(structure)
             this.energyStores.push(structure)
@@ -289,21 +297,38 @@ export class OwnedRoomObjects {
         checkDecayed(structure)
         break
       case STRUCTURE_STORAGE:
+        if (structure.isActive() !== true) {
+          break
+        }
         storage = structure
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.isActive() !== true) {
+          break
+        }
         terminal = structure
-        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getUsedCapacity(RESOURCE_ENERGY) > 20000) {
           this.energyStores.push(structure)
         }
         break
       case STRUCTURE_POWER_SPAWN:
+        if (structure.isActive() !== true) {
+          break
+        }
         powerSpawn = structure
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
+        }
+        break
+      case STRUCTURE_LAB:
+        if (structure.isActive() !== true) {
+          break
+        }
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          chargeableLabs.push(structure)
         }
         break
       case STRUCTURE_ROAD:
@@ -313,6 +338,21 @@ export class OwnedRoomObjects {
         break // TODO: 全て網羅する
       }
     })
+
+    if (chargeableStructures.length <= 0) {
+      if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
+        if (terminal.store.getFreeCapacity() > 30000) {
+          if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+            chargeableStructures.push(terminal)
+          } else if (controller.level >= 8 && room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 150000) {
+            chargeableStructures.push(terminal)
+          }
+        }
+      }
+    }
+    if (chargeableStructures.length <= 0) {
+      chargeableStructures.push(...chargeableLabs)
+    }
 
     const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
     const othersPowerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS)
@@ -363,6 +403,9 @@ export class OwnedRoomObjects {
       creeps: allianceCreeps,
       powerCreeps: alliancePowerCreeps,
     }
+
+    this.damagedCreeps = room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
+    this.damagedCreeps.push(...room.find(FIND_MY_POWER_CREEPS).filter(creep => creep.hits < creep.hitsMax))
   }
 
   public getSource(position: RoomPosition): Source | null {
@@ -370,8 +413,8 @@ export class OwnedRoomObjects {
       return null
     }
     return this.sources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -385,8 +428,8 @@ export class OwnedRoomObjects {
       return null
     }
     return energySources.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -408,8 +451,8 @@ export class OwnedRoomObjects {
     }
 
     return energyStores.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -423,8 +466,8 @@ export class OwnedRoomObjects {
       return null
     }
     return chargeableStructures.reduce((lhs, rhs) => {
-      const lTargetedBy = lhs.targetedBy.length
-      const rTargetedBy = rhs.targetedBy.length
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
         return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
       }
@@ -432,12 +475,13 @@ export class OwnedRoomObjects {
     })
   }
 
-  public getConstructionSite(): ConstructionSite<BuildableStructureConstant> | null {
-    return this.constructionSites[0]  // TODO: 優先順位づけ
+  public getConstructionSite(position: RoomPosition): ConstructionSite<BuildableStructureConstant> | null {
+    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    return position.findClosestByPath(this.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true))  // TODO: 優先順位づけ
   }
 
   public getRepairStructure(): AnyStructure | null {
-    return this.damagedStructures[0]  // TODO: 優先順位づけ
+    return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
 }
 
@@ -537,7 +581,9 @@ export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
         link,
         container,
       }
-    })()
+    })(),
+
+    bootstrapping: roomInfoMemory.bootstrapping ?? false
   }
 }
 
@@ -563,7 +609,8 @@ function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
         l: roomInfo.upgrader.link?.id ?? null,
         c: roomInfo.upgrader.container?.id ?? null,
       }
-    })()
+    })(),
+    bootstrapping: roomInfo.bootstrapping,
   }
 }
 

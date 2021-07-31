@@ -85,6 +85,9 @@ export class TowerPool implements ResourcePoolType<StructureTower> {
       return lhs.priority < rhs.priority ? -1 : 1
     })[0]
 
+    if (task == null) {
+      return
+    }
     this.towers.forEach(tower => {
       runTask(task, tower)
     })

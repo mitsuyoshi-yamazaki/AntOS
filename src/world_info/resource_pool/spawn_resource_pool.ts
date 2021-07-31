@@ -19,7 +19,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
   }
 
   public spawnCreeps(rawRequests: CreepSpawnRequest[]): void {
-    const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null)
+    const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null || spawn.spawning.remainingTime <= 0)
     if (idleSpawns.length <= 0) {
       return
     }
@@ -34,7 +34,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
       const cost = bodyCost(body)
       if (cost > spawn.room.energyCapacityAvailable) {
-        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)}`)
+        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
         return
       }
       const memory: V5CreepMemory = {
@@ -48,7 +48,9 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       switch (result) {
       case OK: {
         const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
-        creep.v5task = request.initialTask
+        if (creep != null) {
+          creep.v5task = request.initialTask
+        }
         break
       }
       case ERR_NOT_ENOUGH_ENERGY:

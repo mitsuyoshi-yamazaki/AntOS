@@ -14,6 +14,7 @@ export interface DismantleApiWrapperState extends CreepApiWrapperState {
 
 export class DismantleApiWrapper implements ApiWrapper<Creep, DismantleApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "dismantle"
+  public readonly range = 1
 
   private constructor(
     public readonly target: AnyStructure,

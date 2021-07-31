@@ -19,6 +19,7 @@ import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_e
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { bodyCost } from "utility/creep_body"
+import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
 const numberOfCreeps = 10
 
@@ -71,13 +72,28 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): UpgradeToRcl3Task {
+    const roomInfo = Memory.room_info
+    if (roomInfo != null) {
+      const targetRoomInfoMemory = roomInfo[targetRoomName]
+      if (targetRoomInfoMemory != null) {
+        targetRoomInfoMemory.bootstrapping = true
+      }
+    }
+
     return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
-    if (targetRoomObjects != null && targetRoomObjects.activeStructures.spawns.length > 0) {
-      this.takeOberCreeps()
+    if (targetRoomObjects != null && targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.controller.level >= 3) {
+      this.takeOverCreeps()
+      const roomInfo = Memory.room_info
+      if (roomInfo != null) {
+        const targetRoomInfoMemory = roomInfo[this.targetRoomName]
+        if (targetRoomInfoMemory != null) {
+          targetRoomInfoMemory.bootstrapping = false
+        }
+      }
       return TaskStatus.Finished
     }
 
@@ -117,7 +133,11 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         const sources = creep.room.find(FIND_SOURCES)
         if (sources.length > 0) {
           const source = sources[Game.time % sources.length]
-          return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+          if (source != null) {
+            return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+          }
+          creep.say("no source")
+          return null
         }
       } else {
         const constructionSite = creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES)
@@ -131,6 +151,16 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+        const spawn = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
+        if (spawn != null && spawn.room.energyAvailable > 150) {
+          const cost = bodyCost(creep.body.map(b => b.type))
+          if (cost > spawn.room.energyCapacityAvailable) {
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+          }
+        }
+      }
+
       const droppedEnergy = this.getDroppedEnergy(creep.pos, targetRoomObjects)
       if (droppedEnergy != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
@@ -154,7 +184,8 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
 
-    const constructionSite = targetRoomObjects.getConstructionSite()
+    // const constructionSite = targetRoomObjects.getConstructionSite()
+    const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
@@ -167,7 +198,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       if (resource.resourceType !== RESOURCE_ENERGY) {
         return false
       }
-      if (resource.targetedBy.length > 0) {
+      if (resource.v5TargetedBy.length > 0) {
         return false
       }
       return true
@@ -195,7 +226,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   // ---- Take Over Creeps ---- //
-  private takeOberCreeps(): void {
+  private takeOverCreeps(): void {
     World.resourcePools.takeOverCreeps(this.parentRoomName, this.taskIdentifier, null, this.targetRoomName)
   }
 }

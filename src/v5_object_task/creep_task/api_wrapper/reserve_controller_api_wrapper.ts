@@ -15,6 +15,7 @@ export interface ReserveControllerApiWrapperState extends CreepApiWrapperState {
 
 export class ReserveControllerApiWrapper implements ApiWrapper<Creep, ReserveControllerApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "reserve"
+  public readonly range = 1
   private constructor(
     public readonly target: StructureController,
   ) { }

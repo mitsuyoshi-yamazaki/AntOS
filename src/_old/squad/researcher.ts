@@ -164,7 +164,7 @@ export class ResearcherSquad extends Squad {
 
       if (needs_renew) {
         if ((creep.room.spawns.length > 0) && (creep.room.energyAvailable > 0)) {
-          creep.goToRenew(creep.room.spawns[0])
+          creep.goToRenew(creep.room.spawns[0]!)
           return
         }
         else if (creep.memory.status == CreepStatus.WAITING_FOR_RENEW) {

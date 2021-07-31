@@ -1,6 +1,12 @@
-import { TaskRunnerId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
-export type EnergyChargeableStructure = StructureSpawn | StructureExtension | StructureTower | StructureContainer | StructurePowerSpawn | StructureTerminal  // TODO: まだある
+export type EnergyChargeableStructure = StructureSpawn
+  | StructureExtension
+  | StructureTower
+  | StructureContainer
+  | StructurePowerSpawn
+  | StructureTerminal
+  | StructureLab  // TODO: まだある
 
 /** Energyを引き出せるオブジェクト */
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep
@@ -20,19 +26,46 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
 
 declare global {
   interface RoomObject {
-    targetedBy: TaskRunnerId[]
+    /** @deprecated */
+    v5TargetedBy: V5TaskRunnerId[]
   }
 }
 
 // 毎tick呼び出すこと
 export function init(): void {
-  try { // FixMe: Season3環境でなぜか失敗した
-    Object.defineProperty(RoomObject.prototype, "targetedBy", {
-      get(): TaskRunnerId[] {
-        return TaskTargetCache.targetingTaskRunnerIds(this.id)
-      },
-    })
-  } catch (error) {
-    console.log(`RoomObject.defineProperty failed in ${Game.shard.name}`)
+  Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
+    get(): V5TaskRunnerId[] {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const id = (this as any).id // FlagにはIDがない
+      if (id == null) {
+        return []
+      }
+      return V5TaskTargetCache.targetingTaskRunnerIds(id)
+    },
+  })
+}
+
+export function parseId<T>(id: Id<T> | null): T | null {
+  if (id == null) {
+    return null
   }
+  return Game.getObjectById(id)
+}
+
+/**
+ * - parse IDs and remove inexist IDs from argument array
+ */
+export function parseIds<T>(ids: Id<T>[]): T[] {
+  const removeIndexes: number[] = []
+  const result = ids.flatMap((id, index) => {
+    const obj = Game.getObjectById(id)
+    if (obj == null) {
+      removeIndexes.push(index)
+      return []
+    }
+    return obj
+  })
+  removeIndexes.reverse()
+  removeIndexes.forEach(index => ids.splice(index, 1))
+  return result
 }

@@ -14,7 +14,8 @@ import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/h
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
-import { createCreepBody } from "utility/creep_body"
+import { bodyCost, createCreepBody } from "utility/creep_body"
+import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
 const numberOfCreeps = 3
 
@@ -64,7 +65,8 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    if (objects.constructionSites.length > 0 || objects.damagedStructures.length > 0) {
+    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    if (objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true)) || objects.damagedStructures.length > 0) {
       // this.removeBuilderCreepRequest() // CreepInsufficiencyProblemSolverは毎tick Finishするため不要
       return this.builderCreepRequest(objects)
     } else {
@@ -75,6 +77,17 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+        const spawn = objects.activeStructures.spawns[0]
+        const room = objects.controller.room
+        if (spawn != null && room.energyAvailable > 150) {
+          const cost = bodyCost(creep.body.map(b => b.type))
+          if (cost > room.energyCapacityAvailable) {
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+          }
+        }
+      }
+
       const energyStore = objects.getEnergyStore(creep.pos)
       if (energyStore != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energyStore))
@@ -102,7 +115,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
       }
 
-      const constructionSite = objects.getConstructionSite()
+      const constructionSite = objects.getConstructionSite(creep.pos)
       if (constructionSite != null) {
         return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
       }

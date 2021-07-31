@@ -1,6 +1,11 @@
 export type RoomName = string
 
-export type RoomType = "normal" | "highway" | "highway_crossing" | "source_keeper" | "sector_center"
+export type RoomTypeNormal = "normal"
+export type RoomTypeHighway = "highway"
+export type RoomTypeHighwayCrossing = "highway_crossing"
+export type RoomTypeSourceKeeper = "source_keeper"
+export type RoomTypeSectorCenter = "sector_center"
+export type RoomType = RoomTypeNormal | RoomTypeHighway | RoomTypeHighwayCrossing | RoomTypeSourceKeeper | RoomTypeSectorCenter
 
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
@@ -38,14 +43,17 @@ export class RoomCoordinate {
 
   public static parse(roomName: RoomName): RoomCoordinate | null {
     const parsed = /^([WE])([0-9]+)([NS])([0-9]+)$/.exec(roomName)
-    if (parsed == null || (parsed.length < 5)) {
+    if (parsed == null) {
       return null
     }
 
-    const horizontalDirection = parsed[1]
-    const x = parseInt(parsed[2], 10)
-    const verticalDirection = parsed[3] as string
-    const y = parseInt(parsed[4], 10)
+    const [, horizontalDirection, xString, verticalDirection, yString] = parsed
+    if (xString == null || yString == null || horizontalDirection == null || verticalDirection == null) {
+      return null
+    }
+
+    const x = parseInt(xString, 10)
+    const y = parseInt(yString, 10)
     const direction = verticalDirection + horizontalDirection
     if (!isRoomCoordinateDirection(direction)) {
       return null

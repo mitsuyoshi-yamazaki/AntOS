@@ -1,16 +1,17 @@
-import type { RoomPositionIdentifier } from "prototype/room_position"
+import type { RoomPositionId } from "prototype/room_position"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
-type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant>
+type IdRepresentableTaskTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant> | Ruin
 export type TaskTargetType = IdRepresentableTaskTargetType | RoomPosition
 
 export type TaskRunnerId = Id<TaskRunnerType>
-export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionIdentifier
+export type TaskTargetTypeId = Id<IdRepresentableTaskTargetType> | RoomPositionId
 type TaskTargetCacheKey = TaskTargetTypeId
 
 const cache = new Map<TaskTargetCacheKey, TaskRunnerId[]>()
 
 // TODO: Process適合にする
+/** @deprecated */
 export const TaskTargetCache = {
   clearCache(): void {
     cache.clear()

@@ -4,9 +4,12 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "../api_wrapper/transfer_resource_api_wrapper"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { RoomName, roomTypeOf } from "utility/room_name"
+import { SourceKeeper } from "game/source_keeper"
+import { OBSTACLE_COST } from "utility/constants"
 
 export interface SwampRunnerTransferTaskState extends CreepTaskState {
   /** api warpper state */
@@ -100,7 +103,7 @@ export class SwampRunnerTransferTask implements CreepTask {
 
       case ERR_NOT_IN_RANGE:
         creep.drop(resourceType)
-        creep.moveTo(this.transferResourceApiWrapper.target)
+        this.moveCreep(creep)
         this.droppedResourceLocation = creep.pos
         return TaskProgressType.InProgress
 
@@ -118,8 +121,8 @@ export class SwampRunnerTransferTask implements CreepTask {
     const droppedResource = this.droppedResourceLocation.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === resourceType)
     if (droppedResource == null) {
       creep.say("no resource")
-      PrimitiveLogger.programError(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
-      return TaskProgressType.InProgress
+      PrimitiveLogger.fatal(`${this.constructor.name} cannot find dropped resource at ${this.droppedResourceLocation} in ${roomLink(this.droppedResourceLocation.roomName)}`)
+      return TaskProgressType.Finished
     }
     if (droppedResource.pos.isEqualTo(creep.pos) === true) {
       const stopped = droppedResource.pos.isEqualTo(lastTickPosition) === true
@@ -127,7 +130,7 @@ export class SwampRunnerTransferTask implements CreepTask {
         // 静止していた
         this.pickup(creep, droppedResource)
       } else {
-        creep.moveTo(this.transferResourceApiWrapper.target)
+        this.moveCreep(creep)
       }
       return TaskProgressType.InProgress
     }
@@ -145,6 +148,54 @@ export class SwampRunnerTransferTask implements CreepTask {
     default:
       PrimitiveLogger.programError(`${this.constructor.name} pickup failed with ${pickupResult} at ${roomLink(creep.room.name)}`)
       return
+    }
+  }
+
+  private moveCreep(creep: Creep): void {
+    const reusePath = 20
+    const noPathFindingOptions: MoveToOpts = {
+      noPathFinding: true,
+      reusePath,
+    }
+
+    const moveToOptions = ((): MoveToOpts => {
+      const options: MoveToOpts = {}
+      options.reusePath = reusePath
+      options.swampCost = 1
+      if (roomTypeOf(creep.room.name) !== "source_keeper") {
+        return options
+      }
+      creep.say("SK room")
+      // 保存されたパスがあれば計算はスキップする
+
+      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeTerrainWalls: false,
+        excludeStructures: false,
+        excludeWalkableStructures: false,
+      }
+
+      options.maxOps = 2000
+      const sourceKeepers = creep.room.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => creep.owner.username === SourceKeeper.username)
+      const positionsToAvoid = sourceKeepers
+        .flatMap(creep => creep.pos.positionsInRange(4, roomPositionFilteringOptions))
+
+      options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
+        if (roomName !== creep.room.name) {
+          return
+        }
+        positionsToAvoid.forEach(position => {
+          // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+          costMatrix.set(position.x, position.y, OBSTACLE_COST)
+        })
+        return costMatrix
+      }
+      return options
+    })
+
+    if (creep.moveTo(this.transferResourceApiWrapper.target, noPathFindingOptions) === ERR_NOT_FOUND) {
+      creep.moveTo(this.transferResourceApiWrapper.target, moveToOptions())
     }
   }
 }

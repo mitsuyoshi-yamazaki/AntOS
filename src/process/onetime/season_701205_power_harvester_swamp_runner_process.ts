@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomLink } from "utility/log"
+import { coloredText, profileLink, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "process/process_state"
@@ -11,7 +11,6 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { processLog } from "process/process_log"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
@@ -24,6 +23,9 @@ import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { bodyCost } from "utility/creep_body"
+import { OperatingSystem } from "os/os"
+import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
@@ -54,10 +56,15 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
   f: boolean
 }
 
-// Game.io("launch Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
-// Game.io("launch Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W1S25 target_room_name waypoints=W0S25")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
+  public get isPickupFinished(): boolean {
+    return this.pickupFinished
+  }
+
   private readonly identifier: string
   private readonly codename: string
 
@@ -85,17 +92,15 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   private readonly smallAttackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Attacker, CreepRole.Mover],
-    // 480 hits/tick = 2M/4200ticks
-    // 2150E max
+    // 450 hits/tick = 2M/4450ticks
+    // 2050E max
     body: [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
       MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
       ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK,
     ],
   }
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
@@ -222,6 +227,35 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         this.addScout()
       }
     } else {
+      if (this.pickupFinished !== true) {
+        const whitelistedHarvestCreep = ((): Creep | null => {
+          const whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist
+          if (whitelistedUsernames == null || whitelistedUsernames.length <= 0) {
+            return null
+          }
+          const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+          return targetRoom.find(FIND_HOSTILE_CREEPS).find(creep => {
+            if (whitelistedUsernames.includes(creep.owner.username) !== true) {
+              return false
+            }
+            return creep.body.some(b => attackBodyParts.includes(b.type))
+          }) ?? null
+        })()
+        if (whitelistedHarvestCreep != null) {
+          const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => creep.body.some(b => (b.type === ATTACK)))
+          if (isHarvesting === true) {
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is trying to harvest ${roomLink(this.targetRoomName)} power`)
+          } else {
+            processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
+            this.pickupFinished = true
+
+            World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true).forEach(creep => {
+              creep.v5task = null
+            })
+          }
+        }
+      }
+
       powerBank = targetRoom.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_BANK) as StructurePowerBank | null
 
       if (powerBank != null) {
@@ -273,7 +307,23 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
     const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
-    processLog(this, `${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+    processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+
+    if (this.pickupFinished === true) {
+      const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
+      if (runningCreepCount <= 0) {
+        World.resourcePools.assignTasks(
+          this.parentRoomName,
+          this.identifier,
+          CreepPoolAssignPriority.Low,
+          () => RunApisTask.create([SuicideApiWrapper.create()], {waitUntilFinishedAll: true, ignoreFailure: true}),
+          creep => (creep.body.length <= 1),
+        )
+
+        processLog(this, `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`)
+        OperatingSystem.os.killProcess(this.processId)
+      }
+    }
   }
 
   // ---- Hauler ---- //
@@ -282,7 +332,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return
     }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.Medium,
+      priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.haulerSpec.maxCount,
       codename: "swamp_runner",
       roles: this.haulerSpec.roles,
@@ -366,7 +416,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })()
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.High,
+      priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.attackerSpec.maxCount,
       codename: this.codename,
       roles: this.attackerSpec.roles,
@@ -388,6 +438,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   }
 
   private attackerTask(creep: Creep, powerBank: StructurePowerBank | null): CreepTask | null {
+    if (this.pickupFinished === true) {
+      return null
+    }
     const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)[0]
     if (hostileCreep != null) {
       return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
@@ -401,7 +454,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
     }
 
-    return MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 4)
+    const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
+    const range = 4
+    if (creep.pos.inRangeTo(waitingPosition, range) === true) {
+      return null
+    }
+    return MoveToTask.create(waitingPosition, range)
   }
 
   // ---- Scout ---- //
@@ -415,7 +473,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       codename: this.codename,
       roles: this.scoutSpec.roles,
       body: this.scoutSpec.body,
-      initialTask: this.scoutTask(),
+      initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
@@ -426,20 +484,26 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      () => this.scoutTask(),
+      creep => this.scoutTask(creep),
       creep => hasNecessaryRoles(creep, this.scoutSpec.roles),
     )
   }
 
-  private scoutTask(): CreepTask {
+  private scoutTask(creep: Creep): CreepTask | null {
     const options: SequentialTaskOptions = {
       ignoreFailure: true,
       finishWhenSucceed: false,
     }
+
+    const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
+    const range = 10
+    if (creep.pos.inRangeTo(waitingPosition, range) === true) {
+      return null
+    }
+
     const tasks: CreepTask[] = [
       MoveToRoomTask.create(this.targetRoomName, this.waypoints),
-      MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 10),
-      EndlessTask.create(),
+      MoveToTask.create(waitingPosition, range),
     ]
     return SequentialTask.create(tasks, options)
   }

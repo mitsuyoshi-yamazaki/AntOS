@@ -13,11 +13,9 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
-import { processLog } from "process/process_log"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -35,6 +33,9 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
   n: number
 }
 
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W17S29 waypoints=W14S30,W16S29")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -48,6 +49,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     MOVE, MOVE, MOVE, MOVE, MOVE,
     WORK, WORK, WORK, WORK, WORK,
     WORK, WORK, WORK, WORK, WORK,
+  ]
+
+  private readonly scoutBody: BodyPartConstant[] = [
+    MOVE, MOVE, MOVE
   ]
 
   private constructor(
@@ -83,11 +88,11 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n)
+    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, 2)//state.n)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 2)
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 5)
   }
 
   public processShortDescription(): string {
@@ -171,15 +176,15 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.scoutTask(creep),
+      creep => this.removeConstructionSiteTask(creep),
       () => true,
     )
 
     if (this.numberOfCreeps > 0) {
-      if (this.checkScoutAttacked() === true) {
-        processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
-        this.numberOfCreeps = 0
-      }
+      // if (this.checkScoutAttacked() === true) {
+      //   processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
+      //   this.numberOfCreeps = 0
+      // }
     }
   }
 
@@ -202,14 +207,14 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Scout],
-      body: [MOVE],
+      body: this.scoutBody,
       initialTask,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
   }
 
-  private scoutTask(creep: Creep): CreepTask | null {
+  private scoutMoveToFlagTask(creep: Creep): CreepTask | null {
     if (creep.room.name !== this.targetRoomName) {
       return MoveToRoomTask.create(this.targetRoomName, [])
     }
@@ -237,6 +242,9 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       return targetedBy(lhs.pos) < targetedBy(rhs.pos) ? -1 : 1
     })
     const targetFlag = flags[0]
+    if (targetFlag == null) {
+      return null
+    }
 
     const tasks: CreepTask[] = [
       MoveToTask.create(targetFlag.pos, 0),
@@ -261,7 +269,16 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       const position = new RoomPosition(targetSite.pos.x + i, targetSite.pos.y + j, creep.room.name)
       return MoveToTask.create(position, 0)
     }
-    return MoveToTask.create(targetSite.pos, 0)
+
+    if ((creep.ticksToLive ?? 0) > 10 && creep.pos.isNearTo(targetSite.pos) === true) {
+      if (targetSite.progress < (targetSite.progressTotal / 2)) {
+        const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).some(creep => creep.body.some(body => attackBodyParts.includes(body.type))) !== true) {
+          return null
+        }
+      }
+    }
+    return MoveToTask.create(targetSite.pos, 0, {ignoreSwamp: true})
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
@@ -284,6 +301,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES) //.sort((lhs, rhs))
 
 
+    const towerSite = constructionSites.find(site => site.structureType === STRUCTURE_TOWER)
+    if (towerSite != null) {
+      return towerSite
+    }
     const spawnSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
     if (spawnSite != null) {
       return spawnSite
@@ -292,7 +313,8 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     if (targetSite != null) {
       return targetSite
     }
-    return null
+
+    return creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
   }
 
   private checkScoutAttacked(): boolean {

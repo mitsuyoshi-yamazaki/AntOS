@@ -2,14 +2,17 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessLog } from "os/infrastructure/runtime_memory"
 import { OperatingSystem } from "os/os"
+import { ProcessInfo } from "os/os_process_info"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
+import { coloredText } from "utility/log"
+import type { Timestamp } from "utility/timestamp"
 
 const logInterval = 50
 
 export interface LoggerProcessState extends ProcessState {
-  /** message filter (|| statement) */
+  /** message filter */
   f: {
     /** filter by process ID */
     p: ProcessId[]
@@ -27,13 +30,10 @@ function isLoggerProcessMessageFilterType(arg: string): arg is LoggerProcessMess
 }
 
 export class LoggerProcess implements Process, Procedural, MessageObserver {
-  private lastLog: { time: number, message: string } = {
-    time: 0,
-    message: "",
-  }
+  private lastLogs = new Map<ProcessId, { time: Timestamp, message: string }>()
 
   public constructor(
-    public readonly launchTime: number,
+    public readonly launchTime: Timestamp,
     public readonly processId: ProcessId,
     private readonly filter: { processIds: ProcessId[] }
   ) {
@@ -63,33 +63,58 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
 
   // ---- Procedural ---- //
   public runOnTick(): void {
-    const logs = OperatingSystem.os.processLogs()
-    logs.forEach(log => {
-      if (this.shouldShow(log)) {
-        this.show(log)
+    const processLogs = new Map<ProcessId, { processType: string, messages: string[] }>()
+    OperatingSystem.os.processLogs().forEach(log => {
+      const logInfo = ((): { processType: string, messages: string[] } => {
+        const stored = processLogs.get(log.processId)
+        if (stored != null) {
+          return stored
+        }
+        const newInfo = {
+          processType: log.processType,
+          messages: [],
+        }
+        processLogs.set(log.processId, newInfo)
+        return newInfo
+      })()
+      logInfo.messages.push(log.message)
+    })
+    processLogs.forEach((logInfo, processId) => {
+      if (this.shouldShowProcessLog(processId)) {
+        this.show(processId, logInfo)
       }
     })
     OperatingSystem.os.clearProcessLogs()
+
+    if (Game.time % 1511 === 13) {
+      this.filter.processIds = this.filter.processIds.filter(processId => OperatingSystem.os.processOf(processId) != null)
+    }
   }
 
-  private shouldShow(log: ProcessLog): boolean {
-    if (this.filter.processIds.includes(log.processId)) {
+  private shouldShowProcessLog(processId: ProcessId): boolean {
+    if (this.filter.processIds.includes(processId)) {
       return true
     }
     return false
   }
 
-  private show(log: ProcessLog): void {
-    const message = `${log.processId} ${log.processType}: ${log.message}`
-    if (message === this.lastLog.message) {
-      if (Game.time - this.lastLog.time < logInterval) {
+  private show(processId: ProcessId, logInfo: { processType: string, messages: string[] }): void {
+    const message = ((): string => {
+      if (logInfo.messages.length > 1) {
+        return `${processId} ${logInfo.processType}${coloredText(":", "info")} \n  ${logInfo.messages.join("\n  ")}`
+      }
+      return `${processId} ${logInfo.processType}${coloredText(":", "info")} ${logInfo.messages[0]}`
+    })()
+    const lastLog = this.lastLogs.get(processId)
+    if (lastLog != null && message === lastLog.message) {
+      if (Game.time - lastLog.time < logInterval) {
         return
       }
     }
-    this.lastLog = {
+    this.lastLogs.set(processId, {
       time: Game.time,
       message,
-    }
+    })
     PrimitiveLogger.log(message)
   }
 
@@ -110,7 +135,7 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
   public didReceiveMessage(message: string): string {
     const components = message.split(" ")
     const operation = components[0]
-    if (!(isLoggerProcessMessageOperation(operation))) {
+    if (operation == null || !(isLoggerProcessMessageOperation(operation))) {
       return `Invalid operation ${operation}. Operation is either "add", "remove" or "clear"`
     }
 
@@ -119,19 +144,22 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
     }
 
     const filterType = components[1]
-    if (!(isLoggerProcessMessageFilterType(filterType))) {
+    if (filterType == null || !(isLoggerProcessMessageFilterType(filterType))) {
       return `Invalid filter type ${filterType}. Filter type is either "id" (process ID) or "type" (process Type)`
     }
 
     switch (filterType) {
     case "id":
-      return this.filterById(operation, components[2])
+      return this.filterById(operation, components[2] ?? null)
     }
   }
 
-  private filterById(operation: LoggerProcessMessageOperation, rawProcessId: string): string {
+  private filterById(operation: LoggerProcessMessageOperation, rawProcessId: string | null): string {
     switch (operation) {
     case "add": {
+      if (rawProcessId == null) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       const processId = parseInt(rawProcessId, 10)
       if (isNaN(processId)) {
         return `Invalid process ID ${rawProcessId}`
@@ -143,6 +171,9 @@ export class LoggerProcess implements Process, Procedural, MessageObserver {
       return `Added ${processId}`
     }
     case "remove": {
+      if (rawProcessId == null) {
+        return `Invalid process ID ${rawProcessId}`
+      }
       const processId = parseInt(rawProcessId, 10)
       if (isNaN(processId)) {
         return `Invalid process ID ${rawProcessId}`

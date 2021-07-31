@@ -15,6 +15,7 @@ export interface ClaimControllerApiWrapperState extends CreepApiWrapperState {
 
 export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControllerApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "claim"
+  public readonly range = 1
   private constructor(
     public readonly target: StructureController,
   ) { }

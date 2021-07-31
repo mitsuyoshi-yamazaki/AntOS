@@ -60,7 +60,7 @@ export class MoveToTransferHaulerTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
 
     case ERR_NOT_IN_RANGE: {
-      const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions : interRoomMoveToOptions
+      const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions() : interRoomMoveToOptions()
       creep.moveTo(this.apiWrapper.target, options)
       this.runSubTask(creep)
       return TaskProgressType.InProgress

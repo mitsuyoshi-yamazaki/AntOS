@@ -21,6 +21,8 @@ import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -77,7 +79,8 @@ export class OwnedRoomHaulerTask extends Task {
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = energySources.length * 1 // TODO: 距離等を加味する
+    const energyCapacity = objects.sources.reduce((result, current) => result + current.energyCapacity, 0)
+    const minimumCreepCount = Math.ceil(energyCapacity / 3000)
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -123,8 +126,9 @@ export class OwnedRoomHaulerTask extends Task {
         }
         if (solver != null) {
           this.addChildTask(solver)
+          return [solver]
         }
-        return [solver]
+        return []
       },
     }
 
@@ -180,9 +184,31 @@ export class OwnedRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.store.getFreeCapacity() > 0) {
+        const resourcefulTombstones = objects.tombStones.filter(tomb => tomb.store.getUsedCapacity() > 0)
+        const resourcefulTombstone = creep.pos.findClosestByRange(resourcefulTombstones)
+        if (resourcefulTombstone != null) {
+          const resourceTypes = Object.keys(resourcefulTombstone.store) as ResourceConstant[]
+          const mineral = resourceTypes.filter(resourceType => resourceType !== RESOURCE_ENERGY)[0]
 
-    if (noEnergy) {
+          if (mineral != null) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, mineral))
+          }
+          if (resourceTypes.includes(RESOURCE_ENERGY) === true) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, RESOURCE_ENERGY))
+          }
+        }
+      }
+
+      if (creep.store.getUsedCapacity() > 0) {
+        const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
+        const storageObject = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        if (resourceType != null && storageObject != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(storageObject, resourceType))
+        }
+      }
+
       const energySource = this.getEnergySource(creep.pos, objects, energySources)
       if (energySource != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
@@ -206,7 +232,7 @@ export class OwnedRoomHaulerTask extends Task {
 
   private getEnergySource(position: RoomPosition, objects: OwnedRoomObjects, energySources: EnergySource[]): EnergyStore | null {
     const droppedEnergy = objects.droppedResources.find(resource => {
-      if (resource.targetedBy.length > 0) {
+      if (resource.v5TargetedBy.length > 0) {
         return false
       }
       if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
@@ -219,7 +245,7 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     const tombstone = objects.tombStones.find(tombstone => {
-      if (tombstone.targetedBy.length > 0) {
+      if (tombstone.v5TargetedBy.length > 0) {
         return false
       }
       return tombstone.store.getUsedCapacity(RESOURCE_ENERGY) >= 100  // TODO: その他のリソースも回収する
@@ -229,7 +255,7 @@ export class OwnedRoomHaulerTask extends Task {
     }
 
     const availableEnergyStores = energySources.filter(source => {
-      if (source.targetedBy.length >= 2) {
+      if (source.v5TargetedBy.length >= 2) {
         return false
       }
       if (source instanceof Resource) {
@@ -239,8 +265,8 @@ export class OwnedRoomHaulerTask extends Task {
     })
     if (availableEnergyStores.length > 0) {
       return availableEnergyStores.reduce((lhs, rhs) => {
-        const lTargetedBy = lhs.targetedBy.length
-        const rTargetedBy = rhs.targetedBy.length
+        const lTargetedBy = lhs.v5TargetedBy.length
+        const rTargetedBy = rhs.v5TargetedBy.length
         if (lTargetedBy === rTargetedBy) {
           return getEnergyAmountOf(lhs) > getEnergyAmountOf(rhs) ? lhs : rhs
         }

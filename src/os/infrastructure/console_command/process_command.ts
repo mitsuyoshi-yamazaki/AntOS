@@ -132,10 +132,10 @@ export class ProcessCommand implements ConsoleCommand {
   private listProcess(): CommandExecutionResult {
     const tab = (str: string, tabs: Tab): string => this.tab(str, tabs)
 
-    const startString = `${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
-    return OperatingSystem.os.listAllProcesses().reduce((result, current) => {
+    const startString = `${tab("index", smallTab)}${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
+    return OperatingSystem.os.listAllProcesses().reduce((result, current, index) => {
       const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
-      return `${result}\n${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
+      return `${result}\n${tab(`${index}`, smallTab)}${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
     }, startString)
   }
 

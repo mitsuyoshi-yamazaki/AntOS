@@ -8,8 +8,11 @@ import { ExecCommand } from "./console_command/exec_command"
 import { HelpCommand } from "./console_command/help_command"
 import { KillCommand } from "./console_command/kill_command"
 import { LaunchCommand } from "./console_command/launch_command"
+import { MemoryCommand } from "./console_command/memory_command"
 import { MessageCommand } from "./console_command/message_command"
 import { ProcessCommand } from "./console_command/process_command"
+import { ResumeCommand } from "./console_command/resume_command"
+import { SuspendCommand } from "./console_command/suspend_command"
 
 export const standardInput = (rawCommand: string): string => {
   let result: string | null = null
@@ -46,7 +49,7 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
   }
 
   const command = components[0]
-  if (!isConsoleCommand(command)) {
+  if (command == null || !isConsoleCommand(command)) {
     return invalidCommandDescription(`Unknown command ${command}`)
   }
   components.splice(0, 1)
@@ -56,16 +59,9 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   components.forEach(component => {
     if (component.startsWith("-")) {
-      const optionKeyValue = component.split("=")
-      switch (optionKeyValue.length) {
-      case 1:
-        options.set(optionKeyValue[0], "")
-        break
-      case 2:
-        options.set(optionKeyValue[0], optionKeyValue[1])
-        break
-      default:
-        break
+      const [optionKey, optionValue] = component.split("=")
+      if (optionKey != null) {
+        options.set(optionKey, optionValue ?? "")
       }
       return
     }
@@ -87,6 +83,12 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
   case "kill":
     return Result.Succeeded(new KillCommand(options, args, rawCommand))
 
+  case "suspend":
+    return Result.Succeeded(new SuspendCommand(options, args, rawCommand))
+
+  case "resume":
+    return Result.Succeeded(new ResumeCommand(options, args, rawCommand))
+
   case "launch":
     return Result.Succeeded(new LaunchCommand(options, args, rawCommand))
 
@@ -98,5 +100,8 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   case "message":
     return Result.Succeeded(new MessageCommand(options, args, rawCommand))
+
+  case "memory":
+    return Result.Succeeded(new MemoryCommand(options, args, rawCommand))
   }
 }

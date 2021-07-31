@@ -1,4 +1,4 @@
-import { decodeRoomPosition, RoomPositionIdentifier, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionId, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
@@ -16,7 +16,7 @@ export interface TargetToPositionTaskState extends CreepTaskState {
 export class TargetToPositionTask implements CreepTask {
   public readonly shortDescription: string
 
-  public get targetId(): RoomPositionIdentifier {
+  public get targetId(): RoomPositionId {
     return this.destinationPosition.id
   }
 
@@ -55,7 +55,7 @@ export class TargetToPositionTask implements CreepTask {
 
   public run(creep: Creep): TaskProgressType {
     if (creep.pos.isEqualTo(this.destinationPosition) !== true) {
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions)
+      creep.moveTo(this.destinationPosition, defaultMoveToOptions())
     }
 
     for (const wrapper of this.apiWrappers) {

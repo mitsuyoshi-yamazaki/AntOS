@@ -1,7 +1,9 @@
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
+import { TaskTargetPosition } from "object_task/object_task_target_cache"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
 import { V6Creep } from "prototype/creep"
 import { REPAIR_RANGE } from "utility/constants"
+import { bodyPower } from "utility/creep_body"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 
 const apiWrapperType = "RepairApiWrapper"
@@ -42,6 +44,16 @@ export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
     return new RepairApiWrapper(target)
   }
 
+  public taskTarget(creep: V6Creep): TaskTargetPosition {
+    return {
+      taskTargetType: "position",
+      position: this.target.pos,
+      concreteTarget: this.target,
+      taskType: "repair",
+      amount: bodyPower(creep.body, "repair"),
+    }
+  }
+
   public run(creep: V6Creep): CreepApiWrapperProgress {
     if (this.target.hits >= this.target.hitsMax) {
       return CreepApiWrapperProgress.Finished(false)
@@ -51,7 +63,7 @@ export class RepairApiWrapper implements CreepApiWrapper, TargetingApiWrapper {
 
     switch (result) {
     case OK: {
-      const repairAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
+      const repairAmount = creep.body.filter(b => b.type === WORK).length * 1 // REPAIR_POWERはhitsの回復量
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= repairAmount) {
         return CreepApiWrapperProgress.Finished(true)
       } else {

@@ -1,6 +1,7 @@
 export type TargetingApiWrapperTargetType = AnyCreep | Resource | Tombstone | AnyStructure | Source | ConstructionSite<BuildableStructureConstant> | Ruin
 
 export interface TargetingApiWrapper {
+  range: number
   target: TargetingApiWrapperTargetType
 }
 

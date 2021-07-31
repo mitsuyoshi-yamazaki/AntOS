@@ -1,3 +1,4 @@
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { randomDirection } from "utility/constants"
@@ -37,6 +38,10 @@ export class RandomMoveTask implements CreepTask {
 
   public static create(originalPosition: RoomPosition): RandomMoveTask {
     return new RandomMoveTask(Game.time, originalPosition)
+  }
+
+  public taskTargets(): TaskTarget[] {
+    return []
   }
 
   public run(creep: V6Creep): CreepTaskProgress {

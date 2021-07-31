@@ -20,6 +20,7 @@ export class KeepHarvestingApiWrapper implements ApiWrapper<Creep, KeepHarvestin
     return this.source
   }
   public readonly shortDescription: string
+  public readonly range = 1
 
   private constructor(
     public readonly source: Source,

@@ -5,8 +5,8 @@ export class HarvestingRoomLostProblem implements Problem {
   public readonly identifier: ProblemIdentifier
 
   public constructor(
-    public readonly source: Source,
+    public readonly target: Source | Mineral,
   ) {
-    this.identifier = `${this.constructor.name}_${this.source.room.name}`
+    this.identifier = `${this.constructor.name}_${this.target.room?.name}`
   }
 }

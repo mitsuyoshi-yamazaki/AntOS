@@ -1,7 +1,9 @@
-import { TaskRunnerId, TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import { RoomName } from "utility/room_name"
+import { PositionTaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 
-export type RoomPositionIdentifier = string
+enum RoomPositionIdType { }
+export type RoomPositionId = string & RoomPositionIdType
 
 export interface RoomPositionState {
   x: number,
@@ -18,26 +20,37 @@ export interface RoomPositionFilteringOptions {
 
 declare global {
   interface RoomPosition {
-    id: RoomPositionIdentifier
-    targetedBy: TaskRunnerId[]
+    id: RoomPositionId
+    pos: RoomPosition
+
+    /** @deprecated */
+    v5TargetedBy: V5TaskRunnerId[]
 
     encode(): RoomPositionState
+    targetedBy(taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
+    positionTo(direction: DirectionConstant): RoomPosition | null
   }
 }
 
 // 毎tick呼び出すこと
 export function init(): void {
   Object.defineProperty(RoomPosition.prototype, "id", {
-    get(): RoomPositionIdentifier {
-      return `${this.roomName}_${this.x}_${this.y}`
+    get(): RoomPositionId {
+      return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
     },
   })
 
-  Object.defineProperty(RoomPosition.prototype, "targetedBy", {
-    get(): TaskRunnerId[] {
-      return TaskTargetCache.targetingTaskRunnerIds(this.id)
+  Object.defineProperty(RoomPosition.prototype, "pos", {
+    get(): RoomPosition {
+      return this
+    },
+  })
+
+  Object.defineProperty(RoomPosition.prototype, "v5TargetedBy", {
+    get(): V5TaskRunnerId[] {
+      return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
     },
   })
 
@@ -47,6 +60,10 @@ export function init(): void {
       y: this.y,
       r: this.roomName,
     }
+  }
+
+  RoomPosition.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo {
+    return TaskTargetCache.positionTargetingTaskRunnerInfo(this.id, taskType)
   }
 
   RoomPosition.prototype.neighbours = function (clockwise?: boolean): RoomPosition[] {
@@ -126,6 +143,47 @@ export function init(): void {
       }
     }
     return positions
+  }
+
+  RoomPosition.prototype.positionTo = function (direction: DirectionConstant): RoomPosition | null {
+    const i = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case LEFT:
+      case BOTTOM_LEFT:
+        return -1
+      case TOP:
+      case BOTTOM:
+        return 0
+      case TOP_RIGHT:
+      case RIGHT:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+    const j = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case TOP:
+      case TOP_RIGHT:
+        return -1
+      case LEFT:
+      case RIGHT:
+        return 0
+      case BOTTOM_LEFT:
+      case BOTTOM:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+
+    const x = this.x + i
+    const y = this.y + j
+    try {
+      return new RoomPosition(x, y, this.roomName)
+    } catch {
+      return null
+    }
   }
 }
 

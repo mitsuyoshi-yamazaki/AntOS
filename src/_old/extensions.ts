@@ -12,7 +12,9 @@ import * as Migration from "./migration";
 import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "utility/system_info"
 import { isV4CreepMemory } from "prototype/creep"
-import type { RoomInfoMemory } from "world_info/room_info"
+import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
+import type { RoomInfoType } from "room_resource/room_info"
+import type { GameInfoMemory } from "game/game_info"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -170,7 +172,9 @@ declare global {
 
     towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>  // TODO: 消す
 
-    room_info: {[index: string]: RoomInfoMemory}  // index: RoomName
+    gameInfo: GameInfoMemory
+    room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
+    v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomNa
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
@@ -760,7 +764,7 @@ export function tick(): void {
           if (!resources[destination_room_name]) {
             resources[destination_room_name] = {}
           }
-          resources[destination_room_name][room.name] = region_memory.resource_transports[destination_room_name]
+          resources[destination_room_name]![room.name] = region_memory.resource_transports[destination_room_name]!
         }
       }
       else if (!target_room_name || (target_room_name == room.name)) {
@@ -791,7 +795,7 @@ export function tick(): void {
         let receiving = false
 
         for (const from_room_name in resources[room_name]) {
-          const r = resources[room_name][from_room_name]
+          const r = resources[room_name]![from_room_name]
           if (r && (r.length > 0)) {
             receiving = true
             console.log(`   <-${from_room_name}: ${r}`)
@@ -944,7 +948,7 @@ export function tick(): void {
         return
       }
 
-      Memory.rooms[room_name].cost_matrix = undefined
+      Memory.rooms[room_name]!.cost_matrix = undefined
       cost_matrixes.delete(room_name)
 
     }, `Game.reset_costmatrix for ${room_name}`)()
@@ -962,7 +966,7 @@ export function tick(): void {
           break
         }
 
-        Memory.rooms[room_name].cost_matrix = undefined
+        Memory.rooms[room_name]!.cost_matrix = undefined
         cost_matrixes.delete(room_name)
       }
     }, `Game.reset_all_costmatrix`)()
@@ -973,7 +977,7 @@ export function tick(): void {
 
     ErrorMapper.wrapLoop(() => {
       for (const creep_name in Game.creeps) {
-        const creep = Game.creeps[creep_name]
+        const creep = Game.creeps[creep_name]!
         if (!isV4CreepMemory(creep.memory)) {
           continue
         }
@@ -992,7 +996,7 @@ export function tick(): void {
     console.log(`${squad_type} squad info:`)
 
     for (const squad_name in Memory.squads) {
-      const squad_memory = Memory.squads[squad_name]
+      const squad_memory = Memory.squads[squad_name]!
       if (squad_memory.type != squad_type) {
         continue
       }
@@ -1267,7 +1271,7 @@ export function tick(): void {
         continue
       }
 
-      const room_memory = Memory.rooms[room_name]
+      const room_memory = Memory.rooms[room_name]!
       if (room_memory.ancestor || room_memory.exits || room_memory.is_gcl_farm) {
         continue
       }
@@ -1372,7 +1376,7 @@ export function tick(): void {
     }
 
     const rooms = sector_memory.regions.map(region_name => {
-      return Game.rooms[region_name]
+      return Game.rooms[region_name]!
     }).filter(room => {
       if (!room || !room.storage || !room.terminal) {
         return false
@@ -1442,7 +1446,7 @@ export function tick(): void {
       }
 
       const amount = 10000
-      const destination_room_name = target_room_names[room_index % target_room_names.length]
+      const destination_room_name = target_room_names[room_index % target_room_names.length]!
 
       if (dry_run) {
         if (show_logs) {

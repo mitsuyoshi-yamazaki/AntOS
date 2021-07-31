@@ -2,27 +2,32 @@ import { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
 import { ShortVersion, ShortVersionV5, ShortVersionV6 } from "utility/system_info"
 import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
-import { TaskTargetCache } from "v5_object_task/object_task_target_cache"
+import { TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
 import type { RoomName } from "utility/room_name"
 import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
 import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 import { CreepTask } from "object_task/creep_task/creep_task"
+import { TaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
 
-export const defaultMoveToOptions: MoveToOpts = {
-  maxRooms: 1,
-  reusePath: 3,
-  maxOps: 500,
+export function defaultMoveToOptions(): MoveToOpts {
+  return {
+    maxRooms: 1,
+    reusePath: 5,
+    maxOps: 500,
+  }
 }
 
-export const interRoomMoveToOptions: MoveToOpts = {
-  maxRooms: 3,
-  reusePath: 3,
-  maxOps: 500,
+export function interRoomMoveToOptions(): MoveToOpts {
+  return {
+    maxRooms: 3,
+    reusePath: 20,
+    maxOps: 1500,
+  }
 }
 
 // ---- Custon Return Code ---- //
@@ -41,9 +46,6 @@ export const ERR_PROGRAMMING_ERROR: ERR_PROGRAMMING_ERROR = 971
 export interface V6Creep extends Creep {
   task: CreepTask | null
 
-  /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
-  _task: CreepTask | null
-
   memory: V6CreepMemory
 }
 
@@ -56,7 +58,10 @@ declare global {
     /** @deprecated 外部呼び出しを想定していないのでとりあえずdeprecatedにしている */
     _v5task: V5CreepTask | null
 
+    /** @deprecated */
     roles: CreepRole[]
+
+    targetedBy(taskType: TaskTargetCacheTaskType): TaskRunnerInfo[]
   }
 }
 
@@ -69,9 +74,6 @@ export interface V6CreepMemory {
 
   /** parent room name */
   p: RoomName
-
-  /** roles */
-  r: CreepRole[]
 
   /** task */
   t: CreepTaskState | null
@@ -166,32 +168,16 @@ export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(Creep.prototype, "task", {
-    get(): CreepTask | null {
-      return this._task
-    },
-    set(task: CreepTask | null): void {
-      if (this._task != null && this._task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._task.targetId)
-      }
-      if (task != null && task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, task.targetId)
-      }
-
-      this._task = task
-    }
-  })
-
   Object.defineProperty(Creep.prototype, "v5task", {
     get(): V5CreepTask | null {
       return this._v5task
     },
     set(v5task: V5CreepTask | null): void {
       if (this._v5task != null && this._v5task.targetId != null) {
-        TaskTargetCache.didFinishTask(this.id, this._v5task.targetId)
+        V5TaskTargetCache.didFinishTask(this.id, this._v5task.targetId)
       }
       if (v5task != null && v5task.targetId != null) {
-        TaskTargetCache.didAssignTask(this.id, v5task.targetId)
+        V5TaskTargetCache.didAssignTask(this.id, v5task.targetId)
       }
 
       this._v5task = v5task
@@ -204,10 +190,40 @@ export function init(): void {
       if (isV5CreepMemory(memory)) {
         return memory.r.concat([])
       }
-      if (isV6CreepMemory(memory)) {
-        return memory.r.concat([])
-      }
       return []
     }
   })
+
+  Creep.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): TaskRunnerInfo[] {
+    return TaskTargetCache.creepTargetingTaskRunnerInfo(this.id, taskType)
+  }
+}
+
+export function moveToOptions(position: RoomPosition, destination: RoomPosition, staying: number): MoveToOpts {
+  if (staying > 2) {
+    const maxRooms = position.roomName === destination.roomName ? 1 : 2
+    const maxOps = position.roomName === destination.roomName ? 1500 : 2000
+    return {
+      maxRooms,
+      reusePath: 3,
+      maxOps,
+    }
+  }
+
+  if (["W27S25"].includes(position.roomName)) { // FixMe:
+    const maxRooms = position.roomName === destination.roomName ? 1 : 2
+    return {
+      maxRooms,
+      reusePath: 100,
+      maxOps: 4000,
+      ignoreCreeps: true,
+    }
+  }
+
+  const options = defaultMoveToOptions()
+  options.maxRooms = position.roomName === destination.roomName ? 1 : 2
+  options.maxOps = position.roomName === destination.roomName ? 500 : 1500
+  options.reusePath = 100
+  options.ignoreCreeps = true
+  return options
 }

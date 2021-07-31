@@ -14,6 +14,7 @@ export interface TempRenewApiWrapperState extends CreepApiWrapperState {
 
 export class TempRenewApiWrapper implements ApiWrapper<Creep, TempRenewApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "renew"
+  public readonly range = 1
 
   private constructor(
     public readonly target: StructureSpawn,

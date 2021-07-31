@@ -38,7 +38,7 @@ implements Stateful, TaskProfit<Performance, PerformanceState>
   abstract readonly identifier: TaskIdentifier
   abstract run(roomResource: OwnedRoomResource): TaskOutputs<OutputType, ProblemTypes>
 
-  public runTask(roomResource: OwnedRoomResource): TaskOutputs<OutputType, ProblemTypes> {
+  public runSafely(roomResource: OwnedRoomResource): TaskOutputs<OutputType, ProblemTypes> {
     const result = ErrorMapper.wrapLoop((): TaskOutputs<OutputType, ProblemTypes> => {
       return this.run(roomResource)
     }, `${this.constructor.name}.run()`)()

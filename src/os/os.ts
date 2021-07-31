@@ -8,6 +8,7 @@ import { LoggerProcess } from "./process/logger"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
+import { init as initPowerCreepPrototype } from "prototype/power_creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 import { init as initRoomPrototype } from "prototype/room"
 import type { ProcessState } from "process/process_state"
@@ -30,6 +31,10 @@ interface InternalProcessInfo {
 
 export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
+  config: {
+    /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
+    shouldReadMemory?: boolean
+  }
 }
 
 function init(): void {
@@ -40,6 +45,7 @@ function updatePrototypes(): void {
   initRoomPositionPrototype()
   initRoomObjectPrototype()
   initCreepPrototype()
+  initPowerCreepPrototype()
   initStructureSpawnPrototype()
   initRoomPrototype()
 }
@@ -65,7 +71,7 @@ export class OperatingSystem {
   private runtimeMemory: RuntimeMemory = {processLogs: []}
 
   private constructor() {
-    // !!!! 起動処理がOSアクセスを行う場合があるためsetup()内部で実行すること !!!! //
+    // !!!! 起動処理がOSアクセスを行う場合があるため、起動時に一度だけ行う処理はsetup()内部で実行すること !!!! //
   }
 
   // ---- Process ---- //
@@ -81,30 +87,34 @@ export class OperatingSystem {
     return process
   }
 
-  public processOf(processId: ProcessId): Process | undefined {
-    return this.processes.get(processId)?.process
+  public processOf(processId: ProcessId): Process | null {
+    return this.processes.get(processId)?.process ?? null
   }
 
-  public suspendProcess(processId: ProcessId): void {
+  public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      this.sendOSError(`No process with ID ${processId} (suspendProcess())`)
-      return
+      return Result.Failed(`No process with ID ${processId}`)
+    }
+    if (processInfo.running !== true) {
+      return Result.Failed(`Process with ID ${processId} already suspended`)
     }
 
     processInfo.running = false
-    this.processes.set(processId, processInfo)
+    return Result.Succeeded(processInfo.process.constructor.name)
   }
 
-  public resumeProcess(processId: ProcessId): void {
+  public resumeProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {
-      this.sendOSError(`No process with ID ${processId} (resumeProcess())`)
-      return
+      return Result.Failed(`No process with ID ${processId}`)
+    }
+    if (processInfo.running === true) {
+      return Result.Failed(`Process with ID ${processId} already running`)
     }
 
     processInfo.running = true
-    this.processes.set(processId, processInfo)
+    return Result.Succeeded(processInfo.process.constructor.name)
   }
 
   /**
@@ -188,6 +198,12 @@ export class OperatingSystem {
     if (this.didSetup !== true) {
       this.setup()
       this.didSetup = true
+    } else {
+      if (Memory.os.config.shouldReadMemory === true) {
+        ErrorMapper.wrapLoop(() => {
+          this.restoreProcesses()
+        }, "OperatingSystem.restoreProcesses()")()
+      }
     }
 
     ErrorMapper.wrapLoop(() => {
@@ -218,10 +234,14 @@ export class OperatingSystem {
     if (Memory.os == null) {
       Memory.os = {
         p: [],
+        config: {},
       }
     }
     if (Memory.os.p == null) {
       Memory.os.p = []
+    }
+    if (Memory.os.config == null) {
+      Memory.os.config = {}
     }
   }
 

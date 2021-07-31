@@ -12,7 +12,7 @@ interface PowerConstantsInterface {
   regenSource: PowerInfo
 }
 
-export const PowerConstants: PowerConstantsInterface = {
+export const PowerGameConstants: PowerConstantsInterface = {
   regenSource: {
     value: [50, 100, 150, 200, 250],
     duration: 15,

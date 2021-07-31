@@ -25,12 +25,12 @@ export function findPath(startObjectId: string, goalObjectId: string): string {
   })
   visualize(startRoomPath, { color: "#ffffff" })
 
-  if (startRoomPath.length <= 0) {
-    return "No path"
-  }
 
   const goalRoomName = goalObject.room.name
   const edgePosition = startRoomPath[startRoomPath.length - 1]
+  if (edgePosition == null) {
+    return "No path"
+  }
   const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoomName)
   const goalRoomPath = goalObject.pos.findPathTo(edgeRoomPosition, options).map(p => {
     return new RoomPosition(p.x, p.y, goalRoomName)
@@ -104,38 +104,41 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
 
   // TODO: こういうのをテスタブルにしたい
   const shortestPath = results.reduce((lhs, rhs) => lhs.path.length < rhs.path.length ? lhs : rhs)
+  const firstHarvestPosition = harvestPositions[0]
+  const lastHarvestPosition = harvestPositions[harvestPositions.length - 1]
   if (shortestPath != null && harvestPositions.length > 0) {
     const lastPosition = shortestPath.path[shortestPath.path.length - 1]
+    if (lastPosition != null && firstHarvestPosition != null && lastHarvestPosition != null) {
+      if (lastPosition.isNearTo(firstHarvestPosition) === true) {
+        // do nothing
+      } else if (lastPosition.isNearTo(lastHarvestPosition) === true) {
+        harvestPositions.reverse()
+      } else {
 
-    if (lastPosition.isNearTo(harvestPositions[0]) === true) {
-      // do nothing
-    } else if (lastPosition.isNearTo(harvestPositions[harvestPositions.length - 1]) === true) {
-      harvestPositions.reverse()
-    } else {
+        // FixMe: 必ずしも動かないわけではないが動くわけでもない
+        PrimitiveLogger.fatal(`Pathfinder cannot calculate proper path to source ${sourceId} in ${roomLink(source.room.name)}`)
+        harvestPositions.sort((lhs, rhs) => {
+          const lValue = Math.abs(lhs.x - lastPosition.x) + Math.abs(lhs.y - lastPosition.y)
+          const rValue = Math.abs(rhs.x - lastPosition.x) + Math.abs(rhs.y - lastPosition.y)
+          if (lValue === rValue) {
+            return 0
+          }
+          return lValue > rValue ? 1 : -1
+        })
 
-      // FixMe: 必ずしも動かないわけではないが動くわけでもない
-      PrimitiveLogger.fatal(`Pathfinder cannot calculate proper path to source ${sourceId} in ${roomLink(source.room.name)}`)
-      harvestPositions.sort((lhs, rhs) => {
-        const lValue = Math.abs(lhs.x - lastPosition.x) + Math.abs(lhs.y - lastPosition.y)
-        const rValue = Math.abs(rhs.x - lastPosition.x) + Math.abs(rhs.y - lastPosition.y)
-        if (lValue === rValue) {
-          return 0
-        }
-        return lValue > rValue ? 1 : -1
-      })
+        // TODO:
+        // const firstHarvestPosition = harvestPositions[0]
+        // const lastHarvestPosition = harvestPositions[1]
+        // if (firstHarvestPosition.getRangeTo(lastPosition) < lastHarvestPosition.getRangeTo(lastPosition)) {
+        //   const betweenPositions = getPathBetween(firstHarvestPosition, lastPosition)
+        //   if (betweenPositions == null) {
 
-      // TODO:
-      // const firstHarvestPosition = harvestPositions[0]
-      // const lastHarvestPosition = harvestPositions[1]
-      // if (firstHarvestPosition.getRangeTo(lastPosition) < lastHarvestPosition.getRangeTo(lastPosition)) {
-      //   const betweenPositions = getPathBetween(firstHarvestPosition, lastPosition)
-      //   if (betweenPositions == null) {
-
-      //   }
-      //   shortestPath.path.
-      // } else {
-      //   harvestPositions.reverse()
-      // }
+        //   }
+        //   shortestPath.path.
+        // } else {
+        //   harvestPositions.reverse()
+        // }
+      }
     }
   }
 
@@ -227,7 +230,8 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   }
 
   const startRoomPath = startPosition.findPathTo(goalPosition, options)
-  if (startRoomPath.length <= 0) {
+  const edgePosition = startRoomPath[startRoomPath.length - 1]
+  if (edgePosition == null) {
     return Result.Failed(`No path from ${startPosition} to ${goalPosition}`)
   }
 
@@ -238,7 +242,6 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   startRoomPath.forEach(position => {
     placeMark(startRoom, position)
   })
-  const edgePosition = startRoomPath[startRoomPath.length - 1]
   const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoom.name)
 
   goalPosition.findPathTo(edgeRoomPosition, options).map(position => {

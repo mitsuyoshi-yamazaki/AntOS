@@ -150,7 +150,7 @@ export class Region {
         this.set_scouts()
       }, `Region initialize memory`)()
     }
-    const region_memory = Memory.regions[this.name]
+    const region_memory = Memory.regions[this.name]!
 
     // region_memory.region_version = (this.controller.sign || {text: 'none'}).text
 
@@ -471,7 +471,7 @@ export class Region {
         }
 
         return true
-      })[0]
+      })[0]!
 
       if (target_room) {
         const remote_harvester_squad_names = target_room.add_remote_harvester(this.room.name, {dry_run:false})
@@ -574,11 +574,11 @@ export class Region {
               }
             }
 
-            Memory.regions[this.name].no_reaction = finished
+            Memory.regions[this.name]!.no_reaction = finished
           }
 
           if (finished && (region_memory.reaction_outputs.length > 1)) {//0)) { // to continue reaction after new resource sent
-            Memory.regions[this.name].reaction_outputs!.shift()
+            Memory.regions[this.name]!.reaction_outputs!.shift()
           }
           else {
             research_input_targets = [
@@ -636,7 +636,7 @@ export class Region {
           let reason: string
 
           if (RESOURCES_ALL.indexOf(output as ResourceConstant) < 0) {
-            Memory.regions[this.name].reaction_outputs!.shift()
+            Memory.regions[this.name]!.reaction_outputs!.shift()
             reason = ``
           }
           else {
@@ -694,7 +694,7 @@ export class Region {
     let worker_squad: WorkerSquad | null = null
 
     for (const squad_name in Memory.squads) {
-      const squad_memory = Memory.squads[squad_name]
+      const squad_memory = Memory.squads[squad_name]!
       if (squad_memory.owner_name != this.name) {
         continue
       }
@@ -869,10 +869,10 @@ export class Region {
 
               if (labs.length >= 4) {
                 opt_labs = {
-                  move: labs[0],
-                  heal: labs[1],
-                  tough: labs[2],
-                  dismantle: labs[3],
+                  move: labs[0]!,
+                  heal: labs[1]!,
+                  tough: labs[2]!,
+                  dismantle: labs[3]!,
                 }
               }
             }
@@ -987,15 +987,15 @@ export class Region {
           harvesting_source_ids: []
         }
       }
-      if (!Memory.rooms[target.room_name].harvesting_source_ids) {
-        Memory.rooms[target.room_name].harvesting_source_ids = []
+      if (!Memory.rooms[target.room_name]!.harvesting_source_ids) {
+        Memory.rooms[target.room_name]!.harvesting_source_ids = []
       }
 
       // --
-      if (Memory.rooms[target.room_name].harvesting_source_ids.indexOf(target.id) >= 0) {
+      if (Memory.rooms[target.room_name]!.harvesting_source_ids.indexOf(target.id) >= 0) {
         continue
       }
-      Memory.rooms[target.room_name].harvesting_source_ids.push(target.id)
+      Memory.rooms[target.room_name]!.harvesting_source_ids.push(target.id)
 
       const name = HarvesterSquad.generateNewName()
       const squad = new HarvesterSquad(name, this.room, target, harvester_destination, energy_capacity, this)
@@ -1025,7 +1025,7 @@ export class Region {
       else return 0
     })
 
-    const highest_priority = sorted[0].spawnPriority
+    const highest_priority = sorted[0]!.spawnPriority
     const availableEnergy = this.room.energyAvailable
     const worker_squad_name = this.worker_squad.name
 
@@ -1035,10 +1035,10 @@ export class Region {
 
     // Research
     if ((research_input_targets.length == 2) && (research_output_targets.length > 0)) {
-      const input_lab1 = Game.getObjectById(research_input_targets[0].id) as StructureLab
-      const input_lab2 = Game.getObjectById(research_input_targets[1].id) as StructureLab
+      const input_lab1 = Game.getObjectById(research_input_targets[0]!.id) as StructureLab
+      const input_lab2 = Game.getObjectById(research_input_targets[1]!.id) as StructureLab
 
-      if ((input_lab1.mineralType == research_input_targets[0].resource_type) && (input_lab2.mineralType == research_input_targets[1].resource_type)) {
+      if ((input_lab1.mineralType == research_input_targets[0]!.resource_type) && (input_lab2.mineralType == research_input_targets[1]!.resource_type)) {
         research_output_targets.forEach((target) => {
           const output_lab = Game.getObjectById(target.id) as StructureLab
           const reaction_result = output_lab.runReaction(input_lab1, input_lab2)
@@ -1166,7 +1166,7 @@ export class Region {
           console.log(`Nuke detected ${this.room.name}`)
           return (nuke.timeToLand < 100)
         }
-      })[0]
+      })[0]!
 
       if (nuke) {
         let creeps: Creep[] = []
@@ -1306,7 +1306,7 @@ export class Region {
 
     region_memory.observe_index = (region_memory.observe_index + 1) % positions.length
 
-    const position = positions[region_memory.observe_index]
+    const position = positions[region_memory.observe_index]!
     const x = Number(this.room.name.slice(1,3)) + position.x
     const y = Number(this.room.name.slice(4,6)) + position.y
 
@@ -1324,7 +1324,7 @@ export class Region {
   }
 
   private sendResources(): void {
-    if (CONTROLLER_STRUCTURES[STRUCTURE_TERMINAL][this.controller.level] < 1) {
+    if (CONTROLLER_STRUCTURES[STRUCTURE_TERMINAL][this.controller.level]! < 1) {
       return
     }
     if (!this.room.terminal) {
@@ -1694,7 +1694,7 @@ export class Region {
       return (squad.hasEnoughEnergy(availableEnergy, energy_capacity))
     })
 
-    const urgent = (squad_needs_spawn.length > 0) ? squad_needs_spawn[0].spawnPriority == SpawnPriority.URGENT : false
+    const urgent = (squad_needs_spawn.length > 0) ? squad_needs_spawn[0]!.spawnPriority == SpawnPriority.URGENT : false
 
     Array.from(this.spawns.values()).filter((spawn) => {
       if (spawn.spawning) {
@@ -1711,7 +1711,7 @@ export class Region {
         squad.addCreep(availableEnergy, (body, name, ops) => { // this closure is to keep 'this'
           const result = spawn.spawnCreep(body, name, ops)
           if (result == OK) {
-            Memory.regions[this.name].last_spawn_time = Game.time
+            Memory.regions[this.name]!.last_spawn_time = Game.time
           }
           else {
             // @fixme: If
@@ -1869,7 +1869,7 @@ export class Region {
         continue
       }
 
-      const squad_memory = new_squads[squad_name]
+      const squad_memory = new_squads[squad_name]!
       Memory.squads[squad_name] = squad_memory
 
       console.log(`${this.name}, creates ${squad_name}`)

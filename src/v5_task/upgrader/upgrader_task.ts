@@ -155,8 +155,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (objects.activeStructures.storage == null) {
         return false
       }
-      const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
-      return storedEnergy > 100000
+      const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      return storedEnergy > 130000
     })()
 
     const energyCapacity = objects.controller.room.energyCapacityAvailable
@@ -168,7 +168,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return Math.min(max, 5)
       }
-      return Math.min(max, 6)
+      return Math.min(max, 8)
     })()
 
     for (let i = 0; i < maxBodyCount; i += 1) {
@@ -189,7 +189,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   private emptyPosition(): RoomPosition | null {
-    const emptyPositions = this.upgraderPositions.filter(position => position.targetedBy.length <= 0)
+    const emptyPositions = this.upgraderPositions.filter(position => position.v5TargetedBy.length <= 0)
     if (emptyPositions[0] == null) {
       PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
       return null

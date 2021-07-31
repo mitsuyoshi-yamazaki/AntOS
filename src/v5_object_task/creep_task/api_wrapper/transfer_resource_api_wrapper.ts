@@ -4,9 +4,10 @@ import { ApiWrapper } from "v5_object_task/api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
+import { EnergyChargeableStructure } from "prototype/room_object"
 
 type TransferResourceApiWrapperResult = FINISHED | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
-export type TransferResourceApiWrapperTargetType = AnyCreep | StructureContainer | StructureStorage | StructureTerminal | StructureSpawn | StructureExtension | StructureTower | StructurePowerSpawn
+export type TransferResourceApiWrapperTargetType = AnyCreep | StructureStorage | EnergyChargeableStructure
 
 export interface TransferResourceApiWrapperState extends CreepApiWrapperState {
   /** target id */
@@ -18,6 +19,7 @@ export interface TransferResourceApiWrapperState extends CreepApiWrapperState {
 
 export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferResourceApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "transfer"
+  public readonly range = 1
 
   private constructor(
     public readonly target: TransferResourceApiWrapperTargetType,
@@ -45,6 +47,11 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
   }
 
   public run(creep: Creep): TransferResourceApiWrapperResult {
+    const freeCapacity = this.target.store.getFreeCapacity(this.resourceType)
+    if (freeCapacity != null && freeCapacity <= 0) {
+      return FINISHED
+    }
+
     const result = creep.transfer(this.target, this.resourceType)
 
     switch (result) {

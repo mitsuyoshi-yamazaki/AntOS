@@ -66,7 +66,7 @@ export class Empire {
         },
       }
     }
-    const empire_memory = Memory.empires[this.name]
+    const empire_memory = Memory.empires[this.name]!
 
     owned_controllers.forEach(controller => {
       this.owned_room_names.push(controller.room.name)
@@ -86,7 +86,7 @@ export class Empire {
           }
         }
 
-        const sector_memory = Memory.sectors[sector_name]
+        const sector_memory = Memory.sectors[sector_name]!
         if (sector_memory.regions.indexOf(room_name) < 0) {
           sector_memory.regions.push(room_name)
         }
@@ -101,7 +101,7 @@ export class Empire {
     // --- Claim
     const number_of_gcl_farms = 1
     const non_owned_onboarding_rooms = Object.keys(empire_memory.onboarding_rooms).filter(room_name=> {
-      const info = empire_memory.onboarding_rooms[room_name]
+      const info = empire_memory.onboarding_rooms[room_name]!
       return this.owned_room_names.indexOf(info.target_room_name) < 0
     })
 
@@ -148,7 +148,7 @@ export class Empire {
       farm_room = {
         room,
         controller: room.controller,
-        ...gcl_farm_rooms[room_name]
+        ...gcl_farm_rooms[room_name]!
       }
       break
     }
@@ -265,8 +265,8 @@ export class Empire {
     }
     else {
       if (empire_memory && empire_memory.farm && empire_memory.farm.room) {
-        const farm_info = gcl_farm_rooms[empire_memory.farm.room]
-        const next_farm_info = gcl_farm_rooms[farm_info.next]
+        const farm_info = gcl_farm_rooms[empire_memory.farm.room]!
+        const next_farm_info = gcl_farm_rooms[farm_info.next]!
 
         next_farm = {
           target_room_name: farm_info.next,
@@ -311,7 +311,7 @@ export class Empire {
     }
 
     for (const room_name in empire_memory.onboarding_rooms) {
-      const info = empire_memory.onboarding_rooms[room_name]
+      const info = empire_memory.onboarding_rooms[room_name]!
 
       this.setDelegate(room_name, info.target_room_name, {max_rcl: info.delegate_until})
     }

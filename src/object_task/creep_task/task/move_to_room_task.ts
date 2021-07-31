@@ -1,3 +1,4 @@
+import type { TaskTarget } from "object_task/object_task_target_cache"
 import { ExitNotFoundProblem } from "application/problem/creep/exit_not_found_problem"
 import { ExitToRoomNotFoundProblem } from "application/problem/creep/exit_to_room_not_found_problem"
 import { SourceKeeper } from "game/source_keeper"
@@ -52,26 +53,28 @@ export class MoveToRoomTask implements CreepTask {
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, waypoints, null)
+    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null)
+  }
+
+  public taskTargets(): TaskTarget[] {
+    return []
   }
 
   public run(creep: V6Creep): CreepTaskProgress {
-    const directionIndex = (Game.time + this.startTime) % 3
-
-    if (creep.pos.x === 0) {
-      if (creep.move([RIGHT, TOP_RIGHT, BOTTOM_RIGHT][directionIndex]) === OK) {  // エラーは無視する
+    if (creep.pos.x === 0) {  // 部屋の境界に侵入する際はその座標にとどまらない（隣の部屋の境界へ移動する、x:0 === x:49）ため移動先でのみ発火
+      if (creep.move(RIGHT) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.x === 49) {
-      if (creep.move([LEFT, TOP_LEFT, BOTTOM_LEFT][directionIndex]) === OK) {
+      if (creep.move(LEFT) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 0) {
-      if (creep.move([BOTTOM, BOTTOM_LEFT, BOTTOM_RIGHT][directionIndex]) === OK) {
+      if (creep.move(BOTTOM) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     } else if (creep.pos.y === 49) {
-      if (creep.move([TOP, TOP_LEFT, TOP_RIGHT][directionIndex]) === OK) {
+      if (creep.move(TOP) === OK) {
         return CreepTaskProgress.InProgress([])
       }
     }
@@ -99,7 +102,7 @@ export class MoveToRoomTask implements CreepTask {
     }
 
     const moveToOptions = ((): MoveToOpts => {
-      const options: MoveToOpts = { ...defaultMoveToOptions }
+      const options: MoveToOpts = defaultMoveToOptions()
       options.reusePath = reusePath
       if (creep.room.roomType !== "source_keeper") {
         return options
@@ -187,9 +190,9 @@ export class MoveToRoomTask implements CreepTask {
     if (exitPosition == null) {
       creep.say("no path")
       if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, defaultMoveToOptions)
+        creep.moveTo(creep.room.controller, defaultMoveToOptions())
       } else {
-        creep.moveTo(25, 25, defaultMoveToOptions)
+        creep.moveTo(25, 25, defaultMoveToOptions())
       }
       return CreepTaskProgress.InProgress([
         new ExitNotFoundProblem(creep.pos, exit)
