@@ -47,6 +47,11 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
   }
 
   public run(creep: Creep): TransferResourceApiWrapperResult {
+    const freeCapacity = this.target.store.getFreeCapacity(this.resourceType)
+    if (freeCapacity != null && freeCapacity <= 0) {
+      return FINISHED
+    }
+
     const result = creep.transfer(this.target, this.resourceType)
 
     switch (result) {

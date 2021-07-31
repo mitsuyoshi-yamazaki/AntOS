@@ -42,6 +42,10 @@ export class TransferEnergyApiWrapper implements ApiWrapper<Creep, TransferEnerg
   }
 
   public run(creep: Creep): TransferEnergyApiWrapperResult {
+    if (this.target.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+      return FINISHED
+    }
+
     const result = creep.transfer(this.target, RESOURCE_ENERGY)
 
     switch (result) {
