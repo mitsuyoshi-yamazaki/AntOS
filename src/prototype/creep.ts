@@ -198,3 +198,32 @@ export function init(): void {
     return TaskTargetCache.creepTargetingTaskRunnerInfo(this.id, taskType)
   }
 }
+
+export function moveToOptions(position: RoomPosition, destination: RoomPosition, staying: number): MoveToOpts {
+  if (staying > 2) {
+    const maxRooms = position.roomName === destination.roomName ? 1 : 2
+    const maxOps = position.roomName === destination.roomName ? 1500 : 2000
+    return {
+      maxRooms,
+      reusePath: 3,
+      maxOps,
+    }
+  }
+
+  if (["W27S25"].includes(position.roomName)) { // FixMe:
+    const maxRooms = position.roomName === destination.roomName ? 1 : 2
+    return {
+      maxRooms,
+      reusePath: 100,
+      maxOps: 4000,
+      ignoreCreeps: true,
+    }
+  }
+
+  const options = defaultMoveToOptions()
+  options.maxRooms = position.roomName === destination.roomName ? 1 : 2
+  options.maxOps = position.roomName === destination.roomName ? 500 : 1500
+  options.reusePath = 100
+  options.ignoreCreeps = true
+  return options
+}

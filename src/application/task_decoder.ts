@@ -13,6 +13,8 @@ import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridg
 import { TemplateTask, TemplateTaskState } from "./task/template/template_task"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "./task/mineral_harvester/owned_room_mineral_harvester_task"
 import { ResearchTask, ResearchTaskState } from "./task/research/research_task"
+import { SafeModeManagerTask, SafeModeManagerTaskState } from "./task/defence/safe_mode_manager_task"
+import { WallBuilderTask, WallBuilderTaskState } from "./task/wall/wall_builder_task"
 // import { UpgraderTask, UpgraderTaskState } from "./task/upgrader/upgrader_task"
 
 export type TaskType = keyof TaskMap
@@ -30,6 +32,8 @@ class TaskMap {
   "TemplateTask" = (state: TaskState) => TemplateTask.decode(state as unknown as TemplateTaskState)
   "OwnedRoomMineralHarvesterTask" = (state: TaskState) => OwnedRoomMineralHarvesterTask.decode(state as unknown as OwnedRoomMineralHarvesterTaskState)
   "ResearchTask" = (state: TaskState) => ResearchTask.decode(state as unknown as ResearchTaskState)
+  "SafeModeManagerTask" = (state: TaskState) => SafeModeManagerTask.decode(state as unknown as SafeModeManagerTaskState)
+  "WallBuilderTask" = (state: TaskState) => WallBuilderTask.decode(state as unknown as WallBuilderTaskState)
 }
 // const taskMap = new TaskMap()
 
