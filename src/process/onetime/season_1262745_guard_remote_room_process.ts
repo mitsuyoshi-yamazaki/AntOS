@@ -134,7 +134,9 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      const roomDistance = Game.map.getRoomLinearDistance(creep.room.name, this.targetRoomName)
+      const waypoints: RoomName[] = roomDistance <= 1 ? [] : this.waypoints
+      creep.v5task = MoveToRoomTask.create(this.targetRoomName, waypoints)
       return
     }
 
