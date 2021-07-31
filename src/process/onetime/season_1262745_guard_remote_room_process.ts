@@ -138,7 +138,8 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       return
     }
 
-    if (movement.attacked === true) {
+    if (movement.attackedTarget != null) {
+      creep.moveTo(movement.attackedTarget)
       return
     }
 
@@ -172,20 +173,20 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     return true
   }
 
-  private attackNearbyHostile(creep: Creep): { attacked: boolean, moved: boolean } {
-    let attacked = false
+  private attackNearbyHostile(creep: Creep): { attackedTarget: Creep | null, moved: boolean } {
+    let attackedTarget = null as Creep | null
     let moved = false
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null) {
       this.rangedAttack(creep, closestHostile)
-      attacked = true
+      attackedTarget = closestHostile
 
       if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
         this.fleeFrom(closestHostile.pos, creep, 4)
         moved = true
       }
     }
-    return { attacked, moved }
+    return { attackedTarget, moved }
   }
 
   private closestHostile(position: RoomPosition): Creep | null {
