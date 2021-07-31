@@ -45,7 +45,7 @@ export class BuildWallTask implements CreepTask {
       if (constructionSite != null && wallTypes.includes(constructionSite.structureType)) {
         return constructionSite as ConstructionSite<STRUCTURE_WALL> | ConstructionSite<STRUCTURE_RAMPART>
       }
-      const wall = targetPosition.findInRange(FIND_STRUCTURES, 0)[0]
+      const wall = targetPosition.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}})[0]
       if (wall != null && wallTypes.includes(wall.structureType)) {
         return wall as StructureWall | StructureRampart
       }
