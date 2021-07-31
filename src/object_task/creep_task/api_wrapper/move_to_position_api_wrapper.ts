@@ -3,12 +3,21 @@ import { PathNotFoundProblem } from "application/problem/creep/path_not_found_pr
 import { UnexpectedCreepProblem } from "application/problem/creep/unexpected_creep_problem"
 import { TaskTargetPosition } from "object_task/object_task_target_cache"
 import { TargetingApiWrapper } from "object_task/targeting_api_wrapper"
-import { defaultMoveToOptions, V6Creep } from "prototype/creep"
+import { defaultMoveToOptions, moveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { Timestamp } from "utility/timestamp"
 import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "../creep_api_wrapper"
 import { MoveToApiOptions } from "./move_to_api_options"
 
 const apiWrapperType = "MoveToPositionApiWrapper"
+type Position = {
+  position: RoomPosition,
+  timestamp: Timestamp,
+}
+type PositionState = {
+  position: RoomPositionState,
+  timestamp: Timestamp,
+}
 
 export interface MoveToPositionApiWrapperState extends CreepApiWrapperState {
   /** type identifier */
@@ -19,6 +28,8 @@ export interface MoveToPositionApiWrapperState extends CreepApiWrapperState {
 
   /** options */
   o: MoveToApiOptions
+
+  lastPosition: PositionState | null
 }
 
 // TODO: 動いていないことを検出する
@@ -30,6 +41,7 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
   private constructor(
     public readonly target: RoomPosition,
     public readonly options: MoveToApiOptions,
+    private lastPosition: Position | null,
   ) {
     this.shortDescription = `${this.target.x},${this.target.y}`
   }
@@ -39,16 +51,34 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
       t: apiWrapperType,
       p: this.target.encode(),
       o: this.options,
+      lastPosition: ((): PositionState | null => {
+        if (this.lastPosition == null) {
+          return null
+        }
+        return {
+          position: this.lastPosition.position.encode(),
+          timestamp: this.lastPosition.timestamp,
+        }
+      })()
     }
   }
 
   public static decode(state: MoveToPositionApiWrapperState): MoveToPositionApiWrapper {
     const position = decodeRoomPosition(state.p)
-    return new MoveToPositionApiWrapper(position, state.o)
+    const lastPosition = ((): Position | null => {
+      if (state.lastPosition == null) {
+        return null
+      }
+      return {
+        position: decodeRoomPosition(state.lastPosition.position),
+        timestamp: state.lastPosition.timestamp,
+      }
+    })()
+    return new MoveToPositionApiWrapper(position, state.o, lastPosition)
   }
 
   public static create(position: RoomPosition, options?: MoveToApiOptions): MoveToPositionApiWrapper {
-    return new MoveToPositionApiWrapper(position, options ?? defaultMoveToOptions())
+    return new MoveToPositionApiWrapper(position, options ?? defaultMoveToOptions(), null)
   }
 
   public taskTarget(): TaskTargetPosition {
@@ -66,7 +96,27 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
       return CreepApiWrapperProgress.Finished(false)
     }
 
-    const result = creep.moveTo(this.target, this.options)
+    const staying = ((): number => {
+      if (this.lastPosition == null) {
+        return 0
+      }
+      if (this.lastPosition.position.isEqualTo(creep.pos) !== true) {
+        return 0
+      }
+      return Game.time - this.lastPosition.timestamp
+    })()
+    const options = moveToOptions(creep.pos, this.target, staying)
+    if (this.options.swampCost != null) {
+      options.swampCost = this.options.swampCost
+    }
+
+    const result = creep.moveTo(this.target, options)
+    if (this.lastPosition == null || this.lastPosition.position.isEqualTo(creep.pos) !== true) {
+      this.lastPosition = {
+        position: creep.pos,
+        timestamp: Game.time
+      }
+    }
 
     switch (result) {
     case OK:
