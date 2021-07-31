@@ -64,7 +64,8 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    if (objects.constructionSites.length > 0 || objects.damagedStructures.length > 0) {
+    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    if (objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true)) || objects.damagedStructures.length > 0) {
       // this.removeBuilderCreepRequest() // CreepInsufficiencyProblemSolverは毎tick Finishするため不要
       return this.builderCreepRequest(objects)
     } else {
