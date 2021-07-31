@@ -65,6 +65,38 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       return taskOutputs
     }
 
+    if (roomResource.activeStructures.towers.length > 0) {
+      if (roomResource.activeStructures.towers.some(tower => (tower.store.getUsedCapacity(RESOURCE_ENERGY) < (tower.store.getCapacity(RESOURCE_ENERGY) * 0.14)))) {
+        const result = roomResource.controller.activateSafeMode()
+        switch (result) {
+        case OK: {
+          const message = `${roomLink(this.roomName)} activate safe mode (${invaders})`
+          PrimitiveLogger.fatal(message)
+          taskOutputs.logs.push({
+            taskIdentifier: this.identifier,
+            logEventType: "event",
+            message,
+          })
+          return taskOutputs
+        }
+
+        case ERR_BUSY:
+        case ERR_NOT_ENOUGH_RESOURCES:
+        case ERR_TIRED:
+          taskOutputs.logs.push({
+            taskIdentifier: this.identifier,
+            logEventType: "event",
+            message: `${roomLink(this.roomName)} activate safe mode failed ${result}, (${invaders})`
+          })
+          return taskOutputs
+
+        case ERR_NOT_OWNER:
+          PrimitiveLogger.programError(`${this.identifier} controller.activateSafeMode() returns ${result}, ${roomLink(this.roomName)}`)
+          return taskOutputs
+        }
+      }
+    }
+
     const events = roomResource.room.getEventLog()
     for (const event of events) {
       if (event.event !== EVENT_ATTACK) {
