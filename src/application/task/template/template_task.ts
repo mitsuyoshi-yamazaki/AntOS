@@ -4,12 +4,11 @@ import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
-import { calculateEconomyTaskPerformance, EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
+import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
 
 type TemplateTaskOutput = void
 type TemplateTaskProblemTypes = UnexpectedProblem
@@ -18,12 +17,9 @@ type TemplateTaskOutputs = TaskOutputs<TemplateTaskOutput, TemplateTaskProblemTy
 export interface TemplateTaskState extends TaskState {
   /** task type identifier */
   readonly t: "TemplateTask"
-
-  /** performance */
-  readonly pf: EconomyTaskPerformanceState
 }
 
-export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTypes, EconomyTaskPerformance, EconomyTaskPerformanceState> {
+export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskType = "TemplateTask"
   public readonly identifier: TaskIdentifier
 
@@ -33,9 +29,8 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: EconomyTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -47,16 +42,15 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: TemplateTaskState): TemplateTask {
-    return new TemplateTask(state.s, state.ss, state.r, state.pf)
+    return new TemplateTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): TemplateTask {
-    return new TemplateTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState())
+    return new TemplateTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): TemplateTaskOutputs {
@@ -80,9 +74,5 @@ export class TemplateTask extends Task<TemplateTaskOutput, TemplateTaskProblemTy
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): EconomyTaskPerformance {
-    return calculateEconomyTaskPerformance(period, 0, this.performanceState)
   }
 }

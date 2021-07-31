@@ -49,4 +49,32 @@ calls		time		avg		function
 109695		138.1		0.001		RoomPosition.encode
 3537		122.7		0.035		RoomPosition.findClosestByPath
 Avg: 98.59	Total: 98394.95	Ticks: 998
+
+1288811
+calls		time		avg		function
+7436		1520.5		0.204		Creep.moveTo
+5286		1082.7		0.205		Creep.move
+4545		953.8		0.210		Creep.moveByPath
+3262		668.3		0.205		Creep.harvest
+80512		372.2		0.005		Structure.isActive
+870		251.1		0.289		RoomPosition.findPathTo
+870		242.4		0.279		Room.findPath
+1263		241.6		0.191		Creep.upgradeController
+1105		230.3		0.208		Creep.repair
+2596		219.1		0.084		Creep.withdraw
+734		147.0		0.200		Creep.reserveController
+3395		126.2		0.037		Creep.transfer
+529		108.1		0.204		Creep.drop
+32368		102.8		0.003		Room.find
+1181		53.3		0.045		Creep.pickup
+200		44.2		0.221		Creep.heal
+483		31.8		0.066		Room.createConstructionSite
+1688		29.1		0.017		RoomPosition.findInRange
+13126		24.5		0.002		RoomPosition.isNearTo
+11542		16.8		0.001		RoomPosition.encode
+344		14.4		0.042		RoomPosition.findClosestByPath
+7788		12.8		0.002		RoomPosition.inRangeTo
+6333		11.3		0.002		RoomPosition.getRangeTo
+1472		11.0		0.007		RoomPosition.lookFor
+Avg: 79.29	Total: 7769.99	Ticks: 98
 */

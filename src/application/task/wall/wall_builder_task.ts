@@ -7,8 +7,7 @@ import { GameConstants } from "utility/constants"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
-import { calculateConsumeTaskPerformance, ConsumeTaskPerformance, ConsumeTaskPerformanceState, emptyConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
+import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
 import { CreepTask } from "object_task/creep_task/creep_task"
@@ -29,12 +28,9 @@ type WallBuilderTaskOutputs = TaskOutputs<WallBuilderTaskOutput, WallBuilderTask
 export interface WallBuilderTaskState extends TaskState {
   /** task type identifier */
   readonly t: "WallBuilderTask"
-
-  /** performance */
-  readonly pf: ConsumeTaskPerformanceState
 }
 
-export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTaskProblemTypes, ConsumeTaskPerformance, ConsumeTaskPerformanceState> {
+export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTaskProblemTypes, ConsumeTaskPerformance> {
   public readonly taskType = "WallBuilderTask"
   public readonly identifier: TaskIdentifier
 
@@ -44,9 +40,8 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: ConsumeTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -58,16 +53,15 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: WallBuilderTaskState): WallBuilderTask {
-    return new WallBuilderTask(state.s, state.ss, state.r, state.pf)
+    return new WallBuilderTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): WallBuilderTask {
-    return new WallBuilderTask(Game.time, Game.time, roomName, emptyConsumeTaskPerformanceState())
+    return new WallBuilderTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
@@ -185,9 +179,5 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): ConsumeTaskPerformance {
-    return calculateConsumeTaskPerformance(period, 0, this.performanceState)
   }
 }

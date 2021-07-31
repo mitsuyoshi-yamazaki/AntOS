@@ -4,11 +4,10 @@ import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
-import { calculateEconomyTaskPerformance, EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
+import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
@@ -29,12 +28,9 @@ type OwnedRoomMineralHarvesterTaskOutputs = TaskOutputs<OwnedRoomMineralHarveste
 export interface OwnedRoomMineralHarvesterTaskState extends TaskState {
   /** task type identifier */
   readonly t: "OwnedRoomMineralHarvesterTask"
-
-  /** performance */
-  readonly pf: EconomyTaskPerformanceState
 }
 
-export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarvesterTaskOutput, OwnedRoomMineralHarvesterTaskProblemTypes, EconomyTaskPerformance, EconomyTaskPerformanceState> {
+export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarvesterTaskOutput, OwnedRoomMineralHarvesterTaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskType = "OwnedRoomMineralHarvesterTask"
   public readonly identifier: TaskIdentifier
 
@@ -44,9 +40,8 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: EconomyTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -58,16 +53,15 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: OwnedRoomMineralHarvesterTaskState): OwnedRoomMineralHarvesterTask {
-    return new OwnedRoomMineralHarvesterTask(state.s, state.ss, state.r, state.pf)
+    return new OwnedRoomMineralHarvesterTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): OwnedRoomMineralHarvesterTask {
-    return new OwnedRoomMineralHarvesterTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState())
+    return new OwnedRoomMineralHarvesterTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): OwnedRoomMineralHarvesterTaskOutputs {
@@ -201,9 +195,5 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): EconomyTaskPerformance {
-    return calculateEconomyTaskPerformance(period, "continuous", this.performanceState)
   }
 }

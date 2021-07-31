@@ -5,7 +5,6 @@ import { TaskState } from "application/task_state"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler, TaskRequestHandlerInputs } from "./task_request_handler"
-import { Timestamp } from "utility/timestamp"
 import { GameConstants } from "utility/constants"
 import { Season3FindPowerBankTask, Season3FindPowerBankTaskPowerBankInfo, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
 import { TaskPrioritizer, TaskPrioritizerPrioritizedTasks, TaskPrioritizerTaskEstimation } from "./task_prioritizer"
@@ -18,7 +17,7 @@ import { CreepTaskAssignTaskRequest } from "application/task_request"
 import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_problem_solver"
 import { AnyTaskProblem } from "application/any_problem"
 import { coloredText, roomLink } from "utility/log"
-import { emptyRoomKeeperPerformanceState, RoomKeeperPerformance, RoomKeeperPerformanceState } from "application/task_profit/owned_room_performance"
+import { RoomKeeperPerformance } from "application/task_profit/owned_room_performance"
 import { ResourceInsufficiencyPriority } from "room_resource/room_info"
 import { RoomResources } from "room_resource/room_resources"
 import { TaskLogRequest } from "application/task_logger"
@@ -42,9 +41,6 @@ export interface RoomKeeperTaskState extends TaskState {
   /** task type identifier */
   readonly t: "RoomKeeperTask"
 
-  /** performance */
-  readonly pf: RoomKeeperPerformanceState
-
   /** child task states */
   c: {
     /** find power bank task state */
@@ -57,7 +53,7 @@ export interface RoomKeeperTaskState extends TaskState {
   }
 }
 
-export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes, RoomKeeperPerformance, RoomKeeperPerformanceState> {
+export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes, RoomKeeperPerformance> {
   public readonly taskType = "RoomKeeperTask"
   public readonly identifier: TaskIdentifier
 
@@ -68,7 +64,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: RoomKeeperPerformanceState,
     private readonly children: {  // TODO: economyTasks: {[index: string]: EconomyTask} などの形式にしてprioritize忘れがないようにする
       safeMode: SafeModeManagerTask,
       findPowerBank: Season3FindPowerBankTask | null,
@@ -77,7 +72,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       wallBuilder: WallBuilderTask | null,
     },
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.taskRequestHandler = new TaskRequestHandler(this.roomName)
@@ -89,7 +84,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
       c: {
         pf: this.children.findPowerBank?.encode() ?? null,
         safeModeTaskState: this.children.safeMode.encode(),
@@ -138,7 +132,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       research,
       wallBuilder,
     }
-    return new RoomKeeperTask(state.s, state.ss, state.r, state.pf, children)
+    return new RoomKeeperTask(state.s, state.ss, state.r, children)
   }
 
   public static create(roomName: RoomName): RoomKeeperTask {
@@ -149,7 +143,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       research: null,
       wallBuilder: null,
     }
-    return new RoomKeeperTask(Game.time, Game.time, roomName, emptyRoomKeeperPerformanceState(), children)
+    return new RoomKeeperTask(Game.time, Game.time, roomName, children)
   }
 
   public run(roomResource: OwnedRoomResource): RoomKeeperTaskOutputs {
@@ -460,40 +454,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       spawnTime: 0, // TODO:
       numberOfCreeps: 0,  // TODO:
       resourceCost, // TODO:
-    }
-  }
-
-  public performance(period: Timestamp): RoomKeeperPerformance {
-    const timeSpent = Math.min(Game.time - this.startTime, period)
-    const fromTimestamp = Game.time - timeSpent
-    const state = this.performanceState
-
-    let spawnTime = 0
-    let numberOfCreeps = 0
-
-    state.s.forEach(spawnInfo => {
-      if (spawnInfo.t < fromTimestamp) {
-        return
-      }
-      spawnTime += spawnInfo.st
-      numberOfCreeps += 1
-    })
-
-    const resourceCost = new Map<ResourceConstant, number>()
-    state.r.forEach(resourceInfo => {
-      if (resourceInfo.t < fromTimestamp) {
-        return
-      }
-      const stored = resourceCost.get(resourceInfo.r) ?? 0
-      resourceCost.set(resourceInfo.r, stored + resourceInfo.a)
-    })
-
-    return {
-      periodType: "continuous",
-      timeSpent,
-      spawnTime,
-      numberOfCreeps,
-      resourceCost,
     }
   }
 }

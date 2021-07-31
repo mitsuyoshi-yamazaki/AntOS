@@ -8,8 +8,7 @@ import { UnexpectedProblem } from "application/problem/unexpected/unexpected_pro
 import { generateCodename } from "utility/unique_id"
 import { profileLink, roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
-import { calculateDefenceTaskPerformance, DefenceTaskPerformance, DefenceTaskPerformanceState, emptyDefenceTaskPerformanceState } from "application/task_profit/defence_task_performance"
+import { DefenceTaskPerformance } from "application/task_profit/defence_task_performance"
 import { Invader } from "game/invader"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
@@ -20,14 +19,9 @@ type SafeModeManagerTaskOutputs = TaskOutputs<SafeModeManagerTaskOutput, SafeMod
 export interface SafeModeManagerTaskState extends TaskState {
   /** task type identifier */
   readonly t: "SafeModeManagerTask"
-
-  /** performance */
-  readonly pf: DefenceTaskPerformanceState
-
-
 }
 
-export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeModeManagerTaskProblemTypes, DefenceTaskPerformance, DefenceTaskPerformanceState> {
+export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeModeManagerTaskProblemTypes, DefenceTaskPerformance> {
   public readonly taskType = "SafeModeManagerTask"
   public readonly identifier: TaskIdentifier
 
@@ -37,9 +31,8 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: DefenceTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -51,16 +44,15 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: SafeModeManagerTaskState): SafeModeManagerTask {
-    return new SafeModeManagerTask(state.s, state.ss, state.r, state.pf)
+    return new SafeModeManagerTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): SafeModeManagerTask {
-    return new SafeModeManagerTask(Game.time, Game.time, roomName, emptyDefenceTaskPerformanceState())
+    return new SafeModeManagerTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): SafeModeManagerTaskOutputs {
@@ -136,9 +128,5 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): DefenceTaskPerformance {
-    return calculateDefenceTaskPerformance(period, 0, this.performanceState)
   }
 }

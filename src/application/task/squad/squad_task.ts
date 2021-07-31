@@ -4,12 +4,11 @@ import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
-import { calculateEconomyTaskPerformance, EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
+import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
 
 type SquadTaskOutput = void
 type SquadTaskProblemTypes = UnexpectedProblem
@@ -18,12 +17,9 @@ type SquadTaskOutputs = TaskOutputs<SquadTaskOutput, SquadTaskProblemTypes>
 export interface SquadTaskState extends TaskState {
   /** task type identifier */
   readonly t: "SquadTask"
-
-  /** performance */
-  readonly pf: EconomyTaskPerformanceState
 }
 
-export class SquadTask extends Task<SquadTaskOutput, SquadTaskProblemTypes, EconomyTaskPerformance, EconomyTaskPerformanceState> {
+export class SquadTask extends Task<SquadTaskOutput, SquadTaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskType = "SquadTask"
   public readonly identifier: TaskIdentifier
 
@@ -33,9 +29,8 @@ export class SquadTask extends Task<SquadTaskOutput, SquadTaskProblemTypes, Econ
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: EconomyTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -47,16 +42,15 @@ export class SquadTask extends Task<SquadTaskOutput, SquadTaskProblemTypes, Econ
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: SquadTaskState): SquadTask {
-    return new SquadTask(state.s, state.ss, state.r, state.pf)
+    return new SquadTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): SquadTask {
-    return new SquadTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState())
+    return new SquadTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): SquadTaskOutputs {
@@ -80,9 +74,5 @@ export class SquadTask extends Task<SquadTaskOutput, SquadTaskProblemTypes, Econ
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): EconomyTaskPerformance {
-    return calculateEconomyTaskPerformance(period, "one time", this.performanceState)
   }
 }

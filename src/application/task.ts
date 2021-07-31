@@ -7,12 +7,12 @@ import type { Timestamp } from "utility/timestamp"
 import { Problem } from "./problem"
 import type { TaskType } from "./task_decoder"
 import type { TaskIdentifier } from "./task_identifier"
-import { TaskPerformance, TaskPerformanceState, TaskProfit } from "./task_profit"
+import { TaskPerformance, TaskProfit } from "./task_profit"
 import { emptyTaskOutputs, TaskOutputs } from "./task_requests"
 import type { TaskState } from "./task_state"
 
-export abstract class Task<OutputType, ProblemTypes extends Problem, Performance extends TaskPerformance, PerformanceState extends TaskPerformanceState>
-implements Stateful, TaskProfit<Performance, PerformanceState>
+export abstract class Task<OutputType, ProblemTypes extends Problem, Performance extends TaskPerformance>
+implements Stateful, TaskProfit<Performance>
 {
   protected constructor(
     public readonly startTime: Timestamp,
@@ -20,7 +20,6 @@ implements Stateful, TaskProfit<Performance, PerformanceState>
     /** pauseが明けた時間 */
     protected sessionStartTime: Timestamp,
     public readonly roomName: RoomName,
-    public readonly performanceState: PerformanceState,
   ) {
     // if (this.isPaused() !== true) {
     //   this.paused = null
@@ -32,7 +31,6 @@ implements Stateful, TaskProfit<Performance, PerformanceState>
   abstract encode(): TaskState
 
   abstract estimate(roomResource: OwnedRoomResource): Performance
-  abstract performance(period: Timestamp): Performance
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
