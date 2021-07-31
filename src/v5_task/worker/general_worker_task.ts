@@ -148,12 +148,14 @@ export class GeneralWorkerTask extends Task {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
-      const spawn = objects.activeStructures.spawns[0]
-      const room = objects.controller.room
-      if (spawn != null && room.energyAvailable > 150) {
-        const cost = bodyCost(creep.body.map(b => b.type))
-        if (cost > room.energyCapacityAvailable) {
-          return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+        const spawn = objects.activeStructures.spawns[0]
+        const room = objects.controller.room
+        if (spawn != null && room.energyAvailable > 150) {
+          const cost = bodyCost(creep.body.map(b => b.type))
+          if (cost > room.energyCapacityAvailable) {
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+          }
         }
       }
 
