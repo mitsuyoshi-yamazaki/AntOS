@@ -85,6 +85,12 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
         if (invader.hits < invader.hitsMax) {
           continue
         }
+        if (invader.owner.username === Invader.username) {
+          const closestTower = invader.pos.findClosestByRange(roomResource.activeStructures.towers)
+          if (closestTower != null && invader.pos.getRangeTo(closestTower.pos) > 15) {
+            continue
+          }
+        }
 
         const result = roomResource.controller.activateSafeMode()
         switch (result) {
