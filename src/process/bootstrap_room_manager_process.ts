@@ -56,8 +56,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public processShortDescription(): string {
-    const nextLevelDescription = this.shouldRun() ? `${Math.floor(Game.gcl.progressTotal - Game.gcl.progress)}CP left` : ""
-    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")} ${nextLevelDescription}`
+    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")}`
   }
 
   public runOnTick(): void {
@@ -138,7 +137,10 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
 
     const targetRoom = World.rooms.get(targetRoomName)
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
-      return `${roomLink(targetRoomName)} is already mine`
+      const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}})
+      if (spawn.length > 0) {
+        return `${roomLink(targetRoomName)} is already mine`
+      }
     }
     const bootstrappingRoomNames = this.tasks.map(task => task.targetRoomName)
     if (bootstrappingRoomNames.includes(targetRoomName) === true) {
