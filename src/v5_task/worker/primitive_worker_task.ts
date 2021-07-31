@@ -20,8 +20,6 @@ import { TaskState } from "v5_task/task_state"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 
-const creepCountForSource = 4
-
 export interface PrimitiveWorkerTaskState extends TaskState {
   /** room name */
   r: RoomName
