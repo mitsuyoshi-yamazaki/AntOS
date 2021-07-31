@@ -45,8 +45,11 @@ export interface Season1105755HarvestMineralProcessState extends ProcessState {
 // Z
 // Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W25S25 waypoints=W27S25")
 
-// H
+// H //
 // Game.io("launch -l Season1105755HarvestMineralProcess room_name=W27S26 target_room_name=W26S25 waypoints=W27S25")
+
+// Z
+// Game.io("launch -l Season1105755HarvestMineralProcess room_name=W3S24 target_room_name=W4S24 waypoints=W4S24")
 export class Season1105755HarvestMineralProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string

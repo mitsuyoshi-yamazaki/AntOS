@@ -24,7 +24,7 @@ export const epicScenes: { description: string, url: string }[] = [
  */
 
 /*
-[10:13: 10 PM][shardSeason]calls		time		avg		function
+calls		time		avg		function
 3046123		34484.2		0.011		Structure.isActive
 74813		14863.8		0.199		Creep.moveTo
 54576		11165.2		0.205		Creep.move
