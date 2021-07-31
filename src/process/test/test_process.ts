@@ -1,4 +1,3 @@
-import { Sign } from "game/sign"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { processLog } from "process/process_log"
