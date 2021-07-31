@@ -131,6 +131,10 @@ export class MoveToTargetTask implements CreepTask {
             maxOps,
             range,
           }
+        } else {
+          if (creep.fatigue > 0) {
+            this.lastPosition.timestamp += 1
+          }
         }
       } else {
         this.lastPosition = {

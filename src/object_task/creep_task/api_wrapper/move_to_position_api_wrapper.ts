@@ -111,10 +111,14 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
     }
 
     const result = creep.moveTo(this.target, options)
-    if (this.lastPosition == null || this.lastPosition.position.isEqualTo(creep.pos) !== true) {
-      this.lastPosition = {
-        position: creep.pos,
-        timestamp: Game.time
+    if (creep.fatigue > 0 && this.lastPosition != null) {
+      this.lastPosition.timestamp += 1
+    } else {
+      if (this.lastPosition == null || this.lastPosition.position.isEqualTo(creep.pos) !== true) {
+        this.lastPosition = {
+          position: creep.pos,
+          timestamp: Game.time
+        }
       }
     }
 
