@@ -28,6 +28,7 @@ import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_l
 import { Season1143119BoostedAttackProcess } from "process/onetime/season_1143119_boosted_attack_process"
 import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/onetime/season_1244215_generic_dismantle_process"
+import { Season1249418SendHugeCreepProcess } from "process/onetime/season_1249418_send_huge_creep_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -97,6 +98,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1200082SendMineralProcess":
       result = this.launchSeason1200082SendMineralProcess()
+      break
+    case "Season1249418SendHugeCreepProcess":
+      result = this.launchSeason1249418SendHugeCreepProcess()
       break
     default:
       break
@@ -553,6 +557,29 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1249418SendHugeCreepProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1249418SendHugeCreepProcess.create(processId, roomName, targetRoomName, waypoints, "ranged attacker")
     })
     return Result.Succeeded(process)
   }
