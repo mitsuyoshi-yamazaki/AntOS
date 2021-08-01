@@ -256,7 +256,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     let powerResource: Resource | Ruin | null = null
 
     if (targetRoom == null) {
-      if (scoutCount <= this.scoutSpec.maxCount) {
+      if (scoutCount < this.scoutSpec.maxCount) {
         this.addScout()
       }
     } else {
