@@ -16,6 +16,7 @@ import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
 import { bodyCost, createCreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
+import { World } from "world_info/world_info"
 
 const numberOfCreeps = 3
 
@@ -65,6 +66,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const haulerCount = World.resourcePools.countCreeps(this.roomName, null, creep => (creep.roles.includes(CreepRole.Worker) !== true))
+    if (haulerCount <= 0) {
+      return this.haulerCreepRequest(objects)
+    }
     const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
     if (objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true)) || objects.damagedStructures.length > 0) {
       // this.removeBuilderCreepRequest() // CreepInsufficiencyProblemSolverは毎tick Finishするため不要
