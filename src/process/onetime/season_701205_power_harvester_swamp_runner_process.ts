@@ -27,6 +27,7 @@ import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_ta
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { getResourceAmountOf } from "prototype/room_object"
+import { findRoomRoute } from "utility/map"
 
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL6
@@ -99,6 +100,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
   private readonly identifier: string
   private readonly codename: string
+  private readonly estimatedTicksToRoom: number
   private readonly fullAttackPower: number
 
   private readonly scoutSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
@@ -168,6 +170,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+    this.estimatedTicksToRoom = findRoomRoute(this.parentRoomName, this.targetRoomName, this.waypoints).length * GameConstants.room.size
 
     const attackerBody = ((): BodyPartConstant[] => {
       const parentRoom = Game.rooms[this.parentRoomName]
@@ -256,6 +259,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     let powerBank: StructurePowerBank | null = null
     const powerResources: (Resource | Ruin)[] = []
 
+    let estimation = ""
+
     if (targetRoom == null) {
       if (scoutCount < this.scoutSpec.maxCount) {
         this.addScout()
@@ -332,13 +337,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           if (estimatedPowerBankHits < damage) {
             return false
           }
-          const ticksToPowerBank = ((): number => {
-            if (this.ticksToPowerBank == null) {
-              PrimitiveLogger.programError(`${this.identifier} Unexpectedly missing ticksToPowerBank ${roomLink(this.targetRoomName)}`)
-              return 500
-            }
-            return this.ticksToPowerBank
-          })()
+          const ticksToPowerBank = this.ticksToPowerBank ?? this.estimatedTicksToRoom
           const attackDuration = GameConstants.creep.life.lifeTime - ticksToPowerBank
           const ticksToDestroy = ((estimatedPowerBankHits - damage) / this.fullAttackPower)
           const requiredAttackerCount = Math.ceil(ticksToDestroy / attackDuration)
@@ -365,8 +364,20 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         }
       }
 
-      const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 2)
-      if (powerResources.length > 0|| almost) {
+      const almost = ((): boolean => {
+        if (powerBank == null) {
+          return true
+        }
+        const attackPowerPerTick = this.fullAttackPower * Math.min(this.neighbourCount, this.attackerSpec.maxCount)
+        const ticksToDestroy = Math.ceil(powerBank.hits / attackPowerPerTick)
+        const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
+        const haulerCount = this.haulerSpec.maxCount
+        const haulerSpawnTime = this.haulerSpec.body.length * GameConstants.creep.life.spawnTime
+        const ticksToHaulerReady = (haulerCount * haulerSpawnTime) + ticksToRoom
+        estimation = `, estimated ticks to destroy: ${Math.floor(ticksToDestroy / 100) * 100}, ticks to hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 1000)}k)`
+        return (ticksToDestroy + 50) > ticksToHaulerReady
+      })()
+      if (powerResources.length > 0 || almost) {
         if (haulerCount < haulerSpec.maxCount) {
           this.addHauler()
         }
@@ -380,7 +391,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
     const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
-    processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}`)
+    processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}${estimation}`)
 
     if (this.pickupFinished === true) {
       const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
