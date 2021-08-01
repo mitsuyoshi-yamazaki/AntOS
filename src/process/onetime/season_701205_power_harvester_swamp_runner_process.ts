@@ -384,7 +384,22 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     }
 
-    const haulerInTargetRoom = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, this.haulerSpec.roles) && (creep.pos.roomName === this.targetRoomName))
+    const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
+    const haulerInTargetRoom = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => {
+      if (hasNecessaryRoles(creep, this.haulerSpec.roles) !== true) {
+        return false
+      }
+      if (creep.pos.roomName !== this.targetRoomName) {
+        return false
+      }
+      if (creep.ticksToLive == null) {
+        return false
+      }
+      if (creep.ticksToLive < (ticksToRoom + 50)) {
+        return true
+      }
+      return true
+    })
     const haulerReady = haulerInTargetRoom >= this.haulerSpec.maxCount
 
     this.runScout()
@@ -542,6 +557,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           return true
         }
         if (powerBank.hits > 2000) {
+          return true
+        }
+        if (powerBank.ticksToDecay < 20) {
           return true
         }
         if (creep.ticksToLive == null) {
