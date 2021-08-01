@@ -360,13 +360,12 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const findPowerBankOutputs = this.children.findPowerBank.runSafely(roomResource)
     this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
-    if (this.canHarvestPowerBank(roomResource) !== true) {
-      return
-    }
-
     const powerBanks = (findPowerBankOutputs.output?.powerBanks ?? []).filter(powerBankInfo => {
       if (powerBankInfo.powerAmount < 1000) {
         return false
+      }
+      if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {
+        return
       }
       const decay = powerBankInfo.decayedBy - Game.time
       const minimumDamage = 450
@@ -400,7 +399,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     })
   }
 
-  private canHarvestPowerBank(roomResource: OwnedRoomResource): boolean {
+  private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
     if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
       return false
     }
@@ -408,9 +407,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
         continue
       }
-      // if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
-      //   return false
-      // }
+      if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
+        return false
+      }
       if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
         return false
       }
