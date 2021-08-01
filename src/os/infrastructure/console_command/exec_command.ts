@@ -2,6 +2,7 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -28,6 +29,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showPositionsInRange()
     case "DescribeLabs":
       return this.describeLabs()
+    case "MoveToRoom":
+      return this.moveToRoom()
     default:
       return "Invalid script type"
     }
@@ -268,5 +271,27 @@ export class ExecCommand implements ConsoleCommand {
       return "" // FixMe: nullチェック
     }
     return describeLabs(roomName)
+  }
+
+  private moveToRoom(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "room_name", "waypoints")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, roomName, rawWaypoints] = args
+    if (creepName == null || roomName == null || rawWaypoints == null) {
+      return ""
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    if (creep.v5task != null) {
+      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    }
+    creep.v5task = MoveToRoomTask.create(roomName, waypoints)
+    return "ok"
   }
 }
