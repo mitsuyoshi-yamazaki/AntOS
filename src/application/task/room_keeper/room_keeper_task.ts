@@ -31,6 +31,7 @@ import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task
 import { ConsumeTaskPerformance, ConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
 import { Environment } from "utility/environment"
 import { findRoomRoute } from "utility/map"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 const config = {
   powerHarvestingEnabled: true
@@ -158,10 +159,18 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const taskPriority = this.prioritizeTasks(roomResource)
 
-    this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
-    this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
-    this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
-    this.runWallBuilder(roomResource, requestHandlerInputs, taskPriority)
+    ErrorMapper.wrapLoop((): void => {
+      this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
+    }, "runPowerBankTasks()")()
+    ErrorMapper.wrapLoop((): void => {
+      this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
+    }, "runMineralHarvestTask()")()
+    ErrorMapper.wrapLoop((): void => {
+      this.runResearchTask(roomResource, requestHandlerInputs, taskPriority)
+    }, "runResearchTask()")()
+    ErrorMapper.wrapLoop((): void => {
+      this.runWallBuilder(roomResource, requestHandlerInputs, taskPriority)
+    }, "runWallBuilder()")()
 
     const safeModeOutput = this.children.safeMode.runSafely(roomResource)
     this.concatRequests(safeModeOutput, this.children.safeMode.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
