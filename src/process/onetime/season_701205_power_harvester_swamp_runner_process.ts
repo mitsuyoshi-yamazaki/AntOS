@@ -110,7 +110,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return {
         maxCount: 4,
         roles,
-        body: [CARRY, CARRY, CARRY, CARRY, CARRY, MOVE],
+        body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
       }
     }
 
@@ -129,7 +129,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const creepUnitCount = ((): number => {
       const estimatedUnitCount = requiredCreepCount * creepMaxUnitCount
       if (estimatedUnitCount > requiredCreepCount) {
-        return Math.ceil(requiredCreepCount / requiredCreepCount)
+        return Math.ceil(requiredCarryUnitCount / requiredCreepCount)
       }
       return creepMaxUnitCount
     })()
