@@ -118,7 +118,7 @@ export function bodyDescription(body: BodyPartConstant[]): string {
   })
   const result: string[] = []
   map.forEach((value, key) => {
-    result.push(`${value}${coloredBodyShortDescription(key)}`)
+    result.push(`<b>${value}${coloredBodyShortDescription(key)}</b>`)
   })
   return result.join("")
 }
