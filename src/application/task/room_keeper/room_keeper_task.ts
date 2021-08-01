@@ -272,7 +272,12 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    if (((Game.time + this.startTime) % 797) !== 73) {
+    const terminal = roomResource.activeStructures.terminal
+    if (terminal == null) {
+      return null
+    }
+    const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+    if ((((Game.time + this.startTime) % 797) !== 73) && energyAmount < 150000) {
       return null
     }
     if (roomResource.controller.level < 8) {
@@ -281,18 +286,13 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
       return null
     }
-    const terminal = roomResource.activeStructures.terminal
-    if (terminal == null) {
-      return null
-    }
-    const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
     if (energyAmount < 100000) {
       return null
     }
     const sendAmount = energyAmount / 2
     const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
       .filter(room => {
-        if (room.roomName !== this.roomName) {
+        if (room.roomName === this.roomName) {
           return false
         }
         const targetRoom = Game.rooms[room.roomName]
