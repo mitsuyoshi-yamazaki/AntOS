@@ -25,6 +25,7 @@ import { bodyCost } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL6
@@ -58,6 +59,7 @@ interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   body: BodyPartConstant[]
 }
 
+// TODO: Haulerの生成タイミング
 export interface Season701205PowerHarvesterSwampRunnerProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -441,9 +443,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
-        MoveToTask.create(powerBank.pos, 4),
+        MoveToTask.create(powerBank.pos, 7),
       ]
-      return SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false})
+      return FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }))
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
@@ -465,7 +467,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         reversedWaypoints.reverse()
         return MoveToRoomTask.create(store.room.name, reversedWaypoints)
       }
-      return MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
+      return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
     }
 
     if (powerResource == null) {
@@ -480,7 +482,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     }
 
-    return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER))
+    return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER)))
   }
 
   // ---- Attacker ---- //
@@ -579,7 +581,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       MoveToRoomTask.create(this.targetRoomName, this.waypoints),
       MoveToTask.create(waitingPosition, range),
     ]
-    return SequentialTask.create(tasks, options)
+    return FleeFromAttackerTask.create(SequentialTask.create(tasks, options))
   }
 
   // ---- Functions ---- //

@@ -16,6 +16,7 @@ import { CreepTask } from "./creep_task"
 import { TargetToPositionTask, TargetToPositionTaskState } from "./meta_task/target_to_position_task"
 import { TestRunHaulerTask, TestRunHaulerTaskState } from "./meta_task/test_run_hauler_task"
 import { SwampRunnerTransferTask, SwampRunnerTransferTaskState } from "./meta_task/swamp_runner_transfer_task"
+import { FleeFromAttackerTask, FleeFromAttackerTaskState } from "./combined_task/flee_from_attacker_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -31,6 +32,14 @@ class CreepTaskDecoderMap {
   "RunApiTask" = (state: CreepTaskState) => RunApiTask.decode(state as unknown as RunApiTaskState)
   "RunApisTask" = (state: CreepTaskState) => RunApisTask.decode(state as unknown as RunApisTaskState)
   "MoveToTransferHaulerTask" = (state: CreepTaskState) => MoveToTransferHaulerTask.decode(state as unknown as MoveToTransferHaulerTaskState)
+  "FleeFromAttackerTask" = (state: CreepTaskState) => {
+    const fleeFromAttackerTaskState = state as unknown as FleeFromAttackerTaskState
+    const childTask = decodeCreepTaskFromState(fleeFromAttackerTaskState.childTaskState)
+    if (childTask == null) {
+      return null
+    }
+    return FleeFromAttackerTask.decode(fleeFromAttackerTaskState, childTask)
+  }
 
   // ---- Meta task ---- //
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as unknown as MoveToRoomTaskState)
