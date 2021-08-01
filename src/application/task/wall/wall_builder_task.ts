@@ -64,6 +64,8 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     return new WallBuilderTask(Game.time, Game.time, roomName)
   }
 
+  // allocationを渡す→その中で行う
+  // 状況によってallocationは変化しうる
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
     const taskOutputs: WallBuilderTaskOutputs = emptyTaskOutputs()
     const creepInfo = roomResource.runningCreepInfo(this.identifier)

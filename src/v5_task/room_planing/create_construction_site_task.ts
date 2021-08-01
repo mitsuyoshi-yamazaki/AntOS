@@ -22,10 +22,10 @@ const structurePriority: StructureConstant[] = [
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
   STRUCTURE_STORAGE,
+  STRUCTURE_TERMINAL,
   STRUCTURE_EXTENSION,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
-  STRUCTURE_TERMINAL,
   STRUCTURE_LAB,
   STRUCTURE_NUKER,
 ]
@@ -125,7 +125,23 @@ export class CreateConstructionSiteTask extends Task {
         flag.remove()
         break
       case ERR_FULL:
+        break
       case ERR_RCL_NOT_ENOUGH:
+        if (structureType === STRUCTURE_SPAWN) {
+          switch (room.createConstructionSite(flag.pos, STRUCTURE_POWER_SPAWN)) {
+          case OK:
+            flag.remove()
+            return
+          case ERR_NOT_OWNER:
+          case ERR_INVALID_TARGET:
+          case ERR_INVALID_ARGS:
+            flag.remove()
+            break
+          case ERR_FULL:
+          case ERR_RCL_NOT_ENOUGH:
+            break
+          }
+        }
         break
       }
     }
