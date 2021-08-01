@@ -515,10 +515,10 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
   private attackerTask(creep: Creep, powerBank: StructurePowerBank | null): CreepTask | null {
     if (this.pickupFinished === true) {
-      return null
+      return this.attackNearbyHostileHaulerTask(creep)
     }
     const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)[0]
-    if (hostileCreep != null) {
+    if (hostileCreep != null && hostileCreep.getActiveBodyparts(ATTACK) <= 0) {
       return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
     }
 
@@ -530,12 +530,25 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
     }
 
+    const attackNearbyHostileHaulerTask = this.attackNearbyHostileHaulerTask(creep)
+    if (attackNearbyHostileHaulerTask != null) {
+      return attackNearbyHostileHaulerTask
+    }
+
     const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
     const range = 4
     if (creep.pos.inRangeTo(waitingPosition, range) === true) {
       return null
     }
     return MoveToTask.create(waitingPosition, range)
+  }
+
+  private attackNearbyHostileHaulerTask(creep: Creep): CreepTask | null {
+    const hostileHauler = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => (creep.getActiveBodyparts(CARRY) > 0)))
+    if (hostileHauler == null) {
+      return null
+    }
+    return MoveToTargetTask.create(AttackApiWrapper.create(hostileHauler))
   }
 
   // ---- Scout ---- //
