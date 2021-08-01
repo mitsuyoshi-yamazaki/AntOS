@@ -6,6 +6,7 @@ export const remoteRoomNamesToDefend = ((): Map<RoomName, RoomName[]> => {
   case "persistent world":
     return new Map<RoomName, RoomName[]>([
       ["W57S27", ["W57S26", "W57S28"]],
+      ["W52S25", ["W52S26"]],
     ])
   case "simulation":
     return new Map<RoomName, RoomName[]>([

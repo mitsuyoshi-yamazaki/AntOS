@@ -308,7 +308,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
       return
     }
-    const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
+    const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 }, {
+      maxRooms: 2,
+      maxOps: 6000,
+    })
     // if (resultPath.incomplete === true) {
     //   PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
     //   return  // TODO: 毎tick行わないようにする
