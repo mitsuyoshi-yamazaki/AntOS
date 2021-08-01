@@ -21,7 +21,6 @@ import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { bodyCost } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
@@ -116,26 +115,26 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     // max:
-    // 2450 capacity
+    // 1600 capacity
     // 2500E = RCL6
-    const body: BodyPartConstant[] = [MOVE]
-    const bodyUnit = [CARRY]
+    const body: BodyPartConstant[] = []
+    const bodyUnit = [CARRY, CARRY, MOVE]
+    const unitCarryCount = bodyUnit.filter(b => b === CARRY).length
     const energyCapacity = parentRoom.energyCapacityAvailable
-    const requiredCarryCount = Math.ceil(this.powerBankInfo.powerAmount / GameConstants.creep.actionPower.carryCapacity)
-    const creepMaxCarryCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), 49)
+    const requiredCarryUnitCount = Math.ceil(this.powerBankInfo.powerAmount / (GameConstants.creep.actionPower.carryCapacity * unitCarryCount))
+    const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(50 / bodyUnit.length))
     const creepMaxCount = 4
-    const requiredCreepCount = Math.min(Math.ceil(requiredCarryCount / creepMaxCarryCount), creepMaxCount)
+    const requiredCreepCount = Math.min(Math.ceil(requiredCarryUnitCount / creepMaxUnitCount), creepMaxCount)
 
-    const creepCarryCount = ((): number => {
-      const estimatedCarryCount = requiredCreepCount * creepMaxCarryCount
-      if (estimatedCarryCount > requiredCarryCount) {
-        return Math.ceil(requiredCarryCount / requiredCreepCount)
+    const creepUnitCount = ((): number => {
+      const estimatedUnitCount = requiredCreepCount * creepMaxUnitCount
+      if (estimatedUnitCount > requiredCreepCount) {
+        return Math.ceil(requiredCreepCount / requiredCreepCount)
       }
-      return creepMaxCarryCount
+      return creepMaxUnitCount
     })()
-    const bodyUnitCount = creepCarryCount
 
-    for (let i = 0; i < bodyUnitCount; i += 1) {
+    for (let i = 0; i < creepUnitCount; i += 1) {
       body.unshift(...bodyUnit)
     }
 
@@ -339,7 +338,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.haulerSpec.maxCount,
-      codename: "swamp_runner",
+      codename: this.codename,
       roles: this.haulerSpec.roles,
       body: this.haulerSpec.body,
       initialTask: null,
@@ -381,7 +380,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
-      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
+      if (creep.room.name !== store.room.name) {
+        const reversedWaypoints = [...this.waypoints]
+        reversedWaypoints.reverse()
+        return MoveToRoomTask.create(store.room.name, reversedWaypoints)
+      }
+      return MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
     }
 
     if (powerResource == null) {
@@ -396,12 +400,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     }
 
-    const tasks: CreepTask[] = [
-      MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER)),
-      SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)),
-    ]
-
-    return SequentialTask.create(tasks, {ignoreFailure: false, finishWhenSucceed: false})
+    return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER))
   }
 
   // ---- Attacker ---- //
