@@ -175,6 +175,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     const resourceCost = new Map<ResourceConstant, number>()
 
     return {
+      consumeType: "build wall",
       periodType: 0,
       timeSpent: GameConstants.creep.life.lifeTime,
       spawnTime: 0,

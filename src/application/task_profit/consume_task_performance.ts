@@ -1,27 +1,18 @@
 import { emptyTaskPerformanceState, TaskPerformance, TaskPerformanceState } from "application/task_profit"
 
-type ConsumeTaskPerformanceTypeUpgrade = {
-  targetType: "upgrade"
-  energySpent: number
-}
-type ConsumeTaskPerformanceTypeRepairWall = {
-  targetType: "wall"
-  energySpent: number
-}
-
-export type ConsumeTaskPerformanceType = ConsumeTaskPerformanceTypeUpgrade
-  | ConsumeTaskPerformanceTypeRepairWall
+type ConsumeTaskPerformanceType = "upgrade" | "build wall"
 
 export interface ConsumeTaskPerformance extends TaskPerformance {
-  // readonly task: ConsumeTaskPerformanceType
+  readonly consumeType: ConsumeTaskPerformanceType
 }
 
 export interface ConsumeTaskPerformanceState extends TaskPerformanceState {
-
+  readonly consumeType: ConsumeTaskPerformanceType
 }
 
-export function emptyConsumeTaskPerformanceState(): ConsumeTaskPerformanceState {
+export function emptyConsumeTaskPerformanceState(consumeType: ConsumeTaskPerformanceType): ConsumeTaskPerformanceState {
   return {
     ...emptyTaskPerformanceState(),
+    consumeType,
   }
 }
