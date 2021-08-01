@@ -50,6 +50,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 
   readonly config?: {
     disablePowerHarvesting?: boolean
+    disableMineralHarvesting?: boolean
     disableUnnecessaryTasks?: boolean
     enableOperateSpawn?: boolean
     researchCompounds?: { [index in MineralCompoundConstant]?: number }

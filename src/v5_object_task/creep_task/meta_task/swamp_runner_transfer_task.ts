@@ -128,7 +128,7 @@ export class SwampRunnerTransferTask implements CreepTask {
       const stopped = droppedResource.pos.isEqualTo(lastTickPosition) === true
       if (stopped === true) {
         // 静止していた
-        this.pickup(creep, droppedResource)
+        this.pickup(creep, droppedResource) // FixMe: 部屋の境界で静止していた場合
       } else {
         this.moveCreep(creep)
       }
