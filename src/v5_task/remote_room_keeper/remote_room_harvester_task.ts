@@ -254,7 +254,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       if (creep.pos.isEqualTo(harvestPosition) === true) {
         return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
       }
-      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+      return MoveToTask.create(harvestPosition, 0)
     }
 
     if (container.hits < container.hitsMax * 0.8) {
@@ -266,7 +266,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
-    return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))  // TODO: dropは他の操作と同時に行える: parallel taskでharvestとdropを同時に行うようにする
+    return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
   }
 
   // ---- Build Container ---- //

@@ -241,7 +241,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     if (container.hits < container.hitsMax * 0.8) {
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
-    return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))  // TODO: dropは他の操作と同時に行える: parallel taskでharvestとdropを同時に行うようにする
+    return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
   }
 
   // ---- Build Container ---- //
