@@ -30,6 +30,7 @@ import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_m
 import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
 import { ConsumeTaskPerformance, ConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
 import { Environment } from "utility/environment"
+import { findRoomRoute } from "utility/map"
 
 const config = {
   powerHarvestingEnabled: true
@@ -362,8 +363,22 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (launched === true) {
         return
       }
+      if (powerBankInfo.powerAmount < 1000) {
+        return
+      }
       const decay = powerBankInfo.decayedBy - Game.time
-      if (powerBankInfo.powerAmount < 1200 || decay < 2000 || powerBankInfo.nearbySquareCount < 2) {
+      const minimumDamage = 450
+      const powerBankHits = 2000000 // TODO: 実際の値を求める
+      const estimatedTicksToRoom = findRoomRoute(this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints).length * GameConstants.room.size
+      const margin = 500
+      const maxAttackerCount = 3
+      const estimatedTicksToDestroy = margin + estimatedTicksToRoom + Math.ceil((powerBankHits / minimumDamage) / Math.min(powerBankInfo.nearbySquareCount, maxAttackerCount))
+      if (decay < estimatedTicksToDestroy) { // TODO: 優先順位づけ
+        requestHandlerInputs.logs.push({
+          taskIdentifier: this.identifier,
+          logEventType: "event",
+          message: `Power bank in ${roomLink(powerBankInfo.roomName)} estimated ticks to destroy: ${estimatedTicksToDestroy}, decay: ${Math.floor(decay / 100) * 100}`
+        })
         return
       }
       if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {

@@ -42,6 +42,7 @@ export const GameConstants = {
     }
   },
   room: {
+    size: 50,
     edgePosition: {
       min: 0,
       max: 49,
