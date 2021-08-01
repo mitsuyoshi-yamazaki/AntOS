@@ -135,7 +135,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     const creepUnitCount = ((): number => {
       const estimatedUnitCount = requiredCreepCount * creepMaxUnitCount
-      if (estimatedUnitCount > requiredCreepCount) {
+      if (estimatedUnitCount > requiredCarryUnitCount) {
         return Math.ceil(requiredCarryUnitCount / requiredCreepCount)
       }
       return creepMaxUnitCount
@@ -374,8 +374,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         const haulerCount = this.haulerSpec.maxCount
         const haulerSpawnTime = this.haulerSpec.body.length * GameConstants.creep.life.spawnTime
         const ticksToHaulerReady = (haulerCount * haulerSpawnTime) + ticksToRoom
-        estimation = `, estimated ticks to destroy: ${Math.floor(ticksToDestroy / 100) * 100}, ticks to hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 1000)}k)`
-        return (ticksToDestroy + 50) > ticksToHaulerReady
+        estimation = `, ETD: ${Math.ceil(ticksToDestroy / 100) * 100}, hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 25000) * 25}k)`
+        return (ticksToDestroy + 50) < ticksToHaulerReady
       })()
       if (powerResources.length > 0 || almost) {
         if (haulerCount < haulerSpec.maxCount) {
@@ -384,14 +384,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     }
 
+    const haulerInTargetRoom = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, this.haulerSpec.roles) && (creep.pos.roomName === this.targetRoomName))
+    const haulerReady = haulerInTargetRoom >= this.haulerSpec.maxCount
+
     this.runScout()
-    this.runAttackers(powerBank)
+    this.runAttackers(powerBank, haulerReady)
     this.runHauler(powerBank, powerResources)
 
-    const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
+    const workingStatus = this.pickupFinished ? "finished" : "working"
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
-    const haulerDescription = `(${haulerSpec.maxCount} haulers x ${haulerCapacity} capacity)`
-    processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount} scouts, ${attackerCount} attackers, ${haulerCount} haulers ${haulerDescription}${estimation}`)
+    const haulerDescription = `(${haulerSpec.maxCount} x ${haulerCapacity})`
+    processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount}s, ${attackerCount}a, ${haulerCount}h ${haulerDescription}${estimation}`)
 
     if (this.pickupFinished === true) {
       const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
@@ -510,17 +513,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runAttackers(powerBank: StructurePowerBank | null): void {
+  private runAttackers(powerBank: StructurePowerBank | null, haulerReady: boolean): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.attackerTask(creep, powerBank),
+      creep => this.attackerTask(creep, powerBank, haulerReady),
       creep => hasNecessaryRoles(creep, this.attackerSpec.roles),
     )
   }
 
-  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null): CreepTask | null {
+  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null, haulerReady: boolean): CreepTask | null {
     if (this.pickupFinished === true) {
       return this.attackNearbyHostileHaulerTask(creep)
     }
@@ -534,7 +537,21 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     if (powerBank != null) {
-      return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
+      const shouldAttack = ((): boolean => {
+        if (haulerReady === true) {
+          return true
+        }
+        if (powerBank.hits > 2000) {
+          return true
+        }
+        if (creep.ticksToLive == null) {
+          return true
+        }
+        return creep.ticksToLive < 10
+      })()
+      if (shouldAttack === true) {
+        return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
+      }
     }
 
     const attackNearbyHostileHaulerTask = this.attackNearbyHostileHaulerTask(creep)
