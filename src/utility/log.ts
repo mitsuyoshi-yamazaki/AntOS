@@ -19,7 +19,11 @@ export function textColor(color: TextColor): string {
 
 export function coloredText(text: string, color: TextColor): string {
   const colorValue = textColor(color)
-  return `<span style='color:${colorValue}'>${text}</span>`
+  return anyColoredText(text, colorValue)
+}
+
+export function anyColoredText(text: string, color: string): string {
+  return `<span style='color:${color}'>${text}</span>`
 }
 
 function baseUrl(): string {

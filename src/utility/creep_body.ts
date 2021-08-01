@@ -1,3 +1,5 @@
+import { anyColoredText } from "./log"
+
 export function bodyCost(body: BodyPartConstant[]): number {
   return body.reduce((result, current) => {
     return result + BODYPART_COST[current]
@@ -83,6 +85,32 @@ export function createCreepBody(baseBody: BodyPartConstant[], bodyUnit: BodyPart
   return result
 }
 
+const bodyShortDescription: { [index in BodyPartConstant]: string } = {
+  move: "M",
+  carry: "C",
+  work: "W",
+  tough: "T",
+  attack: "A",
+  ranged_attack: "RA",
+  heal: "H",
+  claim: "CL",
+}
+
+const bodyColors: { [index in BodyPartConstant]: string } = {
+  move: "#AAB7C6",
+  carry: "#777777",
+  work: "#FFE76E",
+  tough: "#FFFFFF",
+  attack: "#F72843",
+  ranged_attack: "#5E7FB2",
+  heal: "#6DFF63",
+  claim: "#B897F8",
+}
+
+function coloredBodyShortDescription(body: BodyPartConstant): string {
+  return anyColoredText(bodyShortDescription[body], bodyColors[body])
+}
+
 export function bodyDescription(body: BodyPartConstant[]): string {
   const map = new Map<BodyPartConstant, number>()
   body.forEach(b => {
@@ -90,7 +118,7 @@ export function bodyDescription(body: BodyPartConstant[]): string {
   })
   const result: string[] = []
   map.forEach((value, key) => {
-    result.push(`${value}${key}`)
+    result.push(`${value}${coloredBodyShortDescription(key)}`)
   })
   return result.join("")
 }
