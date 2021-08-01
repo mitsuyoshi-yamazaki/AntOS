@@ -66,6 +66,10 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
 
   public run(roomResource: OwnedRoomResource): OwnedRoomMineralHarvesterTaskOutputs {
     const taskOutputs: OwnedRoomMineralHarvesterTaskOutputs = emptyTaskOutputs()
+    if (roomResource.roomInfo.config?.disableMineralHarvesting === true) {
+      return taskOutputs
+    }
+
     const mineral = roomResource.mineral
     if (mineral == null) {
       return taskOutputs
@@ -115,7 +119,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       })
 
       const creep = creepInfo.creep
-      if (creep.store.getUsedCapacity(mineralType) > 0) {
+      if (creep.store.getFreeCapacity(mineralType) <= 0 || mineral.mineralAmount <= 0) {
         const transferTarget = this.transferTarget(roomResource)
         if (transferTarget == null) {
           return []
