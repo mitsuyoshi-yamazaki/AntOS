@@ -152,7 +152,7 @@ export class RemoteRoomReserveTask extends Task {
       CLAIM, CLAIM,
     ]
 
-    return bodyCost(mediumBody) <= energyCapacity ? maximumBody : minimumBody
+    return bodyCost(mediumBody) <= energyCapacity ? mediumBody : minimumBody
   }
 
   private newClaimerTaskFor(targetController: StructureController): CreepTask | null {
