@@ -272,7 +272,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    if (((Game.time + this.startTime) % 1511) !== 73) {
+    if (((Game.time + this.startTime) % 797) !== 73) {
       return null
     }
     if (roomResource.controller.level < 8) {
@@ -291,7 +291,16 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const sendAmount = energyAmount / 2
     const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
-      .filter(room => room.roomName !== this.roomName)
+      .filter(room => {
+        if (room.roomName !== this.roomName) {
+          return false
+        }
+        const targetRoom = Game.rooms[room.roomName]
+        if (targetRoom == null || targetRoom.terminal == null) {
+          return false
+        }
+        return (targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) > 40000
+      })
       .sort((lhs, rhs) => {
         if (lhs.priority === rhs.priority) {
           return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
