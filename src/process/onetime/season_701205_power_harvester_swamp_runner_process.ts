@@ -26,6 +26,7 @@ import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { getResourceAmountOf } from "prototype/room_object"
 
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL6
@@ -253,7 +254,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     haulerCount = this.countCreep(haulerSpec.roles)
 
     let powerBank: StructurePowerBank | null = null
-    let powerResource: Resource | Ruin | null = null
+    const powerResources: (Resource | Ruin)[] = []
 
     if (targetRoom == null) {
       if (scoutCount < this.scoutSpec.maxCount) {
@@ -350,36 +351,22 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
             }
             return false
           }).length + Math.max(this.neighbourCount - workingAttackers.length, 0)
-          return openPositionCount < onTheWayAttackers.length
+          return openPositionCount > onTheWayAttackers.length
         })()
         if (needsAttacker === true) {
           this.addAttacker()
         }
       } else {
-        powerResource = ((): Resource | Ruin | null => {
-          if (this.powerBankInfo == null) {
-            PrimitiveLogger.programError(`${this.constructor.name} power bank info is null`)
-            const resource = targetRoom.find(FIND_DROPPED_RESOURCES).find(resource => resource.resourceType === RESOURCE_POWER)
-            if (resource != null) {
-              return resource
-            }
-          } else {
-            const resource = this.powerBankInfo.position.findInRange(FIND_DROPPED_RESOURCES, 0).find(resource => resource.resourceType === RESOURCE_POWER)
-            if (resource != null) {
-              return resource
-            }
-          }
+        powerResources.push(...targetRoom.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_POWER } }))
+        powerResources.push(...targetRoom.find(FIND_RUINS).filter(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK))
 
-          const ruin = targetRoom.find(FIND_RUINS).find(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK)
-          return ruin ?? null
-        })()
-        if (powerBank == null && powerResource == null) {
+        if (powerBank == null && powerResources.length <= 0) {
           this.pickupFinished = true
         }
       }
 
       const almost = powerBank != null && powerBank.hits < (powerBank.hitsMax / 2)
-      if (powerResource != null || almost) {
+      if (powerResources.length > 0|| almost) {
         if (haulerCount < haulerSpec.maxCount) {
           this.addHauler()
         }
@@ -388,7 +375,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     this.runScout()
     this.runAttackers(powerBank)
-    this.runHauler(powerBank, powerResource)
+    this.runHauler(powerBank, powerResources)
 
     const workingStatus = this.pickupFinished ? "Pick up finished" : "Working..."
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
@@ -429,17 +416,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runHauler(powerBank: StructurePowerBank | null, powerResource: Resource | Ruin | null): void {
+  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin)[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerBank, powerResource),
+      creep => this.haulerTask(creep, powerBank, powerResources),
       creep => hasNecessaryRoles(creep, this.haulerSpec.roles),
     )
   }
 
-  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResource: Resource | Ruin | null): CreepTask | null {
+  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin)[]): CreepTask | null {
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
@@ -470,7 +457,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
     }
 
-    if (powerResource == null) {
+    if (powerResources.length <= 0) {
       if (this.pickupFinished === true) {
         creep.say("finished")
         return null
@@ -482,7 +469,16 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     }
 
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerResource, RESOURCE_POWER)))
+    const targetResource = powerResources.reduce((lhs, rhs) => {
+      const lTargetedBy = lhs.v5TargetedBy.length
+      const rTargetedBy = rhs.v5TargetedBy.length
+      if (lTargetedBy === rTargetedBy) {
+        return getResourceAmountOf(lhs, RESOURCE_POWER) > getResourceAmountOf(rhs, RESOURCE_POWER) ? lhs : rhs
+      }
+      return lTargetedBy < rTargetedBy ? lhs : rhs
+    })
+
+    return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER)))
   }
 
   // ---- Attacker ---- //

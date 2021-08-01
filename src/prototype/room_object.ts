@@ -24,6 +24,16 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
   return energySource.store.getUsedCapacity(RESOURCE_ENERGY)
 }
 
+export function getResourceAmountOf(obj: Ruin | Resource, resourceType: ResourceConstant): number {
+  if (obj instanceof Resource) {
+    if (obj.resourceType !== resourceType) {
+      return 0
+    }
+    return obj.amount
+  }
+  return obj.store.getUsedCapacity(resourceType)
+}
+
 declare global {
   interface RoomObject {
     /** @deprecated */
