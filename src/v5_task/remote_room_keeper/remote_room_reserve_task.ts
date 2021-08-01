@@ -104,7 +104,7 @@ export class RemoteRoomReserveTask extends Task {
       return []
     }
 
-    if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 4400) {
+    if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 3900) {
       const targetRoom = World.rooms.get(this.targetRoomName)
       if (targetRoom != null) {
         const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
@@ -141,11 +141,18 @@ export class RemoteRoomReserveTask extends Task {
 
   private createReserverBody(minimumBody: BodyPartConstant[], energyCapacity: number): BodyPartConstant[] {
     const maximumBody = [
+      MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+      CLAIM, CLAIM, CLAIM,
+    ]
+    if (bodyCost(maximumBody) <= energyCapacity) {
+      return maximumBody
+    }
+    const mediumBody = [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       CLAIM, CLAIM,
     ]
 
-    return bodyCost(maximumBody) <= energyCapacity ? maximumBody : minimumBody
+    return bodyCost(mediumBody) <= energyCapacity ? maximumBody : minimumBody
   }
 
   private newClaimerTaskFor(targetController: StructureController): CreepTask | null {
