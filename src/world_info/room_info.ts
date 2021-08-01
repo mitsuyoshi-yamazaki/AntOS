@@ -283,7 +283,7 @@ export class OwnedRoomObjects {
           break
         }
         towers.push(structure)
-        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 50) {
           chargeableStructures.push(structure)
         }
         break
@@ -319,7 +319,7 @@ export class OwnedRoomObjects {
           break
         }
         powerSpawn = structure
-        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 2000) {
           chargeableStructures.push(structure)
         }
         break
