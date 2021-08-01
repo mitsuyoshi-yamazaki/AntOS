@@ -1,13 +1,30 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Environment } from "utility/environment"
 import { RoomName } from "utility/room_name"
 
 export const remoteRoomNamesToDefend = ((): Map<RoomName, RoomName[]> => {
   switch (Environment.world) {
   case "persistent world":
-    return new Map<RoomName, RoomName[]>([
-      ["W57S27", ["W57S26", "W57S28"]],
-      ["W52S25", ["W52S26"]],
-    ])
+    switch (Environment.shard) {
+    case "shard0":
+    case "shard1":
+      return new Map<RoomName, RoomName[]>([
+      ])
+    case "shard2":
+      return new Map<RoomName, RoomName[]>([
+        ["W57S27", ["W57S26", "W57S28"]],
+        ["W52S25", ["W52S26"]],
+      ])
+    case "shard3":
+      return new Map<RoomName, RoomName[]>([
+      ])
+    default:
+      if ((Game.time % 19) === 11) {
+        PrimitiveLogger.programError(`remoteRoomNamesToDefend unknown shard name ${Environment.shard} in ${Environment.world}`)
+      }
+      return new Map<RoomName, RoomName[]>([
+      ])
+    }
   case "simulation":
     return new Map<RoomName, RoomName[]>([
     ])
