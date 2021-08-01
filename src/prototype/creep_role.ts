@@ -10,6 +10,7 @@ type CreepRoleHauler = "hauler"
 type CreepRoleScout = "scout"
 type CreepRoleClaimer = "claimer"
 type CreepRoleAttacker = "attacker"
+type CreepRoleRangedAttacker = "ranged_attacker"
 type CreepRoleHealer = "healer"
 
 const creepRoleMover: CreepRoleMover = "mover"
@@ -21,6 +22,7 @@ const creepRoleHauler: CreepRoleHauler = "hauler"
 const creepRoleScout: CreepRoleScout = "scout"
 const creepRoleClaimer: CreepRoleClaimer = "claimer"
 const creepRoleAttacker: CreepRoleAttacker = "attacker"
+const creepRoleRangedAttacker: CreepRoleRangedAttacker = "ranged_attacker"
 const creepRoleHealer: CreepRoleHealer = "healer"
 
 /** @deprecated */
@@ -33,6 +35,7 @@ export type CreepRole = CreepRoleMover
   | CreepRoleScout
   | CreepRoleClaimer
   | CreepRoleAttacker
+  | CreepRoleRangedAttacker
   | CreepRoleHealer
 
 /** @deprecated */
@@ -48,6 +51,7 @@ export const CreepRole = {
   Scout: creepRoleScout,
   Claimer: creepRoleClaimer,
   Attacker: creepRoleAttacker,
+  RangedAttacker: creepRoleRangedAttacker,
   Healer: creepRoleHealer,
 }
 

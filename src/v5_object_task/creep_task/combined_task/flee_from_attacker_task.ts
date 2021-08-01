@@ -6,6 +6,7 @@ import { CreepTaskState } from "../creep_task_state"
 export interface FleeFromAttackerTaskState extends CreepTaskState {
   childTaskState: CreepTaskState
   didFlee: boolean
+  range: number
 }
 
 export class FleeFromAttackerTask implements CreepTask {
@@ -13,6 +14,7 @@ export class FleeFromAttackerTask implements CreepTask {
     public readonly startTime: number,
     public readonly childTask: CreepTask,
     private didFlee: boolean,
+    private readonly range: number,
   ) {
   }
 
@@ -22,23 +24,24 @@ export class FleeFromAttackerTask implements CreepTask {
       t: "FleeFromAttackerTask",
       childTaskState: this.childTask.encode(),
       didFlee: this.didFlee,
+      range: this.range,
     }
   }
 
   public static decode(state: FleeFromAttackerTaskState, childTask: CreepTask): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false)
+    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 5)
   }
 
-  public static create(childTask: CreepTask): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(Game.time, childTask, false)
+  public static create(childTask: CreepTask, range?: number): FleeFromAttackerTask {
+    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 5)
   }
 
   public run(creep: Creep): TaskProgressType {
     const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
       .filter(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)))
-    if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= 5) {
+    if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= this.range) {
       this.didFlee = true
-      this.fleeFrom(hostileAttacker.pos, creep, 6)
+      this.fleeFrom(hostileAttacker.pos, creep, this.range + 1)
       return TaskProgressType.InProgress
     }
     if (this.didFlee === true) {

@@ -17,6 +17,7 @@ import { TargetToPositionTask, TargetToPositionTaskState } from "./meta_task/tar
 import { TestRunHaulerTask, TestRunHaulerTaskState } from "./meta_task/test_run_hauler_task"
 import { SwampRunnerTransferTask, SwampRunnerTransferTaskState } from "./meta_task/swamp_runner_transfer_task"
 import { FleeFromAttackerTask, FleeFromAttackerTaskState } from "./combined_task/flee_from_attacker_task"
+import { ParallelTask, ParallelTaskState } from "./combined_task/parallel_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -39,6 +40,18 @@ class CreepTaskDecoderMap {
       return null
     }
     return FleeFromAttackerTask.decode(fleeFromAttackerTaskState, childTask)
+  }
+  "ParallelTask" = (state: CreepTaskState) => {
+    const parallelTaskState = state as unknown as ParallelTaskState
+    const childTasks: CreepTask[] = []
+    for (const childState of parallelTaskState.c) {
+      const childTask = decodeCreepTaskFromState(childState)
+      if (childTask == null) {
+        return null
+      }
+      childTasks.push(childTask)
+    }
+    return ParallelTask.decode(parallelTaskState, childTasks)
   }
 
   // ---- Meta task ---- //
