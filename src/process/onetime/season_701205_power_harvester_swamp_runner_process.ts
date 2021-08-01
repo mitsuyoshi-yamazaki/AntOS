@@ -26,6 +26,32 @@ import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 
+// 570 hits/tick = 2M/3510ticks
+// 2470E = RCL6
+const normalAttackerBody: BodyPartConstant[] = [
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK,
+  MOVE, ATTACK, MOVE, ATTACK,
+]
+
+// 450 hits/tick = 2M/4450ticks
+// 2050E max
+const smallAttackerBody: BodyPartConstant[] = [
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK,
+  MOVE, ATTACK, MOVE, ATTACK,
+]
+
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
   roles: CreepRole[]
@@ -53,8 +79,12 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 
   /** pickup finished */
   f: boolean
+
+  ticksToPowerBank: number | null
+  neighbourCount: number
 }
 
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W27S26 target_room_name waypoints=W28S26,W28S25,W30S25")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W24S29 target_room_name waypoints=W24S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
@@ -66,42 +96,14 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
   private readonly identifier: string
   private readonly codename: string
+  private readonly fullAttackPower: number
 
   private readonly scoutSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
     maxCount: 1,
     roles: [CreepRole.Scout],
     body: [MOVE],
   }
-  private readonly attackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
-    maxCount: 3,
-    roles: [CreepRole.Attacker, CreepRole.Mover],
-    // 570 hits/tick = 2M/3510ticks
-    // 2470E = RCL6
-    body: [
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK,
-    ],
-  }
-  private readonly smallAttackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
-    maxCount: 3,
-    roles: [CreepRole.Attacker, CreepRole.Mover],
-    // 450 hits/tick = 2M/4450ticks
-    // 2050E max
-    body: [
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-      ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-    ],
-  }
+  private readonly attackerSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
     const roles = [CreepRole.Hauler, CreepRole.Mover]
     const parentRoom = Game.rooms[this.parentRoomName]
@@ -158,9 +160,30 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       position: RoomPosition,
     } | null,
     private pickupFinished: boolean,
+    private ticksToPowerBank: number | null,
+    private readonly neighbourCount: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+
+    const attackerBody = ((): BodyPartConstant[] => {
+      const parentRoom = Game.rooms[this.parentRoomName]
+      if (parentRoom == null) {
+        PrimitiveLogger.programError(`${this.identifier} no parent room visual ${roomLink(this.parentRoomName)}`)
+        return normalAttackerBody
+      }
+      if (bodyCost(normalAttackerBody) > parentRoom.energyCapacityAvailable) {
+        return smallAttackerBody  // FixMe: まだ大きい場合
+      }
+      return normalAttackerBody
+    })()
+    this.attackerSpec = {
+      maxCount: 3,
+      roles: [CreepRole.Attacker, CreepRole.Mover],
+      body: attackerBody,
+    }
+
+    this.fullAttackPower = this.attackerSpec.body.filter(b => (b === ATTACK)).length * GameConstants.creep.actionPower.attack
   }
 
   public encode(): Season701205PowerHarvesterSwampRunnerProcessState {
@@ -181,6 +204,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         }
       })(),
       f: this.pickupFinished,
+      ticksToPowerBank: this.ticksToPowerBank,
+      neighbourCount: this.neighbourCount,
     }
   }
 
@@ -195,11 +220,11 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         position,
       }
     })()
-    return new Season701205PowerHarvesterSwampRunnerProcess(state.l, state.i, state.p, state.tr, state.w, powerBankInfo, state.f)
+    return new Season701205PowerHarvesterSwampRunnerProcess(state.l, state.i, state.p, state.tr, state.w, powerBankInfo, state.f, state.ticksToPowerBank, state.neighbourCount ?? 3)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season701205PowerHarvesterSwampRunnerProcess {
-    return new Season701205PowerHarvesterSwampRunnerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], neighbourCount: number): Season701205PowerHarvesterSwampRunnerProcess {
+    return new Season701205PowerHarvesterSwampRunnerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, false, null, neighbourCount)
   }
 
   public processShortDescription(): string {
@@ -209,6 +234,13 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
   public runOnTick(): void {
     const targetRoom = Game.rooms[this.targetRoomName]
+    if (this.ticksToPowerBank == null) {
+      const creepInTargetRoom = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => (creep.room.name === this.targetRoomName))[0]
+      if (creepInTargetRoom != null && creepInTargetRoom.ticksToLive != null) {
+        this.ticksToPowerBank = Math.max(GameConstants.creep.life.lifeTime - creepInTargetRoom.ticksToLive, 0) + 40
+      }
+    }
+
     let scoutCount = 0
     let attackerCount = 0
     let haulerCount = 0
@@ -270,7 +302,55 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           }
         }
 
-        if (attackerCount < this.attackerSpec.maxCount) {
+        const targetPowerBank = powerBank
+        const needsAttacker = ((): boolean => {
+          const attackers = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, this.attackerSpec.roles))
+          if (attackers.length === 0) {
+            return true
+          }
+          if (attackers.length >= this.attackerSpec.maxCount) {
+            return false
+          }
+          const workingAttackers: Creep[] = []
+          const onTheWayAttackers: Creep[] = []
+          attackers.forEach(creep => {
+            if (creep.pos.isNearTo(targetPowerBank) === true) {
+              workingAttackers.push(creep)
+            } else {
+              onTheWayAttackers.push(creep)
+            }
+          })
+
+          const damage = workingAttackers.reduce((result, current) => {
+            const ticksToLive = current.ticksToLive ?? 0
+            return result + (current.getActiveBodyparts(ATTACK) * GameConstants.creep.actionPower.attack * ticksToLive)
+          }, 0)
+          const estimatedPowerBankHits = targetPowerBank.hits + 100000
+          if (estimatedPowerBankHits < damage) {
+            return false
+          }
+          const ticksToPowerBank = ((): number => {
+            if (this.ticksToPowerBank == null) {
+              PrimitiveLogger.programError(`${this.identifier} Unexpectedly missing ticksToPowerBank ${roomLink(this.targetRoomName)}`)
+              return 500
+            }
+            return this.ticksToPowerBank
+          })()
+          const attackDuration = GameConstants.creep.life.lifeTime - ticksToPowerBank
+          const ticksToDestroy = ((estimatedPowerBankHits - damage) / this.fullAttackPower)
+          const requiredAttackerCount = Math.ceil(ticksToDestroy / attackDuration)
+          if (requiredAttackerCount <= onTheWayAttackers.length) {
+            return false
+          }
+          const openPositionCount = workingAttackers.filter(creep => {
+            if (creep.ticksToLive == null || creep.ticksToLive < ticksToPowerBank) {
+              return true
+            }
+            return false
+          }).length + Math.max(this.neighbourCount - workingAttackers.length, 0)
+          return openPositionCount < onTheWayAttackers.length
+        })()
+        if (needsAttacker === true) {
           this.addAttacker()
         }
       } else {
@@ -408,23 +488,13 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (this.pickupFinished === true) {
       return
     }
-    const body = ((): BodyPartConstant[] => {
-      const parentRoom = Game.rooms[this.parentRoomName]
-      if (parentRoom == null) {
-        return this.attackerSpec.body
-      }
-      if (bodyCost(this.attackerSpec.body) > parentRoom.energyCapacityAvailable) {
-        return this.smallAttackerSpec.body  // FixMe: まだ大きい場合
-      }
-      return this.attackerSpec.body
-    })()
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: this.attackerSpec.maxCount,
       codename: this.codename,
       roles: this.attackerSpec.roles,
-      body,
+      body: this.attackerSpec.body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,

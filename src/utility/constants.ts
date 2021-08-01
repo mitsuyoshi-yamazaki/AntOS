@@ -62,6 +62,7 @@ export const GameConstants = {
       attack: 1,
     },
     actionPower: {
+      attack: ATTACK_POWER,
       build: BUILD_POWER,
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,

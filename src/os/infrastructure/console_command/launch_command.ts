@@ -12,7 +12,7 @@ import { Season570208DismantleRcl2RoomProcess } from "process/onetime/season_570
 import { Season617434PowerHarvestProcess } from "process/onetime/season_617434_power_harvest_process"
 import { Season631744PowerProcessProcess } from "process/onetime/season_631744_power_process_process"
 import { World } from "world_info/world_info"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { Season634603PowerCreepProcess } from "process/onetime/season_634603_power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { Season812484StealPowerProcess } from "process/onetime/season_812484_steal_power_process"
@@ -30,6 +30,7 @@ import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_
 import { Season1244215GenericDismantleProcess } from "process/onetime/season_1244215_generic_dismantle_process"
 import { Season1249418SendHugeCreepProcess } from "process/onetime/season_1249418_send_huge_creep_process"
 import { Season1262745GuardRemoteRoomProcess } from "process/onetime/season_1262745_guard_remote_room_process"
+import { PrimitiveLogger } from "../primitive_logger"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -309,8 +310,32 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
+    const neighbourCount = ((): number => {
+      const targetRoom = Game.rooms[targetRoomName]
+      if (targetRoom == null) {
+        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no visible to ${roomLink(targetRoomName)}`)
+        return 3
+      }
+      const powerBank = targetRoom.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0]
+      if (powerBank == null) {
+        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no power bank found in ${roomLink(targetRoomName)}`)
+        return 3
+      }
+      return powerBank.pos.positionsInRange(1, {
+        excludeItself: true,
+        excludeTerrainWalls: true,
+        excludeStructures: true,
+        excludeWalkableStructures: false,
+      }).length
+    })()
+
+    const dryRun = args.get("dry_run")
+    if (dryRun != null) {
+      return Result.Failed(`${coloredText("[Dry Run]", "warn")} Season701205PowerHarvesterSwampRunnerProcess ${roomLink(targetRoomName)}, ${neighbourCount} attacker points`)
+    }
+
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints)
+      return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount)
     })
     return Result.Succeeded(process)
   }
