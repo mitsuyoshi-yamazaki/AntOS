@@ -29,6 +29,7 @@ import { parseLabs } from "script/room_plan"
 import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
 import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
 import { ConsumeTaskPerformance, ConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
+import { Environment } from "utility/environment"
 
 const config = {
   powerHarvestingEnabled: true
@@ -323,6 +324,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Power Bank ---- //
   private runPowerBankTasks(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (Environment.world !== "season 3") {
+      return
+    }
     if (roomResource.roomInfo.config?.disablePowerHarvesting === true) {
       if (this.children.findPowerBank != null) {
         this.children.findPowerBank = null
