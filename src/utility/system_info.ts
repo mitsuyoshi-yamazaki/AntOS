@@ -21,6 +21,6 @@ export const SystemInfo = {
   application: {
     version: "6.4.16",
     shortVersionString: ShortVersion.v6,
-    name: "DecisonMaker",
+    name: "DecisionMaker",
   },
 }
