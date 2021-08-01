@@ -242,7 +242,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           }) ?? null
         })()
         if (whitelistedHarvestCreep != null) {
-          const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => creep.body.some(b => (b.type === ATTACK)))
+          const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => {
+            if (creep.body.some(b => (b.type === ATTACK)) !== true) {
+              return false
+            }
+            return creep.room.name === this.targetRoomName
+          })
           if (isHarvesting === true) {
             processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is trying to harvest ${roomLink(this.targetRoomName)} power`)
           } else {
