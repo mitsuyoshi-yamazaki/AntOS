@@ -351,20 +351,13 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     const findPowerBankOutputs = this.children.findPowerBank.runSafely(roomResource)
     this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
-    const powerBanks = findPowerBankOutputs.output?.powerBanks ?? []
-    let launched = false
-    powerBanks.forEach(powerBankInfo => {
-      // requestHandlerInputs.logs.push({
-      //   taskIdentifier: this.identifier,
-      //   logEventType: "event",
-      //   message: `Power bank found in ${roomLink(powerBankInfo.roomName)}`
-      // })
+    if (this.canHarvestPowerBank(roomResource) !== true) {
+      return
+    }
 
-      if (launched === true) {
-        return
-      }
+    const powerBanks = (findPowerBankOutputs.output?.powerBanks ?? []).filter(powerBankInfo => {
       if (powerBankInfo.powerAmount < 1000) {
-        return
+        return false
       }
       const decay = powerBankInfo.decayedBy - Game.time
       const minimumDamage = 450
@@ -373,28 +366,32 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       const margin = 500
       const maxAttackerCount = 3
       const estimatedTicksToDestroy = margin + estimatedTicksToRoom + Math.ceil((powerBankHits / minimumDamage) / Math.min(powerBankInfo.nearbySquareCount, maxAttackerCount))
-      if (decay < estimatedTicksToDestroy) { // TODO: 優先順位づけ
+      if (decay < estimatedTicksToDestroy) {
         requestHandlerInputs.logs.push({
           taskIdentifier: this.identifier,
           logEventType: "event",
           message: `Power bank in ${roomLink(powerBankInfo.roomName)} estimated ticks to destroy: ${estimatedTicksToDestroy}, decay: ${Math.floor(decay / 100) * 100}`
         })
-        return
+        return false
       }
-      if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {
-        return
-      }
-      launched = true
-      this.launchPowerBankHarvestProcess(powerBankInfo)
-      requestHandlerInputs.logs.push({
-        taskIdentifier: this.identifier,
-        logEventType: "event",
-        message: `Launched power bank harvester process ${roomLink(powerBankInfo.roomName)}, amount: ${powerBankInfo.powerAmount}, decay: ${decay}, nearby squares: ${powerBankInfo.nearbySquareCount}`
-      })
+      return true
+    })
+    const targetPowerBank = powerBanks.sort((lhs, rhs) => {
+      return lhs.powerAmount - rhs.powerAmount
+    })[0]
+
+    if (targetPowerBank == null) {
+      return
+    }
+    this.launchPowerBankHarvestProcess(targetPowerBank)
+    requestHandlerInputs.logs.push({
+      taskIdentifier: this.identifier,
+      logEventType: "event",
+      message: `Launched power bank harvester process ${roomLink(targetPowerBank.roomName)}, amount: ${targetPowerBank.powerAmount}, decay: ${targetPowerBank.decayedBy - Game.time}, nearby squares: ${targetPowerBank.nearbySquareCount}`
     })
   }
 
-  private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
+  private canHarvestPowerBank(roomResource: OwnedRoomResource): boolean {
     if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
       return false
     }
@@ -402,9 +399,9 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
         continue
       }
-      if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
-        return false
-      }
+      // if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
+      //   return false
+      // }
       if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
         return false
       }
