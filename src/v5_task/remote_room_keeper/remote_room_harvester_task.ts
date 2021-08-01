@@ -132,7 +132,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     container: StructureContainer | null,
   ): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
-    const minimumCreepCount = this.containerId == null ? 3 : 2 // TODO: lifeが短くなってきたら次をspawnさせる
+    const minimumCreepCount = this.containerId == null ? 3 : 1
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
