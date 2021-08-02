@@ -284,7 +284,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const rangedAttackerCount = this.countCreep(this.rangedAttackerSpec.roles)
 
     let powerBank: StructurePowerBank | null = null
-    const powerResources: (Resource | Ruin)[] = []
+    const powerResources: (Resource | Ruin | Tombstone)[] = []
 
     let estimation = ""
 
@@ -402,6 +402,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       } else {
         powerResources.push(...targetRoom.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_POWER } }))
         powerResources.push(...targetRoom.find(FIND_RUINS).filter(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK))
+        powerResources.push(...targetRoom.find(FIND_TOMBSTONES).filter(tombstone => (tombstone.store.getUsedCapacity(RESOURCE_POWER) > 0)))
 
         if (powerBank == null && powerResources.length <= 0) {
           this.pickupFinished = true
@@ -561,7 +562,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin)[]): void {
+  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
@@ -571,7 +572,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     )
   }
 
-  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin)[]): CreepTask | null {
+  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): CreepTask | null {
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
