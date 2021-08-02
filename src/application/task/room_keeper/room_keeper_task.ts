@@ -368,7 +368,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         return
       }
       const decay = powerBankInfo.decayedBy - Game.time
-      const minimumDamage = 450
+      const minimumDamage = roomResource.controller.level < 7 ? 450 : 570
       const powerBankHits = 2000000 // TODO: 実際の値を求める
       const estimatedTicksToRoom = findRoomRoute(this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints).length * GameConstants.room.size
       const margin = 500

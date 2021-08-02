@@ -33,7 +33,7 @@ import { RangedAttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/ra
 import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_wrapper"
 
 // 570 hits/tick = 2M/3510ticks
-// 2470E = RCL6
+// 2470E = RCL7
 const normalAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -48,6 +48,7 @@ const normalAttackerBody: BodyPartConstant[] = [
 
 // 450 hits/tick = 2M/4450ticks
 // 2050E max
+// RCL6
 const smallAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
