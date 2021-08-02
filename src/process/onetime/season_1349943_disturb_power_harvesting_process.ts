@@ -155,7 +155,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
 
   private closestHostile(creep: Creep): Creep | null {
     const hostiles = creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
-      if (this.whitelistedUsernames.includes(creep.owner.username) !== true) {
+      if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
         return false
       }
       if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
