@@ -657,9 +657,16 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("patrol_rooms")
     }
     const patrolRooms = rawPatrolRooms.split(",")
+    const attackerType = args.get("attacker_type")
+    if (attackerType == null) {
+      return this.missingArgumentError("attacker_type")
+    }
+    if (["attacker", "ranged_attacker"].includes(attackerType) !== true) {
+      return Result.Failed(`Invalid attacker type: ${attackerType}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms)
+      return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker"))
     })
     return Result.Succeeded(process)
 

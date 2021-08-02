@@ -11,6 +11,8 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "process/process_log"
 
+type AttackerType = "attacker" | "ranged_attacker"
+
 export interface Season1349943DisturbPowerHarvestingProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -19,10 +21,11 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
   w: RoomName[]
 
   patrollRoomNames: RoomName[]
+  attackerType: AttackerType
 }
 
-// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20")
-// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20 attacker_type=attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20 attacker_type=attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -35,6 +38,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     public readonly parentRoomName: RoomName,
     public readonly waypoints: RoomName[],
     public readonly patrollRoomNames: RoomName[],
+    public readonly attackerType: AttackerType,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.patrollRoomNames.join(",")}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -48,15 +52,16 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       p: this.parentRoomName,
       w: this.waypoints,
       patrollRoomNames: this.patrollRoomNames,
+      attackerType: this.attackerType,
     }
   }
 
   public static decode(state: Season1349943DisturbPowerHarvestingProcessState): Season1349943DisturbPowerHarvestingProcess {
-    return new Season1349943DisturbPowerHarvestingProcess(state.l, state.i, state.p, state.w, state.patrollRoomNames)
+    return new Season1349943DisturbPowerHarvestingProcess(state.l, state.i, state.p, state.w, state.patrollRoomNames, state.attackerType ?? "ranged_attacker")
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, waypoints: RoomName[], patrollRoomNames: RoomName[]): Season1349943DisturbPowerHarvestingProcess {
-    return new Season1349943DisturbPowerHarvestingProcess(Game.time, processId, parentRoomName, waypoints, patrollRoomNames)
+  public static create(processId: ProcessId, parentRoomName: RoomName, waypoints: RoomName[], patrollRoomNames: RoomName[], attackerType: AttackerType): Season1349943DisturbPowerHarvestingProcess {
+    return new Season1349943DisturbPowerHarvestingProcess(Game.time, processId, parentRoomName, waypoints, patrollRoomNames, attackerType)
   }
 
   public processShortDescription(): string {
@@ -69,7 +74,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       this.requestCreep()
     }
 
-    creeps.forEach(creep => this.runRangedAttacker(creep))
+    creeps.forEach(creep => this.runAttacker(creep))
   }
 
   private requestCreep(): void {
@@ -78,20 +83,37 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       PrimitiveLogger.programError(`${this.identifier} no room provided ${this.waypoints}, ${this.patrollRoomNames}`)
       return
     }
+    const roles = ((): CreepRole[] => {
+      switch (this.attackerType) {
+      case "attacker":
+        return [CreepRole.Attacker, CreepRole.Mover]
+      case "ranged_attacker":
+        return [CreepRole.RangedAttacker, CreepRole.Mover]
+      }
+    })()
+    const body = ((): BodyPartConstant[] => {
+      switch (this.attackerType) {
+      case "attacker":
+        return [ATTACK, MOVE, ATTACK, MOVE]
+      case "ranged_attacker":
+        return [RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE]
+      }
+    })()
+
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
-      roles: [CreepRole.RangedAttacker],
-      body: [RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE],
+      roles,
+      body,
       initialTask: MoveToRoomTask.create(targetRoom, this.waypoints),
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
   }
 
-  private runRangedAttacker(creep: Creep): void {
-    const { moved } = this.avoidHostileRangedAttacker(creep)
+  private runAttacker(creep: Creep): void {
+    const { moved } = this.avoidHostileAttacker(creep)
     const movement = this.attackHostile(creep, moved !== true)
 
     const shouldPauseTask = (moved === true || movement.moved === true || movement.attackedTarget != null)
@@ -118,8 +140,15 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     }
   }
 
-  private avoidHostileRangedAttacker(creep: Creep): { moved: boolean } {
-    const hostiles = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+  private avoidHostileAttacker(creep: Creep): { moved: boolean } {
+    const hostiles = ((): Creep[] => {
+      switch (this.attackerType) {
+      case "attacker":
+        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0) || (creep.getActiveBodyparts(ATTACK) > 0))
+      case "ranged_attacker":
+        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+      }
+    })()
     const closest = creep.pos.findClosestByRange(hostiles)
     if (closest == null) {
       return {
@@ -137,7 +166,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     let moved = false
     const closestHostile = this.closestHostile(creep)
     if (closestHostile != null) {
-      this.rangedAttack(creep, closestHostile)
+      this.attack(creep, closestHostile)
       attackedTarget = closestHostile
       processLog(this, `Found target ${attackedTarget} in ${roomLink(creep.room.name)}`)
 
@@ -154,6 +183,14 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   }
 
   private closestHostile(creep: Creep): Creep | null {
+    const includeAttacker = ((): boolean => {
+      switch (this.attackerType) {
+      case "attacker":
+        return false
+      case "ranged_attacker":
+        return true
+      }
+    })()
     const hostiles = creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
       if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
         return false
@@ -161,7 +198,14 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
         return
       }
-      return creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(CARRY) > 0
+      if (creep.getActiveBodyparts(ATTACK) > 0) {
+        if (includeAttacker === true) {
+          return true
+        } else {
+          return false
+        }
+      }
+      return creep.getActiveBodyparts(CARRY) > 0
     })
     if (hostiles.length <= 0) {
       return null
@@ -169,11 +213,18 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     return creep.pos.findClosestByRange(hostiles)
   }
 
-  private rangedAttack(creep: Creep, target: AnyCreep | AnyStructure): void {
-    if (creep.pos.isNearTo(target.pos) === true) {
-      creep.rangedMassAttack()
-    } else {
-      creep.rangedAttack(target)
+  private attack(creep: Creep, target: AnyCreep | AnyStructure): void {
+    switch (this.attackerType) {
+    case "attacker":
+      creep.attack(target)
+      return
+    case "ranged_attacker":
+      if (creep.pos.isNearTo(target.pos) === true) {
+        creep.rangedMassAttack()
+      } else {
+        creep.rangedAttack(target)
+      }
+      return
     }
   }
 
