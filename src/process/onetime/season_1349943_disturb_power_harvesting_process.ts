@@ -195,6 +195,9 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
         return false
       }
+      if (creep.ticksToLive == null || creep.ticksToLive < 50) {
+        return false
+      }
       if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
         return
       }
