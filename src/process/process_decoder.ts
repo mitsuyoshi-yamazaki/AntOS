@@ -19,6 +19,7 @@ import { Season631744PowerProcessProcess, Season631744PowerProcessProcessState }
 import { Season634603PowerCreepProcess, Season634603PowerCreepProcessState } from "./onetime/season_634603_power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess, Season701205PowerHarvesterSwampRunnerProcessState } from "./onetime/season_701205_power_harvester_swamp_runner_process"
 import { Season812484StealPowerProcess, Season812484StealPowerProcessState } from "./onetime/season_812484_steal_power_process"
+import { Season831595DismantleRcl2RoomProcess, Season831595DismantleRcl2RoomProcessState } from "./onetime/season_831595_dismantle_rcl2_room_process"
 import { Season845677Attack1TowerProcess, Season845677Attack1TowerProcessState } from "./onetime/season_845677_attack_1tower_process"
 import { Season989041MovePowerCreepProcess, Season989041MovePowerCreepProcessState } from "./onetime/season_989041_move_power_creep_process"
 import type { Process } from "./process"
@@ -64,6 +65,7 @@ class ProcessTypes {
   "Season1249418SendHugeCreepProcess" = (state: ProcessState) => Season1249418SendHugeCreepProcess.decode(state as unknown as Season1249418SendHugeCreepProcessState)
   "Season1262745GuardRemoteRoomProcess" = (state: ProcessState) => Season1262745GuardRemoteRoomProcess.decode(state as unknown as Season1262745GuardRemoteRoomProcessState)
   "Season1349943DisturbPowerHarvestingProcess" = (state: ProcessState) => Season1349943DisturbPowerHarvestingProcess.decode(state as unknown as Season1349943DisturbPowerHarvestingProcessState)
+  "Season831595DismantleRcl2RoomProcess" = (state: ProcessState) => Season831595DismantleRcl2RoomProcess.decode(state as unknown as Season831595DismantleRcl2RoomProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

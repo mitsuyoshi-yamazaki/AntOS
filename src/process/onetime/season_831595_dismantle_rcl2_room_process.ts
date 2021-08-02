@@ -16,7 +16,6 @@ import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/disma
 
 const numberOfCreeps = 2
 
-// Game.io("launch Season831595DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
 export interface Season831595DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -31,6 +30,7 @@ export interface Season831595DismantleRcl2RoomProcessState extends ProcessState 
   ti: Id<AnyStructure> | null
 }
 
+// Game.io("launch -l Season831595DismantleRcl2RoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S23,S2S23")
 export class Season831595DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string

@@ -32,6 +32,7 @@ import { Season1249418SendHugeCreepProcess } from "process/onetime/season_124941
 import { Season1262745GuardRemoteRoomProcess } from "process/onetime/season_1262745_guard_remote_room_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/onetime/season_1349943_disturb_power_harvesting_process"
+import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -110,6 +111,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1349943DisturbPowerHarvestingProcess":
       result = this.launchSeason1349943DisturbPowerHarvestingProcess()
+      break
+    case "Season831595DismantleRcl2RoomProcess":
+      result = this.launchSeason831595DismantleRcl2RoomProcess()
       break
     default:
       break
@@ -669,6 +673,28 @@ export class LaunchCommand implements ConsoleCommand {
       return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker"))
     })
     return Result.Succeeded(process)
+  }
 
+  private launchSeason831595DismantleRcl2RoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
   }
 }
