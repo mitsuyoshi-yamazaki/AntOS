@@ -43,9 +43,10 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     readonly inputLab2: Id<StructureLab>
     readonly outputLabs: Id<StructureLab>[]
   }
+  highestRcl: number
 
   // ---- Inter Room ---- //
-// TODO: 同様にCreepも送れるようにする
+  // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiencyPriority }
 
   readonly config?: {
@@ -67,5 +68,6 @@ export function buildOwnedRoomInfo(normalRoomInfo?: NormalRoomInfo): OwnedRoomIn
     energySourceStructureIds: normalRoomInfo?.energySourceStructureIds ?? [],
     energyStoreStructureIds: normalRoomInfo?.energyStoreStructureIds ?? [],
     resourceInsufficiencies: {},
+    highestRcl: 1,
   }
 }

@@ -43,6 +43,7 @@ export interface RoomInfoMemory {
   } | null
 
   bootstrapping: boolean
+  highestRcl: number
 }
 
 export interface RoomInfo {
@@ -64,6 +65,7 @@ export interface RoomInfo {
   } | null
 
   bootstrapping: boolean
+  highestRcl: number
 }
 
 export interface RoomsInterface {
@@ -196,10 +198,16 @@ export class OwnedRoomObjects {
           upgrader: null,
           distributor: null,
           bootstrapping: false,
+          highestRcl: controller.level,
         }
       }
       return decodeRoomInfo(roomInfoMemory)
     })()
+
+    if (this.roomInfo.highestRcl < this.controller.level) {
+      this.roomInfo.highestRcl = this.controller.level
+    }
+    const shouldCheckActiveness = this.controller.level < this.roomInfo.highestRcl
 
     this.sources = room.find(FIND_SOURCES)
     this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES)
@@ -261,7 +269,7 @@ export class OwnedRoomObjects {
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         spawns.push(structure)
@@ -270,7 +278,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_EXTENSION:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         extensions.push(structure)
@@ -279,7 +287,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_TOWER:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         towers.push(structure)
@@ -297,7 +305,7 @@ export class OwnedRoomObjects {
         checkDecayed(structure)
         break
       case STRUCTURE_STORAGE:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         storage = structure
@@ -306,7 +314,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_TERMINAL:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         terminal = structure
@@ -315,7 +323,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_POWER_SPAWN:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         powerSpawn = structure
@@ -324,7 +332,7 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_LAB:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
@@ -583,7 +591,8 @@ export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
       }
     })(),
 
-    bootstrapping: roomInfoMemory.bootstrapping ?? false
+    bootstrapping: roomInfoMemory.bootstrapping ?? false,
+    highestRcl: roomInfoMemory.highestRcl ?? 1,
   }
 }
 
@@ -611,6 +620,7 @@ function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
       }
     })(),
     bootstrapping: roomInfo.bootstrapping,
+    highestRcl: roomInfo.highestRcl,
   }
 }
 

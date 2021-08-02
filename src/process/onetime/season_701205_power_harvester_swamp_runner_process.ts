@@ -269,7 +269,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (this.ticksToPowerBank == null) {
       const creepInTargetRoom = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => (creep.room.name === this.targetRoomName))[0]
       if (creepInTargetRoom != null && creepInTargetRoom.ticksToLive != null) {
-        this.ticksToPowerBank = Math.max(GameConstants.creep.life.lifeTime - creepInTargetRoom.ticksToLive, 0) + 40
+        this.ticksToPowerBank = Math.max(GameConstants.creep.life.lifeTime - creepInTargetRoom.ticksToLive, 0) + 40 // TODO: Creepを引き継いだ場合に異常な値をとる
       }
     }
 
