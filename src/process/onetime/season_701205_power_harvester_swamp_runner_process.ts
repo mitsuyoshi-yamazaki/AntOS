@@ -593,7 +593,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return null
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+    if (creep.store.getFreeCapacity(RESOURCE_POWER) < 0 || powerResources.length <= 0) {
       if (isSwampRunner(creep) === true) {
         return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
       } else {
@@ -630,7 +630,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (creep.room.name === this.parentRoomName) {
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.waypoints))
     }
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER)))
+    return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER))
   }
 
   // ---- Attacker ---- //
@@ -688,7 +688,16 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         if (creep.ticksToLive == null) {
           return true
         }
-        return creep.ticksToLive < 10
+        if (creep.ticksToLive < 10) {
+          return true
+        }
+        if (creep.hits < creep.hitsMax) {
+          return true
+        }
+        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).length > 0) {
+          return true
+        }
+        return false
       })()
       if (shouldAttack === true) {
         return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
