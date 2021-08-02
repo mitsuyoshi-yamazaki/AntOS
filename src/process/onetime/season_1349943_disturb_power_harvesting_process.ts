@@ -9,6 +9,7 @@ import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { processLog } from "process/process_log"
 
 export interface Season1349943DisturbPowerHarvestingProcessState extends ProcessState {
   /** parent room name */
@@ -21,6 +22,7 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
 }
 
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -128,6 +130,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     if (closestHostile != null) {
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
+      processLog(this, `Found target ${attackedTarget} in ${roomLink(creep.room.name)}`)
 
       if (canMove === true) {
         if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
