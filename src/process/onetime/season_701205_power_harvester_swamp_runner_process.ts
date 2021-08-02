@@ -593,7 +593,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return null
     }
 
-    if (creep.store.getFreeCapacity(RESOURCE_POWER) < 0 || powerResources.length <= 0) {
+    if (creep.store.getFreeCapacity(RESOURCE_POWER) <= 0 || powerResources.length <= 0) {
       if (isSwampRunner(creep) === true) {
         return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
       } else {
