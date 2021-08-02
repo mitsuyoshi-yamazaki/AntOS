@@ -286,6 +286,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     let powerBank: StructurePowerBank | null = null
     const powerResources: (Resource | Ruin | Tombstone)[] = []
 
+    let requestingAttacker = false as boolean
     let estimation = ""
 
     if (targetRoom == null) {
@@ -397,6 +398,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           return openPositionCount > onTheWayAttackers.length
         })()
         if (needsAttacker === true) {
+          requestingAttacker = true
           this.addAttacker()
         }
       } else {
@@ -409,29 +411,31 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         }
       }
 
-      const almost = ((): boolean => {
-        if (powerBank == null) {
-          return true
-        }
-        const attackPowerPerTick = this.fullAttackPower * Math.min(this.neighbourCount, this.attackerSpec.maxCount)
-        const ticksToDestroy = Math.ceil(powerBank.hits / attackPowerPerTick)
-        const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
-        const haulerCount = this.haulerSpec.maxCount
-        const haulerSpawnTime = this.haulerSpec.body.length * GameConstants.creep.life.spawnTime
-        const ticksToHaulerReady = (haulerCount * haulerSpawnTime) + ticksToRoom
-        estimation = `, ETD: ${Math.ceil(ticksToDestroy / 100) * 100}, hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 50000) * 50}k)`
-        return (ticksToDestroy + 50) < ticksToHaulerReady
-      })()
-      if (almost === true) {
-        if (haulerCount < haulerSpec.maxCount) {
-          this.addHauler()
-        }
-      } else if (powerResources.length > 0) {
-        const sum = powerResources.reduce((result, current) => (result + getResourceAmountOf(current, RESOURCE_POWER)), 0)
-        const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
-        const requiredHaulerCount = Math.min(Math.ceil(sum / haulerCapacity), this.haulerSpec.maxCount)
-        if (haulerCount < requiredHaulerCount) {
-          this.addHauler()
+      if (requestingAttacker !== true) {
+        const almost = ((): boolean => {
+          if (powerBank == null) {
+            return true
+          }
+          const attackPowerPerTick = this.fullAttackPower * Math.min(this.neighbourCount, this.attackerSpec.maxCount)
+          const ticksToDestroy = Math.ceil(powerBank.hits / attackPowerPerTick)
+          const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
+          const haulerCount = this.haulerSpec.maxCount
+          const haulerSpawnTime = this.haulerSpec.body.length * GameConstants.creep.life.spawnTime
+          const ticksToHaulerReady = (haulerCount * haulerSpawnTime) + ticksToRoom
+          estimation = `, ETD: ${Math.ceil(ticksToDestroy / 100) * 100}, hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 50000) * 50}k)`
+          return (ticksToDestroy + 50) < ticksToHaulerReady
+        })()
+        if (almost === true) {
+          if (haulerCount < haulerSpec.maxCount) {
+            this.addHauler()
+          }
+        } else if (powerResources.length > 0) {
+          const sum = powerResources.reduce((result, current) => (result + getResourceAmountOf(current, RESOURCE_POWER)), 0)
+          const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
+          const requiredHaulerCount = Math.min(Math.ceil(sum / haulerCapacity), this.haulerSpec.maxCount)
+          if (haulerCount < requiredHaulerCount) {
+            this.addHauler()
+          }
         }
       }
     }
