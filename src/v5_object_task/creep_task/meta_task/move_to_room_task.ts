@@ -20,6 +20,7 @@ export interface MoveToRoomTaskState extends CreepTaskState {
   e: RoomPositionState | null
 
   ignoreSwamp: boolean
+  paused: boolean
 }
 
 export class MoveToRoomTask implements CreepTask {
@@ -31,6 +32,7 @@ export class MoveToRoomTask implements CreepTask {
     public readonly waypoints: RoomName[],
     private exitPosition: RoomPosition | null,
     private readonly ignoreSwamp: boolean,
+    private paused: boolean,
   ) {
     this.shortDescription = this.destinationRoomName
   }
@@ -43,19 +45,28 @@ export class MoveToRoomTask implements CreepTask {
       w: this.waypoints,
       e: this.exitPosition?.encode() ?? null,
       ignoreSwamp: this.ignoreSwamp,
+      paused: this.paused,
     }
   }
 
   public static decode(state: MoveToRoomTaskState): MoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
-    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition, state.ignoreSwamp ?? false)
+    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition, state.ignoreSwamp ?? false, state.paused ?? false)
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[], ignoreSwamp?: boolean): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, ignoreSwamp ?? false)
+    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, ignoreSwamp ?? false, false)
+  }
+
+  public pause(paused: boolean): void {
+    this.paused = paused
   }
 
   public run(creep: Creep): TaskProgressType {
+    if (this.paused === true) {
+      return TaskProgressType.InProgress
+    }
+
     if (creep.pos.x === 0) {
       if (creep.move(RIGHT) === OK) {
         return TaskProgressType.InProgress
