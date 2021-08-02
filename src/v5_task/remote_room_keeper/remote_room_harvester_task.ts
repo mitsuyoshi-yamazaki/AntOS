@@ -13,7 +13,6 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
-import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
@@ -216,7 +215,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const moveSpeed = 1.0
     const terrainCost = 1
     const sourceEnergyCapacity = source.energyCapacity
-    const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER)
+    const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
