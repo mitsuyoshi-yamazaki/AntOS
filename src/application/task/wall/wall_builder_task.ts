@@ -74,7 +74,20 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
 
       if (energyAmount > 80000) {
-        const hasWalls = roomResource.walls.length > 0 || roomResource.ramparts.length > 0 || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
+        const maxHits = 2000000
+        const walls: (StructureWall | StructureRampart)[] = [
+          ...roomResource.walls,
+          ...roomResource.ramparts,
+        ].filter(wall => {
+          if (wall.hits >= wall.hitsMax) {
+            return false
+          }
+          if (wall.hits > maxHits) {
+            return false
+          }
+          return true
+        })
+        const hasWalls = walls.length > 0 || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
 
         if (hasWalls === true) {
           if ((Game.time % 3) === 1) {
