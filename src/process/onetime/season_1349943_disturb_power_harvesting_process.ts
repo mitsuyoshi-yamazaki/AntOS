@@ -26,6 +26,7 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
 
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20 attacker_type=attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W24S29 waypoints=W24S30 patrol_rooms=W23S30,W20S30,W20S21 attacker_type=attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -155,7 +156,16 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         moved: false
       }
     }
-    this.fleeFrom(closest.pos, creep, 6)
+    const range = ((): number => {
+      if (closest.getActiveBodyparts(RANGED_ATTACK) <= 0) {
+        return 4
+      }
+      if (this.attackerType === "ranged_attacker") {
+        return 3
+      }
+      return 3
+    })()
+    this.fleeFrom(closest.pos, creep, range)
     return {
       moved: true
     }
