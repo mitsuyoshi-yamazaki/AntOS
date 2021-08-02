@@ -144,9 +144,9 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     const hostiles = ((): Creep[] => {
       switch (this.attackerType) {
       case "attacker":
-        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0) || (creep.getActiveBodyparts(ATTACK) > 0))
+        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0) || (creep.getActiveBodyparts(ATTACK) > 0))
       case "ranged_attacker":
-        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0))
       }
     })()
     const closest = creep.pos.findClosestByRange(hostiles)
@@ -155,7 +155,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         moved: false
       }
     }
-    this.fleeFrom(closest.pos, creep, 7)
+    this.fleeFrom(closest.pos, creep, 6)
     return {
       moved: true
     }
@@ -199,7 +199,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         return false
       }
       if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
-        return
+        return false
       }
       if (creep.getActiveBodyparts(ATTACK) > 0) {
         if (includeAttacker === true) {
