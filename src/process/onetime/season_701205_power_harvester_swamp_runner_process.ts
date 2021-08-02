@@ -31,6 +31,7 @@ import { findRoomRoute } from "utility/map"
 import { ParallelTask } from "v5_object_task/creep_task/combined_task/parallel_task"
 import { RangedAttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/ranged_attack_api_wrapper"
 import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_wrapper"
+import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL7
@@ -58,6 +59,11 @@ const smallAttackerBody: BodyPartConstant[] = [
   ATTACK, ATTACK, ATTACK,
   MOVE, ATTACK, MOVE, ATTACK,
 ]
+
+const swampRunnerRoles: CreepRole[] = [CreepRole.SwampRunner, CreepRole.Mover]
+function isSwampRunner(creep: Creep): boolean {
+  return hasNecessaryRoles(creep, swampRunnerRoles)
+}
 
 interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   maxCount: number
@@ -139,10 +145,18 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const body: BodyPartConstant[] = []
     const bodyUnit = [CARRY, CARRY, MOVE]
     const unitCarryCount = bodyUnit.filter(b => b === CARRY).length
-    const energyCapacity = parentRoom.energyCapacityAvailable
-    const requiredCarryUnitCount = Math.ceil(this.powerBankInfo.powerAmount / (GameConstants.creep.actionPower.carryCapacity * unitCarryCount))
-    const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(50 / bodyUnit.length))
+    const unitCarryCapacity = (GameConstants.creep.actionPower.carryCapacity * unitCarryCount)
     const creepMaxCount = 4
+    const energyCapacity = parentRoom.energyCapacityAvailable
+
+    const carryAmountPerCreep = Math.floor(50 / bodyUnit.length) * unitCarryCapacity
+    const haulableAmount = creepMaxCount * carryAmountPerCreep
+    if (this.powerBankInfo.powerAmount > (haulableAmount * 1.4)) {
+      return swampRunnerSpec(energyCapacity, this.powerBankInfo.powerAmount)
+    }
+
+    const requiredCarryUnitCount = Math.ceil(this.powerBankInfo.powerAmount / unitCarryCapacity)
+    const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(50 / bodyUnit.length))
     const requiredCreepCount = Math.min(Math.ceil(requiredCarryUnitCount / creepMaxUnitCount), creepMaxCount)
 
     const creepUnitCount = ((): number => {
@@ -454,7 +468,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     const workingStatus = this.pickupFinished ? "finished" : "working"
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
-    const haulerDescription = `(${haulerSpec.maxCount} x ${haulerCapacity})`
+    const swampRunnerDescription = haulerSpec.roles.includes(CreepRole.SwampRunner) ? "sw " : ""
+    const haulerDescription = `(${swampRunnerDescription}${haulerSpec.maxCount} x ${haulerCapacity})`
     processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount}s, ${attackerCount}a, ${rangedAttackerCount}ra, ${haulerCount}h ${haulerDescription}${estimation}`)
 
     if (this.pickupFinished === true) {
@@ -579,12 +594,16 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
-      if (creep.room.name !== store.room.name) {
-        const reversedWaypoints = [...this.waypoints]
-        reversedWaypoints.reverse()
-        return MoveToRoomTask.create(store.room.name, reversedWaypoints)
+      if (isSwampRunner(creep) === true) {
+        return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
+      } else {
+        if (creep.room.name !== store.room.name) {
+          const reversedWaypoints = [...this.waypoints]
+          reversedWaypoints.reverse()
+          return MoveToRoomTask.create(store.room.name, reversedWaypoints)
+        }
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
       }
-      return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
     }
 
     if (powerResources.length <= 0) {
@@ -608,7 +627,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return lTargetedBy < rTargetedBy ? lhs : rhs
     })
 
-    if (creep.room.name === this.parentRoomName || creep.room.name === "W15S28") {
+    if (creep.room.name === this.parentRoomName) {
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.waypoints))
     }
     return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER)))
@@ -748,5 +767,36 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   // ---- Functions ---- //
   private countCreep(roles: CreepRole[]): number {
     return World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, roles))
+  }
+}
+
+function swampRunnerSpec(energyCapacity: number, powerAmount: number): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
+  // max:
+  // 2450 capacity
+  // 2500E = RCL6
+  const body: BodyPartConstant[] = [MOVE]
+  const bodyUnit = [CARRY]
+  const requiredCarryCount = Math.ceil(powerAmount / GameConstants.creep.actionPower.carryCapacity)
+  const creepMaxCarryCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), 49)
+  const creepMaxCount = 4
+  const requiredCreepCount = Math.min(Math.ceil(requiredCarryCount / creepMaxCarryCount), creepMaxCount)
+
+  const creepCarryCount = ((): number => {
+    const estimatedCarryCount = requiredCreepCount * creepMaxCarryCount
+    if (estimatedCarryCount > requiredCarryCount) {
+      return Math.ceil(requiredCarryCount / requiredCreepCount)
+    }
+    return creepMaxCarryCount
+  })()
+  const bodyUnitCount = creepCarryCount
+
+  for (let i = 0; i < bodyUnitCount; i += 1) {
+    body.unshift(...bodyUnit)
+  }
+
+  return {
+    maxCount: requiredCreepCount,
+    roles: swampRunnerRoles,
+    body,
   }
 }

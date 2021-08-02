@@ -12,6 +12,7 @@ type CreepRoleClaimer = "claimer"
 type CreepRoleAttacker = "attacker"
 type CreepRoleRangedAttacker = "ranged_attacker"
 type CreepRoleHealer = "healer"
+type CreepRoleSwampRunner = "swamp_runner"
 
 const creepRoleMover: CreepRoleMover = "mover"
 const creepRoleHarvester: CreepRoleHarvester = "harvester"
@@ -24,6 +25,7 @@ const creepRoleClaimer: CreepRoleClaimer = "claimer"
 const creepRoleAttacker: CreepRoleAttacker = "attacker"
 const creepRoleRangedAttacker: CreepRoleRangedAttacker = "ranged_attacker"
 const creepRoleHealer: CreepRoleHealer = "healer"
+const creepRoleSwampRunner: CreepRoleSwampRunner = "swamp_runner"
 
 /** @deprecated */
 export type CreepRole = CreepRoleMover
@@ -37,6 +39,7 @@ export type CreepRole = CreepRoleMover
   | CreepRoleAttacker
   | CreepRoleRangedAttacker
   | CreepRoleHealer
+  | CreepRoleSwampRunner
 
 /** @deprecated */
 export const CreepRole = {
@@ -53,6 +56,7 @@ export const CreepRole = {
   Attacker: creepRoleAttacker,
   RangedAttacker: creepRoleRangedAttacker,
   Healer: creepRoleHealer,
+  SwampRunner: creepRoleSwampRunner,
 }
 
 export function hasNecessaryRoles(creep: Creep, roles: CreepRole[]): boolean {
