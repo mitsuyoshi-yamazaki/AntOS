@@ -100,12 +100,21 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     }
     if (creep.v5task == null) {
       const patrollRoomNames = [...this.patrollRoomNames]
-      const targetRoom = patrollRoomNames.pop()
-      if (targetRoom == null || patrollRoomNames.length < 1) {
-        PrimitiveLogger.programError(`${this.identifier} not enough patrollRoomNames ${this.patrollRoomNames}`)
-        return
+      if (creep.room.name === patrollRoomNames[patrollRoomNames.length - 1]) {
+        const targetRoom = patrollRoomNames.shift()
+        if (targetRoom == null || patrollRoomNames.length < 1) {
+          PrimitiveLogger.programError(`${this.identifier} not enough patrollRoomNames ${this.patrollRoomNames}`)
+          return
+        }
+        creep.v5task = MoveToRoomTask.create(targetRoom, patrollRoomNames)
+      } else {
+        const targetRoom = patrollRoomNames.pop()
+        if (targetRoom == null || patrollRoomNames.length < 1) {
+          PrimitiveLogger.programError(`${this.identifier} not enough patrollRoomNames ${this.patrollRoomNames}`)
+          return
+        }
+        creep.v5task = MoveToRoomTask.create(targetRoom, patrollRoomNames)
       }
-      creep.v5task = MoveToRoomTask.create(targetRoom, patrollRoomNames)
     }
   }
 
