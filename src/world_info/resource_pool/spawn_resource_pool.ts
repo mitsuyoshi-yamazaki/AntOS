@@ -19,7 +19,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
   }
 
   public spawnCreeps(rawRequests: CreepSpawnRequest[]): void {
-    const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null || spawn.spawning.remainingTime <= 0)
+    const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null)
     const spawn = idleSpawns[0]
     if (spawn == null) {
       return
