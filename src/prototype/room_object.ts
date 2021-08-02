@@ -24,7 +24,7 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
   return energySource.store.getUsedCapacity(RESOURCE_ENERGY)
 }
 
-export function getResourceAmountOf(obj: Ruin | Resource, resourceType: ResourceConstant): number {
+export function getResourceAmountOf(obj: Ruin | Resource | Tombstone, resourceType: ResourceConstant): number {
   if (obj instanceof Resource) {
     if (obj.resourceType !== resourceType) {
       return 0

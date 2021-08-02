@@ -13,7 +13,7 @@ import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { bodyCost } from "utility/creep_body"
-import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
+import { EnergySource, EnergyStore, getEnergyAmountOf, getResourceAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "v5_task/task_state"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
@@ -23,6 +23,8 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -168,9 +170,31 @@ export class RemoteRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+        const powerStorage = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        if (powerStorage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerStorage, RESOURCE_POWER))
+        }
+      } else {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom != null) {
+          const droppedPower = targetRoom.find(FIND_DROPPED_RESOURCES)
+            .filter(resource => getResourceAmountOf(resource, RESOURCE_POWER))
+            .sort((lhs, rhs) => {
+              return lhs.amount - rhs.amount
+            })[0]
+          if (droppedPower != null) {
+            return MoveToTargetTask.create(PickupApiWrapper.create(droppedPower))
+          }
 
-    if (noEnergy) {
+          const tombstone = targetRoom.find(FIND_TOMBSTONES)
+            .filter(tombstone => getResourceAmountOf(tombstone, RESOURCE_POWER))[0]
+          if (tombstone != null) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(tombstone, RESOURCE_POWER))
+          }
+        }
+      }
       const energySource = this.getEnergySource(energySources)
       if (energySource != null) {
         if (this.targetRoomName === "W8S24" && creep.room.name === "W9S24") {

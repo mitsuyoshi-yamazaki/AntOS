@@ -23,6 +23,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -198,6 +199,11 @@ export class OwnedRoomHaulerTask extends Task {
           if (resourceTypes.includes(RESOURCE_ENERGY) === true) {
             return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, RESOURCE_ENERGY))
           }
+        }
+
+        const droppedResource = objects.droppedResources.filter(resource => resource.amount > 50)[0]
+        if (droppedResource != null) {
+          return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
         }
       }
 
