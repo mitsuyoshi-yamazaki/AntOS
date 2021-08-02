@@ -3,6 +3,9 @@ import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourc
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { isV5CreepMemory } from "prototype/creep"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -31,6 +34,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.describeLabs()
     case "MoveToRoom":
       return this.moveToRoom()
+    case "Transfer":
+      return this.transfer()
     default:
       return "Invalid script type"
     }
@@ -291,7 +296,40 @@ export class ExecCommand implements ConsoleCommand {
     if (creep.v5task != null) {
       return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
     }
-    creep.v5task = MoveToRoomTask.create(roomName, waypoints)
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    creep.memory.t = MoveToRoomTask.create(roomName, waypoints).encode()
+
+    return "ok"
+  }
+
+  private transfer(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    if (creep.v5task != null) {
+      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    }
+    const target = Game.getObjectById(targetId) as TransferResourceApiWrapperTargetType | null
+    if (target == null) {
+      return `Target ${targetId} does not exists`
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    creep.memory.t = MoveToTargetTask.create(TransferResourceApiWrapper.create(target, RESOURCE_POWER)).encode()
     return "ok"
   }
 }
