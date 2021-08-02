@@ -467,7 +467,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         if (creep.ticksToLive == null) {
           return false
         }
-        if (creep.ticksToLive < (ticksToRoom * 2 + 50)) {
+        if (creep.ticksToLive < (ticksToRoom * 2 + 150)) {
           return true
         }
         return false
