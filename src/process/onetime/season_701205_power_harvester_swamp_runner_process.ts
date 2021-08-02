@@ -277,6 +277,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     let attackerCount = 0
     let haulerCount = 0
     const haulerSpec = this.haulerSpec
+    const isSwampRunner = haulerSpec.roles.includes(CreepRole.SwampRunner)
 
     scoutCount = this.countCreep(this.scoutSpec.roles)
     attackerCount = this.countCreep(this.attackerSpec.roles)
@@ -402,7 +403,18 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           this.addAttacker()
         }
       } else {
-        powerResources.push(...targetRoom.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_POWER } }))
+        const droppedResources = ((): Resource[] => {
+          const resources = targetRoom.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_POWER } })
+          if (isSwampRunner !== true) {
+            return resources
+          }
+          if (this.powerBankInfo == null) {
+            return resources
+          }
+          const powerBankPosition = this.powerBankInfo.position
+          return resources.filter(r => (r.pos.isEqualTo(powerBankPosition) === true))
+        })()
+        powerResources.push(...droppedResources)
         powerResources.push(...targetRoom.find(FIND_RUINS).filter(ruin => ruin.structure.structureType === STRUCTURE_POWER_BANK))
         powerResources.push(...targetRoom.find(FIND_TOMBSTONES).filter(tombstone => (tombstone.store.getUsedCapacity(RESOURCE_POWER) > 0)))
 
@@ -473,7 +485,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     const workingStatus = this.pickupFinished ? "finished" : "working"
     const haulerCapacity = haulerSpec.body.filter(body => body === CARRY).length * GameConstants.creep.actionPower.carryCapacity
-    const swampRunnerDescription = haulerSpec.roles.includes(CreepRole.SwampRunner) ? "sw " : ""
+    const swampRunnerDescription = isSwampRunner ? "sw " : ""
     const haulerDescription = `(${swampRunnerDescription}${haulerSpec.maxCount} x ${haulerCapacity})`
     processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount}s, ${attackerCount}a, ${rangedAttackerCount}ra, ${haulerCount}h ${haulerDescription}${estimation}`)
 
