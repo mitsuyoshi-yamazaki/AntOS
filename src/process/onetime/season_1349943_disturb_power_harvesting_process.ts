@@ -27,6 +27,7 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W24S29 waypoints=W24S30 patrol_rooms=W23S30,W20S30,W20S21 attacker_type=attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S30,W30S19 attacker_type=attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -147,7 +148,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       case "attacker":
         return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0) || (creep.getActiveBodyparts(ATTACK) > 0))
       case "ranged_attacker":
-        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+        return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => (creep.getActiveBodyparts(ATTACK) > 0))
       }
     })()
     const closest = creep.pos.findClosestByRange(hostiles)
@@ -157,15 +158,22 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       }
     }
     const range = ((): number => {
-      if (closest.getActiveBodyparts(RANGED_ATTACK) <= 0) {
-        return 4
+      switch (this.attackerType) {
+      case "attacker":
+        if (closest.getActiveBodyparts(RANGED_ATTACK) <= 0) {
+          return 4
+        }
+        return 2
+      case "ranged_attacker":
+        return 2
       }
-      if (this.attackerType === "ranged_attacker") {
-        return 3
-      }
-      return 3
     })()
-    this.fleeFrom(closest.pos, creep, range)
+    if (closest.pos.getRangeTo(creep.pos) > range) {
+      return {
+        moved: false
+      }
+    }
+    this.fleeFrom(closest.pos, creep, range + 1)
     return {
       moved: true
     }
