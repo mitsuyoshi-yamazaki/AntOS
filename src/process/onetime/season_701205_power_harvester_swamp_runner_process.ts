@@ -513,7 +513,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           creep => (creep.body.length <= 1),
         )
 
-        processLog(this, `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`)
+        const finishMessage = `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`
+        processLog(this, finishMessage)
+        PrimitiveLogger.notice(finishMessage)
         OperatingSystem.os.killProcess(this.processId)
       }
     }
