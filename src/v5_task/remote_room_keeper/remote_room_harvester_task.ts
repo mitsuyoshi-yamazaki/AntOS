@@ -24,7 +24,6 @@ import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
-import { Invader } from "game/invader"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -139,7 +138,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     const targetRoom = World.rooms.get(this.targetRoomName)
     if (targetRoom != null) {
-      const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+      const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
       if (invaded !== true) {
         const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
         problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
@@ -199,7 +198,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private builderBody(energyCapacity: number): BodyPartConstant[] {
     const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
-    const maxUnits = 5
+    const maxUnits = 6
     const unitCost = bodyCost(unit)
     const count = Math.max(Math.min(Math.floor(energyCapacity / unitCost), maxUnits), 1)
 

@@ -107,7 +107,7 @@ export class RemoteRoomReserveTask extends Task {
     if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 3900) {
       const targetRoom = World.rooms.get(this.targetRoomName)
       if (targetRoom != null) {
-        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
         if (invaded !== true) {
           return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
         }

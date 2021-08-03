@@ -18,7 +18,6 @@ import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_tas
 import { TaskState } from "v5_task/task_state"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
-import { Invader } from "game/invader"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
@@ -94,7 +93,7 @@ export class RemoteRoomHaulerTask extends Task {
     if (hasEnergy === true) {
       const targetRoom = World.rooms.get(this.targetRoomName)
       if (targetRoom != null) {
-        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
+        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
         if (invaded !== true) {
           problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
         }
