@@ -187,7 +187,20 @@ export class OwnedRoomHaulerTask extends Task {
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.store.getFreeCapacity() > 0) {
-        const resourcefulTombstones = objects.tombStones.filter(tomb => tomb.store.getUsedCapacity() > 0)
+        const ignoreEnergy = creep.store.getUsedCapacity() > 0
+        const resourcefulTombstones = objects.tombStones.filter(tomb => {
+          const amount = tomb.store.getUsedCapacity()
+          if (amount <= 0) {
+            return false
+          }
+          if (ignoreEnergy !== true) {
+            return true
+          }
+          if (amount !== tomb.store.getUsedCapacity(RESOURCE_ENERGY)) {
+            return true
+          }
+          return false
+        })
         const resourcefulTombstone = creep.pos.findClosestByRange(resourcefulTombstones)
         if (resourcefulTombstone != null) {
           const resourceTypes = Object.keys(resourcefulTombstone.store) as ResourceConstant[]
@@ -201,7 +214,15 @@ export class OwnedRoomHaulerTask extends Task {
           }
         }
 
-        const droppedResource = objects.droppedResources.filter(resource => resource.amount > 50)[0]
+        const droppedResource = objects.droppedResources.filter(resource => {
+          if (resource.resourceType !== RESOURCE_ENERGY) {
+            return true
+          }
+          if (ignoreEnergy === true) {
+            return false
+          }
+          return resource.amount > 100
+        })[0]
         if (droppedResource != null) {
           return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
         }
