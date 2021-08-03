@@ -101,7 +101,7 @@ export class MoveToApiWrapper implements CreepApiWrapper {
       }
       return Game.time - this.lastPosition.timestamp
     })()
-    const options = moveToOptions(creep.pos, this.position, staying)
+    const options = moveToOptions(creep.pos, creep.room, this.position, staying)
     options.range = this.options.range
 
     const result = creep.moveTo(this.position, options)

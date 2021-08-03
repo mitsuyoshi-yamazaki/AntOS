@@ -149,14 +149,30 @@ export class MoveToTargetTask implements CreepTask {
       }
     }
 
+    const inEconomicArea = ((): boolean => {
+      if (creep.room.controller == null) {
+        return false
+      }
+      if (creep.room.controller.my === true) {
+        return true
+      }
+      if (creep.room.controller.reservation == null) {
+        return false
+      }
+      if (creep.room.controller.reservation.username === Game.user.name) {
+        return true
+      }
+      return false
+    })()
+
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
       const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
       return {
         maxRooms,
-        reusePath: 100,
+        reusePath: inEconomicArea === true ? 100 : 3,
         maxOps: 4000,
         range,
-        ignoreCreeps: true,
+        ignoreCreeps: inEconomicArea === true ? true : false,
       }
     }
 
@@ -164,8 +180,8 @@ export class MoveToTargetTask implements CreepTask {
     options.range = range
     options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
     options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
-    options.reusePath = 100
-    options.ignoreCreeps = true
+    options.reusePath = inEconomicArea === true ? 100 : 3
+    options.ignoreCreeps = inEconomicArea === true ? true : false
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

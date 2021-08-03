@@ -105,7 +105,7 @@ export class MoveToPositionApiWrapper implements CreepApiWrapper, TargetingApiWr
       }
       return Game.time - this.lastPosition.timestamp
     })()
-    const options = moveToOptions(creep.pos, this.target, staying)
+    const options = moveToOptions(creep.pos, creep.room, this.target, staying)
     if (this.options.swampCost != null) {
       options.swampCost = this.options.swampCost
     }
