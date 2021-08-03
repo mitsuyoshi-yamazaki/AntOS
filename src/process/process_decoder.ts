@@ -14,7 +14,6 @@ import { Season1349943DisturbPowerHarvestingProcess, Season1349943DisturbPowerHa
 import { Season487837AttackInvaderCoreProcess, Season487837AttackInvaderCoreProcessState } from "./onetime/season_487837_attack_invader_core_process"
 import { Season553093AttackRcl3RoomProcess, Season553093AttackRcl3RoomProcessState } from "./onetime/season_553093_attack_rcl3_room_process"
 import { Season570208DismantleRcl2RoomProcess, Season570208DismantleRcl2RoomProcessState } from "./onetime/season_570208_dismantle_rcl2_room_process"
-import { Season617434PowerHarvestProcess, Season617434PowerHarvestProcessState } from "./onetime/season_617434_power_harvest_process"
 import { Season631744PowerProcessProcess, Season631744PowerProcessProcessState } from "./onetime/season_631744_power_process_process"
 import { Season634603PowerCreepProcess, Season634603PowerCreepProcessState } from "./onetime/season_634603_power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess, Season701205PowerHarvesterSwampRunnerProcessState } from "./onetime/season_701205_power_harvester_swamp_runner_process"
@@ -49,7 +48,6 @@ class ProcessTypes {
   "Season487837AttackInvaderCoreProcess" = (state: ProcessState) => Season487837AttackInvaderCoreProcess.decode(state as unknown as Season487837AttackInvaderCoreProcessState)
   "Season553093AttackRcl3RoomProcess" = (state: ProcessState) => Season553093AttackRcl3RoomProcess.decode(state as unknown as Season553093AttackRcl3RoomProcessState)
   "Season570208DismantleRcl2RoomProcess" = (state: ProcessState) => Season570208DismantleRcl2RoomProcess.decode(state as unknown as Season570208DismantleRcl2RoomProcessState)
-  "Season617434PowerHarvestProcess" = (state: ProcessState) => Season617434PowerHarvestProcess.decode(state as unknown as Season617434PowerHarvestProcessState)
   "Season631744PowerProcessProcess" = (state: ProcessState) => Season631744PowerProcessProcess.decode(state as unknown as Season631744PowerProcessProcessState)
   "Season634603PowerCreepProcess" = (state: ProcessState) => Season634603PowerCreepProcess.decode(state as unknown as Season634603PowerCreepProcessState)
   "Season701205PowerHarvesterSwampRunnerProcess" = (state: ProcessState) => Season701205PowerHarvesterSwampRunnerProcess.decode(state as unknown as Season701205PowerHarvesterSwampRunnerProcessState)

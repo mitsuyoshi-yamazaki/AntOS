@@ -9,7 +9,6 @@ import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487
 import { Season553093AttackRcl3RoomProcess } from "process/onetime/season_553093_attack_rcl3_room_process"
 import { RoomName, roomTypeOf } from "utility/room_name"
 import { Season570208DismantleRcl2RoomProcess } from "process/onetime/season_570208_dismantle_rcl2_room_process"
-import { Season617434PowerHarvestProcess } from "process/onetime/season_617434_power_harvest_process"
 import { Season631744PowerProcessProcess } from "process/onetime/season_631744_power_process_process"
 import { World } from "world_info/world_info"
 import { coloredText, roomLink } from "utility/log"
@@ -60,9 +59,6 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season570208DismantleRcl2RoomProcess":
       result = this.launchSeason570208DismantleRcl2RoomProcess()
-      break
-    case "Season617434PowerHarvestProcess":
-      result = this.launchSeason617434PowerHarvestProcess()
       break
     case "Season631744PowerProcessProcess":
       result = this.launchSeason631744PowerProcessProcess()
@@ -238,29 +234,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason617434PowerHarvestProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const process = OperatingSystem.os.addProcess(processId => {
-      return Season617434PowerHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
