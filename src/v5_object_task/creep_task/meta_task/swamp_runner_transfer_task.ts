@@ -10,10 +10,13 @@ import { roomLink } from "utility/log"
 import { RoomName, roomTypeOf } from "utility/room_name"
 import { SourceKeeper } from "game/source_keeper"
 import { OBSTACLE_COST } from "utility/constants"
+import { WithdrawResourceApiWrapper, WithdrawResourceApiWrapperState } from "../api_wrapper/withdraw_resource_api_wrapper"
+
+type ApiWrapperType = TransferResourceApiWrapper | WithdrawResourceApiWrapper
 
 export interface SwampRunnerTransferTaskState extends CreepTaskState {
   /** api warpper state */
-  as: TransferResourceApiWrapperState
+  as: TransferResourceApiWrapperState | WithdrawResourceApiWrapperState
 
   /** dropped resource location */
   d: RoomPositionState | null
@@ -31,12 +34,12 @@ export interface SwampRunnerTransferTaskState extends CreepTaskState {
 export class SwampRunnerTransferTask implements CreepTask {
   public readonly shortDescription = "s-runner"
   public get targetId(): Id<TargetingApiWrapperTargetType> {
-    return this.transferResourceApiWrapper.target.id
+    return this.apiWrapper.target.id
   }
 
   private constructor(
     public readonly startTime: number,
-    private readonly transferResourceApiWrapper: TransferResourceApiWrapper,
+    private readonly apiWrapper: ApiWrapperType,
     private droppedResourceLocation: RoomPosition | null,
     private lastTickPosition: RoomPosition | null,
   ) {
@@ -46,17 +49,13 @@ export class SwampRunnerTransferTask implements CreepTask {
     return {
       s: this.startTime,
       t: "SwampRunnerTransferTask",
-      as: this.transferResourceApiWrapper.encode(),
+      as: this.apiWrapper.encode(),
       d: this.droppedResourceLocation?.encode() ?? null,
       p: this.lastTickPosition?.encode() ?? null,
     }
   }
 
-  public static decode(state: SwampRunnerTransferTaskState): SwampRunnerTransferTask | null {
-    const wrapper = TransferResourceApiWrapper.decode(state.as)
-    if (wrapper == null) {
-      return null
-    }
+  public static decode(state: SwampRunnerTransferTaskState, apiWrapper: ApiWrapperType): SwampRunnerTransferTask | null {
     const parsePosition = ((roomPositionState: RoomPositionState | null): RoomPosition | null => {
       if (roomPositionState == null) {
         return null
@@ -65,10 +64,10 @@ export class SwampRunnerTransferTask implements CreepTask {
     })
     const resourceLocation = parsePosition(state.d)
     const lastTickPosition = parsePosition(state.p)
-    return new SwampRunnerTransferTask(state.s, wrapper, resourceLocation, lastTickPosition)
+    return new SwampRunnerTransferTask(state.s, apiWrapper, resourceLocation, lastTickPosition)
   }
 
-  public static create(apiWrapper: TransferResourceApiWrapper): SwampRunnerTransferTask {
+  public static create(apiWrapper: ApiWrapperType): SwampRunnerTransferTask {
     return new SwampRunnerTransferTask(Game.time, apiWrapper, null, null)
   }
 
@@ -89,10 +88,10 @@ export class SwampRunnerTransferTask implements CreepTask {
    *   - 6. 動かずRoom Bに戻る
    */
   private move(creep: Creep, lastTickPosition: RoomPosition): TaskProgressType {
-    const resourceType = this.transferResourceApiWrapper.resourceType
+    const resourceType = this.apiWrapper.resourceType
 
     if (this.droppedResourceLocation == null) {
-      const result = this.transferResourceApiWrapper.run(creep)
+      const result = this.apiWrapper.run(creep)
 
       switch (result) {
       case FINISHED:
@@ -194,8 +193,8 @@ export class SwampRunnerTransferTask implements CreepTask {
       return options
     })
 
-    if (creep.moveTo(this.transferResourceApiWrapper.target, noPathFindingOptions) === ERR_NOT_FOUND) {
-      creep.moveTo(this.transferResourceApiWrapper.target, moveToOptions())
+    if (creep.moveTo(this.apiWrapper.target, noPathFindingOptions) === ERR_NOT_FOUND) {
+      creep.moveTo(this.apiWrapper.target, moveToOptions())
     }
   }
 }
