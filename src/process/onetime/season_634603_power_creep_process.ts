@@ -75,9 +75,13 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
     const powerSpawn = objects.activeStructures.powerSpawn
     let isMoving = false
-    if (powerSpawn != null && powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
-      this.renewPowerCreep(powerCreep, powerSpawn)
-      isMoving = true
+    if (powerSpawn == null) {
+      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} does not have power spawn`)
+    } else {
+      if (powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
+        this.renewPowerCreep(powerCreep, powerSpawn)
+        isMoving = true
+      }
     }
 
     if (isMoving !== true) {
