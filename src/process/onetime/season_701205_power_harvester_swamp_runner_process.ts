@@ -32,6 +32,7 @@ import { ParallelTask } from "v5_object_task/creep_task/combined_task/parallel_t
 import { RangedAttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/ranged_attack_api_wrapper"
 import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_wrapper"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
+import { isV5CreepMemory } from "prototype/creep"
 
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL7
@@ -112,6 +113,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   private readonly codename: string
   private readonly estimatedTicksToRoom: number
   private readonly fullAttackPower: number
+  private readonly whitelistedUsernames: string[]
 
   private readonly scoutSpec: Season701205PowerHarvesterSwampRunnerProcessCreepSpec = {
     maxCount: 1,
@@ -197,6 +199,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
     this.estimatedTicksToRoom = findRoomRoute(this.parentRoomName, this.targetRoomName, this.waypoints).length * GameConstants.room.size
+    this.whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist || []
 
     const attackerBody = ((): BodyPartConstant[] => {
       const parentRoom = Game.rooms[this.parentRoomName]
@@ -296,9 +299,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
     } else {
       if (rangedAttackerCount < this.rangedAttackerSpec.maxCount) {
-        const whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist || []
         const hostileExists = targetRoom.find(FIND_HOSTILE_CREEPS).filter(creep => {
-          if (whitelistedUsernames.includes(creep.owner.username) === true) {
+          if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
             return false
           }
           if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
@@ -327,8 +329,15 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           }) ?? null
         })()
         if (whitelistedHarvestCreep != null) {
+          const processName = this.constructor.name
           const isHarvesting = targetRoom.find(FIND_MY_CREEPS).some(creep => {
-            if (creep.body.some(b => (b.type === ATTACK)) !== true) {
+            const isPowerHarvesterCreep = ((): boolean => {
+              if (!isV5CreepMemory(creep.memory)) {
+                return false
+              }
+              return creep.memory.i?.includes(processName) === true
+            })()
+            if (isPowerHarvesterCreep !== true || (creep.body.some(b => (b.type === ATTACK)) !== true)) {
               return false
             }
             return creep.room.name === this.targetRoomName
@@ -379,19 +388,20 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
             const ticksToLive = current.ticksToLive ?? 0
             return result + (current.getActiveBodyparts(ATTACK) * GameConstants.creep.actionPower.attack * ticksToLive)
           }, 0)
-          const estimatedPowerBankHits = targetPowerBank.hits + 100000
+          const estimatedPowerBankHits = targetPowerBank.hits
           if (estimatedPowerBankHits < damage) {
             return false
           }
-          const ticksToPowerBank = this.ticksToPowerBank ?? this.estimatedTicksToRoom
+          const ticksToPowerBank = (this.ticksToPowerBank ?? this.estimatedTicksToRoom) + 40
           const attackDuration = GameConstants.creep.life.lifeTime - ticksToPowerBank
           const ticksToDestroy = ((estimatedPowerBankHits - damage) / this.fullAttackPower)
           const requiredAttackerCount = Math.ceil(ticksToDestroy / attackDuration)
           if (requiredAttackerCount <= onTheWayAttackers.length) {
             return false
           }
+          const spawnDuration = this.attackerSpec.body.length * GameConstants.creep.life.spawnTime
           const openPositionCount = workingAttackers.filter(creep => {
-            if (creep.ticksToLive == null || creep.ticksToLive < ticksToPowerBank) {
+            if (creep.ticksToLive == null || creep.ticksToLive < (ticksToPowerBank + spawnDuration)) {
               return true
             }
             return false
@@ -539,6 +549,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     const hostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS).filter(c => {
+      if (this.whitelistedUsernames.includes(c.owner.username) === true) {
+        return false
+      }
       if (c.getActiveBodyparts(MOVE) <= 0 && c.getActiveBodyparts(HEAL) <= 0) {
         return false
       }
@@ -647,7 +660,11 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (creep.room.name === this.parentRoomName) {
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.waypoints))
     }
-    return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER))
+    if (isSwampRunner(creep) === true) {
+      return SwampRunnerTransferTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER))
+    } else {
+      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(targetResource, RESOURCE_POWER))
+    }
   }
 
   // ---- Attacker ---- //
