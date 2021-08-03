@@ -34,6 +34,8 @@ import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_w
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { isV5CreepMemory } from "prototype/creep"
 
+const swampRunnerEnabled = false as boolean
+
 // 570 hits/tick = 2M/3510ticks
 // 2470E = RCL7
 const normalAttackerBody: BodyPartConstant[] = [
@@ -153,7 +155,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     const carryAmountPerCreep = Math.floor(50 / bodyUnit.length) * unitCarryCapacity
     const haulableAmount = creepMaxCount * carryAmountPerCreep
-    if (this.powerBankInfo.powerAmount > (haulableAmount * 1.4)) {
+    if (swampRunnerEnabled === true && (this.powerBankInfo.powerAmount > (haulableAmount * 1.4))) {
       return swampRunnerSpec(energyCapacity, this.powerBankInfo.powerAmount)
     }
 
