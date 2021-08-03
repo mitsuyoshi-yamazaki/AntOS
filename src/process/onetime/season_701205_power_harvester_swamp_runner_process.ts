@@ -34,6 +34,7 @@ import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_w
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { isV5CreepMemory } from "prototype/creep"
 
+// https://screeps.com/season/#!/history/shardSeason/W26S30?t=1408797
 const swampRunnerEnabled = false as boolean
 
 // 570 hits/tick = 2M/3510ticks
@@ -730,7 +731,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         if (creep.hits < creep.hitsMax) {
           return true
         }
-        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).length > 0) {
+        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 12).length > 0) {
           return true
         }
         return false
@@ -738,6 +739,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       if (shouldAttack === true) {
         return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
       } else {
+        creep.say("waiting")
         return null
       }
     }
