@@ -6,6 +6,9 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { isV5CreepMemory } from "prototype/creep"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -36,6 +39,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.moveToRoom()
     case "Transfer":
       return this.transfer()
+    case "Pickup":
+      return this.pickup()
     default:
       return "Invalid script type"
     }
@@ -330,6 +335,41 @@ export class ExecCommand implements ConsoleCommand {
       return `Creep ${creepName} is not v5`
     }
     creep.memory.t = MoveToTargetTask.create(TransferResourceApiWrapper.create(target, RESOURCE_POWER)).encode()
+    return "ok"
+  }
+
+  private pickup(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
+    const target = Game.getObjectById(targetId) as Resource | null
+    if (target == null) {
+      return `Target ${targetId} does not exists`
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const tasks: CreepTask[] = [
+      MoveToTargetTask.create(PickupApiWrapper.create(target)),
+    ]
+    if (target.room != null) {
+      tasks.unshift(MoveToRoomTask.create(target.room.name, []))
+    }
+    creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
     return "ok"
   }
 }
