@@ -182,6 +182,9 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
+      if (objects.constructionSites.length > 0) {
+        return 1
+      }
       return 3
     })()
 
