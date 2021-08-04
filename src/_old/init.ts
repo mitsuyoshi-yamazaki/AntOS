@@ -1,3 +1,4 @@
+import _ from "lodash"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { init as extensionInit, tick as extensionTick } from "_old/extensions"
 import { init as creepInit } from "_old/creep"
@@ -32,10 +33,6 @@ export function init(): void {
 
   if (Memory.v6RoomInfo == null) {
     Memory.v6RoomInfo = {}
-  }
-
-  if (Memory.towers == null) {
-    Memory.towers = {}
   }
 
   if (!Memory.empires) {

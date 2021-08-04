@@ -1,3 +1,5 @@
+import _ from "lodash"
+
 // League Of Automated Nations allied users list by Kamots
 // Provides global.LOANlist as array of allied usernames. Array is empty if not in an alliance, but still defined.
 // Updates on 2nd run and then every 1001 ticks or if the global scope gets cleared.

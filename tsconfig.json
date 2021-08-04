@@ -9,6 +9,10 @@
     ],
     "outDir": "dist",
     "baseUrl": "src/",
+    "typeRoots": [
+      "node_modules/@types",
+      "types"
+    ],
     "sourceMap": true,
     "strict": true,
     "experimentalDecorators": true,
@@ -18,7 +22,7 @@
     "noUncheckedIndexedAccess": true
   },
   "include": [
-    "src/**/*"
+    "src/main.ts"
   ],
   "exclude": [
     "node_modules",

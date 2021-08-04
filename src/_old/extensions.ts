@@ -170,8 +170,6 @@ declare global {
       last_bucket: number
     }
 
-    towers: { [index: string]: TowerMemory }  // index: Id<StructureTower>  // TODO: 消す
-
     gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomNa
