@@ -1,10 +1,5 @@
+import { GameConstants } from "./constants"
 import { anyColoredText } from "./log"
-
-export function bodyCost(body: BodyPartConstant[]): number {
-  return body.reduce((result, current) => {
-    return result + BODYPART_COST[current]
-  }, 0)
-}
 
 export type CreepBodyFixedAmountActionType = "harvest" | "build" | "repair" | "dismantle" | "upgradeController" | "attack" | "rangedAttack" | "heal" | "capacity"
 export type CreepBodyActionType = CreepBodyFixedAmountActionType | "rangedMassAttack" | "rangedHeal"
@@ -37,11 +32,41 @@ export const CreepBodyActionPower: { [index in CreepBodyFixedAmountActionType]: 
   capacity: CARRY_CAPACITY,
 }
 
-export function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBodyFixedAmountActionType): number {
+export const CreepBody = {
+  create: function(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
+    return createCreepBody(baseBody, bodyUnit, energyCapacity, maxUnitCount)
+  },
+
+  cost: function(body: BodyPartConstant[]): number {
+    return bodyCost(body)
+  },
+
+  power: function(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType):number {
+    return bodyPower(body, actionType)
+  },
+
+  carryCapacity: function (body: BodyPartConstant[]): number {
+    return body.filter(b => (b === CARRY)).length * GameConstants.creep.actionPower.carryCapacity
+  },
+
+  description: function (body: BodyPartConstant[]): string {
+    return bodyDescription(body)
+  },
+}
+
+// TODO: remove "export"
+/** @deprecated */
+export function bodyCost(body: BodyPartConstant[]): number {
+  return body.reduce((result, current) => {
+    return result + BODYPART_COST[current]
+  }, 0)
+}
+
+function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBodyFixedAmountActionType): number {
   if (typeof bodyPart.boost !== "string") {
     return 1
   }
-  const boostMap: { [index: string]: {[index: string]: number}} | undefined = BOOSTS[bodyPart.type]
+  const boostMap: { [index: string]: { [index: string]: number } } | undefined = BOOSTS[bodyPart.type]
   if (boostMap == null) {
     return 1
   }
@@ -56,6 +81,7 @@ export function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBody
   return multiply
 }
 
+/** @deprecated */
 export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType): number {
   const bodyPart = CreepActionToBodyPart[actionType]
   const actionPower = CreepBodyActionPower[actionType]  // FixMe: Mineral harvestでは値が異なる
@@ -72,6 +98,7 @@ export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixed
   }, 0)
 }
 
+/** @deprecated */
 export function createCreepBody(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
   const result: BodyPartConstant[] = [...baseBody]
 
@@ -111,6 +138,7 @@ function coloredBodyShortDescription(body: BodyPartConstant): string {
   return anyColoredText(bodyShortDescription[body], bodyColors[body])
 }
 
+/** @deprecated */
 export function bodyDescription(body: BodyPartConstant[]): string {
   const map = new Map<BodyPartConstant, number>()
   body.forEach(b => {

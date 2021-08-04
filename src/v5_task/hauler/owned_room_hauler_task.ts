@@ -187,13 +187,13 @@ export class OwnedRoomHaulerTask extends Task {
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.store.getFreeCapacity() > 0) {
-        const ignoreEnergy = creep.store.getUsedCapacity() > 0
+        const hasResource = creep.store.getUsedCapacity() > 0
         const resourcefulTombstones = objects.tombStones.filter(tomb => {
           const amount = tomb.store.getUsedCapacity()
           if (amount <= 0) {
             return false
           }
-          if (ignoreEnergy !== true) {
+          if (hasResource !== true) {
             return true
           }
           if (amount !== tomb.store.getUsedCapacity(RESOURCE_ENERGY)) {
@@ -218,7 +218,7 @@ export class OwnedRoomHaulerTask extends Task {
           if (resource.resourceType !== RESOURCE_ENERGY) {
             return true
           }
-          if (ignoreEnergy === true) {
+          if (hasResource === true) {
             return false
           }
           return resource.amount > 100
