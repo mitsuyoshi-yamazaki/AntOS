@@ -12,17 +12,19 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { RoomName } from "utility/room_name"
 
-const roomName = "W14S28"
-const labId1 = "61011ce4706bd898698bc8dc" as Id<StructureLab>
-const labId2 = "6100dc7bfdeb8837badf5c0b" as Id<StructureLab>
-const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
-const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
+// const labId1 = "61011ce4706bd898698bc8dc" as Id<StructureLab>
+// const labId2 = "6100dc7bfdeb8837badf5c0b" as Id<StructureLab>
+// const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
+// const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
 
-const boost1 = RESOURCE_LEMERGIUM_ALKALIDE
-const boost2 = RESOURCE_KEANIUM_OXIDE
-const boost3 = RESOURCE_GHODIUM_ALKALIDE
-const boost4 = RESOURCE_ZYNTHIUM_OXIDE
+const boosts: MineralBoostConstant[] = [
+  RESOURCE_LEMERGIUM_ALKALIDE,
+  RESOURCE_GHODIUM_ALKALIDE,
+  RESOURCE_KEANIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+]
 
 type LabInfo = {
   boost: MineralBoostConstant,
@@ -30,8 +32,11 @@ type LabInfo = {
 }
 
 export interface Season1143119LabChargerProcessState extends ProcessState {
+  parentRoomName: RoomName
+  labIds: Id<StructureLab>[]
 }
 
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 lab_ids=61072e7d8631b61addd464c2,6107707f22b7dd084bded966,6107c31e36a5b7de9159d0de")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -39,8 +44,10 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
+    public readonly parentRoomName: RoomName,
+    public readonly labIds: Id<StructureLab>[],
   ) {
-    this.identifier = `${this.constructor.name}_${roomName}`
+    this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -49,76 +56,70 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       t: "Season1143119LabChargerProcess",
       l: this.launchTime,
       i: this.processId,
+      parentRoomName: this.parentRoomName,
+      labIds: this.labIds,
     }
   }
 
   public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i)
+    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labIds)
   }
 
-  public static create(processId: ProcessId): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(Game.time, processId)
+  public static create(processId: ProcessId, parentRoomName: RoomName, labIds: Id<StructureLab>[]): Season1143119LabChargerProcess {
+    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labIds)
   }
 
   public processShortDescription(): string {
-    return roomLink(roomName)
+    return `${roomLink(this.parentRoomName)} ${this.labIds.length}labs`
   }
 
   public runOnTick(): void {
-    const objects = World.rooms.getOwnedRoomObjects(roomName)
+    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
     if (objects == null) {
-      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(roomName)} lost`)
+      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
 
-    const lab1 = Game.getObjectById(labId1)
-    const lab2 = Game.getObjectById(labId2)
-    const lab3 = Game.getObjectById(labId3)
-    const lab4 = Game.getObjectById(labId4)
-    if (lab1 == null || lab2 == null || lab3 == null || lab4 == null) {
-      PrimitiveLogger.fatal(`${this.identifier} target lab not found ${roomLink(roomName)}`)
-      return
+    const labs: LabInfo[] = []
+    for (let i = 0; i < this.labIds.length; i += 1) {
+      const labId = this.labIds[i]
+      if (labId == null) {
+        PrimitiveLogger.programError(`${this.identifier} Unexpected null in ${this.labIds}, index ${i}`)
+        return
+      }
+      const lab = Game.getObjectById(labId)
+      if (lab == null) {
+        PrimitiveLogger.fatal(`${this.identifier} target lab ${labId} not found ${roomLink(this.parentRoomName)}`)
+        return
+      }
+      const boost = boosts[i]
+      if (boost == null) {
+        PrimitiveLogger.programError(`${this.identifier} Unsupported boost: ${this.labIds.length}labs but ${boosts.length}boosts`)
+        return
+      }
+      labs.push({
+        lab,
+        boost,
+      })
     }
 
     const terminal = objects.activeStructures.terminal
     if (terminal == null) {
-      PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(roomName)}`)
+      PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(this.parentRoomName)}`)
       return
     }
 
-    const hasResource = terminal.store.getUsedCapacity(boost1) > 0
-      || terminal.store.getUsedCapacity(boost2) > 0
-      || terminal.store.getUsedCapacity(boost3) > 0
-      || terminal.store.getUsedCapacity(boost4) > 0
-
-    const creepCount = World.resourcePools.countCreeps(roomName, this.identifier, () => true)
+    const hasResource = labs.some(labInfo => (terminal.store.getUsedCapacity(labInfo.boost) > 0))
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (hasResource === true && creepCount < 1) {
       this.requestCreep()
     }
 
-    const labs: LabInfo[] = [
-      {
-        boost: boost1,
-        lab: lab1,
-      },
-      {
-        boost: boost2,
-        lab: lab2,
-      },
-      {
-        boost: boost3,
-        lab: lab3,
-      },
-      {
-        boost: boost4,
-        lab: lab4,
-      },
-    ]
     this.runCreep(terminal, labs)
   }
 
   private requestCreep(): void {
-    World.resourcePools.addSpawnCreepRequest(roomName, {
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
@@ -132,7 +133,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
 
   private runCreep(terminal: StructureTerminal, labs: LabInfo[]): void {
     World.resourcePools.assignTasks(
-      roomName,
+      this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.creepTask(creep, terminal, labs),

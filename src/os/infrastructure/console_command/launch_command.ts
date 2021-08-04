@@ -484,8 +484,20 @@ export class LaunchCommand implements ConsoleCommand {
   }
 
   private launchSeason1143119LabChargerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const rawLabIds = args.get("lab_ids")
+    if (rawLabIds == null) {
+      return this.missingArgumentError("lab_ids")
+    }
+    const labIds = rawLabIds.split(",") as Id<StructureLab>[]
+
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1143119LabChargerProcess.create(processId)
+      return Season1143119LabChargerProcess.create(processId, roomName, labIds)
     })
     return Result.Succeeded(process)
   }
