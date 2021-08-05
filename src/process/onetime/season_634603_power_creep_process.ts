@@ -163,9 +163,9 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     if (roomInfoMemory.config?.enableOperateSpawn !== true) {
       return false
     }
-    if ((Game.time % 2000) < 1000) {
-      return false
-    }
+    // if ((Game.time % 2000) < 1000) {
+    //   return false
+    // }
 
     const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 
