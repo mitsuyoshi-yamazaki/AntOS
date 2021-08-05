@@ -246,7 +246,7 @@ export class OwnedRoomObjects {
     let terminal = null as StructureTerminal | null
     let powerSpawn: StructurePowerSpawn | null = null
     const chargeableLabs: StructureLab[] = []
-    let nuker: StructureNuker | null = null
+    let nuker = null as StructureNuker | null
 
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
@@ -368,7 +368,7 @@ export class OwnedRoomObjects {
     if (chargeableStructures.length <= 0) {
       chargeableStructures.push(...chargeableLabs)
     }
-    if (chargeableStructures.length <= 0 && nuker != null) {
+    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
       chargeableStructures.push(nuker)
     }
 
