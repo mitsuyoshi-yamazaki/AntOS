@@ -172,7 +172,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     }
     const waitingRange = 5
     if (creep.pos.getRangeTo(waitingTarget.pos) <= waitingRange) {
-      creep.move(randomDirection(Game.time + this.launchTime))
+      creep.move(randomDirection(this.launchTime))
       return
     }
     const moveToOptions = defaultMoveToOptions()
