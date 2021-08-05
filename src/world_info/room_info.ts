@@ -246,6 +246,7 @@ export class OwnedRoomObjects {
     let terminal = null as StructureTerminal | null
     let powerSpawn: StructurePowerSpawn | null = null
     const chargeableLabs: StructureLab[] = []
+    let nuker: StructureNuker | null = null
 
     const chargeableStructures: EnergyChargeableStructure[] = []
     if (this.roomInfo.upgrader?.container != null) {
@@ -339,6 +340,12 @@ export class OwnedRoomObjects {
           chargeableLabs.push(structure)
         }
         break
+      case STRUCTURE_NUKER:
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+          break
+        }
+        nuker = structure
+        break
       case STRUCTURE_ROAD:
         checkDecayed(structure)
         break
@@ -360,6 +367,9 @@ export class OwnedRoomObjects {
     }
     if (chargeableStructures.length <= 0) {
       chargeableStructures.push(...chargeableLabs)
+    }
+    if (chargeableStructures.length <= 0 && nuker != null) {
+      chargeableStructures.push(nuker)
     }
 
     const othersCreeps = room.find(FIND_HOSTILE_CREEPS)
