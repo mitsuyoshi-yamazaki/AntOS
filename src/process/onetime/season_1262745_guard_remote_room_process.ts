@@ -9,7 +9,20 @@ import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
-export type Season1262745GuardRemoteRoomProcessCreepType = "ranged attacker"
+export type Season1262745GuardRemoteRoomProcessCreepType = "ranged attacker"// | "attacker"
+
+// const attackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
+// const attackerBody: BodyPartConstant[] = [
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK, ATTACK,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE, MOVE,
+//   HEAL, HEAL, HEAL, HEAL, HEAL,
+//   HEAL, HEAL, HEAL, HEAL,
+// ]
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
 const rangedAttackerBody: BodyPartConstant[] = [

@@ -107,6 +107,7 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W14S28 target_room_name waypoints=W14S30")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W9S24 target_room_name waypoints=W10S24")
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W1S25 target_room_name waypoints=W0S25")
+// Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W6S29 target_room_name waypoints=W6S30")
 export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Procedural {
   public get isPickupFinished(): boolean {
     return this.pickupFinished
@@ -560,7 +561,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       if (c.getActiveBodyparts(MOVE) <= 0 && c.getActiveBodyparts(HEAL) <= 0) {
         return false
       }
-      return c.getActiveBodyparts(ATTACK) > 0 || c.getActiveBodyparts(CARRY) > 0 || c.getActiveBodyparts(RANGED_ATTACK) > 0
+      return c.getActiveBodyparts(ATTACK) > 0 || c.getActiveBodyparts(CARRY) > 0 || c.getActiveBodyparts(RANGED_ATTACK) > 0 || c.getActiveBodyparts(HEAL) > 0
     })
     const target = creep.pos.findClosestByRange(hostileCreeps)
     if (target == null) {
