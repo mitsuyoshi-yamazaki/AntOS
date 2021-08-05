@@ -20,6 +20,8 @@ interface QuadState {
   moveToTarget: RoomName | RoomPositionState | null
 }
 
+let exitingDirection = null as DirectionConstant | null
+
 class Quad {
   public get numberOfCreeps(): number {
     return this.creeps.length
@@ -114,9 +116,23 @@ class Quad {
     }
 
     const topRightPosition = ((): RoomPosition => {
-      const x = Math.min(Math.max(topRight.pos.x, 2), 48)
-      const y = Math.min(Math.max(topRight.pos.y, 1), 47)
-      return new RoomPosition(x, y, topRight.pos.roomName)
+      switch (exitingDirection) {
+      case LEFT: {
+        const x = Math.min(Math.max(topRight.pos.x - 1, 0), 49)
+        const y = Math.min(Math.max(topRight.pos.y, 1), 47)
+        return new RoomPosition(x, y, topRight.pos.roomName)
+      }
+      case BOTTOM: {
+        const x = Math.min(Math.max(topRight.pos.x, 2), 48)
+        const y = Math.min(Math.max(topRight.pos.y + 1, 0), 49)
+        return new RoomPosition(x, y, topRight.pos.roomName)
+      }
+      default: {
+        const x = Math.min(Math.max(topRight.pos.x, 2), 48)
+        const y = Math.min(Math.max(topRight.pos.y, 1), 47)
+        return new RoomPosition(x, y, topRight.pos.roomName)
+      }
+      }
     })()
     // topRight.say(`${topRightPosition.x},${topRightPosition.y}`)
     topRight.say("align")
@@ -186,6 +202,14 @@ class Quad {
   }
 
   private moveFollowersToNextPosition(nextPosition: RoomPosition): void {
+    if (nextPosition.x <= 1) {
+      exitingDirection = LEFT
+    } else if (nextPosition.y >= 48) {
+      exitingDirection = BOTTOM
+    } else {
+      exitingDirection = null
+    }
+
     const move = (creepIndex: number, directionFromTopRight: DirectionConstant): void => {
       const creep = this.creeps[creepIndex]
       if (creep == null) {
@@ -333,7 +357,7 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       case 3:
         return [RANGED_ATTACK, MOVE]
       case 2:
-        return [HEAL, MOVE]
+        return [WORK, MOVE]
       default:
         return [TOUGH, MOVE]
       }
