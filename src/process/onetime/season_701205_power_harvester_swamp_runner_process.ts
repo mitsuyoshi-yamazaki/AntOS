@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { coloredText, profileLink, roomLink } from "utility/log"
+import { coloredText, profileLink, roomHistoryLink, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "process/process_state"
@@ -514,7 +514,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           creep => (creep.body.length <= 1),
         )
 
-        const finishMessage = `${coloredText("[Finished]", "info")} ${roomLink(this.targetRoomName)}`
+        const finishMessage = `${coloredText("[Finished]", "info")} ${roomHistoryLink(this.targetRoomName)}`
         processLog(this, finishMessage)
         PrimitiveLogger.notice(finishMessage)
         OperatingSystem.os.killProcess(this.processId)

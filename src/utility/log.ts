@@ -46,6 +46,11 @@ export function roomLink(roomName: string, opts?: { text?: string, color?: strin
   return `<a href="${baseUrl()}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
 }
 
+export function roomHistoryLink(roomName: string, ticks?: number): string {
+  const color = "#FFFFFF"
+  return `<a href="https://screeps.com/a/#!/history/shard2/${roomName}?t=${ticks ?? Game.time}", style='color:${color}'>${roomName}</a>`
+}
+
 export function profileLink(username: string, colorCode?: string): string {
   const color = colorCode || "#FFFFFF"
   return `<a href="${baseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`

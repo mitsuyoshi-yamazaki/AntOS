@@ -1,4 +1,4 @@
-import { coloredResourceType, coloredText, profileLink, resourceColorCode, roomLink, textColor, TextColor } from "utility/log"
+import { coloredResourceType, coloredText, profileLink, resourceColorCode, roomHistoryLink, roomLink, textColor, TextColor } from "utility/log"
 import { generateUniqueId } from "utility/unique_id"
 
 export function room_link(room_name: string, opts?: { text?: string, color?: string }): string {
@@ -47,10 +47,7 @@ export interface StructureFilter {
 }
 
 export function room_history_link(room_name: string, ticks: number, opts?: {text?: string, color?: string}): string {
-  opts = opts || {}
-  const color = opts.color || '#FFFFFF'
-  const text = opts.text || room_name
-  return `<a href="https://screeps.com/a/#!/history/shard2/${room_name}?t=${ticks}", style='color:${color}'>${text}</a>`
+  return roomHistoryLink(room_name, ticks)
 }
 
 export function profile_link(username: string, opts?: {color?: string}) {
