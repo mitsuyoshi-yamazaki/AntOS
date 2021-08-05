@@ -95,8 +95,10 @@ export const ApplicationConstants = {
 }
 
 // ---- Direction ---- //
+let randomDirectionSeed = 0
 export function randomDirection(seed: number): DirectionConstant {
-  const rawDirection = (seed % 8) + 1
+  randomDirectionSeed += 3
+  const rawDirection = ((Game.time + seed + randomDirectionSeed) % 8) + 1
   return rawDirection as DirectionConstant
 }
 

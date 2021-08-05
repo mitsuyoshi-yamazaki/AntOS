@@ -8,6 +8,8 @@ import { generateCodename } from "utility/unique_id"
 import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { defaultMoveToOptions } from "prototype/creep"
+import { randomDirection } from "utility/constants"
 
 export type Season1262745GuardRemoteRoomProcessCreepType = "ranged attacker"// | "attacker"
 
@@ -159,24 +161,29 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       return
     }
 
-    this.runSingleAttacker(creep)
-    // const moved = this.runSingleAttacker(creep)
+    const {moved} = this.runSingleAttacker(creep)
+    if (moved === true) {
+      return
+    }
 
-    // if (moved !== true && creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.9)) {
-    //   const spawn = World.rooms.getOwnedRoomObjects(this.targetRoomName)?.activeStructures.spawns[0]
-    //   if (spawn != null) {
-    //     if (spawn.spawning == null && (Game.time % 13) < 6 && spawn.room.energyAvailable >= spawn.room.energyCapacityAvailable) {
-    //       spawn.renewCreep(creep)
-    //     }
-    //     creep.moveTo(spawn, { range: 1 })
-    //   }
-    // }
+    const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
+    if (waitingTarget == null) {
+      return
+    }
+    const waitingRange = 5
+    if (creep.pos.getRangeTo(waitingTarget.pos) <= waitingRange) {
+      creep.move(randomDirection(Game.time + this.launchTime))
+      return
+    }
+    const moveToOptions = defaultMoveToOptions()
+    moveToOptions.range = waitingRange
+    creep.moveTo(waitingTarget, moveToOptions)
   }
 
-  private runSingleAttacker(creep: Creep): boolean {
+  private runSingleAttacker(creep: Creep): { moved: boolean} {
     const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if (target == null) {
-      return false
+      return {moved: false}
     }
 
     this.rangedAttack(creep, target)
@@ -186,7 +193,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     } else {
       creep.moveTo(target)
     }
-    return true
+    return { moved: true}
   }
 
   private attackNearbyHostile(creep: Creep): { attackedTarget: Creep | null, moved: boolean } {
