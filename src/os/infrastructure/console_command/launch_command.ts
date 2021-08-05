@@ -32,6 +32,7 @@ import { Season1262745GuardRemoteRoomProcess } from "process/onetime/season_1262
 import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/onetime/season_1349943_disturb_power_harvesting_process"
 import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
+import { Season1488500QuadProcess } from "process/onetime/season_1488500_quad_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -110,6 +111,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season831595DismantleRcl2RoomProcess":
       result = this.launchSeason831595DismantleRcl2RoomProcess()
+      break
+    case "Season1488500QuadProcess":
+      result = this.launchSeason1488500QuadProcess()
       break
     default:
       break
@@ -679,6 +683,20 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1488500QuadProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1488500QuadProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }
