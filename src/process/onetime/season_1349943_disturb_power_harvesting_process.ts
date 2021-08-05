@@ -222,13 +222,13 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   }
 
   private closestHostile(creep: Creep): Creep | null {
-    const includeAttacker = ((): boolean => {
+    const isMeleeAttacker = ((): boolean => {
       switch (this.attackerType) {
       case "attacker":
-        return false
+        return true
       case "ranged_attacker":
       case "large_ranged_attacker":
-        return true
+        return false
       }
     })()
     const hostiles = creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
@@ -241,14 +241,10 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
         return false
       }
-      if (creep.getActiveBodyparts(ATTACK) > 0) {
-        if (includeAttacker === true) {
-          return true
-        } else {
-          return false
-        }
+      if (isMeleeAttacker === true && (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)) {
+        return false
       }
-      return creep.getActiveBodyparts(CARRY) > 0
+      return creep.getActiveBodyparts(CARRY) > 0 || creep.getActiveBodyparts(HEAL) > 0
     })
     if (hostiles.length <= 0) {
       return null
