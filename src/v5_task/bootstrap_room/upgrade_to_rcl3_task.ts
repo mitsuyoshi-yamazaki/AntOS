@@ -72,29 +72,18 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): UpgradeToRcl3Task {
-    const roomInfo = Memory.room_info
-    if (roomInfo != null) {
-      const targetRoomInfoMemory = roomInfo[targetRoomName]
-      if (targetRoomInfoMemory != null) {
-        targetRoomInfoMemory.bootstrapping = true
-      }
-    }
-
     return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
-    if (targetRoomObjects != null && targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.controller.level >= 3) {
-      this.takeOverCreeps()
-      const roomInfo = Memory.room_info
-      if (roomInfo != null) {
-        const targetRoomInfoMemory = roomInfo[this.targetRoomName]
-        if (targetRoomInfoMemory != null) {
-          targetRoomInfoMemory.bootstrapping = false
-        }
+    if (targetRoomObjects != null) {
+      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.controller.level >= 3) {
+        this.takeOverCreeps()
+        targetRoomObjects.roomInfo.bootstrapping = false
+        return TaskStatus.Finished
       }
-      return TaskStatus.Finished
+      targetRoomObjects.roomInfo.bootstrapping = true
     }
 
     super.runTask(objects, childTaskResults)
@@ -172,6 +161,10 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       }
       creep.say("no source")
       return null
+    }
+
+    if (targetRoomObjects.controller.level < 2) {
+      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller))
     }
 
     const structureToCharge = targetRoomObjects.getStructureToCharge(creep.pos)
