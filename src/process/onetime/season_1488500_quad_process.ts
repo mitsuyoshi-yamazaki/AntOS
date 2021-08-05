@@ -93,6 +93,7 @@ class Quad {
       costCallback: quadCostCallback,
       range,
       ignoreCreeps: true,
+      maxRooms: 1,
     }
 
     const nextSteps = topRight.room.findPath(topRight.pos, position, pathFinderOptions) // Room間移動は対応していない
@@ -484,6 +485,7 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     const pathFinderOptions: FindPathOpts = {
       costCallback: isSourceKeeperRoom ? quadSourceKeeperRoomCostCallback : quadCostCallback,
       ignoreCreeps: true,
+      maxRooms: 1,
     }
 
     const exit = creepRoom.findExitTo(destinationRoomName)
