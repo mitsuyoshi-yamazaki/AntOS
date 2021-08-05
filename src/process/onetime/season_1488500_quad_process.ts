@@ -62,7 +62,7 @@ class Quad {
     }
     const nextPosition = moveToRoomQuad(topRight, destinationRoomName, waypoints)
     topRight.moveTo(nextPosition)
-    this.moveFollowersToNextPosition(nextPosition)
+    this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
   // public moveLineTo(position: RoomPosition, range: number): void {
@@ -107,7 +107,7 @@ class Quad {
     })
     const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
     topRight.moveTo(nextPosition)
-    this.moveFollowersToNextPosition(nextPosition)
+    this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
   public align(): void {
@@ -139,7 +139,7 @@ class Quad {
     topRight.say("align")
     topRight.moveTo(topRightPosition)
 
-    this.moveFollowersToNextPosition(topRightPosition)
+    this.moveFollowersToNextPosition(topRightPosition, 2)
   }
 
   private canMove(): boolean {
@@ -202,7 +202,7 @@ class Quad {
     return true
   }
 
-  private moveFollowersToNextPosition(nextPosition: RoomPosition): void {
+  private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number): void {
     if (nextPosition.x <= 1) {
       exitingDirection = LEFT
     } else if (nextPosition.y >= 48) {
@@ -221,7 +221,7 @@ class Quad {
         creep.say("no pos")
         return
       }
-      creep.moveTo(position)
+      creep.moveTo(position, {maxRooms, maxOps: 200})
     }
 
     move(1, LEFT)
@@ -369,7 +369,7 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       numberOfCreeps,
       codename: this.codename,
       roles: [CreepRole.Mover],
-      body,
+      body: [MOVE],
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -395,17 +395,29 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
     return costMatrix
   }
 
-  const walkableTerrains: Terrain[] = ["swamp", "plain"]
+  const nextToSwampCost = 3
   for (let y = 0; y < GameConstants.room.edgePosition.max; y += 1) {
     for (let x = 0; x < GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
-      const isWalkable = position.look().some(obj => (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain)))
-      if (isWalkable === true) {
-        continue
+      const terrain = position.lookFor(LOOK_TERRAIN)[0]
+      switch (terrain) {
+      case "plain":
+        break
+      case "swamp":
+        position.neighbours().forEach(p => {
+          if (costMatrix.get(p.x, p.y) < nextToSwampCost) {
+            costMatrix.set(p.x, p.y, nextToSwampCost)
+          }
+        })
+        break
+      case "wall":
+        position.neighbours().forEach(p => {
+          costMatrix.set(p.x, p.y, OBSTACLE_COST)
+        })
+        break
+      default:
+        break
       }
-      position.neighbours().forEach(p => {
-        costMatrix.set(p.x, p.y, OBSTACLE_COST)
-      })
     }
   }
 
@@ -434,17 +446,29 @@ function quadSourceKeeperRoomCostCallback(roomName: RoomName, costMatrix: CostMa
     costMatrix.set(position.x, position.y, OBSTACLE_COST)
   })
 
-  const walkableTerrains: Terrain[] = ["swamp", "plain"]
+  const nextToSwampCost = 3
   for (let y = 0; y < GameConstants.room.edgePosition.max; y += 1) {
     for (let x = 0; x < GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
-      const isWalkable = position.look().some(obj => (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain)))
-      if (isWalkable === true) {
-        continue
+      const terrain = position.lookFor(LOOK_TERRAIN)[0]
+      switch (terrain) {
+      case "plain":
+        break
+      case "swamp":
+        position.neighbours().forEach(p => {
+          if (costMatrix.get(p.x, p.y) < nextToSwampCost) {
+            costMatrix.set(p.x, p.y, nextToSwampCost)
+          }
+        })
+        break
+      case "wall":
+        position.neighbours().forEach(p => {
+          costMatrix.set(p.x, p.y, OBSTACLE_COST)
+        })
+        break
+      default:
+        break
       }
-      position.neighbours().forEach(p => {
-        costMatrix.set(p.x, p.y, OBSTACLE_COST)
-      })
     }
   }
 

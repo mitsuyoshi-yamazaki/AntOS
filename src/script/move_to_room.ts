@@ -145,7 +145,7 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     return false
   })
 
-  const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit)
+  const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit) // TODO: このPathFinding省略できないか
   if (exitPosition == null) {
     creep.say("no path")
     if (creepRoom.controller != null) {
