@@ -654,12 +654,12 @@ export class LaunchCommand implements ConsoleCommand {
     if (attackerType == null) {
       return this.missingArgumentError("attacker_type")
     }
-    if (["attacker", "ranged_attacker"].includes(attackerType) !== true) {
+    if (["attacker", "ranged_attacker", "large_ranged_attacker"].includes(attackerType) !== true) {
       return Result.Failed(`Invalid attacker type: ${attackerType}`)
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker"))
+      return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker" | "large_ranged_attacker"))
     })
     return Result.Succeeded(process)
   }
