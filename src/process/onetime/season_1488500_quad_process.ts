@@ -80,14 +80,19 @@ class Quad {
     const pathFinderOptions: FindPathOpts = {
       costCallback: quadCostcallback,
       range,
+      ignoreCreeps: true,
     }
 
-    const nextStep = topRight.room.findPath(topRight.pos, position, pathFinderOptions)[0] // Room間移動は対応していない
-    if (nextStep == null) {
+    const nextSteps = topRight.room.findPath(topRight.pos, position, pathFinderOptions) // Room間移動は対応していない
+    if (nextSteps[0] == null) {
       topRight.say("no path")
       return
     }
-    const nextPosition = new RoomPosition(nextStep.x, nextStep.y, topRight.room.name)
+    nextSteps.forEach((step, index) => {
+      const p = new RoomPosition(step.x, step.y, topRight.room.name)
+      topRight.room.visual.text(`${index}`, p, {color: "#ffffff"})
+    })
+    const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
     topRight.moveTo(nextPosition)
     this.moveFollowersToNextPosition(nextPosition)
   }
