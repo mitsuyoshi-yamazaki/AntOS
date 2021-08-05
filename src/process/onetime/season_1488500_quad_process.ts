@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -11,8 +11,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { processLog } from "process/process_log"
 import { GameConstants, OBSTACLE_COST } from "utility/constants"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { SourceKeeper } from "game/source_keeper"
 
 interface QuadState {
   creepNames: CreepName[]
@@ -42,22 +43,31 @@ class Quad {
     return this.creeps.every(creep => (creep.room.name === roomName))
   }
 
-  // public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[]): void {
-  //   if (this.isSquadForm() !== true) {
-  //     this.align()
-  //     return
-  //   }
-  //   if (this.canMoveToSquad() !== true) {
-  //     return
-  //   }
-  //   // TODO:
-  // }
-
-  public moveLineTo(position: RoomPosition, range: number): void {
-    if (this.canMove() !== true) {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[]): void {
+    if (this.isSquadForm() !== true) {
+      this.align()
       return
     }
+    if (this.canMoveQquad() !== true) {
+      return
+    }
+    const topRight = this.creeps[0]
+    if (topRight == null) {
+      return
+    }
+    if (topRight.room.name === destinationRoomName) {
+      return
+    }
+    const nextPosition = moveToRoomQuad(topRight, destinationRoomName, waypoints)
+    topRight.moveTo(nextPosition)
+    this.moveFollowersToNextPosition(nextPosition)
   }
+
+  // public moveLineTo(position: RoomPosition, range: number): void {
+  //   if (this.canMove() !== true) {
+  //     return
+  //   }
+  // }
 
   public moveQuadTo(position: RoomPosition, range: number): void {
     if (this.isSquadForm() !== true) {
@@ -78,7 +88,7 @@ class Quad {
     }
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostcallback,
+      costCallback: quadCostCallback,
       range,
       ignoreCreeps: true,
     }
@@ -199,11 +209,13 @@ export interface Season1488500QuadProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
+  targetRoomName: RoomName
+  waypoints: RoomName[]
   destination: RoomPositionState | null
   quadState: QuadState
 }
 
-// Game.io("launch -l Season1488500QuadProcess room_name=W3S24")
+// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W26S27 waypoints=W24S23,W24S25")
 export class Season1488500QuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -212,6 +224,8 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
+    public readonly targetRoomName: RoomName,
+    public readonly waypoints: RoomName[],
     private destination: RoomPosition | null,
     private quadState: QuadState,
   ) {
@@ -225,6 +239,8 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
+      targetRoomName: this.targetRoomName,
+      waypoints: this.waypoints,
       destination: this.destination?.encode() ?? null,
       quadState: this.quadState,
     }
@@ -237,19 +253,19 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       }
       return decodeRoomPosition(state.destination)
     })()
-    return new Season1488500QuadProcess(state.l, state.i, state.p, destination, state.quadState)
+    return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName): Season1488500QuadProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1488500QuadProcess {
     const quadState: QuadState = {
       creepNames: [],
       moveToTarget: null,
     }
-    return new Season1488500QuadProcess(Game.time, processId, parentRoomName, null, quadState)
+    return new Season1488500QuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, quadState)
   }
 
   public processShortDescription(): string {
-    return roomLink(this.parentRoomName)
+    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName}`
   }
 
   public didReceiveMessage(message: string): string {
@@ -263,7 +279,7 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       return `Invalid format. Position is not a number ${message}`
     }
     try {
-      this.destination = new RoomPosition(x, y, this.parentRoomName)
+      this.destination = new RoomPosition(x, y, this.targetRoomName)
     } catch (e) {
       return `Failed: ${e}`
     }
@@ -310,12 +326,25 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
   }
 
   private requestCreep(priority: CreepSpawnRequestPriority, numberOfCreeps: number): void {
+    const body = ((): BodyPartConstant[] => {
+      switch (numberOfCreeps) {
+      case 4:
+        return [ATTACK, MOVE]
+      case 3:
+        return [RANGED_ATTACK, MOVE]
+      case 2:
+        return [HEAL, MOVE]
+      default:
+        return [TOUGH, MOVE]
+      }
+    })()
+
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority,
       numberOfCreeps,
       codename: this.codename,
       roles: [CreepRole.Mover],
-      body: [TOUGH, MOVE],
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -323,16 +352,19 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
   }
 
   private runQuad(quad: Quad): void {
-    if (this.destination == null) {
-      quad.align()
+    if (this.destination != null) {
+      quad.moveQuadTo(this.destination, 0)
       return
     }
 
-    quad.moveQuadTo(this.destination, 0)
+    if (quad.inRoom(this.targetRoomName) !== true) {
+      quad.moveToRoom(this.targetRoomName, this.waypoints)
+      return
+    }
   }
 }
 
-function quadCostcallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
+function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
   const room = Game.rooms[roomName]
   if (room == null) {
     return costMatrix
@@ -353,4 +385,140 @@ function quadCostcallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
   }
 
   return costMatrix
+}
+
+function quadSourceKeeperRoomCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
+  const room = Game.rooms[roomName]
+  if (room == null) {
+    return costMatrix
+  }
+
+  const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+    excludeItself: false,
+    excludeTerrainWalls: false,
+    excludeStructures: false,
+    excludeWalkableStructures: false,
+  }
+  const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
+    .filter(creep => creep.owner.username === SourceKeeper.username)
+  const positionsToAvoid = sourceKeepers
+    .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
+
+  positionsToAvoid.forEach(position => {
+    // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+    costMatrix.set(position.x, position.y, OBSTACLE_COST)
+  })
+
+  const walkableTerrains: Terrain[] = ["swamp", "plain"]
+  for (let y = 0; y < GameConstants.room.edgePosition.max; y += 1) {
+    for (let x = 0; x < GameConstants.room.edgePosition.max; x += 1) {
+      const position = new RoomPosition(x, y, roomName)
+      const isWalkable = position.look().some(obj => (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain)))
+      if (isWalkable === true) {
+        continue
+      }
+      position.neighbours().forEach(p => {
+        costMatrix.set(p.x, p.y, OBSTACLE_COST)
+      })
+    }
+  }
+
+  return costMatrix
+}
+
+function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[]): RoomPosition {
+  try {
+    const creepRoom = creep.room
+
+    if (creep.pos.x === 0) {
+      return creep.pos.positionTo(RIGHT) ?? creep.pos
+    } else if (creep.pos.x === 49) {
+      return creep.pos.positionTo(LEFT) ?? creep.pos
+    } else if (creep.pos.y === 0) {
+      return creep.pos.positionTo(BOTTOM) ?? creep.pos
+    } else if (creep.pos.y === 49) {
+      return creep.pos.positionTo(TOP) ?? creep.pos
+    }
+
+    if (creepRoom.name === targetRoomName) {
+      return creep.pos
+    }
+
+    const destinationRoomName = ((): RoomName => {
+      const nextWaypoint = waypoints[0]
+      if (nextWaypoint == null) {
+        return targetRoomName
+      }
+      if (nextWaypoint === creepRoom.name) {
+        waypoints.shift()
+        return waypoints[0] ?? targetRoomName
+      }
+      return nextWaypoint
+    })()
+
+    const isSourceKeeperRoom = roomTypeOf(creepRoom.name) === "source_keeper"
+    const pathFinderOptions: FindPathOpts = {
+      costCallback: isSourceKeeperRoom ? quadSourceKeeperRoomCostCallback : quadCostCallback,
+      ignoreCreeps: true,
+    }
+
+    const exit = creepRoom.findExitTo(destinationRoomName)
+    if (exit === ERR_NO_PATH) {
+      creep.say("no exit")
+      return creep.pos
+    } else if (exit === ERR_INVALID_ARGS) {
+      creep.say("invalid")
+      PrimitiveLogger.fatal(`Room.findExitTo() returns ERR_INVALID_ARGS (${exit}), room ${roomLink(creepRoom.name)} to ${roomLink(destinationRoomName)}`)
+      return creep.pos
+    }
+
+    const exitFlag = creepRoom.find(FIND_FLAGS).find(flag => {
+      switch (exit) {
+      case FIND_EXIT_TOP:
+        if (flag.pos.y === GameConstants.room.edgePosition.min) {
+          return true
+        }
+        break
+      case FIND_EXIT_BOTTOM:
+        if (flag.pos.y === GameConstants.room.edgePosition.max) {
+          return true
+        }
+        break
+      case FIND_EXIT_LEFT:
+        if (flag.pos.x === GameConstants.room.edgePosition.min) {
+          return true
+        }
+        break
+      case FIND_EXIT_RIGHT:
+        if (flag.pos.x === GameConstants.room.edgePosition.max) {
+          return true
+        }
+        break
+      default:
+        break
+      }
+      return false
+    })
+
+    const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit, pathFinderOptions)
+    if (exitPosition == null) {
+      creep.say("no path1")
+      return creep.pos
+    }
+
+    const nextSteps = creep.room.findPath(creep.pos, exitPosition, pathFinderOptions) // Room間移動は対応していない
+    if (nextSteps[0] == null) {
+      creep.say("no path2")
+      return creep.pos
+    }
+    nextSteps.forEach((step, index) => {  // FixMe: デバッグコード
+      const p = new RoomPosition(step.x, step.y, creep.room.name)
+      creep.room.visual.text(`${index}`, p, { color: "#ffffff" })
+    })
+    return new RoomPosition(nextSteps[0].x, nextSteps[0].y, creep.room.name)
+  } catch (e) {
+    PrimitiveLogger.programError(`moveToRoomQuad() failed: ${e}`)
+    creep.say("error")
+    return creep.pos
+  }
 }
