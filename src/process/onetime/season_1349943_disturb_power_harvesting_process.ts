@@ -260,14 +260,15 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
     switch (this.attackerType) {
     case "attacker":
       creep.attack(target)
-      return
+      break
     case "ranged_attacker":
+    case "large_ranged_attacker":
       if (creep.pos.isNearTo(target.pos) === true) {
         creep.rangedMassAttack()
       } else {
         creep.rangedAttack(target)
       }
-      return
+      break
     }
   }
 
