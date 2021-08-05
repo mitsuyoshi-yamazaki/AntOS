@@ -3,6 +3,11 @@
 import { PowerGameConstants } from "./power_constants"
 import { StructureGameConstants } from "./structure_constants"
 
+export type CreepBodyEnergyConsumeActionType = "build" | "repair" | "upgradeController"
+export type CreepBodyFixedAmountActionType = CreepBodyEnergyConsumeActionType | "harvest" | "dismantle" | "attack" | "rangedAttack" | "heal" | "capacity"
+export type CreepBodyActionType = CreepBodyFixedAmountActionType | "rangedMassAttack" | "rangedHeal"
+export type CreepBodyBoostableActionType = CreepBodyActionType | "fatigue" | "damage"
+
 /** @deprecated */
 export const SWAMP_COST = 5
 
@@ -27,6 +32,12 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
   const remainingTime = CREEP_LIFE_TIME - ticksToLive
   const increases = Math.floor(600 / bodySize)
   return Math.floor(remainingTime / increases)
+}
+
+const creepActionEnergyCost: { [Action in CreepBodyEnergyConsumeActionType]: number } = {
+  "build": BUILD_POWER,
+  "repair": REPAIR_POWER * REPAIR_COST,
+  "upgradeController": UPGRADE_CONTROLLER_POWER,
 }
 
 export const GameConstants = {
@@ -68,6 +79,7 @@ export const GameConstants = {
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
     },
+    actionCost: creepActionEnergyCost,
   },
   source: {
     regenerationDuration: 300,

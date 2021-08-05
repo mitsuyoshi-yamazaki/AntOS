@@ -1,9 +1,6 @@
-import { GameConstants } from "./constants"
+import { CreepBodyBoostableActionType, CreepBodyEnergyConsumeActionType, CreepBodyFixedAmountActionType, GameConstants } from "./constants"
 import { anyColoredText } from "./log"
 
-export type CreepBodyFixedAmountActionType = "harvest" | "build" | "repair" | "dismantle" | "upgradeController" | "attack" | "rangedAttack" | "heal" | "capacity"
-export type CreepBodyActionType = CreepBodyFixedAmountActionType | "rangedMassAttack" | "rangedHeal"
-export type CreepBodyBoostableActionType = CreepBodyActionType | "fatigue" | "damage"
 const CreepActionToBodyPart: { [index in CreepBodyBoostableActionType]: BodyPartConstant } = {
   harvest: WORK,
   build: WORK,
@@ -41,8 +38,22 @@ export const CreepBody = {
     return bodyCost(body)
   },
 
+  spawnTime: function(body: BodyPartConstant[]): number {
+    return body.length * GameConstants.creep.life.spawnTime
+  },
+
   power: function(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType):number {
     return bodyPower(body, actionType)
+  },
+
+  actionEnergyCost: function (body: BodyPartConstant[], actionType: CreepBodyEnergyConsumeActionType): number {
+    const actionCost = GameConstants.creep.actionCost
+    return body.reduce((result, current) => {
+      if (current !== WORK) {
+        return result
+      }
+      return result + (actionCost[actionType] ?? 0)
+    }, 0)
   },
 
   carryCapacity: function (body: BodyPartConstant[]): number {
