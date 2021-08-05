@@ -61,6 +61,99 @@ export class RoomCoordinate {
 
     return new RoomCoordinate(roomName, direction, x, y)
   }
+
+  public neighbourRoom(direction: TOP | BOTTOM | LEFT | RIGHT): RoomName {
+    switch (direction) {
+    case TOP:
+      return this.topNeighbourRoom()
+    case BOTTOM:
+      return this.bottomNeighbourRoom()
+    case RIGHT:
+      return this.rightNeighbourRoom()
+    case LEFT:
+      return this.leftNeighbourRoom()
+    }
+  }
+
+  private topNeighbourRoom(): RoomName {
+    switch (this.direction) {
+    case "NE":
+    case "NW":
+      return RoomCoordinate.create(this.direction, this.x, this.y + 1).roomName
+
+    case "SE":
+      if (this.y > 0) {
+        return RoomCoordinate.create(this.direction, this.x, this.y - 1).roomName
+      }
+      return RoomCoordinate.create("NE", this.x, 0).roomName
+
+    case "SW":
+      if (this.y > 0) {
+        return RoomCoordinate.create(this.direction, this.x, this.y - 1).roomName
+      }
+      return RoomCoordinate.create("NW", this.x, 0).roomName
+    }
+  }
+
+  private bottomNeighbourRoom(): RoomName {
+    switch (this.direction) {
+    case "NE":
+      if (this.y > 0) {
+        return RoomCoordinate.create(this.direction, this.x, this.y - 1).roomName
+      }
+      return RoomCoordinate.create("SE", this.x, 0).roomName
+
+    case "NW":
+      if (this.y > 0) {
+        return RoomCoordinate.create(this.direction, this.x, this.y - 1).roomName
+      }
+      return RoomCoordinate.create("SW", this.x, 0).roomName
+
+    case "SE":
+    case "SW":
+      return RoomCoordinate.create(this.direction, this.x, this.y + 1).roomName
+    }
+  }
+
+  private leftNeighbourRoom(): RoomName {
+    switch (this.direction) {
+    case "NE":
+      if (this.x > 0) {
+        return RoomCoordinate.create(this.direction, this.x - 1, this.y).roomName
+      }
+      return RoomCoordinate.create("NW", 0, this.y).roomName
+
+    case "SE":
+      if (this.x > 0) {
+        return RoomCoordinate.create(this.direction, this.x - 1, this.y).roomName
+      }
+      return RoomCoordinate.create("SW", 0, this.y).roomName
+
+    case "NW":
+    case "SW":
+      return RoomCoordinate.create(this.direction, this.x + 1, this.y).roomName
+    }
+  }
+
+  private rightNeighbourRoom(): RoomName {
+    switch (this.direction) {
+    case "NE":
+    case "SE":
+      return RoomCoordinate.create(this.direction, this.x + 1, this.y).roomName
+
+    case "NW":
+      if (this.x > 0) {
+        return RoomCoordinate.create(this.direction, this.x - 1, this.y).roomName
+      }
+      return RoomCoordinate.create("NE", 0, this.y).roomName
+
+    case "SW":
+      if (this.x > 0) {
+        return RoomCoordinate.create(this.direction, this.x - 1, this.y).roomName
+      }
+      return RoomCoordinate.create("SE", 0, this.y).roomName
+    }
+  }
 }
 
 export function roomTypeOf(roomName: RoomName): RoomType | null {

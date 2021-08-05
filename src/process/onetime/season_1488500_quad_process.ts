@@ -20,7 +20,7 @@ interface QuadState {
   moveToTarget: RoomName | RoomPositionState | null
 }
 
-let exitingDirection = null as DirectionConstant | null
+let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
 
 class Quad {
   public get numberOfCreeps(): number {
@@ -128,7 +128,9 @@ class Quad {
         const y = Math.min(Math.max(topRight.pos.y + 1, 0), 49)
         return new RoomPosition(x, y, topRight.pos.roomName)
       }
-      default: {
+      case TOP:
+      case RIGHT:
+      case null: {
         const x = Math.min(Math.max(topRight.pos.x, 2), 48)
         const y = Math.min(Math.max(topRight.pos.y, 1), 47)
         return new RoomPosition(x, y, topRight.pos.roomName)
@@ -205,6 +207,10 @@ class Quad {
   private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number): void {
     if (nextPosition.x <= 1) {
       exitingDirection = LEFT
+    } else if (nextPosition.x >= 49) {
+      exitingDirection = RIGHT
+    } else if (nextPosition.y <= 0) {
+      exitingDirection = TOP
     } else if (nextPosition.y >= 48) {
       exitingDirection = BOTTOM
     } else {
@@ -216,11 +222,7 @@ class Quad {
       if (creep == null) {
         return
       }
-      const position = nextPosition.positionTo(directionFromTopRight)
-      if (position == null) {
-        creep.say("no pos")
-        return
-      }
+      const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
       creep.moveTo(position, {maxRooms, maxOps: 200})
     }
 
@@ -240,7 +242,7 @@ export interface Season1488500QuadProcessState extends ProcessState {
   quadState: QuadState
 }
 
-// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W26S27 waypoints=W24S23,W24S25")
+// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W26S27 waypoints=W23S23,W23S22,W22S22")
 export class Season1488500QuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -351,18 +353,18 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
   }
 
   private requestCreep(priority: CreepSpawnRequestPriority, numberOfCreeps: number): void {
-    const body = ((): BodyPartConstant[] => {
-      switch (numberOfCreeps) {
-      case 4:
-        return [ATTACK, MOVE]
-      case 3:
-        return [RANGED_ATTACK, MOVE]
-      case 2:
-        return [WORK, MOVE]
-      default:
-        return [TOUGH, MOVE]
-      }
-    })()
+    // const body = ((): BodyPartConstant[] => {
+    //   switch (numberOfCreeps) {
+    //   case 4:
+    //     return [ATTACK, MOVE]
+    //   case 3:
+    //     return [RANGED_ATTACK, MOVE]
+    //   case 2:
+    //     return [WORK, MOVE]
+    //   default:
+    //     return [TOUGH, MOVE]
+    //   }
+    // })()
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority,

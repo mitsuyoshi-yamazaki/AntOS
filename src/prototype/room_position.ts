@@ -1,6 +1,9 @@
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
-import { RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "utility/room_name"
 import { PositionTaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
+import { GameConstants } from "utility/constants"
 
 enum RoomPositionIdType { }
 export type RoomPositionId = string & RoomPositionIdType
@@ -31,6 +34,7 @@ declare global {
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
     positionTo(direction: DirectionConstant): RoomPosition | null
+    nextRoomPositionTo(direction: DirectionConstant): RoomPosition
   }
 }
 
@@ -183,6 +187,69 @@ export function init(): void {
       return new RoomPosition(x, y, this.roomName)
     } catch {
       return null
+    }
+  }
+
+  RoomPosition.prototype.nextRoomPositionTo = function (direction: DirectionConstant): RoomPosition {
+    const roomCoordinate = RoomCoordinate.parse(this.roomName)
+    if (roomCoordinate == null) {
+      PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() cannot parse room name ${roomLink(this.roomName)}`)
+      return this
+    }
+
+    const i = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case LEFT:
+      case BOTTOM_LEFT:
+        return -1
+      case TOP:
+      case BOTTOM:
+        return 0
+      case TOP_RIGHT:
+      case RIGHT:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+    const j = ((): (-1 | 0 | 1) => {
+      switch (direction) {
+      case TOP_LEFT:
+      case TOP:
+      case TOP_RIGHT:
+        return -1
+      case LEFT:
+      case RIGHT:
+        return 0
+      case BOTTOM_LEFT:
+      case BOTTOM:
+      case BOTTOM_RIGHT:
+        return 1
+      }
+    })()
+
+    // 対角線上の部屋への移動は原理上ありえるがおそらくゲームにそのような地形はないので無視する
+    const x = this.x + i
+    const y = this.y + j
+    const min = GameConstants.room.edgePosition.min
+    const max = GameConstants.room.edgePosition.max
+    try {
+      if (x < min) {
+        return new RoomPosition(max - 1, y, roomCoordinate.neighbourRoom(LEFT))
+      }
+      if (x > max) {
+        return new RoomPosition(min + 1, y, roomCoordinate.neighbourRoom(RIGHT))
+      }
+      if (y < min) {
+        return new RoomPosition(x, max - 1, roomCoordinate.neighbourRoom(TOP))
+      }
+      if (y > max) {
+        return new RoomPosition(x, min + 1, roomCoordinate.neighbourRoom(BOTTOM))
+      }
+      return new RoomPosition(x, y, this.roomName)
+    } catch (e) {
+      PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() faild: ${e}`)
+      return this
     }
   }
 }
