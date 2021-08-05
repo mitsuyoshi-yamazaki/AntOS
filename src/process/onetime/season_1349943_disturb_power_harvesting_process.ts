@@ -11,7 +11,7 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "process/process_log"
 
-type AttackerType = "attacker" | "ranged_attacker"
+type AttackerType = "attacker" | "ranged_attacker" | "large_ranged_attacker"
 
 export interface Season1349943DisturbPowerHarvestingProcessState extends ProcessState {
   /** parent room name */
@@ -29,6 +29,7 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W24S29 waypoints=W24S30 patrol_rooms=W23S30,W20S30,W20S21 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S30,W30S19 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W6S29 waypoints=W6S30 patrol_rooms=W0S30,W10S30 attacker_type=attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W9S24 waypoints=W10S24 patrol_rooms=W10S22,W10S30 attacker_type=large_ranged_attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -68,7 +69,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   }
 
   public processShortDescription(): string {
-    return this.patrollRoomNames.map(roomName => roomLink(roomName)).join(",")
+    return `${roomLink(this.parentRoomName)} => ${this.patrollRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
 
   public runOnTick(): void {
@@ -91,6 +92,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       case "attacker":
         return [CreepRole.Attacker, CreepRole.Mover]
       case "ranged_attacker":
+      case "large_ranged_attacker":
         return [CreepRole.RangedAttacker, CreepRole.Mover]
       }
     })()
@@ -100,6 +102,14 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         return [ATTACK, MOVE, ATTACK, MOVE]
       case "ranged_attacker":
         return [RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE]
+      case "large_ranged_attacker":
+        return [
+          TOUGH, TOUGH,
+          RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+          RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+          MOVE, MOVE, MOVE, MOVE, MOVE,
+          HEAL, HEAL, HEAL,
+        ]
       }
     })()
 
@@ -118,6 +128,14 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   private runAttacker(creep: Creep): void {
     const { moved } = this.avoidHostileAttacker(creep)
     const movement = this.attackHostile(creep, moved !== true)
+    switch (this.attackerType) {
+    case "attacker":
+    case "ranged_attacker":
+      break
+    case "large_ranged_attacker":
+      creep.heal(creep)
+      break
+    }
 
     const shouldPauseTask = (moved === true || movement.moved === true || movement.attackedTarget != null)
     if (creep.v5task?.pause != null) {
@@ -149,6 +167,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       case "attacker":
         return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 5).filter(creep => (creep.getActiveBodyparts(RANGED_ATTACK) > 0) || (creep.getActiveBodyparts(ATTACK) > 0))
       case "ranged_attacker":
+      case "large_ranged_attacker":
         return creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(creep => (creep.getActiveBodyparts(ATTACK) > 0))
       }
     })()
@@ -166,6 +185,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         }
         return 2
       case "ranged_attacker":
+      case "large_ranged_attacker":
         return 2
       }
     })()
@@ -207,6 +227,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       case "attacker":
         return false
       case "ranged_attacker":
+      case "large_ranged_attacker":
         return true
       }
     })()
