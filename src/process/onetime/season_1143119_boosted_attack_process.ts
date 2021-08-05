@@ -333,9 +333,23 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
     this.targetId = target?.id ?? null
 
     if (target != null) {
-      const notInRange = (this.rangedAttack(squad.leader, target) === ERR_NOT_IN_RANGE) || (this.rangedAttack(squad.follower, target) === ERR_NOT_IN_RANGE)
+      if (target.structureType === STRUCTURE_RAMPART) {
+        const notInRange = (this.rangedAttack(squad.leader, target) === ERR_NOT_IN_RANGE) || (this.rangedAttack(squad.follower, target) === ERR_NOT_IN_RANGE)
 
-      if (notInRange === true) {
+        if (notInRange === true) {
+          if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+            if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
+              squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
+            } else {
+              squad.leader.moveTo(target, { range: 1 })
+            }
+          }
+          squad.follower.moveTo(squad.leader)
+        }
+      } else {
+        this.rangedAttack(squad.leader, target)
+        this.rangedAttack(squad.follower, target)
+
         if (this.leaderCanMove(squad.leader, squad.follower) === true) {
           if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
             squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
