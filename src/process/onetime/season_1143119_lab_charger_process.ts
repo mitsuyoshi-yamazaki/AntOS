@@ -19,7 +19,15 @@ import { RoomName } from "utility/room_name"
 // const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
 // const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
 
-const boosts: MineralBoostConstant[] = [
+type BoostTire = 1 | 2
+
+const tire1Boosts: MineralBoostConstant[] = [
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_KEANIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+]
+
+const tire2Boosts: MineralBoostConstant[] = [
   RESOURCE_LEMERGIUM_ALKALIDE,
   RESOURCE_GHODIUM_ALKALIDE,
   RESOURCE_KEANIUM_OXIDE,
@@ -34,21 +42,34 @@ type LabInfo = {
 export interface Season1143119LabChargerProcessState extends ProcessState {
   parentRoomName: RoomName
   labIds: Id<StructureLab>[]
+  tire: BoostTire
 }
 
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 lab_ids=61072e7d8631b61addd464c2,6107707f22b7dd084bded966,6107c31e36a5b7de9159d0de")
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 tire=1 lab_ids=61072e7d8631b61addd464c2,6107707f22b7dd084bded966,6107c31e36a5b7de9159d0de")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
+
+  private readonly boosts: MineralBoostConstant[]
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public readonly labIds: Id<StructureLab>[],
+    private readonly labIds: Id<StructureLab>[],
+    private readonly tire: BoostTire,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+
+    switch (this.tire) {
+    case 1:
+      this.boosts = [...tire1Boosts]
+      break
+    case 2:
+      this.boosts = [...tire2Boosts]
+      break
+    }
   }
 
   public encode(): Season1143119LabChargerProcessState {
@@ -58,15 +79,16 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       i: this.processId,
       parentRoomName: this.parentRoomName,
       labIds: this.labIds,
+      tire: this.tire,
     }
   }
 
   public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labIds)
+    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labIds, state.tire)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, labIds: Id<StructureLab>[]): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labIds)
+  public static create(processId: ProcessId, parentRoomName: RoomName, labIds: Id<StructureLab>[], tire: BoostTire): Season1143119LabChargerProcess {
+    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labIds, tire)
   }
 
   public processShortDescription(): string {
@@ -92,9 +114,9 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
         PrimitiveLogger.fatal(`${this.identifier} target lab ${labId} not found ${roomLink(this.parentRoomName)}`)
         return
       }
-      const boost = boosts[i]
+      const boost = this.boosts[i]
       if (boost == null) {
-        PrimitiveLogger.programError(`${this.identifier} Unsupported boost: ${this.labIds.length}labs but ${boosts.length}boosts`)
+        PrimitiveLogger.programError(`${this.identifier} Unsupported boost: ${this.labIds.length}labs but ${this.boosts.length}boosts`)
         return
       }
       labs.push({

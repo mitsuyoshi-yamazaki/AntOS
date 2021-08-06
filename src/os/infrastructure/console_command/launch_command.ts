@@ -498,6 +498,14 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
+    const rawTier = args.get("tire")
+    if (rawTier == null) {
+      return this.missingArgumentError("tire")
+    }
+    const tire = parseInt(rawTier, 10)
+    if (isNaN(tire) === true || [1,2].includes(tire) === false) {
+      return Result.Failed(`Not supported tire ${tire}`)
+    }
     const rawLabIds = args.get("lab_ids")
     if (rawLabIds == null) {
       return this.missingArgumentError("lab_ids")
@@ -505,7 +513,7 @@ export class LaunchCommand implements ConsoleCommand {
     const labIds = rawLabIds.split(",") as Id<StructureLab>[]
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1143119LabChargerProcess.create(processId, roomName, labIds)
+      return Season1143119LabChargerProcess.create(processId, roomName, labIds, tire as 1 | 2)
     })
     return Result.Succeeded(process)
   }
