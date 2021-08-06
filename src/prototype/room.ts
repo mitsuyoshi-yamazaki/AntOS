@@ -1,4 +1,5 @@
-import { RoomType, roomTypeOf } from "utility/room_name"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { RoomCoordinate, RoomName, RoomType, roomTypeOf } from "utility/room_name"
 
 export interface RoomPathMemory {
   /** source paths */
@@ -24,6 +25,7 @@ declare global {
   interface Room {
     roomType: RoomType
     isHighway: boolean
+    coordinate: RoomCoordinate
   }
 }
 
@@ -39,6 +41,18 @@ export function init(): void {
     get(): boolean {
       const roomType: RoomType = this.roomType
       return roomType === "highway" || roomType === "highway_crossing"
+    }
+  })
+
+  Object.defineProperty(Room.prototype, "coordinate", {
+    get(): RoomCoordinate {
+      const roomName = this.name as RoomName
+      const coordinate = RoomCoordinate.parse(roomName)
+      if (coordinate == null) {
+        PrimitiveLogger.programError(`Cannot parse ${roomName}`)
+        return RoomCoordinate.create("NE", 0, 0)
+      }
+      return coordinate
     }
   })
 }

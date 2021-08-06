@@ -14,6 +14,7 @@ import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { SourceKeeper } from "game/source_keeper"
+import { moveToRoom } from "script/move_to_room"
 
 interface QuadState {
   creepNames: CreepName[]
@@ -51,15 +52,22 @@ class Quad {
   }
 
   public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[]): void {
+    const topRight = this.creeps[0]
+    if (topRight == null) {
+      return
+    }
+
+    if (this.isCloseToDestinationRoom(topRight.pos, topRight.room, destinationRoomName, waypoints) !== true) {
+      moveToRoom(topRight, destinationRoomName, waypoints)
+      this.follow()
+      return
+    }
+
     if (this.isSquadForm() !== true) {
       this.align()
       return
     }
     if (this.canMoveQquad() !== true) {
-      return
-    }
-    const topRight = this.creeps[0]
-    if (topRight == null) {
       return
     }
     if (topRight.room.name === destinationRoomName) {
@@ -69,12 +77,6 @@ class Quad {
     topRight.moveTo(nextPosition)
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
-
-  // public moveLineTo(position: RoomPosition, range: number): void {
-  //   if (this.canMove() !== true) {
-  //     return
-  //   }
-  // }
 
   public moveQuadTo(position: RoomPosition, range: number): void {
     if (this.isSquadForm() !== true) {
@@ -115,7 +117,41 @@ class Quad {
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
-  public align(): void {
+  private isCloseToDestinationRoom(position: RoomPosition, room: Room, destinationRoomName: RoomName, waypoints: RoomName[]): boolean {
+    if (waypoints.length > 0) {
+      return false
+    }
+    const exit = room.findExitTo(destinationRoomName)
+    if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
+      return false
+    }
+
+    const directionMap: { [index in ExitConstant]: TOP | BOTTOM | LEFT | RIGHT } = {
+      1: TOP,     // FIND_EXIT_TOP
+      3: RIGHT,   // FIND_EXIT_RIGHT
+      5: BOTTOM,  // FIND_EXIT_BOTTOM
+      7: LEFT,    // FIND_EXIT_LEFT
+    }
+    const directionToDestination = directionMap[exit]
+    const nextRoomName = room.coordinate.neighbourRoom(directionToDestination)
+    if (nextRoomName !== destinationRoomName) {
+      return false
+    }
+
+    const threshold = 6
+    switch (directionToDestination) {
+    case TOP:
+      return position.y < (GameConstants.room.edgePosition.min + threshold)
+    case BOTTOM:
+      return position.y > (GameConstants.room.edgePosition.max - threshold)
+    case LEFT:
+      return position.x < (GameConstants.room.edgePosition.min + threshold)
+    case RIGHT:
+      return position.x > (GameConstants.room.edgePosition.max - threshold)
+    }
+  }
+
+  private align(): void {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return
@@ -162,22 +198,6 @@ class Quad {
     }
     return this.isSquadForm()
   }
-
-  // private isLineForm(): boolean {
-  //   const
-
-  //   // const line = (creepIndex: number): void => {
-  //   //   const previousCreep = this.creeps[creepIndex]
-  //   //   const creep = this.creeps[creepIndex]
-  //   //   if (previousCreep == null || creep == null) {
-  //   //     return
-  //   //   }
-  //   //   creep.moveTo(previousCreep.pos)
-  //   // }
-  //   // line(0)
-  //   // line(1)
-  //   // line(2)
-  // }
 
   private isSquadForm(): boolean {
     const topRight = this.creeps[0]
@@ -232,12 +252,35 @@ class Quad {
         return
       }
       const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
-      creep.moveTo(position, {maxRooms, maxOps: 200})
+      creep.moveTo(position, this.followerMoveToOptions(maxRooms))
     }
 
     move(1, LEFT)
     move(2, BOTTOM)
     move(3, BOTTOM_LEFT)
+  }
+
+  private follow(): void {
+    const follow = (creepIndex: number): void => {
+      const previousCreep = this.creeps[creepIndex - 1]
+      const creep = this.creeps[creepIndex]
+      if (previousCreep == null || creep == null) {
+        return
+      }
+      creep.moveTo(previousCreep.pos, this.followerMoveToOptions(2))
+    }
+
+    follow(1)
+    follow(2)
+    follow(3)
+  }
+
+  private followerMoveToOptions(maxRooms: number): MoveToOpts {
+    return {
+      maxRooms,
+      maxOps: 200,
+      reusePath: 0,
+    }
   }
 }
 
@@ -251,7 +294,7 @@ export interface Season1488500QuadProcessState extends ProcessState {
   quadState: QuadState
 }
 
-// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W26S27 waypoints=W23S23,W23S22,W22S22")
+// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W22S22 waypoints=W22S23")
 export class Season1488500QuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -302,7 +345,8 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName}`
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName} ${creepCount}cr`
   }
 
   public didReceiveMessage(message: string): string {
