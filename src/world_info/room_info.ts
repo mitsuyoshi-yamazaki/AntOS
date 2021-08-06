@@ -456,6 +456,14 @@ export class OwnedRoomObjects {
   }
 
   public getEnergyStore(position: RoomPosition): EnergyStore | null { // TODO: Resource等は量も考慮する
+    const roomInfo = Memory.v6RoomInfo[this.controller.room.name]
+    if (roomInfo != null && roomInfo.roomType === "owned") {
+      if (roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+        if (this.activeStructures.terminal != null && this.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
+          return this.activeStructures.terminal
+        }
+      }
+    }
     if (this.activeStructures.storage != null && this.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
       return this.activeStructures.storage
     }
