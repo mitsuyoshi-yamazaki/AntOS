@@ -1,0 +1,169 @@
+
+import { Procedural } from "process/procedural"
+import { Process, ProcessId } from "process/process"
+import { RoomName } from "utility/room_name"
+import { roomLink } from "utility/log"
+import { ProcessState } from "process/process_state"
+import { CreepRole } from "prototype/creep_role"
+import { generateCodename } from "utility/unique_id"
+import { World } from "world_info/world_info"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
+
+const swampRunnerRoles: CreepRole[] = [CreepRole.SwampRunner, CreepRole.Mover]
+const swampRunnerBody: BodyPartConstant[] = [
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  MOVE,
+]
+
+export interface Season1521073SendResourceProcessState extends ProcessState {
+  /** parent room name */
+  p: RoomName
+
+  /** waypoints */
+  w: RoomName[]
+
+  targetRoomName: RoomName
+}
+
+// Game.io("launch -l Season1521073SendResourceProcess room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27")
+export class Season1521073SendResourceProcess implements Process, Procedural {
+  public readonly identifier: string
+  private readonly codename: string
+
+  private readonly isSwampRunner: boolean
+  private readonly roles: CreepRole[]
+  private readonly body: BodyPartConstant[]
+
+  private constructor(
+    public readonly launchTime: number,
+    public readonly processId: ProcessId,
+    public readonly parentRoomName: RoomName,
+    public readonly targetRoomName: RoomName,
+    public readonly waypoints: RoomName[],
+  ) {
+    this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
+    this.codename = generateCodename(this.identifier, this.launchTime)
+
+    this.isSwampRunner = true
+    this.roles = swampRunnerRoles
+    this.body = swampRunnerBody
+  }
+
+  public encode(): Season1521073SendResourceProcessState {
+    return {
+      t: "Season1521073SendResourceProcess",
+      l: this.launchTime,
+      i: this.processId,
+      p: this.parentRoomName,
+      targetRoomName: this.targetRoomName,
+      w: this.waypoints,
+    }
+  }
+
+  public static decode(state: Season1521073SendResourceProcessState): Season1521073SendResourceProcess {
+    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w)
+  }
+
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[],): Season1521073SendResourceProcess {
+    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints)
+  }
+
+  public processShortDescription(): string {
+    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName}`
+  }
+
+  public runOnTick(): void {
+    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
+    const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
+    if (objects == null || targetRoomObjects == null) {
+      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} or ${roomLink(this.targetRoomName)} lost`)
+      return
+    }
+
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const energyStore = ((): StructureTerminal | StructureStorage | null => {
+      if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 3000) {
+        return objects.activeStructures.terminal
+      }
+      if (objects.activeStructures.storage != null && objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 3000) {
+        return objects.activeStructures.storage
+      }
+      return null
+    })()
+    const targetStorage = targetRoomObjects.activeStructures.storage
+    if (energyStore == null || targetStorage == null || targetStorage.store.getFreeCapacity(RESOURCE_ENERGY) < 50000) {
+      return
+    }
+    if (creeps.length < 1) {
+      this.requestCreep()
+    }
+
+    this.runCreep(energyStore, targetStorage)
+  }
+
+  private requestCreep(): void {
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: this.roles,
+      body: this.body,
+      initialTask: null,
+      taskIdentifier: this.identifier,
+      parentRoomName: null,
+    })
+  }
+
+  private runCreep(energyStore: StructureTerminal | StructureStorage, targetStorage: StructureStorage): void {
+    World.resourcePools.assignTasks(
+      this.parentRoomName,
+      this.identifier,
+      CreepPoolAssignPriority.Low,
+      creep => this.creepTask(creep, energyStore, targetStorage),
+      () => true,
+    )
+  }
+
+  private creepTask(creep: Creep, energyStore: StructureTerminal | StructureStorage, targetStorage: StructureStorage): CreepTask | null {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (energyStore == null) {
+        creep.say("no energy")
+        return null
+      }
+      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energyStore, RESOURCE_ENERGY))
+    }
+
+    if (this.isSwampRunner === true) {
+      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(targetStorage, RESOURCE_ENERGY))
+    }
+
+    const options: SequentialTaskOptions = {
+      ignoreFailure: false,
+      finishWhenSucceed: false,
+    }
+    const tasks: CreepTask[] = [
+      MoveToRoomTask.create(this.targetRoomName, this.waypoints),
+      MoveToTargetTask.create(TransferEnergyApiWrapper.create(targetStorage)),
+    ]
+    return FleeFromAttackerTask.create(SequentialTask.create(tasks, options))
+  }
+}

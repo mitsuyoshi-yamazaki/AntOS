@@ -22,6 +22,7 @@ import { Season831595DismantleRcl2RoomProcess, Season831595DismantleRcl2RoomProc
 import { Season845677Attack1TowerProcess, Season845677Attack1TowerProcessState } from "./onetime/season_845677_attack_1tower_process"
 import { Season989041MovePowerCreepProcess, Season989041MovePowerCreepProcessState } from "./onetime/season_989041_move_power_creep_process"
 import { Season1488500QuadProcess, Season1488500QuadProcessState } from "./onetime/season_1488500_quad_process"
+import { Season1521073SendResourceProcess, Season1521073SendResourceProcessState } from "./onetime/season_1521073_send_resource_process"
 import type { Process } from "./process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import type { ProcessState } from "./process_state"
@@ -66,6 +67,7 @@ class ProcessTypes {
   "Season1349943DisturbPowerHarvestingProcess" = (state: ProcessState) => Season1349943DisturbPowerHarvestingProcess.decode(state as unknown as Season1349943DisturbPowerHarvestingProcessState)
   "Season831595DismantleRcl2RoomProcess" = (state: ProcessState) => Season831595DismantleRcl2RoomProcess.decode(state as unknown as Season831595DismantleRcl2RoomProcessState)
   "Season1488500QuadProcess" = (state: ProcessState) => Season1488500QuadProcess.decode(state as unknown as Season1488500QuadProcessState)
+  "Season1521073SendResourceProcess" = (state: ProcessState) => Season1521073SendResourceProcess.decode(state as unknown as Season1521073SendResourceProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
