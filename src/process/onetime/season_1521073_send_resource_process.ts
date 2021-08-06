@@ -19,6 +19,11 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
+import { GameConstants } from "utility/constants"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { OwnedRoomObjects } from "world_info/room_info"
+import { EnergyChargeableStructure } from "prototype/room_object"
 
 const useSwampRunner = false as boolean
 
@@ -102,7 +107,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName}`
+    return `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`
   }
 
   public runOnTick(): void {
@@ -123,15 +128,14 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       }
       return null
     })()
-    const targetStorage = targetRoomObjects.activeStructures.storage
-    if (energyStore == null || targetStorage == null || targetStorage.store.getFreeCapacity(RESOURCE_ENERGY) < 50000) {
+    if (energyStore == null) {
       return
     }
     if (creeps.length < 1) {
       this.requestCreep()
     }
 
-    this.runCreep(energyStore, targetStorage)
+    this.runCreep(energyStore, targetRoomObjects)
   }
 
   private requestCreep(): void {
@@ -147,27 +151,38 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     })
   }
 
-  private runCreep(energyStore: StructureTerminal | StructureStorage, targetStorage: StructureStorage): void {
+  private runCreep(energyStore: StructureTerminal | StructureStorage, targetRoomObjects: OwnedRoomObjects): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.creepTask(creep, energyStore, targetStorage),
+      creep => this.creepTask(creep, energyStore, targetRoomObjects),
       () => true,
     )
   }
 
-  private creepTask(creep: Creep, energyStore: StructureTerminal | StructureStorage, targetStorage: StructureStorage): CreepTask | null {
+  private creepTask(creep: Creep, energyStore: StructureTerminal | StructureStorage, targetRoomObjects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      if (energyStore == null) {
-        creep.say("no energy")
-        return null
+      if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 2)) {
+        return RunApiTask.create(SuicideApiWrapper.create())
       }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energyStore, RESOURCE_ENERGY))
     }
 
+    const chargeableStructure = ((): EnergyChargeableStructure | StructureStorage | null => {
+      const targetStorage = targetRoomObjects.activeStructures.storage
+      if (targetStorage != null && targetStorage.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        return targetStorage
+      }
+      return targetRoomObjects.getStructureToCharge(creep.pos)
+    })()
+    if (chargeableStructure == null) {
+      creep.say("nth to do")
+      return null
+    }
+
     if (this.isSwampRunner === true) {
-      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(targetStorage, RESOURCE_ENERGY))
+      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(chargeableStructure, RESOURCE_ENERGY))
     }
 
     const options: SequentialTaskOptions = {
@@ -176,7 +191,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     }
     const tasks: CreepTask[] = [
       MoveToRoomTask.create(this.targetRoomName, this.waypoints),
-      MoveToTargetTask.create(TransferEnergyApiWrapper.create(targetStorage)),
+      MoveToTargetTask.create(TransferEnergyApiWrapper.create(chargeableStructure)),
     ]
     return FleeFromAttackerTask.create(SequentialTask.create(tasks, options))
   }
