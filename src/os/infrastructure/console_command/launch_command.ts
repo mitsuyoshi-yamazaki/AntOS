@@ -34,7 +34,7 @@ import { Season1349943DisturbPowerHarvestingProcess } from "process/onetime/seas
 import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
 import { Season1488500QuadProcess } from "process/onetime/season_1488500_quad_process"
 import { Season1521073SendResourceProcess } from "process/onetime/season_1521073_send_resource_process"
-import { Season1536602QuadAttackerProcess } from "process/onetime/season_1536602_quad_attacker_process"
+import { isSeason1536602QuadAttackerProcessCreepType, Season1536602QuadAttackerProcess, season1536602QuadAttackerProcessCreepType } from "process/onetime/season_1536602_quad_attacker_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -770,17 +770,16 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("targets")
     }
     const targets = rawTargets.split(",")
-    const rawCreepType = args.get("creep_type")
-    if (rawCreepType == null) {
+    const creepType = args.get("creep_type")
+    if (creepType == null) {
       return this.missingArgumentError("creep_type")
     }
-    const creepType = parseInt(rawTier, 10)
-    if (isNaN(tire) === true || [0, 1].includes(tire) === false) {
-      return Result.Failed(`Not supported tire ${tire}`)
+    if (!isSeason1536602QuadAttackerProcessCreepType(creepType)) {
+      return Result.Failed(`Unrecognizeable creep type ${creepType}, creep types: ${season1536602QuadAttackerProcessCreepType}`)
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], tire as 0 | 1)
+      return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], creepType)
     })
     return Result.Succeeded(process)
   }

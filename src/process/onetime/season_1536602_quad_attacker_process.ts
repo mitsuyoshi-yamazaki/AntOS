@@ -16,14 +16,14 @@ import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api
 
 type AttackTarget = AnyCreep | AnyStructure
 
-const season1536602QuadAttackerProcessCreepType = [
+export const season1536602QuadAttackerProcessCreepType = [
   "test",
   "tire0",
   "tire1",
 ] as const
 type Season1536602QuadAttackerProcessCreepType = typeof season1536602QuadAttackerProcessCreepType[number]
 
-export const isConsoleCommand = (obj: string): obj is Season1536602QuadAttackerProcessCreepType => {
+export const isSeason1536602QuadAttackerProcessCreepType = (obj: string): obj is Season1536602QuadAttackerProcessCreepType => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return season1536602QuadAttackerProcessCreepType.includes(obj as any)
 }
@@ -43,7 +43,17 @@ const tire0CreepBody: BodyPartConstant[] = [
   HEAL, HEAL,
 ]
 const tire1CreepBody: BodyPartConstant[] = [
-  TOUGH, MOVE,  // TODO:
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL,
 ]
 
 const tire0Boosts: MineralBoostConstant[] = [
@@ -73,8 +83,8 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 }
 
 // tire 0
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 tire=0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 tire=0 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
