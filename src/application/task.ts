@@ -34,6 +34,9 @@ implements Stateful, TaskProfit<Performance>
 
   /** 相似のタスクに引き継げるものは共通のTaskIdentifierを返す */
   abstract readonly identifier: TaskIdentifier
+
+  // /** run()とestimate()共通で使用する計算などを行っておく */
+  // abstract beforeTick(roomResource: OwnedRoomResource): void
   abstract run(roomResource: OwnedRoomResource): TaskOutputs<OutputType, ProblemTypes>
 
   public runSafely(roomResource: OwnedRoomResource): TaskOutputs<OutputType, ProblemTypes> {

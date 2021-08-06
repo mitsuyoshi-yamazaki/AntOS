@@ -9,7 +9,7 @@ import { generateCodename } from "utility/unique_id"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
-import { createCreepBody } from "utility/creep_body"
+import { CreepBody } from "utility/creep_body"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
@@ -64,8 +64,13 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     return new WallBuilderTask(Game.time, Game.time, roomName)
   }
 
-  // allocationを渡す→その中で行う
-  // 状況によってallocationは変化しうる
+  public beforeTick(roomResource: OwnedRoomResource): void {
+
+  }
+
+  /**
+   * - Builderサイズ or hits上限により使用Energy量が変化する
+   */
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
     const taskOutputs: WallBuilderTaskOutputs = emptyTaskOutputs()
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
@@ -136,7 +141,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       this.codename,
       this.identifier,
       null,
-      createCreepBody([], [WORK, CARRY, MOVE], room.energyCapacityAvailable, 8),
+      CreepBody.create([], [WORK, CARRY, MOVE], room.energyCapacityAvailable, 8),
       null,
       0
     )
@@ -184,15 +189,31 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   }
 
   // ---- Profit ---- //
+  /**
+   * - [ ] estimateからRoomResource引数を除く
+   */
   public estimate(roomResource: OwnedRoomResource): ConsumeTaskPerformance {
-    const resourceCost = new Map<ResourceConstant, number>()
+    const body = CreepBody.create([], [WORK, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 8)
+    const creepCount = 1
+    const creepCost = CreepBody.cost(body) * creepCount
+    const spawnTime = CreepBody.spawnTime(body) * creepCount
+
+    const carryCapacity = CreepBody.carryCapacity(body)
+    const repairPower = CreepBody.actionEnergyCost(body, "repair")
+    const ticksToConsume = Math.ceil(carryCapacity / repairPower)
+    const estimatedTimeToWithdrawEnergy = 20
+    const energyCost = Math.ceil(GameConstants.creep.life.lifeTime / (ticksToConsume + estimatedTimeToWithdrawEnergy)) * carryCapacity
+
+    const resourceCost = new Map<ResourceConstant, number>([
+      [RESOURCE_ENERGY, creepCost + energyCost],
+    ])
 
     return {
       consumeType: "build wall",
-      periodType: 0,
+      periodType: "continuous",
       timeSpent: GameConstants.creep.life.lifeTime,
-      spawnTime: 0,
-      numberOfCreeps: 0,
+      spawnTime,
+      numberOfCreeps: creepCount,
       resourceCost,
     }
   }
