@@ -1,5 +1,34 @@
 
 /*
+calls		time		avg		function
+113		217.2		1.922		Room.findPath
+879		210.0		0.239		Creep.moveTo
+779		159.6		0.205		Creep.move
+668		140.1		0.210		Creep.moveByPath
+19408		127.0		0.007		RoomPosition.look
+145		74.4		0.513		RoomPosition.findClosestByPath
+19408		73.3		0.004		Room.lookAt
+334		61.8		0.185		Creep.harvest
+6130		40.0		0.007		RoomPosition.neighbours
+162		31.2		0.193		Creep.repair
+366		30.1		0.082		Creep.withdraw
+111		28.9		0.260		RoomPosition.findPathTo
+100		22.2		0.222		Creep.upgradeController
+70		14.9		0.213		Creep.reserveController
+4031		13.0		0.003		Room.find
+60		11.0		0.183		Creep.attack
+434		10.1		0.023		Creep.transfer
+40		6.6		0.164		Creep.heal
+77		3.9		0.051		Room.createConstructionSite
+239		3.2		0.013		RoomPosition.lookFor
+290		3.0		0.010		RoomPosition.findInRange
+1506		3.0		0.002		RoomPosition.isNearTo
+25		2.8		0.113		RoomPosition.positionsInRange
+1285		2.2		0.002		RoomPosition.encode
+239		2.1		0.009		Room.lookForAt
+Avg: 116.88	Total: 935.05	Ticks: 8
+
+
 // isActive()の削除
 calls		time		avg		function
 6129		1515.0		0.247		Creep.moveTo
