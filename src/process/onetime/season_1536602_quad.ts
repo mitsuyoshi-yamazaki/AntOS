@@ -594,13 +594,17 @@ export class HRAQuad extends Quad {
           return
         }
         const result = healer.heal(damagedCreep)
-        if (result !== OK) {
+        switch (result) {
+        case OK:
+          damage -= CreepBody.power(healer.body, "heal")
+          break
+        case ERR_NO_BODYPART:
+          break
+        default:
           PrimitiveLogger.programError(`HRAQuad.heal() returns ${result}, healer: ${healer.pos}, target: ${damagedCreep.pos} in ${roomLink(healer.room.name)}`)
           healers.unshift(healer)
-          continue
+          break
         }
-        const healPower = CreepBody.power(healer.body, "heal")
-        damage -= healPower
       }
     })
 
