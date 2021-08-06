@@ -611,7 +611,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
-        MoveToTask.create(powerBank.pos, 7),
+        MoveToTask.create(powerBank.pos, 3),
       ]
       return FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }))
     }

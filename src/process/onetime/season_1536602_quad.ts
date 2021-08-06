@@ -1,41 +1,35 @@
-import { Procedural } from "process/procedural"
-import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
-import { ProcessState } from "process/process_state"
-import { CreepRole } from "prototype/creep_role"
-import { generateCodename } from "utility/unique_id"
-import { World } from "world_info/world_info"
-import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { SourceKeeper } from "game/source_keeper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
-import { processLog } from "process/process_log"
-import { GameConstants, OBSTACLE_COST } from "utility/constants"
-import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
-import { MessageObserver } from "os/infrastructure/message_observer"
-import { SourceKeeper } from "game/source_keeper"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
+import { GameConstants } from "utility/constants"
+import { CreepBody } from "utility/creep_body"
+import { roomLink } from "utility/log"
+import { RoomName } from "utility/room_name"
 
-interface QuadState {
+export interface QuadState {
   creepNames: CreepName[]
-  moveToTarget: RoomName | RoomPositionState | null
 }
 
+type MoveToRoomStatus = "in progress" | "close to room exit" | "close to destination"
 let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
 
-/**
- * - [ ] TOP/RIGHT方向へ部屋移動する際に崩れる問題
- */
 class Quad {
   public get numberOfCreeps(): number {
     return this.creeps.length
   }
+  public get topRightPosition(): RoomPosition | null {
+    return this.creeps[0]?.pos ?? null
+  }
+  public get topRightRoom(): Room | null {
+    return this.creeps[0]?.room ?? null
+  }
 
-  private creeps: Creep[] = []
+  public creeps: Creep[] = []
 
   public constructor(
     creepNames: CreepName[],
-    private readonly moveToTarget: RoomName | RoomPosition | null
   ) {
     creepNames.forEach(creepName => {
       const creep = Game.creeps[creepName]
@@ -45,23 +39,73 @@ class Quad {
     })
   }
 
+  public say(message: string): void {
+    this.creeps[0]?.say(message)
+  }
+
   public inRoom(roomName: RoomName): boolean {
     return this.creeps.every(creep => (creep.room.name === roomName))
   }
 
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[]): void {
+  // public fleeFrom(position: RoomPosition): void {
+  //   // TODO:
+  // }
+
+  public getMinRangeTo(position: RoomPosition): number | null {
+    if (this.creeps.length <= 0) {
+      return null
+    }
+    const closest = this.creeps.reduce((lhs, rhs) => {
+      return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
+    })
+    const minRange = closest.pos.getRangeTo(position)
+    if (isFinite(minRange) !== true) {
+      return null
+    }
+    return minRange
+  }
+
+  public getMaxRangeTo(position: RoomPosition): number | null {
+    if (this.creeps.length <= 0) {
+      return null
+    }
+    const farthest = this.creeps.reduce((lhs, rhs) => {
+      return lhs.pos.getRangeTo(position) > rhs.pos.getRangeTo(position) ? lhs : rhs
+    })
+    const maxRange = farthest.pos.getRangeTo(position)
+    if (isFinite(maxRange) !== true) {
+      return null
+    }
+    return maxRange
+  }
+
+  public moveQuadToRoom(destinationRoomName: RoomName, waypoints: RoomName[]): void {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return
     }
 
-    if (this.isCloseToDestinationRoom(topRight.pos, topRight.room, destinationRoomName, waypoints) !== true) {
+    const status = this.getMoveToRoomStatus(topRight.pos, topRight.room, destinationRoomName, waypoints)
+    switch (status) {
+    case "in progress":
       moveToRoom(topRight, destinationRoomName, waypoints)
+      this.follow()
+      return
+
+    case "close to room exit": {
+      const quadRange = this.getMaxRangeTo(topRight.pos)
+      if (quadRange != null && quadRange <= 5) {
+        moveToRoom(topRight, destinationRoomName, waypoints)
+      }
       this.follow()
       return
     }
 
-    if (this.isSquadForm() !== true) {
+    case "close to destination":
+      break
+    }
+
+    if (this.isQuadForm() !== true) {
       this.align()
       return
     }
@@ -76,8 +120,11 @@ class Quad {
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
+  /**
+   * @param range 全てのCreepがこのrangeに入る
+   */
   public moveQuadTo(position: RoomPosition, range: number): void {
-    if (this.isSquadForm() !== true) {
+    if (this.isQuadForm() !== true) {
       this.align()
       return
     }
@@ -89,14 +136,15 @@ class Quad {
     if (topRight == null) {
       return
     }
-    if (topRight.pos.isEqualTo(position) === true) {
+    const maxRange = this.getMinRangeTo(position)
+    if (maxRange != null && maxRange <= (range + 1)) {
       topRight.say("ok")
       return
     }
 
     const pathFinderOptions: FindPathOpts = {
       costCallback: quadCostCallback,
-      range,
+      range: 0,
       ignoreCreeps: true,
       maxRooms: 1,
     }
@@ -108,20 +156,18 @@ class Quad {
     }
     nextSteps.forEach((step, index) => {
       const p = new RoomPosition(step.x, step.y, topRight.room.name)
-      topRight.room.visual.text(`${index}`, p, {color: "#ffffff"})
+      topRight.room.visual.text(`${index}`, p, { color: "#ffffff" })
     })
     const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
     topRight.moveTo(nextPosition)
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
-  private isCloseToDestinationRoom(position: RoomPosition, room: Room, destinationRoomName: RoomName, waypoints: RoomName[]): boolean {
-    if (waypoints.length > 0) {
-      return false
-    }
-    const exit = room.findExitTo(destinationRoomName)
+  private getMoveToRoomStatus(position: RoomPosition, room: Room, destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomStatus {
+    const currentDestination = waypoints[0] ?? destinationRoomName
+    const exit = room.findExitTo(currentDestination)
     if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
-      return false
+      return "in progress"
     }
 
     const directionMap: { [index in ExitConstant]: TOP | BOTTOM | LEFT | RIGHT } = {
@@ -130,26 +176,35 @@ class Quad {
       5: BOTTOM,  // FIND_EXIT_BOTTOM
       7: LEFT,    // FIND_EXIT_LEFT
     }
-    const directionToDestination = directionMap[exit]
-    const nextRoomName = room.coordinate.neighbourRoom(directionToDestination)
-    if (nextRoomName !== destinationRoomName) {
-      return false
-    }
+    const exitDirection = directionMap[exit]
+    const nextRoomName = room.coordinate.neighbourRoom(exitDirection)
 
     const threshold = 6
-    switch (directionToDestination) {
+    switch (exitDirection) {
     case TOP:
-      return position.y < (GameConstants.room.edgePosition.min + threshold)
+      if (position.y > (GameConstants.room.edgePosition.min + threshold)) {
+        return "in progress"
+      }
+      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
     case BOTTOM:
-      return position.y > (GameConstants.room.edgePosition.max - threshold)
+      if (position.y < (GameConstants.room.edgePosition.max - threshold)) {
+        return "in progress"
+      }
+      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
     case LEFT:
-      return position.x < (GameConstants.room.edgePosition.min + threshold)
+      if (position.x > (GameConstants.room.edgePosition.min + threshold)) {
+        return "in progress"
+      }
+      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
     case RIGHT:
-      return position.x > (GameConstants.room.edgePosition.max - threshold)
+      if (position.x < (GameConstants.room.edgePosition.max - threshold)) {
+        return "in progress"
+      }
+      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
     }
   }
 
-  private align(): void {
+  protected align(): void {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return
@@ -183,21 +238,21 @@ class Quad {
     this.moveFollowersToNextPosition(topRightPosition, 2)
   }
 
-  private canMove(): boolean {
+  protected canMove(): boolean {
     if (this.creeps.length <= 0) {
       return false
     }
     return this.creeps.every(creep => (creep.fatigue <= 0))
   }
 
-  private canMoveQquad(): boolean {
+  protected canMoveQquad(): boolean {
     if (this.canMove() !== true) {
       return false
     }
-    return this.isSquadForm()
+    return this.isQuadForm()
   }
 
-  private isSquadForm(): boolean {
+  protected isQuadForm(): boolean {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return false
@@ -282,178 +337,14 @@ class Quad {
   }
 }
 
-export interface Season1488500QuadProcessState extends ProcessState {
-  /** parent room name */
-  p: RoomName
-
-  targetRoomName: RoomName
-  waypoints: RoomName[]
-  destination: RoomPositionState | null
-  quadState: QuadState
-}
-
-// Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W22S22 waypoints=W22S23")
-export class Season1488500QuadProcess implements Process, Procedural, MessageObserver {
-  public readonly identifier: string
-  private readonly codename: string
-
-  private constructor(
-    public readonly launchTime: number,
-    public readonly processId: ProcessId,
-    public readonly parentRoomName: RoomName,
-    public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
-    private destination: RoomPosition | null,
-    private quadState: QuadState,
-  ) {
-    this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}`
-    this.codename = generateCodename(this.identifier, this.launchTime)
-  }
-
-  public encode(): Season1488500QuadProcessState {
-    return {
-      t: "Season1488500QuadProcess",
-      l: this.launchTime,
-      i: this.processId,
-      p: this.parentRoomName,
-      targetRoomName: this.targetRoomName,
-      waypoints: this.waypoints,
-      destination: this.destination?.encode() ?? null,
-      quadState: this.quadState,
-    }
-  }
-
-  public static decode(state: Season1488500QuadProcessState): Season1488500QuadProcess {
-    const destination = ((): RoomPosition | null => {
-      if (state.destination == null) {
-        return null
-      }
-      return decodeRoomPosition(state.destination)
-    })()
-    return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
-    // return new Season1488500QuadProcess(state.l, state.i, state.p, "W20S21", ["W20S23"], destination, state.quadState)
-  }
-
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1488500QuadProcess {
-    const quadState: QuadState = {
-      creepNames: [],
-      moveToTarget: null,
-    }
-    return new Season1488500QuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, quadState)
-  }
-
-  public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName} ${creepCount}cr`
-  }
-
-  public didReceiveMessage(message: string): string {
-    const [rawX, rawY] = message.split(" ")
-    if (rawX == null || rawY == null) {
-      return `Invalid format. Expected: "x y" (${message})`
-    }
-    const x = parseInt(rawX, 10)
-    const y = parseInt(rawY, 10)
-    if (isNaN(x) === true || isNaN(y) === true) {
-      return `Invalid format. Position is not a number ${message}`
-    }
-    try {
-      this.destination = new RoomPosition(x, y, this.targetRoomName)
-    } catch (e) {
-      return `Failed: ${e}`
-    }
-    return "ok"
-  }
-
-  public runOnTick(): void {
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
-    creeps.forEach(creep => {
-      if (this.quadState.creepNames.includes(creep.name) !== true) {
-        this.quadState.creepNames.push(creep.name)
-      }
-    })
-
-    const creepInsufficiency = 4 - this.quadState.creepNames.length
-    if (creepInsufficiency > 0) {
-      const room = Game.rooms[this.parentRoomName]
-      if (room == null) {
-        PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
-      } else {
-        const priority: CreepSpawnRequestPriority = CreepSpawnRequestPriority.High //this.quadState.creepNames.length <= 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
-        this.requestCreep(priority, creepInsufficiency)
-      }
-    }
-
-    if (this.quadState.creepNames.length > 0) {
-      const moveToTarget = ((): RoomName | RoomPosition | null => {
-        if (this.quadState.moveToTarget == null) {
-          return null
-        }
-        if (typeof this.quadState.moveToTarget === "string") {
-          return this.quadState.moveToTarget
-        }
-        return decodeRoomPosition(this.quadState.moveToTarget)
-      })()
-      const quad = new Quad(this.quadState.creepNames, moveToTarget)
-      if (quad.numberOfCreeps > 0) {
-        this.runQuad(quad)
-        return
-      }
-      processLog(this, "Quad dead")
-      return
-    }
-  }
-
-  private requestCreep(priority: CreepSpawnRequestPriority, numberOfCreeps: number): void {
-    // const body = ((): BodyPartConstant[] => {
-    //   switch (numberOfCreeps) {
-    //   case 4:
-    //     return [ATTACK, MOVE]
-    //   case 3:
-    //     return [RANGED_ATTACK, MOVE]
-    //   case 2:
-    //     return [WORK, MOVE]
-    //   default:
-    //     return [TOUGH, MOVE]
-    //   }
-    // })()
-
-    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority,
-      numberOfCreeps,
-      codename: this.codename,
-      roles: [CreepRole.Mover],
-      body: [MOVE],
-      initialTask: null,
-      taskIdentifier: this.identifier,
-      parentRoomName: null,
-    })
-  }
-
-  private runQuad(quad: Quad): void {
-    if (this.destination != null) {
-      quad.moveQuadTo(this.destination, 0)
-      return
-    }
-
-    if (quad.inRoom(this.targetRoomName) !== true) {
-      quad.moveToRoom(this.targetRoomName, this.waypoints)
-      return
-    }
-  }
-}
 
 function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
   const room = Game.rooms[roomName]
   if (room == null) {
     return costMatrix
   }
-  // for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) { // FixMe:
-  //   for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
-  //     room.visual.text(`${costMatrix.get(x, y)}`, x, y)
-  //   }
-  // }
 
+  const obstacleCost = GameConstants.pathFinder.costs.obstacle
   if (room.roomType === "source_keeper") {
     const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
       excludeItself: false,
@@ -468,7 +359,7 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
 
     positionsToAvoid.forEach(position => {
       // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-      costMatrix.set(position.x, position.y, OBSTACLE_COST)
+      costMatrix.set(position.x, position.y, obstacleCost)
     })
   }
 
@@ -481,7 +372,6 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
     return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
   }
   const swampCost = GameConstants.pathFinder.costs.swamp
-  const obstacleCost = GameConstants.pathFinder.costs.obstacle
   const walkableStructures: StructureConstant[] = [
     STRUCTURE_CONTAINER,
     STRUCTURE_ROAD,
@@ -628,5 +518,55 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     PrimitiveLogger.programError(`moveToRoomQuad() failed: ${e}`)
     creep.say("error")
     return creep.pos
+  }
+}
+
+export class HRAQuad extends Quad {
+  public attack(target: AnyCreep | AnyStructure): void {
+    this.creeps.forEach(creep => {
+      if (creep.pos.isNearTo(target) === true) {
+        creep.rangedMassAttack()
+      } else {
+        creep.rangedAttack(target)
+      }
+    })
+  }
+
+  public heal(): void {
+    if (this.isQuadForm() !== true) {
+      this.creeps.forEach(creep => creep.heal(creep))
+      return
+    }
+
+    const damagedCreeps = [...this.creeps].sort((lhs, rhs) => {
+      return (rhs.hitsMax - rhs.hits) - (lhs.hitsMax - lhs.hits)
+    })
+    const healers = [...this.creeps]
+
+    damagedCreeps.forEach(damagedCreep => {
+      const healerCount = healers.length
+      for (let i = 0; i < healerCount; i += 1) {
+        let damage = damagedCreep.hitsMax - damagedCreep.hits
+        if (damage <= 0) {
+          return
+        }
+        const healer = healers.pop()
+        if (healer == null) {
+          return
+        }
+        const result = healer.heal(damagedCreep)
+        if (result !== OK) {
+          PrimitiveLogger.programError(`HRAQuad.heal() returns ${result}, healer: ${healer.pos}, target: ${damagedCreep.pos} in ${roomLink(healer.room.name)}`)
+          healers.unshift(healer)
+          continue
+        }
+        const healPower = CreepBody.power(healer.body, "heal")
+        damage -= healPower
+      }
+    })
+
+    healers.forEach(healer => {
+      healer.heal(healer)
+    })
   }
 }

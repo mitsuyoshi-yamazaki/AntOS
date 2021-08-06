@@ -34,6 +34,7 @@ import { Season1349943DisturbPowerHarvestingProcess } from "process/onetime/seas
 import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
 import { Season1488500QuadProcess } from "process/onetime/season_1488500_quad_process"
 import { Season1521073SendResourceProcess } from "process/onetime/season_1521073_send_resource_process"
+import { Season1536602QuadAttackerProcess } from "process/onetime/season_1536602_quad_attacker_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -741,6 +742,34 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1536602QuadAttackerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const rawTargets = args.get("targets")
+    if (rawTargets == null) {
+      return this.missingArgumentError("targets")
+    }
+    const targets = rawTargets.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[])
     })
     return Result.Succeeded(process)
   }
