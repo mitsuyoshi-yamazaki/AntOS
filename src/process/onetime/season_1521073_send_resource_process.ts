@@ -20,6 +20,8 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 
+const useSwampRunner = false as boolean
+
 const swampRunnerRoles: CreepRole[] = [CreepRole.SwampRunner, CreepRole.Mover]
 const swampRunnerBody: BodyPartConstant[] = [
   CARRY, CARRY, CARRY, CARRY, CARRY,
@@ -32,6 +34,13 @@ const swampRunnerBody: BodyPartConstant[] = [
   CARRY, CARRY, CARRY, CARRY, CARRY,
   CARRY, CARRY, CARRY, CARRY, CARRY,
   MOVE,
+]
+
+const haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
+const haulerBody: BodyPartConstant[] = [
+  CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+  CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
+  CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE,
 ]
 
 export interface Season1521073SendResourceProcessState extends ProcessState {
@@ -63,9 +72,14 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
 
-    this.isSwampRunner = true
-    this.roles = swampRunnerRoles
-    this.body = swampRunnerBody
+    if (useSwampRunner === true) {
+      this.roles = swampRunnerRoles
+      this.body = swampRunnerBody
+    } else {
+      this.roles = haulerRoles
+      this.body = haulerBody
+    }
+    this.isSwampRunner = this.roles.includes(CreepRole.SwampRunner)
   }
 
   public encode(): Season1521073SendResourceProcessState {
