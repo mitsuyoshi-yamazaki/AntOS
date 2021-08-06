@@ -289,8 +289,8 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       }
       return decodeRoomPosition(state.destination)
     })()
-    // return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
-    return new Season1488500QuadProcess(state.l, state.i, state.p, "W20S21", ["W20S23"], destination, state.quadState)
+    return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
+    // return new Season1488500QuadProcess(state.l, state.i, state.p, "W20S21", ["W20S23"], destination, state.quadState)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1488500QuadProcess {
@@ -425,7 +425,17 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
     })
   }
 
-  const nextToSwampCost = 3
+  const obstacleDirections: DirectionConstant[] = [
+    TOP,
+    TOP_RIGHT,
+    RIGHT,
+  ]
+  const getObstaclePositions = (position: RoomPosition): RoomPosition[] => {
+    return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
+  }
+  const swampCost = GameConstants.pathFinder.costs.swamp
+  const obstacleCost = GameConstants.pathFinder.costs.obstacle
+
   for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
     for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
@@ -434,15 +444,15 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
       case "plain":
         break
       case "swamp":
-        position.neighbours().forEach(p => {
-          if (costMatrix.get(p.x, p.y) < nextToSwampCost) {
-            costMatrix.set(p.x, p.y, nextToSwampCost)
+        getObstaclePositions(position).forEach(p => {
+          if (costMatrix.get(p.x, p.y) < swampCost) {
+            costMatrix.set(p.x, p.y, swampCost)
           }
         })
         break
       case "wall":
-        position.neighbours().forEach(p => {
-          costMatrix.set(p.x, p.y, OBSTACLE_COST)
+        getObstaclePositions(position).forEach(p => {
+          costMatrix.set(p.x, p.y, obstacleCost)
         })
         break
       default:
