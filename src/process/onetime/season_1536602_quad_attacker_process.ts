@@ -24,9 +24,11 @@ const creepRoles: CreepRole[] = [CreepRole.RangedAttacker, CreepRole.Healer, Cre
 const tire0CreepBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-  MOVE, MOVE,
+  RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+  MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL,
 ]
 const tire1CreepBody: BodyPartConstant[] = [
   TOUGH, MOVE,  // TODO:
@@ -130,7 +132,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${roomLink(this.parentRoomName)} => ${this.targetRoomName} ${creepCount}cr`
+    return `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)} ${creepCount}cr`
   }
 
   public didReceiveMessage(message: string): string {
@@ -204,6 +206,9 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
   private attackQuad(quad: HRAQuad): void {
     const nearbyHostileCreep = this.nearbyHostileAttacker(quad)
     if (nearbyHostileCreep != null) {
+      if (quad.isQuadForm() !== true) {
+        quad.align()
+      }
       quad.attack(nearbyHostileCreep)
       return
     }

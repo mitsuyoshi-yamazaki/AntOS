@@ -3,10 +3,11 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
-import { GameConstants } from "utility/constants"
+import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
+import { oppositeDirections } from "utility/direction"
 
 export interface QuadState {
   creepNames: CreepName[]
@@ -15,6 +16,10 @@ export interface QuadState {
 type MoveToRoomStatus = "in progress" | "close to room exit" | "close to destination"
 let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
 
+/**
+ * - [ ] align時に余裕がないことを検出する
+ * - [ ] 経路探索、特にRIGHTが障害物にならない問題がある
+ */
 class Quad {
   public get numberOfCreeps(): number {
     return this.creeps.length
@@ -47,9 +52,9 @@ class Quad {
     return this.creeps.every(creep => (creep.room.name === roomName))
   }
 
-  // public fleeFrom(position: RoomPosition): void {
-  //   // TODO:
-  // }
+  public fleeFrom(position: RoomPosition): void {
+    // TODO:
+  }
 
   public getMinRangeTo(position: RoomPosition): number | null {
     if (this.creeps.length <= 0) {
@@ -164,6 +169,10 @@ class Quad {
   }
 
   private getMoveToRoomStatus(position: RoomPosition, room: Room, destinationRoomName: RoomName, waypoints: RoomName[]): MoveToRoomStatus {
+    if (position.roomName === destinationRoomName) {
+      return "close to destination"
+    }
+
     const currentDestination = waypoints[0] ?? destinationRoomName
     const exit = room.findExitTo(currentDestination)
     if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
@@ -185,26 +194,26 @@ class Quad {
       if (position.y > (GameConstants.room.edgePosition.min + threshold)) {
         return "in progress"
       }
-      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
+      return (nextRoomName === destinationRoomName) ? "close to destination" : "close to room exit"
     case BOTTOM:
       if (position.y < (GameConstants.room.edgePosition.max - threshold)) {
         return "in progress"
       }
-      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
+      return (nextRoomName === destinationRoomName) ? "close to destination" : "close to room exit"
     case LEFT:
       if (position.x > (GameConstants.room.edgePosition.min + threshold)) {
         return "in progress"
       }
-      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
+      return (nextRoomName === destinationRoomName) ? "close to destination" : "close to room exit"
     case RIGHT:
       if (position.x < (GameConstants.room.edgePosition.max - threshold)) {
         return "in progress"
       }
-      return (nextRoomName !== destinationRoomName) ? "close to destination" : "close to room exit"
+      return (nextRoomName === destinationRoomName) ? "close to destination" : "close to room exit"
     }
   }
 
-  protected align(): void {
+  public align(): void {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return
@@ -233,7 +242,35 @@ class Quad {
     })()
     // topRight.say(`${topRightPosition.x},${topRightPosition.y}`)
     topRight.say("align")
-    topRight.moveTo(topRightPosition)
+    if (topRight.pos.isEqualTo(topRightPosition) === true) {
+      const followerDirections: DirectionConstant[] = [
+        LEFT,
+        BOTTOM_LEFT,
+        BOTTOM,
+      ]
+      for (const positionDirection of followerDirections) {
+        const followerPosition = topRight.pos.positionTo(positionDirection)
+        if (followerPosition == null) {
+          continue
+        }
+        const hasObstacle = ((): boolean => {
+          switch (getFieldType(followerPosition)) {
+          case "plain":
+          case "swamp":
+            return false
+          case "obstacle":
+            return true
+          }
+        })()
+        if (hasObstacle === true) {
+          const direction = oppositeDirections(positionDirection)[Game.time % 3] ?? oppositeDirection(positionDirection)
+          topRight.move(direction)
+          break
+        }
+      }
+    } else {
+      topRight.moveTo(topRightPosition)
+    }
 
     this.moveFollowersToNextPosition(topRightPosition, 2)
   }
@@ -252,7 +289,7 @@ class Quad {
     return this.isQuadForm()
   }
 
-  protected isQuadForm(): boolean {
+  public isQuadForm(): boolean {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return false
@@ -337,6 +374,29 @@ class Quad {
   }
 }
 
+const walkableStructures: StructureConstant[] = [
+  STRUCTURE_CONTAINER,
+  STRUCTURE_ROAD,
+]
+
+function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
+  const terrain = position.lookFor(LOOK_TERRAIN)[0]
+  switch (terrain) {
+  case "plain": {
+    const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
+    return isObstacle === true ? "obstacle" : "plain"
+  }
+  case "swamp": {
+    const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
+    return isObstacle === true ? "obstacle" : "swamp"
+  }
+  case "wall":
+    return "obstacle"
+  default:
+    PrimitiveLogger.programError(`Unexpected terrain ${terrain} at ${position} in ${roomLink(position.roomName)}`)
+    return "obstacle"
+  }
+}
 
 function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
   const room = Game.rooms[roomName]
@@ -372,50 +432,29 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
     return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
   }
   const swampCost = GameConstants.pathFinder.costs.swamp
-  const walkableStructures: StructureConstant[] = [
-    STRUCTURE_CONTAINER,
-    STRUCTURE_ROAD,
-  ]
 
   for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
     for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
-      const terrain = position.lookFor(LOOK_TERRAIN)[0]
-      switch (terrain) {
-      case "plain": {
-        const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
-        if (isObstacle === true) {
-          costMatrix.set(x, y, obstacleCost)
-          getObstaclePositions(position).forEach(p => {
-            costMatrix.set(p.x, p.y, obstacleCost)
-          })
-        }
+      const fieldType = getFieldType(position)
+      switch (fieldType) {
+      case "plain":
         break
-      }
-      case "swamp": {
-        const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
-        if (isObstacle === true) {
-          costMatrix.set(x, y, obstacleCost)
-          getObstaclePositions(position).forEach(p => {
-            costMatrix.set(p.x, p.y, obstacleCost)
-          })
-        } else {
-          getObstaclePositions(position).forEach(p => {
-            costMatrix.set(x, y, swampCost)
-            if (costMatrix.get(p.x, p.y) < swampCost) {
-              costMatrix.set(p.x, p.y, swampCost)
-            }
-          })
-        }
+
+      case "swamp":
+        getObstaclePositions(position).forEach(p => {
+          costMatrix.set(x, y, swampCost)
+          if (costMatrix.get(p.x, p.y) < swampCost) {
+            costMatrix.set(p.x, p.y, swampCost)
+          }
+        })
         break
-      }
-      case "wall":
+
+      case "obstacle":
         costMatrix.set(x, y, obstacleCost)
         getObstaclePositions(position).forEach(p => {
           costMatrix.set(p.x, p.y, obstacleCost)
         })
-        break
-      default:
         break
       }
     }
