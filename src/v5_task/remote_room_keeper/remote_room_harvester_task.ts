@@ -137,7 +137,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     ]
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    if (targetRoom != null) {
+    if (targetRoom != null && (targetRoom.controller == null || targetRoom.controller.reservation == null || targetRoom.controller.reservation.username === Game.user.name)) {
       const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
       if (invaded !== true) {
         const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
