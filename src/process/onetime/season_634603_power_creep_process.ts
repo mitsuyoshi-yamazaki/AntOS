@@ -215,7 +215,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
         powerCreep.moveTo(store, defaultMoveToOptions())
       }
-      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 200) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
         powerCreep.transfer(store, RESOURCE_OPS, 100)
       }
       break
