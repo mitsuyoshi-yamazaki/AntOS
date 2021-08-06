@@ -89,13 +89,15 @@ export class RemoteRoomHaulerTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
-    const hasEnergy = energySources.some(source => getEnergyAmountOf(source) > 500)
-    if (hasEnergy === true) {
-      const targetRoom = World.rooms.get(this.targetRoomName)
-      if (targetRoom != null) {
-        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
-        if (invaded !== true) {
-          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
+    if (objects.activeStructures.storage != null) {
+      const hasEnergy = energySources.some(source => getEnergyAmountOf(source) > 500)
+      if (hasEnergy === true) {
+        const targetRoom = World.rooms.get(this.targetRoomName)
+        if (targetRoom != null) {
+          const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+          if (invaded !== true) {
+            problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
+          }
         }
       }
     }

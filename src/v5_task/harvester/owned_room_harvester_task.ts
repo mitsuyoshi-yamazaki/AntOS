@@ -125,8 +125,11 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source)
     ]
+
+    if (objects.activeStructures.storage != null) {
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source))
+    }
 
     this.checkProblemFinders(problemFinders)
 

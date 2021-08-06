@@ -136,12 +136,14 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const problemFinders: ProblemFinder[] = [
     ]
 
-    const targetRoom = World.rooms.get(this.targetRoomName)
-    if (targetRoom != null && (targetRoom.controller == null || targetRoom.controller.reservation == null || targetRoom.controller.reservation.username === Game.user.name)) {
-      const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
-      if (invaded !== true) {
-        const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
-        problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
+    if (objects.activeStructures.storage != null) {
+      const targetRoom = World.rooms.get(this.targetRoomName)
+      if (targetRoom != null && (targetRoom.controller == null || targetRoom.controller.reservation == null || targetRoom.controller.reservation.username === Game.user.name)) {
+        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+        if (invaded !== true) {
+          const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
+          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
+        }
       }
     }
 
@@ -299,6 +301,16 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return
     }
 
+    const positions: { [sourceId: string]: RoomPosition } = {
+      "60d686cb0dd3bc23acfcb210": new RoomPosition(13, 40, "W5S27")
+    }
+
+    const cachedPosition = positions[source.id]
+
+    if (cachedPosition != null) {
+      this.addChildTask(BuildContainerTask.create(roomName, cachedPosition, this.taskIdentifier))
+      return
+    }
     const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
     if (pathStartPosition == null) {
       if ((Game.time % 17) === 11) {

@@ -85,8 +85,12 @@ export class OwnedRoomHaulerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
     ]
+
+    if (objects.activeStructures.storage != null) {
+      const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
+      problemFinders.push(problemFinder)
+    }
 
     this.checkProblemFinders(problemFinders)
 
