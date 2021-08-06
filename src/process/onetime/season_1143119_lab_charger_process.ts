@@ -164,6 +164,17 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   }
 
   private creepTask(creep: Creep, terminal: StructureTerminal, labs: LabInfo[]): CreepTask | null {
+    if (creep.ticksToLive != null && creep.ticksToLive < 50) {
+      return null
+    }
+
+    if (creep.store.getUsedCapacity() > 0) {
+      const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
+      if (resourceType != null && labs.every(l => l.boost !== resourceType)) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+      }
+    }
+
     for (const labInfo of labs) {
       if (creep.store.getUsedCapacity(labInfo.boost) <= 0) {
         continue
@@ -182,6 +193,15 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
         continue
       }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, labInfo.boost))
+    }
+
+    if (creep.store.getUsedCapacity() <= 0) {
+      for (const labInfo of labs) {
+        if (labInfo.lab.mineralType == null || labInfo.lab.mineralType === labInfo.boost) {
+          continue
+        }
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
+      }
     }
     return null
   }
