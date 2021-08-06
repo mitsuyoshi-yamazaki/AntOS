@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName, roomTypeOf } from "utility/room_name"
+import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -22,6 +22,11 @@ interface QuadState {
 
 let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
 
+/**
+ * - [ ] 移動時のドラクエ
+ * - [ ] Quadに移行
+ * - [ ] TOP/RIGHT方向へ部屋移動する際に崩れる問題
+ */
 class Quad {
   public get numberOfCreeps(): number {
     return this.creeps.length
@@ -206,13 +211,17 @@ class Quad {
 
   private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number): void {
     if (nextPosition.x <= 1) {
-      exitingDirection = LEFT
+      if (exitingDirection !== RIGHT) {
+        exitingDirection = LEFT
+      }
     } else if (nextPosition.x >= 49) {
       exitingDirection = RIGHT
     } else if (nextPosition.y <= 0) {
       exitingDirection = TOP
     } else if (nextPosition.y >= 48) {
-      exitingDirection = BOTTOM
+      if (exitingDirection !== TOP) {
+        exitingDirection = BOTTOM
+      }
     } else {
       exitingDirection = null
     }
@@ -280,7 +289,8 @@ export class Season1488500QuadProcess implements Process, Procedural, MessageObs
       }
       return decodeRoomPosition(state.destination)
     })()
-    return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
+    // return new Season1488500QuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, destination, state.quadState)
+    return new Season1488500QuadProcess(state.l, state.i, state.p, "W20S21", ["W20S23"], destination, state.quadState)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1488500QuadProcess {
@@ -397,60 +407,27 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
     return costMatrix
   }
 
-  const nextToSwampCost = 3
-  for (let y = 0; y < GameConstants.room.edgePosition.max; y += 1) {
-    for (let x = 0; x < GameConstants.room.edgePosition.max; x += 1) {
-      const position = new RoomPosition(x, y, roomName)
-      const terrain = position.lookFor(LOOK_TERRAIN)[0]
-      switch (terrain) {
-      case "plain":
-        break
-      case "swamp":
-        position.neighbours().forEach(p => {
-          if (costMatrix.get(p.x, p.y) < nextToSwampCost) {
-            costMatrix.set(p.x, p.y, nextToSwampCost)
-          }
-        })
-        break
-      case "wall":
-        position.neighbours().forEach(p => {
-          costMatrix.set(p.x, p.y, OBSTACLE_COST)
-        })
-        break
-      default:
-        break
-      }
+  if (room.roomType === "source_keeper") {
+    const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+      excludeItself: false,
+      excludeTerrainWalls: false,
+      excludeStructures: false,
+      excludeWalkableStructures: false,
     }
+    const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
+      .filter(creep => creep.owner.username === SourceKeeper.username)
+    const positionsToAvoid = sourceKeepers
+      .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
+
+    positionsToAvoid.forEach(position => {
+      // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+      costMatrix.set(position.x, position.y, OBSTACLE_COST)
+    })
   }
-
-  return costMatrix
-}
-
-function quadSourceKeeperRoomCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
-  const room = Game.rooms[roomName]
-  if (room == null) {
-    return costMatrix
-  }
-
-  const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-    excludeItself: false,
-    excludeTerrainWalls: false,
-    excludeStructures: false,
-    excludeWalkableStructures: false,
-  }
-  const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
-    .filter(creep => creep.owner.username === SourceKeeper.username)
-  const positionsToAvoid = sourceKeepers
-    .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
-
-  positionsToAvoid.forEach(position => {
-    // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-    costMatrix.set(position.x, position.y, OBSTACLE_COST)
-  })
 
   const nextToSwampCost = 3
-  for (let y = 0; y < GameConstants.room.edgePosition.max; y += 1) {
-    for (let x = 0; x < GameConstants.room.edgePosition.max; x += 1) {
+  for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
+    for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
       const terrain = position.lookFor(LOOK_TERRAIN)[0]
       switch (terrain) {
@@ -507,9 +484,8 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
       return nextWaypoint
     })()
 
-    const isSourceKeeperRoom = roomTypeOf(creepRoom.name) === "source_keeper"
     const pathFinderOptions: FindPathOpts = {
-      costCallback: isSourceKeeperRoom ? quadSourceKeeperRoomCostCallback : quadCostCallback,
+      costCallback: quadCostCallback,
       ignoreCreeps: true,
       maxRooms: 1,
     }
