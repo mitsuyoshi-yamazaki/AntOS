@@ -147,7 +147,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
+      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
