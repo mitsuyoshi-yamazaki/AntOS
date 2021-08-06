@@ -131,7 +131,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     if (energyStore == null) {
       return
     }
-    if (creeps.length < 1) {
+    if (creeps.length < 1 && targetRoomObjects.activeStructures.terminal == null) {
       this.requestCreep()
     }
 
