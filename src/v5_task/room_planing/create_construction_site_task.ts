@@ -72,12 +72,13 @@ export class CreateConstructionSiteTask extends Task {
     if (Game.time % 17 !== 3) {
       return TaskStatus.InProgress
     }
-    this.placeConstructionSite(objects.controller.room, objects.flags)
+    const centerPosition: RoomPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
+    this.placeConstructionSite(objects.controller.room, objects.flags, centerPosition)
 
     return TaskStatus.InProgress
   }
 
-  private placeConstructionSite(room: Room, flags: Flag[]): void {
+  private placeConstructionSite(room: Room, flags: Flag[], centerPosition: RoomPosition): void {
     if (room.controller == null) {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
@@ -104,7 +105,7 @@ export class CreateConstructionSiteTask extends Task {
         return -1
       }
       if (lPriority === rPriority) {
-        return -1
+        return lhs.pos.getRangeTo(centerPosition) - rhs.pos.getRangeTo(centerPosition)
       }
       return lPriority < rPriority ? -1 : 1
     })
