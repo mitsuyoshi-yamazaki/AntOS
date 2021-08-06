@@ -120,6 +120,9 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season1521073SendResourceProcess":
       result = this.launchSeason1521073SendResourceProcess()
       break
+    case "Season1536602QuadAttackerProcess":
+      result = this.launchSeason1536602QuadAttackerProcess()
+      break
     default:
       break
     }
@@ -767,9 +770,17 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("targets")
     }
     const targets = rawTargets.split(",")
+    const rawTier = args.get("tire")
+    if (rawTier == null) {
+      return this.missingArgumentError("tire")
+    }
+    const tire = parseInt(rawTier, 10)
+    if (isNaN(tire) === true || [0, 1].includes(tire) === false) {
+      return Result.Failed(`Not supported tire ${tire}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[])
+      return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], tire as 0 | 1)
     })
     return Result.Succeeded(process)
   }
