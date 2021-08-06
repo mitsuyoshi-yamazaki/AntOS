@@ -136,8 +136,8 @@ class Quad {
     if (topRight == null) {
       return
     }
-    const maxRange = this.getMinRangeTo(position)
-    if (maxRange != null && maxRange <= (range + 1)) {
+    const maxRange = this.getMaxRangeTo(position)
+    if (maxRange != null && maxRange <= range) {
       topRight.say("ok")
       return
     }
