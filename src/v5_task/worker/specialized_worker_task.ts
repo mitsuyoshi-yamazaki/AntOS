@@ -18,8 +18,6 @@ import { bodyCost, createCreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
 
-const numberOfCreeps = 3
-
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
   r: RoomName
@@ -32,6 +30,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
 
   private readonly codename: string
+  private readonly numberOfCreeps: number
 
   private constructor(
     public readonly startTime: number,
@@ -42,6 +41,12 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
+
+    const numberOfCreeps: { [roomName: string]: number } = {
+      "W6S29": 6,
+      "W21S23": 5,
+    }
+    this.numberOfCreeps = numberOfCreeps[this.roomName] ?? 3
   }
 
   public encode(): SpecializedWorkerTaskState {
@@ -133,6 +138,15 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
       }
 
+      const roomInfo = Memory.v6RoomInfo[objects.controller.room.name]
+      if (roomInfo != null && roomInfo.roomType === "owned") {
+        if (roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+          const storage = objects.activeStructures.storage
+          if (storage != null && storage.store.getFreeCapacity(RESOURCE_ENERGY) > 1000) {
+            return MoveToTargetTask.create(TransferEnergyApiWrapper.create(storage))
+          }
+        }
+      }
       creep.say("no task")
       return null
     }
@@ -167,7 +181,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps,
+      numberOfCreeps: this.numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,
@@ -179,7 +193,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     return {
       necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps,
+      numberOfCreeps: this.numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,
