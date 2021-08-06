@@ -14,6 +14,9 @@ import { HRAQuad, QuadState } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 
+type BoostTire = 0 | 1
+type AttackTarget = AnyCreep | AnyStructure
+
 const testing = false as boolean
 
 const testBody: BodyPartConstant[] = [
@@ -33,8 +36,6 @@ const tire0CreepBody: BodyPartConstant[] = [
 const tire1CreepBody: BodyPartConstant[] = [
   TOUGH, MOVE,  // TODO:
 ]
-
-type BoostTire = 0 | 1
 
 const tire0Boosts: MineralBoostConstant[] = [
 ]
@@ -57,13 +58,14 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 
   targetRoomName: RoomName
   waypoints: RoomName[]
-  predefinedTargetIds: Id<AnyStructure | AnyCreep>[]
+  predefinedTargetIds: Id<AttackTarget>[]
   boostTire: BoostTire
   quadState: QuadState
 }
 
 // tire 0
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 tire=0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 tire=0 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -79,7 +81,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private readonly predefinedTargetIds: Id<AnyStructure | AnyCreep>[],
+    private readonly predefinedTargetIds: Id<AttackTarget>[],
     private readonly boostTire: BoostTire,
     private quadState: QuadState,
   ) {
@@ -123,7 +125,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     return new Season1536602QuadAttackerProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.predefinedTargetIds, state.boostTire, state.quadState)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AnyStructure>[], boostTire: BoostTire): Season1536602QuadAttackerProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], boostTire: BoostTire): Season1536602QuadAttackerProcess {
     const quadState: QuadState = {
       creepNames: [],
     }
@@ -139,7 +141,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     if (message.length <= 0) {
       return "Empty message"
     }
-    this.predefinedTargetIds.push(message as Id<AnyStructure | AnyCreep>)
+    this.predefinedTargetIds.unshift(message as Id<AnyStructure | AnyCreep>)
     return "ok"
   }
 
@@ -169,10 +171,11 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     if (this.quadState.creepNames.length > 0) {
       const quad = new HRAQuad(this.quadState.creepNames)
       if (quad.numberOfCreeps > 0) {
-        this.runQuad(quad)
+        const { attackingTarget } = this.runQuad(quad)
         const quadRoom = quad.topRightRoom
         const roomInfo = quadRoom != null ? ` in ${roomLink(quadRoom.name)}` : ""
-        processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}`)
+        const targetInfo = attackingTarget != null ? ` target: ${attackingTarget.pos}` : ""
+        processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}${targetInfo}`)
         return
       }
       processLog(this, "Quad dead")
@@ -194,33 +197,34 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     })
   }
 
-  private runQuad(quad: HRAQuad): void {
+  private runQuad(quad: HRAQuad): { attackingTarget: AttackTarget | null} {
     quad.heal()
     if (quad.inRoom(this.targetRoomName) !== true) {
       this.moveQuadToRoom(quad)
-      return
+      return {attackingTarget: null}
     }
-    this.attackQuad(quad)
+    return this.attackQuad(quad)
   }
 
-  private attackQuad(quad: HRAQuad): void {
+  private attackQuad(quad: HRAQuad): { attackingTarget: AttackTarget | null } {
     const nearbyHostileCreep = this.nearbyHostileAttacker(quad)
     if (nearbyHostileCreep != null) {
       if (quad.isQuadForm() !== true) {
         quad.align()
       }
       quad.attack(nearbyHostileCreep)
-      return
+      return {attackingTarget: nearbyHostileCreep}
     }
 
     const target = this.attackTarget(quad)
     if (target != null) {
       quad.moveQuadTo(target.pos, 3)
       quad.attack(target)
-      return
+      return {attackingTarget: target}
     }
 
     quad.say("nth to do")
+    return {attackingTarget: null}
   }
 
   private attackTarget(quad: HRAQuad): AnyStructure | AnyCreep | null {
@@ -230,7 +234,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     }
     for (const targetId of this.predefinedTargetIds) {
       const target = Game.getObjectById(targetId)
-      if (target != null) {
+      if (target != null && target.room != null && target.room.name === room.name) {
         return target
       }
     }
@@ -251,17 +255,28 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       return null
     }
     const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
-    const closestAttacker = position.findInRange(FIND_HOSTILE_CREEPS, 4)
-      .filter(creep => {
-        if (whitelist.includes(creep.owner.username) === true) {
-          return
-        }
-        return creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0
-      })
-      .sort((lhs, rhs) => {
-        return (lhs.pos.getRangeTo(position)) - (rhs.pos.getRangeTo(position))
-      })[0] ?? null
-    return  closestAttacker
+    const attackers: Creep[] = []
+    const workers: Creep[] = []
+    position.findInRange(FIND_HOSTILE_CREEPS, 4).forEach(creep => {
+      if (whitelist.includes(creep.owner.username) === true) {
+        return
+      }
+      if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
+        attackers.push(creep)
+      } else {
+        workers.push(creep)
+      }
+    })
+
+    const distanceSort = (lhs: Creep, rhs: Creep) => {
+      return (lhs.pos.getRangeTo(position)) - (rhs.pos.getRangeTo(position))
+    }
+    const closestAttacker = attackers.sort(distanceSort)[0]
+    if (closestAttacker != null) {
+      return closestAttacker
+    }
+
+    return  workers.sort(distanceSort)[0] ?? null
   }
 
   private moveQuadToRoom(quad: HRAQuad): void {
