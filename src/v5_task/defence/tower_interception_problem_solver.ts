@@ -77,10 +77,13 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
         }
         this.targetId = null
       }
-      if (this.roomName === "W6S29" && (Game.time % 17) < 8) {
+      if (this.roomName === "W6S27") {
         const min = GameConstants.room.edgePosition.min + 2
         const max = GameConstants.room.edgePosition.max - 2
         const hostileInsideRoom = hostileCreeps.filter(creep => {
+          if (creep.pos.y >= 25 && creep.pos.x <= 10) {
+            return false
+          }
           if (creep.pos.x < (min + 2) || creep.pos.x > (max - 2) || creep.pos.y < min || creep.pos.y > max) {
             return false
           }
