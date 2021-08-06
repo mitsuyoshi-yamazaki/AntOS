@@ -1,8 +1,9 @@
 import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
+import { ProcessId } from "process/process"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
-const veryLargeTab = 40
+const veryLargeTab = 50
 const mediumTab = 20
 const smallTab = 10
 type Tab = number
@@ -18,19 +19,20 @@ export class ProcessCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     if (this.args[0] != null) {
-      return this.detailProcess(this.args[0])
+      const processId = parseInt(this.args[0], 10)
+      if (isNaN(processId) === true) {
+        return this.listProcess(this.args[0])
+      } else {
+        return this.showProcessDetail(processId)
+      }
     }
     return this.listProcess()
   }
 
-  private detailProcess(processId: string): CommandExecutionResult {
-    const parsedId = parseInt(processId, 10)
-    if (isNaN(parsedId)) {
-      return `Invalid process ID: ${processId}`
-    }
-    const processInfo = OperatingSystem.os.processInfoOf(parsedId)
+  private showProcessDetail(processId: ProcessId): CommandExecutionResult {
+    const processInfo = OperatingSystem.os.processInfoOf(processId)
     if (processInfo == null) {
-      return `No process for process ID ${parsedId}`
+      return `No process for process ID ${processId}`
     }
 
     if (this.options.get("-m") != null) {
@@ -129,14 +131,18 @@ export class ProcessCommand implements ConsoleCommand {
     }
   }
 
-  private listProcess(): CommandExecutionResult {
+  private listProcess(filterTypeName?: string): CommandExecutionResult {
     const tab = (str: string, tabs: Tab): string => this.tab(str, tabs)
 
     const startString = `${tab("index", smallTab)}${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
-    return OperatingSystem.os.listAllProcesses().reduce((result, current, index) => {
-      const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
-      return `${result}\n${tab(`${index}`, smallTab)}${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
-    }, startString)
+    return OperatingSystem.os.listAllProcesses()
+      .reduce((result, current, index) => {
+        if (filterTypeName != null && current.type !== filterTypeName) {
+          return result
+        }
+        const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
+        return `${result}\n${tab(`${index}`, smallTab)}${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
+      }, startString)
   }
 
   // ---- Text ---- //
