@@ -406,6 +406,11 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
   if (room == null) {
     return costMatrix
   }
+  // for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) { // FixMe:
+  //   for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
+  //     room.visual.text(`${costMatrix.get(x, y)}`, x, y)
+  //   }
+  // }
 
   if (room.roomType === "source_keeper") {
     const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
@@ -435,22 +440,45 @@ function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatri
   }
   const swampCost = GameConstants.pathFinder.costs.swamp
   const obstacleCost = GameConstants.pathFinder.costs.obstacle
+  const walkableStructures: StructureConstant[] = [
+    STRUCTURE_CONTAINER,
+    STRUCTURE_ROAD,
+  ]
 
   for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
     for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
       const position = new RoomPosition(x, y, roomName)
       const terrain = position.lookFor(LOOK_TERRAIN)[0]
       switch (terrain) {
-      case "plain":
+      case "plain": {
+        const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
+        if (isObstacle === true) {
+          costMatrix.set(x, y, obstacleCost)
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(p.x, p.y, obstacleCost)
+          })
+        }
         break
-      case "swamp":
-        getObstaclePositions(position).forEach(p => {
-          if (costMatrix.get(p.x, p.y) < swampCost) {
-            costMatrix.set(p.x, p.y, swampCost)
-          }
-        })
+      }
+      case "swamp": {
+        const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
+        if (isObstacle === true) {
+          costMatrix.set(x, y, obstacleCost)
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(p.x, p.y, obstacleCost)
+          })
+        } else {
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(x, y, swampCost)
+            if (costMatrix.get(p.x, p.y) < swampCost) {
+              costMatrix.set(p.x, p.y, swampCost)
+            }
+          })
+        }
         break
+      }
       case "wall":
+        costMatrix.set(x, y, obstacleCost)
         getObstaclePositions(position).forEach(p => {
           costMatrix.set(p.x, p.y, obstacleCost)
         })
