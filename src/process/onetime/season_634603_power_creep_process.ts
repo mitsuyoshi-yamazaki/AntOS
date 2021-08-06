@@ -95,19 +95,20 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     const store = ((): StructureTerminal | StructureStorage | null => {
       const terminal = objects.activeStructures.terminal
-      if (terminal != null && terminal.store.getFreeCapacity() > 100000) {
+      if (terminal != null && terminal.store.getFreeCapacity() > 10000) {
         return terminal
       }
       const storage = objects.activeStructures.storage
-      if (storage != null && storage.store.getFreeCapacity() > 100000) {
+      if (storage != null && storage.store.getFreeCapacity() > 10000) {
         return storage
       }
       return null
     })()
 
-    if (store != null) {
-      this.runGenerateOps(powerCreep, isMoving, store)
+    if (store == null) {
+      powerCreep.say("no storage")
     }
+    this.runGenerateOps(powerCreep, isMoving, store)
   }
 
   private hasPower(powerCreep: PowerCreep, power: PowerConstant): boolean {
@@ -196,7 +197,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage): void {
+  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage | null): void {
     if (this.hasPower(powerCreep, PWR_GENERATE_OPS) !== true) {
       return
     }
@@ -208,6 +209,9 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_TIRED:
+      if (store == null) {
+        break
+      }
       if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
         powerCreep.moveTo(store, defaultMoveToOptions())
       }
