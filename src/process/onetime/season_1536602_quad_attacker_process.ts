@@ -14,10 +14,19 @@ import { HRAQuad, QuadState } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 
-type BoostTire = 0 | 1
 type AttackTarget = AnyCreep | AnyStructure
 
-const testing = false as boolean
+const season1536602QuadAttackerProcessCreepType = [
+  "test",
+  "tire0",
+  "tire1",
+] as const
+type Season1536602QuadAttackerProcessCreepType = typeof season1536602QuadAttackerProcessCreepType[number]
+
+export const isConsoleCommand = (obj: string): obj is Season1536602QuadAttackerProcessCreepType => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return season1536602QuadAttackerProcessCreepType.includes(obj as any)
+}
 
 const testBody: BodyPartConstant[] = [
   RANGED_ATTACK, MOVE, MOVE, HEAL,
@@ -59,7 +68,7 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
   targetRoomName: RoomName
   waypoints: RoomName[]
   predefinedTargetIds: Id<AttackTarget>[]
-  boostTire: BoostTire
+  creepType: Season1536602QuadAttackerProcessCreepType
   quadState: QuadState
 }
 
@@ -82,28 +91,28 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private readonly predefinedTargetIds: Id<AttackTarget>[],
-    private readonly boostTire: BoostTire,
+    private readonly creepType: Season1536602QuadAttackerProcessCreepType,
     private quadState: QuadState,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
 
-    if (testing === true) {
+    switch (this.creepType) {
+    case "test":
       this.boosts = [RESOURCE_KEANIUM_OXIDE]
       this.creepRole = creepRoles
       this.creepBody = testBody
-    } else {
+      break
+    case "tire0":
       this.creepRole = creepRoles
-      switch (this.boostTire) {
-      case 0:
-        this.boosts = tire0Boosts
-        this.creepBody = tire0CreepBody
-        break
-      case 1:
-        this.boosts = tire1Boosts
-        this.creepBody = tire1CreepBody
-        break
-      }
+      this.boosts = tire0Boosts
+      this.creepBody = tire0CreepBody
+      break
+    case "tire1":
+      this.creepRole = creepRoles
+      this.boosts = tire1Boosts
+      this.creepBody = tire1CreepBody
+      break
     }
   }
 
@@ -116,20 +125,20 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       targetRoomName: this.targetRoomName,
       waypoints: this.waypoints,
       predefinedTargetIds: this.predefinedTargetIds,
-      boostTire: this.boostTire,
+      creepType: this.creepType,
       quadState: this.quadState,
     }
   }
 
   public static decode(state: Season1536602QuadAttackerProcessState): Season1536602QuadAttackerProcess {
-    return new Season1536602QuadAttackerProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.predefinedTargetIds, state.boostTire, state.quadState)
+    return new Season1536602QuadAttackerProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.predefinedTargetIds, state.creepType ?? "tire0", state.quadState)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], boostTire: BoostTire): Season1536602QuadAttackerProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], creepType: Season1536602QuadAttackerProcessCreepType): Season1536602QuadAttackerProcess {
     const quadState: QuadState = {
       creepNames: [],
     }
-    return new Season1536602QuadAttackerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, predefinedTargetIds, boostTire, quadState)
+    return new Season1536602QuadAttackerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, predefinedTargetIds, creepType, quadState)
   }
 
   public processShortDescription(): string {
@@ -155,8 +164,12 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
 
     const creepCount = 4//testing ? 1 : 4
     const priority = ((): CreepSpawnRequestPriority => {
-      if (testing === true) {
+      switch (this.creepType) {
+      case "test":
         return CreepSpawnRequestPriority.High
+      case "tire0":
+      case "tire1":
+        break
       }
       if (this.quadState.creepNames.length <= 0) {
         return CreepSpawnRequestPriority.Low
@@ -257,7 +270,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
     const attackers: Creep[] = []
     const workers: Creep[] = []
-    position.findInRange(FIND_HOSTILE_CREEPS, 4).forEach(creep => {
+    position.findInRange(FIND_HOSTILE_CREEPS, 3).forEach(creep => {
       if (whitelist.includes(creep.owner.username) === true) {
         return
       }

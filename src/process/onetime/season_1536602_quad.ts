@@ -17,8 +17,11 @@ type MoveToRoomStatus = "in progress" | "close to room exit" | "close to destina
 let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
 
 /**
- * - [ ] align時に余裕がないことを検出する
  * - [ ] 経路探索、特にRIGHTが障害物にならない問題がある
+ * - [ ] Rampartに近づきすぎる問題
+ * - [ ] 複数のtargetを指向できない問題
+ * - [ ] ダメージを受けたら退避
+ * - [ ] 手動で左へ移動できない
  */
 class Quad {
   public get numberOfCreeps(): number {

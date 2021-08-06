@@ -770,11 +770,11 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("targets")
     }
     const targets = rawTargets.split(",")
-    const rawTier = args.get("tire")
-    if (rawTier == null) {
-      return this.missingArgumentError("tire")
+    const rawCreepType = args.get("creep_type")
+    if (rawCreepType == null) {
+      return this.missingArgumentError("creep_type")
     }
-    const tire = parseInt(rawTier, 10)
+    const creepType = parseInt(rawTier, 10)
     if (isNaN(tire) === true || [0, 1].includes(tire) === false) {
       return Result.Failed(`Not supported tire ${tire}`)
     }
