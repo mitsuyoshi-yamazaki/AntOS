@@ -22,7 +22,7 @@ let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
  * - [ ] 複数のtargetを指向できない問題
  * - [ ] ダメージを受けたら退避
  * - [ ] 手動で左へ移動できない
- * - [ ] Processの自動終了
+ * - [ ] 部屋に入る瞬間に隊列が崩れる
  */
 class Quad {
   public get numberOfCreeps(): number {

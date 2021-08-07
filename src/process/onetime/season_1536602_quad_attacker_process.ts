@@ -19,8 +19,8 @@ type AttackTarget = AnyCreep | AnyStructure
 
 export const season1536602QuadAttackerProcessCreepType = [
   "test",
-  "tire0",
-  "tire1",
+  "tire0-300",
+  "tire1-1200",
 ] as const
 type Season1536602QuadAttackerProcessCreepType = typeof season1536602QuadAttackerProcessCreepType[number]
 
@@ -85,11 +85,18 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
   quadState: QuadState
 }
 
+
+// W2S24
 // tire 0
-// W3S24
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610899a0706bd8222c8ec63e,6108993836a5b7220d5a280b")
+// tire 1
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire1 targets=")
+
+// W9S24
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 creep_type=tire0 targets=60fc5b672d39b65e8b50d195,60fc588a396ad54d58286b5d")
 
 // tire 1
+// W13S27
 // 下-右
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
 // 上-右
@@ -126,12 +133,12 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       this.creepRole = creepRoles
       this.creepBody = testBody
       break
-    case "tire0":
+    case "tire0-300":
       this.creepRole = creepRoles
       this.boosts = tire0Boosts
       this.creepBody = tire0CreepBody
       break
-    case "tire1":
+    case "tire1-1200":
       this.creepRole = creepRoles
       this.boosts = tire1Boosts
       this.creepBody = tire1CreepBody
@@ -190,8 +197,8 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       switch (this.creepType) {
       case "test":
         return CreepSpawnRequestPriority.High
-      case "tire0":
-      case "tire1":
+      case "tire0-300":
+      case "tire1-1200":
         break
       }
       if (this.quadState.creepNames.length <= 0) {
