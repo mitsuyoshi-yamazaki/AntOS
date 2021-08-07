@@ -365,9 +365,9 @@ export class OwnedRoomObjects {
         }
       }
     }
-    if (chargeableStructures.length <= 0) {
-      chargeableStructures.push(...chargeableLabs)
-    }
+    // if (chargeableStructures.length <= 0) {
+    chargeableStructures.push(...chargeableLabs)
+    // }
     if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
       chargeableStructures.push(nuker)
     }
