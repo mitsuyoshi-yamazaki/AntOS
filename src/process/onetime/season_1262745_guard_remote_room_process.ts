@@ -121,6 +121,15 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     if (creeps[0] == null || (creeps.length < this.numberOfCreeps && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
       const targetRoom = Game.rooms[this.targetRoomName]
       const shouldSendGuard = ((): boolean => {
+        const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
+        if (objects == null) {
+          return false
+        }
+        const energyAmount = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+          + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+        if (energyAmount < 50000) {
+          return false
+        }
         if (targetRoom == null) {
           return true
         }
