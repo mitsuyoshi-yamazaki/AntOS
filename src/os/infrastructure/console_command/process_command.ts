@@ -137,7 +137,7 @@ export class ProcessCommand implements ConsoleCommand {
     const startString = `${tab("index", smallTab)}${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
     return OperatingSystem.os.listAllProcesses()
       .reduce((result, current, index) => {
-        if (filterTypeName != null && current.type !== filterTypeName) {
+        if (filterTypeName != null && current.type.includes(filterTypeName) !== true) {
           return result
         }
         const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
