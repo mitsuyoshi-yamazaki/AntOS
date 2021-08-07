@@ -20,6 +20,9 @@ type AttackTarget = AnyCreep | AnyStructure
 export const season1536602QuadAttackerProcessCreepType = [
   "test",
   "tire0-300",
+  "tire1-750-mini-ra",
+  "tire1-750",
+  "tire1-750-ra",
   "tire1-1200",
 ] as const
 type Season1536602QuadAttackerProcessCreepType = typeof season1536602QuadAttackerProcessCreepType[number]
@@ -34,17 +37,43 @@ const testBody: BodyPartConstant[] = [
 ]
 
 const creepRoles: CreepRole[] = [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover]
-const tire0CreepBody: BodyPartConstant[] = [
-  TOUGH, TOUGH,
+const tire0D300CreepBody: BodyPartConstant[] = [
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-  MOVE, MOVE, MOVE,
+  RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL,
   MOVE, HEAL,
 ]
-const tire1CreepBody: BodyPartConstant[] = [
+const tire1D750MiniCreepBody: BodyPartConstant[] = [  // 5250Energy RCL7
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL,
+  MOVE, HEAL,
+]
+const tire1D750CreepBody: BodyPartConstant[] = [  // 6600Energy RCL8
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL,
+  MOVE, HEAL,
+]
+const tire1D1200CreepBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -59,9 +88,13 @@ const tire1CreepBody: BodyPartConstant[] = [
   MOVE, HEAL,
 ]
 
-const tire0Boosts: MineralBoostConstant[] = [
+const noBoosts: MineralBoostConstant[] = [
 ]
-const tire1Boosts: MineralBoostConstant[] = [
+const tire1HealMoveBoosts: MineralBoostConstant[] = [
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+]
+const tire1HealMoveRangedAttackBoosts: MineralBoostConstant[] = [
   RESOURCE_LEMERGIUM_OXIDE,
   RESOURCE_KEANIUM_OXIDE,
   RESOURCE_ZYNTHIUM_OXIDE,
@@ -87,24 +120,12 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 
 
 // W2S24
-// tire 0
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610899a0706bd8222c8ec63e,6108993836a5b7220d5a280b")
-// tire 1
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire1 targets=")
+// tire1-750-mini-ra
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire1-750-mini-ra targets=610899a0706bd8222c8ec63e,6108993836a5b7220d5a280b")
 
-// W9S24
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 creep_type=tire0 targets=60fc5b672d39b65e8b50d195,60fc588a396ad54d58286b5d")
-
-// tire 1
-// W13S27
-// 下-右
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
-// 上-右
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S26,W12S26,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
-// 下-下
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tire1 targets=61001cc1396ad5c67729e31c,61001cb55da6f74a2406bc2d")
-//
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W3S27 waypoints=W3S25 creep_type=tire1 targets=610c0e4236a5b755575bace9,610c0ec283089114a58108c0")
+// W13S27 下-下
+// tire0-300
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tire0-300 targets=61001ce3cb384f6a69de7b20,61001d1f5587d3796206f939")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -135,13 +156,28 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       break
     case "tire0-300":
       this.creepRole = creepRoles
-      this.boosts = tire0Boosts
-      this.creepBody = tire0CreepBody
+      this.boosts = noBoosts
+      this.creepBody = tire0D300CreepBody
+      break
+    case "tire1-750":
+      this.creepRole = creepRoles
+      this.boosts = tire1HealMoveBoosts
+      this.creepBody = tire1D750CreepBody
+      break
+    case "tire1-750-mini-ra":
+      this.creepRole = creepRoles
+      this.boosts = tire1HealMoveRangedAttackBoosts
+      this.creepBody = tire1D750MiniCreepBody
+      break
+    case "tire1-750-ra":
+      this.creepRole = creepRoles
+      this.boosts = tire1HealMoveRangedAttackBoosts
+      this.creepBody = tire1D750CreepBody
       break
     case "tire1-1200":
       this.creepRole = creepRoles
-      this.boosts = tire1Boosts
-      this.creepBody = tire1CreepBody
+      this.boosts = tire1HealMoveRangedAttackBoosts
+      this.creepBody = tire1D1200CreepBody
       break
     }
   }
