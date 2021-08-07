@@ -22,6 +22,7 @@ PowerCreep.create("power_creep_0000", POWER_CLASS.OPERATOR)
 Game.powerCreeps["power_creep_0000"].spawn(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
+Game.io("launch -l Season634603PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
 export class Season634603PowerCreepProcess implements Process, Procedural {
   private readonly identifier: string
@@ -90,7 +91,18 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     const spawn = objects.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
-      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
+      const opsStore = ((): StructureTerminal | StructureStorage | null => {
+        const storage = objects.activeStructures.storage
+        if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return storage
+        }
+        const terminal = objects.activeStructures.terminal
+        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return terminal
+        }
+        return null
+      })()
+      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
@@ -153,7 +165,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, isMoving: boolean): boolean {
+  private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, opsStore: StructureTerminal | StructureStorage | null, isMoving: boolean): boolean {
     if (this.hasPower(powerCreep, PWR_OPERATE_SPAWN) !== true) {
       return false
     }
@@ -167,6 +179,14 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     // if ((Game.time % 2000) < 1000) {
     //   return false
     // }
+
+    if (powerCreep.store.getUsedCapacity(RESOURCE_OPS) < 100) {
+      if (opsStore != null && powerCreep.withdraw(opsStore, RESOURCE_OPS, 100) === ERR_NOT_IN_RANGE && isMoving !== true) {
+        powerCreep.moveTo(opsStore, defaultMoveToOptions())
+        return true
+      }
+      return false
+    }
 
     const result = powerCreep.usePower(PWR_OPERATE_SPAWN, spawn)
 
