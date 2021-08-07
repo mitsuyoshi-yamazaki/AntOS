@@ -121,6 +121,7 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 
 // W2S24
 // tire1-750-mini-ra
+// 左下
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire1-750-mini-ra targets=610899a0706bd8222c8ec63e,6108993836a5b7220d5a280b")
 
 // W13S27 下-下
@@ -290,20 +291,24 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       })
       return {attackingTarget: null}
     }
-    return this.attackQuad(quad)
-  }
 
-  private attackQuad(quad: HRAQuad): { attackingTarget: AttackTarget | null } {
-    // const lowHpRampart =
     const nearbyHostileCreep = this.nearbyHostileAttacker(quad)
     if (nearbyHostileCreep != null) {
       if (quad.isQuadForm() !== true) {
         quad.align()
       }
       quad.attack(nearbyHostileCreep)
-      return {attackingTarget: nearbyHostileCreep}
+      return { attackingTarget: nearbyHostileCreep }
     }
 
+    // if () {
+
+    // }
+
+    return this.attackQuad(quad)
+  }
+
+  private attackQuad(quad: HRAQuad): { attackingTarget: AttackTarget | null } {
     const target = this.attackTarget(quad)
     if (target != null) {
       quad.moveQuadTo(target.pos, 3)
@@ -316,8 +321,9 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
   }
 
   private attackTarget(quad: HRAQuad): AnyStructure | AnyCreep | null {
+    const position = quad.topRightPosition
     const room = quad.topRightRoom
-    if (room == null) {
+    if (position == null || room == null) {
       return null
     }
     for (const targetId of this.predefinedTargetIds) {
@@ -327,12 +333,19 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       }
     }
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
+      STRUCTURE_STORAGE,
+      STRUCTURE_POWER_SPAWN,
+      STRUCTURE_EXTENSION,
       STRUCTURE_TERMINAL,
       STRUCTURE_SPAWN,
       STRUCTURE_TOWER,
     ]
     const targetStructure = room.find(FIND_HOSTILE_STRUCTURES).sort((lhs, rhs) => {
-      return targetPriority.indexOf(rhs.structureType) - targetPriority.indexOf(lhs.structureType)
+      const priority = targetPriority.indexOf(rhs.structureType) - targetPriority.indexOf(lhs.structureType)
+      if (priority !== 0) {
+        return priority
+      }
+      return lhs.pos.getRangeTo(position) - rhs.pos.getRangeTo(position)
     })[0]
     return targetStructure ?? null
   }

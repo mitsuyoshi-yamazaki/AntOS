@@ -56,6 +56,16 @@ class Quad {
     return this.creeps.every(creep => (creep.room.name === roomName))
   }
 
+  public quadDamage(): number {
+    return this.creeps.reduce((result, current) => {
+      return result + (current.hitsMax - current.hits)
+    }, 0)
+  }
+
+  // public damagePercent(): number {
+
+  // }
+
   public fleeFrom(position: RoomPosition): void {
     // TODO:
   }
@@ -147,7 +157,7 @@ class Quad {
     }
     const maxRange = this.getMaxRangeTo(position)
     if (maxRange != null && maxRange <= range) {
-      topRight.say("ok")
+      // topRight.say("ok")
       return
     }
 
