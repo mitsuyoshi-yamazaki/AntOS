@@ -349,6 +349,9 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
       if (whitelist.includes(creep.owner.username) === true) {
         return
       }
+      if (creep.pos.lookFor(LOOK_STRUCTURES).some(structure => (structure.structureType === STRUCTURE_RAMPART)) === true) {
+        return
+      }
       if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
         attackers.push(creep)
       } else {

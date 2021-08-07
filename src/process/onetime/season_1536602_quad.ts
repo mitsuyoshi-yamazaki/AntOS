@@ -574,7 +574,7 @@ export class HRAQuad extends Quad {
   }
 
   private attackCreep(creep: Creep, target: AnyCreep | AnyStructure): void {
-    if (creep.pos.isNearTo(target) === true) {
+    if (creep.pos.getRangeTo(target) <= 2) {
       creep.rangedMassAttack()
     } else {
       creep.rangedAttack(target)
