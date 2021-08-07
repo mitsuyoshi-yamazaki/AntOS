@@ -58,6 +58,8 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W6S29 waypoints=W14S30,W6S30")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W6S27 waypoints=W3S25,W6S25")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W3S26 waypoints=W3S25 creeps=1")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W8S29 waypoints=W14S30,W8S30 creeps=1")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creeps=2")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -116,7 +118,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
 
     if (creeps[0] == null || (creeps.length < this.numberOfCreeps && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
       const targetRoom = Game.rooms[this.targetRoomName]
-      if (targetRoom == null || targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}).length < 2) {
+      if (targetRoom == null || (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}).length < 2) || targetRoom.storage == null || targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
         this.requestCreep()
       }
     }
