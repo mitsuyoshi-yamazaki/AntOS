@@ -97,14 +97,14 @@ class Quad {
     const status = this.getMoveToRoomStatus(topRight.pos, topRight.room, destinationRoomName, waypoints)
     switch (status) {
     case "in progress":
-      moveToRoom(topRight, destinationRoomName, waypoints)
+      moveToRoom(topRight, destinationRoomName, waypoints, 3)
       this.follow()
       return
 
     case "close to room exit": {
       const quadRange = this.getMaxRangeTo(topRight.pos)
       if (quadRange != null && quadRange <= 5) {
-        moveToRoom(topRight, destinationRoomName, waypoints)
+        moveToRoom(topRight, destinationRoomName, waypoints, 3)
       }
       this.follow()
       return
@@ -192,7 +192,7 @@ class Quad {
     const exitDirection = directionMap[exit]
     const nextRoomName = room.coordinate.neighbourRoom(exitDirection)
 
-    const threshold = 6
+    const threshold = 4
     switch (exitDirection) {
     case TOP:
       if (position.y > (GameConstants.room.edgePosition.min + threshold)) {
@@ -567,10 +567,24 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
 export class HRAQuad extends Quad {
   public attack(target: AnyCreep | AnyStructure): void {
     this.creeps.forEach(creep => {
-      if (creep.pos.isNearTo(target) === true) {
-        creep.rangedMassAttack()
-      } else {
-        creep.rangedAttack(target)
+      this.attackCreep(creep, target)
+    })
+  }
+
+  private attackCreep(creep: Creep, target: AnyCreep | AnyStructure): void {
+    if (creep.pos.isNearTo(target) === true) {
+      creep.rangedMassAttack()
+    } else {
+      creep.rangedAttack(target)
+    }
+  }
+
+  public attackIndividually(filter: (hostile: Creep) => boolean): void {
+    this.creeps.forEach(creep => {
+      const hostilesInRange = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 3).filter(filter)
+      const closest = creep.pos.findClosestByRange(hostilesInRange)
+      if (closest != null) {
+        this.attackCreep(creep, closest)
       }
     })
   }

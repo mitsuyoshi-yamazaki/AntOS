@@ -84,7 +84,12 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 
 // tire 0
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
+
+// tire 1
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S26,W12S26,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
+//
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W3S27 waypoints=W3S25 creep_type=tire1 targets=610c0e4236a5b755575bace9,610c0ec283089114a58108c0")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -224,6 +229,13 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
     quad.heal()
     if (quad.inRoom(this.targetRoomName) !== true) {
       this.moveQuadToRoom(quad)
+      const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+      quad.attackIndividually(hostileCreep => {
+        if (whitelist.includes(hostileCreep.owner.username) === true) {
+          return false
+        }
+        return true
+      })
       return {attackingTarget: null}
     }
     return this.attackQuad(quad)
