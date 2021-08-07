@@ -27,6 +27,8 @@ import { EnergyChargeableStructure } from "prototype/room_object"
 
 const useSwampRunner = false as boolean
 
+const numberOfCreeps = 2
+
 const swampRunnerRoles: CreepRole[] = [CreepRole.SwampRunner, CreepRole.Mover]
 const swampRunnerBody: BodyPartConstant[] = [
   CARRY, CARRY, CARRY, CARRY, CARRY,
@@ -131,7 +133,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     if (energyStore == null) {
       return
     }
-    if (creeps.length < 1 && targetRoomObjects.activeStructures.terminal == null) {
+    if (creeps.length < numberOfCreeps && targetRoomObjects.activeStructures.terminal == null) {
       this.requestCreep()
     }
 
@@ -141,7 +143,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
   private requestCreep(): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
-      numberOfCreeps: 1,
+      numberOfCreeps,
       codename: this.codename,
       roles: this.roles,
       body: this.body,
