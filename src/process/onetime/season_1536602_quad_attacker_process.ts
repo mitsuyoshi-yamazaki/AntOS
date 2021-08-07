@@ -13,6 +13,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { HRAQuad, QuadState } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
+import { OperatingSystem } from "os/os"
 
 type AttackTarget = AnyCreep | AnyStructure
 
@@ -37,10 +38,11 @@ const tire0CreepBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
   RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-  MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL,
+  HEAL,
+  MOVE, HEAL,
 ]
 const tire1CreepBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
@@ -50,10 +52,11 @@ const tire1CreepBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE,
+  MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL,
+  HEAL, HEAL,
+  MOVE, HEAL,
 ]
 
 const tire0Boosts: MineralBoostConstant[] = [
@@ -86,8 +89,12 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
 
 // tire 1
+// 下-右
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
+// 上-右
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S26,W12S26,W12S27 creep_type=tire1 targets=61001b3f18ec8579b6913b5a,61001ab3993e4f3ed96724fd")
+// 下-下
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tire1 targets=61001cc1396ad5c67729e31c,61001cb55da6f74a2406bc2d")
 //
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W3S27 waypoints=W3S25 creep_type=tire1 targets=610c0e4236a5b755575bace9,610c0ec283089114a58108c0")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
@@ -207,6 +214,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
         return
       }
       processLog(this, "Quad dead")
+      OperatingSystem.os.killProcess(this.processId)
       return
     }
     processLog(this, "No creeps")
@@ -242,6 +250,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
   }
 
   private attackQuad(quad: HRAQuad): { attackingTarget: AttackTarget | null } {
+    // const lowHpRampart =
     const nearbyHostileCreep = this.nearbyHostileAttacker(quad)
     if (nearbyHostileCreep != null) {
       if (quad.isQuadForm() !== true) {

@@ -97,14 +97,14 @@ class Quad {
     const status = this.getMoveToRoomStatus(topRight.pos, topRight.room, destinationRoomName, waypoints)
     switch (status) {
     case "in progress":
-      moveToRoom(topRight, destinationRoomName, waypoints, 3)
+      moveToRoom(topRight, destinationRoomName, waypoints, 1)
       this.follow()
       return
 
     case "close to room exit": {
       const quadRange = this.getMaxRangeTo(topRight.pos)
       if (quadRange != null && quadRange <= 5) {
-        moveToRoom(topRight, destinationRoomName, waypoints, 3)
+        moveToRoom(topRight, destinationRoomName, waypoints, 1)
       }
       this.follow()
       return
@@ -132,7 +132,7 @@ class Quad {
   /**
    * @param range 全てのCreepがこのrangeに入る
    */
-  public moveQuadTo(position: RoomPosition, range: number): void {
+  public moveQuadTo(position: RoomPosition, range: number, options?: { avoid?: {position: RoomPosition, range: number}[]}): void {
     if (this.isQuadForm() !== true) {
       this.align()
       return
@@ -152,7 +152,7 @@ class Quad {
     }
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback,
+      costCallback: quadCostCallback(),
       range: 0,
       ignoreCreeps: true,
       maxRooms: 1,
@@ -311,10 +311,10 @@ class Quad {
       return true
     }
 
-    if (checkPosition(1, LEFT) !== true) {
+    if (checkPosition(1, BOTTOM) !== true) {
       return false
     }
-    if (checkPosition(2, BOTTOM) !== true) {
+    if (checkPosition(2, LEFT) !== true) {
       return false
     }
     if (checkPosition(3, BOTTOM_LEFT) !== true) {
@@ -349,8 +349,8 @@ class Quad {
       creep.moveTo(position, this.followerMoveToOptions(maxRooms))
     }
 
-    move(1, LEFT)
-    move(2, BOTTOM)
+    move(1, BOTTOM)
+    move(2, LEFT)
     move(3, BOTTOM_LEFT)
   }
 
@@ -402,69 +402,71 @@ function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
   }
 }
 
-function quadCostCallback(roomName: RoomName, costMatrix: CostMatrix): CostMatrix {
-  const room = Game.rooms[roomName]
-  if (room == null) {
-    return costMatrix
-  }
-
-  const obstacleCost = GameConstants.pathFinder.costs.obstacle
-  if (room.roomType === "source_keeper") {
-    const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-      excludeItself: false,
-      excludeTerrainWalls: false,
-      excludeStructures: false,
-      excludeWalkableStructures: false,
+function quadCostCallback(): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
+  return (roomName: RoomName, costMatrix: CostMatrix): CostMatrix => {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return costMatrix
     }
-    const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
-      .filter(creep => creep.owner.username === SourceKeeper.username)
-    const positionsToAvoid = sourceKeepers
-      .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
 
-    positionsToAvoid.forEach(position => {
-      // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-      costMatrix.set(position.x, position.y, obstacleCost)
-    })
-  }
+    const obstacleCost = GameConstants.pathFinder.costs.obstacle
+    if (room.roomType === "source_keeper") {
+      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeTerrainWalls: false,
+        excludeStructures: false,
+        excludeWalkableStructures: false,
+      }
+      const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => creep.owner.username === SourceKeeper.username)
+      const positionsToAvoid = sourceKeepers
+        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
 
-  const obstacleDirections: DirectionConstant[] = [
-    TOP,
-    TOP_RIGHT,
-    RIGHT,
-  ]
-  const getObstaclePositions = (position: RoomPosition): RoomPosition[] => {
-    return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
-  }
-  const swampCost = GameConstants.pathFinder.costs.swamp
+      positionsToAvoid.forEach(position => {
+        // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+        costMatrix.set(position.x, position.y, obstacleCost)
+      })
+    }
 
-  for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
-    for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
-      const position = new RoomPosition(x, y, roomName)
-      const fieldType = getFieldType(position)
-      switch (fieldType) {
-      case "plain":
-        break
+    const obstacleDirections: DirectionConstant[] = [
+      TOP,
+      TOP_RIGHT,
+      RIGHT,
+    ]
+    const getObstaclePositions = (position: RoomPosition): RoomPosition[] => {
+      return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
+    }
+    const swampCost = GameConstants.pathFinder.costs.swamp
 
-      case "swamp":
-        getObstaclePositions(position).forEach(p => {
-          costMatrix.set(x, y, swampCost)
-          if (costMatrix.get(p.x, p.y) < swampCost) {
-            costMatrix.set(p.x, p.y, swampCost)
-          }
-        })
-        break
+    for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
+      for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
+        const position = new RoomPosition(x, y, roomName)
+        const fieldType = getFieldType(position)
+        switch (fieldType) {
+        case "plain":
+          break
 
-      case "obstacle":
-        costMatrix.set(x, y, obstacleCost)
-        getObstaclePositions(position).forEach(p => {
-          costMatrix.set(p.x, p.y, obstacleCost)
-        })
-        break
+        case "swamp":
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(x, y, swampCost)
+            if (costMatrix.get(p.x, p.y) < swampCost) {
+              costMatrix.set(p.x, p.y, swampCost)
+            }
+          })
+          break
+
+        case "obstacle":
+          costMatrix.set(x, y, obstacleCost)
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(p.x, p.y, obstacleCost)
+          })
+          break
+        }
       }
     }
-  }
 
-  return costMatrix
+    return costMatrix
+  }
 }
 
 function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[]): RoomPosition {
@@ -498,7 +500,7 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     })()
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback,
+      costCallback: quadCostCallback(),
       ignoreCreeps: true,
       maxRooms: 1,
     }
