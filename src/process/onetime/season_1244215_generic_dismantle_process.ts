@@ -45,6 +45,9 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 // Game.io("launch -l Season1244215GenericDismantleProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 target_id=")
 // Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22 target_id=60fc5b672d39b65e8b50d195")
 
+// W9S29
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e6699d5b67ef23d3b4084f")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e3c5e17471565a7fe2623b")
 export class Season1244215GenericDismantleProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -84,7 +87,16 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const creepDescription = ((): string => {
+      if (this.creepName == null) {
+        return "not spawned"
+      }
+      if (Game.creeps[this.creepName] == null) {
+        return "creep dead"
+      }
+      return "running"
+    })()
+    return `${roomLink(this.targetRoomName)} ${creepDescription}`
   }
 
   public runOnTick(): void {
