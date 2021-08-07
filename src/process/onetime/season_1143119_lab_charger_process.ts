@@ -165,7 +165,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   }
 
   private creepTask(creep: Creep, terminal: StructureTerminal, labs: LabInfo[]): CreepTask | null {
-    if (creep.ticksToLive != null && creep.ticksToLive < 50) {
+    if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
       return null
     }
 
