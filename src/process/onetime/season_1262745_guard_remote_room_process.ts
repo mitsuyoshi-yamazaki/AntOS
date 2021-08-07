@@ -161,7 +161,9 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     }
 
     if (movement.attackedTarget != null) {
-      creep.moveTo(movement.attackedTarget)
+      if (movement.attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(movement.attackedTarget.pos) !== true) {
+        creep.moveTo(movement.attackedTarget)
+      }
       return
     }
 
@@ -195,7 +197,9 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     if (target.getActiveBodyparts(ATTACK) > 0 && target.pos.getRangeTo(creep.pos) <= 2) {
       this.fleeFrom(target.pos, creep, 4)
     } else {
-      creep.moveTo(target)
+      if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
+        creep.moveTo(target)
+      }
     }
     return { moved: true}
   }

@@ -25,6 +25,7 @@ declare global {
   interface RoomPosition {
     id: RoomPositionId
     pos: RoomPosition
+    isRoomEdge: boolean
 
     /** @deprecated */
     v5TargetedBy: V5TaskRunnerId[]
@@ -49,6 +50,15 @@ export function init(): void {
   Object.defineProperty(RoomPosition.prototype, "pos", {
     get(): RoomPosition {
       return this
+    },
+  })
+
+  Object.defineProperty(RoomPosition.prototype, "isRoomEdge", {
+    get(): boolean {
+      return this.x === GameConstants.room.edgePosition.min
+        || this.x === GameConstants.room.edgePosition.max
+        || this.y === GameConstants.room.edgePosition.min
+        || this.y === GameConstants.room.edgePosition.max
     },
   })
 
