@@ -86,7 +86,8 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 }
 
 // tire 0
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610b186f76fc229c3e3a17dc,610896928f86f5747bf5a8d0")
+// W3S24
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creep_type=tire0 targets=610899a0706bd8222c8ec63e,6108993836a5b7220d5a280b")
 
 // tire 1
 // 下-右

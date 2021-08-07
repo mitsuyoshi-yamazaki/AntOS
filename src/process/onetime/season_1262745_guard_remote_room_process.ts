@@ -52,10 +52,12 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 
   targetId: Id<AnyStructure | AnyCreep> | null
   creepType: Season1262745GuardRemoteRoomProcessCreepType
+  numberOfCreeps: number
 }
 
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W6S29 waypoints=W14S30,W6S30")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W6S27 waypoints=W3S25,W6S25")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W3S26 waypoints=W3S25 creeps=1")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -70,6 +72,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private readonly creepType: Season1262745GuardRemoteRoomProcessCreepType,
+    private readonly numberOfCreeps: number,
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
@@ -91,16 +94,17 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       tr: this.targetRoomName,
       w: this.waypoints,
       creepType: this.creepType,
+      numberOfCreeps: this.numberOfCreeps,
       targetId: this.targetId,
     }
   }
 
   public static decode(state: Season1262745GuardRemoteRoomProcessState): Season1262745GuardRemoteRoomProcess {
-    return new Season1262745GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.targetId)
+    return new Season1262745GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps ?? 2, state.targetId)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: Season1262745GuardRemoteRoomProcessCreepType): Season1262745GuardRemoteRoomProcess {
-    return new Season1262745GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, null)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: Season1262745GuardRemoteRoomProcessCreepType, numberOfCreeps: number): Season1262745GuardRemoteRoomProcess {
+    return new Season1262745GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null)
   }
 
   public processShortDescription(): string {
@@ -110,7 +114,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
   public runOnTick(): void {
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
 
-    if (creeps[0] == null || (creeps.length === 1 && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
+    if (creeps[0] == null || (creeps.length < this.numberOfCreeps && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
       const targetRoom = Game.rooms[this.targetRoomName]
       if (targetRoom == null || targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}).length < 2) {
         this.requestCreep()

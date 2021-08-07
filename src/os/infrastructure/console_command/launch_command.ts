@@ -642,9 +642,17 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("waypoints")
     }
     const waypoints = rawWaypoints.split(",")
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, "ranged attacker")
+      return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, "ranged attacker", numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
