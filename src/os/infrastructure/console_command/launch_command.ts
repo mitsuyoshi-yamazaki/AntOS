@@ -123,6 +123,9 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season1536602QuadAttackerProcess":
       result = this.launchSeason1536602QuadAttackerProcess()
       break
+    case "Season1244215GenericDismantleProcess":
+      result = this.launchSeason1244215GenericDismantleProcess()
+      break
     default:
       break
     }
