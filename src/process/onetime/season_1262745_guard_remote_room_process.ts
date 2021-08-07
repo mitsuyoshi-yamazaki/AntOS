@@ -60,6 +60,8 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W3S26 waypoints=W3S25 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W8S29 waypoints=W14S30,W8S30 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creeps=2")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W13S28 waypoints=W14S30,W12S30,W12S28 creeps=1")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W12S27 waypoints=W14S30,W12S30 creeps=1")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -118,7 +120,25 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
 
     if (creeps[0] == null || (creeps.length < this.numberOfCreeps && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
       const targetRoom = Game.rooms[this.targetRoomName]
-      if (targetRoom == null || (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_TOWER}}).length < 2) || targetRoom.storage == null || targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
+      const shouldSendGuard = ((): boolean => {
+        if (targetRoom == null) {
+          return true
+        }
+        if (targetRoom.controller != null && targetRoom.controller.safeMode != null) {
+          return false
+        }
+        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length < 2) {
+          return true
+        }
+        if (targetRoom.storage == null) {
+          return true
+        }
+        if (targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
+          return true
+        }
+        return false
+      })()
+      if (shouldSendGuard === true) {
         this.requestCreep()
       }
     }
@@ -172,6 +192,44 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
     const {moved} = this.runSingleAttacker(creep)
     if (moved === true) {
       return
+    }
+
+    const isEnemyRoom = ((): boolean => {
+      const controller = creep.room.controller
+      if (controller == null) {
+        return false
+      }
+      if (controller.my === true) {
+        return false
+      }
+      const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+      if (controller.owner != null) {
+        if (whitelist.includes(controller.owner.username) === true) {
+          return false
+        }
+        if (Game.isEnemy(controller.owner) !== true) {
+          return false
+        }
+        return true
+      }
+      if (controller.reservation != null) {
+        if (whitelist.includes(controller.reservation.username) === true) {
+          return false
+        }
+        if (Game.isEnemy(controller.reservation) !== true) {
+          return false
+        }
+        return true
+      }
+      return false
+    })()
+    if (isEnemyRoom === true) {
+      const road = creep.pos.findClosestByRange(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+      if (road != null) {
+        creep.rangedAttack(road)
+        creep.moveTo(road)
+        return
+      }
     }
 
     const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
