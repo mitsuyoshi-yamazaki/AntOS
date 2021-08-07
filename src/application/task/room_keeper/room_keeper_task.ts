@@ -269,7 +269,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       return
     }
     ((): void => {
-      const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 160000
+      const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 100000
       if (canReceiveEnergy === true) {
         // const lackOfEnergy = roomResource.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 100000
         // if (lackOfEnergy === true) {
