@@ -33,6 +33,7 @@ import { RangedAttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/ra
 import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_wrapper"
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { isV5CreepMemory } from "prototype/creep"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 
 // https://screeps.com/season/#!/history/shardSeason/W26S30?t=1408797
 const swampRunnerEnabled = false as boolean
@@ -75,7 +76,6 @@ interface Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
   body: BodyPartConstant[]
 }
 
-// TODO: Haulerの生成タイミング
 export interface Season701205PowerHarvesterSwampRunnerProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -100,6 +100,7 @@ export interface Season701205PowerHarvesterSwampRunnerProcessState extends Proce
 
   ticksToPowerBank: number | null
   neighbourCount: number
+  powerDropPoints: RoomPositionState[]
 }
 
 // Game.io("launch -l Season701205PowerHarvesterSwampRunnerProcess room_name=W27S26 target_room_name waypoints=W28S26,W28S25,W30S25")
@@ -199,6 +200,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     private pickupFinished: boolean,
     private ticksToPowerBank: number | null,
     private readonly neighbourCount: number,
+    private readonly powerDropPoints: RoomPosition[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -245,6 +247,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       f: this.pickupFinished,
       ticksToPowerBank: this.ticksToPowerBank,
       neighbourCount: this.neighbourCount,
+      powerDropPoints: this.powerDropPoints.map(position => position.encode()),
     }
   }
 
@@ -259,11 +262,33 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
         position,
       }
     })()
-    return new Season701205PowerHarvesterSwampRunnerProcess(state.l, state.i, state.p, state.tr, state.w, powerBankInfo, state.f, state.ticksToPowerBank, state.neighbourCount ?? 3)
+    return new Season701205PowerHarvesterSwampRunnerProcess(
+      state.l,
+      state.i,
+      state.p,
+      state.tr,
+      state.w,
+      powerBankInfo,
+      state.f,
+      state.ticksToPowerBank,
+      state.neighbourCount ?? 3,
+      state.powerDropPoints?.map(positionState => decodeRoomPosition(positionState)) ?? [],
+    )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], neighbourCount: number): Season701205PowerHarvesterSwampRunnerProcess {
-    return new Season701205PowerHarvesterSwampRunnerProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, false, null, neighbourCount)
+    return new Season701205PowerHarvesterSwampRunnerProcess(
+      Game.time,
+      processId,
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      null,
+      false,
+      null,
+      neighbourCount,
+      [],
+    )
   }
 
   public processShortDescription(): string {
@@ -290,6 +315,16 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     attackerCount = this.countCreep(this.attackerSpec.roles)
     haulerCount = this.countCreep(haulerSpec.roles)
     const rangedAttackerCount = this.countCreep(this.rangedAttackerSpec.roles)
+
+    World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, haulerSpec.roles)).forEach(hauler => {
+      if (hauler.ticksToLive != null && hauler.ticksToLive !== 2) {
+        return
+      }
+      if (hauler.store.getUsedCapacity(RESOURCE_POWER) <= 0) {
+        return
+      }
+      this.powerDropPoints.push(hauler.pos)
+    })
 
     let powerBank: StructurePowerBank | null = null
     const powerResources: (Resource | Ruin | Tombstone)[] = []
@@ -643,6 +678,34 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     if (powerResources.length <= 0) {
+      const droppedPower = creep.pos.findClosestByRange(creep.room.find(FIND_DROPPED_RESOURCES).filter(r => r.resourceType === RESOURCE_POWER))
+      if (droppedPower != null) {
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(PickupApiWrapper.create(droppedPower)))
+      }
+      const tombstone = creep.pos.findClosestByRange(creep.room.find(FIND_TOMBSTONES).filter(t => t.store.getUsedCapacity(RESOURCE_POWER) > 0))
+      if (tombstone != null) {
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(tombstone, RESOURCE_POWER)))
+      }
+
+      if (this.powerDropPoints.length > 0 && creep.ticksToLive != null) {
+        const ticksToLive = creep.ticksToLive
+        const point = this.powerDropPoints.find(position => {
+          const distanceToPosition = Game.map.getRoomLinearDistance(creep.room.name, position.roomName)
+          const distanceToHome = Game.map.getRoomLinearDistance(position.roomName, this.parentRoomName)
+          const estimatedDistance = (distanceToPosition * 50 + distanceToHome * 50 * 2) * 1.2
+          if (ticksToLive < estimatedDistance) {
+            return false
+          }
+          return true
+        })
+        if (point != null) {
+          const index = this.powerDropPoints.indexOf(point)
+          if (index >= 0) {
+            this.powerDropPoints.splice(index, 1)
+          }
+          return FleeFromAttackerTask.create(MoveToRoomTask.create(point.roomName, []))
+        }
+      }
       if (this.pickupFinished === true) {
         creep.say("finished")
         return null

@@ -69,7 +69,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} => ${this.patrollRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+    return `${roomLink(this.parentRoomName)} => ${this.patrollRoomNames.map(roomName => roomLink(roomName)).join(",")} ${this.attackerType}`
   }
 
   public runOnTick(): void {

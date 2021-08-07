@@ -23,7 +23,7 @@ export interface Season989041MovePowerCreepProcessState extends ProcessState {
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W24S29 to_room_name=W14S28 waypoints=W24S30,W14S30 power_creep_name=power_creep_0000")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W14S28 waypoints=W10S24,W10S30,W14S30 power_creep_name=power_creep_0001")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W14S28 to_room_name=W9S24 waypoints=W14S30,W10S30,W10S24 power_creep_name=power_creep_0000")
-// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W3S24 waypoints=W9S25,W3S25 power_creep_name=power_creep_0000")
+// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W3S24 waypoints=W9S25,W3S25 power_creep_name=power_creep_0002")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W14S28 to_room_name= waypoints= power_creep_name=power_creep_0001")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W3S24 to_room_name=W9S24 waypoints=W3S25,W9S25 power_creep_name=power_creep_0000")
 export class Season989041MovePowerCreepProcess implements Process, Procedural {
