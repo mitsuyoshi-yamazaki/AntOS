@@ -11,6 +11,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
+import { coloredResourceType } from "utility/log"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -390,8 +391,9 @@ export class ExecCommand implements ConsoleCommand {
 
   private listResource(): CommandExecutionResult {
     const resources = ResourceManager.list()
+    // const resourceTypes = Array.from(resources.keys()).sort()  // TODO:
     resources.forEach((amount, resourceType) => {
-      PrimitiveLogger.log(`${resourceType}: ${amount}`)
+      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amount}`)
     })
     return "ok"
   }
