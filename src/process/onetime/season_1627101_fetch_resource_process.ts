@@ -39,7 +39,9 @@ export class Season1627101FetchResourceProcess implements Process, Procedural {
 
   private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
   private readonly haulerBody: BodyPartConstant[] = [
-    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
+    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
   ]
 
   private constructor(
@@ -117,6 +119,10 @@ export class Season1627101FetchResourceProcess implements Process, Procedural {
 
   private haulerTask(creep: Creep): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0) {
+      if (creep.ticksToLive == null || creep.ticksToLive < 400) {
+        return null
+      }
+
       if (creep.room.name === this.parentRoomName) {
         if (this.transferResourceType == null) {
           return this.moveToTargetRoomTask()
