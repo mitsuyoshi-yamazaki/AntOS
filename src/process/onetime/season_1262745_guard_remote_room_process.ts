@@ -59,7 +59,7 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W6S27 waypoints=W3S25,W6S25")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W3S26 waypoints=W3S25 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W8S29 waypoints=W14S30,W8S30 creeps=1")
-// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creeps=2")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W13S28 waypoints=W14S30,W12S30,W12S28 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W14S28 target_room_name=W12S27 waypoints=W14S30,W12S30 creeps=1")
 
@@ -115,7 +115,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.targetRoomName)} ${this.creepType}`
+    return `${roomLink(this.targetRoomName)} ${this.numberOfCreeps} ${this.creepType}`
   }
 
   public runOnTick(): void {

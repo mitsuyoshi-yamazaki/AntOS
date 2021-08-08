@@ -11,7 +11,8 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
+import { isResourceConstant } from "utility/resource"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -384,6 +385,12 @@ export class ExecCommand implements ConsoleCommand {
 
     const command = args[0]
     switch (command) {
+    case "room":
+      if (args[1] == null || !isResourceConstant(args[1])) {
+        return `Invalid resource type ${args[1]}`
+      }
+      return this.resourceInRoom(args[1])
+    case "list":
     default:
       return this.listResource()
     }
@@ -397,6 +404,15 @@ export class ExecCommand implements ConsoleCommand {
         return `${amount}`  // TODO: format
       })()
       PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amountDescription}`)
+    })
+    return "ok"
+  }
+
+  private resourceInRoom(resourceType: ResourceConstant): CommandExecutionResult {
+    const resourceInRoom = ResourceManager.resourceInRoom(resourceType)
+    PrimitiveLogger.log(`${coloredResourceType(resourceType)}: `)
+    resourceInRoom.forEach((amount, roomName) => {
+      PrimitiveLogger.log(`- ${roomLink(roomName)}: ${amount}`)
     })
     return "ok"
   }
