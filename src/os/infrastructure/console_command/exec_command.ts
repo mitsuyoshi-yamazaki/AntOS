@@ -9,6 +9,8 @@ import { isV5CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { ResourceManager } from "utility/resource_manager"
+import { PrimitiveLogger } from "../primitive_logger"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -41,6 +43,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.transfer()
     case "Pickup":
       return this.pickup()
+    case "Resource":
+      return this.resource()
     default:
       return "Invalid script type"
     }
@@ -370,6 +374,25 @@ export class ExecCommand implements ConsoleCommand {
       tasks.unshift(MoveToRoomTask.create(target.room.name, []))
     }
     creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+    return "ok"
+  }
+
+  private resource(): CommandExecutionResult {
+    const args = [...this.args]
+    args.splice(0, 1)
+
+    const command = args[0]
+    switch (command) {
+    default:
+      return this.listResource()
+    }
+  }
+
+  private listResource(): CommandExecutionResult {
+    const resources = ResourceManager.list()
+    resources.forEach((amount, resourceType) => {
+      PrimitiveLogger.log(`${resourceType}: ${amount}`)
+    })
     return "ok"
   }
 }
