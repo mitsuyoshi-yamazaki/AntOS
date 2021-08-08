@@ -393,7 +393,10 @@ export class ExecCommand implements ConsoleCommand {
     const resources = ResourceManager.list()
     // const resourceTypes = Array.from(resources.keys()).sort()  // TODO:
     resources.forEach((amount, resourceType) => {
-      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amount}`)
+      const amountDescription = ((): string => {
+        return `${amount}`  // TODO: format
+      })()
+      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amountDescription}`)
     })
     return "ok"
   }

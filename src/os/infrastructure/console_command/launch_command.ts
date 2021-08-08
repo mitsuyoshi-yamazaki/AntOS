@@ -38,6 +38,7 @@ import { isSeason1536602QuadAttackerProcessCreepType, Season1536602QuadAttackerP
 import { Season1606052SKHarvesterProcess } from "process/onetime/season_1606052_sk_harvester_process"
 import { Season1627101FetchResourceProcess } from "process/onetime/season_1627101_fetch_resource_process"
 import { isResourceConstant } from "utility/resource"
+import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -134,6 +135,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1627101FetchResourceProcess":
       result = this.launchSeason1627101FetchResourceProcess()
+      break
+    case "UpgradePowerCreepProcess":
+      result = this.launchUpgradePowerCreepProcess()
       break
     default:
       break
@@ -865,6 +869,13 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1627101FetchResourceProcess.create(processId, roomName, targetRoomName, waypoints, transferResourceType, withdrawResourceType)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchUpgradePowerCreepProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(processId => {
+      return UpgradePowerCreepProcess.create(processId)
     })
     return Result.Succeeded(process)
   }

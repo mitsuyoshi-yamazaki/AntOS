@@ -56,6 +56,10 @@ export function profileLink(username: string, colorCode?: string): string {
   return `<a href="${baseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`
 }
 
+export function managePowerCreepLink(): string {
+  return `<a href="${baseUrl()}/overview/power", style='color:#FFFFFF'>Manage Power Creep</a>`
+}
+
 export function coloredResourceType(resourceType: ResourceConstant): string {
   return `<b><span style='color:${resourceColorCode(resourceType)}'>${resourceType}</span></b>`
 }

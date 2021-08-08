@@ -26,8 +26,9 @@ import { Season1521073SendResourceProcess, Season1521073SendResourceProcessState
 import { Season1536602QuadAttackerProcess, Season1536602QuadAttackerProcessState } from "./onetime/season_1536602_quad_attacker_process"
 import { Season1606052SKHarvesterProcess, Season1606052SKHarvesterProcessState } from "./onetime/season_1606052_sk_harvester_process"
 import { Season1627101FetchResourceProcess, Season1627101FetchResourceProcessState } from "./onetime/season_1627101_fetch_resource_process"
-import type { Process } from "./process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
+import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
+import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
@@ -40,6 +41,7 @@ class ProcessTypes {
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as unknown as TestProcessState)
   "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as unknown as LoggerProcessState)
   "BuyPixelProcess" = (state: ProcessState) => BuyPixelProcess.decode(state as unknown as BuyPixelProcessState)
+  "UpgradePowerCreepProcess" = (state: ProcessState) => UpgradePowerCreepProcess.decode(state as unknown as UpgradePowerCreepProcessState)
 
   // ---- v5 Process ---- //
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)
