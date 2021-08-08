@@ -36,6 +36,8 @@ import { Season1488500QuadProcess } from "process/onetime/season_1488500_quad_pr
 import { Season1521073SendResourceProcess } from "process/onetime/season_1521073_send_resource_process"
 import { isSeason1536602QuadAttackerProcessCreepType, Season1536602QuadAttackerProcess, season1536602QuadAttackerProcessCreepType } from "process/onetime/season_1536602_quad_attacker_process"
 import { Season1606052SKHarvesterProcess } from "process/onetime/season_1606052_sk_harvester_process"
+import { Season1627101FetchResourceProcess } from "process/onetime/season_1627101_fetch_resource_process"
+import { isResourceConstant } from "utility/resource"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -129,6 +131,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1606052SKHarvesterProcess":
       result = this.launchSeason1606052SKHarvesterProcess()
+      break
+    case "Season1627101FetchResourceProcess":
+      result = this.launchSeason1627101FetchResourceProcess()
       break
     default:
       break
@@ -818,6 +823,48 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1606052SKHarvesterProcess.create(processId, roomName, targetRoomName, waypoints, false)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1627101FetchResourceProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const rawTransferResourceType = args.get("transfer")
+    if (rawTransferResourceType == null) {
+      return Result.Failed("Missing transfer argument, if nothing to transfer, specify \"none\"")
+    }
+    let transferResourceType: ResourceConstant | null = null
+    if (isResourceConstant(rawTransferResourceType)) {
+      transferResourceType = rawTransferResourceType
+    } else if (rawTransferResourceType === "none") {
+      transferResourceType = null
+    } else {
+      return Result.Failed(`Invalid transfer resource type ${rawTransferResourceType}, if nothing to transfer, specify "none"`)
+    }
+    const withdrawResourceType = args.get("withdraw")
+    if (withdrawResourceType == null) {
+      return this.missingArgumentError("withdraw")
+    }
+    if (!isResourceConstant(withdrawResourceType)) {
+      return Result.Failed(`Invalid withdraw resource type ${withdrawResourceType}`)
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1627101FetchResourceProcess.create(processId, roomName, targetRoomName, waypoints, transferResourceType, withdrawResourceType)
     })
     return Result.Succeeded(process)
   }
