@@ -24,7 +24,16 @@ export function init(): void {
   }
 
   if (Memory.gameInfo == null) {
-    Memory.gameInfo = {}
+    Memory.gameInfo = {
+      whitelist: [],
+      sourceHarvestWhitelist: [],
+    }
+  }
+  if (Memory.gameInfo.whitelist == null) {
+    Memory.gameInfo.whitelist = []
+  }
+  if (Memory.gameInfo.sourceHarvestWhitelist == null) {
+    Memory.gameInfo.sourceHarvestWhitelist = []
   }
 
   if (Memory.room_info == null) {

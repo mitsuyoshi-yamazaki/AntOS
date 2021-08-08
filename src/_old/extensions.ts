@@ -1292,8 +1292,9 @@ export function tick(): void {
       }
     }
     else {
-      Game.whitelist = Game.LOANlist
+      Game.whitelist = [...Game.LOANlist]
     }
+    Game.whitelist = Game.whitelist.concat(Memory.gameInfo.whitelist)
   }
 
   Game.isEnemy = function(player: Owner): boolean {

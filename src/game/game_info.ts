@@ -1,3 +1,4 @@
 export interface GameInfoMemory {
-  sourceHarvestWhitelist?: string[]
+  whitelist: string[]
+  sourceHarvestWhitelist: string[]
 }
