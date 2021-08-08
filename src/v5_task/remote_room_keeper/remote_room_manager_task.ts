@@ -61,6 +61,19 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
+    const keeperExists = this.children.some(task => {
+      if (!(task instanceof RemoteRoomKeeperTask)) {
+        return false
+      }
+      if (task.targetRoomName !== "W4S24") {
+        return false
+      }
+      return true
+    })
+    if (keeperExists !== true) {
+      this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, "W4S24"))
+    }
+
     return TaskStatus.InProgress
   }
 }

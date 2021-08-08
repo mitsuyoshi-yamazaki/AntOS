@@ -21,6 +21,7 @@ import { ParallelTask, ParallelTaskState } from "./combined_task/parallel_task"
 import { decodeCreepApiWrapperFromState } from "./creep_api_wrapper"
 import { TransferResourceApiWrapper } from "./api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "./api_wrapper/withdraw_resource_api_wrapper"
+import { FleeFromSKLairTask, FleeFromSKLairTaskState } from "./combined_task/flee_from_sk_lair_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -55,6 +56,14 @@ class CreepTaskDecoderMap {
       childTasks.push(childTask)
     }
     return ParallelTask.decode(parallelTaskState, childTasks)
+  }
+  "FleeFromSKLairTask" = (state: CreepTaskState) => {
+    const fleeFromSKLairTaskState = state as unknown as FleeFromSKLairTaskState
+    const childTask = decodeCreepTaskFromState(fleeFromSKLairTaskState.childTaskState)
+    if (childTask == null) {
+      return null
+    }
+    return FleeFromSKLairTask.decode(fleeFromSKLairTaskState, childTask)
   }
 
   // ---- Meta task ---- //

@@ -17,11 +17,11 @@ const rangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE,
+  MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL,
+  HEAL,
 ]
 
 export interface Season1606052SKHarvesterProcessState extends ProcessState {
@@ -149,8 +149,25 @@ export class Season1606052SKHarvesterProcess implements Process, Procedural {
   }
 
   private runSingleAttacker(creep: Creep): { moved: boolean } {
-    const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    const target = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
     if (target == null) {
+      const lairs = creep.room.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } }) as StructureKeeperLair[]
+      const keeperLair = lairs.sort((lhs, rhs) => {
+        if (lhs.ticksToSpawn == null && rhs.ticksToSpawn == null) {
+          return 0
+        }
+        if (lhs.ticksToSpawn == null) {
+          return 1
+        }
+        if (rhs.ticksToSpawn == null) {
+          return -1
+        }
+        return lhs.ticksToSpawn - rhs.ticksToSpawn
+      })[0]
+      if (keeperLair != null) {
+        creep.moveTo(keeperLair, {maxRooms: 1, maxOps: 500, range: 5})
+        return {moved: true}
+      }
       return { moved: false }
     }
 
@@ -174,9 +191,14 @@ export class Season1606052SKHarvesterProcess implements Process, Procedural {
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
 
-      if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
-        this.fleeFrom(closestHostile.pos, creep, 4)
-        moved = true
+      if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
+        const range = closestHostile.pos.getRangeTo(creep)
+        if (range <= 2) {
+          this.fleeFrom(closestHostile.pos, creep, 4)
+          moved = true
+        } else if (range === 3) {
+          moved = true
+        }
       }
     }
     return { attackedTarget, moved }

@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -24,6 +24,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -109,7 +110,14 @@ export class RemoteRoomHaulerTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskForHauler(creep, objects, energySources)
+        const task = this.newTaskForHauler(creep, objects, energySources)
+        if (task == null) {
+          return null
+        }
+        if (roomTypeOf(this.roomName) === "source_keeper") {
+          return FleeFromSKLairTask.create(task)
+        }
+        return task
       },
       creepPoolFilter,
     )

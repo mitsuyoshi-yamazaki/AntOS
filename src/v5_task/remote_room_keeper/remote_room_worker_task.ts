@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"
@@ -51,8 +51,10 @@ export class RemoteRoomWorkerTask extends Task {
     const energySources: EnergySourceTask[] = sources.map(source => RemoteRoomHarvesterTask.create(roomName, source))
     const children: Task[] = [
       RemoteRoomHaulerTask.create(roomName, targetRoom.name, energySources),
-      RemoteRoomReserveTask.create(roomName, targetRoom.name),
     ]
+    if (roomTypeOf(roomName) === "normal") {
+      children.push(RemoteRoomReserveTask.create(roomName, targetRoom.name))
+    }
     return new RemoteRoomWorkerTask(Game.time, children, roomName, targetRoom.name)
   }
 

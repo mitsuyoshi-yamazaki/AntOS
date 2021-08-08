@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -24,6 +24,7 @@ import { placeRoadConstructionMarks } from "script/pathfinder"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
+import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -155,7 +156,14 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         this.taskIdentifier,
         CreepPoolAssignPriority.Low,
         (creep: Creep): CreepTask | null => {
-          return this.newTaskForHarvester(creep, source, container)
+          const task = this.newTaskForHarvester(creep, source, container)
+          if (task == null) {
+            return null
+          }
+          if (roomTypeOf(this.roomName) === "source_keeper") {
+            return FleeFromSKLairTask.create(task)
+          }
+          return task
         },
         creepPoolFilter,
       )
