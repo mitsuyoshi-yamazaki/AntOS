@@ -24,6 +24,7 @@ import { Season989041MovePowerCreepProcess, Season989041MovePowerCreepProcessSta
 import { Season1488500QuadProcess, Season1488500QuadProcessState } from "./onetime/season_1488500_quad_process"
 import { Season1521073SendResourceProcess, Season1521073SendResourceProcessState } from "./onetime/season_1521073_send_resource_process"
 import { Season1536602QuadAttackerProcess, Season1536602QuadAttackerProcessState } from "./onetime/season_1536602_quad_attacker_process"
+import { Season1606052SKHarvesterProcess, Season1606052SKHarvesterProcessState } from "./onetime/season_1606052_sk_harvester_process"
 import type { Process } from "./process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import type { ProcessState } from "./process_state"
@@ -70,6 +71,7 @@ class ProcessTypes {
   "Season1488500QuadProcess" = (state: ProcessState) => Season1488500QuadProcess.decode(state as unknown as Season1488500QuadProcessState)
   "Season1521073SendResourceProcess" = (state: ProcessState) => Season1521073SendResourceProcess.decode(state as unknown as Season1521073SendResourceProcessState)
   "Season1536602QuadAttackerProcess" = (state: ProcessState) => Season1536602QuadAttackerProcess.decode(state as unknown as Season1536602QuadAttackerProcessState)
+  "Season1606052SKHarvesterProcess" = (state: ProcessState) => Season1606052SKHarvesterProcess.decode(state as unknown as Season1606052SKHarvesterProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

@@ -35,6 +35,7 @@ import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831
 import { Season1488500QuadProcess } from "process/onetime/season_1488500_quad_process"
 import { Season1521073SendResourceProcess } from "process/onetime/season_1521073_send_resource_process"
 import { isSeason1536602QuadAttackerProcessCreepType, Season1536602QuadAttackerProcess, season1536602QuadAttackerProcessCreepType } from "process/onetime/season_1536602_quad_attacker_process"
+import { Season1606052SKHarvesterProcess } from "process/onetime/season_1606052_sk_harvester_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -125,6 +126,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1244215GenericDismantleProcess":
       result = this.launchSeason1244215GenericDismantleProcess()
+      break
+    case "Season1606052SKHarvesterProcess":
+      result = this.launchSeason1606052SKHarvesterProcess()
       break
     default:
       break
@@ -791,6 +795,29 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], creepType)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1606052SKHarvesterProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1606052SKHarvesterProcess.create(processId, roomName, targetRoomName, waypoints, false)
     })
     return Result.Succeeded(process)
   }
