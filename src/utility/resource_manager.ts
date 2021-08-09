@@ -87,6 +87,9 @@ export const ResourceManager: ResourceManagerInterface = {
     let sentAmount = 0
     const errorMessages: string[] = []
     resourceInRoom.forEach(([fromRoomName, amount]) => {
+      if (fromRoomName === roomName) {
+        return
+      }
       if (requiredAmount !== "all" && sentAmount >= requiredAmount) {
         return
       }
