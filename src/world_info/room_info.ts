@@ -460,7 +460,9 @@ export class OwnedRoomObjects {
     if (roomInfo != null && roomInfo.roomType === "owned") {
       if (roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
         if (this.activeStructures.terminal != null && this.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) >= 500) {
-          return this.activeStructures.terminal
+          if (this.activeStructures.storage != null && this.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000) {
+            return this.activeStructures.terminal
+          }
         }
       }
     }

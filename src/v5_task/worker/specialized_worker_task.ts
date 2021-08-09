@@ -142,7 +142,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       if (roomInfo != null && roomInfo.roomType === "owned") {
         if (roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
           const storage = objects.activeStructures.storage
-          if (storage != null && storage.store.getFreeCapacity(RESOURCE_ENERGY) > 1000) {
+          if (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000) {
             return MoveToTargetTask.create(TransferEnergyApiWrapper.create(storage))
           }
         }
