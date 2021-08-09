@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType, roomLink } from "./log"
-import { Result } from "./result"
+import { Result, ResultFailed } from "./result"
 import { RoomName } from "./room_name"
 
 let list = null as Map<ResourceConstant, number> | null
@@ -13,10 +13,11 @@ interface ResourceManagerInterface {
 
   // ---- Check Resource Amount ---- //
   list(): Map<ResourceConstant, number>
+  amount(resourceType: ResourceConstant): number
   resourceInRoom(resourceType: ResourceConstant): Map<RoomName, number>
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number): Result<number, string>
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all"): Result<number, string>
 }
 
 export const ResourceManager: ResourceManagerInterface = {
@@ -55,6 +56,11 @@ export const ResourceManager: ResourceManagerInterface = {
     return new Map(list)
   },
 
+  amount(resourceType: ResourceConstant): number {
+    const list = this.list()
+    return list.get(resourceType) ?? 0
+  },
+
   resourceInRoom(resourceType: ResourceConstant): Map<RoomName, number> {
     if (resourceInRoom == null) {
       const result = new Map<RoomName, number>()
@@ -73,7 +79,7 @@ export const ResourceManager: ResourceManagerInterface = {
   },
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number): Result<number, string> {
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all"): Result<number, string> {
     const resourceInRoom = Array.from(this.resourceInRoom(resourceType).entries()).sort(([lhs], [rhs]) => {
       return Game.map.getRoomLinearDistance(roomName, lhs) - Game.map.getRoomLinearDistance(roomName, rhs)
     })
@@ -81,7 +87,7 @@ export const ResourceManager: ResourceManagerInterface = {
     let sentAmount = 0
     const errorMessages: string[] = []
     resourceInRoom.forEach(([fromRoomName, amount]) => {
-      if (sentAmount >= requiredAmount) {
+      if (requiredAmount !== "all" && sentAmount >= requiredAmount) {
         return
       }
       const resources = RoomResources.getOwnedRoomResource(fromRoomName)
@@ -91,11 +97,20 @@ export const ResourceManager: ResourceManagerInterface = {
       }
       const terminal = resources.activeStructures.terminal
       if (terminal == null) {
-        errorMessages.push(`No terminal in ${roomLink(fromRoomName)}`)
+        PrimitiveLogger.programError(`ResourceManager.sendTo() no terminal in ${roomLink(fromRoomName)}, ${coloredResourceType(resourceType)}`)
         return
       }
       const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-      const sendAmount = Math.min(Math.min(amount, requiredAmount - sentAmount), energyAmount)
+      const sendAmount = ((): number => {
+        if (requiredAmount === "all") {
+          if (amount > energyAmount) {
+            errorMessages.push(`Not enough energy in ${roomLink(fromRoomName)}`)
+            return energyAmount
+          }
+          return amount
+        }
+        return Math.min(Math.min(amount, requiredAmount - sentAmount), energyAmount)
+      })()
       const result = terminal.send(resourceType, sendAmount, roomName)
       switch (result) {
       case OK:
@@ -114,10 +129,20 @@ export const ResourceManager: ResourceManagerInterface = {
       }
     })
 
+    const failedResult = (): ResultFailed<string> => {
+      errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomName}`)
+      return Result.Failed(errorMessages.join("\n"))
+    }
+
+    if (requiredAmount === "all") {
+      if (errorMessages.length <= 0) {
+        return Result.Succeeded(sentAmount)
+      }
+      return failedResult()
+    }
     if ((requiredAmount - sentAmount) <= 0) {
       return Result.Succeeded(sentAmount)
     }
-    errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomName}`)
-    return Result.Failed(errorMessages.join("\n"))
+    return failedResult()
   },
 }

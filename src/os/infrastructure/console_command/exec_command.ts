@@ -399,14 +399,20 @@ export class ExecCommand implements ConsoleCommand {
       if (args[2] == null || !isRoomName(args[2])) {
         return `Invalid room name ${args[2]}`
       }
-      if (args[3] == null) {
-        return "amount is not provided"
+      const amount = ((): number | string | null => {
+        if (args[3] == null) {
+          return null
+        }
+        const parsed = parseInt(args[3], 10)
+        if (isNaN(parsed) === true) {
+          return `amount is not a number ${args[3]}`
+        }
+        return parsed
+      })()
+      if (typeof amount === "string") {
+        return amount
       }
-      const amount = parseInt(args[3], 10)
-      if (isNaN(amount) === true) {
-        return `amount is not a number ${args[3]}`
-      }
-      return this.collectResource(args[1], args[2], amount)
+      return this.collectResource(args[1], args[2], amount ?? "all")
     }
     case "list":
     default:
@@ -445,7 +451,7 @@ export class ExecCommand implements ConsoleCommand {
     return "ok"
   }
 
-  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number): CommandExecutionResult {
+  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number | "all"): CommandExecutionResult {
     const resources = RoomResources.getOwnedRoomResource(destinationRoomName)
     if (resources == null) {
       return `${this.constructor.name} collectResource() cannot retrieve owned room resources from ${roomLink(destinationRoomName)}`
@@ -453,8 +459,15 @@ export class ExecCommand implements ConsoleCommand {
     if (resources.activeStructures.terminal == null) {
       return `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomName)}`
     }
-    if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-      return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
+    if (amount === "all") {
+      const resourceAmount = ResourceManager.amount(resourceType)
+      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
+        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)} (${resourceAmount} ${coloredResourceType(resourceType)})`
+      }
+    } else {
+      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
+        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
+      }
     }
 
     const result = ResourceManager.collect(resourceType, destinationRoomName, amount)
