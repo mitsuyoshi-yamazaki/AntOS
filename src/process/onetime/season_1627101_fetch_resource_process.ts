@@ -17,6 +17,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { OperatingSystem } from "os/os"
 import { processLog } from "process/process_log"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 export interface Season1627101FetchResourceProcessState extends ProcessState {
   /** parent room name */
@@ -164,8 +165,12 @@ export class Season1627101FetchResourceProcess implements Process, Procedural {
           OperatingSystem.os.suspendProcess(this.processId)
           return this.moveToParentRoomTask()
         }
-        processLog(this, `Withdraw ${this.withdrawResourceType} from ${roomLink(this.targetRoomName)}`)
-        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourceStore, this.withdrawResourceType))
+        if (creep.pos.isNearTo(resourceStore.pos) === true) {
+          processLog(this, `Withdraw ${this.withdrawResourceType} from ${roomLink(this.targetRoomName)}`)
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourceStore, this.withdrawResourceType))
+        } else {
+          return MoveToTask.create(resourceStore.pos, 1)
+        }
       }
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, []))
     }
@@ -178,7 +183,11 @@ export class Season1627101FetchResourceProcess implements Process, Procedural {
           OperatingSystem.os.suspendProcess(this.processId)
           return null
         }
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(resourceStore, this.transferResourceType))
+        if (creep.pos.isNearTo(resourceStore.pos) === true) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(resourceStore, this.transferResourceType))
+        } else {
+          return MoveToTask.create(resourceStore.pos, 1)
+        }
       }
       return this.moveToTargetRoomTask()
     }
