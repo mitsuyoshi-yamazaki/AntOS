@@ -190,7 +190,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
           if (haulers.length < 1) {
             this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
           } else {
-            if (harvesters.length < 1) {
+            if (harvesters[0] == null || (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100)) {
               this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
             } else {
               // if (haulers.length < 2) {
