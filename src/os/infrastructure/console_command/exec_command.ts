@@ -23,29 +23,29 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
-    case "FindPath":
+    case "findPath":
       return this.findPath()
-    case "FindPathToSource":
+    case "findPathToSource":
       return this.findPathToSource()
-    case "ShowCachedSourcePath":
+    case "showCachedSourcePath":
       return this.showCachedSourcePath()
-    case "ShowOldRoomPlan":
+    case "showOldRoomPlan":
       return this.showOldRoomPlan()
-    case "PlaceOldRoomPlan":
+    case "placeOldRoomPlan":
       return this.placeOldRoomPlan()
-    case "PlaceRoadConstructionMarks":
+    case "placeRoadConstructionMarks":
       return this.placeRoadConstructionMarks()
-    case "ShowPositionsInRange":
+    case "showPositionsInRange":
       return this.showPositionsInRange()
-    case "DescribeLabs":
+    case "describeLabs":
       return this.describeLabs()
-    case "MoveToRoom":
+    case "moveToRoom":
       return this.moveToRoom()
-    case "Transfer":
+    case "transfer":
       return this.transfer()
-    case "Pickup":
+    case "pickup":
       return this.pickup()
-    case "Resource":
+    case "resource":
       return this.resource()
     default:
       return "Invalid script type"
@@ -397,9 +397,19 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private listResource(): CommandExecutionResult {
-    const resources = ResourceManager.list()
-    // const resourceTypes = Array.from(resources.keys()).sort()  // TODO:
-    resources.forEach((amount, resourceType) => {
+    const isLowercase = (value: string): boolean => (value === value.toLocaleLowerCase())
+    const resources = Array.from(ResourceManager.list().entries()).sort(([lhs], [rhs]) => {
+      const lowerL = isLowercase(lhs)
+      const lowerR = isLowercase(rhs)
+      if (lowerL === true && lowerR === true) {
+        return rhs.length - lhs.length
+      }
+      if (lowerL === false && lowerR === false) {
+        return lhs.length - rhs.length
+      }
+      return lowerL === true ? -1 : 1
+    })
+    resources.forEach(([resourceType, amount]) => {
       const amountDescription = ((): string => {
         return `${amount}`  // TODO: format
       })()
