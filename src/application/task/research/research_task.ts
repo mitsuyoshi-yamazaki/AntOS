@@ -17,8 +17,9 @@ import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
 import { isMineralCompoundConstant, MineralCompoundIngredients } from "utility/resource"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { ParallelResourceOperationTask } from "object_task/creep_task/task/parallel_resource_operation_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -76,7 +77,17 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       return taskOutputs
     }
     const compound = Object.keys(compoundsList)[0]
-    if (compound == null || !isMineralCompoundConstant(compound)) {
+    if (compound == null) {
+      return taskOutputs
+    }
+    if (!isMineralCompoundConstant(compound)) {
+      PrimitiveLogger.programError(`${this.identifier} ${compound} is not a mineral compound, ${roomLink(this.roomName)}`)
+      delete (compoundsList as {[index: string]: number})[compound]
+      return taskOutputs
+    }
+    const compoundAmount = compoundsList[compound]
+    if (compoundAmount == null) {
+      PrimitiveLogger.programError(`${this.identifier} no amount for ${compound}, ${roomLink(this.roomName)}`)
       return taskOutputs
     }
     this.compound = compound
@@ -90,6 +101,15 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
     const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
       taskOutputs.problems.push(new MissingActiveStructureProblem(this.roomName, STRUCTURE_TERMINAL))
+      return taskOutputs
+    }
+    if (terminal.store.getUsedCapacity(compound) >= compoundAmount) {
+      taskOutputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `${compoundAmount} ${coloredResourceType(compound)} created.`,
+      })
+      delete compoundsList[compound]
       return taskOutputs
     }
 
