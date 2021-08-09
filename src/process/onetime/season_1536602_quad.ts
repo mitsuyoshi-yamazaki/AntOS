@@ -37,6 +37,17 @@ class Quad {
   public get topRightRoom(): Room | null {
     return this.creeps[0]?.room ?? null
   }
+  public get minTicksToLive(): number {
+    const max = GameConstants.creep.life.lifeTime
+    const minCreep = this.creeps.sort((lhs, rhs) => {
+      return (lhs.ticksToLive ?? max) - (rhs.ticksToLive ?? max)
+    })[0]
+
+    if (minCreep == null) {
+      return 0
+    }
+    return minCreep.ticksToLive ?? max
+  }
   /** @deprecated */
   public get allCreeps(): Creep[] {
     return [

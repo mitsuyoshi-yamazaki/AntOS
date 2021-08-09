@@ -15,7 +15,6 @@ import { defaultMoveToOptions } from "prototype/creep"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { processLog } from "process/process_log"
-import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { OperatingSystem } from "os/os"
@@ -58,11 +57,14 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
   private readonly harvesterRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover]
   private readonly harvesterBody: BodyPartConstant[] = [
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    CARRY,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
   ]
 
   private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
   private readonly haulerBody: BodyPartConstant[] = [
+    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
     CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
   ]
 
@@ -177,7 +179,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
             if (creep.ticksToLive == null) {
               return false
             }
-            return creep.ticksToLive < 100
+            return creep.ticksToLive < 150
           })
         })()
 
@@ -191,9 +193,9 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
             if (harvesters.length < 1) {
               this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
             } else {
-              if (haulers.length < 2) {
-                this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
-              }
+              // if (haulers.length < 2) {
+              //   this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
+              // }
             }
           }
         }
@@ -232,7 +234,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     const quad = new HRAQuad(attackers.map(creep => creep.name), {allowPartial: true})
 
     quad.heal()
-    if (quad.allCreeps.length < 2) {
+    if (quad.numberOfCreeps < 2) {
       const waypoints = [...this.waypoints].reverse()
       quad.moveQuadToRoom(this.parentRoomName, waypoints)
       return
@@ -244,7 +246,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     }
 
     if (sourceKeeper != null) {
-      if (quad.numberOfCreeps < 2) {
+      if (quad.numberOfCreeps < 2 || quad.minTicksToLive < 10) {
         quad.fleeQuadFrom(sourceKeeper.pos, 5)
         return
       }
@@ -318,7 +320,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     if (creep.v5task != null) {
       return
     }
-    if (creep.room.name === this.parentRoomName && (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3))) {
+    if (creep.room.name === this.parentRoomName && (creep.ticksToLive != null && creep.ticksToLive < 250)) {
       creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
       return
     }
@@ -341,7 +343,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
       returnToParentRoom()
       return
     }
-    if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.35)) {
+    if (creep.ticksToLive != null && creep.ticksToLive < 100) {
       processLog(this, `No lifetime left. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
       returnToParentRoom()
       return
