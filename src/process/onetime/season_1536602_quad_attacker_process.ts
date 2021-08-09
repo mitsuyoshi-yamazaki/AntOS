@@ -126,7 +126,7 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 
 // W11S23
 // tire0-300
-// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22 creep_type=tire0-300 targets=60fc5b672d39b65e8b50d195,60fc588a396ad54d58286b5d")
+// Game.io("launch -l Season1536602QuadAttackerProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22 creep_type=tire0-300 targets=60f9969c2d39b6f4cf4fc0a0")
 
 // W13S27 下-下
 // tire0-300
@@ -390,7 +390,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
   private moveQuadToRoom(quad: HRAQuad): void {
     quad.moveQuadToRoom(this.targetRoomName, this.waypoints)
 
-    quad.creeps.forEach(creep => {
+    quad.allCreeps.forEach(creep => {
       if (creep.room.name !== this.parentRoomName) {
         return
       }

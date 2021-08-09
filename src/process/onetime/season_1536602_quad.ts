@@ -26,7 +26,7 @@ let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
  */
 class Quad {
   public get numberOfCreeps(): number {
-    return this.creeps.length
+    return this.creeps.length + this.partialCreeps.length
   }
   public get topRightPosition(): RoomPosition | null {
     return this.creeps[0]?.pos ?? null
@@ -34,18 +34,67 @@ class Quad {
   public get topRightRoom(): Room | null {
     return this.creeps[0]?.room ?? null
   }
+  public get allCreeps(): Creep[] {
+    return [
+      ...this.creeps,
+      ...this.partialCreeps,
+    ]
+  }
 
-  public creeps: Creep[] = []
+  protected readonly creeps: Creep[] = []
+  protected readonly partialCreeps: Creep[] = []
 
   public constructor(
     creepNames: CreepName[],
+    options?: {
+      allowPartial: boolean
+    },
   ) {
-    creepNames.forEach(creepName => {
-      const creep = Game.creeps[creepName]
-      if (creep != null) {
+    if (options?.allowPartial === true) {
+      creepNames.forEach(creepName => {
+        const creep = Game.creeps[creepName]
+        if (creep == null) {
+          return
+        }
+        if (this.creeps[0] == null) {
+          this.creeps.push(creep)
+          return
+        }
+        const leaderCreep = this.creeps[0]
+        const isInSquad = ((): boolean => {
+          if (leaderCreep.pos.getRangeTo(creep.pos) < 3) {
+            return true
+          }
+          if (leaderCreep.room.name === creep.room.name) {
+            return false
+          }
+          if (leaderCreep.pos.isRoomEdge !== true) {
+            return false
+          }
+          return true // FixMe:
+        })()
+        if (isInSquad === true) {
+          this.creeps.push(creep)
+        } else {
+          this.partialCreeps.push(creep)
+        }
+      })
+    } else {
+      creepNames.forEach(creepName => {
+        const creep = Game.creeps[creepName]
+        if (creep == null) {
+          return
+        }
         this.creeps.push(creep)
-      }
-    })
+      })
+    }
+
+    const lastCreep = this.creeps[this.creeps.length - 1]
+    if (lastCreep != null) {
+      this.partialCreeps.forEach(creep => {
+        creep.moveTo(lastCreep.pos, this.followerMoveToOptions(10))
+      })
+    }
   }
 
   public say(message: string): void {
@@ -65,10 +114,6 @@ class Quad {
   // public damagePercent(): number {
 
   // }
-
-  public fleeFrom(position: RoomPosition): void {
-    // TODO:
-  }
 
   public getMinRangeTo(position: RoomPosition): number | null {
     if (this.creeps.length <= 0) {
@@ -142,7 +187,7 @@ class Quad {
   /**
    * @param range 全てのCreepがこのrangeに入る
    */
-  public moveQuadTo(position: RoomPosition, range: number, options?: { avoid?: {position: RoomPosition, range: number}[]}): void {
+  public moveQuadTo(position: RoomPosition, range: number): void {
     if (this.isQuadForm() !== true) {
       this.align()
       return
@@ -169,6 +214,52 @@ class Quad {
     }
 
     const nextSteps = topRight.room.findPath(topRight.pos, position, pathFinderOptions) // Room間移動は対応していない
+    if (nextSteps[0] == null) {
+      topRight.say("no path")
+      return
+    }
+    nextSteps.forEach((step, index) => {
+      const p = new RoomPosition(step.x, step.y, topRight.room.name)
+      topRight.room.visual.text(`${index}`, p, { color: "#ffffff" })
+    })
+    const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
+    topRight.moveTo(nextPosition)
+    this.moveFollowersToNextPosition(nextPosition, 1)
+  }
+
+  public fleeQuadFrom(position: RoomPosition, range: number): void {
+    if (this.isQuadForm() !== true) {
+      this.align()
+      return
+    }
+    if (this.canMoveQquad() !== true) {
+      return
+    }
+
+    const topRight = this.creeps[0]
+    if (topRight == null) {
+      return
+    }
+    const minRange = this.getMinRangeTo(position)
+    if (minRange == null || minRange > range) {
+      return
+    }
+
+    const fleePath = PathFinder.search(topRight.pos, { pos: position, range: range + 2 }, { flee: true, maxRooms: 1 })
+    const fleePosition = fleePath.path[fleePath.path.length - 1]
+    if (fleePosition == null) {
+      this.say("no f-path")
+      return
+    }
+
+    const pathFinderOptions: FindPathOpts = {
+      costCallback: quadCostCallback(),
+      range: 0,
+      ignoreCreeps: true,
+      maxRooms: 1,
+    }
+
+    const nextSteps = topRight.room.findPath(topRight.pos, fleePosition, pathFinderOptions) // Room間移動は対応していない
     if (nextSteps[0] == null) {
       topRight.say("no path")
       return
@@ -412,7 +503,7 @@ function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
   }
 }
 
-function quadCostCallback(): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
+function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
   return (roomName: RoomName, costMatrix: CostMatrix): CostMatrix => {
     const room = Game.rooms[roomName]
     if (room == null) {
@@ -420,6 +511,12 @@ function quadCostCallback(): (roomName: RoomName, costMatrix: CostMatrix) => Cos
     }
 
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
+    if (positionsToAvoid != null) {
+      positionsToAvoid.forEach(position => {
+        costMatrix.set(position.x, position.y, obstacleCost)
+      })
+    }
+
     if (room.roomType === "source_keeper") {
       const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
         excludeItself: false,
@@ -429,11 +526,10 @@ function quadCostCallback(): (roomName: RoomName, costMatrix: CostMatrix) => Cos
       }
       const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
         .filter(creep => creep.owner.username === SourceKeeper.username)
-      const positionsToAvoid = sourceKeepers
+      const sourceKeeperPositions = sourceKeepers
         .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
 
-      positionsToAvoid.forEach(position => {
-        // creepRoom.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+      sourceKeeperPositions.forEach(position => {
         costMatrix.set(position.x, position.y, obstacleCost)
       })
     }

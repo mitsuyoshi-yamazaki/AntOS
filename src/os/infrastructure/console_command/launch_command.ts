@@ -39,6 +39,7 @@ import { Season1606052SKHarvesterProcess } from "process/onetime/season_1606052_
 import { Season1627101FetchResourceProcess } from "process/onetime/season_1627101_fetch_resource_process"
 import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
+import { Season1655635SKMineralHarvestProcess } from "process/onetime/season_1655635_sk_mineral_harvest_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -138,6 +139,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "UpgradePowerCreepProcess":
       result = this.launchUpgradePowerCreepProcess()
+      break
+    case "Season1655635SKMineralHarvestProcess":
+      result = this.launchSeason1655635SKMineralHarvestProcess()
       break
     default:
       break
@@ -876,6 +880,29 @@ export class LaunchCommand implements ConsoleCommand {
   private launchUpgradePowerCreepProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return UpgradePowerCreepProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason1655635SKMineralHarvestProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season1655635SKMineralHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
