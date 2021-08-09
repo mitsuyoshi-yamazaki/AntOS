@@ -52,7 +52,7 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
         ...objects.hostiles.powerCreeps,
       ]
 
-      if (this.targetId != null) {
+      if (this.targetId != null && ((Game.time % 29) !== 3)) {
         const stored = Game.getObjectById(this.targetId)
         if (stored != null && stored.room != null && stored.room.name === this.roomName) {
           if (stored.hits < stored.hitsMax) {
