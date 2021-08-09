@@ -551,7 +551,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
         const finishMessage = `${coloredText("[Finished]", "info")} ${roomHistoryLink(this.targetRoomName)}`
         processLog(this, finishMessage)
-        PrimitiveLogger.notice(finishMessage)
+        // PrimitiveLogger.notice(finishMessage)
         OperatingSystem.os.killProcess(this.processId)
       }
     }
