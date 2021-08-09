@@ -254,12 +254,12 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
 
     if (this.quadState.creepNames.length > 0) {
       const quad = new HRAQuad(this.quadState.creepNames)
-      if (quad.numberOfCreeps > 0) {
+      if (quad.allCreeps.length > 0) {
         const { attackingTarget } = this.runQuad(quad)
         const quadRoom = quad.topRightRoom
         const roomInfo = quadRoom != null ? ` in ${roomLink(quadRoom.name)}` : ""
         const targetInfo = attackingTarget != null ? ` target: ${attackingTarget.pos}` : ""
-        processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}${targetInfo}`)
+        processLog(this, `${quad.allCreeps.length}creeps${roomInfo}${targetInfo}`)
         return
       }
       processLog(this, "Quad dead")
@@ -390,7 +390,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
   private moveQuadToRoom(quad: HRAQuad): void {
     quad.moveQuadToRoom(this.targetRoomName, this.waypoints)
 
-    quad.allCreeps.forEach(creep => {
+    quad.allCreeps.forEach(creep => { // TODO: boostしてからQuadに追加する
       if (creep.room.name !== this.parentRoomName) {
         return
       }

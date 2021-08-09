@@ -26,7 +26,10 @@ let exitingDirection = null as TOP | BOTTOM | LEFT | RIGHT | null
  */
 class Quad {
   public get numberOfCreeps(): number {
-    return this.creeps.length + this.partialCreeps.length
+    return this.creeps.length
+  }
+  public get numberOfPartialCreeps(): number {
+    return this.partialCreeps.length
   }
   public get topRightPosition(): RoomPosition | null {
     return this.creeps[0]?.pos ?? null
@@ -34,6 +37,7 @@ class Quad {
   public get topRightRoom(): Room | null {
     return this.creeps[0]?.room ?? null
   }
+  /** @deprecated */
   public get allCreeps(): Creep[] {
     return [
       ...this.creeps,

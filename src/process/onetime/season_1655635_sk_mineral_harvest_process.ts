@@ -242,7 +242,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     const quad = new HRAQuad(attackers.map(creep => creep.name), {allowPartial: true})
 
     quad.heal()
-    if (quad.numberOfCreeps < 2) {
+    if (quad.allCreeps.length < 2) {
       const waypoints = [...this.waypoints].reverse()
       quad.moveQuadToRoom(this.parentRoomName, waypoints)
       return
@@ -255,7 +255,17 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
 
     const sourceKeeper = mineral.pos.findInRange(FIND_HOSTILE_CREEPS, 5)[0]
     if (sourceKeeper != null) {
-      quad.moveQuadTo(sourceKeeper.pos, 3)
+      if (quad.numberOfCreeps < 2) {
+        quad.fleeQuadFrom(sourceKeeper.pos, 5)
+        return
+      }
+
+      const range = quad.getMinRangeTo(sourceKeeper.pos)
+      if (range != null && range < 2) {
+        quad.fleeQuadFrom(sourceKeeper.pos, 2)
+      } else {
+        quad.moveQuadTo(sourceKeeper.pos, 3)
+      }
       quad.attack(sourceKeeper)
       return
     }
@@ -270,10 +280,8 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     }
     const safeRange = 4
     if (targetRange > safeRange) {
-      quad.say("move")
       quad.moveQuadTo(target.pos, safeRange)
     } else if (targetRange < safeRange) {
-      quad.say("flee")
       quad.fleeQuadFrom(target.pos, safeRange)
     }
   }
