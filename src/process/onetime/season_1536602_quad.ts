@@ -322,7 +322,14 @@ class Quad {
     }
   }
 
-  public align(): void {
+  public keepQuadForm(): void {
+    if (this.isQuadForm() !== true) {
+      this.align()
+      return
+    }
+  }
+
+  protected align(): void {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return
@@ -398,7 +405,7 @@ class Quad {
     return this.isQuadForm()
   }
 
-  public isQuadForm(): boolean {
+  protected isQuadForm(): boolean {
     const topRight = this.creeps[0]
     if (topRight == null) {
       return false
@@ -701,7 +708,23 @@ export class HRAQuad extends Quad {
     })
   }
 
-  public heal(): void {
+  public heal(target?: AnyCreep): void {
+    if (target != null) {
+      this.healOther(target)
+    } else {
+      this.healQuad()
+    }
+  }
+
+  private healOther(target: AnyCreep): void {
+    this.creeps.forEach(creep => {
+      if (creep.heal(target) === ERR_NOT_IN_RANGE) {
+        creep.rangedHeal(target)
+      }
+    })
+  }
+
+  private healQuad(): void {
     if (this.isQuadForm() !== true) {
       this.creeps.forEach(creep => creep.heal(creep))
       return

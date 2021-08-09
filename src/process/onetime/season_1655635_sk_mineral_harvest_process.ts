@@ -24,6 +24,7 @@ import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 
 const fleeRange = 6
+const keeperLairSpawnTime = 15
 
 export interface Season1655635SKMineralHarvestProcessState extends ProcessState {
   /** parent room name */
@@ -270,6 +271,8 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
       quad.moveQuadTo(target.pos, safeRange)
     } else if (targetRange < safeRange) {
       quad.fleeQuadFrom(target.pos, safeRange)
+    } else {
+      quad.keepQuadForm()
     }
   }
 
@@ -279,7 +282,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
       this.fleeFrom(closestHostile.pos, creep, fleeRange + 1)
       return
     }
-    if (keeperLair != null && keeperLair.ticksToSpawn != null && keeperLair.ticksToSpawn <= 10 && creep.pos.getRangeTo(keeperLair) <= fleeRange) {
+    if (keeperLair != null && keeperLair.ticksToSpawn != null && keeperLair.ticksToSpawn <= keeperLairSpawnTime && creep.pos.getRangeTo(keeperLair) <= fleeRange) {
       this.fleeFrom(keeperLair.pos, creep, fleeRange + 1)
       return
     }
@@ -307,7 +310,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
       this.fleeFrom(closestHostile.pos, creep, fleeRange + 1)
       return
     }
-    if (keeperLair != null && keeperLair.ticksToSpawn != null && keeperLair.ticksToSpawn <= 10 && creep.pos.getRangeTo(keeperLair) <= fleeRange) {
+    if (keeperLair != null && keeperLair.ticksToSpawn != null && keeperLair.ticksToSpawn <= keeperLairSpawnTime && creep.pos.getRangeTo(keeperLair) <= fleeRange) {
       this.fleeFrom(keeperLair.pos, creep, fleeRange + 1)
       return
     }
@@ -351,7 +354,16 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
           return true
         }
         return haulers.every(hauler => {
-          return hauler.store.getUsedCapacity(mineral.mineralType) <= 0
+          if (hauler === creep) {
+            return true
+          }
+          if (hauler.store.getUsedCapacity(mineral.mineralType) <= 0) {
+            return true
+          }
+          if (hauler.pos.getRangeTo(creep.pos) > 3) {
+            return true
+          }
+          return false
         })
       })()
       if (shouldWithdraw === true) {

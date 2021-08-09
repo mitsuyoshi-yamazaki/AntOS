@@ -298,9 +298,7 @@ export class Season1536602QuadAttackerProcess implements Process, Procedural, Me
 
     const nearbyHostileCreep = this.nearbyHostileAttacker(quad)
     if (nearbyHostileCreep != null) {
-      if (quad.isQuadForm() !== true) {
-        quad.align()
-      }
+      quad.keepQuadForm()
       quad.attack(nearbyHostileCreep)
       return { attackingTarget: nearbyHostileCreep }
     }
