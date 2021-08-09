@@ -58,8 +58,8 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
   private readonly harvesterBody: BodyPartConstant[] = [
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+    WORK, MOVE, WORK, MOVE, WORK,
+    CARRY, CARRY, CARRY, CARRY, CARRY,
   ]
 
   private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
