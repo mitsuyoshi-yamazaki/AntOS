@@ -58,7 +58,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
   private readonly harvesterBody: BodyPartConstant[] = [
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    WORK, MOVE, WORK, MOVE, WORK,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE,
     CARRY, CARRY, CARRY, CARRY, CARRY,
   ]
 
@@ -187,15 +187,11 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
           const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
           this.requestCreep(this.attackerRoles, this.attackerBody, priority)
         } else {
-          if (haulers.length < 1) {
-            this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
+          if (harvesters[0] == null || (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100)) {
+            this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
           } else {
-            if (harvesters[0] == null || (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100)) {
-              this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
-            } else {
-              // if (haulers.length < 2) {
-              //   this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
-              // }
+            if (haulers.length < 1) {
+              this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
             }
           }
         }
