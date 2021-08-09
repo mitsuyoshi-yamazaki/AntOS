@@ -1,4 +1,7 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
+import { coloredResourceType, roomLink } from "./log"
+import { Result } from "./result"
 import { RoomName } from "./room_name"
 
 let list = null as Map<ResourceConstant, number> | null
@@ -8,8 +11,12 @@ interface ResourceManagerInterface {
   beforeTick(): void
   afterTick(): void
 
+  // ---- Check Resource Amount ---- //
   list(): Map<ResourceConstant, number>
   resourceInRoom(resourceType: ResourceConstant): Map<RoomName, number>
+
+  // ---- Send Resource ---- //
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number): Result<number, string>
 }
 
 export const ResourceManager: ResourceManagerInterface = {
@@ -21,6 +28,7 @@ export const ResourceManager: ResourceManagerInterface = {
   afterTick(): void {
   },
 
+  // ---- Check Resource Amount ---- //
   list(): Map<ResourceConstant, number> {
     if (list == null) {
       const result = new Map<ResourceConstant, number>()
@@ -62,5 +70,54 @@ export const ResourceManager: ResourceManagerInterface = {
       resourceInRoom = result
     }
     return new Map(resourceInRoom)
+  },
+
+  // ---- Send Resource ---- //
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number): Result<number, string> {
+    const resourceInRoom = Array.from(this.resourceInRoom(resourceType).entries()).sort(([lhs], [rhs]) => {
+      return Game.map.getRoomLinearDistance(roomName, lhs) - Game.map.getRoomLinearDistance(roomName, rhs)
+    })
+
+    let sentAmount = 0
+    const errorMessages: string[] = []
+    resourceInRoom.forEach(([fromRoomName, amount]) => {
+      if (sentAmount >= requiredAmount) {
+        return
+      }
+      const resources = RoomResources.getOwnedRoomResource(fromRoomName)
+      if (resources == null) {
+        PrimitiveLogger.programError(`ResourceManager.sendTo() cannot retrieve owned room resources from ${roomLink(fromRoomName)}, ${coloredResourceType(resourceType)}`)
+        return
+      }
+      const terminal = resources.activeStructures.terminal
+      if (terminal == null) {
+        errorMessages.push(`No terminal in ${roomLink(fromRoomName)}`)
+        return
+      }
+      const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      const sendAmount = Math.min(Math.min(amount, requiredAmount - sentAmount), energyAmount)
+      const result = terminal.send(resourceType, sendAmount, roomName)
+      switch (result) {
+      case OK:
+        sentAmount += sendAmount
+        break
+
+      case ERR_TIRED:
+        errorMessages.push(`Terminal in ${roomLink(fromRoomName)} under cooldown`)
+        break
+
+      case ERR_NOT_ENOUGH_RESOURCES:
+      case ERR_NOT_OWNER:
+      case ERR_INVALID_ARGS:
+        PrimitiveLogger.programError(`ResourceManager.sendTo() terminal.send() returns ${result}, ${roomLink(fromRoomName)} to ${roomLink(roomName)}, ${coloredResourceType(resourceType)}`)
+        break
+      }
+    })
+
+    if ((requiredAmount - sentAmount) <= 0) {
+      return Result.Succeeded(sentAmount)
+    }
+    errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomName}`)
+    return Result.Failed(errorMessages.join("\n"))
   },
 }

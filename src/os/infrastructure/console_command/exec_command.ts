@@ -13,6 +13,8 @@ import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, roomLink } from "utility/log"
 import { isResourceConstant } from "utility/resource"
+import { isRoomName, RoomName } from "utility/room_name"
+import { RoomResources } from "room_resource/room_resources"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -390,6 +392,22 @@ export class ExecCommand implements ConsoleCommand {
         return `Invalid resource type ${args[1]}`
       }
       return this.resourceInRoom(args[1])
+    case "collect": {
+      if (args[1] == null || !isResourceConstant(args[1])) {
+        return `Invalid resource type ${args[1]}`
+      }
+      if (args[2] == null || !isRoomName(args[2])) {
+        return `Invalid room name ${args[2]}`
+      }
+      if (args[3] == null) {
+        return "amount is not provided"
+      }
+      const amount = parseInt(args[3], 10)
+      if (isNaN(amount) === true) {
+        return `amount is not a number ${args[3]}`
+      }
+      return this.collectResource(args[1], args[2], amount)
+    }
     case "list":
     default:
       return this.listResource()
@@ -425,5 +443,26 @@ export class ExecCommand implements ConsoleCommand {
       PrimitiveLogger.log(`- ${roomLink(roomName)}: ${amount}`)
     })
     return "ok"
+  }
+
+  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number): CommandExecutionResult {
+    const resources = RoomResources.getOwnedRoomResource(destinationRoomName)
+    if (resources == null) {
+      return `${this.constructor.name} collectResource() cannot retrieve owned room resources from ${roomLink(destinationRoomName)}`
+    }
+    if (resources.activeStructures.terminal == null) {
+      return `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomName)}`
+    }
+    if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
+      return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
+    }
+
+    const result = ResourceManager.collect(resourceType, destinationRoomName, amount)
+    switch (result.resultType) {
+    case "succeeded":
+      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomName)}`
+    case "failed":
+      return result.reason
+    }
   }
 }
