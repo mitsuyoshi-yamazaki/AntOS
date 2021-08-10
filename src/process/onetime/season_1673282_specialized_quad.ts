@@ -349,8 +349,7 @@ export class Quad implements Stateful, QuadInterface {
     }
 
     const maxRange = this.getMaxRangeTo(position)
-    if (maxRange != null && maxRange <= range) {
-      // topRight.say("ok")
+    if (maxRange <= range) {
       return
     }
 
@@ -391,7 +390,7 @@ export class Quad implements Stateful, QuadInterface {
       return
     }
     const minRange = this.getMinRangeTo(position)
-    if (minRange == null || minRange > range) {
+    if (minRange >= range) {
       return
     }
 
@@ -478,42 +477,37 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   private align(): void {
-    const topRight = this.creeps[0]
-    if (topRight == null) {
-      return
-    }
-
     const topRightPosition = ((): RoomPosition => {
       switch (exitingDirection) {
       case LEFT: {
-        const x = Math.min(Math.max(topRight.pos.x - 1, 0), 49)
-        const y = Math.min(Math.max(topRight.pos.y, 1), 47)
-        return new RoomPosition(x, y, topRight.pos.roomName)
+        const x = Math.min(Math.max(this.leaderCreep.pos.x - 1, 0), 49)
+        const y = Math.min(Math.max(this.leaderCreep.pos.y, 1), 47)
+        return new RoomPosition(x, y, this.leaderCreep.pos.roomName)
       }
       case BOTTOM: {
-        const x = Math.min(Math.max(topRight.pos.x, 2), 48)
-        const y = Math.min(Math.max(topRight.pos.y + 1, 0), 49)
-        return new RoomPosition(x, y, topRight.pos.roomName)
+        const x = Math.min(Math.max(this.leaderCreep.pos.x, 2), 48)
+        const y = Math.min(Math.max(this.leaderCreep.pos.y + 1, 0), 49)
+        return new RoomPosition(x, y, this.leaderCreep.pos.roomName)
       }
       case TOP:
       case RIGHT:
       case null: {
-        const x = Math.min(Math.max(topRight.pos.x, 2), 48)
-        const y = Math.min(Math.max(topRight.pos.y, 1), 47)
-        return new RoomPosition(x, y, topRight.pos.roomName)
+        const x = Math.min(Math.max(this.leaderCreep.pos.x, 2), 48)
+        const y = Math.min(Math.max(this.leaderCreep.pos.y, 1), 47)
+        return new RoomPosition(x, y, this.leaderCreep.pos.roomName)
       }
       }
     })()
     // topRight.say(`${topRightPosition.x},${topRightPosition.y}`)
-    topRight.say("align")
-    if (topRight.pos.isEqualTo(topRightPosition) === true) {
+    this.leaderCreep.say("align")
+    if (this.leaderCreep.pos.isEqualTo(topRightPosition) === true) {
       const followerDirections: DirectionConstant[] = [
         LEFT,
         BOTTOM_LEFT,
         BOTTOM,
       ]
       for (const positionDirection of followerDirections) {
-        const followerPosition = topRight.pos.positionTo(positionDirection)
+        const followerPosition = this.leaderCreep.pos.positionTo(positionDirection)
         if (followerPosition == null) {
           continue
         }
@@ -528,12 +522,12 @@ export class Quad implements Stateful, QuadInterface {
         })()
         if (hasObstacle === true) {
           const direction = oppositeDirections(positionDirection)[Game.time % 3] ?? oppositeDirection(positionDirection)
-          topRight.move(direction)
+          this.leaderCreep.move(direction)
           break
         }
       }
     } else {
-      topRight.moveTo(topRightPosition)
+      this.leaderCreep.moveTo(topRightPosition)
     }
 
     this.moveFollowersToNextPosition(topRightPosition, 2)
@@ -644,8 +638,11 @@ export class Quad implements Stateful, QuadInterface {
             break
           case ERR_NO_BODYPART:
             break
+          case ERR_NOT_IN_RANGE:
+            damage -= (CreepBody.power(healer.body, "heal") / 3)
+            break
           default:
-            PrimitiveLogger.programError(`HRAQuad.heal() returns ${result}, healer: ${healer.pos}, target: ${damagedCreep.pos} in ${roomLink(healer.room.name)}`)
+            PrimitiveLogger.programError(`Quad.heal() returns ${result}, healer: ${healer.pos}, target: ${damagedCreep.pos} in ${roomLink(healer.room.name)}`)
             healers.unshift(healer)
             break
           }
@@ -743,21 +740,14 @@ export class Quad implements Stateful, QuadInterface {
   }
 }
 
-const walkableStructures: StructureConstant[] = [
-  STRUCTURE_CONTAINER,
-  STRUCTURE_ROAD,
-]
-
 function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
   const terrain = position.lookFor(LOOK_TERRAIN)[0]
   switch (terrain) {
   case "plain": {
-    const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
-    return isObstacle === true ? "obstacle" : "plain"
+    return hasObstacleObjectAt(position) === true ? "obstacle" : "plain"
   }
   case "swamp": {
-    const isObstacle = position.lookFor(LOOK_STRUCTURES).some(structure => (walkableStructures.includes(structure.structureType) !== true))
-    return isObstacle === true ? "obstacle" : "swamp"
+    return hasObstacleObjectAt(position) ? "obstacle" : "swamp"
   }
   case "wall":
     return "obstacle"
@@ -765,6 +755,30 @@ function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
     PrimitiveLogger.programError(`Unexpected terrain ${terrain} at ${position} in ${roomLink(position.roomName)}`)
     return "obstacle"
   }
+}
+
+const walkableStructures: StructureConstant[] = [
+  STRUCTURE_CONTAINER,
+  STRUCTURE_ROAD,
+]
+
+function hasObstacleObjectAt(position: RoomPosition): boolean {
+  return position.look().some(obj => {
+    switch (obj.type) {
+    case "creep":
+    case "powerCreep":
+      return true
+
+    case "structure":
+      if (obj.structure == null) {
+        return false
+      }
+      return walkableStructures.includes(obj.structure.structureType) !== true
+
+    default:
+      return false
+    }
+  })
 }
 
 function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
