@@ -331,7 +331,7 @@ export class Quad implements Stateful, QuadInterface {
     if (this.room.name === destinationRoomName) {
       return
     }
-    const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints)
+    const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name))
     this.leaderCreep.moveTo(nextPosition)
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
@@ -354,7 +354,7 @@ export class Quad implements Stateful, QuadInterface {
     }
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback(),
+      costCallback: quadCostCallback(this.creeps.map(creep => creep.name)),
       range: 0,
       ignoreCreeps: true,
       maxRooms: 1,
@@ -402,7 +402,7 @@ export class Quad implements Stateful, QuadInterface {
     }
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback(),
+      costCallback: quadCostCallback(this.creeps.map(creep => creep.name)),
       range: 0,
       ignoreCreeps: true,
       maxRooms: 1,
@@ -512,7 +512,7 @@ export class Quad implements Stateful, QuadInterface {
           continue
         }
         const hasObstacle = ((): boolean => {
-          switch (getFieldType(followerPosition)) {
+          switch (getFieldType(followerPosition, this.creeps.map(creep => creep.name))) {
           case "plain":
           case "swamp":
             return false
@@ -740,14 +740,14 @@ export class Quad implements Stateful, QuadInterface {
   }
 }
 
-function getFieldType(position: RoomPosition): "obstacle" | "swamp" | "plain" {
+function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): "obstacle" | "swamp" | "plain" {
   const terrain = position.lookFor(LOOK_TERRAIN)[0]
   switch (terrain) {
   case "plain": {
-    return hasObstacleObjectAt(position) === true ? "obstacle" : "plain"
+    return hasObstacleObjectAt(position, excludedCreepNames) === true ? "obstacle" : "plain"
   }
   case "swamp": {
-    return hasObstacleObjectAt(position) ? "obstacle" : "swamp"
+    return hasObstacleObjectAt(position, excludedCreepNames) ? "obstacle" : "swamp"
   }
   case "wall":
     return "obstacle"
@@ -762,10 +762,17 @@ const walkableStructures: StructureConstant[] = [
   STRUCTURE_ROAD,
 ]
 
-function hasObstacleObjectAt(position: RoomPosition): boolean {
+function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[]): boolean {
   return position.look().some(obj => {
     switch (obj.type) {
     case "creep":
+      if (obj.creep == null) {
+        return false
+      }
+      if (excludedCreepNames.includes(obj.creep.name)) {
+        return false
+      }
+      return true
     case "powerCreep":
       return true
 
@@ -781,7 +788,7 @@ function hasObstacleObjectAt(position: RoomPosition): boolean {
   })
 }
 
-function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
+function quadCostCallback(excludedCreepNames: CreepName[], positionsToAvoid?: RoomPosition[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
   return (roomName: RoomName, costMatrix: CostMatrix): CostMatrix => {
     const room = Game.rooms[roomName]
     if (room == null) {
@@ -825,7 +832,7 @@ function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomNam
     for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
       for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
         const position = new RoomPosition(x, y, roomName)
-        const fieldType = getFieldType(position)
+        const fieldType = getFieldType(position, excludedCreepNames)
         switch (fieldType) {
         case "plain":
           break
@@ -853,7 +860,7 @@ function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomNam
   }
 }
 
-function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[]): RoomPosition {
+function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[], excludedCreepNames: CreepName[]): RoomPosition {
   try {
     const creepRoom = creep.room
 
@@ -884,7 +891,7 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     })()
 
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback(),
+      costCallback: quadCostCallback(excludedCreepNames),
       ignoreCreeps: true,
       maxRooms: 1,
     }
