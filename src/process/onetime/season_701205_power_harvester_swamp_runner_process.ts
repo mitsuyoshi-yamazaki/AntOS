@@ -130,8 +130,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     maxCount: 1,
     roles: [CreepRole.RangedAttacker, CreepRole.Mover],
     body: [
-      RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-      MOVE, HEAL,
+      RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+      MOVE, HEAL, MOVE, HEAL,
     ],
   }
   private get haulerSpec(): Season701205PowerHarvesterSwampRunnerProcessCreepSpec {
