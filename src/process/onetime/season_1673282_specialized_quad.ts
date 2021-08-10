@@ -279,7 +279,7 @@ export class Quad implements Stateful, QuadInterface {
 
   // ---- Execution ---- //
   public run(): void {
-    this.followerCreeps[0]?.say(this.moveTask.taskType)
+    // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
     case "move to room":
       this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed)
@@ -704,9 +704,9 @@ export class Quad implements Stateful, QuadInterface {
     const maxSingleAttackPower = 10
     const targets: [QuadAttackTargetType, number][] = optionalTargets.map(target => [target, target.pos.getRangeTo(creep.pos)])
 
-    for (const [, range] of targets) {
+    for (const [target, range] of targets) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((mainTarget as any).owner == null) {
+      if ((target as any).owner == null) {
         continue
       }
       switch (range) {
