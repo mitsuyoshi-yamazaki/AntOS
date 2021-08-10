@@ -184,23 +184,15 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public getMinRangeTo(position: RoomPosition): number {
-    if (this.creeps.length <= 0) {
-      return 0
-    }
-    const closest = this.creeps.reduce((lhs, rhs) => {
-      return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
-    })
-    return closest.pos.getRangeTo(position)
+    return this.creeps
+      .map(creep => creep.pos.getRangeTo(position))
+      .sort((lhs, rhs) => lhs - rhs)[0] ?? 0
   }
 
   public getMaxRangeTo(position: RoomPosition): number {
-    if (this.creeps.length <= 0) {
-      return 0
-    }
-    const farthest = this.creeps.reduce((lhs, rhs) => {
-      return lhs.pos.getRangeTo(position) > rhs.pos.getRangeTo(position) ? lhs : rhs
-    })
-    return farthest.pos.getRangeTo(position)
+    return this.creeps
+      .map(creep => creep.pos.getRangeTo(position))
+      .sort((lhs, rhs) => rhs - lhs)[0] ?? 0
   }
 
   public isQuadForm(): boolean {

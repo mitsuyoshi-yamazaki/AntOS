@@ -14,7 +14,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 import { OperatingSystem } from "os/os"
 import { Quad, QuadAttackTargetType, QuadState } from "./season_1673282_specialized_quad"
-import { CreepName, isAnyCreep } from "prototype/creep"
+import { CreepName } from "prototype/creep"
 import { GameConstants } from "utility/constants"
 
 type AttackTarget = AnyCreep | AnyStructure
@@ -27,6 +27,7 @@ export const season1673282SpecializedQuadProcessCreepType = [
   "test-dismantler",
   "test-attacker",
   "tier0-d100-attacker"
+  // "tier0-d450"
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
 
@@ -57,10 +58,25 @@ const tier0h3HealerSpec: CreepBodySpec = {
   ]
 }
 const tier0AttackerSpec: CreepBodySpec = {
-  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  roles: [CreepRole.Attacker, CreepRole.Healer, CreepRole.Mover],
   body: [
     RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
+  ]
+}
+
+const tire0h10HealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL, HEAL,
+    MOVE, HEAL,
   ]
 }
 
@@ -279,6 +295,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     quad.heal()
+    quad.attack(mainTarget, optionalTargets)
     if (mainTarget != null) {
       if ((mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
         if (quad.getMinRangeTo(mainTarget.pos) <= 1) {
@@ -292,7 +309,6 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return
     }
     quad.keepQuadForm()
-    quad.attack(mainTarget, optionalTargets)
   }
 
   private attackTargets(position: RoomPosition, room: Room): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]}  {
