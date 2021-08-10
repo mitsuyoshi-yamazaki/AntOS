@@ -29,11 +29,11 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   public static decode(state: FleeFromAttackerTaskState, childTask: CreepTask): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 5)
+    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 6)
   }
 
   public static create(childTask: CreepTask, range?: number): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 5)
+    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 6)
   }
 
   public run(creep: Creep): TaskProgressType {
