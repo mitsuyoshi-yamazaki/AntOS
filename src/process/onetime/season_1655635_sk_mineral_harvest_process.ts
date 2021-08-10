@@ -335,7 +335,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     }
 
     if (creep.store.getFreeCapacity() <= 0) {
-      processLog(this, `Storage full. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
+      processLog(this, `Creep store full. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
       returnToParentRoom()
       return
     }

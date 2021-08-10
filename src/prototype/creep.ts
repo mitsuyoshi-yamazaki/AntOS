@@ -65,6 +65,11 @@ declare global {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isAnyCreep(arg: any): arg is AnyCreep {
+  return (arg instanceof Creep) || (arg instanceof PowerCreep)
+}
+
 // ---- Memory ---- //
 export type CreepMemory = V6CreepMemory | V5CreepMemory | V4CreepMemory
 

@@ -107,7 +107,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       taskOutputs.logs.push({
         taskIdentifier: this.identifier,
         logEventType: "event",
-        message: `${compoundAmount} ${coloredResourceType(compound)} created.`,
+        message: `${compoundAmount} ${coloredResourceType(compound)} created ${roomLink(this.roomName)}.`,
       })
       delete compoundsList[compound]
       return taskOutputs

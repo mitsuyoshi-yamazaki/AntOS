@@ -260,7 +260,11 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
   }
 
   private runSingleAttacker(creep: Creep): { moved: boolean} {
-    const target = creep.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+    const hostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
+      return whitelist.includes(creep.owner.username) !== true
+    })
+    const target = creep.pos.findClosestByRange(hostileCreeps)
     if (target == null) {
       return {moved: false}
     }
@@ -294,7 +298,10 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
   }
 
   private closestHostile(position: RoomPosition): Creep | null {
-    const hostiles = position.findInRange(FIND_HOSTILE_CREEPS, 4)
+    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+    const hostiles = position.findInRange(FIND_HOSTILE_CREEPS, 4).filter(creep => {
+      return whitelist.includes(creep.owner.username) !== true
+    })
     if (hostiles.length <= 0) {
       return null
     }
