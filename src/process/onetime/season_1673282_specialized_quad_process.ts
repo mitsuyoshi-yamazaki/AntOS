@@ -26,6 +26,7 @@ type CreepBodySpec = {
 export const season1673282SpecializedQuadProcessCreepType = [
   "test-dismantler",
   "test-attacker",
+  "tier0-d100-attacker"
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
 
@@ -47,6 +48,22 @@ const testAttackerSpec: CreepBodySpec = {
   body: [ATTACK, MOVE, MOVE, HEAL],
 }
 
+const tier0h3HealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL,
+  ]
+}
+const tier0AttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
+  ]
+}
+
 const noBoosts: MineralBoostConstant[] = [
 ]
 
@@ -62,8 +79,7 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   quadState: QuadState | null
 }
 
-// test
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W10S29 waypoints=W10S24 creep_type=test-attacker targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W10S29 waypoints=W10S24 creep_type=tier0-d100-attacker targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -86,9 +102,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     switch (this.creepType) {
     case "test-dismantler":
-      this.boosts = noBoosts
-      break
     case "test-attacker":
+    case "tier0-d100-attacker":
       this.boosts = noBoosts
       break
     }
@@ -173,6 +188,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       case "test-dismantler":
       case "test-attacker":
         return 4 - this.creepNames.length
+      case "tier0-d100-attacker":
+        return 4 - this.creepNames.length
       }
     })()
     if (creepInsufficiency > 0) {
@@ -189,6 +206,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
             return testAttackerSpec
           } else {
             return testHealerSpec
+          }
+        case "tier0-d100-attacker":
+          if (creepInsufficiency <= 1) {
+            return tier0AttackerSpec
+          } else {
+            return tier0h3HealerSpec
           }
         }
       })()
@@ -227,10 +250,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   private runQuad(quad: Quad): void {
-    quad.heal()
     if (quad.inRoom(this.targetRoomName) !== true) {
       quad.moveToRoom(this.targetRoomName, this.waypoints)
       quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+      quad.heal()
       return
     }
 
@@ -239,16 +262,36 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (closestNeighbourRoom != null) {
         quad.moveToRoom(closestNeighbourRoom, [], true)
         quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+        quad.heal()
         return
       }
     }
 
     const { mainTarget, optionalTargets } = this.attackTargets(quad.pos, quad.room)
-    if (mainTarget != null && !isAnyCreep(mainTarget)) {
-      quad.moveTo(mainTarget.pos, 1)
-    } else {
-      quad.keepQuadForm()
+    if (mainTarget == null && optionalTargets.length <= 0) {
+      const damagedCreeps = this.damagedMyCreepsInRoom(quad)
+      const closestDamagedCreep = quad.pos.findClosestByPath(damagedCreeps)
+      if (closestDamagedCreep != null) {
+        quad.moveTo(closestDamagedCreep.pos, 1)
+      }
+      quad.heal(damagedCreeps)
+      return
     }
+
+    quad.heal()
+    if (mainTarget != null) {
+      if ((mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
+        if (quad.getMinRangeTo(mainTarget.pos) <= 1) {
+          quad.fleeFrom(mainTarget.pos, 2)
+        } else {
+          quad.moveTo(mainTarget.pos, 2)
+        }
+      } else {
+        quad.moveTo(mainTarget.pos, 1)
+      }
+      return
+    }
+    quad.keepQuadForm()
     quad.attack(mainTarget, optionalTargets)
   }
 
@@ -297,6 +340,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     const excludedStructureTypes: StructureConstant[] = [
       STRUCTURE_CONTROLLER,
       STRUCTURE_RAMPART,
+      STRUCTURE_KEEPER_LAIR,
+      STRUCTURE_POWER_BANK,
     ]
     const targetStructures = room.find(FIND_HOSTILE_STRUCTURES)
       .filter(structure => excludedStructureTypes.includes(structure.structureType) !== true)
@@ -312,6 +357,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     optionalTargets.push(...targetStructures)
+
+    if (mainTarget == null) {
+      const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS).filter(creep => whitelist.includes(creep.owner.username) !== true)
+      mainTarget = position.findClosestByPath(hostileCreepsInRoom)
+    }
 
     return {
       mainTarget,
@@ -330,6 +380,28 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     return [
       ...room.find(FIND_HOSTILE_CREEPS).filter(filter),
       ...room.find(FIND_HOSTILE_POWER_CREEPS).filter(filter),
+    ]
+  }
+
+  private damagedMyCreepsInRoom(quad: Quad): AnyCreep[] {
+    const damagedCreeps = quad.room.find(FIND_MY_CREEPS).filter(creep => {
+      if (quad.includes(creep.name) === true) {
+        return false
+      }
+      if (creep.hits < creep.hitsMax) {
+        return true
+      }
+      return false
+    })
+    const damagedPowerCreeps = quad.room.find(FIND_MY_POWER_CREEPS).filter(creep => {
+      if (creep.hits < creep.hitsMax) {
+        return true
+      }
+      return false
+    })
+    return [
+      ...damagedCreeps,
+      ...damagedPowerCreeps,
     ]
   }
 
