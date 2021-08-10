@@ -45,6 +45,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     const numberOfCreeps: { [roomName: string]: number } = {
       "W6S29": 6,
       "W21S23": 5,
+
+      // shard3
+      "W51S29": 4,
     }
     this.numberOfCreeps = numberOfCreeps[this.roomName] ?? 3
   }
