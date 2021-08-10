@@ -212,11 +212,22 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
 
     if (roomResource.roomInfo.researchLab == null) {
-      const placedLabs = parseLabs(roomResource.room)
-      if (placedLabs == null) {
+      const result = parseLabs(roomResource.room)
+      if (result.resultType === "failed") {
+        requestHandlerInputs.logs.push({
+          taskIdentifier: this.identifier,
+          logEventType: "event",
+          message: result.reason,
+        })
         return
       }
 
+      const placedLabs = result.value
+      requestHandlerInputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `inputs: ${result.value.inputLab1.pos}, ${result.value.inputLab2.pos}, outputs: ${result.value.outputLabs.length} labs`,
+      })
       roomResource.roomInfo.researchLab = {
         inputLab1: placedLabs.inputLab1.id,
         inputLab2: placedLabs.inputLab2.id,

@@ -133,7 +133,7 @@ export const ResourceManager: ResourceManagerInterface = {
     })
 
     const failedResult = (): ResultFailed<string> => {
-      errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomName}`)
+      errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomLink(roomName)}`)
       return Result.Failed(errorMessages.join("\n"))
     }
 
