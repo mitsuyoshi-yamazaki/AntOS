@@ -16,6 +16,7 @@ import { OperatingSystem } from "os/os"
 import { Quad, QuadAttackTargetType, QuadState } from "./season_1673282_specialized_quad"
 import { CreepName } from "prototype/creep"
 import { GameConstants } from "utility/constants"
+import { boostableCreepBody } from "utility/resource"
 
 type AttackTarget = AnyCreep | AnyStructure
 type CreepBodySpec = {
@@ -29,6 +30,7 @@ export const season1673282SpecializedQuadProcessCreepType = [
   "tier0-d100-attacker",
   "tier0-d450",
   "tire0-d360-dismantler",
+  "tier3-d2000-dismantler-swamp",
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
 
@@ -81,7 +83,7 @@ const tire0h10HealerSpec: CreepBodySpec = {
   ]
 }
 const tire0DismantlerSpec: CreepBodySpec = {
-  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  roles: [CreepRole.Worker, CreepRole.Mover],
   body: [
     WORK, WORK, WORK, WORK,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
@@ -93,7 +95,52 @@ const tire0DismantlerSpec: CreepBodySpec = {
   ]
 }
 
+const tier3SwampHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL,
+  ]
+}
+const tier3SwampDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+
 const noBoosts: MineralBoostConstant[] = [
+]
+
+// XZHO2,XLHO2,KHO2,XGHO2,XZH2O
+const tier3DismantlerBoost1: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+  RESOURCE_CATALYZED_ZYNTHIUM_ACID,
 ]
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
@@ -120,6 +167,9 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W13S27 tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier0-d450 targets=61000f6d396ad5973929dd91,61001128b44a521e4dd1caf3,61001ce3cb384f6a69de7b20,61001d1f5587d3796206f939")
+// W13S27 tier3-d2000-dismantler-swamp
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier3-d2000-dismantler-swamp targets=")
+
 
 // W27S29 tire0-d360-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W24S29 target_room_name=W27S29 waypoints=W24S30,W27S30 creep_type=tire0-d360-dismantler targets=")
@@ -146,12 +196,15 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     switch (this.creepType) {
     case "test-dismantler":
     case "test-attacker":
-      this.boosts = noBoosts
+      this.boosts = [...noBoosts]
       break
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tire0-d360-dismantler":
-      this.boosts = noBoosts
+      this.boosts = [...noBoosts]
+      break
+    case "tier3-d2000-dismantler-swamp":
+      this.boosts = [...tier3DismantlerBoost1]
       break
     }
   }
@@ -185,6 +238,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public didReceiveMessage(message: string): string {
+    if (message === "clear") {
+      this.predefinedTargetIds.splice(0, this.predefinedTargetIds.length)
+      return "cleared"
+    }
     if (message.length <= 0) {
       return "Empty message"
     }
@@ -238,6 +295,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       case "tier0-d100-attacker":
       case "tier0-d450":
       case "tire0-d360-dismantler":
+      case "tier3-d2000-dismantler-swamp":
         return 4 - this.creepNames.length
       }
     })()
@@ -270,12 +328,19 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
           } else {
             return tire0h10HealerSpec
           }
+        case "tier3-d2000-dismantler-swamp":
+          if (creepInsufficiency <= 1) {
+            return tier3SwampDismantlerSpec
+          } else {
+            return tier3SwampHealerSpec
+          }
         }
       })()
       this.requestCreep(priority, creepInsufficiency, spec)
     }
 
     if (quad != null) {
+      quad.beforeRun()
       this.runQuad(quad)
       quad.run()
       this.quadState = quad.encode()
@@ -285,12 +350,16 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
     this.quadState = null
 
-    if (this.creepNames.length > 0) {
+    if (this.creepNames.length > 0 && creeps.length <= 0) {
       processLog(this, "Quad dead")
       OperatingSystem.os.killProcess(this.processId)
       return
     }
-    processLog(this, "No creeps")
+    if (creeps.length <= 0) {
+      processLog(this, "No creeps")
+    } else {
+      processLog(this, `${creeps.length} unboosted creeps`)
+    }
   }
 
   private requestCreep(priority: CreepSpawnRequestPriority, numberOfCreeps: number, spec: CreepBodySpec): void {
@@ -314,7 +383,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return
     }
 
-    if (quad.damagePercent * 4 > 0.25) {
+    if (quad.damagePercent * 4 > 0.15) {
       const closestNeighbourRoom = this.closestNeighbourRoom(quad.pos)
       if (closestNeighbourRoom != null) {
         quad.moveToRoom(closestNeighbourRoom, [], true)
@@ -487,13 +556,30 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return true
     }
     return this.boosts.every(boost => {
-      return creep.body.some(body => body.boost === boost)
+      const boostablePart = boostableCreepBody(boost)
+      if (creep.getActiveBodyparts(boostablePart) <= 0) {
+        return true
+      }
+      return creep.body.every(body => {
+        if (body.type !== boostablePart) {
+          return true
+        }
+        return body.boost === boost
+      })
     })
   }
 
   private boostCreep(creep: Creep): void {
     const unboostedType = this.boosts.find(boost => {
-      return creep.body.every(body => body.boost !== boost)
+      return creep.body.some(body => {
+        if (body.boost != null) {
+          return false
+        }
+        if (body.type === boostableCreepBody(boost)) {
+          return true
+        }
+        return false
+      })
     })
     if (unboostedType == null) {
       return

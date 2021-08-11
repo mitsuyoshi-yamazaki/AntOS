@@ -176,3 +176,39 @@ export const MineralCompoundIngredients: { [index in MineralCompoundConstant]: {
   XGH2O: { lhs: RESOURCE_GHODIUM_ACID, rhs: RESOURCE_CATALYST },
   XGHO2: { lhs: RESOURCE_GHODIUM_ALKALIDE, rhs: RESOURCE_CATALYST },
 }
+
+const boostableCreepBodyMap: { [boost in MineralBoostConstant]: BodyPartConstant } = {
+  UH: ATTACK,
+  UH2O: ATTACK,
+  XUH2O: ATTACK,
+  UO: WORK,
+  UHO2: WORK,
+  XUHO2: WORK,
+  KH: CARRY,
+  KH2O: CARRY,
+  XKH2O: CARRY,
+  KO: RANGED_ATTACK,
+  KHO2: RANGED_ATTACK,
+  XKHO2: RANGED_ATTACK,
+  LH: WORK,
+  LH2O: WORK,
+  XLH2O: WORK,
+  LO: HEAL,
+  LHO2: HEAL,
+  XLHO2: HEAL,
+  ZH: WORK,
+  ZH2O: WORK,
+  XZH2O: WORK,
+  ZO: MOVE,
+  ZHO2: MOVE,
+  XZHO2: MOVE,
+  GH: WORK,
+  GH2O: WORK,
+  XGH2O: WORK,
+  GO: TOUGH,
+  GHO2: TOUGH,
+  XGHO2: TOUGH,
+}
+export function boostableCreepBody(boost: MineralBoostConstant): BodyPartConstant {
+  return boostableCreepBodyMap[boost]
+}

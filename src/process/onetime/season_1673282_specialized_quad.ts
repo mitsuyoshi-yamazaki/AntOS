@@ -1,7 +1,7 @@
 import { SourceKeeper } from "game/source_keeper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName, isAnyCreep } from "prototype/creep"
-import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
@@ -79,6 +79,7 @@ export interface QuadState extends State {
   direction: Direction
   exitingDirection: Direction | null
   previousTargetId: Id<QuadAttackTargetType> | null
+  leaderRotationPositionState: RoomPositionState | null
   leaderName: CreepName
   followerNames: CreepName[]
 }
@@ -117,6 +118,7 @@ interface QuadInterface {
   passiveAttack(targets: QuadAttackTargetType[]): void
 
   // ---- Execution ---- //
+  beforeRun(): void
   run(): void
 }
 
@@ -171,6 +173,7 @@ export class Quad implements Stateful, QuadInterface {
     private direction: Direction,
     private exitingDirection: Direction | null,
     private previousTargetId: Id<QuadAttackTargetType> | null,
+    private leaderRotationPosition: RoomPosition | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
   ) {
@@ -184,6 +187,7 @@ export class Quad implements Stateful, QuadInterface {
       direction: this.direction,
       exitingDirection: this.exitingDirection,
       previousTargetId: this.previousTargetId,
+      leaderRotationPositionState: this.leaderRotationPosition?.encode() ?? null,
       leaderName: this.leaderCreep.name,
       followerNames: this.followerCreeps.map(creep => creep.name),
     }
@@ -201,11 +205,17 @@ export class Quad implements Stateful, QuadInterface {
     if (leader == null) {
       return null
     }
-    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection, state.previousTargetId ?? null, leader, followerCreeps)
+    const leaderRotationPosition = ((): RoomPosition | null => {
+      if (state.leaderRotationPositionState == null) {
+        return null
+      }
+      return decodeRoomPosition(state.leaderRotationPositionState)
+    })()
+    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection, state.previousTargetId, leaderRotationPosition, leader, followerCreeps)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(leaderCreep.pos, TOP, null, null, leaderCreep, followerCreeps)
+    return new Quad(leaderCreep.pos, TOP, null, null, null, leaderCreep, followerCreeps)
   }
 
   // ---- Position ---- //
@@ -329,11 +339,12 @@ export class Quad implements Stateful, QuadInterface {
     default:
       break
     }
-    if (this.canMoveQquad() !== true) {
-      return
-    }
     const direction = this.directionTo(target)
     if (direction == null || direction === this.direction) {
+      if (direction == null) {
+        this.leaderCreep.say("no dir")
+      }
+      PrimitiveLogger.log(`next direction ${direction} (current: ${this.direction})`)
       return
     }
 
@@ -418,6 +429,12 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Execution ---- //
+  public beforeRun(): void {
+    if (this.leaderRotationPosition != null && this.leaderCreep.pos.isEqualTo(this.leaderRotationPosition) === true) {
+      this.leaderRotationPosition = null
+    }
+  }
+
   public run(): void {
     // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
@@ -478,8 +495,8 @@ export class Quad implements Stateful, QuadInterface {
       return
     }
     const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
-    this.leaderCreep.moveTo(nextPosition)
-    this.moveFollowersToNextPosition(nextPosition, 1)
+    this.leaderCreep.moveTo(nextPosition, this.moveToOptions(2))
+    this.moveFollowersToNextPosition(nextPosition, 2)
   }
 
   /**
@@ -518,7 +535,7 @@ export class Quad implements Stateful, QuadInterface {
       })
     }
     const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, this.room.name)
-    this.leaderCreep.moveTo(nextPosition)
+    this.leaderCreep.moveTo(nextPosition, this.moveToOptions(1))
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
@@ -566,7 +583,7 @@ export class Quad implements Stateful, QuadInterface {
       })
     }
     const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
-    topRight.moveTo(nextPosition)
+    topRight.moveTo(nextPosition, this.moveToOptions(2))
     this.moveFollowersToNextPosition(nextPosition, 1)
   }
 
@@ -578,10 +595,6 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   private runRotateTask(direction: Direction): void {
-    if (this.isQuadForm() !== true) {
-      PrimitiveLogger.programError(`Quad.runRotateTask() not quad formed ${roomLink(this.room.name)}`)
-      return
-    }
     const rotation = rotationFor(this.direction, direction)
     if (rotation == null) {
       return
@@ -605,8 +618,13 @@ export class Quad implements Stateful, QuadInterface {
       return
     }
     this.leaderCreep.say(`r-${rotation}`)
+    if (this.isQuadForm() === true) {
+      this.leaderRotationPosition = leaderNextPosition
+    }
     this.direction = toDirection
-    this.align(leaderNextPosition)
+    if (this.canMoveQquad() === true) {
+      this.align()
+    }
   }
 
   private absoluteQuadFollowerDirection(direction: QuadFollowerDirection): DirectionConstant {
@@ -711,7 +729,24 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private align(leaderNextPosition?: RoomPosition): void {
+  private align(): void {
+    const leaderRotationPosition = ((): RoomPosition | null => {
+      const position = this.leaderRotationPosition ?? null
+      if (position != null && this.leaderCreep.pos.isEqualTo(position) === true) {
+        this.leaderRotationPosition = null
+        return null
+      }
+      this.leaderRotationPosition = position
+      return position
+    })()
+
+    if (leaderRotationPosition != null) {
+      this.leaderCreep.say("rotate")
+      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))
+      this.moveFollowersToNextPosition(leaderRotationPosition, 2)
+      return
+    }
+
     const leaderAvoidEdgePosition = ((): RoomPosition => {
       const result = ErrorMapper.wrapLoop((): RoomPosition => {
         const exitPosition = this.quadExitPosition()
@@ -741,12 +776,12 @@ export class Quad implements Stateful, QuadInterface {
           const leaderAvoidObstaclePosition = leaderAvoidEdgePosition.positionTo(this.absoluteQuadDirection(RIGHT))
           if (leaderAvoidObstaclePosition != null) {
             this.leaderCreep.say("avoid-o1")
-            this.leaderCreep.moveTo(leaderAvoidObstaclePosition)
+            this.leaderCreep.moveTo(leaderAvoidObstaclePosition, this.moveToOptions(1))
             return leaderAvoidObstaclePosition
           }
         }
         this.leaderCreep.say("avoid-e")
-        this.leaderCreep.moveTo(leaderAvoidEdgePosition)
+        this.leaderCreep.moveTo(leaderAvoidEdgePosition, this.moveToOptions(1))
         return leaderAvoidEdgePosition
       }
 
@@ -772,11 +807,6 @@ export class Quad implements Stateful, QuadInterface {
         }
       }
 
-      if (leaderNextPosition != null) {
-        this.leaderCreep.say("rotate")
-        this.leaderCreep.moveTo(leaderNextPosition)
-        return leaderNextPosition
-      }
       this.leaderCreep.say("align")
       return this.leaderCreep.pos
     })()
@@ -820,7 +850,7 @@ export class Quad implements Stateful, QuadInterface {
         return
       }
       const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
-      creep.moveTo(position, this.followerMoveToOptions(maxRooms))
+      creep.moveTo(position, this.moveToOptions(maxRooms))
     }
 
     move(1, this.absoluteQuadFollowerDirection(BOTTOM))
@@ -871,7 +901,7 @@ export class Quad implements Stateful, QuadInterface {
       if (previousCreep == null || previousCreep.spawning === true || creep == null) {
         return
       }
-      creep.moveTo(previousCreep.pos, this.followerMoveToOptions(2))
+      creep.moveTo(previousCreep.pos, this.moveToOptions(2))
     }
 
     follow(1)
@@ -879,7 +909,7 @@ export class Quad implements Stateful, QuadInterface {
     follow(3)
   }
 
-  private followerMoveToOptions(maxRooms: number): MoveToOpts {
+  private moveToOptions(maxRooms: number): MoveToOpts {
     return {
       maxRooms,
       maxOps: 200,
