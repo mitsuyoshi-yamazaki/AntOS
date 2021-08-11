@@ -119,11 +119,6 @@ interface QuadInterface {
   run(): void
 }
 
-/**
- * - [ ] attack()時にrotate
- * - [ ] attack()時にattack(), dismantle()
- * - [ ] 近所にAttackerが来たら避ける
- */
 export class Quad implements Stateful, QuadInterface {
   public get pos(): RoomPosition {
     return this.leaderCreep.pos
@@ -377,6 +372,9 @@ export class Quad implements Stateful, QuadInterface {
       }
       availableDirections.push(targetDirection)
     })
+    if (availableDirections.includes(this.direction) === true) {
+      return this.direction
+    }
     const rawDirection = this.rawDirectionTo(target.pos)
     if (availableDirections.includes(rawDirection) === true) {
       return rawDirection
@@ -853,7 +851,7 @@ export class Quad implements Stateful, QuadInterface {
     const follow = (creepIndex: number): void => {
       const previousCreep = this.creeps[creepIndex - 1]
       const creep = this.creeps[creepIndex]
-      if (previousCreep == null || creep == null) {
+      if (previousCreep == null || previousCreep.spawning === true || creep == null) {
         return
       }
       creep.moveTo(previousCreep.pos, this.followerMoveToOptions(2))
@@ -1138,14 +1136,15 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
     const swampCost = GameConstants.pathFinder.costs.swamp
     const roomMinEdge = GameConstants.room.edgePosition.min
     const roomMaxEdge = GameConstants.room.edgePosition.max
+    const exitPositionCost = obstacleCost - 1
 
     for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
       for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
         const position = new RoomPosition(x, y, roomName)
         if (position.isRoomEdge === true) {
-          costMatrix.set(x, y, obstacleCost)
+          costMatrix.set(x, y, exitPositionCost)
           getObstaclePositions(position).forEach(p => {
-            costMatrix.set(p.x, p.y, obstacleCost)
+            costMatrix.set(p.x, p.y, exitPositionCost)
           })
           continue
         }
