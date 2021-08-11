@@ -15,6 +15,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */
@@ -175,7 +176,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.removeConstructionSiteTask(creep),
+      creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep)),
       () => true,
     )
 
@@ -257,10 +258,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     return SequentialTask.create(tasks, options)
   }
 
-  private removeConstructionSiteTask(creep: Creep): CreepTask | null {
+  private removeConstructionSiteTask(creep: Creep): CreepTask {
     const targetSite = this.targetConstructionSite(creep)
     if (targetSite == null) {
-      return null
+      return MoveToTask.create(creep.pos, 0)
     }
     if (targetSite.pos.isEqualTo(creep.pos) === true) {
       const i = (Game.time % 3) - 1
