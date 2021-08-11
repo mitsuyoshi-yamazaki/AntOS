@@ -321,7 +321,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
     }
 
-    const { mainTarget, optionalTargets } = this.attackTargets(quad.pos, quad.room)
+    const { mainTarget, optionalTargets } = this.attackTargets(quad)
     if (mainTarget == null && optionalTargets.length <= 0) {
       const damagedCreeps = this.damagedMyCreepsInRoom(quad)
       const closestDamagedCreep = quad.pos.findClosestByPath(damagedCreeps)
@@ -349,27 +349,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     quad.keepQuadForm()
   }
 
-  private attackTargets(position: RoomPosition, room: Room): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]}  {
+  private attackTargets(quad: Quad): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[] }  {
+    const position = quad.pos
+    const room = quad.room
+
     let mainTarget = null as QuadAttackTargetType | null
     const optionalTargets: QuadAttackTargetType[] = []
-
-    const hostileAttackers: Creep[] = []
-    const hostileWorkers: AnyCreep[] = position.findInRange(FIND_HOSTILE_POWER_CREEPS, 4)
-    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
-    position.findInRange(FIND_HOSTILE_CREEPS, 4).forEach(creep => {
-      if (whitelist.includes(creep.owner.username) === true) {
-        return
-      }
-      if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
-        hostileAttackers.push(creep)
-      } else {
-        hostileWorkers.push(creep)
-      }
-    })
-
-    mainTarget = hostileAttackers.shift() ?? null
-    optionalTargets.push(...hostileAttackers)
-    optionalTargets.push(...hostileWorkers)
 
     for (const targetId of this.predefinedTargetIds) {
       const target = Game.getObjectById(targetId)
@@ -411,6 +396,41 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     optionalTargets.push(...targetStructures)
+
+    const hostileAttackers: Creep[] = []
+    const hostileWorkers: AnyCreep[] = position.findInRange(FIND_HOSTILE_POWER_CREEPS, 4)
+    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+    position.findInRange(FIND_HOSTILE_CREEPS, 4).forEach(creep => {
+      if (whitelist.includes(creep.owner.username) === true) {
+        return
+      }
+      if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
+        hostileAttackers.push(creep)
+      } else {
+        hostileWorkers.push(creep)
+      }
+    });
+
+    ((): void => {
+      if (mainTarget == null) {
+        mainTarget = hostileAttackers.shift() ?? null
+        return
+      }
+      const hostileAttacker = hostileAttackers.shift() ?? null
+      if (hostileAttacker == null) {
+        return
+      }
+      if (quad.getMinRangeTo(mainTarget.pos) > 3) {
+        hostileAttackers.unshift(hostileAttacker)
+        return
+      }
+      optionalTargets.unshift(mainTarget)
+      mainTarget = hostileAttacker
+      return
+    })()
+
+    optionalTargets.unshift(...hostileWorkers)
+    optionalTargets.unshift(...hostileAttackers)
 
     if (mainTarget == null) {
       const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS).filter(creep => whitelist.includes(creep.owner.username) !== true)

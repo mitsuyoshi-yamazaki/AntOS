@@ -969,10 +969,12 @@ export class Quad implements Stateful, QuadInterface {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (creep.pos.getRangeTo(mainTarget) <= 1 && (mainTarget as any).owner != null) {
         creep.rangedMassAttack()
+        return
       } else {
-        creep.rangedAttack(mainTarget)
+        if (creep.rangedAttack(mainTarget) === OK) {
+          return
+        }
       }
-      return
     }
 
     if (optionalTargets.length <= 0) {
@@ -1252,7 +1254,7 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
 
     const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit, pathFinderOptions)
     if (exitPosition == null) {
-      creep.say("no path1")
+      creep.say(`no path1-${exit}`)
       return creep.pos
     }
 
