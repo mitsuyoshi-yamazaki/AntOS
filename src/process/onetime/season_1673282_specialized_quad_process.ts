@@ -28,6 +28,7 @@ export const season1673282SpecializedQuadProcessCreepType = [
   "test-attacker",
   "tier0-d100-attacker",
   "tier0-d450",
+  "tire0-d360-dismantler",
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
 
@@ -69,14 +70,26 @@ const tire0h10HealerSpec: CreepBodySpec = {
   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
   body: [
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
-    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE,
     HEAL, HEAL, HEAL, HEAL, HEAL,
     HEAL, HEAL, HEAL, HEAL,
     MOVE, HEAL,
+  ]
+}
+const tire0DismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    WORK, WORK, WORK, WORK,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    WORK, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
   ]
 }
 
@@ -134,6 +147,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       break
     case "tier0-d100-attacker":
     case "tier0-d450":
+    case "tire0-d360-dismantler":
       this.boosts = noBoosts
       break
     }
@@ -220,6 +234,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         return 4 - this.creepNames.length
       case "tier0-d100-attacker":
       case "tier0-d450":
+      case "tire0-d360-dismantler":
         return 4 - this.creepNames.length
       }
     })()
@@ -246,6 +261,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
           }
         case "tier0-d450":
           return tire0h10HealerSpec
+        case "tire0-d360-dismantler":
+          if (creepInsufficiency <= 1) {
+            return tire0DismantlerSpec
+          } else {
+            return tire0h10HealerSpec
+          }
         }
       })()
       this.requestCreep(priority, creepInsufficiency, spec)
