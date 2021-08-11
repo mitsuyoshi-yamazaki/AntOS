@@ -768,7 +768,10 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     if (this.pickupFinished === true) {
       return this.attackNearbyHostileHaulerTask(creep)
     }
-    const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)[0]
+    const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)
+      .filter(hostileCreep => {
+        return this.whitelistedUsernames.includes(hostileCreep.owner.username) !== true
+      })[0]
     if (hostileCreep != null && hostileCreep.getActiveBodyparts(ATTACK) <= 0) {
       return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
     }
@@ -824,7 +827,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
   }
 
   private attackNearbyHostileHaulerTask(creep: Creep): CreepTask | null {
-    const hostileHauler = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => (creep.getActiveBodyparts(CARRY) > 0)))
+    const hostileHauler = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS).filter(hostileCreep => {
+      if (this.whitelistedUsernames.includes(hostileCreep.owner.username) === true) {
+        return false
+      }
+      return (hostileCreep.getActiveBodyparts(CARRY) > 0)
+    }))
     if (hostileHauler == null) {
       return null
     }
