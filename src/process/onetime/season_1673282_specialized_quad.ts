@@ -78,6 +78,7 @@ export interface QuadState extends State {
   lastLeaderPosition: RoomPosition
   direction: Direction
   exitingDirection: Direction | null
+  previousTargetId: Id<QuadAttackTargetType> | null
   leaderName: CreepName
   followerNames: CreepName[]
 }
@@ -169,6 +170,7 @@ export class Quad implements Stateful, QuadInterface {
     private lastLeaderPosition: RoomPosition,
     private direction: Direction,
     private exitingDirection: Direction | null,
+    private previousTargetId: Id<QuadAttackTargetType> | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
   ) {
@@ -181,6 +183,7 @@ export class Quad implements Stateful, QuadInterface {
       lastLeaderPosition: this.lastLeaderPosition,
       direction: this.direction,
       exitingDirection: this.exitingDirection,
+      previousTargetId: this.previousTargetId,
       leaderName: this.leaderCreep.name,
       followerNames: this.followerCreeps.map(creep => creep.name),
     }
@@ -198,11 +201,11 @@ export class Quad implements Stateful, QuadInterface {
     if (leader == null) {
       return null
     }
-    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection ?? null, leader, followerCreeps)
+    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection, state.previousTargetId ?? null, leader, followerCreeps)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(leaderCreep.pos, TOP, null, leaderCreep, followerCreeps)
+    return new Quad(leaderCreep.pos, TOP, null, null, leaderCreep, followerCreeps)
   }
 
   // ---- Position ---- //
@@ -358,6 +361,8 @@ export class Quad implements Stateful, QuadInterface {
       [RIGHT, BOTTOM_LEFT, LEFT],
       [RIGHT, LEFT, TOP_LEFT],
     ]
+
+    const creepNames = this.creeps.map(creep => creep.name)
     availablePositionsForDirection.forEach(([targetDirection, direction1, direction2]) => {
       const position1 = target.pos.positionTo(direction1)
       const position2 = target.pos.positionTo(direction2)
@@ -368,6 +373,18 @@ export class Quad implements Stateful, QuadInterface {
         return
       }
       if (neighbourPositions.every(position => position.isEqualTo(position2) !== true)) {
+        return
+      }
+      const pathFinderOptions: FindPathOpts = {
+        costCallback: quadCostCallback(creepNames, targetDirection),
+        range: 1,
+        ignoreCreeps: true,
+        maxRooms: 1,
+        maxOps: 500,
+      }
+
+      const nextSteps = this.room.findPath(this.pos, position1, pathFinderOptions)
+      if (nextSteps.length <= 0) {
         return
       }
       availableDirections.push(targetDirection)
@@ -935,13 +952,19 @@ export class Quad implements Stateful, QuadInterface {
       if (creep.getActiveBodyparts(ATTACK) > 0) {
         const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
         if (nearbyTarget != null) {
-          this.rotateTo(nearbyTarget)
+          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
+            this.previousTargetId = nearbyTarget.id
+            this.rotateTo(nearbyTarget)
+          }
           creep.attack(nearbyTarget)
         }
       } else if (creep.getActiveBodyparts(WORK) > 0) {
         const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
         if (nearbyTarget != null && !isAnyCreep(nearbyTarget)) {
-          this.rotateTo(nearbyTarget)
+          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
+            this.previousTargetId = nearbyTarget.id
+            this.rotateTo(nearbyTarget)
+          }
           creep.dismantle(nearbyTarget)
         }
       }
@@ -960,6 +983,7 @@ export class Quad implements Stateful, QuadInterface {
         }
       }
     })
+    this.previousTargetId = null
   }
 
   private rangedAttackCreep(creep: Creep, mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]): void {

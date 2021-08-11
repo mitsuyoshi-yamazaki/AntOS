@@ -269,14 +269,14 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       return MoveToTask.create(position, 0)
     }
 
-    if ((creep.ticksToLive ?? 0) > 10 && creep.pos.isNearTo(targetSite.pos) === true) {
-      if (targetSite.progress < (targetSite.progressTotal / 2)) {
-        const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
-        if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).some(creep => creep.body.some(body => attackBodyParts.includes(body.type))) !== true) {
-          return null
-        }
-      }
-    }
+    // if ((creep.ticksToLive ?? 0) > 10 && creep.pos.isNearTo(targetSite.pos) === true) {
+    //   if (targetSite.progress < (targetSite.progressTotal / 2)) {
+    //     const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
+    //     if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).some(creep => creep.body.some(body => attackBodyParts.includes(body.type))) !== true) {
+    //       return null
+    //     }
+    //   }
+    // }
     return MoveToTask.create(targetSite.pos, 0, {ignoreSwamp: true})
   }
 
