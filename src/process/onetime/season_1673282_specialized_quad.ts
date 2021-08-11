@@ -801,7 +801,7 @@ export class Quad implements Stateful, QuadInterface {
 
     const move = (creepIndex: number, directionFromTopRight: DirectionConstant): void => {
       const creep = this.creeps[creepIndex]
-      if (creep == null) {
+      if (creep == null || creep.spawning === true) {
         return
       }
       const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
