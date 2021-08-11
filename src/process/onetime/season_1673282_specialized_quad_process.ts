@@ -26,8 +26,8 @@ type CreepBodySpec = {
 export const season1673282SpecializedQuadProcessCreepType = [
   "test-dismantler",
   "test-attacker",
-  "tier0-d100-attacker"
-  // "tier0-d450"
+  "tier0-d100-attacker",
+  "tier0-d450",
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
 
@@ -95,7 +95,18 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   quadState: QuadState | null
 }
 
+// test
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W10S29 waypoints=W10S24 creep_type=tier0-d100-attacker targets=")
+
+// W11S23 tier0-d450
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 creep_type=tier0-d450 targets=")
+
+// W11S25
+// tier0-d450
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S25 waypoints=W10S24,W10S25 creep_type=tier0-d450 targets=611362889c09be8c65e9e5c6")
+
+// W13S27 tier0-d450
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier0-d450 targets=61000f6d396ad5973929dd91,61001128b44a521e4dd1caf3,61001ce3cb384f6a69de7b20,61001d1f5587d3796206f939")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -119,7 +130,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     switch (this.creepType) {
     case "test-dismantler":
     case "test-attacker":
+      this.boosts = noBoosts
+      break
     case "tier0-d100-attacker":
+    case "tier0-d450":
       this.boosts = noBoosts
       break
     }
@@ -205,6 +219,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       case "test-attacker":
         return 4 - this.creepNames.length
       case "tier0-d100-attacker":
+      case "tier0-d450":
         return 4 - this.creepNames.length
       }
     })()
@@ -229,6 +244,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
           } else {
             return tier0h3HealerSpec
           }
+        case "tier0-d450":
+          return tire0h10HealerSpec
         }
       })()
       this.requestCreep(priority, creepInsufficiency, spec)
@@ -355,7 +372,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     ]
     const excludedStructureTypes: StructureConstant[] = [
       STRUCTURE_CONTROLLER,
-      STRUCTURE_RAMPART,
+      // STRUCTURE_RAMPART,
       STRUCTURE_KEEPER_LAIR,
       STRUCTURE_POWER_BANK,
     ]
