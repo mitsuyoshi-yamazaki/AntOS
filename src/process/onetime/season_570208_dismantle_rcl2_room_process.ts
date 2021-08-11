@@ -33,10 +33,7 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
   n: number
 }
 
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W27S26 target_room_name=W25S22 waypoints=W26S26,W26S25,W24S25,W24S22")
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S27")
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W14S28 target_room_name=W17S29 waypoints=W14S30,W16S29")
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W9S24 target_room_name=W11S25 waypoints=W10S24,W11S25 creeps=1")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -92,8 +89,8 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, 2)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): Season570208DismantleRcl2RoomProcess {
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount)
   }
 
   public processShortDescription(): string {

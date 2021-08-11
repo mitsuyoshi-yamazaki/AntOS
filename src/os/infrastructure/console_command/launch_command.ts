@@ -258,18 +258,17 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("waypoints")
     }
     const waypoints = rawWaypoints.split(",")
-
-
-    // const parentRoomName = "W27S26"
-    // const targetRoomName = "W25S22"
-    // const waypoints: RoomName[] = ["W26S26", "W26S25", "W24S25", "W24S22"]
-
-    // const parentRoomName = "W9S24"
-    // const targetRoomName = "W3S27"
-    // const waypoints: RoomName[] = ["W3S25"]
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
+      return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
