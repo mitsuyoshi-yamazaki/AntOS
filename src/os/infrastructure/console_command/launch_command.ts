@@ -23,7 +23,7 @@ import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProc
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1105755HarvestMineralProcess } from "process/onetime/season_1105755_harvest_mineral_process"
-import { Season1143119LabChargerProcess } from "process/onetime/season_1143119_lab_charger_process"
+import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/onetime/season_1143119_lab_charger_process"
 import { Season1143119BoostedAttackProcess } from "process/onetime/season_1143119_boosted_attack_process"
 import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/onetime/season_1244215_generic_dismantle_process"
@@ -37,7 +37,7 @@ import { Season1521073SendResourceProcess } from "process/onetime/season_1521073
 import { isSeason1536602QuadAttackerProcessCreepType, Season1536602QuadAttackerProcess, season1536602QuadAttackerProcessCreepType } from "process/onetime/season_1536602_quad_attacker_process"
 import { Season1606052SKHarvesterProcess } from "process/onetime/season_1606052_sk_harvester_process"
 import { Season1627101FetchResourceProcess } from "process/onetime/season_1627101_fetch_resource_process"
-import { isResourceConstant } from "utility/resource"
+import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/onetime/season_1655635_sk_mineral_harvest_process"
 import { isSeason1673282SpecializedQuadProcessCreepType, Season1673282SpecializedQuadProcess, season1673282SpecializedQuadProcessCreepType } from "process/onetime/season_1673282_specialized_quad_process"
@@ -525,22 +525,31 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const rawTier = args.get("tire")
-    if (rawTier == null) {
-      return this.missingArgumentError("tire")
-    }
-    const tire = parseInt(rawTier, 10)
-    if (isNaN(tire) === true || [1,2].includes(tire) === false) {
-      return Result.Failed(`Not supported tire ${tire}`)
-    }
-    const rawLabIds = args.get("lab_ids")
+    const rawLabIds = args.get("labs")
     if (rawLabIds == null) {
-      return this.missingArgumentError("lab_ids")
+      return this.missingArgumentError("labs")
     }
-    const labIds = rawLabIds.split(",") as Id<StructureLab>[]
+    const labStates: Season1143119LabChargerProcessLabInfo[] = []
+    for (const rawLabInfo of rawLabIds.split(",")) {
+      const [labId, boost] = rawLabInfo.split(":")
+      if (labId == null || boost == null) {
+        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds})`)
+      }
+      const lab = Game.getObjectById(labId)
+      if (!(lab instanceof StructureLab)) {
+        return Result.Failed(`${lab} is not StructureLab`)
+      }
+      if (!isMineralBoostConstant(boost)) {
+        return Result.Failed(`${boost} is not MineralBoostConstant`)
+      }
+      labStates.push({
+        lab,
+        boost,
+      })
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1143119LabChargerProcess.create(processId, roomName, labIds, tire as 1 | 2)
+      return Season1143119LabChargerProcess.create(processId, roomName, labStates)
     })
     return Result.Succeeded(process)
   }

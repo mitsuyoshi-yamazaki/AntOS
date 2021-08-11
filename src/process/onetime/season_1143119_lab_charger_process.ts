@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -14,63 +14,34 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RoomName } from "utility/room_name"
 
-// const labId1 = "61011ce4706bd898698bc8dc" as Id<StructureLab>
-// const labId2 = "6100dc7bfdeb8837badf5c0b" as Id<StructureLab>
-// const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
-// const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
-
-type BoostTire = 1 | 2
-
-const tire1Boosts: MineralBoostConstant[] = [
-  RESOURCE_LEMERGIUM_OXIDE,
-  RESOURCE_KEANIUM_OXIDE,
-  RESOURCE_ZYNTHIUM_OXIDE,
-]
-
-const tire2Boosts: MineralBoostConstant[] = [
-  RESOURCE_LEMERGIUM_ALKALIDE,
-  RESOURCE_GHODIUM_ALKALIDE,
-  RESOURCE_KEANIUM_OXIDE,
-  RESOURCE_ZYNTHIUM_OXIDE,
-]
-
-type LabInfo = {
-  boost: MineralBoostConstant,
+export type Season1143119LabChargerProcessLabInfo = {
+  boost: MineralBoostConstant
   lab: StructureLab
+}
+
+type LabState = {
+  boost: MineralBoostConstant
+  labId: Id<StructureLab>
 }
 
 export interface Season1143119LabChargerProcessState extends ProcessState {
   parentRoomName: RoomName
-  labIds: Id<StructureLab>[]
-  tire: BoostTire
+  labStates: LabState[]
 }
 
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 tire=1 lab_ids=61072e7d8631b61addd464c2,6107707f22b7dd084bded966,6107c31e36a5b7de9159d0de")
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 tire=1 lab_ids=61011ce4706bd898698bc8dc,6100dc7bfdeb8837badf5c0b,6101058b83089149347c9d2c")
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6100dc7bfdeb8837badf5c0b:XLHO2,6102750e8f86f5cb23f3328c:XKHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
-
-  private readonly boosts: MineralBoostConstant[]
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    private readonly labIds: Id<StructureLab>[],
-    private readonly tire: BoostTire,
+    private readonly labStates: LabState[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
-
-    switch (this.tire) {
-    case 1:
-      this.boosts = [...tire1Boosts]
-      break
-    case 2:
-      this.boosts = [...tire2Boosts]
-      break
-    }
   }
 
   public encode(): Season1143119LabChargerProcessState {
@@ -79,21 +50,22 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       parentRoomName: this.parentRoomName,
-      labIds: this.labIds,
-      tire: this.tire,
+      labStates: this.labStates,
     }
   }
 
   public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labIds, state.tire)
+    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labStates)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, labIds: Id<StructureLab>[], tire: BoostTire): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labIds, tire)
+  public static create(processId: ProcessId, parentRoomName: RoomName, labs: Season1143119LabChargerProcessLabInfo[]): Season1143119LabChargerProcess {
+    const labStates: LabState[] = labs.map(labInfo => ({boost: labInfo.boost, labId: labInfo.lab.id}))
+    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labStates)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} ${this.labIds.length}labs`
+    const boostDescriptions: string[] = this.labStates.map(labState => coloredResourceType(labState.boost))
+    return `${roomLink(this.parentRoomName)} ${boostDescriptions.join(",")}`
   }
 
   public runOnTick(): void {
@@ -103,28 +75,17 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       return
     }
 
-    const labs: LabInfo[] = []
-    for (let i = 0; i < this.labIds.length; i += 1) {
-      const labId = this.labIds[i]
-      if (labId == null) {
-        PrimitiveLogger.programError(`${this.identifier} Unexpected null in ${this.labIds}, index ${i}`)
-        return
-      }
-      const lab = Game.getObjectById(labId)
+    const labs: Season1143119LabChargerProcessLabInfo[] = this.labStates.flatMap(labState => {
+      const lab = Game.getObjectById(labState.labId)
       if (lab == null) {
-        PrimitiveLogger.fatal(`${this.identifier} target lab ${labId} not found ${roomLink(this.parentRoomName)}`)
-        return
+        PrimitiveLogger.fatal(`${this.identifier} target lab ${labState.labId} not found ${roomLink(this.parentRoomName)}`)
+        return []
       }
-      const boost = this.boosts[i]
-      if (boost == null) {
-        PrimitiveLogger.programError(`${this.identifier} Unsupported boost: ${this.labIds.length}labs but ${this.boosts.length}boosts`)
-        return
-      }
-      labs.push({
+      return {
+        boost: labState.boost,
         lab,
-        boost,
-      })
-    }
+      }
+    })
 
     const terminal = objects.activeStructures.terminal
     if (terminal == null) {
@@ -147,14 +108,14 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
+      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: LabInfo[]): void {
+  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
@@ -164,7 +125,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: LabInfo[]): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
       return null
     }
