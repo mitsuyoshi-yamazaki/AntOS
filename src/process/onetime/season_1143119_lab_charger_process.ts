@@ -13,6 +13,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RoomName } from "utility/room_name"
+import { isMineralBoostConstant } from "utility/resource"
 
 export type Season1143119LabChargerProcessLabInfo = {
   boost: MineralBoostConstant
@@ -29,7 +30,7 @@ export interface Season1143119LabChargerProcessState extends ProcessState {
   labStates: LabState[]
 }
 
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6100dc7bfdeb8837badf5c0b:XLHO2,6102750e8f86f5cb23f3328c:XKHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -64,8 +65,9 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
+    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     const boostDescriptions: string[] = this.labStates.map(labState => coloredResourceType(labState.boost))
-    return `${roomLink(this.parentRoomName)} ${boostDescriptions.join(",")}`
+    return `${roomLink(this.parentRoomName)} ${numberOfCreeps}cr ${boostDescriptions.join(",")}`
   }
 
   public runOnTick(): void {
@@ -134,6 +136,28 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
       if (resourceType != null && labs.every(l => l.boost !== resourceType)) {
         return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+      }
+    }
+
+    if (creep.store.getUsedCapacity() <= 0) {
+      const container = creep.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } }).find(container => {
+        if (!(container instanceof StructureContainer)) {
+          return false
+        }
+        if (container.store.getUsedCapacity() === container.store.getUsedCapacity(RESOURCE_ENERGY)) {
+          return false
+        }
+        const resourceType = Object.keys(container.store)[0] as ResourceConstant | null
+        if (resourceType == null || !isMineralBoostConstant(resourceType)) {
+          return false
+        }
+        return true
+      }) as StructureContainer | null
+      if (container != null) {
+        const resourceType = Object.keys(container.store)[0] as ResourceConstant | null
+        if (resourceType != null && isMineralBoostConstant(resourceType)) {
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(container, resourceType))
+        }
       }
     }
 
