@@ -340,7 +340,7 @@ export class Quad implements Stateful, QuadInterface {
       return
     }
 
-    const maxRange = this.getMaxRangeTo(position)
+    const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
       return
     }
@@ -631,7 +631,11 @@ export class Quad implements Stateful, QuadInterface {
           case ERR_NO_BODYPART:
             break
           case ERR_NOT_IN_RANGE:
-            damage -= (CreepBody.power(healer.body, "heal") / 3)
+            if (healer.rangedHeal(damagedCreep) === OK) {
+              damage -= (CreepBody.power(healer.body, "heal") / 3)
+              break
+            }
+            healers.unshift(healer)
             break
           default:
             PrimitiveLogger.programError(`Quad.heal() returns ${result}, healer: ${healer.pos}, target: ${damagedCreep.pos} in ${roomLink(healer.room.name)}`)
