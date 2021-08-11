@@ -1134,10 +1134,20 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
     }
     const swampCost = GameConstants.pathFinder.costs.swamp
+    const roomMinEdge = GameConstants.room.edgePosition.min
+    const roomMaxEdge = GameConstants.room.edgePosition.max
 
-    for (let y = 0; y <= GameConstants.room.edgePosition.max; y += 1) {
-      for (let x = 0; x <= GameConstants.room.edgePosition.max; x += 1) {
+    for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
+      for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
         const position = new RoomPosition(x, y, roomName)
+        if (position.isRoomEdge === true) {
+          costMatrix.set(x, y, obstacleCost)
+          getObstaclePositions(position).forEach(p => {
+            costMatrix.set(p.x, p.y, obstacleCost)
+          })
+          continue
+        }
+
         const fieldType = getFieldType(position, excludedCreepNames)
         switch (fieldType) {
         case "plain":
