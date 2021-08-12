@@ -85,7 +85,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       && mineral.mineralAmount > 0
       && roomResource.activeStructures.terminal != null
       && roomResource.activeStructures.terminal.store.getUsedCapacity(mineralType) < 100000
-      && roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) > 50000
+      && roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) > 20000
 
     if (canHarvestMineral) {
       const creepCount = roomResource.runningCreepInfo(this.identifier).length
