@@ -280,7 +280,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       return
     }
     ((): void => {
-      const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 100000
+      const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 50000
       if (canReceiveEnergy === true) {
         // const lackOfEnergy = roomResource.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 100000
         // if (lackOfEnergy === true) {
@@ -308,8 +308,13 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
       return null
     }
-    if (energyAmount < 100000) {
+    if (energyAmount < 20000) {
       return null
+    }
+    if (energyAmount < 100000) {
+      if (roomResource.activeStructures.storage == null || roomResource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000) {
+        return null
+      }
     }
     const sendAmount = energyAmount / 2
     const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
@@ -321,7 +326,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         if (targetRoom == null || targetRoom.terminal == null) {
           return false
         }
-        return (targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) > 40000
+        return (targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) > 20000
       })
       .sort((lhs, rhs) => {
         if (lhs.priority === rhs.priority) {
