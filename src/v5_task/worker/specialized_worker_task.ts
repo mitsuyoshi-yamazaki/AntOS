@@ -90,6 +90,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
+      if (droppedEnergy != null) {
+        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
+      }
+
       if (creep.ticksToLive != null && creep.ticksToLive < 400) {
         const spawn = objects.activeStructures.spawns[0]
         const room = objects.controller.room
