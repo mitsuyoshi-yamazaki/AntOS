@@ -58,6 +58,9 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
       return ERR_DAMAGED
 
     case ERR_GCL_NOT_ENOUGH:
+      creep.reserveController(this.target)
+      return IN_PROGRESS
+
     case ERR_INVALID_TARGET:
     case ERR_FULL:
     default:
