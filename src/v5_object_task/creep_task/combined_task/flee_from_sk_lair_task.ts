@@ -34,8 +34,14 @@ export class FleeFromSKLairTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
+    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
     const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
-      .filter(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)))
+      .filter(creep => {
+        if (whitelist.includes(creep.owner.username) === true) {
+          return false
+        }
+        return (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)
+      }))
     const range = 4
     if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= range) {
       this.didFlee = true
