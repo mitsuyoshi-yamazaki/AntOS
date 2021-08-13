@@ -536,15 +536,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     this.runScout()
     this.runAttackers(powerBank, haulerReady)
-    this.runHauler(powerBank, powerResources, haulers.some(creep => {
-      if (creep.v5task != null) {
-        return false
-      }
-      if (creep.store.getUsedCapacity() > 0) {
-        return false
-      }
-      return true
-    }))
+    this.runHauler(powerBank, powerResources)
     this.runRangedAttacker()
 
     const workingStatus = this.pickupFinished ? "finished" : "working"
@@ -647,17 +639,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[], haulerWorking: boolean): void {
+  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerBank, powerResources, haulerWorking),
+      creep => this.haulerTask(creep, powerBank, powerResources),
       creep => hasNecessaryRoles(creep, this.haulerSpec.roles),
     )
   }
 
-  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[], haulerWorking: boolean): CreepTask | null {
+  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): CreepTask | null {
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
@@ -687,16 +679,16 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     if (creep.store.getFreeCapacity(RESOURCE_POWER) <= 0 || powerResources.length <= 0) {
       if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
-        if (isSwampRunner(creep) === true) {
-          return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
-        } else {
-          if (creep.room.name !== store.room.name) {
-            const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
-            reversedWaypoints.reverse()
-            return MoveToRoomTask.create(store.room.name, reversedWaypoints)
-          }
-          return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
+        // if (isSwampRunner(creep) === true) {
+        //   return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
+        // } else {
+        if (creep.room.name !== store.room.name) {
+          const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
+          reversedWaypoints.reverse()
+          return FleeFromAttackerTask.create(MoveToRoomTask.create(store.room.name, reversedWaypoints))
         }
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
+        // }
       }
     }
 
@@ -731,14 +723,28 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
       if (this.pickupFinished === true) {
         creep.say("finished")
-        const waitingPosition = new RoomPosition(40, 40, creep.room.name)
-        if (creep.pos.getRangeTo(waitingPosition) > 4) {
-          return MoveToTask.create(waitingPosition, 4)
+        if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {  // 念の為
+          if (creep.room.name !== store.room.name) {
+            const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
+            reversedWaypoints.reverse()
+            return FleeFromAttackerTask.create(MoveToRoomTask.create(store.room.name, reversedWaypoints))
+          }
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
         }
-        if (haulerWorking === true) {
+        switch (creep.room.name) {
+        case this.parentRoomName: {
+          const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
+          return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, reversedWaypoints))
+        }
+        case this.targetRoomName: {
+          const waitingPosition = new RoomPosition(40, 40, creep.room.name)
+          if (creep.pos.getRangeTo(waitingPosition) > 4) {
+            return MoveToTask.create(waitingPosition, 4)
+          }
           return null
-        } else {
-          return RunApiTask.create(SuicideApiWrapper.create())
+        }
+        default:
+          return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, []))
         }
       } else {
         creep.say("error")
