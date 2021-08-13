@@ -180,7 +180,7 @@ export class MoveToTargetTask implements CreepTask {
     options.range = range
     options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
     options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
-    options.reusePath = inEconomicArea === true ? 100 : 3
+    options.reusePath = inEconomicArea === true ? 100 : 1
     options.ignoreCreeps = inEconomicArea === true ? true : false
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
