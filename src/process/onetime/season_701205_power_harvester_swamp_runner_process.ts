@@ -153,17 +153,18 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     const bodyUnit = [CARRY, CARRY, MOVE]
     const unitCarryCount = bodyUnit.filter(b => b === CARRY).length
     const unitCarryCapacity = (GameConstants.creep.actionPower.carryCapacity * unitCarryCount)
-    const creepMaxCount = 4
+    const creepMaxCount = 8
     const energyCapacity = parentRoom.energyCapacityAvailable
 
-    const carryAmountPerCreep = Math.floor(50 / bodyUnit.length) * unitCarryCapacity
+    const creepMaxBody = 25
+    const carryAmountPerCreep = Math.floor(creepMaxBody / bodyUnit.length) * unitCarryCapacity
     const haulableAmount = creepMaxCount * carryAmountPerCreep
     if (swampRunnerEnabled === true && (this.powerBankInfo.powerAmount > (haulableAmount * 1.4))) {
       return swampRunnerSpec(energyCapacity, this.powerBankInfo.powerAmount)
     }
 
     const requiredCarryUnitCount = Math.ceil(this.powerBankInfo.powerAmount / unitCarryCapacity)
-    const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(50 / bodyUnit.length))
+    const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(creepMaxBody / bodyUnit.length))
     const requiredCreepCount = Math.min(Math.ceil(requiredCarryUnitCount / creepMaxUnitCount), creepMaxCount)
 
     const creepUnitCount = ((): number => {
@@ -307,13 +308,13 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     let scoutCount = 0
     let attackerCount = 0
-    let haulerCount = 0
     const haulerSpec = this.haulerSpec
     const isSwampRunner = haulerSpec.roles.includes(CreepRole.SwampRunner)
 
     scoutCount = this.countCreep(this.scoutSpec.roles)
     attackerCount = this.countCreep(this.attackerSpec.roles)
-    haulerCount = this.countCreep(haulerSpec.roles)
+    const haulers = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, haulerSpec.roles) === true)
+    const haulerCount = haulers.length
     const rangedAttackerCount = this.countCreep(this.rangedAttackerSpec.roles)
 
     World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, haulerSpec.roles)).forEach(hauler => {
@@ -434,7 +435,13 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           const ticksToPowerBank = (this.ticksToPowerBank ?? this.estimatedTicksToRoom) + 40
           const attackDuration = GameConstants.creep.life.lifeTime - ticksToPowerBank
           const ticksToDestroy = ((estimatedPowerBankHits - damage) / this.fullAttackPower)
-          const requiredAttackerCount = Math.ceil(ticksToDestroy / attackDuration)
+          const requiredAttackerCount = ((): number => {
+            const count = Math.ceil(ticksToDestroy / attackDuration)
+            if (count <= 1 && ticksToDestroy > 400) {
+              return count + 1
+            }
+            return count
+          })()
           if (requiredAttackerCount <= onTheWayAttackers.length) {
             return false
           }
@@ -529,7 +536,15 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
 
     this.runScout()
     this.runAttackers(powerBank, haulerReady)
-    this.runHauler(powerBank, powerResources)
+    this.runHauler(powerBank, powerResources, haulers.some(creep => {
+      if (creep.v5task != null) {
+        return false
+      }
+      if (creep.store.getUsedCapacity() > 0) {
+        return false
+      }
+      return true
+    }))
     this.runRangedAttacker()
 
     const workingStatus = this.pickupFinished ? "finished" : "working"
@@ -539,8 +554,8 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount}s, ${attackerCount}a, ${rangedAttackerCount}ra, ${haulerCount}h ${haulerDescription}${estimation}`)
 
     if (this.pickupFinished === true) {
-      const runningCreepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => creep.v5task != null)
-      if (runningCreepCount <= 0) {
+      const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+      if (creepCount <= 0) {
         World.resourcePools.assignTasks(
           this.parentRoomName,
           this.identifier,
@@ -632,17 +647,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): void {
+  private runHauler(powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[], haulerWorking: boolean): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerBank, powerResources),
+      creep => this.haulerTask(creep, powerBank, powerResources, haulerWorking),
       creep => hasNecessaryRoles(creep, this.haulerSpec.roles),
     )
   }
 
-  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): CreepTask | null {
+  private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[], haulerWorking: boolean): CreepTask | null {
     if (powerBank != null) {
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.targetRoomName, this.waypoints),
@@ -652,6 +667,12 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
+      if (this.parentRoomName === "W27S26") {
+        const childRoomStorage = Game.rooms["W29S25"]?.storage
+        if (childRoomStorage != null) {
+          return childRoomStorage
+        }
+      }
       const parentRoom = Game.rooms[this.parentRoomName]
       if (parentRoom == null) {
         return null
@@ -665,15 +686,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     }
 
     if (creep.store.getFreeCapacity(RESOURCE_POWER) <= 0 || powerResources.length <= 0) {
-      if (isSwampRunner(creep) === true) {
-        return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
-      } else {
-        if (creep.room.name !== store.room.name) {
-          const reversedWaypoints = [...this.waypoints]
-          reversedWaypoints.reverse()
-          return MoveToRoomTask.create(store.room.name, reversedWaypoints)
+      if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+        if (isSwampRunner(creep) === true) {
+          return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER))
+        } else {
+          if (creep.room.name !== store.room.name) {
+            const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
+            reversedWaypoints.reverse()
+            return MoveToRoomTask.create(store.room.name, reversedWaypoints)
+          }
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
         }
-        return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
       }
     }
 
@@ -708,7 +731,15 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       }
       if (this.pickupFinished === true) {
         creep.say("finished")
-        return null
+        const waitingPosition = new RoomPosition(40, 40, creep.room.name)
+        if (creep.pos.getRangeTo(waitingPosition) > 4) {
+          return MoveToTask.create(waitingPosition, 4)
+        }
+        if (haulerWorking === true) {
+          return null
+        } else {
+          return RunApiTask.create(SuicideApiWrapper.create())
+        }
       } else {
         creep.say("error")
         PrimitiveLogger.fatal(`${this.constructor.name} no visual to ${roomLink(this.targetRoomName)}`)
