@@ -27,9 +27,11 @@ type CreepBodySpec = {
 export const season1673282SpecializedQuadProcessCreepType = [
   "test-dismantler",
   "test-attacker",
+  "invader-core-attacker",
   "tier0-d100-attacker",
   "tier0-d450",
   "tire0-d360-dismantler",
+  "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
 ] as const
 type Season1673282SpecializedQuadProcessCreepType = typeof season1673282SpecializedQuadProcessCreepType[number]
@@ -38,6 +40,9 @@ export const isSeason1673282SpecializedQuadProcessCreepType = (obj: string): obj
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return season1673282SpecializedQuadProcessCreepType.includes(obj as any)
 }
+
+const noBoosts: MineralBoostConstant[] = [
+]
 
 const testHealerSpec: CreepBodySpec = {
   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
@@ -50,6 +55,22 @@ const testDismantlerSpec: CreepBodySpec = {
 const testAttackerSpec: CreepBodySpec = {
   roles: [CreepRole.Worker, CreepRole.Healer, CreepRole.Mover],
   body: [ATTACK, MOVE, MOVE, HEAL],
+}
+
+const invaderCoreAttackerAttacker: CreepBodySpec = {
+  roles: [CreepRole.Attacker, CreepRole.Mover],
+  body: [
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ],
+}
+const invaderCoreAttackerHealer: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL,
+  ],
 }
 
 const tier0h3HealerSpec: CreepBodySpec = {
@@ -95,6 +116,48 @@ const tire0DismantlerSpec: CreepBodySpec = {
   ]
 }
 
+// const noDefence3TowerAttackerSpec: CreepBodySpec = {
+//   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+//   body: [
+//     TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+//     TOUGH,
+//     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+//     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+//     MOVE, MOVE, MOVE, MOVE, MOVE,
+//     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+//     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+//     RANGED_ATTACK, RANGED_ATTACK,
+//     MOVE, MOVE, MOVE, MOVE, MOVE,
+//     MOVE, MOVE, MOVE, MOVE, MOVE,
+//     MOVE, MOVE,
+//     HEAL, HEAL, HEAL, HEAL, HEAL,
+//   ]
+// }
+const noDefence3TowerAttackerSpec: CreepBodySpec = {  // for RCL7
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+  ]
+}
+
+
+const noDefence3TowerAttackerBoost: MineralBoostConstant[] = [
+  RESOURCE_ZYNTHIUM_OXIDE,
+  RESOURCE_LEMERGIUM_ALKALIDE,
+  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+]
+
 const tier3SwampHealerSpec: CreepBodySpec = {
   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
   body: [
@@ -131,9 +194,6 @@ const tier3SwampDismantlerSpec: CreepBodySpec = {
   ]
 }
 
-const noBoosts: MineralBoostConstant[] = [
-]
-
 // XZHO2,XLHO2,KHO2,XGHO2,XZH2O
 const tier3DismantlerBoost1: MineralBoostConstant[] = [
   RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
@@ -160,19 +220,30 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W11S23 tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 creep_type=tier0-d450 targets=")
+// tire0-d360-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 creep_type=tire0-d360-dismantler targets=610ea82a56c8192c44e7de28,60fc574ea19fa5e4ddb0b833")
 
 // W11S25
 // tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S25 waypoints=W10S24,W10S25 creep_type=tier0-d450 targets=611362889c09be8c65e9e5c6")
 
 // W13S27 tier0-d450
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier0-d450 targets=61000f6d396ad5973929dd91,61001128b44a521e4dd1caf3,61001ce3cb384f6a69de7b20,61001d1f5587d3796206f939")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier0-d450 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tire0-d360-dismantler targets=")
 // W13S27 tier3-d2000-dismantler-swamp
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tier3-d2000-dismantler-swamp targets=")
 
+// W2S29
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W3S24 target_room_name=W2S29 waypoints=W3S25,W2S25,W2S28 creep_type=tier0-d450 targets=")
 
 // W27S29 tire0-d360-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W24S29 target_room_name=W27S29 waypoints=W24S30,W27S30 creep_type=tire0-d360-dismantler targets=")
+
+// E3S29 no-defence-3tower
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=E3S29 waypoints=W6S30,E4S30,E4S29 creep_type=no-defence-3tower targets=")
+
+// E5S29 invader-core-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=E5S29 waypoints=W6S30,E5S30 creep_type=invader-core-attacker targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -198,6 +269,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     case "test-attacker":
       this.boosts = [...noBoosts]
       break
+    case "invader-core-attacker":
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tire0-d360-dismantler":
@@ -205,6 +277,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       break
     case "tier3-d2000-dismantler-swamp":
       this.boosts = [...tier3DismantlerBoost1]
+      break
+    case "no-defence-3tower":
+      this.boosts = [...noDefence3TowerAttackerBoost]
       break
     }
   }
@@ -241,6 +316,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (message === "clear") {
       this.predefinedTargetIds.splice(0, this.predefinedTargetIds.length)
       return "cleared"
+    }
+    const direction = parseInt(message, 10)
+    if (this.quadState != null && isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
+      this.quadState.direction = direction as TOP | BOTTOM | RIGHT | LEFT
+      return `direction ${direction} set`
     }
     if (message.length <= 0) {
       return "Empty message"
@@ -287,18 +367,22 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       return CreepSpawnRequestPriority.High
     })()
-    const creepInsufficiency = ((): number => {
+    const squadCreepCount = ((): number => {
       switch (this.creepType) {
       case "test-dismantler":
       case "test-attacker":
-        return 4 - this.creepNames.length
+        return 4
+      case "invader-core-attacker":
+        return 3
       case "tier0-d100-attacker":
       case "tier0-d450":
       case "tire0-d360-dismantler":
       case "tier3-d2000-dismantler-swamp":
-        return 4 - this.creepNames.length
+      case "no-defence-3tower":
+        return 4
       }
     })()
+    const creepInsufficiency = squadCreepCount - this.creepNames.length
     if (creepInsufficiency > 0) {
       const spec = ((): CreepBodySpec => {
         switch (this.creepType) {
@@ -313,6 +397,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
             return testAttackerSpec
           } else {
             return testHealerSpec
+          }
+        case "invader-core-attacker":
+          if (creepInsufficiency >= 2) {
+            return invaderCoreAttackerAttacker
+          } else {
+            return invaderCoreAttackerHealer
           }
         case "tier0-d100-attacker":
           if (creepInsufficiency <= 1) {
@@ -334,14 +424,21 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
           } else {
             return tier3SwampHealerSpec
           }
+        case "no-defence-3tower":
+          return noDefence3TowerAttackerSpec
         }
       })()
       this.requestCreep(priority, creepInsufficiency, spec)
     }
 
     if (quad != null) {
+      const isBoosting = quad.numberOfCreeps < creeps.length
       quad.beforeRun()
-      this.runQuad(quad)
+      if (isBoosting !== true || quad.room.name === this.parentRoomName) {
+        this.runQuad(quad)
+      } else {
+        quad.heal()
+      }
       quad.run()
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
@@ -449,6 +546,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       STRUCTURE_TOWER,
     ]
     const excludedStructureTypes: StructureConstant[] = [
+      // STRUCTURE_STORAGE,
       STRUCTURE_CONTROLLER,
       // STRUCTURE_RAMPART,
       STRUCTURE_KEEPER_LAIR,
@@ -507,6 +605,13 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (mainTarget == null) {
       const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS).filter(creep => whitelist.includes(creep.owner.username) !== true)
       mainTarget = position.findClosestByPath(hostileCreepsInRoom)
+    }
+
+    if (mainTarget == null && optionalTargets.length <= 0) {
+      return {
+        mainTarget: null,
+        optionalTargets: quad.pos.findInRange(FIND_STRUCTURES, 4, { filter: {structureType: STRUCTURE_ROAD}})
+      }
     }
 
     return {
