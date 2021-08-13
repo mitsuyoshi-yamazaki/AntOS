@@ -1,5 +1,61 @@
 
 /*
+Quad部屋間移動
+calls		time		avg		function
+9609		2135.9		0.222		Creep.moveTo
+8298		1663.5		0.200		Creep.move
+1179		1496.8		1.270		Room.findPath
+7042		1467.8		0.208		Creep.moveByPath
+3252		602.1		0.185		Creep.harvest
+158233		354.6		0.002		RoomPosition.positionTo
+45144		318.6		0.007		RoomPosition.look
+1565		313.5		0.200		Creep.repair
+1433		281.6		0.197		Creep.upgradeController
+1155		272.2		0.236		RoomPosition.findPathTo
+3665		255.1		0.070		Creep.withdraw
+133191		204.2		0.002		RoomPosition.getRangeTo
+45144		184.5		0.004		Room.lookAt
+925		173.0		0.187		Creep.reserveController
+46497		143.5		0.003		Room.find
+800		142.5		0.178		Creep.heal
+1611		135.7		0.084		RoomPosition.findClosestByPath
+3947		95.0		0.024		Creep.transfer
+59497		86.6		0.001		RoomPosition.lookFor
+200		43.0		0.215		Creep.attack
+2784		42.9		0.015		RoomPosition.findInRange
+741		38.1		0.051		Creep.rangedAttack
+324		35.0		0.108		RoomPosition.positionsInRange
+15940		27.8		0.002		RoomPosition.isNearTo
+Avg: 94.25	Total: 9236.86	Ticks: 98
+
+// 基準
+calls		time		avg		function
+9523		2073.7		0.218		Creep.moveTo
+7844		1564.5		0.199		Creep.move
+6302		1317.6		0.209		Creep.moveByPath
+3242		603.6		0.186		Creep.harvest
+1687		334.6		0.198		Creep.repair
+1390		320.3		0.230		RoomPosition.findPathTo
+1390		308.1		0.222		Room.findPath
+1207		207.0		0.172		Creep.upgradeController
+2866		201.9		0.070		Creep.withdraw
+925		195.6		0.211		Creep.reserveController
+800		165.6		0.207		Creep.heal
+45211		146.0		0.003		Room.find
+4044		94.4		0.023		Creep.transfer
+1523		61.3		0.040		RoomPosition.findClosestByPath
+200		42.9		0.215		Creep.attack
+343		36.4		0.106		RoomPosition.positionsInRange
+2610		33.0		0.013		RoomPosition.findInRange
+16310		30.7		0.002		RoomPosition.isNearTo
+178		21.8		0.122		Room.findExitTo
+2744		21.8		0.008		RoomPosition.look
+100		18.9		0.189		Creep.rangedMassAttack
+2435		18.6		0.008		RoomPosition.lookFor
+13094		18.1		0.001		RoomPosition.encode
+10097		17.4		0.002		RoomPosition.getRangeTo
+Avg: 72.89	Total: 7142.90	Ticks: 98
+
 calls		time		avg		function
 7776		1783.0		0.229		Creep.moveTo
 7023		1397.7		0.199		Creep.move
