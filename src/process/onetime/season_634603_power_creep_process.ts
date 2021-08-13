@@ -8,6 +8,7 @@ import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { randomDirection } from "utility/constants"
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */
@@ -254,8 +255,12 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       if (store == null) {
         break
       }
-      if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
-        powerCreep.moveTo(store, defaultMoveToOptions())
+      if (isMoving !== true) {
+        if (powerCreep.pos.isNearTo(store) !== true) {
+          powerCreep.moveTo(store, defaultMoveToOptions())
+        } else {
+          powerCreep.move(randomDirection(0))
+        }
       }
       if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
         powerCreep.transfer(store, RESOURCE_OPS, 100)
