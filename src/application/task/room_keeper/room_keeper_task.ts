@@ -279,18 +279,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       })
       return
     }
-    ((): void => {
-      const canReceiveEnergy = roomResource.activeStructures.terminal.store.getFreeCapacity(RESOURCE_ENERGY) > 50000
-      if (canReceiveEnergy === true) {
-        // const lackOfEnergy = roomResource.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 100000
-        // if (lackOfEnergy === true) {
-        roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = ResourceInsufficiencyPriority.Optional
-        return
-        // }
-      }
-      delete roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY]
-      return
-    })()
+    roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = ResourceInsufficiencyPriority.Optional
   }
 
   private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
