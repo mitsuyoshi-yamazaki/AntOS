@@ -68,11 +68,14 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
     }
     const powerSpawn = Game.getObjectById(this.powerSpawnId)
     if (powerSpawn == null) {
-      PrimitiveLogger.fatal(`Power spawn in ${roomLink(this.parentRoomName)} not found`)
+      if (objects.controller.level > 5) {
+        PrimitiveLogger.fatal(`Power spawn in ${roomLink(this.parentRoomName)} not found`)
+      }
       return
     }
 
-    const powerAmount = objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_POWER) ?? 0
+    const powerAmount = (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_POWER) ?? 0)
+      + (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_POWER) ?? 0)
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount <= 0 && powerAmount > 0) {
@@ -109,9 +112,17 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       }
 
       if (powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
-        const container = objects.controller.room.find(FIND_STRUCTURES)
-          .find(structure => structure.structureType === STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_POWER) > 0) as StructureContainer | null
-        const powerStore: StructureContainer | StructureTerminal | null = container ?? objects.activeStructures.terminal
+        const powerStore = ((): StructureContainer | StructureStorage | StructureTerminal | null => {
+          const container = objects.controller.room.find(FIND_STRUCTURES)
+            .find(structure => structure.structureType === STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_POWER) > 0) as StructureContainer | null
+          if (container != null) {
+            return container
+          }
+          if (objects.activeStructures.storage != null && objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+            return objects.activeStructures.storage
+          }
+          return objects.activeStructures.terminal
+        })()
         if (powerStore != null) {
           return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerStore, RESOURCE_POWER))
         }
