@@ -15,6 +15,7 @@ import { coloredResourceType, roomLink } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -363,20 +364,30 @@ export class ExecCommand implements ConsoleCommand {
     // if (creep.v5task != null) {
     //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
     // }
-    const target = Game.getObjectById(targetId) as Resource | null
-    if (target == null) {
-      return `Target ${targetId} does not exists`
+    const apiWrapper = ((): PickupApiWrapper | WithdrawResourceApiWrapper | string => {
+      const target = Game.getObjectById(targetId)
+      if (target == null) {
+        return `Target ${targetId} does not exists`
+      }
+      if (target instanceof Resource) {
+        return PickupApiWrapper.create(target)
+      }
+      if ((target instanceof Tombstone) && target.store.getUsedCapacity(RESOURCE_POWER) > 0 ) {
+        return WithdrawResourceApiWrapper.create(target, RESOURCE_POWER)
+      }
+      return `Unsupported target type ${target}`
+    })()
+
+    if (typeof apiWrapper === "string") {
+      return apiWrapper
     }
 
     if (!isV5CreepMemory(creep.memory)) {
       return `Creep ${creepName} is not v5`
     }
     const tasks: CreepTask[] = [
-      MoveToTargetTask.create(PickupApiWrapper.create(target)),
+      MoveToTargetTask.create(apiWrapper),
     ]
-    if (target.room != null) {
-      tasks.unshift(MoveToRoomTask.create(target.room.name, []))
-    }
     creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
     return "ok"
   }
