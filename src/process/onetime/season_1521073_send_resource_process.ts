@@ -24,6 +24,8 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 const useSwampRunner = false as boolean
 
@@ -61,6 +63,7 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season1521073SendResourceProcess room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27")
+// Game.io("launch -l Season1521073SendResourceProcess room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25")
 export class Season1521073SendResourceProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -165,7 +168,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
 
   private creepTask(creep: Creep, energyStore: StructureTerminal | StructureStorage, targetRoomObjects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 2)) {
+      if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3)) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energyStore, RESOURCE_ENERGY))
@@ -179,8 +182,20 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       return targetRoomObjects.getStructureToCharge(creep.pos)
     })()
     if (chargeableStructure == null) {
-      creep.say("nth to do")
-      return null
+      const droppedEnergy = targetRoomObjects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
+      if (droppedEnergy != null) {
+        if (droppedEnergy.pos.isEqualTo(creep.pos) === true) {
+          return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+        } else {
+          return MoveToTask.create(droppedEnergy.pos, 0)
+        }
+      }
+      const targetObject = targetRoomObjects.activeStructures.spawns[0] ?? targetRoomObjects.controller
+      if (targetObject.pos.isNearTo(creep.pos) === true) {
+        return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+      } else {
+        return MoveToTask.create(targetObject.pos, 1)
+      }
     }
 
     if (this.isSwampRunner === true) {
