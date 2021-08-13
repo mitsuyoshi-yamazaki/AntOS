@@ -46,7 +46,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly body: BodyPartConstant[] = [MOVE, CARRY, CARRY, CARRY, CARRY]
+  private readonly body: BodyPartConstant[] = [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
 
   private constructor(
     public readonly launchTime: number,
@@ -177,6 +177,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
 
   private transferResourceTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal): CreepTask | null {
     if (creep.ticksToLive != null && creep.ticksToLive < 3 && creep.store.getUsedCapacity() <= 0) {
+      creep.say("dying")
       return null
     }
     const terminalAmount = 20000
@@ -196,7 +197,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return RunApiTask.create(TransferResourceApiWrapper.create(storage, creepResourceType))
     }
 
-    const shortageResources: ResourceConstant[] = []
+    const enoughResources: ResourceConstant[] = []
     const excessResources: ResourceConstant[] = []
     Object.keys(terminal.store).find(resourceType => {
       if (!isResourceConstant(resourceType)) {
@@ -208,10 +209,11 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       const amount = terminal.store.getUsedCapacity(resourceType)
       if (amount > terminalAmount) {
         excessResources.push(resourceType)
+        enoughResources.push(resourceType)
         return
       }
-      if (amount < terminalAmount) {
-        shortageResources.push(resourceType)
+      if (amount === terminalAmount) {
+        enoughResources.push(resourceType)
         return
       }
     })
@@ -222,7 +224,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return RunApiTask.create(WithdrawResourceApiWrapper.create(terminal, excessResourceType, withdrawAmount))
     }
 
-    if (terminal.store.getFreeCapacity() < 10000) {
+    if (terminal.store.getFreeCapacity() < 20000) {
       processLog(this, `Not enough space in ${terminal} ${roomLink(this.parentRoomName)}`)
       return null
     }
@@ -231,13 +233,20 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       if (!isResourceConstant(resourceType)) {
         return false
       }
-      if (shortageResources.includes(resourceType) !== true) {
+      if (excludedResourceTypes.includes(resourceType) === true) {
+        return false
+      }
+      if (enoughResources.includes(resourceType) === true) {
         return false
       }
       return true
     }) as ResourceConstant | null
+
     if (shortageResourceType != null) {
-      const withdrawAmount = Math.min(terminalAmount - terminal.store.getUsedCapacity(shortageResourceType), creep.store.getFreeCapacity())
+      const maxAmount = terminalAmount - terminal.store.getUsedCapacity(shortageResourceType)
+      const creepCapacity = creep.store.getFreeCapacity()
+      const availableAmount = storage.store.getUsedCapacity(shortageResourceType)
+      const withdrawAmount = Math.min(Math.min(maxAmount, creepCapacity), availableAmount)
       return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, shortageResourceType, withdrawAmount))
     }
     return null
@@ -257,7 +266,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(TransferEnergyApiWrapper.create(link))
       }
-      if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 10000) {
+      if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 20000) {
         processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
         return null
       }
