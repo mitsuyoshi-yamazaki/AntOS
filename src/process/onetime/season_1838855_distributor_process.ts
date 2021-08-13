@@ -150,7 +150,20 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return null
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+    const canTransferResource = ((): boolean => {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        return false
+      }
+      if (creep.store.getUsedCapacity() > 0) {
+        return true
+      }
+      if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        return false
+      }
+      return true
+    })()
+
+    if (canTransferResource === true) {
       const resourceTask = this.transferResourceTask(creep, storage, terminal)
       if (resourceTask != null) {
         return resourceTask
