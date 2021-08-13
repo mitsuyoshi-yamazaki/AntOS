@@ -416,6 +416,8 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
+    const spawnOperatingRooms: RoomName[] = ["W14S28", "W9S24"]
+    let processCount = spawnOperatingRooms.includes(this.roomName) === true ? 2 : 1
     if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
       return false
     }
@@ -427,7 +429,10 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         return false
       }
       if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
-        return false
+        processCount -= 1
+        if (processCount <= 0) {
+          return false
+        }
       }
     }
     return true
