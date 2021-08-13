@@ -18,6 +18,9 @@ import { processLog } from "process/process_log"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { isResourceConstant } from "utility/resource"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 
 type EnergyStore = StructureTerminal | StructureStorage
 
@@ -30,8 +33,14 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   upgraderLinkId: Id<StructureLink> | null
 }
 
-// Game.io("launch -l Season1838855DistributorProcess room_name= pos= link_id= upgrader_link_id=")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W6S29 pos=26,36 link_id=610b604e550481c7f76f8e98 upgrader_link_id=610b7ec24645122963c87887")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W6S27 pos=14,17")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W21S23 pos=24,22 link_id=610b564f5504812b426f89ed upgrader_link_id=610b5d807c129561c313bbf2")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W3S24 pos=13,14")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W9S24 pos=24,32")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W14S28 pos=32,29")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W24S29 pos=17,9")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W27S26 pos=18,13")
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -141,6 +150,84 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return null
     }
 
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const resourceTask = this.transferResourceTask(creep, storage, terminal)
+      if (resourceTask != null) {
+        return resourceTask
+      }
+    }
+    return this.transferEnergyTask(creep, storage, terminal, link, resources)
+  }
+
+  private transferResourceTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal): CreepTask | null {
+    if (creep.ticksToLive != null && creep.ticksToLive < 3 && creep.store.getUsedCapacity() <= 0) {
+      return null
+    }
+    const terminalAmount = 20000
+    const excludedResourceTypes: ResourceConstant[] = [
+      RESOURCE_ENERGY,
+      RESOURCE_POWER,
+      RESOURCE_OPS,
+    ]
+
+    const creepResourceType = Object.keys(creep.store)[0]
+    if (creepResourceType != null && isResourceConstant(creepResourceType) && creep.store.getUsedCapacity(creepResourceType) > 0) {
+      const terminalShortage = terminalAmount - terminal.store.getUsedCapacity(creepResourceType)
+      if (terminalShortage > 0) {
+        const transferAmount = Math.min(terminalShortage, creep.store.getUsedCapacity(creepResourceType))
+        return RunApiTask.create(TransferResourceApiWrapper.create(terminal, creepResourceType, transferAmount))
+      }
+      return RunApiTask.create(TransferResourceApiWrapper.create(storage, creepResourceType))
+    }
+
+    const shortageResources: ResourceConstant[] = []
+    const excessResources: ResourceConstant[] = []
+    Object.keys(terminal.store).find(resourceType => {
+      if (!isResourceConstant(resourceType)) {
+        return
+      }
+      if (excludedResourceTypes.includes(resourceType) === true) {
+        return
+      }
+      const amount = terminal.store.getUsedCapacity(resourceType)
+      if (amount > terminalAmount) {
+        excessResources.push(resourceType)
+        return
+      }
+      if (amount < terminalAmount) {
+        shortageResources.push(resourceType)
+        return
+      }
+    })
+
+    const excessResourceType = excessResources[0]
+    if (excessResourceType != null && storage.store.getFreeCapacity(excessResourceType) > 30000) {
+      const withdrawAmount = Math.min(terminal.store.getUsedCapacity(excessResourceType) - terminalAmount, creep.store.getFreeCapacity())
+      return RunApiTask.create(WithdrawResourceApiWrapper.create(terminal, excessResourceType, withdrawAmount))
+    }
+
+    if (terminal.store.getFreeCapacity() < 10000) {
+      processLog(this, `Not enough space in ${terminal} ${roomLink(this.parentRoomName)}`)
+      return null
+    }
+
+    const shortageResourceType = Object.keys(storage.store).find(resourceType => {
+      if (!isResourceConstant(resourceType)) {
+        return false
+      }
+      if (shortageResources.includes(resourceType) !== true) {
+        return false
+      }
+      return true
+    }) as ResourceConstant | null
+    if (shortageResourceType != null) {
+      const withdrawAmount = Math.min(terminalAmount - terminal.store.getUsedCapacity(shortageResourceType), creep.store.getFreeCapacity())
+      return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, shortageResourceType, withdrawAmount))
+    }
+    return null
+  }
+
+  private transferEnergyTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
     const [energySource, energyStore] = ((): [EnergyStore, EnergyStore] => {
       const needEnergy = resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null
       if (needEnergy === true) {

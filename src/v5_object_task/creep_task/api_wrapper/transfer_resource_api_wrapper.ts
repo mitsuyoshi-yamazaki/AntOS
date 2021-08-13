@@ -15,6 +15,8 @@ export interface TransferResourceApiWrapperState extends CreepApiWrapperState {
 
   /** resource type */
   r: ResourceConstant
+
+  amount: number | null
 }
 
 export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferResourceApiWrapperResult>, TargetingApiWrapper {
@@ -24,6 +26,7 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
   private constructor(
     public readonly target: TransferResourceApiWrapperTargetType,
     public readonly resourceType: ResourceConstant,
+    public readonly amount: number | null,
   ) { }
 
   public encode(): TransferResourceApiWrapperState {
@@ -31,6 +34,7 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
       t: "TransferResourceApiWrapper",
       i: this.target.id,
       r: this.resourceType,
+      amount: this.amount,
     }
   }
 
@@ -39,11 +43,11 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
     if (target == null) {
       return null
     }
-    return new TransferResourceApiWrapper(target, state.r)
+    return new TransferResourceApiWrapper(target, state.r, state.amount ?? null)
   }
 
-  public static create(target: TransferResourceApiWrapperTargetType, resourceType: ResourceConstant): TransferResourceApiWrapper {
-    return new TransferResourceApiWrapper(target, resourceType)
+  public static create(target: TransferResourceApiWrapperTargetType, resourceType: ResourceConstant, amount?: number): TransferResourceApiWrapper {
+    return new TransferResourceApiWrapper(target, resourceType, amount ?? null)
   }
 
   public run(creep: Creep): TransferResourceApiWrapperResult {
@@ -52,7 +56,7 @@ export class TransferResourceApiWrapper implements ApiWrapper<Creep, TransferRes
       return FINISHED
     }
 
-    const result = creep.transfer(this.target, this.resourceType)
+    const result = creep.transfer(this.target, this.resourceType, this.amount ?? undefined)
 
     switch (result) {
     case OK:

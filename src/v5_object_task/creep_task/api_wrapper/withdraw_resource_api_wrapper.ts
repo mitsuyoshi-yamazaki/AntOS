@@ -15,6 +15,8 @@ export interface WithdrawResourceApiWrapperState extends CreepApiWrapperState {
 
   /** resource type */
   r: ResourceConstant
+
+  amount: number | null
 }
 
 export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawResourceApiWrapperResult>, TargetingApiWrapper {
@@ -24,6 +26,7 @@ export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawRes
   private constructor(
     public readonly target: WithdrawResourceApiWrapperTargetType,
     public readonly resourceType: ResourceConstant,
+    public readonly amount: number | null,
   ) {
     if (this.target instanceof Resource) {
       this.shortDescription = "pickup"
@@ -37,6 +40,7 @@ export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawRes
       t: "WithdrawResourceApiWrapper",
       i: this.target.id,
       r: this.resourceType,
+      amount: this.amount,
     }
   }
 
@@ -45,11 +49,11 @@ export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawRes
     if (source == null) {
       return null
     }
-    return new WithdrawResourceApiWrapper(source, state.r)
+    return new WithdrawResourceApiWrapper(source, state.r, state.amount ?? null)
   }
 
-  public static create(target: WithdrawResourceApiWrapperTargetType, resourceType: ResourceConstant): WithdrawResourceApiWrapper {
-    return new WithdrawResourceApiWrapper(target, resourceType)
+  public static create(target: WithdrawResourceApiWrapperTargetType, resourceType: ResourceConstant, amount?: number): WithdrawResourceApiWrapper {
+    return new WithdrawResourceApiWrapper(target, resourceType, amount ?? null)
   }
 
   public run(creep: Creep): WithdrawResourceApiWrapperResult {
@@ -63,7 +67,7 @@ export class WithdrawResourceApiWrapper implements ApiWrapper<Creep, WithdrawRes
       if (this.target instanceof PowerCreep) {
         return this.target.transfer(creep, this.resourceType) // TODO: 動くか確認
       }
-      return creep.withdraw(this.target, this.resourceType)
+      return creep.withdraw(this.target, this.resourceType, this.amount ?? undefined)
     })()
 
     switch (result) {
