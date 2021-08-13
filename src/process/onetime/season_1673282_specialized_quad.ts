@@ -120,9 +120,15 @@ interface QuadInterface {
   // ---- Execution ---- //
   beforeRun(): void
   run(): void
+
+  setDirection(direction: Direction): void
 }
 
 export class Quad implements Stateful, QuadInterface {
+  public setDirection(direction: Direction): void {
+    this.direction = direction
+  }
+
   public get pos(): RoomPosition {
     return this.leaderCreep.pos
   }
@@ -742,7 +748,7 @@ export class Quad implements Stateful, QuadInterface {
 
     if (leaderRotationPosition != null) {
       this.leaderCreep.say("rotate")
-      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))
+      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1, true))
       this.moveFollowersToNextPosition(leaderRotationPosition, 2)
       return
     }
@@ -776,12 +782,12 @@ export class Quad implements Stateful, QuadInterface {
           const leaderAvoidObstaclePosition = leaderAvoidEdgePosition.positionTo(this.absoluteQuadDirection(RIGHT))
           if (leaderAvoidObstaclePosition != null) {
             this.leaderCreep.say("avoid-o1")
-            this.leaderCreep.moveTo(leaderAvoidObstaclePosition, this.moveToOptions(1))
+            this.leaderCreep.moveTo(leaderAvoidObstaclePosition, this.moveToOptions(1, true))
             return leaderAvoidObstaclePosition
           }
         }
         this.leaderCreep.say("avoid-e")
-        this.leaderCreep.moveTo(leaderAvoidEdgePosition, this.moveToOptions(1))
+        this.leaderCreep.moveTo(leaderAvoidEdgePosition, this.moveToOptions(1, true))
         return leaderAvoidEdgePosition
       }
 
@@ -811,7 +817,7 @@ export class Quad implements Stateful, QuadInterface {
       return this.leaderCreep.pos
     })()
 
-    this.moveFollowersToNextPosition(leaderPosition, 2)
+    this.moveFollowersToNextPosition(leaderPosition, 2, false)  // 動かないことがあった
   }
 
   private canMove(): boolean {
@@ -828,7 +834,7 @@ export class Quad implements Stateful, QuadInterface {
     return this.isQuadForm()
   }
 
-  private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number): void {
+  private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number, ignoreCreeps?: boolean): void {
     if (this.exitingDirection == null) {
       const exitPosition = this.quadExitPosition()
       if (nextPosition.x <= exitPosition.minX) {
@@ -850,7 +856,7 @@ export class Quad implements Stateful, QuadInterface {
         return
       }
       const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
-      creep.moveTo(position, this.moveToOptions(maxRooms))
+      creep.moveTo(position, this.moveToOptions(maxRooms, ignoreCreeps))
     }
 
     move(1, this.absoluteQuadFollowerDirection(BOTTOM))
@@ -909,11 +915,12 @@ export class Quad implements Stateful, QuadInterface {
     follow(3)
   }
 
-  private moveToOptions(maxRooms: number): MoveToOpts {
+  private moveToOptions(maxRooms: number, ignoreCreeps?: boolean): MoveToOpts {
     return {
       maxRooms,
       maxOps: 200,
       reusePath: 0,
+      ignoreCreeps: ignoreCreeps ?? false,
     }
   }
 
