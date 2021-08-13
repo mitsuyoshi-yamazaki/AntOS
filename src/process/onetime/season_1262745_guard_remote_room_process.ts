@@ -212,6 +212,15 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       return
     }
 
+    const damagedCreeps = creep.room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
+    const damagedCreep = creep.pos.findClosestByPath(damagedCreeps)
+    if (damagedCreep != null) {
+      if (creep.heal(damagedCreep) === ERR_NOT_IN_RANGE) {
+        creep.rangedHeal(damagedCreep)
+        creep.moveTo(damagedCreep)
+      }
+    }
+
     const isEnemyRoom = ((): boolean => {
       const controller = creep.room.controller
       if (controller == null) {
