@@ -41,6 +41,7 @@ import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/onetime/season_1655635_sk_mineral_harvest_process"
 import { isSeason1673282SpecializedQuadProcessCreepType, Season1673282SpecializedQuadProcess, season1673282SpecializedQuadProcessCreepType } from "process/onetime/season_1673282_specialized_quad_process"
+import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -146,6 +147,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1673282SpecializedQuadProcess":
       result = this.launchSeason1673282SpecializedQuadProcess()
+      break
+    case "Season1838855DistributorProcess":
+      result = this.launchSeason1838855DistributorProcess()
       break
     default:
       break
@@ -952,5 +956,54 @@ export class LaunchCommand implements ConsoleCommand {
       return Season1673282SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], creepType)
     })
     return Result.Succeeded(process)
+  }
+
+  private launchSeason1838855DistributorProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const linkId = args.get("link_id") as Id<StructureLink> | null
+    const upgraderLinkId = args.get("upgrader_link_id") as Id<StructureLink> | null
+    const validateLinkId = (id: Id<StructureLink> | null): boolean => {
+      if (id == null) {
+        return true
+      }
+      const link = Game.getObjectById(id)
+      if (link instanceof StructureLink) {
+        return true
+      }
+      return false
+    }
+    if (validateLinkId(linkId) !== true) {
+      return Result.Failed("Invalid link_id")
+    }
+    if (validateLinkId(upgraderLinkId) !== true) {
+      return Result.Failed("Invalid upgrader_link_id")
+    }
+    const rawPosition = args.get("pos")
+    if (rawPosition == null) {
+      return this.missingArgumentError("pos")
+    }
+    const [rawX, rawY] = rawPosition.split(",")
+    if (rawX == null || rawY == null) {
+      return Result.Failed(`Invalid pos format ${rawPosition}, expected pos=x,y`)
+    }
+    const x = parseInt(rawX, 10)
+    const y = parseInt(rawY, 10)
+    if (isNaN(x) === true || isNaN(y) === true) {
+      return Result.Failed(`Invalid pos value ${rawPosition}, expected pos=x,y`)
+    }
+    try {
+      const position = new RoomPosition(x, y, roomName)
+      const process = OperatingSystem.os.addProcess(processId => {
+        return Season1838855DistributorProcess.create(processId, roomName, position, linkId, upgraderLinkId)
+      })
+      return Result.Succeeded(process)
+    } catch (e) {
+      return Result.Failed(`Invalid pos value ${rawPosition}, expected pos=x,y, ${e}`)
+    }
   }
 }
