@@ -307,9 +307,9 @@ export class ExecCommand implements ConsoleCommand {
     if (creep == null) {
       return `Creep ${creepName} doesn't exists`
     }
-    if (creep.v5task != null) {
-      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
     if (!isV5CreepMemory(creep.memory)) {
       return `Creep ${creepName} is not v5`
     }
