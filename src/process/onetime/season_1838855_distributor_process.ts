@@ -21,6 +21,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { CreepBody } from "utility/creep_body"
 
 type EnergyStore = StructureTerminal | StructureStorage
 
@@ -44,6 +45,8 @@ export interface Season1838855DistributorProcessState extends ProcessState {
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
+
+  private readonly body: BodyPartConstant[] = [MOVE, CARRY, CARRY, CARRY, CARRY]
 
   private constructor(
     public readonly launchTime: number,
@@ -94,8 +97,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       this.runLinks(link, upgraderLink)
     }
 
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount < 1) {
+    const creep = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)[0]
+    if (creep == null || (creep.ticksToLive != null && creep.ticksToLive < CreepBody.spawnTime(this.body))) {
       this.requestDistributor()
     }
 
@@ -114,7 +117,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: [MOVE, CARRY, CARRY, CARRY, CARRY],
+      body: this.body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
