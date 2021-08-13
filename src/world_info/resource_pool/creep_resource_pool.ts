@@ -107,7 +107,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
     for (const creep of filteredCreeps) {
       const newTask = taskBuilder(creep)
       if (newTask == null) {
-        return
+        continue
       }
       creep.v5task = newTask
     }
