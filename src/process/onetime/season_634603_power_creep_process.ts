@@ -74,6 +74,11 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
+    if (objects.controller.isPowerEnabled !== true) {
+      this.enablePower(powerCreep, objects.controller)
+      return
+    }
+
     const powerSpawn = objects.activeStructures.powerSpawn
     let isMoving = false
     if (powerSpawn == null) {
@@ -121,6 +126,23 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       powerCreep.say("no storage")
     }
     this.runGenerateOps(powerCreep, isMoving, store)
+  }
+
+  private enablePower(powerCreep: PowerCreep, controller: StructureController): void {
+    const result = powerCreep.enableRoom(controller)
+    switch (result) {
+    case OK:
+      break
+
+    case ERR_NOT_IN_RANGE:
+      powerCreep.moveTo(controller)
+      break
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_TARGET:
+      PrimitiveLogger.programError(`${this.identifier} powerCreep.enableRoom() returns ${result} ${roomLink(controller.room.name)}`)
+      break
+    }
   }
 
   private hasPower(powerCreep: PowerCreep, power: PowerConstant): boolean {
