@@ -104,12 +104,14 @@ export class RemoteRoomReserveTask extends Task {
       return []
     }
 
-    if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 4400) {
-      const targetRoom = World.rooms.get(this.targetRoomName)
-      if (targetRoom != null) {
-        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
-        if (invaded !== true) {
-          return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
+    if (objects.activeStructures.storage != null) {
+      if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 3900) {
+        const targetRoom = World.rooms.get(this.targetRoomName)
+        if (targetRoom != null) {
+          const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+          if (invaded !== true) {
+            return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
+          }
         }
       }
     }
@@ -141,11 +143,18 @@ export class RemoteRoomReserveTask extends Task {
 
   private createReserverBody(minimumBody: BodyPartConstant[], energyCapacity: number): BodyPartConstant[] {
     const maximumBody = [
+      MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+      CLAIM, CLAIM, CLAIM,
+    ]
+    if (bodyCost(maximumBody) <= energyCapacity) {
+      return maximumBody
+    }
+    const mediumBody = [
       MOVE, MOVE, MOVE, MOVE, MOVE,
       CLAIM, CLAIM,
     ]
 
-    return bodyCost(maximumBody) <= energyCapacity ? maximumBody : minimumBody
+    return bodyCost(mediumBody) <= energyCapacity ? mediumBody : minimumBody
   }
 
   private newClaimerTaskFor(targetController: StructureController): CreepTask | null {

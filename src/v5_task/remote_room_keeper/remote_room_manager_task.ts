@@ -61,6 +61,32 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
+    // const keeperExists = this.children.some(task => {
+    //   if (!(task instanceof RemoteRoomKeeperTask)) {
+    //     return false
+    //   }
+    //   if (task.targetRoomName !== "W4S24") {
+    //     return false
+    //   }
+    //   return true
+    // })
+    // if (keeperExists !== true && this.roomName === "W3S24") {
+    //   this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, "W4S24"))
+    // }
+    const keeper = this.children.find(task => {
+      if (!(task instanceof RemoteRoomKeeperTask)) {
+        return false
+      }
+      if (task.targetRoomName !== "W4S24") {
+        return false
+      }
+      return true
+    })
+    if (keeper != null) {
+      console.log(`${this.roomName} removed ${keeper.taskIdentifier}`)
+      this.removeChildTask(keeper)
+    }
+
     return TaskStatus.InProgress
   }
 }

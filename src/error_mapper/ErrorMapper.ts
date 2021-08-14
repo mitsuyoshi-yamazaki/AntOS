@@ -3,7 +3,9 @@
 // https://github.com/screepers/screeps-typescript-starter/blob/master/LICENSE
 
 // tslint:disable:no-conditional-assignment
-import {SourceMapConsumer} from "source-map"
+import { SourceMapConsumer } from "source-map"
+
+import _ from "lodash"
 
 export class ErrorMapper {
   // Cache consumer

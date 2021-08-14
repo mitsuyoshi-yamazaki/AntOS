@@ -58,7 +58,7 @@ export class MoveClaimControllerTask implements CreepTask {
     }
 
     const claimControllerApiWrapper = ClaimControllerApiWrapper.create(creep.room.controller)
-    return MoveToTargetTask.create(claimControllerApiWrapper, {ignoreSwamp: this.canIgnoreSwamp(creep)}).run(creep)
+    return MoveToTargetTask.create(claimControllerApiWrapper, {ignoreSwamp: this.canIgnoreSwamp(creep), reusePath: null}).run(creep)
   }
 
   private canIgnoreSwamp(creep: Creep): boolean {

@@ -65,6 +65,11 @@ declare global {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isAnyCreep(arg: any): arg is AnyCreep {
+  return (arg instanceof Creep) || (arg instanceof PowerCreep)
+}
+
 // ---- Memory ---- //
 export type CreepMemory = V6CreepMemory | V5CreepMemory | V4CreepMemory
 
@@ -199,7 +204,7 @@ export function init(): void {
   }
 }
 
-export function moveToOptions(position: RoomPosition, destination: RoomPosition, staying: number): MoveToOpts {
+export function moveToOptions(position: RoomPosition, room: Room, destination: RoomPosition, staying: number): MoveToOpts {
   if (staying > 2) {
     const maxRooms = position.roomName === destination.roomName ? 1 : 2
     const maxOps = position.roomName === destination.roomName ? 1500 : 2000
@@ -210,20 +215,36 @@ export function moveToOptions(position: RoomPosition, destination: RoomPosition,
     }
   }
 
+  const inEconomicArea = ((): boolean => {
+    if (room.controller == null) {
+      return false
+    }
+    if (room.controller.my === true) {
+      return true
+    }
+    if (room.controller.reservation == null) {
+      return false
+    }
+    if (room.controller.reservation.username === Game.user.name) {
+      return true
+    }
+    return false
+  })()
+
   if (["W27S25"].includes(position.roomName)) { // FixMe:
     const maxRooms = position.roomName === destination.roomName ? 1 : 2
     return {
       maxRooms,
-      reusePath: 100,
+      reusePath: inEconomicArea === true ? 100 : 3,
       maxOps: 4000,
-      ignoreCreeps: true,
+      ignoreCreeps: inEconomicArea === true ? true : false,
     }
   }
 
   const options = defaultMoveToOptions()
   options.maxRooms = position.roomName === destination.roomName ? 1 : 2
   options.maxOps = position.roomName === destination.roomName ? 500 : 1500
-  options.reusePath = 100
-  options.ignoreCreeps = true
+  options.reusePath = inEconomicArea === true ? 100 : 3
+  options.ignoreCreeps = inEconomicArea === true ? true : false
   return options
 }

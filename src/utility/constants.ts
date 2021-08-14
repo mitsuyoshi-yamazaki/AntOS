@@ -3,6 +3,11 @@
 import { PowerGameConstants } from "./power_constants"
 import { StructureGameConstants } from "./structure_constants"
 
+export type CreepBodyEnergyConsumeActionType = "build" | "repair" | "upgradeController"
+export type CreepBodyFixedAmountActionType = CreepBodyEnergyConsumeActionType | "harvest" | "dismantle" | "attack" | "rangedAttack" | "heal" | "capacity"
+export type CreepBodyActionType = CreepBodyFixedAmountActionType | "rangedMassAttack" | "rangedHeal"
+export type CreepBodyBoostableActionType = CreepBodyActionType | "fatigue" | "damage"
+
 /** @deprecated */
 export const SWAMP_COST = 5
 
@@ -29,6 +34,12 @@ export function estimatedRenewDuration(bodySize: number, ticksToLive: number): n
   return Math.floor(remainingTime / increases)
 }
 
+const creepActionEnergyCost: { [Action in CreepBodyEnergyConsumeActionType]: number } = {
+  "build": BUILD_POWER,
+  "repair": REPAIR_POWER * REPAIR_COST,
+  "upgradeController": UPGRADE_CONTROLLER_POWER,
+}
+
 export const GameConstants = {
   game: {
     cpu: {
@@ -42,6 +53,7 @@ export const GameConstants = {
     }
   },
   room: {
+    size: 50,
     edgePosition: {
       min: 0,
       max: 49,
@@ -62,10 +74,12 @@ export const GameConstants = {
       attack: 1,
     },
     actionPower: {
+      attack: ATTACK_POWER,
       build: BUILD_POWER,
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
     },
+    actionCost: creepActionEnergyCost,
   },
   source: {
     regenerationDuration: 300,
@@ -81,8 +95,10 @@ export const ApplicationConstants = {
 }
 
 // ---- Direction ---- //
+let randomDirectionSeed = 0
 export function randomDirection(seed: number): DirectionConstant {
-  const rawDirection = (seed % 8) + 1
+  randomDirectionSeed += 3
+  const rawDirection = ((Game.time + seed + randomDirectionSeed) % 8) + 1
   return rawDirection as DirectionConstant
 }
 

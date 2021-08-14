@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -12,26 +12,28 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { RoomName } from "utility/room_name"
+import { isMineralBoostConstant } from "utility/resource"
 
-const roomName = "W14S28"
-const labId1 = "61011ce4706bd898698bc8dc" as Id<StructureLab>
-const labId2 = "6100dc7bfdeb8837badf5c0b" as Id<StructureLab>
-const labId3 = "6101058b83089149347c9d2c" as Id<StructureLab>
-const labId4 = "6102750e8f86f5cb23f3328c" as Id<StructureLab>
-
-const boost1 = RESOURCE_LEMERGIUM_ALKALIDE
-const boost2 = RESOURCE_KEANIUM_OXIDE
-const boost3 = RESOURCE_GHODIUM_ALKALIDE
-const boost4 = RESOURCE_ZYNTHIUM_OXIDE
-
-type LabInfo = {
-  boost: MineralBoostConstant,
+export type Season1143119LabChargerProcessLabInfo = {
+  boost: MineralBoostConstant
   lab: StructureLab
 }
 
-export interface Season1143119LabChargerProcessState extends ProcessState {
+type LabState = {
+  boost: MineralBoostConstant
+  labId: Id<StructureLab>
 }
 
+export interface Season1143119LabChargerProcessState extends ProcessState {
+  parentRoomName: RoomName
+  labStates: LabState[]
+}
+
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
+
+// 3Towers
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W6S29 labs=6111e92d9c09be5e07e92f70:ZO,6111d8c310194018d132a7f7:LHO2,61122f11f72716515c8a5dce:KHO2,61125d5eaa2f2224b1896196:XGHO2")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -39,8 +41,10 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
+    public readonly parentRoomName: RoomName,
+    private readonly labStates: LabState[],
   ) {
-    this.identifier = `${this.constructor.name}_${roomName}`
+    this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -49,90 +53,76 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       t: "Season1143119LabChargerProcess",
       l: this.launchTime,
       i: this.processId,
+      parentRoomName: this.parentRoomName,
+      labStates: this.labStates,
     }
   }
 
   public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i)
+    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labStates)
   }
 
-  public static create(processId: ProcessId): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(Game.time, processId)
+  public static create(processId: ProcessId, parentRoomName: RoomName, labs: Season1143119LabChargerProcessLabInfo[]): Season1143119LabChargerProcess {
+    const labStates: LabState[] = labs.map(labInfo => ({boost: labInfo.boost, labId: labInfo.lab.id}))
+    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labStates)
   }
 
   public processShortDescription(): string {
-    return roomLink(roomName)
+    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const boostDescriptions: string[] = this.labStates.map(labState => coloredResourceType(labState.boost))
+    return `${roomLink(this.parentRoomName)} ${numberOfCreeps}cr ${boostDescriptions.join(",")}`
   }
 
   public runOnTick(): void {
-    const objects = World.rooms.getOwnedRoomObjects(roomName)
+    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
     if (objects == null) {
-      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(roomName)} lost`)
+      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
 
-    const lab1 = Game.getObjectById(labId1)
-    const lab2 = Game.getObjectById(labId2)
-    const lab3 = Game.getObjectById(labId3)
-    const lab4 = Game.getObjectById(labId4)
-    if (lab1 == null || lab2 == null || lab3 == null || lab4 == null) {
-      PrimitiveLogger.fatal(`${this.identifier} target lab not found ${roomLink(roomName)}`)
-      return
-    }
+    const labs: Season1143119LabChargerProcessLabInfo[] = this.labStates.flatMap(labState => {
+      const lab = Game.getObjectById(labState.labId)
+      if (lab == null) {
+        PrimitiveLogger.fatal(`${this.identifier} target lab ${labState.labId} not found ${roomLink(this.parentRoomName)}`)
+        return []
+      }
+      return {
+        boost: labState.boost,
+        lab,
+      }
+    })
 
     const terminal = objects.activeStructures.terminal
     if (terminal == null) {
-      PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(roomName)}`)
+      PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(this.parentRoomName)}`)
       return
     }
 
-    const hasResource = terminal.store.getUsedCapacity(boost1) > 0
-      || terminal.store.getUsedCapacity(boost2) > 0
-      || terminal.store.getUsedCapacity(boost3) > 0
-      || terminal.store.getUsedCapacity(boost4) > 0
-
-    const creepCount = World.resourcePools.countCreeps(roomName, this.identifier, () => true)
+    const hasResource = labs.some(labInfo => (terminal.store.getUsedCapacity(labInfo.boost) > 0))
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (hasResource === true && creepCount < 1) {
       this.requestCreep()
     }
 
-    const labs: LabInfo[] = [
-      {
-        boost: boost1,
-        lab: lab1,
-      },
-      {
-        boost: boost2,
-        lab: lab2,
-      },
-      {
-        boost: boost3,
-        lab: lab3,
-      },
-      {
-        boost: boost4,
-        lab: lab4,
-      },
-    ]
     this.runCreep(terminal, labs)
   }
 
   private requestCreep(): void {
-    World.resourcePools.addSpawnCreepRequest(roomName, {
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
+      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: LabInfo[]): void {
+  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): void {
     World.resourcePools.assignTasks(
-      roomName,
+      this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.creepTask(creep, terminal, labs),
@@ -140,7 +130,40 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: LabInfo[]): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
+    if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
+      return null
+    }
+
+    if (creep.store.getUsedCapacity() > 0) {
+      const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
+      if (resourceType != null && labs.every(l => l.boost !== resourceType)) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+      }
+    }
+
+    if (creep.store.getUsedCapacity() <= 0) {
+      const container = creep.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } }).find(container => {
+        if (!(container instanceof StructureContainer)) {
+          return false
+        }
+        if (container.store.getUsedCapacity() === container.store.getUsedCapacity(RESOURCE_ENERGY)) {
+          return false
+        }
+        const resourceType = Object.keys(container.store)[0] as ResourceConstant | null
+        if (resourceType == null || !isMineralBoostConstant(resourceType)) {
+          return false
+        }
+        return true
+      }) as StructureContainer | null
+      if (container != null) {
+        const resourceType = Object.keys(container.store)[0] as ResourceConstant | null
+        if (resourceType != null && isMineralBoostConstant(resourceType)) {
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(container, resourceType))
+        }
+      }
+    }
+
     for (const labInfo of labs) {
       if (creep.store.getUsedCapacity(labInfo.boost) <= 0) {
         continue
@@ -160,6 +183,16 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, labInfo.boost))
     }
+
+    if (creep.store.getUsedCapacity() <= 0) {
+      for (const labInfo of labs) {
+        if (labInfo.lab.mineralType == null || labInfo.lab.mineralType === labInfo.boost) {
+          continue
+        }
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
+      }
+    }
     return null
   }
 }
+

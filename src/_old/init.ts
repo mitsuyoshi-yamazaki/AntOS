@@ -1,3 +1,4 @@
+import _ from "lodash"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { init as extensionInit, tick as extensionTick } from "_old/extensions"
 import { init as creepInit } from "_old/creep"
@@ -23,7 +24,16 @@ export function init(): void {
   }
 
   if (Memory.gameInfo == null) {
-    Memory.gameInfo = {}
+    Memory.gameInfo = {
+      whitelist: [],
+      sourceHarvestWhitelist: [],
+    }
+  }
+  if (Memory.gameInfo.whitelist == null) {
+    Memory.gameInfo.whitelist = []
+  }
+  if (Memory.gameInfo.sourceHarvestWhitelist == null) {
+    Memory.gameInfo.sourceHarvestWhitelist = []
   }
 
   if (Memory.room_info == null) {
@@ -32,10 +42,6 @@ export function init(): void {
 
   if (Memory.v6RoomInfo == null) {
     Memory.v6RoomInfo = {}
-  }
-
-  if (Memory.towers == null) {
-    Memory.towers = {}
   }
 
   if (!Memory.empires) {

@@ -10,6 +10,9 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepName } from "prototype/creep"
 import { processLog } from "process/process_log"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 
 const dismantlerRole: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
 const dismantlerBody: BodyPartConstant[] = [
@@ -39,7 +42,12 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 tower_count=3")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 target_id=")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22 target_id=60fc5b672d39b65e8b50d195")
+
+// W9S29
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e6699d5b67ef23d3b4084f")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e3c5e17471565a7fe2623b")
 export class Season1244215GenericDismantleProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -79,13 +87,27 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const creepDescription = ((): string => {
+      if (this.creepName == null) {
+        return "not spawned"
+      }
+      if (Game.creeps[this.creepName] == null) {
+        return "creep dead"
+      }
+      return "running"
+    })()
+    return `${roomLink(this.targetRoomName)} ${creepDescription}`
   }
 
   public runOnTick(): void {
     if (this.creepName == null) {
-      this.requestDismantler()
-      return
+      const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+      if (creeps[0] != null) {
+        this.creepName = creeps[0].name
+      } else {
+        this.requestDismantler()
+        return
+      }
     }
     const creep = Game.creeps[this.creepName]
     if (creep == null) {
@@ -93,23 +115,55 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       return
     }
 
+    this.runCreep(creep)
+  }
+
+  private runCreep(creep: Creep): void {
     if (creep.v5task != null) {
       return
     }
 
-    const target = Game.getObjectById(this.targetId)
-    if (target == null) {
-      processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
-      return
-    }
     if (creep.room.name !== this.targetRoomName) {
       creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
       return
     }
 
-    if (creep.dismantle(target) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(target)
+    const constructionSite = this.constructionSite(creep)
+    if (constructionSite != null) {
+      creep.v5task = MoveToTask.create(constructionSite.pos, 0)
+      return
     }
+
+    const target = this.getTarget(creep)
+    if (target == null) {
+      return
+    }
+    creep.v5task = MoveToTargetTask.create(DismantleApiWrapper.create(target))
+  }
+
+  private constructionSite(creep: Creep): ConstructionSite | null {
+    const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES).filter(site => {
+      if (site.progress <= 0) {
+        return false
+      }
+      if (site.pos.v5TargetedBy.length > 0) {
+        return false
+      }
+      return true
+    })
+    return creep.pos.findClosestByRange(constructionSites) ?? null
+  }
+
+  private getTarget(creep: Creep): AnyStructure | null {
+    const target = Game.getObjectById(this.targetId)
+    if (target != null) {
+      return target
+    }
+    processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
+
+    const excluded: StructureConstant[] = [STRUCTURE_CONTROLLER]
+    const hostileStructures = creep.room.find(FIND_HOSTILE_STRUCTURES).filter(structure => (excluded.includes(structure.structureType) !== true))
+    return creep.pos.findClosestByRange(hostileStructures) ?? null
   }
 
   private requestDismantler(): void {

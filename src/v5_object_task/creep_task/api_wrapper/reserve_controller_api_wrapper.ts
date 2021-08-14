@@ -49,7 +49,9 @@ export class ReserveControllerApiWrapper implements ApiWrapper<Creep, ReserveCon
       }
       return creep.reserveController(this.target)
     })()
-    creep.signController(this.target, Sign.sign(creep.room))
+    if (this.target.sign == null || this.target.sign.username !== Game.user.name) {
+      creep.signController(this.target, Sign.sign(creep.room))
+    }
 
     switch (result) {
     case OK: {

@@ -16,6 +16,12 @@ import { CreepTask } from "./creep_task"
 import { TargetToPositionTask, TargetToPositionTaskState } from "./meta_task/target_to_position_task"
 import { TestRunHaulerTask, TestRunHaulerTaskState } from "./meta_task/test_run_hauler_task"
 import { SwampRunnerTransferTask, SwampRunnerTransferTaskState } from "./meta_task/swamp_runner_transfer_task"
+import { FleeFromAttackerTask, FleeFromAttackerTaskState } from "./combined_task/flee_from_attacker_task"
+import { ParallelTask, ParallelTaskState } from "./combined_task/parallel_task"
+import { decodeCreepApiWrapperFromState } from "./creep_api_wrapper"
+import { TransferResourceApiWrapper } from "./api_wrapper/transfer_resource_api_wrapper"
+import { WithdrawResourceApiWrapper } from "./api_wrapper/withdraw_resource_api_wrapper"
+import { FleeFromSKLairTask, FleeFromSKLairTaskState } from "./combined_task/flee_from_sk_lair_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -31,13 +37,48 @@ class CreepTaskDecoderMap {
   "RunApiTask" = (state: CreepTaskState) => RunApiTask.decode(state as unknown as RunApiTaskState)
   "RunApisTask" = (state: CreepTaskState) => RunApisTask.decode(state as unknown as RunApisTaskState)
   "MoveToTransferHaulerTask" = (state: CreepTaskState) => MoveToTransferHaulerTask.decode(state as unknown as MoveToTransferHaulerTaskState)
+  "FleeFromAttackerTask" = (state: CreepTaskState) => {
+    const fleeFromAttackerTaskState = state as unknown as FleeFromAttackerTaskState
+    const childTask = decodeCreepTaskFromState(fleeFromAttackerTaskState.childTaskState)
+    if (childTask == null) {
+      return null
+    }
+    return FleeFromAttackerTask.decode(fleeFromAttackerTaskState, childTask)
+  }
+  "ParallelTask" = (state: CreepTaskState) => {
+    const parallelTaskState = state as unknown as ParallelTaskState
+    const childTasks: CreepTask[] = []
+    for (const childState of parallelTaskState.c) {
+      const childTask = decodeCreepTaskFromState(childState)
+      if (childTask == null) {
+        return null
+      }
+      childTasks.push(childTask)
+    }
+    return ParallelTask.decode(parallelTaskState, childTasks)
+  }
+  "FleeFromSKLairTask" = (state: CreepTaskState) => {
+    const fleeFromSKLairTaskState = state as unknown as FleeFromSKLairTaskState
+    const childTask = decodeCreepTaskFromState(fleeFromSKLairTaskState.childTaskState)
+    if (childTask == null) {
+      return null
+    }
+    return FleeFromSKLairTask.decode(fleeFromSKLairTaskState, childTask)
+  }
 
   // ---- Meta task ---- //
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as unknown as MoveToRoomTaskState)
   "MoveToTask" = (state: CreepTaskState) => MoveToTask.decode(state as unknown as MoveToTaskState)
   "EndlessTask" = (state: CreepTaskState) => EndlessTask.decode(state as unknown as EndlessTaskState)
   "TargetToPositionTask" = (state: CreepTaskState) => TargetToPositionTask.decode(state as unknown as TargetToPositionTaskState)
-  "SwampRunnerTransferTask" = (state: CreepTaskState) => SwampRunnerTransferTask.decode(state as unknown as SwampRunnerTransferTaskState)
+  "SwampRunnerTransferTask" = (state: CreepTaskState) => {
+    const swampRunnerTransferTaskState = state as unknown as SwampRunnerTransferTaskState
+    const apiWrapper = decodeCreepApiWrapperFromState(swampRunnerTransferTaskState.as)
+    if (apiWrapper == null || !(apiWrapper instanceof TransferResourceApiWrapper) || !(apiWrapper instanceof WithdrawResourceApiWrapper)) {
+      return null
+    }
+    return SwampRunnerTransferTask.decode(swampRunnerTransferTaskState, apiWrapper)
+  }
 
   // ---- Test Task ---- //
   "TestRunHaulerTask" = (state: CreepTaskState) => TestRunHaulerTask.decode(state as unknown as TestRunHaulerTaskState)

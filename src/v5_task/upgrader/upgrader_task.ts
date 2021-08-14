@@ -23,7 +23,9 @@ export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
 
   /** upgrader positions */
   p: RoomPositionState[]
-}
+
+  linkId: Id<StructureLink> | null
+ }
 
 export class UpgraderTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
@@ -35,6 +37,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     public readonly children: Task[],
     public readonly roomName: RoomName,
     private readonly upgraderPositions: RoomPosition[],
+    private linkId: Id<StructureLink> | null,
   ) {
     super(startTime, children, roomName)
 
@@ -49,12 +52,13 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       c: this.children.map(task => task.encode()),
       r: this.roomName,
       p: this.upgraderPositions.map(position => position.encode()),
+      linkId: this.linkId,
     }
   }
 
   public static decode(state: UpgraderTaskState, children: Task[]): UpgraderTask {
     const upgraderPositions = state.p.map(positionState => decodeRoomPosition(positionState))
-    return new UpgraderTask(state.s, children, state.r, upgraderPositions)
+    return new UpgraderTask(state.s, children, state.r, upgraderPositions, state.linkId ?? null)
   }
 
   public static create(roomName: RoomName): UpgraderTask {
@@ -85,7 +89,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       upgraderPositions.push(...positions)
     }
 
-    return new UpgraderTask(Game.time, [], roomName, upgraderPositions)
+    return new UpgraderTask(Game.time, [], roomName, upgraderPositions, null)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -93,6 +97,9 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
 
     const problemFinders: ProblemFinder[] = [
     ]
+
+    this.checkLink(objects)
+
     this.checkProblemFinders(problemFinders)
 
     return TaskStatus.InProgress
@@ -124,7 +131,13 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     const container = objects.roomInfo.upgrader?.container
-    if (container == null) {
+    const link = ((): StructureLink | null => {
+      if (this.linkId == null) {
+        return null
+      }
+      return Game.getObjectById(this.linkId)
+    })()
+    if (container == null && link == null) {
       return null
     }
 
@@ -134,9 +147,14 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return null
     }
     const apiWrappers: AnyCreepApiWrapper[] = [
-      GetEnergyApiWrapper.create(container),
       UpgradeControllerApiWrapper.create(objects.controller),
     ]
+    if (container != null) {
+      apiWrappers.push(GetEnergyApiWrapper.create(container))
+    }
+    if (link != null) {
+      apiWrappers.push(GetEnergyApiWrapper.create(link))
+    }
     return TargetToPositionTask.create(emptyPosition, apiWrappers)
   }
 
@@ -182,6 +200,9 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
+      if (objects.constructionSites.length > 0) {
+        return 1
+      }
       return 3
     })()
 
@@ -195,5 +216,17 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return null
     }
     return emptyPositions[0]
+  }
+
+  private checkLink(objects: OwnedRoomObjects): void {
+    if (this.linkId != null || (Game.time % 2099) !== 0) {
+      return
+    }
+
+    const link = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+    if (link == null) {
+      return
+    }
+    this.linkId = link.id
   }
 }

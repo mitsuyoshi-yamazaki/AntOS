@@ -10,6 +10,7 @@ import { ApplicationProcessLauncher } from "./process_launcher/application_proce
 import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
 import { TaskTargetCache } from "object_task/object_task_target_cache"
+import { ResourceManager } from "utility/resource_manager"
 
 export class RootProcess {
   private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
@@ -30,6 +31,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       TaskTargetCache.clearCache()
     }, "TaskTargetCache.clearCache()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      ResourceManager.beforeTick()
+    }, "ResourceManager.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
@@ -64,6 +69,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       this.storeTasks()
     }, "RootProcess.storeTasks()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      ResourceManager.afterTick()
+    }, "ResourceManager.afterTick()")()
   }
 
   // ---- Private ---- //

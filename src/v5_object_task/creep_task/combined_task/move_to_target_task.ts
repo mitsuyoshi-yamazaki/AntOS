@@ -19,10 +19,7 @@ type PositionState = {
 
 export interface MoveToTargetTaskOptions {
   ignoreSwamp: boolean
-}
-
-const defaultOptions: MoveToTargetTaskOptions = {
-  ignoreSwamp: false
+  reusePath: number | null
 }
 
 export interface MoveToTargetTaskState extends CreepTaskState {
@@ -33,6 +30,7 @@ export interface MoveToTargetTaskState extends CreepTaskState {
   is: boolean
 
   lastPosition: PositionState | null
+  reusePath: number | null
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -55,7 +53,8 @@ export class MoveToTargetTask implements CreepTask {
       s: this.startTime,
       t: "MoveToTargetTask",
       as: this.apiWrapper.encode(),
-      is: this.options.ignoreSwamp,
+      is: this.options.ignoreSwamp ?? false,
+      reusePath: this.options.reusePath ?? null,
       lastPosition: ((): PositionState | null => {
         if (this.lastPosition == null) {
           return null
@@ -74,7 +73,8 @@ export class MoveToTargetTask implements CreepTask {
       return null
     }
     const options: MoveToTargetTaskOptions = {
-      ignoreSwamp: state.is
+      ignoreSwamp: state.is,
+      reusePath: state.reusePath,
     }
     const lastPosition = ((): Position | null => {
       if (state.lastPosition == null) {
@@ -89,7 +89,16 @@ export class MoveToTargetTask implements CreepTask {
   }
 
   public static create(apiWrapper: MoveToTargetTaskApiWrapper, options?: MoveToTargetTaskOptions): MoveToTargetTask {
-    return new MoveToTargetTask(Game.time, apiWrapper, options ?? defaultOptions, null)
+    const opt = ((): MoveToTargetTaskOptions => {
+      if (options != null) {
+        return options
+      }
+      return {
+        ignoreSwamp: false,
+        reusePath: null,
+      }
+    })()
+    return new MoveToTargetTask(Game.time, apiWrapper, opt, null)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -127,7 +136,7 @@ export class MoveToTargetTask implements CreepTask {
           const maxOps = creep.pos.roomName === targetPosition.roomName ? 1500 : 2000
           return {
             maxRooms,
-            reusePath: 3,
+            reusePath: this.options.reusePath ?? 3,
             maxOps,
             range,
           }
@@ -149,23 +158,52 @@ export class MoveToTargetTask implements CreepTask {
       }
     }
 
+    const inEconomicArea = ((): boolean => {
+      if (creep.room.controller == null) {
+        return false
+      }
+      if (creep.room.controller.my === true) {
+        return true
+      }
+      if (creep.room.controller.reservation == null) {
+        return false
+      }
+      if (creep.room.controller.reservation.username === Game.user.name) {
+        return true
+      }
+      return false
+    })()
+
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
       const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+      const reusePath = ((): number => {
+        if (this.options.reusePath != null) {
+          return this.options.reusePath
+        }
+        return inEconomicArea === true ? 100 : 3
+      })()
       return {
         maxRooms,
-        reusePath: 100,
+        reusePath,
         maxOps: 4000,
         range,
-        ignoreCreeps: true,
+        ignoreCreeps: inEconomicArea === true ? true : false,
       }
     }
+
+    const reusePath = ((): number => {
+      if (this.options.reusePath != null) {
+        return this.options.reusePath
+      }
+      return inEconomicArea === true ? 100 : 0
+    })()
 
     const options = defaultMoveToOptions()
     options.range = range
     options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
     options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
-    options.reusePath = 100
-    options.ignoreCreeps = true
+    options.reusePath = reusePath,
+    options.ignoreCreeps = inEconomicArea === true ? true : false
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

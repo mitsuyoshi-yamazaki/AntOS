@@ -101,7 +101,7 @@ export class MoveToApiWrapper implements CreepApiWrapper {
       }
       return Game.time - this.lastPosition.timestamp
     })()
-    const options = moveToOptions(creep.pos, this.position, staying)
+    const options = moveToOptions(creep.pos, creep.room, this.position, staying)
     options.range = this.options.range
 
     const result = creep.moveTo(this.position, options)
@@ -122,8 +122,30 @@ export class MoveToApiWrapper implements CreepApiWrapper {
     case ERR_TIRED:
       return CreepApiWrapperProgress.InProgress(false)
 
-    case ERR_NO_PATH:
-      return CreepApiWrapperProgress.Failed(new PathNotFoundProblem(creep.pos, this.position))
+    case ERR_NO_PATH: {
+      const noPathOptions = { ...options }
+      noPathOptions.reusePath = 0
+      const noPathResult = creep.moveTo(this.position, noPathOptions)
+      switch (noPathResult) {
+      case OK:
+      case ERR_BUSY:
+      case ERR_TIRED:
+        return CreepApiWrapperProgress.InProgress(false)
+
+      case ERR_NO_PATH: {
+        return CreepApiWrapperProgress.Failed(new PathNotFoundProblem(creep.pos, this.position))
+      }
+
+      case ERR_NO_BODYPART:
+        return CreepApiWrapperProgress.Failed(new CreepDamagedProblem(creep.memory.p, creep.room.name))
+
+      case ERR_NOT_OWNER:
+      case ERR_NOT_FOUND:
+      case ERR_INVALID_TARGET:
+      default:
+        return CreepApiWrapperProgress.Failed(new UnexpectedCreepProblem(creep.memory.p, creep.room.name, apiWrapperType, result))
+      }
+    }
 
     case ERR_NO_BODYPART:
       return CreepApiWrapperProgress.Failed(new CreepDamagedProblem(creep.memory.p, creep.room.name))

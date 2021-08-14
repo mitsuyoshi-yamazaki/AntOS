@@ -23,6 +23,10 @@ export interface Season989041MovePowerCreepProcessState extends ProcessState {
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W24S29 to_room_name=W14S28 waypoints=W24S30,W14S30 power_creep_name=power_creep_0000")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W14S28 waypoints=W10S24,W10S30,W14S30 power_creep_name=power_creep_0001")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W14S28 to_room_name=W9S24 waypoints=W14S30,W10S30,W10S24 power_creep_name=power_creep_0000")
+// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W3S24 waypoints=W9S25,W3S25 power_creep_name=power_creep_0002")
+// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W14S28 to_room_name= waypoints= power_creep_name=power_creep_0001")
+// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W3S24 to_room_name=W9S24 waypoints=W3S25,W9S25 power_creep_name=power_creep_0000")
+// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W3S24 to_room_name=W6S29 waypoints=W3S25,W5S25,W5S29 power_creep_name=power_creep_0002")
 export class Season989041MovePowerCreepProcess implements Process, Procedural {
   private readonly identifier: string
 
@@ -100,6 +104,13 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
       return
     }
 
+    if (powerCreep.room.roomType !== "source_keeper") {
+      const hostileAttacker = powerCreep.pos.findClosestByRange(powerCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)))
+      if (hostileAttacker != null) {
+        this.fleeFrom(hostileAttacker.pos, powerCreep, 7)
+        return
+      }
+    }
     this.moveToRoom(powerCreep)
   }
 
@@ -140,5 +151,13 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
       return
     }
     logger.didReceiveMessage(`add id ${process.processId}`)
+  }
+
+  private fleeFrom(position: RoomPosition, creep: AnyCreep, range: number): void {
+    const path = PathFinder.search(creep.pos, { pos: position, range }, {
+      flee: true,
+      maxRooms: 2,
+    })
+    creep.moveByPath(path.path)
   }
 }

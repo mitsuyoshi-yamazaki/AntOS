@@ -21,9 +21,6 @@ export interface V5BridgingTaskState extends TaskState {
   /** task type identifier */
   readonly t: "V5BridgingTask"
 
-  /** performance */
-  readonly pf: EconomyTaskPerformanceState
-
   readonly v5TaskState: V5TaskState
 }
 
@@ -31,7 +28,7 @@ export interface V5BridgingTaskState extends TaskState {
  * - [ ] タスクの開始
  * - [ ] タスクの終了条件（親が決める
  */
-export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskProblemTypes, EconomyTaskPerformance, EconomyTaskPerformanceState> {
+export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskType = "V5BridgingTask"
   public readonly identifier: TaskIdentifier
 
@@ -40,10 +37,9 @@ export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskPro
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: EconomyTaskPerformanceState,
     private readonly v5Task: V5Task,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
   }
@@ -54,7 +50,6 @@ export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskPro
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
       v5TaskState: this.v5Task.encode(),
     }
   }
@@ -64,11 +59,11 @@ export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskPro
     if (v5Task == null) {
       return null
     }
-    return new V5BridgingTask(state.s, state.ss, state.r, state.pf, v5Task)
+    return new V5BridgingTask(state.s, state.ss, state.r, v5Task)
   }
 
   public static create(roomName: RoomName, v5Task: V5Task): V5BridgingTask {
-    return new V5BridgingTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState(), v5Task)
+    return new V5BridgingTask(Game.time, Game.time, roomName, v5Task)
   }
 
   public run(): V5BridgingTaskOutputs {
@@ -95,11 +90,6 @@ export class V5BridgingTask extends Task<V5BridgingTaskOutput, V5BridgingTaskPro
       spawnTime: GameConstants.creep.life.lifeTime * 0.9,
       numberOfCreeps: 20,
       resourceCost,
-      resourceProfit,
     }
-  }
-
-  public performance(): EconomyTaskPerformance {
-    return this.estimate()
   }
 }

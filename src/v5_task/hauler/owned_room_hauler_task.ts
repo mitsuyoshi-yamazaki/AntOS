@@ -23,6 +23,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -84,8 +85,12 @@ export class OwnedRoomHaulerTask extends Task {
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
     ]
+
+    if (objects.activeStructures.storage != null) {
+      const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
+      problemFinders.push(problemFinder)
+    }
 
     this.checkProblemFinders(problemFinders)
 
@@ -186,7 +191,20 @@ export class OwnedRoomHaulerTask extends Task {
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.store.getFreeCapacity() > 0) {
-        const resourcefulTombstones = objects.tombStones.filter(tomb => tomb.store.getUsedCapacity() > 0)
+        const hasResource = creep.store.getUsedCapacity() > 0
+        const resourcefulTombstones = objects.tombStones.filter(tomb => {
+          const amount = tomb.store.getUsedCapacity()
+          if (amount <= 0) {
+            return false
+          }
+          if (hasResource !== true) {
+            return true
+          }
+          if (amount !== tomb.store.getUsedCapacity(RESOURCE_ENERGY)) {
+            return true
+          }
+          return false
+        })
         const resourcefulTombstone = creep.pos.findClosestByRange(resourcefulTombstones)
         if (resourcefulTombstone != null) {
           const resourceTypes = Object.keys(resourcefulTombstone.store) as ResourceConstant[]
@@ -198,6 +216,19 @@ export class OwnedRoomHaulerTask extends Task {
           if (resourceTypes.includes(RESOURCE_ENERGY) === true) {
             return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, RESOURCE_ENERGY))
           }
+        }
+
+        const droppedResource = objects.droppedResources.filter(resource => {
+          if (resource.resourceType !== RESOURCE_ENERGY) {
+            return true
+          }
+          if (hasResource === true) {
+            return false
+          }
+          return resource.amount > 100
+        })[0]
+        if (droppedResource != null) {
+          return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
         }
       }
 

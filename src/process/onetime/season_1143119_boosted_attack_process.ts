@@ -34,8 +34,6 @@ const tower3boost: ResourceConstant[] = [
   RESOURCE_ZYNTHIUM_OXIDE,
 ]
 
-// Game.rooms["W14S28"].find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }).filter(lab => (lab.mineralType != null && ["LHO2", "KO"].includes(lab.mineralType)))
-
 const healBoost = 3
 
 type SquadState = {
@@ -57,6 +55,8 @@ const tower0AttackerBody: BodyPartConstant[] = [
   HEAL, HEAL, HEAL, HEAL,
 ]
 
+// 4ticks/swamp
+// 22parts + 28MOVE
 const tower1AttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH, TOUGH,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -115,6 +115,8 @@ export interface Season1143119BoostedAttackProcessState extends ProcessState {
 
 // Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 tower_count=3")
 // Game.io("launch -l Season1143119BoostedAttackProcess room_name=W14S28 target_room_name=W6S29 waypoints=W14S30, tower_count")
+// Game.io("launch -l Season1143119BoostedAttackProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25, tower_count=1")
+// Game.io("launch -l Season1143119BoostedAttackProcess room_name=W3S24 target_room_name=W6S27 waypoints=W3S25,W6S25,W6S26 tower_count=0")
 export class Season1143119BoostedAttackProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -331,20 +333,55 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
     this.targetId = target?.id ?? null
 
     if (target != null) {
-      if (this.leaderCanMove(squad.leader, squad.follower) === true) {
-        if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
-          squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
-        } else {
-          squad.leader.moveTo(target, {range: 1})
-        }
-      }
-      squad.follower.moveTo(squad.leader)
+      if (target.structureType === STRUCTURE_RAMPART) {
+        const notInRange = (this.rangedAttack(squad.leader, target) === ERR_NOT_IN_RANGE) || (this.rangedAttack(squad.follower, target) === ERR_NOT_IN_RANGE)
 
-      this.rangedAttack(squad.leader, target)
-      this.rangedAttack(squad.follower, target)
+        if (notInRange === true) {
+          if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+            if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
+              squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
+            } else {
+              squad.leader.moveTo(target, { range: 1 })
+            }
+          }
+          squad.follower.moveTo(squad.leader)
+        }
+      } else {
+        this.rangedAttack(squad.leader, target)
+        this.rangedAttack(squad.follower, target)
+
+        if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+          if (target.id === "60e666eae0ae927d4999b086") { // FixMe:
+            squad.leader.moveTo(new RoomPosition(1, 36, target.room.name))
+          } else {
+            squad.leader.moveTo(target, { range: 1 })
+          }
+        }
+        squad.follower.moveTo(squad.leader)
+      }
     } else {
       processLog(this, `${roomLink(this.targetRoomName)} destroyed`)
-      this.searchAndDestroy(squad)
+      const { moved } = this.searchAndDestroy(squad)
+      if (moved !== true) {
+        const room = squad.leader.room
+        const moveToController = (controller: StructureController): void => {
+          if (this.leaderCanMove(squad.leader, squad.follower) === true) {
+            squad.leader.moveTo(controller)
+          }
+          squad.follower.moveTo(squad.leader)
+        }
+        if (squadDamage > 0) {
+          if (room.controller != null) {
+            moveToController(room.controller)
+          }
+        } else {
+          // const damagedMyCreeps = room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
+          if (room.controller != null) {
+            moveToController(room.controller)
+          }
+
+        }
+      }
     }
   }
 
@@ -397,10 +434,10 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
     return { attacked, moved }
   }
 
-  private searchAndDestroy(squad: Squad): void {
+  private searchAndDestroy(squad: Squad): {moved: boolean} {
     const creepTarget = squad.leader.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
     if (creepTarget == null) {
-      return
+      return {moved: false}
     }
     if (this.leaderCanMove(squad.leader, squad.follower) === true) {
       if (creepTarget.getActiveBodyparts(ATTACK) > 0 && creepTarget.pos.getRangeTo(squad.leader.pos) <= 2) {
@@ -413,6 +450,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
 
     this.rangedAttack(squad.leader, creepTarget)
     this.rangedAttack(squad.follower, creepTarget)
+    return { moved: true }
   }
 
   private healSquad(leaderCreep: Creep, followerCreep: Creep): boolean {
@@ -489,6 +527,7 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
   private targetStructure(room: Room): AnyStructure | null {
     const structureIds = [
       "60e666eae0ae927d4999b086",
+      "6108968e76863036d36eacf1",
     ] as Id<AnyStructure>[]
     for (const structureId of structureIds) {
       const structure = Game.getObjectById(structureId)
@@ -514,11 +553,11 @@ export class Season1143119BoostedAttackProcess implements Process, Procedural {
       })[0] ?? null
   }
 
-  private rangedAttack(creep: Creep, target: AnyCreep | AnyStructure): void {
+  private rangedAttack(creep: Creep, target: AnyCreep | AnyStructure): ScreepsReturnCode {
     if (creep.pos.isNearTo(target.pos) === true) {
-      creep.rangedMassAttack()
+      return creep.rangedMassAttack()
     } else {
-      creep.rangedAttack(target)
+      return creep.rangedAttack(target)
     }
   }
 

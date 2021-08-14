@@ -22,10 +22,10 @@ const structurePriority: StructureConstant[] = [
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
   STRUCTURE_STORAGE,
+  STRUCTURE_TERMINAL,
   STRUCTURE_EXTENSION,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
-  STRUCTURE_TERMINAL,
   STRUCTURE_LAB,
   STRUCTURE_NUKER,
 ]
@@ -72,12 +72,13 @@ export class CreateConstructionSiteTask extends Task {
     if (Game.time % 17 !== 3) {
       return TaskStatus.InProgress
     }
-    this.placeConstructionSite(objects.controller.room, objects.flags)
+    const centerPosition: RoomPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
+    this.placeConstructionSite(objects.controller.room, objects.flags, centerPosition)
 
     return TaskStatus.InProgress
   }
 
-  private placeConstructionSite(room: Room, flags: Flag[]): void {
+  private placeConstructionSite(room: Room, flags: Flag[], centerPosition: RoomPosition): void {
     if (room.controller == null) {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
@@ -104,7 +105,7 @@ export class CreateConstructionSiteTask extends Task {
         return -1
       }
       if (lPriority === rPriority) {
-        return -1
+        return lhs.pos.getRangeTo(centerPosition) - rhs.pos.getRangeTo(centerPosition)
       }
       return lPriority < rPriority ? -1 : 1
     })
@@ -125,7 +126,23 @@ export class CreateConstructionSiteTask extends Task {
         flag.remove()
         break
       case ERR_FULL:
+        break
       case ERR_RCL_NOT_ENOUGH:
+        if (structureType === STRUCTURE_SPAWN) {
+          switch (room.createConstructionSite(flag.pos, STRUCTURE_POWER_SPAWN)) {
+          case OK:
+            flag.remove()
+            return
+          case ERR_NOT_OWNER:
+          case ERR_INVALID_TARGET:
+          case ERR_INVALID_ARGS:
+            flag.remove()
+            break
+          case ERR_FULL:
+          case ERR_RCL_NOT_ENOUGH:
+            break
+          }
+        }
         break
       }
     }

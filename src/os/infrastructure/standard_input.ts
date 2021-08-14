@@ -65,7 +65,9 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
       }
       return
     }
-    args.push(component)
+    if (component.length > 0) {
+      args.push(component)
+    }
   })
 
   if (options.has("-v")) {

@@ -16,8 +16,7 @@ import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
 import { bodyCost, createCreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
-
-const numberOfCreeps = 3
+import { World } from "world_info/world_info"
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -31,6 +30,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
 
   private readonly codename: string
+  private readonly numberOfCreeps: number
 
   private constructor(
     public readonly startTime: number,
@@ -41,6 +41,15 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
+
+    const numberOfCreeps: { [roomName: string]: number } = {
+      "W6S29": 6,
+      "W21S23": 5,
+
+      // shard3
+      "W51S29": 4,
+    }
+    this.numberOfCreeps = numberOfCreeps[this.roomName] ?? 3
   }
 
   public encode(): SpecializedWorkerTaskState {
@@ -65,6 +74,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const haulerCount = World.resourcePools.countCreeps(this.roomName, null, creep => (creep.roles.includes(CreepRole.Worker) !== true))
+    if (haulerCount <= 0) {
+      return this.haulerCreepRequest(objects)
+    }
     const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
     if (objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true)) || objects.damagedStructures.length > 0) {
       // this.removeBuilderCreepRequest() // CreepInsufficiencyProblemSolverは毎tick Finishするため不要
@@ -77,6 +90,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
+      if (droppedEnergy != null) {
+        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
+      }
+
       if (creep.ticksToLive != null && creep.ticksToLive < 400) {
         const spawn = objects.activeStructures.spawns[0]
         const room = objects.controller.room
@@ -128,6 +146,15 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
       }
 
+      const roomInfo = Memory.v6RoomInfo[objects.controller.room.name]
+      if (roomInfo != null && roomInfo.roomType === "owned") {
+        if (roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+          const storage = objects.activeStructures.storage
+          if (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000) {
+            return MoveToTargetTask.create(TransferEnergyApiWrapper.create(storage))
+          }
+        }
+      }
       creep.say("no task")
       return null
     }
@@ -162,7 +189,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps,
+      numberOfCreeps: this.numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,
@@ -174,7 +201,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     return {
       necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps,
+      numberOfCreeps: this.numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,

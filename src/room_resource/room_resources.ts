@@ -14,6 +14,7 @@ interface RoomResourcesInterface {
   afterTick(): void
 
   // ---- Room Resource ---- //
+  getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
 
@@ -54,6 +55,10 @@ export const RoomResources: RoomResourcesInterface = {
   },
 
   // ---- Room Resource ---- //
+  getOwnedRoomResources(): OwnedRoomResource[] {
+    return Array.from(ownedRoomResources.values())
+  },
+
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null {
     return ownedRoomResources.get(roomName) ?? null
   },

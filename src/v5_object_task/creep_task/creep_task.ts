@@ -6,4 +6,6 @@ export interface CreepTask extends ObjectTask<Creep> {
 
   encode(): CreepTaskState
   run(creep: Creep): TaskProgressType
+
+  pause?(paused: boolean): void // 一時Process等で停止するときのため
 }

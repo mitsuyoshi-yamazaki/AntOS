@@ -6,7 +6,7 @@ import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { roomLink } from "utility/log"
 import { RoomName, roomTypeOf } from "utility/room_name"
 
-export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints: RoomName[]): void {
+export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints: RoomName[], sourceKeeperRange?: number): void {
   const creepRoom = creep.room
   if (creepRoom == null) {
     PrimitiveLogger.fatal(`Power creep ${creep.name} is not deployed`)
@@ -88,11 +88,12 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
       excludeWalkableStructures: false,
     }
 
+    const sourceKeeperObstacleRange = sourceKeeperRange ?? 4
     options.maxOps = 2000
     const sourceKeepers = creepRoom.find(FIND_HOSTILE_CREEPS)
       .filter(creep => creep.owner.username === SourceKeeper.username)
     const positionsToAvoid = sourceKeepers
-      .flatMap(creep => creep.pos.positionsInRange(4, roomPositionFilteringOptions))
+      .flatMap(creep => creep.pos.positionsInRange(sourceKeeperObstacleRange, roomPositionFilteringOptions))
 
     options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
       if (roomName !== creepRoom.name) {
@@ -145,7 +146,7 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     return false
   })
 
-  const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit)
+  const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit) // TODO: このPathFinding省略できないか
   if (exitPosition == null) {
     creep.say("no path")
     if (creepRoom.controller != null) {

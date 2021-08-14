@@ -4,11 +4,10 @@ import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
 import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
-import { calculateEconomyTaskPerformance, EconomyTaskPerformance, EconomyTaskPerformanceState, emptyEconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
+import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { OwnedRoomResource, ResearchLabs } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
 import { MissingActiveStructureProblem } from "application/problem/object/missing_active_structure_problem"
 import { CreepName } from "prototype/creep"
 import { CreepTask } from "object_task/creep_task/creep_task"
@@ -18,8 +17,9 @@ import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { createCreepBody } from "utility/creep_body"
 import { isMineralCompoundConstant, MineralCompoundIngredients } from "utility/resource"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { ParallelResourceOperationTask } from "object_task/creep_task/task/parallel_resource_operation_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -29,13 +29,10 @@ export interface ResearchTaskState extends TaskState {
   /** task type identifier */
   readonly t: "ResearchTask"
 
-  /** performance */
-  readonly pf: EconomyTaskPerformanceState
-
   compound: MineralCompoundConstant | null
 }
 
-export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTypes, EconomyTaskPerformance, EconomyTaskPerformanceState> {
+export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTypes, EconomyTaskPerformance> {
   public readonly taskType = "ResearchTask"
   public readonly identifier: TaskIdentifier
 
@@ -45,10 +42,9 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: EconomyTaskPerformanceState,
     private compound: MineralCompoundConstant | null,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -60,17 +56,16 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
       compound: this.compound,
     }
   }
 
   public static decode(state: ResearchTaskState): ResearchTask {
-    return new ResearchTask(state.s, state.ss, state.r, state.pf, state.compound)
+    return new ResearchTask(state.s, state.ss, state.r, state.compound)
   }
 
   public static create(roomName: RoomName): ResearchTask {
-    return new ResearchTask(Game.time, Game.time, roomName, emptyEconomyTaskPerformanceState(), null)
+    return new ResearchTask(Game.time, Game.time, roomName, null)
   }
 
   public run(roomResource: OwnedRoomResource): ResearchTaskOutputs {
@@ -82,7 +77,17 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       return taskOutputs
     }
     const compound = Object.keys(compoundsList)[0]
-    if (compound == null || !isMineralCompoundConstant(compound)) {
+    if (compound == null) {
+      return taskOutputs
+    }
+    if (!isMineralCompoundConstant(compound)) {
+      PrimitiveLogger.programError(`${this.identifier} ${compound} is not a mineral compound, ${roomLink(this.roomName)}`)
+      delete (compoundsList as {[index: string]: number})[compound]
+      return taskOutputs
+    }
+    const compoundAmount = compoundsList[compound]
+    if (compoundAmount == null) {
+      PrimitiveLogger.programError(`${this.identifier} no amount for ${compound}, ${roomLink(this.roomName)}`)
       return taskOutputs
     }
     this.compound = compound
@@ -96,6 +101,15 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
     const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
       taskOutputs.problems.push(new MissingActiveStructureProblem(this.roomName, STRUCTURE_TERMINAL))
+      return taskOutputs
+    }
+    if (terminal.store.getUsedCapacity(compound) >= compoundAmount) {
+      taskOutputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `${compoundAmount} ${coloredResourceType(compound)} created ${roomLink(this.roomName)}.`,
+      })
+      delete compoundsList[compound]
       return taskOutputs
     }
 
@@ -277,9 +291,5 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): EconomyTaskPerformance {
-    return calculateEconomyTaskPerformance(period, "continuous", this.performanceState)
   }
 }

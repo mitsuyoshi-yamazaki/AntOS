@@ -8,6 +8,11 @@ export const PrimitiveLogger = {
     console.log(message)
   },
 
+  notice(message: string): void {
+    console.log(message)
+    Game.notify(message)
+  },
+
   /** ゲームの危機状態の通知 */
   fatal(message: string): void {
     const coloredMessage = coloredText(message, "error")

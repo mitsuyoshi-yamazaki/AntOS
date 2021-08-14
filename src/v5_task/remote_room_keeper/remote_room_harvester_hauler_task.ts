@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -13,16 +13,18 @@ import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { bodyCost } from "utility/creep_body"
-import { EnergySource, EnergyStore, getEnergyAmountOf } from "prototype/room_object"
+import { EnergySource, EnergyStore, getEnergyAmountOf, getResourceAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "v5_task/task_state"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
-import { Invader } from "game/invader"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -88,13 +90,15 @@ export class RemoteRoomHaulerTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
-    const hasEnergy = energySources.some(source => getEnergyAmountOf(source) > 500)
-    if (hasEnergy === true) {
-      const targetRoom = World.rooms.get(this.targetRoomName)
-      if (targetRoom != null) {
-        const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => creep.owner.username === Invader.username)
-        if (invaded !== true) {
-          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
+    if (objects.activeStructures.storage != null) {
+      const hasEnergy = energySources.some(source => getEnergyAmountOf(source) > 500)
+      if (hasEnergy === true) {
+        const targetRoom = World.rooms.get(this.targetRoomName)
+        if (targetRoom != null) {
+          const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
+          if (invaded !== true) {
+            problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
+          }
         }
       }
     }
@@ -106,7 +110,14 @@ export class RemoteRoomHaulerTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskForHauler(creep, objects, energySources)
+        const task = this.newTaskForHauler(creep, objects, energySources)
+        if (task == null) {
+          return null
+        }
+        if (roomTypeOf(this.roomName) === "source_keeper") {
+          return FleeFromSKLairTask.create(task)
+        }
+        return task
       },
       creepPoolFilter,
     )
@@ -168,9 +179,31 @@ export class RemoteRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+        const powerStorage = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        if (powerStorage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerStorage, RESOURCE_POWER))
+        }
+      } else {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom != null) {
+          const droppedPower = targetRoom.find(FIND_DROPPED_RESOURCES)
+            .filter(resource => getResourceAmountOf(resource, RESOURCE_POWER))
+            .sort((lhs, rhs) => {
+              return lhs.amount - rhs.amount
+            })[0]
+          if (droppedPower != null) {
+            return MoveToTargetTask.create(PickupApiWrapper.create(droppedPower))
+          }
 
-    if (noEnergy) {
+          const tombstone = targetRoom.find(FIND_TOMBSTONES)
+            .filter(tombstone => getResourceAmountOf(tombstone, RESOURCE_POWER))[0]
+          if (tombstone != null) {
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(tombstone, RESOURCE_POWER))
+          }
+        }
+      }
       const energySource = this.getEnergySource(energySources)
       if (energySource != null) {
         if (this.targetRoomName === "W8S24" && creep.room.name === "W9S24") {

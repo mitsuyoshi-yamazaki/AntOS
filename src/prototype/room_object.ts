@@ -7,6 +7,7 @@ export type EnergyChargeableStructure = StructureSpawn
   | StructurePowerSpawn
   | StructureTerminal
   | StructureLab  // TODO: まだある
+  | StructureNuker
 
 /** Energyを引き出せるオブジェクト */
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep
@@ -22,6 +23,16 @@ export function getEnergyAmountOf(energySource: EnergySource): number {
     return energySource.amount
   }
   return energySource.store.getUsedCapacity(RESOURCE_ENERGY)
+}
+
+export function getResourceAmountOf(obj: Ruin | Resource | Tombstone, resourceType: ResourceConstant): number {
+  if (obj instanceof Resource) {
+    if (obj.resourceType !== resourceType) {
+      return 0
+    }
+    return obj.amount
+  }
+  return obj.store.getUsedCapacity(resourceType)
 }
 
 declare global {

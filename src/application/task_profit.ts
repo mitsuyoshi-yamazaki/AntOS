@@ -1,4 +1,5 @@
 import type { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { GameConstants } from "utility/constants"
 import type { Timestamp } from "utility/timestamp"
 
 export type TaskPerformancePeriodType = number | "continuous"
@@ -11,37 +12,25 @@ export interface TaskPerformance {
   readonly resourceCost: Map<ResourceConstant, number>
 }
 
-/**
- * - performance()を実装したい
- *   - 具象のTaskPerformanceStateを参照する必要がある
- *   - 具象のTaskPerformanceStateをどのように抽象クラスで指定するか
- */
-export interface TaskProfit<Performance extends TaskPerformance, PerformanceState extends TaskPerformanceState> {
-  performanceState: PerformanceState
-
+export interface TaskProfit<Performance extends TaskPerformance> {
   estimate(roomResource: OwnedRoomResource): Performance
-  performance(period: Timestamp): Performance
 }
 
 export interface TaskPerformanceState {
-  /** spawn time */
-  s: {
-    /** timestamp */
-    t: Timestamp
+  sessionStartTime: Timestamp
+  spawnTime: number
+  resourceSpent: {[K in ResourceConstant]?: number}
+}
 
-    /** spawn time */
-    st: number
-  }[]
+const sessionDuration = GameConstants.creep.life.lifeTime * 3
+export function taskPerformanceSessionStartTime(): Timestamp {
+  return Math.floor(Game.time / sessionDuration) * sessionDuration
+}
 
-  /** resource cost */
-  r: {
-    /** timestamp */
-    t: Timestamp
-
-    /** resource type */
-    r: ResourceConstant
-
-    /** amount */
-    a: number
-  }[]
+export function emptyTaskPerformanceState(): TaskPerformanceState {
+  return {
+    sessionStartTime: Game.time,
+    spawnTime: 0,
+    resourceSpent: {},
+  }
 }

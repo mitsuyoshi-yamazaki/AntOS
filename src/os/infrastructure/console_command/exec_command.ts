@@ -2,6 +2,20 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { isV5CreepMemory } from "prototype/creep"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { ResourceManager } from "utility/resource_manager"
+import { PrimitiveLogger } from "../primitive_logger"
+import { coloredResourceType, roomLink } from "utility/log"
+import { isResourceConstant } from "utility/resource"
+import { isRoomName, RoomName } from "utility/room_name"
+import { RoomResources } from "room_resource/room_resources"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -12,22 +26,30 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
-    case "FindPath":
+    case "findPath":
       return this.findPath()
-    case "FindPathToSource":
+    case "findPathToSource":
       return this.findPathToSource()
-    case "ShowCachedSourcePath":
+    case "showCachedSourcePath":
       return this.showCachedSourcePath()
-    case "ShowOldRoomPlan":
+    case "showOldRoomPlan":
       return this.showOldRoomPlan()
-    case "PlaceOldRoomPlan":
+    case "placeOldRoomPlan":
       return this.placeOldRoomPlan()
-    case "PlaceRoadConstructionMarks":
+    case "placeRoadConstructionMarks":
       return this.placeRoadConstructionMarks()
-    case "ShowPositionsInRange":
+    case "showPositionsInRange":
       return this.showPositionsInRange()
-    case "DescribeLabs":
+    case "describeLabs":
       return this.describeLabs()
+    case "moveToRoom":
+      return this.moveToRoom()
+    case "transfer":
+      return this.transfer()
+    case "pickup":
+      return this.pickup()
+    case "resource":
+      return this.resource()
     default:
       return "Invalid script type"
     }
@@ -268,5 +290,203 @@ export class ExecCommand implements ConsoleCommand {
       return "" // FixMe: nullチェック
     }
     return describeLabs(roomName)
+  }
+
+  private moveToRoom(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "room_name", "waypoints")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, roomName, rawWaypoints] = args
+    if (creepName == null || roomName == null || rawWaypoints == null) {
+      return ""
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    creep.memory.t = MoveToRoomTask.create(roomName, waypoints).encode()
+
+    return "ok"
+  }
+
+  private transfer(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    if (creep.v5task != null) {
+      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    }
+    const target = Game.getObjectById(targetId) as TransferResourceApiWrapperTargetType | null
+    if (target == null) {
+      return `Target ${targetId} does not exists`
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    creep.memory.t = MoveToTargetTask.create(TransferResourceApiWrapper.create(target, RESOURCE_POWER)).encode()
+    return "ok"
+  }
+
+  private pickup(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
+    const apiWrapper = ((): PickupApiWrapper | WithdrawResourceApiWrapper | string => {
+      const target = Game.getObjectById(targetId)
+      if (target == null) {
+        return `Target ${targetId} does not exists`
+      }
+      if (target instanceof Resource) {
+        return PickupApiWrapper.create(target)
+      }
+      if ((target instanceof Tombstone) && target.store.getUsedCapacity(RESOURCE_POWER) > 0 ) {
+        return WithdrawResourceApiWrapper.create(target, RESOURCE_POWER)
+      }
+      return `Unsupported target type ${target}`
+    })()
+
+    if (typeof apiWrapper === "string") {
+      return apiWrapper
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const tasks: CreepTask[] = [
+      MoveToTargetTask.create(apiWrapper),
+    ]
+    creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+    return "ok"
+  }
+
+  private resource(): CommandExecutionResult {
+    const args = [...this.args]
+    args.splice(0, 1)
+
+    const command = args[0]
+    switch (command) {
+    case "room":
+      if (args[1] == null || !isResourceConstant(args[1])) {
+        return `Invalid resource type ${args[1]}`
+      }
+      return this.resourceInRoom(args[1])
+    case "collect": {
+      if (args[1] == null || !isResourceConstant(args[1])) {
+        return `Invalid resource type ${args[1]}`
+      }
+      if (args[2] == null || !isRoomName(args[2])) {
+        return `Invalid room name ${args[2]}`
+      }
+      const amount = ((): number | string | null => {
+        if (args[3] == null) {
+          return null
+        }
+        const parsed = parseInt(args[3], 10)
+        if (isNaN(parsed) === true) {
+          return `amount is not a number ${args[3]}`
+        }
+        return parsed
+      })()
+      if (typeof amount === "string") {
+        return amount
+      }
+      return this.collectResource(args[1], args[2], amount ?? "all")
+    }
+    case "list":
+    default:
+      return this.listResource()
+    }
+  }
+
+  private listResource(): CommandExecutionResult {
+    const isLowercase = (value: string): boolean => (value === value.toLocaleLowerCase())
+    const resources = Array.from(ResourceManager.list().entries()).sort(([lhs], [rhs]) => {
+      const lowerL = isLowercase(lhs)
+      const lowerR = isLowercase(rhs)
+      if (lowerL === true && lowerR === true) {
+        return rhs.length - lhs.length
+      }
+      if (lowerL === false && lowerR === false) {
+        return lhs.length - rhs.length
+      }
+      return lowerL === true ? -1 : 1
+    })
+    resources.forEach(([resourceType, amount]) => {
+      const amountDescription = ((): string => {
+        return `${amount}`  // TODO: format
+      })()
+      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amountDescription}`)
+    })
+    return "ok"
+  }
+
+  private resourceInRoom(resourceType: ResourceConstant): CommandExecutionResult {
+    const resourceInRoom = ResourceManager.resourceInRoom(resourceType)
+    PrimitiveLogger.log(`${coloredResourceType(resourceType)}: `)
+    resourceInRoom.forEach((amount, roomName) => {
+      PrimitiveLogger.log(`- ${roomLink(roomName)}: ${amount}`)
+    })
+    return "ok"
+  }
+
+  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number | "all"): CommandExecutionResult {
+    const resources = RoomResources.getOwnedRoomResource(destinationRoomName)
+    if (resources == null) {
+      return `${this.constructor.name} collectResource() cannot retrieve owned room resources from ${roomLink(destinationRoomName)}`
+    }
+    if (resources.activeStructures.terminal == null) {
+      return `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomName)}`
+    }
+    if (amount === "all") {
+      const resourceAmount = ResourceManager.amount(resourceType)
+      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
+        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)} (${resourceAmount} ${coloredResourceType(resourceType)})`
+      }
+    } else {
+      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
+        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
+      }
+    }
+
+    const result = ResourceManager.collect(resourceType, destinationRoomName, amount)
+    switch (result.resultType) {
+    case "succeeded":
+      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomName)}`
+    case "failed":
+      return result.reason
+    }
   }
 }

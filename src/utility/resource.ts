@@ -43,6 +43,72 @@ export const MineralCompoundConstant: MineralCompoundConstant[] = [
   ...MineralBoostConstant,
 ]
 
+export const MineralConstant: MineralConstant[] = [
+  RESOURCE_UTRIUM,
+  RESOURCE_LEMERGIUM,
+  RESOURCE_KEANIUM,
+  RESOURCE_ZYNTHIUM,
+  RESOURCE_OXYGEN,
+  RESOURCE_HYDROGEN,
+  RESOURCE_CATALYST
+]
+
+export const DepositConstant: DepositConstant[] = [
+  RESOURCE_MIST,
+  RESOURCE_BIOMASS,
+  RESOURCE_METAL,
+  RESOURCE_SILICON,
+]
+
+export const CommodityConstant: CommodityConstant[] = [
+  RESOURCE_UTRIUM_BAR,
+  RESOURCE_LEMERGIUM_BAR,
+  RESOURCE_ZYNTHIUM_BAR,
+  RESOURCE_KEANIUM_BAR,
+  RESOURCE_GHODIUM_MELT,
+  RESOURCE_OXIDANT,
+  RESOURCE_REDUCTANT,
+  RESOURCE_PURIFIER,
+  RESOURCE_BATTERY,
+  RESOURCE_COMPOSITE,
+  RESOURCE_CRYSTAL,
+  RESOURCE_LIQUID,
+  RESOURCE_WIRE,
+  RESOURCE_SWITCH,
+  RESOURCE_TRANSISTOR,
+  RESOURCE_MICROCHIP,
+  RESOURCE_CIRCUIT,
+  RESOURCE_DEVICE,
+  RESOURCE_CELL,
+  RESOURCE_PHLEGM,
+  RESOURCE_TISSUE,
+  RESOURCE_MUSCLE,
+  RESOURCE_ORGANOID,
+  RESOURCE_ORGANISM,
+  RESOURCE_ALLOY,
+  RESOURCE_TUBE,
+  RESOURCE_FIXTURES,
+  RESOURCE_FRAME,
+  RESOURCE_HYDRAULICS,
+  RESOURCE_MACHINE,
+  RESOURCE_CONDENSATE,
+  RESOURCE_CONCENTRATE,
+  RESOURCE_EXTRACT,
+  RESOURCE_SPIRIT,
+  RESOURCE_EMANATION,
+  RESOURCE_ESSENCE
+]
+
+export const ResourceConstant: ResourceConstant[] = [
+  RESOURCE_ENERGY,
+  RESOURCE_POWER,
+  RESOURCE_OPS,
+  ...MineralConstant,
+  ...MineralCompoundConstant,
+  ...DepositConstant,
+  ...CommodityConstant,
+]
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralBoostConstant(arg: string): arg is MineralBoostConstant {
   return (MineralBoostConstant as string[]).includes(arg)
@@ -51,6 +117,26 @@ export function isMineralBoostConstant(arg: string): arg is MineralBoostConstant
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralCompoundConstant(arg: string): arg is MineralCompoundConstant {
   return (MineralCompoundConstant as string[]).includes(arg)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isMineralConstant(arg: string): arg is MineralConstant {
+  return (MineralConstant as string[]).includes(arg)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isDepositConstant(arg: string): arg is DepositConstant {
+  return (DepositConstant as string[]).includes(arg)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isCommodityConstant(arg: string): arg is CommodityConstant {
+  return (CommodityConstant as string[]).includes(arg)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isResourceConstant(arg: string): arg is ResourceConstant {
+  return (ResourceConstant as string[]).includes(arg)
 }
 
 type IngredientType = MineralConstant | MineralCompoundConstant
@@ -89,4 +175,40 @@ export const MineralCompoundIngredients: { [index in MineralCompoundConstant]: {
   XZHO2: { lhs: RESOURCE_ZYNTHIUM_ALKALIDE, rhs: RESOURCE_CATALYST },
   XGH2O: { lhs: RESOURCE_GHODIUM_ACID, rhs: RESOURCE_CATALYST },
   XGHO2: { lhs: RESOURCE_GHODIUM_ALKALIDE, rhs: RESOURCE_CATALYST },
+}
+
+const boostableCreepBodyMap: { [boost in MineralBoostConstant]: BodyPartConstant } = {
+  UH: ATTACK,
+  UH2O: ATTACK,
+  XUH2O: ATTACK,
+  UO: WORK,
+  UHO2: WORK,
+  XUHO2: WORK,
+  KH: CARRY,
+  KH2O: CARRY,
+  XKH2O: CARRY,
+  KO: RANGED_ATTACK,
+  KHO2: RANGED_ATTACK,
+  XKHO2: RANGED_ATTACK,
+  LH: WORK,
+  LH2O: WORK,
+  XLH2O: WORK,
+  LO: HEAL,
+  LHO2: HEAL,
+  XLHO2: HEAL,
+  ZH: WORK,
+  ZH2O: WORK,
+  XZH2O: WORK,
+  ZO: MOVE,
+  ZHO2: MOVE,
+  XZHO2: MOVE,
+  GH: WORK,
+  GH2O: WORK,
+  XGH2O: WORK,
+  GO: TOUGH,
+  GHO2: TOUGH,
+  XGHO2: TOUGH,
+}
+export function boostableCreepBody(boost: MineralBoostConstant): BodyPartConstant {
+  return boostableCreepBodyMap[boost]
 }

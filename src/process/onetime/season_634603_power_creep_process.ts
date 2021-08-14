@@ -8,6 +8,7 @@ import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { randomDirection } from "utility/constants"
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */
@@ -22,6 +23,7 @@ PowerCreep.create("power_creep_0000", POWER_CLASS.OPERATOR)
 Game.powerCreeps["power_creep_0000"].spawn(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
+Game.io("launch -l Season634603PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
 export class Season634603PowerCreepProcess implements Process, Procedural {
   private readonly identifier: string
@@ -73,11 +75,20 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
+    if (objects.controller.isPowerEnabled !== true) {
+      this.enablePower(powerCreep, objects.controller)
+      return
+    }
+
     const powerSpawn = objects.activeStructures.powerSpawn
     let isMoving = false
-    if (powerSpawn != null && powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
-      this.renewPowerCreep(powerCreep, powerSpawn)
-      isMoving = true
+    if (powerSpawn == null) {
+      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} does not have power spawn`)
+    } else {
+      if (powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
+        this.renewPowerCreep(powerCreep, powerSpawn)
+        isMoving = true
+      }
     }
 
     if (isMoving !== true) {
@@ -86,23 +97,52 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     const spawn = objects.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
-      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, isMoving)
+      const opsStore = ((): StructureTerminal | StructureStorage | null => {
+        const storage = objects.activeStructures.storage
+        if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return storage
+        }
+        const terminal = objects.activeStructures.terminal
+        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return terminal
+        }
+        return null
+      })()
+      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
       const terminal = objects.activeStructures.terminal
-      if (terminal != null && terminal.store.getFreeCapacity() > 100000) {
+      if (terminal != null && terminal.store.getFreeCapacity() > 10000) {
         return terminal
       }
       const storage = objects.activeStructures.storage
-      if (storage != null && storage.store.getFreeCapacity() > 100000) {
+      if (storage != null && storage.store.getFreeCapacity() > 10000) {
         return storage
       }
       return null
     })()
 
-    if (store != null) {
-      this.runGenerateOps(powerCreep, isMoving, store)
+    if (store == null) {
+      powerCreep.say("no storage")
+    }
+    this.runGenerateOps(powerCreep, isMoving, store)
+  }
+
+  private enablePower(powerCreep: PowerCreep, controller: StructureController): void {
+    const result = powerCreep.enableRoom(controller)
+    switch (result) {
+    case OK:
+      break
+
+    case ERR_NOT_IN_RANGE:
+      powerCreep.moveTo(controller)
+      break
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_TARGET:
+      PrimitiveLogger.programError(`${this.identifier} powerCreep.enableRoom() returns ${result} ${roomLink(controller.room.name)}`)
+      break
     }
   }
 
@@ -148,7 +188,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, isMoving: boolean): boolean {
+  private runOperateSpawn(powerCreep: PowerCreep, spawn: StructureSpawn, opsStore: StructureTerminal | StructureStorage | null, isMoving: boolean): boolean {
     if (this.hasPower(powerCreep, PWR_OPERATE_SPAWN) !== true) {
       return false
     }
@@ -159,7 +199,15 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     if (roomInfoMemory.config?.enableOperateSpawn !== true) {
       return false
     }
-    if ((Game.time % 2000) < 1000) {
+    // if ((Game.time % 2000) < 1000) {
+    //   return false
+    // }
+
+    if (powerCreep.store.getUsedCapacity(RESOURCE_OPS) < 100) {
+      if (opsStore != null && powerCreep.withdraw(opsStore, RESOURCE_OPS, 100) === ERR_NOT_IN_RANGE && isMoving !== true) {
+        powerCreep.moveTo(opsStore, defaultMoveToOptions())
+        return true
+      }
       return false
     }
 
@@ -192,7 +240,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage): void {
+  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage | null): void {
     if (this.hasPower(powerCreep, PWR_GENERATE_OPS) !== true) {
       return
     }
@@ -204,10 +252,17 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       break
 
     case ERR_TIRED:
-      if (isMoving !== true && powerCreep.pos.isNearTo(store) !== true) {
-        powerCreep.moveTo(store, defaultMoveToOptions())
+      if (store == null) {
+        break
       }
-      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 200) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+      if (isMoving !== true) {
+        if (powerCreep.pos.isNearTo(store) !== true) {
+          powerCreep.moveTo(store, defaultMoveToOptions())
+        } else {
+          powerCreep.move(randomDirection(0))
+        }
+      }
+      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
         powerCreep.transfer(store, RESOURCE_OPS, 100)
       }
       break

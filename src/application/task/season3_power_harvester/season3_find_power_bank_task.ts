@@ -2,7 +2,7 @@ import { UnexpectedProblem } from "application/problem/unexpected/unexpected_pro
 import { Task } from "application/task"
 import { CreepSpawnTaskEvent, CreepSpawnTaskEventHandler } from "application/task_event"
 import type { TaskIdentifier } from "application/task_identifier"
-import { calculateObserveTaskPerformance, emptyObserveTaskPerformanceState, ObserveTaskPerformance, ObserveTaskPerformanceState } from "application/task_profit/observe_task_performance"
+import { ObserveTaskPerformance } from "application/task_profit/observe_task_performance"
 import { CreepTaskAssignTaskRequest, SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
@@ -47,9 +47,6 @@ export interface Season3FindPowerBankTaskState extends TaskState {
   /** task type identifier */
   readonly t: "Season3FindPowerBankTask"
 
-  /** performance */
-  readonly pf: ObserveTaskPerformanceState
-
   readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[]
   readonly powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo} // index: RoomName
 }
@@ -69,7 +66,7 @@ export interface Season3FindPowerBankTaskState extends TaskState {
  *   - 最寄りのhighwaysから上下左右に探索する
  */
 export class Season3FindPowerBankTask
-  extends Task<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes, ObserveTaskPerformance, ObserveTaskPerformanceState>
+  extends Task<Season3FindPowerBankTaskOutput, Season3FindPowerBankTaskProblemTypes, ObserveTaskPerformance>
   implements CreepSpawnTaskEventHandler
 {
   public readonly taskType = "Season3FindPowerBankTask"
@@ -83,11 +80,10 @@ export class Season3FindPowerBankTask
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: ObserveTaskPerformanceState,
     private readonly scoutRoutes: Season3FindPowerBankTaskScoutRoute[],
     private powerBankInfo: { [index: string]: Season3FindPowerBankTaskPowerBankInfo },
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -101,7 +97,6 @@ export class Season3FindPowerBankTask
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
       scoutRoutes: this.scoutRoutes,
       powerBankInfo: this.powerBankInfo,
     }
@@ -111,12 +106,12 @@ export class Season3FindPowerBankTask
     // if (state.r === ) { //W9S24
 
     // }
-    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.pf, state.scoutRoutes, state.powerBankInfo)
+    return new Season3FindPowerBankTask(state.s, state.ss, state.r, state.scoutRoutes, state.powerBankInfo)
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
     if (Environment.world !== "season 3") {
-      PrimitiveLogger.programError(`${this.constructor.name} is not supported in ${Environment.world}`)
+      PrimitiveLogger.programError(`${this.name} is not supported in ${Environment.world}`)
       return null
     }
     const scoutRoutes = calculateRoomRoutes(roomName)
@@ -128,7 +123,6 @@ export class Season3FindPowerBankTask
       Game.time,
       Game.time,
       roomName,
-      emptyObserveTaskPerformanceState(),
       scoutRoutes,
       {},
     )
@@ -315,18 +309,9 @@ export class Season3FindPowerBankTask
     }
   }
 
-  public performance(period: Timestamp): ObserveTaskPerformance {
-    const timeSpent = Math.min(Game.time - this.startTime, period)
-    return calculateObserveTaskPerformance(timeSpent, "continuous", this.performanceState)
-  }
-
   // ---- CreepSpawnTaskEventHandler ---- //
   public didSpawnCreep(creepSpawnEvent: CreepSpawnTaskEvent): void {
-    const spawnTime = bodyCost(creepSpawnEvent.body) * GameConstants.creep.life.spawnTime
-    this.performanceState.s.push({
-      t: Game.time,
-      st: spawnTime,
-    })
+    // TODO:
   }
 
   public didCancelSpawningCreep(creepSpawnEvent: CreepSpawnTaskEvent): void {

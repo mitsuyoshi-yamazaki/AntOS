@@ -50,6 +50,11 @@ export class OwnedRoomResource extends NormalRoomResource {
   ) {
     super(controller, roomInfo)
 
+    if (this.roomInfo.highestRcl < this.controller.level) {
+      this.roomInfo.highestRcl = this.controller.level
+    }
+    const shouldCheckActiveness = this.controller.level < this.roomInfo.highestRcl
+
     this.damagedStructures = []
 
     const spawns: StructureSpawn[] = []
@@ -71,9 +76,11 @@ export class OwnedRoomResource extends NormalRoomResource {
         roomInfo.researchLab = undefined
         return null
       }
-      if (inputLab1.isActive() !== true || inputLab2.isActive() !== true || outputLabs.some(lab => lab.isActive() !== true)) {
-        roomInfo.researchLab = undefined
-        return null
+      if (shouldCheckActiveness === true) {
+        if (inputLab1.isActive() !== true || inputLab2.isActive() !== true || outputLabs.some(lab => lab.isActive() !== true)) {
+          roomInfo.researchLab = undefined
+          return null
+        }
       }
       return {
         inputLab1,
@@ -98,7 +105,7 @@ export class OwnedRoomResource extends NormalRoomResource {
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         spawns.push(structure)
@@ -107,7 +114,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_EXTENSION:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         extensions.push(structure)
@@ -116,7 +123,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_TOWER:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         towers.push(structure)
@@ -125,7 +132,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_STORAGE:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         storage = structure
@@ -134,7 +141,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_TERMINAL:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         terminal = structure
@@ -143,13 +150,13 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_EXTRACTOR:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         extractor = structure
         break
       case STRUCTURE_OBSERVER:
-        if (structure.isActive() !== true) {
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         observer = structure

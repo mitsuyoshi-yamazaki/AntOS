@@ -7,10 +7,9 @@ import { GameConstants } from "utility/constants"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
-import { calculateConsumeTaskPerformance, ConsumeTaskPerformance, ConsumeTaskPerformanceState, emptyConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
+import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
 import { SpawnCreepTaskRequest, SpawnTaskRequestPriority } from "application/task_request"
-import { createCreepBody } from "utility/creep_body"
+import { CreepBody } from "utility/creep_body"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
@@ -29,12 +28,9 @@ type WallBuilderTaskOutputs = TaskOutputs<WallBuilderTaskOutput, WallBuilderTask
 export interface WallBuilderTaskState extends TaskState {
   /** task type identifier */
   readonly t: "WallBuilderTask"
-
-  /** performance */
-  readonly pf: ConsumeTaskPerformanceState
 }
 
-export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTaskProblemTypes, ConsumeTaskPerformance, ConsumeTaskPerformanceState> {
+export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTaskProblemTypes, ConsumeTaskPerformance> {
   public readonly taskType = "WallBuilderTask"
   public readonly identifier: TaskIdentifier
 
@@ -44,9 +40,8 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: ConsumeTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -58,18 +53,24 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: WallBuilderTaskState): WallBuilderTask {
-    return new WallBuilderTask(state.s, state.ss, state.r, state.pf)
+    return new WallBuilderTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): WallBuilderTask {
-    return new WallBuilderTask(Game.time, Game.time, roomName, emptyConsumeTaskPerformanceState())
+    return new WallBuilderTask(Game.time, Game.time, roomName)
   }
 
+  public beforeTick(roomResource: OwnedRoomResource): void {
+
+  }
+
+  /**
+   * - Builderサイズ or hits上限により使用Energy量が変化する
+   */
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
     const taskOutputs: WallBuilderTaskOutputs = emptyTaskOutputs()
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
@@ -78,7 +79,20 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
 
       if (energyAmount > 80000) {
-        const hasWalls = roomResource.walls.length > 0 || roomResource.ramparts.length > 0 || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
+        const maxHits = 5000000
+        const walls: (StructureWall | StructureRampart)[] = [
+          ...roomResource.walls,
+          ...roomResource.ramparts,
+        ].filter(wall => {
+          if (wall.hits >= wall.hitsMax) {
+            return false
+          }
+          if (wall.hits > maxHits) {
+            return false
+          }
+          return true
+        })
+        const hasWalls = walls.length > 0 || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
 
         if (hasWalls === true) {
           if ((Game.time % 3) === 1) {
@@ -127,7 +141,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       this.codename,
       this.identifier,
       null,
-      createCreepBody([], [WORK, CARRY, MOVE], room.energyCapacityAvailable, 8),
+      CreepBody.create([], [WORK, CARRY, MOVE], room.energyCapacityAvailable, 8),
       null,
       0
     )
@@ -175,19 +189,32 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   }
 
   // ---- Profit ---- //
+  /**
+   * - [ ] estimateからRoomResource引数を除く
+   */
   public estimate(roomResource: OwnedRoomResource): ConsumeTaskPerformance {
-    const resourceCost = new Map<ResourceConstant, number>()
+    const body = CreepBody.create([], [WORK, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 8)
+    const creepCount = 1
+    const creepCost = CreepBody.cost(body) * creepCount
+    const spawnTime = CreepBody.spawnTime(body) * creepCount
+
+    const carryCapacity = CreepBody.carryCapacity(body)
+    const repairPower = CreepBody.actionEnergyCost(body, "repair")
+    const ticksToConsume = Math.ceil(carryCapacity / repairPower)
+    const estimatedTimeToWithdrawEnergy = 20
+    const energyCost = Math.ceil(GameConstants.creep.life.lifeTime / (ticksToConsume + estimatedTimeToWithdrawEnergy)) * carryCapacity
+
+    const resourceCost = new Map<ResourceConstant, number>([
+      [RESOURCE_ENERGY, creepCost + energyCost],
+    ])
 
     return {
-      periodType: 0,
+      consumeType: "build wall",
+      periodType: "continuous",
       timeSpent: GameConstants.creep.life.lifeTime,
-      spawnTime: 0,
-      numberOfCreeps: 0,
+      spawnTime,
+      numberOfCreeps: creepCount,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): ConsumeTaskPerformance {
-    return calculateConsumeTaskPerformance(period, 0, this.performanceState)
   }
 }

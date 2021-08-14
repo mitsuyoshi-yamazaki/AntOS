@@ -18,7 +18,7 @@ export class SpawnRequestHandler {
   public execute(spawnRequests: SpawnTaskRequestType[], roomResource: OwnedRoomResource): TaskLogRequest[] {
     const logRequests: TaskLogRequest[] = []
 
-    const idleSpwans = roomResource.activeStructures.spawns.filter(spawn => spawn.spawning == null || spawn.spawning.remainingTime <= 0)
+    const idleSpwans = roomResource.activeStructures.spawns.filter(spawn => spawn.spawning == null)
     if (idleSpwans.length <= 0) {
       return logRequests
     }

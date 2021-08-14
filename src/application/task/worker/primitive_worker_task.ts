@@ -8,8 +8,7 @@ import { UnexpectedProblem } from "application/problem/unexpected/unexpected_pro
 import { generateCodename } from "utility/unique_id"
 import { roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Timestamp } from "utility/timestamp"
-import { calculateInfrastructureTaskPerformance, emptyInfrastructureTaskPerformanceState, InfrastructureTaskPerformance, InfrastructureTaskPerformanceState } from "application/task_profit/infrastructure_performance"
+import { InfrastructureTaskPerformance } from "application/task_profit/infrastructure_performance"
 
 type PrimitiveWorkerTaskOutput = void
 type PrimitiveWorkerTaskProblemTypes = UnexpectedProblem
@@ -18,12 +17,9 @@ type PrimitiveWorkerTaskOutputs = TaskOutputs<PrimitiveWorkerTaskOutput, Primiti
 export interface PrimitiveWorkerTaskState extends TaskState {
   /** task type identifier */
   readonly t: "PrimitiveWorkerTask"
-
-  /** performance */
-  readonly pf: InfrastructureTaskPerformanceState
 }
 
-export class PrimitiveWorkerTask extends Task<PrimitiveWorkerTaskOutput, PrimitiveWorkerTaskProblemTypes, InfrastructureTaskPerformance, InfrastructureTaskPerformanceState> {
+export class PrimitiveWorkerTask extends Task<PrimitiveWorkerTaskOutput, PrimitiveWorkerTaskProblemTypes, InfrastructureTaskPerformance> {
   public readonly taskType = "PrimitiveWorkerTask"
   public readonly identifier: TaskIdentifier
 
@@ -33,9 +29,8 @@ export class PrimitiveWorkerTask extends Task<PrimitiveWorkerTaskOutput, Primiti
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    public readonly performanceState: InfrastructureTaskPerformanceState,
   ) {
-    super(startTime, sessionStartTime, roomName, performanceState)
+    super(startTime, sessionStartTime, roomName)
 
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.startTime)
@@ -47,16 +42,15 @@ export class PrimitiveWorkerTask extends Task<PrimitiveWorkerTaskOutput, Primiti
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      pf: this.performanceState,
     }
   }
 
   public static decode(state: PrimitiveWorkerTaskState): PrimitiveWorkerTask {
-    return new PrimitiveWorkerTask(state.s, state.ss, state.r, state.pf)
+    return new PrimitiveWorkerTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): PrimitiveWorkerTask {
-    return new PrimitiveWorkerTask(Game.time, Game.time, roomName, emptyInfrastructureTaskPerformanceState())
+    return new PrimitiveWorkerTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): PrimitiveWorkerTaskOutputs {
@@ -80,9 +74,5 @@ export class PrimitiveWorkerTask extends Task<PrimitiveWorkerTaskOutput, Primiti
       numberOfCreeps: 0,
       resourceCost,
     }
-  }
-
-  public performance(period: Timestamp): InfrastructureTaskPerformance {
-    return calculateInfrastructureTaskPerformance(period, "continuous", this.performanceState)
   }
 }
