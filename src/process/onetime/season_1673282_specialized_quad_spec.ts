@@ -11,6 +11,7 @@ export const quadTypes = [
   "invader-core-attacker",
   "tier0-d100-attacker",
   "tier0-d450",
+  "tier0-d450-rcl7",
   "tier0-d360-dismantler",
   "tier0-d360-dismantler-rcl7",
   "tier0-swamp-attacker",
@@ -42,6 +43,7 @@ export class QuadSpec {
     case "invader-core-attacker":
     case "tier0-d100-attacker":
     case "tier0-d450":
+    case "tier0-d450-rcl7":
     case "tier0-d360-dismantler":
     case "tier0-d360-dismantler-rcl7":
     case "tier0-swamp-attacker":
@@ -64,6 +66,7 @@ export class QuadSpec {
       return 3
     case "tier0-d100-attacker":
     case "tier0-d450":
+    case "tier0-d450-rcl7":
     case "tier0-d360-dismantler":
     case "tier0-d360-dismantler-rcl7":
     case "tier0-swamp-attacker":
@@ -102,6 +105,8 @@ export class QuadSpec {
       }
     case "tier0-d450":
       return tire0h10HealerSpec
+    case "tier0-d450-rcl7":
+      return tire0h10HealerRCL7Spec
     case "tier0-swamp-attacker":
       if (creepInsufficiency <= 1) {
         return tier0SwampAttackerAttackerSpec

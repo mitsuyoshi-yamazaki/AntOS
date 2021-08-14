@@ -32,8 +32,8 @@ export interface Season1143119LabChargerProcessState extends ProcessState {
 
 // Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
 
-// 3Towers
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W6S29 labs=6111e92d9c09be5e07e92f70:ZO,6111d8c310194018d132a7f7:LHO2,61122f11f72716515c8a5dce:KHO2,61125d5eaa2f2224b1896196:XGHO2")
+// 3Towers full boosted ranged attacker
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W9S24 labs=60f967be396ad538632751b5:XZHO2,60f92938993e4f921d6487aa:XKHO2,6106ee55706bd84a378e1ee7:XLHO2,61073ced8f86f51bf3f51e78:XGHO2")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
