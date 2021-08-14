@@ -36,6 +36,10 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W11S23
 // tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d450 targets=")
+
+//
+// tier0-swamp-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-swamp-attacker targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -92,8 +96,21 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.predefinedTargetIds.splice(0, this.predefinedTargetIds.length)
       return "cleared"
     }
+    if (message === "show") {
+      if (this.predefinedTargetIds.length <= 0) {
+        return "no targets"
+      }
+      return `Targets: ${this.predefinedTargetIds.join(",")}`
+    }
     const direction = parseInt(message, 10)
-    if (this.quadState != null && isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
+    if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
+      if (this.quadState == null) {
+        if (this.creepNames.length > 0) {
+          return "quad died"
+        } else {
+          return "quad not spawned yet"
+        }
+      }
       this.quadState.direction = direction as TOP | BOTTOM | RIGHT | LEFT
       return `direction ${direction} set`
     }
