@@ -86,7 +86,7 @@ export const ResourceManager: ResourceManagerInterface = {
 
     let sentAmount = 0
     const errorMessages: string[] = []
-    resourceInRoom.forEach(([fromRoomName, amount]) => {
+    resourceInRoom.forEach(([fromRoomName]) => {
       if (fromRoomName === roomName) {
         return
       }
@@ -100,9 +100,9 @@ export const ResourceManager: ResourceManagerInterface = {
       }
       const terminal = resources.activeStructures.terminal
       if (terminal == null) {
-        PrimitiveLogger.programError(`ResourceManager.sendTo() no terminal in ${roomLink(fromRoomName)}, ${coloredResourceType(resourceType)}`)
         return
       }
+      const amount = terminal.store.getUsedCapacity(resourceType)
       const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
       const sendAmount = ((): number => {
         if (requiredAmount === "all") {
