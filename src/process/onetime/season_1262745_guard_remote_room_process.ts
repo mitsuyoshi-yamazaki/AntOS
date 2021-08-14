@@ -67,6 +67,7 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W24S29 target_room_name=W27S29 waypoints=W24S30,W27S30 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W21S23 target_room_name=W21S25 waypoints=W21S24 creeps=1")
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W6S29 target_room_name=E3S29 waypoints=W6S30,E4S30,E4S29 creeps=1")
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W24S29 target_room_name=W27S30 waypoints=W24S30 creeps=1")
 
 // SK Room
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W4S24 waypoints=W4S24 creeps=1")

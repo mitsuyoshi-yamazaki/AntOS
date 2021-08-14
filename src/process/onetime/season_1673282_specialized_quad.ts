@@ -1100,9 +1100,12 @@ function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): 
   }
 }
 
-const walkableStructures: StructureConstant[] = [
-  STRUCTURE_CONTAINER,
-  STRUCTURE_ROAD,
+const unbreakableStructureTypes: StructureConstant[] = [
+  STRUCTURE_KEEPER_LAIR,
+  STRUCTURE_CONTROLLER,
+  STRUCTURE_POWER_BANK,
+  STRUCTURE_PORTAL,
+  STRUCTURE_INVADER_CORE,
 ]
 
 function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[]): boolean {
@@ -1119,11 +1122,19 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
     case "powerCreep":
       return true
 
-    case "structure":
-      if (obj.structure == null) {
+    case "structure": {
+      const structure = obj.structure
+      if (structure == null) {
         return false
       }
-      return walkableStructures.includes(obj.structure.structureType) !== true
+      if (structure.hits <= 5000) {
+        return false
+      }
+      if (unbreakableStructureTypes.includes(structure.structureType) === true) {
+        return true
+      }
+      return false
+    }
 
     default:
       return false

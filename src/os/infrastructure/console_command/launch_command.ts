@@ -40,8 +40,9 @@ import { Season1627101FetchResourceProcess } from "process/onetime/season_162710
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/onetime/season_1655635_sk_mineral_harvest_process"
-import { isSeason1673282SpecializedQuadProcessCreepType, Season1673282SpecializedQuadProcess, season1673282SpecializedQuadProcessCreepType } from "process/onetime/season_1673282_specialized_quad_process"
+import { Season1673282SpecializedQuadProcess } from "process/onetime/season_1673282_specialized_quad_process"
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
+import { isQuadType, quadTypes } from "process/onetime/season_1673282_specialized_quad_spec"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -944,16 +945,16 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("targets")
     }
     const targets = rawTargets.split(",")
-    const creepType = args.get("creep_type")
-    if (creepType == null) {
-      return this.missingArgumentError("creep_type")
+    const quadType = args.get("quad_type")
+    if (quadType == null) {
+      return this.missingArgumentError("quad_type")
     }
-    if (!isSeason1673282SpecializedQuadProcessCreepType(creepType)) {
-      return Result.Failed(`Unrecognizeable creep type ${creepType}, creep types: ${season1673282SpecializedQuadProcessCreepType}`)
+    if (!isQuadType(quadType)) {
+      return Result.Failed(`Unrecognizeable quad type ${quadType}, quad types: ${quadTypes}`)
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1673282SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], creepType)
+      return Season1673282SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
     })
     return Result.Succeeded(process)
   }
