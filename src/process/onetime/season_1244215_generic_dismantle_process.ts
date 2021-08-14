@@ -10,9 +10,9 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepName } from "prototype/creep"
 import { processLog } from "process/process_log"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
+import { OperatingSystem } from "os/os"
 
 const dismantlerRole: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
 const dismantlerBody: BodyPartConstant[] = [
@@ -42,12 +42,8 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25 target_id=")
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22 target_id=60fc5b672d39b65e8b50d195")
-
-// W9S29
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e6699d5b67ef23d3b4084f")
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W14S28 target_room_name=W9S29 waypoints=W14S30,W10S30,W10S29 target_id=60e3c5e17471565a7fe2623b")
+// W11S23
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fe798ab44a52011cd135a8")
 export class Season1244215GenericDismantleProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -112,6 +108,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     const creep = Game.creeps[this.creepName]
     if (creep == null) {
       processLog(this, `Creep dead (target: ${this.targetRoomName})`)
+      OperatingSystem.os.killProcess(this.processId)
       return
     }
 
@@ -128,11 +125,11 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       return
     }
 
-    const constructionSite = this.constructionSite(creep)
-    if (constructionSite != null) {
-      creep.v5task = MoveToTask.create(constructionSite.pos, 0)
-      return
-    }
+    // const constructionSite = this.constructionSite(creep)
+    // if (constructionSite != null) {
+    //   creep.v5task = MoveToTask.create(constructionSite.pos, 0)
+    //   return
+    // }
 
     const target = this.getTarget(creep)
     if (target == null) {
