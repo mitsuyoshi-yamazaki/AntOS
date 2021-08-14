@@ -21,7 +21,6 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
-import { CreepBody } from "utility/creep_body"
 
 type EnergyStore = StructureTerminal | StructureStorage
 
@@ -109,8 +108,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
     })()
 
-    const creep = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)[0]
-    if (creep == null || (creep.ticksToLive != null && creep.ticksToLive < CreepBody.spawnTime(body))) {
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    if (creepCount < 1) {
       this.requestDistributor(body)
     }
 
