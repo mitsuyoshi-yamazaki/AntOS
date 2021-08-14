@@ -80,6 +80,33 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
       return
     }
 
+    const opsStore = ((): StructureTerminal | StructureStorage | null => {
+      const storage = objects.activeStructures.storage
+      if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return storage
+      }
+      const terminal = objects.activeStructures.terminal
+      if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return terminal
+      }
+      return null
+    })()
+
+    // if (this.hasPower(powerCreep, PWR_OPERATE_TOWER) === true) {
+    //   let hostileHealerMaxPower = 0
+    //   let healerPowerSum = 0
+    //   objects.hostiles.creeps.forEach(hostileCreep => {
+    //     const healPower = CreepBody.power(hostileCreep.body, "heal")
+    //     if (healPower > hostileHealerMaxPower) {
+    //       hostileHealerMaxPower = healPower
+    //     }
+    //     healerPowerSum += healPower
+    //   })
+    //   if (hostileHealerMaxPower >= 300 || healerPowerSum >= 600) {
+    // Operate Tower
+    //   }
+    // }
+
     const powerSpawn = objects.activeStructures.powerSpawn
     let isMoving = false
     if (powerSpawn == null) {
@@ -97,17 +124,6 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     const spawn = objects.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
-      const opsStore = ((): StructureTerminal | StructureStorage | null => {
-        const storage = objects.activeStructures.storage
-        if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-          return storage
-        }
-        const terminal = objects.activeStructures.terminal
-        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-          return terminal
-        }
-        return null
-      })()
       isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)
     }
 

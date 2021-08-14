@@ -96,11 +96,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.predefinedTargetIds.splice(0, this.predefinedTargetIds.length)
       return "cleared"
     }
-    if (message === "show") {
-      if (this.predefinedTargetIds.length <= 0) {
-        return "no targets"
-      }
-      return `Targets: ${this.predefinedTargetIds.join(",")}`
+    if (message === "status") {
+      const descriptions: string[] = [
+        (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
+        (this.predefinedTargetIds.length <= 0 ? "no targets" : `targets: ${this.predefinedTargetIds.join(",")}`),
+      ]
+      return descriptions.join(", ")
     }
     const direction = parseInt(message, 10)
     if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
