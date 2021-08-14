@@ -305,7 +305,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         return null
       }
     }
-    const sendAmount = energyAmount / 2
+    const sendAmount = Math.min(energyAmount / 2, 50000)
     const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
       .filter(room => {
         if (room.roomName === this.roomName) {
@@ -366,9 +366,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
 
     const powerBanks = (findPowerBankOutputs.output?.powerBanks ?? []).filter(powerBankInfo => {
-      if (powerBankInfo.powerAmount < 1000) {
-        return false
-      }
       if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {
         return
       }
