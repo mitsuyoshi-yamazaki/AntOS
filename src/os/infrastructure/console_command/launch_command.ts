@@ -28,7 +28,7 @@ import { Season1143119BoostedAttackProcess } from "process/onetime/season_114311
 import { Season1200082SendMineralProcess } from "process/onetime/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/onetime/season_1244215_generic_dismantle_process"
 import { Season1249418SendHugeCreepProcess } from "process/onetime/season_1249418_send_huge_creep_process"
-import { Season1262745GuardRemoteRoomProcess } from "process/onetime/season_1262745_guard_remote_room_process"
+import { isSeason1262745GuardRemoteRoomProcessCreepType, Season1262745GuardRemoteRoomProcess, season1262745GuardRemoteRoomProcessCreepType } from "process/onetime/season_1262745_guard_remote_room_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/onetime/season_1349943_disturb_power_harvesting_process"
 import { Season831595DismantleRcl2RoomProcess } from "process/onetime/season_831595_dismantle_rcl2_room_process"
@@ -687,9 +687,16 @@ export class LaunchCommand implements ConsoleCommand {
     if (isNaN(numberOfCreeps) === true) {
       return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
     }
+    const creepType = args.get("creep_type")
+    if (creepType == null) {
+      return this.missingArgumentError("creep_type")
+    }
+    if (!isSeason1262745GuardRemoteRoomProcessCreepType(creepType)) {
+      return Result.Failed(`Invalid creep type ${creepType}, options: ${season1262745GuardRemoteRoomProcessCreepType}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, "ranged attacker", numberOfCreeps)
+      return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
