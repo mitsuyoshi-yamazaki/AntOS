@@ -501,7 +501,7 @@ export class Quad implements Stateful, QuadInterface {
     }
     const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
     this.leaderCreep.moveTo(nextPosition, this.moveToOptions(2))
-    this.moveFollowersToNextPosition(nextPosition, 3)
+    this.moveFollowersToNextPosition(nextPosition, 5)
   }
 
   /**
