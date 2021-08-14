@@ -190,7 +190,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = MoveToTask.create(source.pos, 1)
-          solver.priority = CreepSpawnRequestPriority.High
+          solver.priority = CreepSpawnRequestPriority.Medium
 
           const energyCapacity = objects.controller.room.energyCapacityAvailable
           solver.body = isConstructing ? this.builderBody(energyCapacity) : this.harvesterBody(source, energyCapacity)

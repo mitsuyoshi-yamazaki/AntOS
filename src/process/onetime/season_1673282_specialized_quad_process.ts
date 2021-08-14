@@ -51,7 +51,9 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // tier0-d360-dismantler-rcl7
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 quad_type=tier0-d360-dismantler-rcl7 targets=")
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W17S19 waypoints=W20S23,W20S20 quad_type=tier0-d450-rcl7 targets=")
+// W18S17
+// tier3-4tower-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W18S17 waypoints=W20S23,W20S17 quad_type=tier3-4tower-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -170,7 +172,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (quad == null) {
         return CreepSpawnRequestPriority.Low
       }
-      return CreepSpawnRequestPriority.High
+      return CreepSpawnRequestPriority.Urgent
     })()
     const squadCreepCount = this.quadSpec.creepCount()
     const creepInsufficiency = squadCreepCount - this.creepNames.length
