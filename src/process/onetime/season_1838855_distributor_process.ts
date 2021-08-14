@@ -267,14 +267,26 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   }
 
   private transferEnergyTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
-    const [energySource, energyStore] = ((): [EnergyStore, EnergyStore] => {
+    const energySources = ((): [EnergyStore, EnergyStore] | null => {
+      const terminalEnergyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      const storageEnergyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY)
+      const minimumEnergy = 40000
+      if (terminalEnergyAmount < minimumEnergy && storageEnergyAmount < minimumEnergy) {
+        if (creep.store.getUsedCapacity() <= 0) {
+          return null
+        }
+      }
       const needEnergy = resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null
-      if (needEnergy === true) {
+      if (needEnergy === true && terminalEnergyAmount >= minimumEnergy) {
         return [terminal, storage]
       } else {
         return [storage, terminal]
       }
     })()
+    if (energySources == null) {
+      return null
+    }
+    const [energySource, energyStore] = energySources
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
