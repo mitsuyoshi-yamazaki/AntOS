@@ -1114,7 +1114,7 @@ function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): 
     return hasObstacleObjectAt(position, excludedCreepNames) === true ? "obstacle" : "plain"
   }
   case "swamp": {
-    return hasObstacleObjectAt(position, excludedCreepNames) ? "obstacle" : "swamp"
+    return hasObstacleObjectAt(position, excludedCreepNames) === true ? "obstacle" : "swamp"
   }
   case "wall":
     return "obstacle"
@@ -1154,13 +1154,13 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (structure == null) {
         return false
       }
-      if (structure.hits <= 5000) {
-        return false
-      }
       if (unbreakableStructureTypes.includes(structure.structureType) === true) {
         return true
       }
-      return false
+      if (structure.hits <= 5000) {
+        return false
+      }
+      return true
     }
 
     default:
@@ -1254,6 +1254,12 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
         }
       }
     }
+
+    // for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
+    //   for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
+    //     room.visual.text(`${costMatrix.get(x, y)}`, x, y)
+    //   }
+    // }
 
     return costMatrix
   }
