@@ -1124,6 +1124,10 @@ function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): 
   }
 }
 
+const walkableStructures: StructureConstant[] = [
+  STRUCTURE_ROAD,
+  STRUCTURE_CONTAINER,
+]
 const unbreakableStructureTypes: StructureConstant[] = [
   STRUCTURE_KEEPER_LAIR,
   STRUCTURE_CONTROLLER,
@@ -1157,7 +1161,7 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (unbreakableStructureTypes.includes(structure.structureType) === true) {
         return true
       }
-      if (structure.hits <= 5000) {
+      if (structure.hits <= 5000 || walkableStructures.includes(structure.structureType) === true) {
         return false
       }
       return true
