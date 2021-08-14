@@ -535,7 +535,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })()
 
     this.runScout()
-    this.runAttackers(powerBank, haulerReady)
+    this.runAttackers(powerBank, haulerReady, haulers.filter(creep => creep.store.getUsedCapacity(RESOURCE_POWER) <= 0))
     this.runHauler(powerBank, powerResources)
     this.runRangedAttacker()
 
@@ -687,7 +687,7 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
           reversedWaypoints.reverse()
           return FleeFromAttackerTask.create(MoveToRoomTask.create(store.room.name, reversedWaypoints))
         }
-        return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER)))
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER), {ignoreSwamp: false, reusePath: 0}))
         // }
       }
     }
@@ -791,17 +791,17 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     })
   }
 
-  private runAttackers(powerBank: StructurePowerBank | null, haulerReady: boolean): void {
+  private runAttackers(powerBank: StructurePowerBank | null, haulerReady: boolean, emptyHaulers: Creep[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.attackerTask(creep, powerBank, haulerReady),
+      creep => this.attackerTask(creep, powerBank, haulerReady, emptyHaulers),
       creep => hasNecessaryRoles(creep, this.attackerSpec.roles),
     )
   }
 
-  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null, haulerReady: boolean): CreepTask | null {
+  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null, haulerReady: boolean, emptyHaulers: Creep[]): CreepTask | null {
     if (this.pickupFinished === true) {
       return this.attackNearbyHostileHaulerTask(creep)
     }
@@ -855,12 +855,18 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       return attackNearbyHostileHaulerTask
     }
 
-    const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
-    const range = 4
-    if (creep.pos.inRangeTo(waitingPosition, range) === true) {
+    if (this.powerBankInfo == null) {
       return null
     }
-    return MoveToTask.create(waitingPosition, range)
+    const emptyHauler = creep.pos.findInRange(emptyHaulers, 1)[0]
+    if (emptyHauler == null) {
+      return MoveToTask.create(this.powerBankInfo.position, 1)
+    }
+    if (creep.pos.isNearTo(this.powerBankInfo.position) === true) {
+      return MoveToTask.create(emptyHauler.pos, 0)
+    } else {
+      return MoveToTask.create(this.powerBankInfo.position, 1)
+    }
   }
 
   private attackNearbyHostileHaulerTask(creep: Creep): CreepTask | null {
