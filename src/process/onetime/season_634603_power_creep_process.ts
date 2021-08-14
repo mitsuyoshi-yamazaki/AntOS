@@ -9,6 +9,8 @@ import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { randomDirection } from "utility/constants"
+import { OperatingSystem } from "os/os"
+import { moveToRoom } from "script/move_to_room"
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */
@@ -75,6 +77,17 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
+    if (powerCreep.room == null) {
+      PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    if (powerCreep.room.name !== this.parentRoomName) {
+      moveToRoom(powerCreep, this.parentRoomName, [])
+      this.runGenerateOps(powerCreep, true, null)
+      return
+    }
+
     if (objects.controller.isPowerEnabled !== true) {
       this.enablePower(powerCreep, objects.controller)
       return
