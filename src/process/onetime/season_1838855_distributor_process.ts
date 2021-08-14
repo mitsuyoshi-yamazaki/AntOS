@@ -277,6 +277,11 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
     }
 
+    const energyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+    if (energyAmount > 700000 && energySource instanceof StructureTerminal) {
+      processLog(this, `Has enough energy ${roomLink(this.parentRoomName)}`)
+      return null
+    }
     if ((energySource instanceof StructureStorage) && energySource.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
       processLog(this, `Not enough energy in ${energySource} ${roomLink(this.parentRoomName)}`)
       return null
