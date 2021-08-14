@@ -14,6 +14,7 @@ export const quadTypes = [
   "tier0-d360-dismantler",
   "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
+  "tier3-3tower-full-ranged-attacker",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -45,6 +46,8 @@ export class QuadSpec {
       return [...tier3DismantlerBoost1]
     case "no-defence-3tower":
       return [...noDefence3TowerAttackerBoost]
+    case "tier3-3tower-full-ranged-attacker":
+      return [...tier33TowerFullRangedAttackerBoosts]
     }
   }
 
@@ -60,6 +63,7 @@ export class QuadSpec {
     case "tier0-d360-dismantler":
     case "tier3-d2000-dismantler-swamp":
     case "no-defence-3tower":
+    case "tier3-3tower-full-ranged-attacker":
       return 4
     }
   }
@@ -106,6 +110,8 @@ export class QuadSpec {
       }
     case "no-defence-3tower":
       return noDefence3TowerAttackerSpec
+    case "tier3-3tower-full-ranged-attacker":
+      return tier33TowerFullRangedAttackerSpec
     }
   }
 }
@@ -271,4 +277,29 @@ const tier3DismantlerBoost1: MineralBoostConstant[] = [
   RESOURCE_KEANIUM_ALKALIDE,
   RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
   RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+]
+
+// ---- tier3-3tower-full-ranged-attacker ---- //
+const tier33TowerFullRangedAttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    HEAL, HEAL, HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+
+const tier33TowerFullRangedAttackerBoosts: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
 ]

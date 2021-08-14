@@ -990,7 +990,7 @@ export class Quad implements Stateful, QuadInterface {
         if (nearbyTarget != null) {
           if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
             this.previousTargetId = nearbyTarget.id
-            this.rotateTo(nearbyTarget)
+            // this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
           }
           creep.attack(nearbyTarget)
         }
@@ -999,7 +999,7 @@ export class Quad implements Stateful, QuadInterface {
         if (nearbyTarget != null && !isAnyCreep(nearbyTarget)) {
           if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
             this.previousTargetId = nearbyTarget.id
-            this.rotateTo(nearbyTarget)
+            // this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
           }
           creep.dismantle(nearbyTarget)
         }
