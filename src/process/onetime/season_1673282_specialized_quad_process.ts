@@ -36,10 +36,20 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W11S23
 // tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d450 targets=")
+// tier3-3tower-full-ranged-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier3-3tower-full-ranged-attacker targets=")
+// tier0-swamp-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-swamp-attacker targets=")
+// tier0-d360-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d360-dismantler targets=")
 
-//
+// W1S28
 // tier0-swamp-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-swamp-attacker targets=")
+
+// W21S15
+// tier0-d360-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d360-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -88,7 +98,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)} ${creepCount}cr`
+    return `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)} ${creepCount}cr ${this.quadType}`
   }
 
   public didReceiveMessage(message: string): string {
@@ -168,9 +178,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     if (quad != null) {
-      const isBoosting = quad.numberOfCreeps < creeps.length
+      const isPreparing = ((): boolean => {
+        if (quad.numberOfCreeps < creeps.length) {
+          return true
+        }
+        return false
+      })()
       quad.beforeRun()
-      if (isBoosting !== true || quad.room.name === this.parentRoomName) {
+      if (isPreparing !== true || quad.room.name === this.parentRoomName) {
         this.runQuad(quad)
       } else {
         quad.heal()
