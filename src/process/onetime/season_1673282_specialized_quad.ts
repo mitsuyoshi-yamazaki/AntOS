@@ -986,21 +986,37 @@ export class Quad implements Stateful, QuadInterface {
         this.rangedAttackCreep(creep, mainTarget, [...optionalTargets])
       }
       if (creep.getActiveBodyparts(ATTACK) > 0) {
-        const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
-        if (nearbyTarget != null) {
-          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
-            this.previousTargetId = nearbyTarget.id
-            // this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
+        const nearbyTarget = ((): QuadAttackTargetType | null => {
+          if (mainTarget != null && mainTarget.pos.isNearTo(creep.pos) === true) {
+            return mainTarget
           }
+          return creep.pos.findInRange(optionalTargets, 1)[0] ?? null
+        })()
+        if (nearbyTarget != null) {
+          // if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
+          //   this.previousTargetId = nearbyTarget.id
+          //   this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
+          // }
           creep.attack(nearbyTarget)
         }
       } else if (creep.getActiveBodyparts(WORK) > 0) {
-        const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
-        if (nearbyTarget != null && !isAnyCreep(nearbyTarget)) {
-          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
-            this.previousTargetId = nearbyTarget.id
-            // this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
+        const nearbyTarget = ((): AnyStructure | null => {
+          if (mainTarget != null && !isAnyCreep(mainTarget) && mainTarget.pos.isNearTo(creep.pos) === true) {
+            return mainTarget
           }
+          const nearbyTargets = creep.pos.findInRange(optionalTargets, 1)
+          for (const target of nearbyTargets) {
+            if (!isAnyCreep(target)) {
+              return target
+            }
+          }
+          return null
+        })()
+        if (nearbyTarget != null) {
+          // if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
+          //   this.previousTargetId = nearbyTarget.id
+          //   this.rotateTo(nearbyTarget)  // 計算量が大きすぎるため
+          // }
           creep.dismantle(nearbyTarget)
         }
       }
@@ -1016,6 +1032,15 @@ export class Quad implements Stateful, QuadInterface {
         const target = creep.pos.findInRange(targets, 1)[0]
         if (target != null) {
           creep.attack(target)
+        }
+      } else if (creep.getActiveBodyparts(WORK) > 0) {
+        const nearbyTargets = creep.pos.findInRange(targets, 1)
+        for (const target of nearbyTargets) {
+          if (isAnyCreep(target)) {
+            continue
+          }
+          creep.dismantle(target)
+          break
         }
       }
     })
