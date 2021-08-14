@@ -35,13 +35,14 @@ export interface Season1838855DistributorProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season1838855DistributorProcess room_name=W6S29 pos=26,36 link_id=610b604e550481c7f76f8e98 upgrader_link_id=610b7ec24645122963c87887")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W6S27 pos=14,17")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W6S27 pos=14,17 link_id=6116b45395328f410083221f upgrader_link_id=6116bfc03819de00286d3873")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W21S23 pos=24,22 link_id=610b564f5504812b426f89ed upgrader_link_id=610b5d807c129561c313bbf2")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W3S24 pos=13,14")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W9S24 pos=24,32")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W14S28 pos=32,29")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W24S29 pos=17,9")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W27S26 pos=18,13")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W29S25 pos=24,9 link_id=6116b1e1c7daf82aff322119 upgrader_link_id=6116b4b1dcb0c172dcfa0449")
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -147,6 +148,9 @@ export class Season1838855DistributorProcess implements Process, Procedural {
 
     const storage = resources.activeStructures.storage
     const terminal = resources.activeStructures.terminal
+    if (terminal == null && storage != null && link != null) {
+      return this.transferEnergyToLinkTask(creep, storage, link)
+    }
     if (storage == null || terminal == null) {
       PrimitiveLogger.fatal(`${this.identifier} no active storage or terminal in ${roomLink(this.parentRoomName)}`)
       OperatingSystem.os.suspendProcess(this.processId)
@@ -279,4 +283,14 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     }
     return RunApiTask.create(WithdrawResourceApiWrapper.create(energySource, RESOURCE_ENERGY))
   }
+
+  private transferEnergyToLinkTask(creep: Creep, storage: StructureStorage, link: StructureLink): CreepTask | null {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      if (link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+        return RunApiTask.create(TransferEnergyApiWrapper.create(link))
+      }
+    }
+    return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, RESOURCE_ENERGY))
+  }
+
 }
