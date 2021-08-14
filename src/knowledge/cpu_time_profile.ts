@@ -1,5 +1,33 @@
 
 /*
+Quad
+calls		time		avg		function
+10371		2349.2		0.227		Creep.moveTo
+8676		1775.1		0.205		Creep.move
+7033		1469.6		0.209		Creep.moveByPath
+1425		1193.9		0.838		Room.findPath
+3301		590.1		0.179		Creep.harvest
+5933		396.3		0.067		Creep.withdraw
+1409		377.6		0.268		RoomPosition.findPathTo
+1554		322.8		0.208		Creep.repair
+1470		274.5		0.187		Creep.upgradeController
+1105		207.6		0.188		Creep.reserveController
+30118		183.9		0.006		RoomPosition.look
+48941		160.3		0.003		Room.find
+4940		142.6		0.029		Creep.transfer
+596		103.7		0.174		Creep.heal
+1497		102.8		0.069		RoomPosition.findClosestByPath
+64827		101.1		0.002		RoomPosition.getRangeTo
+30118		97.9		0.003		Room.lookAt
+39772		82.1		0.002		RoomPosition.lookFor
+332		52.4		0.158		Creep.attack
+594		45.2		0.076		Creep.rangedAttack
+225		44.6		0.198		Room.findExitTo
+614		43.2		0.070		Room.createConstructionSite
+2780		39.5		0.014		RoomPosition.findInRange
+20808		37.8		0.002		RoomPosition.isNearTo
+Avg: 95.04	Total: 9314.04	Ticks: 98
+
 Quad部屋間移動
 calls		time		avg		function
 9609		2135.9		0.222		Creep.moveTo
