@@ -1,7 +1,6 @@
-import { SourceKeeper } from "game/source_keeper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName, isAnyCreep } from "prototype/creep"
-import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
@@ -1152,23 +1151,6 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
     if (positionsToAvoid != null) {
       positionsToAvoid.forEach(position => {
-        costMatrix.set(position.x, position.y, obstacleCost)
-      })
-    }
-
-    if (room.roomType === "source_keeper") {
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-      const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-      const sourceKeeperPositions = sourceKeepers
-        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
-
-      sourceKeeperPositions.forEach(position => {
         costMatrix.set(position.x, position.y, obstacleCost)
       })
     }
