@@ -501,7 +501,7 @@ export class Quad implements Stateful, QuadInterface {
     }
     const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
     this.leaderCreep.moveTo(nextPosition, this.moveToOptions(2))
-    this.moveFollowersToNextPosition(nextPosition, 2)
+    this.moveFollowersToNextPosition(nextPosition, 3)
   }
 
   /**
@@ -1237,8 +1237,10 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
           break
 
         case "swamp":
-          getObstaclePositions(position).forEach(p => {
+          if (costMatrix.get(x, y) < swampCost) {
             costMatrix.set(x, y, swampCost)
+          }
+          getObstaclePositions(position).forEach(p => {
             if (costMatrix.get(p.x, p.y) < swampCost) {
               costMatrix.set(p.x, p.y, swampCost)
             }
@@ -1257,7 +1259,14 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
 
     // for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
     //   for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
-    //     room.visual.text(`${costMatrix.get(x, y)}`, x, y)
+    //     const costDescription = ((): string => {
+    //       const cost = costMatrix.get(x, y)
+    //       if (cost === obstacleCost) {
+    //         return "■"
+    //       }
+    //       return `${cost}`
+    //     })()
+    //     room.visual.text(costDescription, x, y)
     //   }
     // }
 
