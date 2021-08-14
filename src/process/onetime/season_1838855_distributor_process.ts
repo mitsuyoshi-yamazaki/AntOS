@@ -47,8 +47,6 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly body: BodyPartConstant[] = [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
-
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -86,6 +84,12 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (resources == null) {
+      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+      return
+    }
+
     const getLink = ((linkId: Id<StructureLink> | null): StructureLink | null => {
       if (linkId == null) {
         return null
@@ -98,27 +102,34 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       this.runLinks(link, upgraderLink)
     }
 
+    const body = ((): BodyPartConstant[] => {
+      if (resources.controller.level >= 8) {
+        return [MOVE, CARRY, CARRY, CARRY, CARRY]
+      }
+      return [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+    })()
+
     const creep = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)[0]
-    if (creep == null || (creep.ticksToLive != null && creep.ticksToLive < CreepBody.spawnTime(this.body))) {
-      this.requestDistributor()
+    if (creep == null || (creep.ticksToLive != null && creep.ticksToLive < CreepBody.spawnTime(body))) {
+      this.requestDistributor(body)
     }
 
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newDistributorTask(creep, link),
+      creep => this.newDistributorTask(creep, link, resources),
       () => true,
     )
   }
 
-  private requestDistributor(): void {
+  private requestDistributor(body: BodyPartConstant[]): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: this.body,
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -135,15 +146,9 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     link.transferEnergy(upgraderLink)
   }
 
-  private newDistributorTask(creep: Creep, link: StructureLink | null): CreepTask | null {
+  private newDistributorTask(creep: Creep, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
     if (creep.pos.isEqualTo(this.position) !== true) {
       return MoveToTask.create(this.position, 0)
-    }
-
-    const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
-    if (resources == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
-      return null
     }
 
     const storage = resources.activeStructures.storage
@@ -283,10 +288,12 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
     }
 
-    const energyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-    if (energyAmount > 700000 && energySource instanceof StructureTerminal) {
-      processLog(this, `Has enough energy ${roomLink(this.parentRoomName)}`)
-      return null
+    if (link == null || link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+      const energyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      if (energyAmount > 700000 && energySource instanceof StructureTerminal) {
+        processLog(this, `Has enough energy ${roomLink(this.parentRoomName)}`)
+        return null
+      }
     }
     if ((energySource instanceof StructureStorage) && energySource.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
       processLog(this, `Not enough energy in ${energySource} ${roomLink(this.parentRoomName)}`)
