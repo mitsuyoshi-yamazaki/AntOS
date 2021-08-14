@@ -181,10 +181,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     if (quad != null) {
       const isPreparing = ((): boolean => {
-        if (quad.numberOfCreeps < this.quadSpec.creepCount()) {
-          return true
+        const creepCount = this.quadSpec.creepCount()
+        if (quad.numberOfCreeps >= creepCount) {
+          return false
         }
-        return false
+        if (this.creepNames.length >= creepCount) {
+          return false
+        }
+        return true
       })()
       quad.beforeRun()
       if (isPreparing !== true || quad.room.name === this.parentRoomName) {
