@@ -12,6 +12,7 @@ export const quadTypes = [
   "tier0-d100-attacker",
   "tier0-d450",
   "tier0-d360-dismantler",
+  "tier0-swamp-attacker",
   "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
   "tier3-3tower-full-ranged-attacker",
@@ -41,6 +42,7 @@ export class QuadSpec {
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tier0-d360-dismantler":
+    case "tier0-swamp-attacker":
       return [...noBoosts]
     case "tier3-d2000-dismantler-swamp":
       return [...tier3DismantlerBoost1]
@@ -61,6 +63,7 @@ export class QuadSpec {
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tier0-d360-dismantler":
+    case "tier0-swamp-attacker":
     case "tier3-d2000-dismantler-swamp":
     case "no-defence-3tower":
     case "tier3-3tower-full-ranged-attacker":
@@ -96,6 +99,12 @@ export class QuadSpec {
       }
     case "tier0-d450":
       return tire0h10HealerSpec
+    case "tier0-swamp-attacker":
+      if (creepInsufficiency <= 1) {
+        return tier0SwampAttackerAttackerSpec
+      } else {
+        return tier0SwampAttackerHealerSpec
+      }
     case "tier0-d360-dismantler":
       if (creepInsufficiency <= 1) {
         return tire0DismantlerSpec
@@ -191,6 +200,37 @@ const tire0DismantlerSpec: CreepBodySpec = {
     MOVE, MOVE, MOVE, MOVE,
   ]
 }
+
+// ---- tier0-swamp-attacker ---- //
+const tier0SwampAttackerAttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.Attacker, CreepRole.Mover],
+  body: [
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
+    ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
+    ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE, ATTACK, MOVE,
+    ATTACK, MOVE, ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+  ]
+}
+const tier0SwampAttackerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE, RANGED_ATTACK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL,
+  ]
+}
+
+// ---- ---- //
 
 // const noDefence3TowerAttackerSpec: CreepBodySpec = {
 //   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
