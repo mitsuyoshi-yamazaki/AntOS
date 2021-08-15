@@ -281,10 +281,23 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
   private runQuad(quad: Quad): void {
     if (quad.inRoom(this.targetRoomName) !== true) {
+      if (this.manualOperations.action === "flee") {
+        this.manualOperations.action = null
+      }
       quad.moveToRoom(this.targetRoomName, this.waypoints)
       quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
       quad.heal()
       return
+    }
+
+    switch (this.manualOperations.action) {
+    case "flee": {
+      const { succeeded } = this.flee(quad)
+      if (succeeded === true) {
+        quad.heal()
+        return
+      }
+    }
     }
 
     if (quad.room.name === this.targetRoomName && quad.room.controller != null && quad.room.controller.safeMode != null) {
