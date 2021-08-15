@@ -45,7 +45,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
       const cost = bodyCost(body)
       if (cost > spawn.room.energyCapacityAvailable) {
         PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
-        return
+        continue
       }
       const memory: V5CreepMemory = {
         v: "v5",
@@ -61,10 +61,10 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         if (creep != null) {
           creep.v5task = request.initialTask
         }
-        break
+        return  // ここはreturn
       }
       case ERR_NOT_ENOUGH_ENERGY:
-        break
+        return  // ここはreturn
       default:
         PrimitiveLogger.programError(`${spawn.name} in ${roomLink(this.parentRoomName)} faild to spawn ${result}, task: ${request.taskIdentifier}, creep name: ${creepName}, body(length: ${body.length}): ${body}`)
         break
