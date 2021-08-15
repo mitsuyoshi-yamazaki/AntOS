@@ -144,6 +144,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
 
   private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
+      creep.say("dying")
       return null
     }
     if (shouldCollectResources === true) {
@@ -207,10 +208,12 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
         return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
       }
     }
+    creep.say("boosted")
     return null
   }
 
   private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
+    creep.say("collect")
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0]
       if (resourceType != null && isResourceConstant(resourceType)) {
