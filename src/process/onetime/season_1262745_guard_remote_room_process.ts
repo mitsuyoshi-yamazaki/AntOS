@@ -81,6 +81,9 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 
 // W21S15
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 creep_type=heavy-ranged-attacker creeps=1")
+
+// W11S14
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W9S24 target_room_name=W11S14 waypoints=W10S24,W10S14 creep_type=heavy-ranged-attacker creeps=2")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -150,7 +153,7 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
 
   public runOnTick(): void {
     const targetRoom = Game.rooms[this.targetRoomName]
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null) {
+    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > 500) {
       PrimitiveLogger.fatal(`${this.identifier} target room ${this.targetRoomName} activated safemode`)
       OperatingSystem.os.suspendProcess(this.processId)
       return
