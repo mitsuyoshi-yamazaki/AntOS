@@ -162,7 +162,24 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
 
     const excluded: StructureConstant[] = [STRUCTURE_CONTROLLER]
-    const hostileStructures = creep.room.find(FIND_HOSTILE_STRUCTURES).filter(structure => (excluded.includes(structure.structureType) !== true))
+    const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
+      STRUCTURE_ROAD,
+      STRUCTURE_STORAGE,
+      STRUCTURE_POWER_SPAWN,
+      STRUCTURE_TERMINAL,
+      STRUCTURE_EXTENSION,
+      STRUCTURE_SPAWN,
+      STRUCTURE_TOWER,
+    ]
+    const hostileStructures = creep.room.find(FIND_STRUCTURES)
+      .filter(structure => (excluded.includes(structure.structureType) !== true))
+      .sort((lhs, rhs) => {
+        const priority = targetPriority.indexOf(rhs.structureType) - targetPriority.indexOf(lhs.structureType)
+        if (priority !== 0) {
+          return priority
+        }
+        return lhs.pos.getRangeTo(creep.pos) - rhs.pos.getRangeTo(creep.pos)
+      })
     return creep.pos.findClosestByRange(hostileStructures) ?? null
   }
 
