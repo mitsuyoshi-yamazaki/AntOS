@@ -580,6 +580,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     const labs = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
     for (const [boost, amount] of requiredBoosts.entries()) {
+      if (amount <= 0) {
+        continue
+      }
       const boostLab = labs.find(lab => {
         if (lab.mineralType == null || lab.mineralType !== boost) {
           return false
@@ -599,6 +602,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
 function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): void {
   PrimitiveLogger.log(`Launch lab charger process for ${quadSpec.quadType}, boosts: ${quadSpec.boosts.map(boost => coloredResourceType(boost)).join(",")}`)
+
+  const showRequiredBoosts = () => {
+    const requiredBoosts = Array.from(quadSpec.totalBoostAmounts().entries()).map(([boost, amount]) => `${coloredResourceType(boost)}: ${coloredText(`${amount}`, "info")}`)
+    PrimitiveLogger.log(`${coloredText("[Boost Needed]", "warn")}: ${requiredBoosts.join(", ")}`)
+  }
 
   const boosts = quadSpec.boosts
   const existingProcessInfo = OperatingSystem.os.listAllProcesses()
@@ -624,6 +632,7 @@ function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): 
         OperatingSystem.os.resumeProcess(existingProcessInfo.processId)
       }
       PrimitiveLogger.log(`Season1673282SpecializedQuadProcess use Season1143119LabChargerProcess ${existingProcessInfo.processId} ${roomLink(parentRoomName)}`)
+      showRequiredBoosts()
       return
     }
     OperatingSystem.os.killProcess(existingProcessInfo.processId)
@@ -664,8 +673,7 @@ function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): 
     })
   }
 
-  const requiredBoosts = Array.from(quadSpec.totalBoostAmounts().entries()).map(([boost, amount]) => `${coloredResourceType(boost)}: ${coloredText(`${amount}`, "info")}`)
-  PrimitiveLogger.log(`${coloredText("[Boost Needed]", "warn")}: ${requiredBoosts.join(", ")}`)
+  showRequiredBoosts()
 
   OperatingSystem.os.addProcess(processId => {
     return Season1143119LabChargerProcess.create(processId, parentRoomName, labInfo)
