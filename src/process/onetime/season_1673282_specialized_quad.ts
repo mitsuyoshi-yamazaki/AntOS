@@ -835,7 +835,7 @@ export class Quad implements Stateful, QuadInterface {
       return this.leaderCreep.pos
     })()
 
-    this.moveFollowersToNextPosition(leaderPosition, 2, false)  // 動かないことがあった
+    this.moveFollowersToNextPosition(leaderPosition, 2, true)
   }
 
   private canMove(): boolean {
