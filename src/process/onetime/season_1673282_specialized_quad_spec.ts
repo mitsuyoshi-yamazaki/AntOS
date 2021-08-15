@@ -279,13 +279,12 @@ const tire0h10HealerRCL7Spec: CreepBodySpec = {
 const tire0DismantlerSpec: CreepBodySpec = {
   roles: [CreepRole.Worker, CreepRole.Mover],
   body: [
-    WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    WORK, MOVE,
-    MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
   ]
 }
 
