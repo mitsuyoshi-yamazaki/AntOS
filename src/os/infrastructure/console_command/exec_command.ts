@@ -50,6 +50,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.pickup()
     case "resource":
       return this.resource()
+    case "set_boost_labs":
+      return this.setBoostLabs()
     default:
       return "Invalid script type"
     }
@@ -488,5 +490,64 @@ export class ExecCommand implements ConsoleCommand {
     case "failed":
       return result.reason
     }
+  }
+
+  // Game.io("exec set_boost_labs room_name=W9S24 labs=60f967be396ad538632751b5,60f92938993e4f921d6487aa,6106ee55706bd84a378e1ee7,61073ced8f86f51bf3f51e78")
+  private setBoostLabs(): CommandExecutionResult {
+    const outputs: string[] = []
+
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const rawLabs = args.get("labs")
+    if (rawLabs == null) {
+      return this.missingArgumentError("labs")
+    }
+    const labIds: Id<StructureLab>[] = []
+    for (const labId of rawLabs.split(",")) {
+      const lab = Game.getObjectById(labId)
+      if (!(lab instanceof StructureLab)) {
+        return `Id ${labId} is not lab ${lab}`
+      }
+      if (lab.room.name !== roomName) {
+        return `Lab ${lab} is not in ${roomLink(roomName)}`
+      }
+      labIds.push(lab.id)
+    }
+
+    const resources = RoomResources.getOwnedRoomResource(roomName)
+    if (resources == null) {
+      return `Room ${roomName} is not owned`
+    }
+    const researchLab = resources.roomInfo.researchLab
+    if (researchLab != null) {
+      for (const labId of labIds) {
+        if (labId === researchLab.inputLab1 || labId === researchLab.inputLab2) {
+          return `Lab ${labId} is set for research input lab ${roomLink(roomName)}`
+        }
+        const index = researchLab.outputLabs.indexOf(labId)
+        if (index < 0) {
+          continue
+        }
+        researchLab.outputLabs.splice(index, 1)
+        outputs.push(`Lab ${labId} is removed from research output lab`)
+      }
+    }
+
+    if (resources.roomInfo.config == null) {
+      resources.roomInfo.config = {}
+      outputs.push("Add roomInfo.config")
+    }
+    if (resources.roomInfo.config.boostLabs != null && resources.roomInfo.config.boostLabs.length > 0) {
+      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${labIds.length} labs`)
+    } else {
+      outputs.push(`Set ${labIds.length} labs`)
+    }
+    resources.roomInfo.config.boostLabs = labIds
+
+    return `\n${outputs.join("\n")}`
   }
 }

@@ -49,13 +49,14 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiencyPriority }
 
-  readonly config?: {
+  config?: {
     disablePowerHarvesting?: boolean
     disableMineralHarvesting?: boolean
     disableUnnecessaryTasks?: boolean
     enableOperateSpawn?: boolean
     researchCompounds?: { [index in MineralCompoundConstant]?: number }
     collectResources?: boolean
+    boostLabs?: Id<StructureLab>[]
   }
 }
 
