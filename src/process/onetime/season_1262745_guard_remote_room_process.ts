@@ -79,10 +79,8 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
   numberOfCreeps: number
 }
 
-// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 creeps=1")
-
-// SK Room
-// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W3S24 target_room_name=W4S24 waypoints=W4S24 creeps=1")
+// W21S15
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 creep_type=heavy-ranged-attacker creeps=1")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string

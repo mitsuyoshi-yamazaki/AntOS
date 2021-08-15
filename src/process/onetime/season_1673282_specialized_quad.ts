@@ -529,7 +529,7 @@ export class Quad implements Stateful, QuadInterface {
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
       if (this.leaderCreep.pos.isNearTo(position) !== true) {
-        this.direction = leftRotationDirectionOf(this.direction)
+        this.runRotateTask(leftRotationDirectionOf(this.direction))
       }
       return
     }
@@ -1238,9 +1238,13 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
         const position = new RoomPosition(x, y, roomName)
         if (position.isRoomEdge === true) {
-          costMatrix.set(x, y, exitPositionCost)
+          if (costMatrix.get(x, y) < exitPositionCost) {
+            costMatrix.set(x, y, exitPositionCost)
+          }
           getObstaclePositions(position).forEach(p => {
-            costMatrix.set(p.x, p.y, exitPositionCost)
+            if (costMatrix.get(p.x, p.y) < exitPositionCost) {
+              costMatrix.set(p.x, p.y, exitPositionCost)
+            }
           })
           continue
         }
