@@ -37,6 +37,15 @@ function rotationFor(fromDirection: Direction, toDirection: Direction): "left" |
   }
   return rotateDirection(fromDirection, toDirection)
 }
+const rotationDirectionMap: { [direction in Direction]: Direction } = {
+  1: LEFT,
+  7: BOTTOM,
+  5: RIGHT,
+  3: TOP,
+}
+function leftRotationDirectionOf(direction: Direction): Direction {
+  return rotationDirectionMap[direction]
+}
 
 type MoveToRoomStatus = "in progress" | "close to room exit" | "close to destination"
 export type QuadAttackTargetType = AnyCreep | AnyStructure
@@ -522,12 +531,21 @@ export class Quad implements Stateful, QuadInterface {
 
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
-      return  // TODO: このときminRangeを調べれば方向転換が必要かわかる
+      if (this.leaderCreep.pos.isNearTo(position) !== true) {
+        this.direction = leftRotationDirectionOf(this.direction)
+      }
+      return
     }
+    const pathFindingRange = ((): number => {
+      if (this.leaderCreep.pos.getRangeTo(position) <= 2) {
+        return 1
+      }
+      return Math.max(range, 2)
+    })()
 
     const pathFinderOptions: FindPathOpts = {
       costCallback: quadCostCallback(this.creeps.map(creep => creep.name), this.direction),
-      range: Math.max(range, 2),
+      range: pathFindingRange,
       ignoreCreeps: true,
       maxRooms: 1,
     }
