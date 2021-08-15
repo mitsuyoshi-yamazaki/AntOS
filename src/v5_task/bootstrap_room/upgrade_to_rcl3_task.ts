@@ -21,7 +21,7 @@ import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_a
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
-const numberOfCreeps = 10
+const defaultNumberOfCreeps = 10
 
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
@@ -100,6 +100,15 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const numberOfCreeps = ((): number => {
+      if (this.targetRoomName === "W11S14") {
+        if (objects.activeStructures.spawns.length <= 0) {
+          return 15
+        }
+      }
+      return defaultNumberOfCreeps
+    })()
+
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
       taskIdentifier: this.taskIdentifier,
