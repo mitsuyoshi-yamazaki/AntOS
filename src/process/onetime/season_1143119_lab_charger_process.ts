@@ -45,6 +45,10 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
+  public get boosts(): MineralBoostConstant[] {
+    return this.labStates.map(labState => labState.boost)
+  }
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,

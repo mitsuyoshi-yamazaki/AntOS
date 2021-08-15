@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomCoordinate, RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -18,6 +18,8 @@ import { QuadSpec, QuadType } from "./season_1673282_specialized_quad_spec"
 import { CreepName } from "prototype/creep"
 import { GameConstants } from "utility/constants"
 import { boostableCreepBody } from "utility/resource"
+import { RoomResources } from "room_resource/room_resources"
+import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "./season_1143119_lab_charger_process"
 
 type AttackTarget = AnyCreep | AnyStructure
 
@@ -42,6 +44,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-swamp-attacker targets=")
 // tier0-d360-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d360-dismantler targets=")
+// test-boosted-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=test-boosted-attacker targets=")
 
 // W1S28
 // tier0-swamp-attacker
@@ -99,6 +103,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
+    const quadSpec = new QuadSpec(quadType)
+    if (quadSpec.boosts.length > 0) {
+      launchLabChargerProcess(parentRoomName, quadSpec)
+    }
     return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, predefinedTargetIds, quadType, [], null)
   }
 
@@ -139,6 +147,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public runOnTick(): void {
+    const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (resources == null) {
+      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
+      return
+    }
+
     let quad = ((): Quad | null => {
       if (this.quadState == null) {
         return null
@@ -179,6 +193,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     const squadCreepCount = this.quadSpec.creepCount()
     const creepInsufficiency = squadCreepCount - this.creepNames.length
     if (creepInsufficiency > 0) {
+      if (this.creepNames.length <= 0 && this.isLabReady(resources.room) !== true) {
+        processLog(this, `Labs not ready ${roomLink(this.parentRoomName)}`)
+        return
+      }
       const spec = this.quadSpec.creepSpecFor(creepInsufficiency)
       this.requestCreep(priority, creepInsufficiency, spec.roles, spec.body)
     }
@@ -508,5 +526,104 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     PrimitiveLogger.programError(`${this.identifier} position.findClosestByPath(FIND_EXIT) returns non-exit position ${exit} ${roomLink(position.roomName)}`)
     return null
   }
+
+  private isLabReady(room: Room): boolean {
+    const boosts = this.quadSpec.boosts
+    if (boosts.length <= 0) {
+      return true
+    }
+    const requiredBoosts = this.quadSpec.totalBoostAmounts()
+
+    const labs = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+    for (const [boost, amount] of requiredBoosts.entries()) {
+      const boostLab = labs.find(lab => {
+        if (lab.mineralType == null || lab.mineralType !== boost) {
+          return false
+        }
+        if (lab.store.getUsedCapacity(boost) < amount) {
+          return false
+        }
+        return true
+      })
+      if (boostLab == null) {
+        return false
+      }
+    }
+    return true
+  }
 }
 
+function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): void {
+  PrimitiveLogger.log(`Launch lab charger process for ${quadSpec.quadType}, boosts: ${quadSpec.boosts.map(boost => coloredResourceType(boost)).join(",")}`)
+
+  const boosts = quadSpec.boosts
+  const existingProcessInfo = OperatingSystem.os.listAllProcesses()
+    .find(processInfo => {
+      const process = processInfo.process
+      if (!(process instanceof Season1143119LabChargerProcess)) {
+        return false
+      }
+      if (process.parentRoomName !== parentRoomName) {
+        return false
+      }
+      return true
+    })
+
+  if (existingProcessInfo != null) {
+    const process = existingProcessInfo.process
+    if (!(process instanceof Season1143119LabChargerProcess)) {
+      PrimitiveLogger.programError(`Season1673282SpecializedQuadProcess program error: ${process} is not Season1143119LabChargerProcess ${roomLink(parentRoomName)}`)
+      return
+    }
+    if (JSON.stringify(process.boosts.sort()) === JSON.stringify(boosts)) {
+      if (existingProcessInfo.running !== true) {
+        OperatingSystem.os.resumeProcess(existingProcessInfo.processId)
+      }
+      PrimitiveLogger.log(`Season1673282SpecializedQuadProcess use Season1143119LabChargerProcess ${existingProcessInfo.processId} ${roomLink(parentRoomName)}`)
+      return
+    }
+    OperatingSystem.os.killProcess(existingProcessInfo.processId)
+  }
+
+  const resources = RoomResources.getOwnedRoomResource(parentRoomName)
+  if (resources == null) {
+    PrimitiveLogger.fatal(`Room ${roomLink(parentRoomName)} is not owned`)
+    return
+  }
+  const boostLabs = resources.roomInfo.config?.boostLabs
+  if (boostLabs == null) {
+    PrimitiveLogger.fatal(`Room ${roomLink(parentRoomName)} has no labs for boosting. Run Game.io("exec set_boost_labs")`)
+    return
+  }
+
+  const labInfo: Season1143119LabChargerProcessLabInfo[] = []
+  for (let i = 0; i < boosts.length; i += 1) {
+    const boost = boosts[i]
+    const labId = boostLabs[i]
+    const lab = ((): StructureLab | null => {
+      if (labId == null) {
+        return null
+      }
+      const storedLab = Game.getObjectById(labId)
+      if (storedLab instanceof StructureLab) {
+        return storedLab
+      }
+      return null
+    })()
+    if (boost == null || lab == null) {
+      PrimitiveLogger.fatal(`Room ${roomLink(parentRoomName)} has no enough labs for boosting (required: ${boosts.length}, labs: ${boostLabs.length}). Run Game.io("exec set_boost_labs")`)
+      return
+    }
+    labInfo.push({
+      lab,
+      boost,
+    })
+  }
+
+  const requiredBoosts = Array.from(quadSpec.totalBoostAmounts().entries()).map(([boost, amount]) => `${coloredResourceType(boost)}: ${coloredText(`${amount}`, "info")}`)
+  PrimitiveLogger.log(`${coloredText("[Boost Needed]", "warn")}: ${requiredBoosts.join(", ")}`)
+
+  OperatingSystem.os.addProcess(processId => {
+    return Season1143119LabChargerProcess.create(processId, parentRoomName, labInfo)
+  })
+}

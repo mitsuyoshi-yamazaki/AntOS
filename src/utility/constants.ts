@@ -80,6 +80,7 @@ export const GameConstants = {
       carryCapacity: CARRY_CAPACITY,
     },
     actionCost: creepActionEnergyCost,
+    boostCost: LAB_BOOST_MINERAL,
   },
   source: {
     regenerationDuration: 300,

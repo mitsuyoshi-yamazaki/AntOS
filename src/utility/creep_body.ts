@@ -1,5 +1,6 @@
 import { CreepBodyBoostableActionType, CreepBodyEnergyConsumeActionType, CreepBodyFixedAmountActionType, GameConstants } from "./constants"
 import { anyColoredText } from "./log"
+import { boostableCreepBody } from "./resource"
 
 const CreepActionToBodyPart: { [index in CreepBodyBoostableActionType]: BodyPartConstant } = {
   harvest: WORK,
@@ -36,6 +37,20 @@ export const CreepBody = {
 
   cost: function(body: BodyPartConstant[]): number {
     return bodyCost(body)
+  },
+
+  boostCost: function (body: BodyPartConstant[], boosts: MineralBoostConstant[]): Map<MineralBoostConstant, number> {
+    const result = new Map<MineralBoostConstant, number>()
+    const boostMineralCost = GameConstants.creep.boostCost
+    boosts.forEach(boost => {
+      body.forEach(bodyPart => {
+        if (boostableCreepBody(boost) !== bodyPart) {
+          return
+        }
+        result.set(boost, (result.get(boost) ?? 0) + boostMineralCost)
+      })
+    })
+    return result
   },
 
   spawnTime: function(body: BodyPartConstant[]): number {

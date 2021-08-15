@@ -1,4 +1,5 @@
 import { CreepRole } from "prototype/creep_role"
+import { CreepBody } from "utility/creep_body"
 
 type CreepBodySpec = {
   roles: CreepRole[]
@@ -8,6 +9,7 @@ type CreepBodySpec = {
 export const quadTypes = [
   "test-dismantler",
   "test-attacker",
+  "test-boosted-attacker",
   "invader-core-attacker",
   "tier0-d100-attacker",
   "tier0-d450",
@@ -42,6 +44,8 @@ export class QuadSpec {
     case "test-dismantler":
     case "test-attacker":
       return [...noBoosts]
+    case "test-boosted-attacker":
+      return [...testAttackBoosts]
     case "invader-core-attacker":
     case "tier0-d100-attacker":
     case "tier0-d450":
@@ -66,6 +70,7 @@ export class QuadSpec {
     switch (this.quadType) {
     case "test-dismantler":
     case "test-attacker":
+    case "test-boosted-attacker":
       return 4
     case "invader-core-attacker":
       return 3
@@ -93,6 +98,12 @@ export class QuadSpec {
         return testHealerSpec
       }
     case "test-attacker":
+      if (creepInsufficiency <= 1) {
+        return testAttackerSpec
+      } else {
+        return testHealerSpec
+      }
+    case "test-boosted-attacker":
       if (creepInsufficiency <= 1) {
         return testAttackerSpec
       } else {
@@ -156,25 +167,49 @@ export class QuadSpec {
       }
     }
   }
+
+  public totalBoostAmounts(): Map<MineralBoostConstant, number> {
+    const requiredBoosts = new Map<MineralBoostConstant, number>()
+    const boosts = this.boosts
+    if (boosts.length <= 0) {
+      return requiredBoosts
+    }
+
+    const creepCount = this.creepCount()
+    for (let i = creepCount; i > 0; i -= 1) {
+      const body = this.creepSpecFor(i).body
+      const boostCost = CreepBody.boostCost(body, boosts)
+      boostCost.forEach((cost, boost) => {
+        requiredBoosts.set(boost, (requiredBoosts.get(boost) ?? 0) + cost)
+      })
+    }
+    return requiredBoosts
+  }
 }
 
 // ---- Specs ---- //
 const noBoosts: MineralBoostConstant[] = [
 ]
 
+// ---- Test ---- //
 const testHealerSpec: CreepBodySpec = {
   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
   body: [RANGED_ATTACK, MOVE, MOVE, HEAL],
 }
 const testDismantlerSpec: CreepBodySpec = {
   roles: [CreepRole.Worker, CreepRole.Healer, CreepRole.Mover],
-  body: [WORK, MOVE, MOVE, HEAL],
+  body: [TOUGH, MOVE, WORK, MOVE],
 }
 const testAttackerSpec: CreepBodySpec = {
   roles: [CreepRole.Worker, CreepRole.Healer, CreepRole.Mover],
-  body: [ATTACK, MOVE, MOVE, HEAL],
+  body: [TOUGH, MOVE, ATTACK, MOVE],
 }
 
+const testAttackBoosts: MineralBoostConstant[] = [
+  RESOURCE_UTRIUM_HYDRIDE,
+]
+
+// ---- ---- //
 const invaderCoreAttackerAttacker: CreepBodySpec = {
   roles: [CreepRole.Attacker, CreepRole.Mover],
   body: [
