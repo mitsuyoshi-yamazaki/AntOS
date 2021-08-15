@@ -149,16 +149,6 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
-        const spawn = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
-        if (spawn != null && spawn.room.energyAvailable > 150) {
-          const cost = bodyCost(creep.body.map(b => b.type))
-          if (cost > spawn.room.energyCapacityAvailable) {
-            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
-          }
-        }
-      }
-
       const droppedEnergy = this.getDroppedEnergy(creep.pos, targetRoomObjects)
       if (droppedEnergy != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
@@ -184,6 +174,16 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     const damagedStructure = targetRoomObjects.getRepairStructure()
     if (damagedStructure != null) {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
+    }
+
+    if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+      const spawn = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
+      if (spawn != null && spawn.room.energyAvailable > 150) {
+        const cost = bodyCost(creep.body.map(b => b.type))
+        if (cost > spawn.room.energyCapacityAvailable) {
+          return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+        }
+      }
     }
 
     // const constructionSite = targetRoomObjects.getConstructionSite()
