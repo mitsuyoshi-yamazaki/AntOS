@@ -50,6 +50,7 @@ type MoveToRoomQuadTask = {
   roomName: RoomName
   waypoints: RoomName[]
   quadFormed: boolean
+  wait: boolean
 }
 type MoveToQuadTask = {
   taskType: "move to"
@@ -106,7 +107,7 @@ interface QuadInterface {
   say(message: string): void
 
   // ---- Move ---- //
-  moveToRoom(roomName: RoomName, waypoints: RoomName[], quadFormed?: boolean): void
+  moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean }): void
   moveTo(position: RoomPosition, range: number): void
   fleeFrom(position: RoomPosition, range: number): void
   keepQuadForm(): void
@@ -290,12 +291,13 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed?: boolean): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean}): void {
     this.moveTask = {
       taskType: "move to room",
       roomName: destinationRoomName,
       waypoints: waypoints,
-      quadFormed: quadFormed ?? false,
+      quadFormed: options?.quadFormed ?? false,
+      wait: options?.wait ?? false,
     }
   }
 
@@ -444,7 +446,7 @@ export class Quad implements Stateful, QuadInterface {
     // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
     case "move to room":
-      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed)
+      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed, this.moveTask.wait)
       break
     case "move to":
       this.runMoveTo(this.moveTask.position, this.moveTask.range)
@@ -466,7 +468,7 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean): void {
+  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean): void {
     if (quadFormed !== true) {
       const status = this.getMoveToRoomStatus(this.pos, this.room, destinationRoomName, waypoints)
       switch (status) {
@@ -476,9 +478,11 @@ export class Quad implements Stateful, QuadInterface {
         return
 
       case "close to room exit": {
-        const quadRange = this.getMaxRangeTo(this.pos)
-        if (quadRange != null && quadRange <= 5) {
-          moveToRoom(this.leaderCreep, destinationRoomName, waypoints, 1)
+        if (wait !== true) {
+          const quadRange = this.getMaxRangeTo(this.pos)  // FixMe: 部屋の境界付近で近づけない場合スタックする
+          if (quadRange <= 5) {
+            moveToRoom(this.leaderCreep, destinationRoomName, waypoints, 1)
+          }
         }
         this.follow()
         return
@@ -518,12 +522,12 @@ export class Quad implements Stateful, QuadInterface {
 
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
-      return
+      return  // TODO: このときminRangeを調べれば方向転換が必要かわかる
     }
 
     const pathFinderOptions: FindPathOpts = {
       costCallback: quadCostCallback(this.creeps.map(creep => creep.name), this.direction),
-      range: 0,
+      range: Math.max(range, 2),
       ignoreCreeps: true,
       maxRooms: 1,
     }

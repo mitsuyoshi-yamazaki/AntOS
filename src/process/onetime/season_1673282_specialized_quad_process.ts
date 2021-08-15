@@ -46,6 +46,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W1S28
 // tier0-swamp-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-swamp-attacker targets=")
+// tier0-d450-rcl7
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-d450-rcl7 targets=")
 
 // W21S15
 // tier0-d360-dismantler-rcl7
@@ -196,10 +198,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         return false
       })()
       quad.beforeRun()
-      if (isPreparing !== true || quad.room.name === this.parentRoomName) {
-        this.runQuad(quad)
-      } else {
+      if (isPreparing === true) {
+        quad.moveToRoom(this.targetRoomName, this.waypoints, {wait: true})
         quad.heal()
+      } else {
+        this.runQuad(quad)
       }
       quad.run()
       this.quadState = quad.encode()
@@ -242,11 +245,17 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return
     }
 
+    if (quad.room.name === this.targetRoomName && quad.room.controller != null && quad.room.controller.safeMode != null) {
+      const { succeeded } = this.flee(quad)
+      if (succeeded === true) {
+        quad.heal()
+        return
+      }
+    }
+
     if (quad.damagePercent * 4 > 0.15) {
-      const closestNeighbourRoom = this.closestNeighbourRoom(quad.pos)
-      if (closestNeighbourRoom != null) {
-        quad.moveToRoom(closestNeighbourRoom, [], true)
-        quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+      const { succeeded } = this.flee(quad)
+      if (succeeded === true) {
         quad.heal()
         return
       }
@@ -278,6 +287,17 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return
     }
     quad.keepQuadForm()
+  }
+
+  private flee(quad: Quad): { succeeded: boolean } {
+    const closestNeighbourRoom = this.closestNeighbourRoom(quad.pos)
+    if (closestNeighbourRoom == null) {
+      return { succeeded: false }
+    }
+    quad.moveToRoom(closestNeighbourRoom, [], {quadFormed: true})
+    quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+    quad.heal()
+    return { succeeded: true }
   }
 
   private attackTargets(quad: Quad): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[] }  {
