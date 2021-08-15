@@ -205,6 +205,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Research ---- //
   private runResearchTask(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (roomResource.controller.level < GameConstants.structure.availability.lab) {
+      this.children.research = null
+      return
+    }
+
     const researchCompounds = roomResource.roomInfo.config?.researchCompounds
     if (researchCompounds == null) {
       this.children.research = null
@@ -315,7 +320,14 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         if (targetRoom == null || targetRoom.terminal == null) {
           return false
         }
-        return (targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) > 20000
+        if ((targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) < 20000) {
+          return false
+        }
+        const targetRoomEnergyAmount = targetRoom.terminal.store.getUsedCapacity(RESOURCE_ENERGY) + (targetRoom.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+        if (targetRoomEnergyAmount > 500000) {
+          return false
+        }
+        return true
       })
       .sort((lhs, rhs) => {
         if (lhs.priority === rhs.priority) {
@@ -339,13 +351,21 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Power Bank ---- //
   private runPowerBankTasks(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    const removeFindPowerBankTask = () => {
+      if(this.children.findPowerBank != null) {
+        this.children.findPowerBank = null
+      }
+    }
     if (Environment.world !== "season 3") {
+      removeFindPowerBankTask()
+      return
+    }
+    if (roomResource.controller.level <= 5) {
+      removeFindPowerBankTask()
       return
     }
     if (roomResource.roomInfo.config?.disablePowerHarvesting === true) {
-      if (this.children.findPowerBank != null) {
-        this.children.findPowerBank = null
-      }
+      removeFindPowerBankTask()
       return
     }
 
