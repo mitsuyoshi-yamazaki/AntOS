@@ -22,6 +22,7 @@ import { decodeCreepApiWrapperFromState } from "./creep_api_wrapper"
 import { TransferResourceApiWrapper } from "./api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "./api_wrapper/withdraw_resource_api_wrapper"
 import { FleeFromSKLairTask, FleeFromSKLairTaskState } from "./combined_task/flee_from_sk_lair_task"
+import { RandomMoveTask, RandomMoveTaskState } from "./meta_task/random_move_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -71,6 +72,7 @@ class CreepTaskDecoderMap {
   "MoveToTask" = (state: CreepTaskState) => MoveToTask.decode(state as unknown as MoveToTaskState)
   "EndlessTask" = (state: CreepTaskState) => EndlessTask.decode(state as unknown as EndlessTaskState)
   "TargetToPositionTask" = (state: CreepTaskState) => TargetToPositionTask.decode(state as unknown as TargetToPositionTaskState)
+  "RandomMoveTask" = (state: CreepTaskState) => RandomMoveTask.decode(state as unknown as RandomMoveTaskState)
   "SwampRunnerTransferTask" = (state: CreepTaskState) => {
     const swampRunnerTransferTaskState = state as unknown as SwampRunnerTransferTaskState
     const apiWrapper = decodeCreepApiWrapperFromState(swampRunnerTransferTaskState.as)

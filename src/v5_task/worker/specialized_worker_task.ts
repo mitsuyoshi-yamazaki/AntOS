@@ -17,6 +17,9 @@ import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_t
 import { bodyCost, createCreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
+import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
+
+let randomSeed = 0
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -119,6 +122,12 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
 
       creep.say("no task")
+      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
+        randomSeed += 1
+        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
+          return RandomMoveTask.create()
+        }
+      }
       return null
     }
 
@@ -156,6 +165,12 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         }
       }
       creep.say("no task")
+      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
+        randomSeed += 1
+        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
+          return RandomMoveTask.create()
+        }
+      }
       return null
     }
   }
