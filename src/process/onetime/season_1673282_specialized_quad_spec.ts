@@ -25,6 +25,7 @@ export const quadTypes = [
   "tier3-4tower-dismantler-rcl7",
   "tier3-4tower-1dismantler",
   "tier3-4tower-1dismantler-rcl7",
+  "tier3-4tower-rcl7",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -69,6 +70,7 @@ export class QuadSpec {
     case "tier3-4tower-dismantler-rcl7":
     case "tier3-4tower-1dismantler":
     case "tier3-4tower-1dismantler-rcl7":
+    case "tier3-4tower-rcl7":
       return [...tier3DismantlerFullBoosts]
     }
   }
@@ -95,6 +97,7 @@ export class QuadSpec {
     case "tier3-4tower-dismantler-rcl7":
     case "tier3-4tower-1dismantler":
     case "tier3-4tower-1dismantler-rcl7":
+    case "tier3-4tower-rcl7":
       return 4
     }
   }
@@ -189,6 +192,8 @@ export class QuadSpec {
       } else {
         return tier34Tower1DismantlerDismantlerSpec
       }
+    case "tier3-4tower-rcl7":
+      return tier34TowerRCL7HealerSpec
     }
   }
 
@@ -575,5 +580,22 @@ const tier34Tower1DismantlerRCL7HealerSpec: CreepBodySpec = {
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     HEAL, HEAL, HEAL, HEAL, HEAL,
+  ]
+}
+
+// ---- tier3-4tower-rcl7 ---- //
+const tier34TowerRCL7HealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL,
   ]
 }
