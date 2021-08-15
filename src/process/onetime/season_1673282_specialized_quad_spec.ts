@@ -17,6 +17,7 @@ export const quadTypes = [
   "tier0-d360-dismantler",
   "tier0-d360-dismantler-rcl7",
   "tier0-swamp-attacker",
+  "tier1-d750",
   "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
   "tier3-3tower-full-ranged-attacker",
@@ -54,6 +55,8 @@ export class QuadSpec {
     case "tier0-d360-dismantler-rcl7":
     case "tier0-swamp-attacker":
       return [...noBoosts]
+    case "tier1-d750":
+      return [...tier1D750Boosts]
     case "tier3-d2000-dismantler-swamp":
       return [...tier3DismantlerBoost1]
     case "no-defence-3tower":
@@ -81,6 +84,7 @@ export class QuadSpec {
     case "tier0-d360-dismantler-rcl7":
     case "tier0-swamp-attacker":
     case "tier3-d2000-dismantler-swamp":
+    case "tier1-d750":
     case "no-defence-3tower":
     case "tier3-3tower-full-ranged-attacker":
     case "tier3-4tower-dismantler":
@@ -143,6 +147,8 @@ export class QuadSpec {
       } else {
         return tire0h10HealerRCL7Spec
       }
+    case "tier1-d750":
+      return tier1D750HealerSpec
     case "tier3-d2000-dismantler-swamp":
       if (creepInsufficiency <= 1) {
         return tier3SwampDismantlerSpec
@@ -312,8 +318,31 @@ const tier0SwampAttackerHealerSpec: CreepBodySpec = {
   ]
 }
 
-// ---- no-defence-3tower ---- //
+// ---- tier1-d750 ---- //
+const tier1D750HealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL,
+  ]
+}
 
+const tier1D750Boosts: MineralBoostConstant[] = [
+  RESOURCE_ZYNTHIUM_OXIDE,
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_KEANIUM_ALKALIDE,
+]
+
+// ---- no-defence-3tower ---- //
 // const noDefence3TowerAttackerSpec: CreepBodySpec = {
 //   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
 //   body: [

@@ -534,7 +534,7 @@ export class Quad implements Stateful, QuadInterface {
 
     const nextSteps = this.room.findPath(this.pos, position, pathFinderOptions) // Room間移動は対応していない
     if (nextSteps[0] == null) {
-      this.say("no path")
+      this.say(`np${position.x},${position.y}`)
       return
     }
     if (showPath === true) {

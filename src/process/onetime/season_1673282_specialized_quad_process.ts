@@ -56,6 +56,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W21S15
 // tier0-d360-dismantler-rcl7
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 quad_type=tier0-d360-dismantler-rcl7 targets=")
+// tier1-d750
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 quad_type=tier1-d750 targets=")
 
 // W18S17
 // tier3-4tower-dismantler
