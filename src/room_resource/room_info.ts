@@ -55,6 +55,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     disableUnnecessaryTasks?: boolean
     enableOperateSpawn?: boolean
     researchCompounds?: { [index in MineralCompoundConstant]?: number }
+    collectResources?: boolean
   }
 }
 

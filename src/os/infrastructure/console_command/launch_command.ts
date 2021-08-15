@@ -544,6 +544,9 @@ export class LaunchCommand implements ConsoleCommand {
       if (!(lab instanceof StructureLab)) {
         return Result.Failed(`${lab} is not StructureLab`)
       }
+      if (lab.room.name !== roomName) {
+        return Result.Failed(`${lab} is not in ${roomLink(roomName)} (${roomLink(lab.room.name)})`)
+      }
       if (!isMineralBoostConstant(boost)) {
         return Result.Failed(`${boost} is not MineralBoostConstant`)
       }
