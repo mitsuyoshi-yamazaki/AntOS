@@ -27,6 +27,7 @@ type ManualOperations = {
   targetIds: Id<AttackTarget>[]
   direction: TOP | BOTTOM | LEFT | RIGHT | null
   action: "flee" | "drain" | null
+  message: string | null
 }
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
@@ -129,6 +130,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       targetIds: predefinedTargetIds,
       direction: null,
       action: null,
+      message: null,
     }
     return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations)
   }
@@ -163,7 +165,17 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
     if (message === "clear action") {
       this.manualOperations.action = null
+      this.manualOperations.message = null
       return "action cleared"
+    }
+    if (message.startsWith("say ")) {
+      const squadMessage = message.slice(4)
+      if (squadMessage.length > 0) {
+        this.manualOperations.message = squadMessage
+        return `set message "${squadMessage}"`
+      }
+      this.manualOperations.message = null
+      return "clear message"
     }
     const direction = parseInt(message, 10)
     if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
@@ -266,6 +278,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         this.runQuad(quad)
       }
       quad.run()
+      if (this.manualOperations.message != null) {
+        quad.say(this.manualOperations.message, true)
+      }
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
       processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}`)
@@ -396,7 +411,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (chargedTowers.length <= 0) {
       return false
     }
-    return chargedTowers.length <= emptyTowers.length
+    return chargedTowers.length > emptyTowers.length
   }
 
   private drain(quad: Quad): void {

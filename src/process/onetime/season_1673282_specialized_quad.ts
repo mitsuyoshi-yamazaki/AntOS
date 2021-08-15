@@ -306,8 +306,8 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Action ---- //
-  public say(message: string): void {
-    this.creeps[0]?.say(message)
+  public say(message: string, toPublic?: boolean): void {
+    this.creeps[0]?.say(message, toPublic)
   }
 
   // ---- Move ---- //
