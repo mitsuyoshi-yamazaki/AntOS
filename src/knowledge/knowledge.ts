@@ -21,4 +21,5 @@ export const epicScenes: { description: string, url: string }[] = [
  * - Tombstoneも戦場の霧を晴らす
  * - Safemode環境下での攻撃行動はERR_NO_BODYPARTを返す
  * - Pathfinder.searchオプションのfleeは離れたいrangeを設定しないと値を返さない
+ * - Dismantler, Attackerは常時自己再生をしていないので二発耐えられないといけない
  */

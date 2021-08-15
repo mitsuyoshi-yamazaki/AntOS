@@ -26,7 +26,7 @@ type AttackTarget = AnyCreep | AnyStructure
 type ManualOperations = {
   targetIds: Id<AttackTarget>[]
   direction: TOP | BOTTOM | LEFT | RIGHT | null
-  action: "flee" | null
+  action: "flee" | "drain" | null
 }
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
@@ -74,6 +74,10 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W2S29
 // tier3-4tower-1dismantler-rcl7
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W2S29 waypoints=W6S30,W2S30 quad_type=tier3-4tower-1dismantler-rcl7 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W2S29 waypoints=W6S30,W2S30 quad_type=tier3-4tower-1dismantler-rcl7 targets=")
+
+// W17S19 tier0-2tower-drain-minimum
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W17S19 waypoints=W20S23,W20S20,W17S20 quad_type=tier0-2tower-drain-minimum targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -137,7 +141,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   public didReceiveMessage(message: string): string {
     if (message === "clear") {
       this.manualOperations.targetIds.splice(0, this.manualOperations.targetIds.length)
-      return "cleared"
+      return "target cleared"
     }
     if (message === "status") {
       const descriptions: string[] = [
@@ -152,6 +156,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (message === "flee") {
       this.manualOperations.action = "flee"
       return "action: flee"
+    }
+    if (message === "drain") {
+      this.manualOperations.action = "drain"
+      return "action: drain"
+    }
+    if (message === "clear action") {
+      this.manualOperations.action = null
+      return "action cleared"
     }
     const direction = parseInt(message, 10)
     if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
@@ -301,16 +313,21 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     case "flee": {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
-        quad.heal()
         return
       }
+      break
     }
+    case "drain":
+      if (this.towerCharged(quad.room) === true) {
+        this.drain(quad)
+        return
+      }
+      break
     }
 
     if (quad.room.name === this.targetRoomName && quad.room.controller != null && quad.room.controller.safeMode != null) {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
-        quad.heal()
         return
       }
     }
@@ -318,7 +335,6 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (quad.damagePercent * 4 > 0.15) {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
-        quad.heal()
         return
       }
     }
@@ -360,6 +376,56 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
     quad.heal()
     return { succeeded: true }
+  }
+
+  private towerCharged(room: Room): boolean {
+    const chargedTowers: StructureTower[] = []
+    const emptyTowers: StructureTower[] = []
+    room.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } })
+      .forEach(tower => {
+        if (!(tower instanceof StructureTower)) {
+          return
+        }
+        if (tower.store.getUsedCapacity(RESOURCE_ENERGY) <= 50) {
+          emptyTowers.push(tower)
+        } else {
+          chargedTowers.push(tower)
+        }
+      })
+
+    if (chargedTowers.length <= 0) {
+      return false
+    }
+    return chargedTowers.length <= emptyTowers.length
+  }
+
+  private drain(quad: Quad): void {
+    quad.say("drain")
+    quad.heal()
+    quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+
+    const quadPosition = quad.pos
+    const threshold = 3
+    const min = GameConstants.room.edgePosition.min + threshold
+    const max = GameConstants.room.edgePosition.max - threshold
+    if (quadPosition.x < min) {
+      return
+    }
+    if (quadPosition.x > max) {
+      return
+    }
+    if (quadPosition.y < min) {
+      return
+    }
+    if (quadPosition.y > max) {
+      return
+    }
+
+    const closestNeighbourRoom = this.closestNeighbourRoom(quad.pos)
+    if (closestNeighbourRoom == null) {
+      return
+    }
+    quad.moveToRoom(closestNeighbourRoom, [], { quadFormed: true })
   }
 
   private attackTargets(quad: Quad): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[] }  {

@@ -12,6 +12,7 @@ export const quadTypes = [
   "test-boosted-attacker",
   "invader-core-attacker",
   "tier0-d100-attacker",
+  "tier0-2tower-drain-minimum",
   "tier0-d450",
   "tier0-d450-rcl7",
   "tier0-d360-dismantler",
@@ -51,6 +52,7 @@ export class QuadSpec {
     case "test-boosted-attacker":
       return [...testAttackBoosts]
     case "invader-core-attacker":
+    case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tier0-d450-rcl7":
@@ -83,6 +85,7 @@ export class QuadSpec {
       return 4
     case "invader-core-attacker":
       return 3
+    case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
     case "tier0-d450-rcl7":
@@ -128,6 +131,8 @@ export class QuadSpec {
       } else {
         return invaderCoreAttackerHealer
       }
+    case "tier0-2tower-drain-minimum":
+      return tier02TowerDrainMinimum
     case "tier0-d100-attacker":
       if (creepInsufficiency <= 1) {
         return tier0AttackerSpec
@@ -255,6 +260,21 @@ const invaderCoreAttackerHealer: CreepBodySpec = {
   ],
 }
 
+// ---- tier0-2tower-drain-minimum ---- //
+const tier02TowerDrainMinimum: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH,
+    RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL,
+  ],
+}
+
+// ---- ---- //
 const tier0h3HealerSpec: CreepBodySpec = {
   roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
   body: [
