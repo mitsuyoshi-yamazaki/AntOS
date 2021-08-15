@@ -140,6 +140,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
         (this.manualOperations.targetIds.length <= 0 ? "no targets" : `targets: ${this.manualOperations.targetIds.join(",")}`),
       ]
+      if (this.manualOperations.action != null) {
+        descriptions.unshift(`action: ${this.manualOperations.action}`)
+      }
       return descriptions.join(", ")
     }
     if (message === "flee") {
@@ -153,11 +156,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
           return "quad died"
         } else {
           this.manualOperations.direction = direction as TOP | BOTTOM | RIGHT | LEFT
-          return `direction ${directionName(direction as TOP | BOTTOM | RIGHT | LEFT)} set`
+          return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
         }
       }
       this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
-      return `direction ${directionName(direction as TOP | BOTTOM | RIGHT | LEFT)} set`
+      return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
     }
     if (message.length <= 0) {
       return "Empty message"
@@ -281,7 +284,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
   private runQuad(quad: Quad): void {
     if (quad.inRoom(this.targetRoomName) !== true) {
-      if (this.manualOperations.action === "flee") {
+      if (this.manualOperations.action === "flee" && quad.allCreepsInSameRoom() === true) {
         this.manualOperations.action = null
       }
       quad.moveToRoom(this.targetRoomName, this.waypoints)

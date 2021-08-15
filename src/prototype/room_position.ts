@@ -36,6 +36,7 @@ declare global {
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
     positionTo(direction: DirectionConstant): RoomPosition | null
     nextRoomPositionTo(direction: DirectionConstant): RoomPosition
+    nextRoomEdgePosition(): RoomPosition | null
   }
 }
 
@@ -244,22 +245,51 @@ export function init(): void {
     const min = GameConstants.room.edgePosition.min
     const max = GameConstants.room.edgePosition.max
     try {
-      if (x < min) {
-        return new RoomPosition(max - 1, y, roomCoordinate.neighbourRoom(LEFT))
+      if (x <= min) {
+        return new RoomPosition(max, y, roomCoordinate.neighbourRoom(LEFT))
       }
-      if (x > max) {
-        return new RoomPosition(min + 1, y, roomCoordinate.neighbourRoom(RIGHT))
+      if (x >= max) {
+        return new RoomPosition(min, y, roomCoordinate.neighbourRoom(RIGHT))
       }
-      if (y < min) {
-        return new RoomPosition(x, max - 1, roomCoordinate.neighbourRoom(TOP))
+      if (y <= min) {
+        return new RoomPosition(x, max, roomCoordinate.neighbourRoom(TOP))
       }
-      if (y > max) {
-        return new RoomPosition(x, min + 1, roomCoordinate.neighbourRoom(BOTTOM))
+      if (y >= max) {
+        return new RoomPosition(x, min, roomCoordinate.neighbourRoom(BOTTOM))
       }
       return new RoomPosition(x, y, this.roomName)
     } catch (e) {
       PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() faild: ${e}`)
       return this
+    }
+  }
+
+  RoomPosition.prototype.nextRoomEdgePosition = function (): RoomPosition | null {
+    const roomCoordinate = RoomCoordinate.parse(this.roomName)
+    if (roomCoordinate == null) {
+      PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() cannot parse room name ${roomLink(this.roomName)}`)
+      return this
+    }
+
+    const min = GameConstants.room.edgePosition.min
+    const max = GameConstants.room.edgePosition.max
+    try {
+      if (this.x <= min) {
+        return new RoomPosition(max, this.y, roomCoordinate.neighbourRoom(LEFT))
+      }
+      if (this.x >= max) {
+        return new RoomPosition(min, this.y, roomCoordinate.neighbourRoom(RIGHT))
+      }
+      if (this.y <= min) {
+        return new RoomPosition(this.x, max, roomCoordinate.neighbourRoom(TOP))
+      }
+      if (this.y >= max) {
+        return new RoomPosition(this.x, min, roomCoordinate.neighbourRoom(BOTTOM))
+      }
+      return null
+    } catch (e) {
+      PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() faild: ${e}`)
+      return null
     }
   }
 }
