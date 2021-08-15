@@ -84,8 +84,8 @@ type MoveQuadTask = StayQuadTask | MoveToRoomQuadTask | MoveToQuadTask | FleeQua
 export interface QuadState extends State {
   t: "Quad"
 
-  lastLeaderPosition: RoomPosition
   direction: Direction
+  nextDirection: Direction | null
   exitingDirection: Direction | null
   leaderRotationPositionState: RoomPositionState | null
   leaderName: CreepName
@@ -183,21 +183,20 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   private constructor(
-    private lastLeaderPosition: RoomPosition,
     private direction: Direction,
+    private nextDirection: Direction | null,
     private exitingDirection: Direction | null,
     private leaderRotationPosition: RoomPosition | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
   ) {
-    this.lastLeaderPosition = this.pos
   }
 
   public encode(): QuadState {
     return {
       t: "Quad",
-      lastLeaderPosition: this.lastLeaderPosition,
       direction: this.direction,
+      nextDirection: this.nextDirection,
       exitingDirection: this.exitingDirection,
       leaderRotationPositionState: this.leaderRotationPosition?.encode() ?? null,
       leaderName: this.leaderCreep.name,
@@ -223,11 +222,11 @@ export class Quad implements Stateful, QuadInterface {
       }
       return decodeRoomPosition(state.leaderRotationPositionState)
     })()
-    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection, leaderRotationPosition, leader, followerCreeps)
+    return new Quad(state.direction, state.nextDirection, state.exitingDirection, leaderRotationPosition, leader, followerCreeps)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(leaderCreep.pos, TOP, null, null, leaderCreep, followerCreeps)
+    return new Quad(TOP, null, null, null, leaderCreep, followerCreeps)
   }
 
   // ---- Position ---- //
@@ -297,7 +296,17 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean}): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean }): void {
+    switch (this.moveTask.taskType) {
+    case "rotate":
+      if (options?.quadFormed === true && this.isQuadForm() === true) {
+        return
+      }
+      break
+    default:
+      break
+    }
+
     this.moveTask = {
       taskType: "move to room",
       roomName: destinationRoomName,
@@ -329,6 +338,16 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public fleeFrom(position: RoomPosition, range: number): void {
+    switch (this.moveTask.taskType) {
+    case "rotate":
+      if (this.isQuadForm() === true) {
+        return
+      }
+      break
+    default:
+      break
+    }
+
     this.moveTask = {
       taskType: "flee",
       position,
@@ -337,107 +356,18 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public keepQuadForm(): void {
-    this.moveTask = {
-      taskType: "form"
-    }
-  }
-
-  private rotateTo(target: QuadAttackTargetType): void {
-    if (target.room == null || this.room.name !== target.room.name) {
-      return
-    }
     switch (this.moveTask.taskType) {
-    case "flee":
-      return
+    case "rotate":
+      if (this.isQuadForm() === true) {
+        return
+      }
+      break
     default:
       break
     }
-    const direction = this.directionTo(target)
-    if (direction == null || direction === this.direction) {
-      if (direction == null) {
-        this.leaderCreep.say("no dir")
-      }
-      PrimitiveLogger.log(`next direction ${direction} (current: ${this.direction})`)
-      return
-    }
 
     this.moveTask = {
-      taskType: "rotate",
-      direction,
-    }
-  }
-
-  private directionTo(target: QuadAttackTargetType): Direction | null {
-    const neighbourPositions = target.pos.positionsInRange(1, {
-      excludeItself: true,
-      excludeStructures: true,
-      excludeTerrainWalls: true,
-      excludeWalkableStructures: false,
-    })
-    const availableDirections: Direction[] = []
-    const availablePositionsForDirection: [Direction, DirectionConstant, DirectionConstant][] = [
-      [BOTTOM, TOP_LEFT, TOP],
-      [BOTTOM, TOP, TOP_RIGHT],
-      [LEFT, TOP_RIGHT, RIGHT],
-      [LEFT, RIGHT, BOTTOM_RIGHT],
-      [TOP, BOTTOM_RIGHT, BOTTOM],
-      [TOP, BOTTOM, BOTTOM_LEFT],
-      [RIGHT, BOTTOM_LEFT, LEFT],
-      [RIGHT, LEFT, TOP_LEFT],
-    ]
-
-    const creepNames = this.creeps.map(creep => creep.name)
-    availablePositionsForDirection.forEach(([targetDirection, direction1, direction2]) => {
-      const position1 = target.pos.positionTo(direction1)
-      const position2 = target.pos.positionTo(direction2)
-      if (position1 == null || position2 == null) {
-        return
-      }
-      if (neighbourPositions.every(position => position.isEqualTo(position1) !== true)) {
-        return
-      }
-      if (neighbourPositions.every(position => position.isEqualTo(position2) !== true)) {
-        return
-      }
-      const pathFinderOptions: FindPathOpts = {
-        costCallback: quadCostCallback(creepNames, targetDirection),
-        range: 1,
-        ignoreCreeps: true,
-        maxRooms: 1,
-        maxOps: 500,
-      }
-
-      const nextSteps = this.room.findPath(this.pos, position1, pathFinderOptions)
-      if (nextSteps.length <= 0) {
-        return
-      }
-      availableDirections.push(targetDirection)
-    })
-    if (availableDirections.includes(this.direction) === true) {
-      return this.direction
-    }
-    const rawDirection = this.rawDirectionTo(target.pos)
-    if (availableDirections.includes(rawDirection) === true) {
-      return rawDirection
-    }
-    return availableDirections[0] ?? null
-  }
-
-  private rawDirectionTo(position: RoomPosition): Direction {
-    const dx = position.x - this.leaderCreep.pos.x
-    const dy = position.y - this.leaderCreep.pos.y
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) {
-        return RIGHT
-      } else {
-        return LEFT
-      }
-    } else {
-      if (dy > 0) {
-        return BOTTOM
-      } else {
-        return TOP
-      }
+      taskType: "form"
     }
   }
 
@@ -445,6 +375,17 @@ export class Quad implements Stateful, QuadInterface {
   public beforeRun(): void {
     if (this.leaderRotationPosition != null && this.leaderCreep.pos.isEqualTo(this.leaderRotationPosition) === true) {
       this.leaderRotationPosition = null
+    }
+
+    if (this.nextDirection != null) {
+      if (this.nextDirection === this.direction) {
+        this.nextDirection = null
+      } else {
+        this.moveTask = {
+          taskType: "rotate",
+          direction: this.nextDirection,
+        }
+      }
     }
   }
 

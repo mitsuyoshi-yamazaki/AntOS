@@ -20,8 +20,14 @@ import { GameConstants } from "utility/constants"
 import { boostableCreepBody } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "./season_1143119_lab_charger_process"
+import { directionName } from "utility/direction"
 
 type AttackTarget = AnyCreep | AnyStructure
+type ManualOperations = {
+  targetIds: Id<AttackTarget>[]
+  direction: TOP | BOTTOM | LEFT | RIGHT | null
+  action: "flee" | null
+}
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   /** parent room name */
@@ -29,10 +35,10 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
   targetRoomName: RoomName
   waypoints: RoomName[]
-  predefinedTargetIds: Id<AttackTarget>[]
   quadType: QuadType
   creepNames: CreepName[]
   quadState: QuadState | null
+  manualOperations: ManualOperations
 }
 
 // W11S23
@@ -76,10 +82,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private readonly predefinedTargetIds: Id<AttackTarget>[],
     private readonly quadType: QuadType,
     private readonly creepNames: CreepName[],
     private quadState: QuadState | null,
+    private readonly manualOperations: ManualOperations,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -95,15 +101,15 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       p: this.parentRoomName,
       targetRoomName: this.targetRoomName,
       waypoints: this.waypoints,
-      predefinedTargetIds: this.predefinedTargetIds,
       quadType: this.quadType,
       creepNames: this.creepNames,
       quadState: this.quadState,
+      manualOperations: this.manualOperations,
     }
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.predefinedTargetIds, state.quadType, state.creepNames, state.quadState)
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
@@ -111,7 +117,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (quadSpec.boosts.length > 0) {
       launchLabChargerProcess(parentRoomName, quadSpec)
     }
-    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, predefinedTargetIds, quadType, [], null)
+    const manualOperations: ManualOperations = {
+      targetIds: predefinedTargetIds,
+      direction: null,
+      action: null,
+    }
+    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations)
   }
 
   public processShortDescription(): string {
@@ -121,15 +132,19 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
   public didReceiveMessage(message: string): string {
     if (message === "clear") {
-      this.predefinedTargetIds.splice(0, this.predefinedTargetIds.length)
+      this.manualOperations.targetIds.splice(0, this.manualOperations.targetIds.length)
       return "cleared"
     }
     if (message === "status") {
       const descriptions: string[] = [
         (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
-        (this.predefinedTargetIds.length <= 0 ? "no targets" : `targets: ${this.predefinedTargetIds.join(",")}`),
+        (this.manualOperations.targetIds.length <= 0 ? "no targets" : `targets: ${this.manualOperations.targetIds.join(",")}`),
       ]
       return descriptions.join(", ")
+    }
+    if (message === "flee") {
+      this.manualOperations.action = "flee"
+      return "action: flee"
     }
     const direction = parseInt(message, 10)
     if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
@@ -137,16 +152,17 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         if (this.creepNames.length > 0) {
           return "quad died"
         } else {
-          return "quad not spawned yet"
+          this.manualOperations.direction = direction as TOP | BOTTOM | RIGHT | LEFT
+          return `direction ${directionName(direction as TOP | BOTTOM | RIGHT | LEFT)} set`
         }
       }
-      this.quadState.direction = direction as TOP | BOTTOM | RIGHT | LEFT
-      return `direction ${direction} set`
+      this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
+      return `direction ${directionName(direction as TOP | BOTTOM | RIGHT | LEFT)} set`
     }
     if (message.length <= 0) {
       return "Empty message"
     }
-    this.predefinedTargetIds.unshift(message as Id<AnyStructure | AnyCreep>)
+    this.manualOperations.targetIds.unshift(message as Id<AnyStructure | AnyCreep>)
     return "ok"
   }
 
@@ -155,6 +171,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (resources == null) {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
+    }
+
+    if (this.quadState != null && this.manualOperations.direction != null) {
+      this.quadState.nextDirection = this.manualOperations.direction
     }
 
     let quad = ((): Quad | null => {
@@ -329,7 +349,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     let mainTarget = null as QuadAttackTargetType | null
     const optionalTargets: QuadAttackTargetType[] = []
 
-    for (const targetId of this.predefinedTargetIds) {
+    for (const targetId of this.manualOperations.targetIds) {
       const target = Game.getObjectById(targetId)
       if (target == null || target.room == null || target.room.name !== room.name) {
         continue
