@@ -10,6 +10,7 @@ import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "./process_log"
+import { RoomName } from "utility/room_name"
 
 export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */
@@ -31,6 +32,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
 // Game.io("message 544054000 parent_room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27 target_gcl=8")
 // Game.io("message 544054000 parent_room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25 target_gcl=9")
 // Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W11S14 waypoints=W10S24,W10S14 target_gcl=9")
+// Game.io("message 544054000 parent_room_name=W21S23 target_room_name=W17S11 waypoints=W20S23,W20S10,W17S10 claim_parent_room_name=W11S14 claim_waypoints=W10S14,W10S10,W17S10 target_gcl=9")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
@@ -124,6 +126,27 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return missingArgumentError("waypoints")
     }
     const waypoints = rawWaypoints.split(",")
+    const claimInfo = ((): { parentRoomName: RoomName, waypoints: RoomName[] } | string => {
+      const claimParentRoomName = args.get("claim_parent_room_name")
+      if (claimParentRoomName == null) {
+        return {
+          parentRoomName,
+          waypoints: [...waypoints],
+        }
+      }
+      const rawClaimWaypoints = args.get("claim_waypoints")
+      if (rawClaimWaypoints == null) {
+        return missingArgumentError("claim_waypoints")
+      }
+      const claimWaypoints = rawClaimWaypoints.split(",") ?? []
+      return {
+        parentRoomName: claimParentRoomName,
+        waypoints: claimWaypoints,
+      }
+    })()
+    if (typeof claimInfo === "string") {
+      return claimInfo
+    }
 
     const targetGcl = args.get("target_gcl")
     if (targetGcl == null) {
@@ -150,9 +173,16 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return `BootstrapRoomTask to ${roomLink(targetRoomName)} already launched`
     }
 
-    this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints))
+    this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints, claimInfo.parentRoomName, claimInfo.waypoints))
     this.nextGcl = parsedTargetGcl
-    return `Launched BootstrapRoomTask ${roomLink(targetRoomName)} (parent: ${roomLink(parentRoomName)})`
+
+    const parentInfo = ((): string => {
+      if (parentRoomName === claimInfo.parentRoomName) {
+        return roomLink(parentRoomName)
+      }
+      return `${roomLink(parentRoomName)}, claim: ${roomLink(claimInfo.parentRoomName)}`
+    })()
+    return `Launched BootstrapRoomTask ${roomLink(targetRoomName)} (parent: ${parentInfo})`
   }
 
   // ---- Private ---- //

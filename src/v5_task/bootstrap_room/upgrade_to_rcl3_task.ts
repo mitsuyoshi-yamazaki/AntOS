@@ -22,6 +22,7 @@ import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
 const defaultNumberOfCreeps = 10
+const increasedNumberOfCreeps = 15
 
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
@@ -101,9 +102,13 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
     const numberOfCreeps = ((): number => {
-      if (this.targetRoomName === "W11S14") {
-        if (objects.activeStructures.spawns.length <= 0) {
-          return 15
+      if (this.targetRoomName === "W11S14" || this.targetRoomName === "W17S11") {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom == null) {
+          return increasedNumberOfCreeps
+        }
+        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length <= 0) {
+          return increasedNumberOfCreeps
         }
       }
       return defaultNumberOfCreeps
