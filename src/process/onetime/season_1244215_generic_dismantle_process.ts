@@ -43,7 +43,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 }
 
 // W11S23
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fe798ab44a52011cd135a8")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fc52c2a19fa54be7b0b666")
 
 // W21S15
 // Game.io("launch -l Season1244215GenericDismantleProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 target_id=6116d6929c09bed4d8eb8845")
