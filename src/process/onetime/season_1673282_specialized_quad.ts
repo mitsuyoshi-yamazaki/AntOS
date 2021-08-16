@@ -61,6 +61,7 @@ type MoveToRoomQuadTask = {
   quadFormed: boolean
   wait: boolean
   backward: boolean
+  healBeforeEnter: boolean
 }
 type MoveToQuadTask = {
   taskType: "move to"
@@ -312,10 +313,10 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, backward?: boolean }): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, backward?: boolean, healBeforeEnter?: boolean}): void {
     switch (this.moveTask.taskType) {
     case "rotate":
-      if (options?.quadFormed === true && this.isQuadForm() === true) {
+      if (this.isQuadForm() === true) {
         return
       }
       break
@@ -330,6 +331,7 @@ export class Quad implements Stateful, QuadInterface {
       quadFormed: options?.quadFormed ?? false,
       wait: options?.wait ?? false,
       backward: options?.backward ?? false,
+      healBeforeEnter: options?.healBeforeEnter ?? false,
     }
   }
 
@@ -410,7 +412,14 @@ export class Quad implements Stateful, QuadInterface {
     // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
     case "move to room":
-      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed, this.moveTask.wait, this.moveTask.backward)
+      this.runMoveToRoom(
+        this.moveTask.roomName,
+        this.moveTask.waypoints,
+        this.moveTask.quadFormed,
+        this.moveTask.wait,
+        this.moveTask.backward,
+        this.moveTask.healBeforeEnter,
+      )
       break
     case "move to":
       this.runMoveTo(this.moveTask.position, this.moveTask.range)
@@ -432,7 +441,7 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, backward: boolean): void {
+  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, backward: boolean, healBeforeEnter: boolean): void {
     if (quadFormed !== true) {
       const status = this.getMoveToRoomStatus(this.pos, this.room, destinationRoomName, waypoints)
       switch (status) {
@@ -479,6 +488,9 @@ export class Quad implements Stateful, QuadInterface {
       }
     }
 
+    if (healBeforeEnter === true && this.damage > 0) {
+      return
+    }
     this.leaderCreep.move(moveDirection)
     this.moveFollowersToNextDirection(moveDirection)
   }
