@@ -60,6 +60,7 @@ type MoveToRoomQuadTask = {
   waypoints: RoomName[]
   quadFormed: boolean
   wait: boolean
+  backward: boolean
 }
 type MoveToQuadTask = {
   taskType: "move to"
@@ -311,7 +312,7 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean }): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, backward?: boolean }): void {
     switch (this.moveTask.taskType) {
     case "rotate":
       if (options?.quadFormed === true && this.isQuadForm() === true) {
@@ -328,6 +329,7 @@ export class Quad implements Stateful, QuadInterface {
       waypoints: waypoints,
       quadFormed: options?.quadFormed ?? false,
       wait: options?.wait ?? false,
+      backward: options?.backward ?? false,
     }
   }
 
@@ -408,7 +410,7 @@ export class Quad implements Stateful, QuadInterface {
     // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
     case "move to room":
-      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed, this.moveTask.wait)
+      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed, this.moveTask.wait, this.moveTask.backward)
       break
     case "move to":
       this.runMoveTo(this.moveTask.position, this.moveTask.range)
@@ -430,7 +432,7 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean): void {
+  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, backward: boolean): void {
     if (quadFormed !== true) {
       const status = this.getMoveToRoomStatus(this.pos, this.room, destinationRoomName, waypoints)
       switch (status) {
@@ -465,12 +467,20 @@ export class Quad implements Stateful, QuadInterface {
     if (this.room.name === destinationRoomName) {
       return
     }
-    const nextDirection = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
-    if (nextDirection == null) {
+    const nextMove = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
+    if (nextMove == null) {
       return
     }
-    this.leaderCreep.move(nextDirection)
-    this.moveFollowersToNextDirection(nextDirection)
+    const {moveDirection, exitDirection} = nextMove
+    if (backward === true) {
+      const quadDirection = oppositeDirectionMap[exitDirection]
+      if (this.direction !== quadDirection) {
+        this.nextDirection = quadDirection
+      }
+    }
+
+    this.leaderCreep.move(moveDirection)
+    this.moveFollowersToNextDirection(moveDirection)
   }
 
   /**
@@ -1273,20 +1283,9 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
   }
 }
 
-function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[], excludedCreepNames: CreepName[], quadDirection: Direction): DirectionConstant | null {
+function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[], excludedCreepNames: CreepName[], quadDirection: Direction): {moveDirection: DirectionConstant, exitDirection: Direction} | null {
   try {
     const creepRoom = creep.room
-
-    // if (creep.pos.x === 0) {
-    //   return creep.pos.positionTo(RIGHT) ?? creep.pos
-    // } else if (creep.pos.x === 49) {
-    //   return creep.pos.positionTo(LEFT) ?? creep.pos
-    // } else if (creep.pos.y === 0) {
-    //   return creep.pos.positionTo(BOTTOM) ?? creep.pos
-    // } else if (creep.pos.y === 49) {
-    //   return creep.pos.positionTo(TOP) ?? creep.pos
-    // }
-
     if (creepRoom.name === targetRoomName) {
       return null
     }
@@ -1364,7 +1363,10 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
         creep.room.visual.text(`${index}`, p, { color: "#ffffff" })
       })
     }
-    return nextSteps[0].direction
+    return {
+      moveDirection: nextSteps[0].direction,
+      exitDirection: exit,
+    }
   } catch (e) {
     PrimitiveLogger.programError(`moveToRoomQuad() failed: ${e}`)
     creep.say("error")

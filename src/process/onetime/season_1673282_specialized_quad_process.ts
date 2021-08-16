@@ -81,6 +81,9 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W17S19 tier0-2tower-drain-minimum
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W17S19 waypoints=W20S23,W20S20,W17S20 quad_type=tier0-2tower-drain-minimum targets=")
+
+// W21S8 tier0-d360-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier0-d360-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -320,7 +323,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (this.manualOperations.action === "flee" && quad.allCreepsInSameRoom() === true) {
         this.manualOperations.action = null
       }
-      quad.moveToRoom(this.targetRoomName, this.waypoints)
+      quad.moveToRoom(this.targetRoomName, this.waypoints, {backward: true})
       quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
       quad.heal()
       return
