@@ -27,6 +27,7 @@ export const quadTypes = [
   "tier3-4tower-1dismantler",
   "tier3-4tower-1dismantler-rcl7",
   "tier3-4tower-rcl7",
+  "tier3-3tower-dismantler-attacker",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -74,6 +75,8 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
       return [...tier3DismantlerFullBoosts]
+    case "tier3-3tower-dismantler-attacker":
+      return [...tier3DismantlerAttackerFullBoosts]
     }
   }
 
@@ -101,6 +104,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler":
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
+    case "tier3-3tower-dismantler-attacker":
       return 4
     }
   }
@@ -199,6 +203,14 @@ export class QuadSpec {
       }
     case "tier3-4tower-rcl7":
       return tier34TowerRCL7HealerSpec
+    case "tier3-3tower-dismantler-attacker":
+      if (creepInsufficiency <= 2) {
+        return tier33TowerDismantlerAttackerHealerSpec
+      } else if (creepInsufficiency === 3) {
+        return tier33TowerDismantlerAttackerAttackerSpec
+      } else {
+        return tier33TowerDismantlerAttackerDismantlerSpec
+      }
     }
   }
 
@@ -619,3 +631,63 @@ const tier34TowerRCL7HealerSpec: CreepBodySpec = {
     HEAL, HEAL, HEAL, HEAL,
   ]
 }
+
+// ---- tier3-3tower-dismantler-attacker ---- //
+const tier33TowerDismantlerAttackerDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier33TowerDismantlerAttackerAttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier33TowerDismantlerAttackerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL, HEAL,
+  ]
+}
+
+// ---- ---- //
+const tier3DismantlerAttackerFullBoosts: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+  RESOURCE_CATALYZED_UTRIUM_ACID,
+  RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+]
