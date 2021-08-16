@@ -169,7 +169,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
   }
 
   private mineralHarvesterBody(energyCapacity: number): BodyPartConstant[] {
-    return createCreepBody([], [WORK, WORK, WORK, CARRY, MOVE, MOVE], energyCapacity, 4)
+    return createCreepBody([], [WORK, WORK, WORK, CARRY, MOVE, MOVE], energyCapacity, 8)
   }
 
   // ---- Extractor ---- //
