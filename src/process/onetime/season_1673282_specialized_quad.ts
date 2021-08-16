@@ -1159,10 +1159,13 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (unbreakableStructureTypes.includes(structure.structureType) === true) {
         return true
       }
+      if (walkableStructures.includes(structure.structureType) === true) {
+        return false
+      }
       if (structureAsObstacle === true) {
         return true
       }
-      if (structure.hits <= 5000 || walkableStructures.includes(structure.structureType) === true) {
+      if (structure.hits <= 5000) {
         return false
       }
       return true
