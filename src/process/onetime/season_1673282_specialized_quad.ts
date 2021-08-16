@@ -499,8 +499,9 @@ export class Quad implements Stateful, QuadInterface {
       return Math.max(range, 2)
     })()
 
+    const quadCreepNames = this.creeps.map(creep => creep.name)
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback(this.creeps.map(creep => creep.name), this.direction),
+      costCallback: quadCostCallback(quadCreepNames, this.direction),
       range: pathFindingRange,
       ignoreCreeps: true,
       maxRooms: 1,
@@ -516,6 +517,27 @@ export class Quad implements Stateful, QuadInterface {
         const p = new RoomPosition(step.x, step.y, this.room.name)
         this.room.visual.text(`${index}`, p, { color: "#ffffff" })
       })
+    }
+    try {
+      const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, this.room.name)
+      const nextPositions: (RoomPosition | null)[] = [
+        nextPosition,
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM)),
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(LEFT)),
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM_LEFT)),
+      ]
+      const hasObstacle = nextPositions.some(quadNextPosition => {
+        if (quadNextPosition == null) {
+          return false
+        }
+        return hasObstacleObjectAt(quadNextPosition, quadCreepNames, true)
+      })
+      if (hasObstacle === true) {
+        this.say("blocked")
+        return
+      }
+    } catch (e) {
+      PrimitiveLogger.programError(`Quad.runMoveTo() failed ${e} ${roomLink(this.room.name)}`)
     }
     const nextDirection = nextSteps[0].direction
     this.leaderCreep.move(nextDirection)
@@ -1101,7 +1123,8 @@ const unbreakableStructureTypes: StructureConstant[] = [
   STRUCTURE_INVADER_CORE,
 ]
 
-function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[]): boolean {
+function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[], markDestructiveStructureAsObstacle?: boolean): boolean {
+  const structureAsObstacle = markDestructiveStructureAsObstacle ?? false
   return position.look().some(obj => {
     switch (obj.type) {
     case "creep":
@@ -1124,6 +1147,9 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
         return false
       }
       if (unbreakableStructureTypes.includes(structure.structureType) === true) {
+        return true
+      }
+      if (structureAsObstacle === true) {
         return true
       }
       if (structure.hits <= 5000 || walkableStructures.includes(structure.structureType) === true) {
