@@ -43,6 +43,7 @@ import { Season1655635SKMineralHarvestProcess } from "process/onetime/season_165
 import { Season1673282SpecializedQuadProcess } from "process/onetime/season_1673282_specialized_quad_process"
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 import { isQuadType, quadTypes } from "process/onetime/season_1673282_specialized_quad_spec"
+import { Season2006098StealResourceProcess } from "process/onetime/season_2006098_steal_resource_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -151,6 +152,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1838855DistributorProcess":
       result = this.launchSeason1838855DistributorProcess()
+      break
+    case "Season2006098StealResourceProcess":
+      result = this.launchSeason2006098StealResourceProcess()
       break
     default:
       break
@@ -1016,5 +1020,32 @@ export class LaunchCommand implements ConsoleCommand {
     } catch (e) {
       return Result.Failed(`Invalid pos value ${rawPosition}, expected pos=x,y, ${e}`)
     }
+  }
+
+  private launchSeason2006098StealResourceProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const targetId = args.get("target_id")
+    if (targetId == null) {
+      return this.missingArgumentError("target_id")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>)
+    })
+    return Result.Succeeded(process)
   }
 }
