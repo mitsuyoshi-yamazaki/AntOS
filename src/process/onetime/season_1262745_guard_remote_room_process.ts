@@ -83,6 +83,9 @@ export interface Season1262745GuardRemoteRoomProcessState extends ProcessState {
 
 // W17S11
 // Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W21S23 target_room_name=W17S11 waypoints=W20S23,W20S10,W17S10 creep_type=heavy-ranged-attacker creeps=2")
+
+// W25S22
+// Game.io("launch -l Season1262745GuardRemoteRoomProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 creep_type=ranged-attacker creeps=2")
 export class Season1262745GuardRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -282,7 +285,9 @@ export class Season1262745GuardRemoteRoomProcess implements Process, Procedural 
       return false
     })()
     if (isEnemyRoom === true) {
-      const road = creep.pos.findClosestByRange(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+      const roads = creep.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+        .filter(road => road.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length <= 0)
+      const road = creep.pos.findClosestByPath(roads)
       if (road != null) {
         creep.rangedAttack(road)
         creep.moveTo(road)
