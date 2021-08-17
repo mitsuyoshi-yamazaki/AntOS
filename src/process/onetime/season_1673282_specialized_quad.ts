@@ -91,6 +91,7 @@ export interface QuadState extends State {
   leaderRotationPositionState: RoomPositionState | null
   leaderName: CreepName
   followerNames: CreepName[]
+  automaticRotationEnabled: boolean
 }
 
 interface QuadInterface {
@@ -190,6 +191,7 @@ export class Quad implements Stateful, QuadInterface {
     private leaderRotationPosition: RoomPosition | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
+    public automaticRotationEnabled: boolean,
   ) {
   }
 
@@ -201,6 +203,7 @@ export class Quad implements Stateful, QuadInterface {
       leaderRotationPositionState: this.leaderRotationPosition?.encode() ?? null,
       leaderName: this.leaderCreep.name,
       followerNames: this.followerCreeps.map(creep => creep.name),
+      automaticRotationEnabled: this.automaticRotationEnabled,
     }
   }
 
@@ -223,11 +226,11 @@ export class Quad implements Stateful, QuadInterface {
       return decodeRoomPosition(roomPositionState)
     }
     const leaderRotationPosition = decodePosition(state.leaderRotationPositionState)
-    return new Quad(state.direction, state.nextDirection, leaderRotationPosition, leader, followerCreeps)
+    return new Quad(state.direction, state.nextDirection, leaderRotationPosition, leader, followerCreeps, state.automaticRotationEnabled ?? true)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(TOP, null, null, leaderCreep, followerCreeps)
+    return new Quad(TOP, null, null, leaderCreep, followerCreeps, true)
   }
 
   // ---- Position ---- //
@@ -509,7 +512,7 @@ export class Quad implements Stateful, QuadInterface {
 
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
-      if (this.leaderCreep.pos.isNearTo(position) !== true) {
+      if (this.automaticRotationEnabled === true && this.leaderCreep.pos.isNearTo(position) !== true) {
         this.runRotateTask(leftRotationDirectionOf(this.direction))
       }
       return
@@ -767,7 +770,7 @@ export class Quad implements Stateful, QuadInterface {
 
     if (leaderRotationPosition != null) {
       this.say("rotate")
-      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))
+      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))  // FixMe: target room直前でrotateしようとしてclose to destinationから抜けてしまうのではないか
       this.moveFollowersToNexPosition(leaderRotationPosition)
       return
     }

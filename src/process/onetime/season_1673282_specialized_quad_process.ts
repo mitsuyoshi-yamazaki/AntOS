@@ -28,6 +28,7 @@ type ManualOperations = {
   direction: TOP | BOTTOM | LEFT | RIGHT | null
   action: "flee" | "drain" | null
   message: string | null
+  automaticRotationEnabled: boolean | null
 }
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
@@ -47,6 +48,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=test-dismantler targets=")
 // tier0-d450
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d450 targets=")
+// top
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 quad_type=tier0-d450 targets=")
 // tier3-3tower-full-ranged-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier3-3tower-full-ranged-attacker targets=")
 // tier0-swamp-attacker
@@ -86,9 +89,17 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier0-d360-dismantler targets=")
 // tier1-d750
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier1-d750 targets=")
+// tier3-2tower-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier3-2tower-attacker targets=")
 
 // W25S22 tier3-3tower-dismantler-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier3-3tower-dismantler-attacker targets=")
+// tier0-d450
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d450 targets=")
+// tier0-d360-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d360-dismantler targets=")
+// tier0-d360-dismantler left
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier0-d360-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -128,7 +139,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, "W21S8", state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
+    // return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
@@ -141,6 +153,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       direction: null,
       action: null,
       message: null,
+      automaticRotationEnabled: null,
     }
     return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations)
   }
@@ -187,6 +200,22 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       this.manualOperations.message = null
       return "clear message"
+    }
+    if (message === "enable rotation") {
+      if (this.quadState != null) {
+        this.quadState.automaticRotationEnabled = true
+      } else {
+        this.manualOperations.automaticRotationEnabled = true
+      }
+      return "automatic rotation enabled"
+    }
+    if (message === "disable rotation") {
+      if (this.quadState != null) {
+        this.quadState.automaticRotationEnabled = false
+      } else {
+        this.manualOperations.automaticRotationEnabled = false
+      }
+      return "automatic rotation disabled"
     }
     const direction = parseInt(message, 10)
     if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
@@ -292,6 +321,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (this.manualOperations.message != null) {
         quad.say(this.manualOperations.message, true)
       }
+      if (this.manualOperations.automaticRotationEnabled != null) {
+        quad.automaticRotationEnabled = this.manualOperations.automaticRotationEnabled
+        this.manualOperations.automaticRotationEnabled = null
+      }
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
       processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}`)
@@ -379,7 +412,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     quad.heal()
     quad.attack(mainTarget, optionalTargets)
     if (mainTarget != null) {
-      if ((mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
+      if (this.quadSpec.canHandleMelee() !== true && (mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
         if (quad.getMinRangeTo(mainTarget.pos) <= 1) {
           quad.fleeFrom(mainTarget.pos, 2)
         } else {
@@ -435,20 +468,25 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     const min = GameConstants.room.edgePosition.min + threshold
     const max = GameConstants.room.edgePosition.max - threshold
     if (quadPosition.x < min) {
+      quad.keepQuadForm()
       return
     }
     if (quadPosition.x > max) {
+      quad.keepQuadForm()
       return
     }
     if (quadPosition.y < min) {
+      quad.keepQuadForm()
       return
     }
     if (quadPosition.y > max) {
+      quad.keepQuadForm()
       return
     }
 
     const closestNeighbourRoom = this.closestNeighbourRoom(quad.pos)
     if (closestNeighbourRoom == null) {
+      quad.keepQuadForm()
       return
     }
     quad.moveToRoom(closestNeighbourRoom, [], { quadFormed: true })
@@ -473,20 +511,22 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
     }
 
-    const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
-      STRUCTURE_STORAGE,
-      STRUCTURE_POWER_SPAWN,
-      STRUCTURE_TERMINAL,
-      STRUCTURE_EXTENSION,
-      STRUCTURE_SPAWN,
-      STRUCTURE_TOWER,
-    ]
+    const targetPriority = ((): StructureConstant[] => {
+      return [ // 添字の大きい方が優先
+        STRUCTURE_POWER_SPAWN,
+        STRUCTURE_TERMINAL,
+        STRUCTURE_EXTENSION,
+        STRUCTURE_SPAWN,
+        STRUCTURE_TOWER,
+      ]
+    })()
     const excludedStructureTypes: StructureConstant[] = [
-      // STRUCTURE_STORAGE,
+      STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
       STRUCTURE_CONTROLLER,
       // STRUCTURE_RAMPART,
       STRUCTURE_KEEPER_LAIR,
       STRUCTURE_POWER_BANK,
+      STRUCTURE_EXTRACTOR,
     ]
     const targetStructures = room.find(FIND_HOSTILE_STRUCTURES)
       .filter(structure => excludedStructureTypes.includes(structure.structureType) !== true)
@@ -510,6 +550,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (whitelist.includes(creep.owner.username) === true) {
         return
       }
+
+      // 現在はmainTargetによってmeleeに近づかない判定なども行っているため
+      // const rampart = creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } })[0]
+      // if (rampart == null || rampart.hits > 1000) {
+      //   return
+      // }
       if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
         hostileAttackers.push(creep)
       } else {
@@ -544,9 +590,15 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     if (mainTarget == null && optionalTargets.length <= 0) {
+      const roads = quad.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+        .filter(road => road.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length <= 0)
+        .sort((lhs, rhs) => {
+          return lhs.pos.getRangeTo(position) - rhs.pos.getRangeTo(position)
+        })
+
       return {
-        mainTarget: null,
-        optionalTargets: quad.pos.findInRange(FIND_STRUCTURES, 4, { filter: {structureType: STRUCTURE_ROAD}})
+        mainTarget: roads.shift() ?? null,
+        optionalTargets: roads,
       }
     }
 

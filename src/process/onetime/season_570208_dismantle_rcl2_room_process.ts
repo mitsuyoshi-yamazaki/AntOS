@@ -40,6 +40,7 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W6S29 target_room_name=E3S29 waypoints=W6S30,E4S30,E4S29 creeps=1")
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 creeps=1")
 // Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 creeps=1")
+// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 creeps=1")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string

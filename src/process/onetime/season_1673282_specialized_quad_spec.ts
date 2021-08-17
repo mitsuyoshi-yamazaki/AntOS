@@ -28,6 +28,7 @@ export const quadTypes = [
   "tier3-4tower-1dismantler-rcl7",
   "tier3-4tower-rcl7",
   "tier3-3tower-dismantler-attacker",
+  "tier3-2tower-attacker",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -77,6 +78,8 @@ export class QuadSpec {
       return [...tier3DismantlerFullBoosts]
     case "tier3-3tower-dismantler-attacker":
       return [...tier3DismantlerAttackerFullBoosts]
+    case "tier3-2tower-attacker":
+      return [...tier3AttackerBoosts]
     }
   }
 
@@ -105,6 +108,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler-attacker":
+    case "tier3-2tower-attacker":
       return 4
     }
   }
@@ -211,6 +215,41 @@ export class QuadSpec {
       } else {
         return tier33TowerDismantlerAttackerDismantlerSpec
       }
+    case "tier3-2tower-attacker":
+      if ((creepInsufficiency % 2) === 0) {
+        return tier32TowerAttackerAttackerSpec
+      } else {
+        return tier32TowerAttackerHealerSpec
+      }
+    }
+  }
+
+  public canHandleMelee(): boolean {
+    switch (this.quadType) {
+    case "test-dismantler":
+    case "test-attacker":
+    case "test-boosted-attacker":
+    case "invader-core-attacker":
+    case "tier0-2tower-drain-minimum":
+    case "tier0-d100-attacker":
+    case "tier0-d450":
+    case "tier0-d450-rcl7":
+    case "tier0-d360-dismantler":
+    case "tier0-d360-dismantler-rcl7":
+    case "tier0-swamp-attacker":
+    case "tier3-d2000-dismantler-swamp":
+    case "tier1-d750":
+    case "no-defence-3tower":
+    case "tier3-3tower-full-ranged-attacker":
+    case "tier3-4tower-dismantler":
+    case "tier3-4tower-dismantler-rcl7":
+    case "tier3-4tower-1dismantler":
+    case "tier3-4tower-1dismantler-rcl7":
+    case "tier3-4tower-rcl7":
+    case "tier3-3tower-dismantler-attacker":
+      return false
+    case "tier3-2tower-attacker":
+      return true
     }
   }
 
@@ -393,7 +432,7 @@ const tier1D750HealerSpec: CreepBodySpec = {
 const tier1D750Boosts: MineralBoostConstant[] = [
   RESOURCE_ZYNTHIUM_OXIDE,
   RESOURCE_LEMERGIUM_OXIDE,
-  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
 ]
 
 // ---- no-defence-3tower ---- //
@@ -687,6 +726,49 @@ const tier3DismantlerAttackerFullBoosts: MineralBoostConstant[] = [
   RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
   RESOURCE_CATALYZED_UTRIUM_ACID,
   RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+]
+
+// ---- tier3-2tower-attacker ---- //
+const tier32TowerAttackerAttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK,
+    TOUGH, TOUGH,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier32TowerAttackerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+
+// ---- ---- //
+const tier3AttackerBoosts: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_UTRIUM_ACID,
+  RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
   RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
   RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
   RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
