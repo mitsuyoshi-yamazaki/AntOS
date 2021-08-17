@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -21,6 +21,8 @@ import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide
 import { isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { processLog } from "process/process_log"
+import { OperatingSystem } from "os/os"
 
 const numberOfCreeps = 4
 const resourcePriority: ResourceConstant[] = [
@@ -97,7 +99,12 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
     }
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount < numberOfCreeps) {
+    if (this.state === "finished" && creepCount <= 0) {
+      processLog(this, `${coloredText("[Finished]", "info")} no more valuable resources in ${roomLink(this.targetRoomName)}`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    if (this.state !== "finished" && creepCount < numberOfCreeps) {
       this.requestHauler(objects.controller.room.energyCapacityAvailable)
     }
 
@@ -177,6 +184,7 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
         return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)
       })[0]
     if (resourceType == null || resourcePriority.includes(resourceType) !== true) {
+      this.state = "finished"
       return null
     }
     return resourceType
