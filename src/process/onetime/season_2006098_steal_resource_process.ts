@@ -24,7 +24,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { processLog } from "process/process_log"
 import { OperatingSystem } from "os/os"
 
-const numberOfCreeps = 4
+const numberOfCreeps = 6
 const resourcePriority: ResourceConstant[] = [
   ...MineralBoostConstant,  // 添字の大きいほうが優先
   RESOURCE_OPS,

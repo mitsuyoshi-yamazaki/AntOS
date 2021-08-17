@@ -60,6 +60,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 quad_type=tier0-d360-dismantler targets=")
 // test-boosted-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=test-boosted-attacker targets=")
+// tier3-3tower-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier3-3tower-attacker targets=")
 
 // W1S28
 // tier0-swamp-attacker

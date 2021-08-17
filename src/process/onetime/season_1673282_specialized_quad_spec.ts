@@ -29,6 +29,7 @@ export const quadTypes = [
   "tier3-4tower-rcl7",
   "tier3-3tower-dismantler-attacker",
   "tier3-2tower-attacker",
+  "tier3-3tower-attacker",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -79,6 +80,7 @@ export class QuadSpec {
     case "tier3-3tower-dismantler-attacker":
       return [...tier3DismantlerAttackerFullBoosts]
     case "tier3-2tower-attacker":
+    case "tier3-3tower-attacker":
       return [...tier3AttackerBoosts]
     }
   }
@@ -109,6 +111,7 @@ export class QuadSpec {
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler-attacker":
     case "tier3-2tower-attacker":
+    case "tier3-3tower-attacker":
       return 4
     }
   }
@@ -221,6 +224,12 @@ export class QuadSpec {
       } else {
         return tier32TowerAttackerHealerSpec
       }
+    case "tier3-3tower-attacker":
+      if ((creepInsufficiency % 2) === 0) {
+        return tier33TowerAttackerAttackerSpec
+      } else {
+        return tier33TowerAttackerHealerSpec
+      }
     }
   }
 
@@ -249,6 +258,7 @@ export class QuadSpec {
     case "tier3-3tower-dismantler-attacker":
       return false
     case "tier3-2tower-attacker":
+    case "tier3-3tower-attacker":
       return true
     }
   }
@@ -773,3 +783,38 @@ const tier3AttackerBoosts: MineralBoostConstant[] = [
   RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
   RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
 ]
+
+// ---- tier3-3tower-attacker ---- //
+const tier33TowerAttackerAttackerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH,TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    ATTACK, ATTACK, ATTACK, ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier33TowerAttackerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
