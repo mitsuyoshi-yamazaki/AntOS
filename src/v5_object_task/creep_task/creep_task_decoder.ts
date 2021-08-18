@@ -23,6 +23,7 @@ import { TransferResourceApiWrapper } from "./api_wrapper/transfer_resource_api_
 import { WithdrawResourceApiWrapper } from "./api_wrapper/withdraw_resource_api_wrapper"
 import { FleeFromSKLairTask, FleeFromSKLairTaskState } from "./combined_task/flee_from_sk_lair_task"
 import { RandomMoveTask, RandomMoveTaskState } from "./meta_task/random_move_task"
+import { Run1TickTask, Run1TickTaskState } from "./combined_task/run_1_tick_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -65,6 +66,14 @@ class CreepTaskDecoderMap {
       return null
     }
     return FleeFromSKLairTask.decode(fleeFromSKLairTaskState, childTask)
+  }
+  "Run1TickTask" = (state: CreepTaskState) => {
+    const run1TickTaskState = state as unknown as Run1TickTaskState
+    const childTask = decodeCreepTaskFromState(run1TickTaskState.childTaskState)
+    if (childTask == null) {
+      return null
+    }
+    return Run1TickTask.decode(run1TickTaskState, childTask)
   }
 
   // ---- Meta task ---- //

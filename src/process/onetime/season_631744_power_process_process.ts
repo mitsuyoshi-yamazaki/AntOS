@@ -15,6 +15,9 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { OwnedRoomObjects } from "world_info/room_info"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { Run1TickTask } from "v5_object_task/creep_task/combined_task/run_1_tick_task"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 export interface Season631744PowerProcessProcessState extends ProcessState {
   /** parent room name */
@@ -130,7 +133,20 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
         return null
       }
       creep.say("waiting..")
-      return null
+      if (creep.pos.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_ROAD}}).length <= 0) {
+        return null
+      }
+      const filteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeStructures: true,
+        excludeWalkableStructures: true,
+        excludeTerrainWalls: true,
+      }
+      const waitingPosition = powerSpawn.pos.positionsInRange(1, filteringOptions)[0]
+      if (waitingPosition == null) {
+        return null
+      }
+      return Run1TickTask.create(MoveToTask.create(waitingPosition, 0))
     }
 
     return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
