@@ -44,6 +44,7 @@ import { Season1673282SpecializedQuadProcess } from "process/onetime/season_1673
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 import { isQuadType, quadTypes } from "process/onetime/season_1673282_specialized_quad_spec"
 import { Season2006098StealResourceProcess } from "process/onetime/season_2006098_steal_resource_process"
+import { Season2055924SendResourcesProcess } from "process/onetime/season_2055924_send_resources_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -155,6 +156,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season2006098StealResourceProcess":
       result = this.launchSeason2006098StealResourceProcess()
+      break
+    case "Season2055924SendResourcesProcess":
+      result = this.launchSeason2055924SendResourcesProcess()
       break
     default:
       break
@@ -1045,6 +1049,20 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(processId => {
       return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason2055924SendResourcesProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return Season2055924SendResourcesProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }

@@ -34,6 +34,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   private readonly codename: string
   private readonly numberOfCreeps: number
+  private saying = 0
 
   private constructor(
     public readonly startTime: number,
@@ -121,7 +122,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         }
       }
 
-      creep.say("no task")
+      if (this.saying !== Game.time) {
+        this.saying = Game.time
+        creep.say("no task")
+      }
       if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
         randomSeed += 1
         if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
@@ -164,7 +168,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
           }
         }
       }
-      creep.say("no task")
+      if (this.saying !== Game.time) {
+        this.saying = Game.time
+        creep.say("no task")
+      }
       if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
         randomSeed += 1
         if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
