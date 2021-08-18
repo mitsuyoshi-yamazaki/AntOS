@@ -427,7 +427,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
-    const spawnOperatingRooms: RoomName[] = ["W21S23", "W9S24"]
+    const spawnOperatingRooms: RoomName[] = ["W21S23", "W9S24", "W6S29"]
     let processCount = spawnOperatingRooms.includes(this.roomName) === true ? 2 : 1
     if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
       return false
