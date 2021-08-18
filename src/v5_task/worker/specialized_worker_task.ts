@@ -46,7 +46,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
 
     const numberOfCreeps: { [roomName: string]: number } = {
-      "W6S29": 6,
+      "W6S29": 4,
 
       // shard3
       "W51S29": 4,

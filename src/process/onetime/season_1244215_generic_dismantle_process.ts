@@ -43,7 +43,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 }
 
 // W11S23
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fc52c2a19fa54be7b0b666")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fc5711993e4f522b65b17b")
 
 // W21S15
 // Game.io("launch -l Season1244215GenericDismantleProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 target_id=6116d6929c09bed4d8eb8845")
@@ -65,10 +65,6 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
-
-    if (this.targetRoomName === "W25S22") {
-      this.targetId = "aaaa" as Id<AnyStructure>
-    }
   }
 
   public encode(): Season1244215GenericDismantleProcessState {

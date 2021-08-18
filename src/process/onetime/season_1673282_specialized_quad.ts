@@ -938,7 +938,7 @@ export class Quad implements Stateful, QuadInterface {
   private moveToOptions(maxRooms: number, ignoreCreeps?: boolean): MoveToOpts {
     return {
       maxRooms,
-      maxOps: 200,
+      maxOps: 500,
       reusePath: 0,
       ignoreCreeps: ignoreCreeps ?? true,
     }

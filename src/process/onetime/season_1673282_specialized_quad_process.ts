@@ -141,8 +141,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, "W21S8", state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
-    // return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
