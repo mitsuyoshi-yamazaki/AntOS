@@ -368,6 +368,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       removeFindPowerBankTask()
       return
     }
+    const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    if (energyAmount < 70000) {
+      return
+    }
 
     if (this.children.findPowerBank == null) {
       if (config.powerHarvestingEnabled !== true) {
