@@ -109,10 +109,21 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       return
     }
 
-    const hasResource = labs.some(labInfo => (terminal.store.getUsedCapacity(labInfo.boost) > 0))
+    const needResourceTransfer = ((): boolean => {
+      for (const labInfo of labs) {
+        if (terminal.store.getUsedCapacity(labInfo.boost) <= 0) {
+          continue
+        }
+        if (labInfo.lab.mineralType != null && labInfo.lab.store.getFreeCapacity(labInfo.lab.mineralType) <= 0) {
+          continue
+        }
+        return true
+      }
+      return false
+    })()
     const shouldCollectResources = resources.roomInfo.config?.collectResources ?? false
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount < 1 && (hasResource === true || shouldCollectResources === true)) {
+    if (creepCount < 1 && (needResourceTransfer === true || shouldCollectResources === true)) {
       this.requestCreep()
     }
 
