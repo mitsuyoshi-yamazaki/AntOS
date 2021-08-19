@@ -14,6 +14,7 @@ export const remoteRoomNamesToDefend = ((): Map<RoomName, RoomName[]> => {
       return new Map<RoomName, RoomName[]>([
         ["W57S27", ["W57S26", "W57S28"]],
         ["W52S25", ["W52S26"]],
+        ["W53S36", ["W52S36"]],
       ])
     case "shard3":
       return new Map<RoomName, RoomName[]>([
@@ -42,6 +43,8 @@ export const remoteRoomNamesToDefend = ((): Map<RoomName, RoomName[]> => {
       ["W6S27", ["W5S27"]],  // W7S27
       ["W29S25", ["W28S25"]],
       ["W17S11", ["W18S11"]],
+      ["W15S8", ["W16S8", "W15S9", "W14S8"]],
+      ["W26S9", ["W26S8"]],
     ])
   }
 })()
