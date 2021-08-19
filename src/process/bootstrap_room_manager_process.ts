@@ -33,6 +33,8 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
 // Game.io("message 544054000 parent_room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25 target_gcl=9")
 // Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W11S14 waypoints=W10S24,W10S14 target_gcl=9")
 // Game.io("message 544054000 parent_room_name=W21S23 target_room_name=W17S11 waypoints=W20S23,W20S10,W17S10 claim_parent_room_name=W11S14 claim_waypoints=W10S14,W10S10,W17S10 target_gcl=9")
+// Game.io("message 544054000 parent_room_name=W17S11 target_room_name=W15S8 waypoints=W17S10,W15S10,W15S8 target_gcl=9")
+// Game.io("message 544054000 parent_room_name=W17S11 target_room_name=W26S9 waypoints=W17S10,W26S10 target_gcl=10")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
@@ -102,6 +104,21 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
+    if (message === "clear") {
+      const childTasks = [...this.tasks]
+      if (childTasks.length <= 0) {
+        return "No tasks to remove"
+      }
+
+      const removedRoomNames: RoomName[] = []
+
+      childTasks.forEach(task => {
+        removedRoomNames.push(task.targetRoomName)
+        this.removeTask(task)
+      })
+      return `Removed boostrap tasks for ${removedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+    }
+
     const args = new Map<string, string>()
     for (const keyValue of message.split(" ")) {
       const [key, value] = keyValue.split("=")
