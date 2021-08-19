@@ -66,7 +66,11 @@ export class CreateConstructionSiteTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    if (objects.constructionSites.length > 0) {
+    const wallTypes: StructureConstant[] = [
+      STRUCTURE_RAMPART,
+      STRUCTURE_WALL,
+    ]
+    if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length > 0) {
       return TaskStatus.InProgress
     }
     if (Game.time % 17 !== 3) {
