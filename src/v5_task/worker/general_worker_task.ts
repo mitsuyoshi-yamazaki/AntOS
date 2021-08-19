@@ -166,7 +166,7 @@ export class GeneralWorkerTask extends Task {
 
       const source = objects.getSource(creep.pos)
       if (source != null) {
-        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
       }
 
       creep.say("no task")
@@ -187,6 +187,6 @@ export class GeneralWorkerTask extends Task {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
-    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller))
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller), { reusePath: 3, ignoreSwamp: false })
   }
 }
