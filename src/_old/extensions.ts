@@ -29,6 +29,7 @@ declare global {
     io: (message: string) => string
 
     user: { name: 'Mitsuyoshi' }
+    systemInfo: string
 
     // Alliance
     LOANlist: string[]
@@ -239,6 +240,7 @@ export function tick(): void {
   Game.user = {
     name: 'Mitsuyoshi',
   }
+  Game.systemInfo = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version}`
 
   Game.empire = {
     name: Game.user.name,
