@@ -194,7 +194,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   // ---- Wall ---- //
   private runWallBuilder(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
     if (roomResource.controller.level <= 4) {
-      return
+      const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      if (energyAmount < 70000) {
+        return
+      }
+
     }
     if (this.children.wallBuilder == null) {
       this.children.wallBuilder = WallBuilderTask.create(this.roomName)
