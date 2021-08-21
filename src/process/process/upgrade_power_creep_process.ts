@@ -57,7 +57,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
     if (next == null) {
       return "No updates"
     }
-    const reservations = this.reservedUpdates.length <= 1 ? "" : ` ${this.reservedUpdates.length} more`
+    const reservations = this.reservedUpdates.length <= 1 ? "" : ` ${this.reservedUpdates.length - 1} more`
     return `${powerName(next.powerType)}, ${next.powerCreepName}${reservations}`
   }
 
