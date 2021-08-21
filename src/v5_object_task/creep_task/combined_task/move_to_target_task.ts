@@ -174,6 +174,16 @@ export class MoveToTargetTask implements CreepTask {
       return false
     })()
 
+    const ignoreCreeps = ((): boolean => {
+      if (inEconomicArea !== true) {
+        return false
+      }
+      if (this.options.reusePath != null) {
+        return false
+      }
+      return true
+    })()
+
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
       const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
       const reusePath = ((): number => {
@@ -187,7 +197,7 @@ export class MoveToTargetTask implements CreepTask {
         reusePath,
         maxOps: 4000,
         range,
-        ignoreCreeps: inEconomicArea === true ? true : false,
+        ignoreCreeps,
       }
     }
 
@@ -203,7 +213,7 @@ export class MoveToTargetTask implements CreepTask {
     options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
     options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
     options.reusePath = reusePath,
-    options.ignoreCreeps = inEconomicArea === true ? true : false
+    options.ignoreCreeps = ignoreCreeps
     if (this.options.ignoreSwamp === true) {
       options.ignoreRoads = true
       options.swampCost = 1

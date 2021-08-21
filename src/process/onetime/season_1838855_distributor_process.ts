@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -31,6 +31,8 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   position: RoomPositionState
   linkId: Id<StructureLink> | null
   upgraderLinkId: Id<StructureLink> | null
+
+  drainStorage: boolean
 }
 
 // Game.io("launch -l Season1838855DistributorProcess room_name=W6S29 pos=26,36 link_id=610b604e550481c7f76f8e98 upgrader_link_id=610b7ec24645122963c87887")
@@ -42,6 +44,9 @@ export interface Season1838855DistributorProcessState extends ProcessState {
 // Game.io("launch -l Season1838855DistributorProcess room_name=W24S29 pos=17,9")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W27S26 pos=18,13")
 // Game.io("launch -l Season1838855DistributorProcess room_name=W29S25 pos=24,9 link_id=6116b1e1c7daf82aff322119 upgrader_link_id=6116b4b1dcb0c172dcfa0449")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W17S11 pos=22,7 link_id=611c2c851019407b1137652e upgrader_link_id=611c2e57f727165f398f0568")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W15S8 pos=32,30 link_id=6120351704ed50f9c27e572f upgrader_link_id=61203b57ec66aca26d9b8327")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W26S9 pos=32,25 link_id=611fd7359c09beee5bef89bd upgrader_link_id=611fd94daacc2648e7168200")
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -53,6 +58,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     public readonly position: RoomPosition,
     public readonly linkId: Id<StructureLink> | null,
     public readonly upgraderLinkId: Id<StructureLink> | null,
+    private drainStorage: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -67,19 +73,25 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       position: this.position.encode(),
       linkId: this.linkId,
       upgraderLinkId: this.upgraderLinkId,
+      drainStorage: this.drainStorage,
     }
   }
 
   public static decode(state: Season1838855DistributorProcessState): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(state.l, state.i, state.p, decodeRoomPosition(state.position), state.linkId, state.upgraderLinkId)
+    return new Season1838855DistributorProcess(state.l, state.i, state.p, decodeRoomPosition(state.position), state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition, linkId: Id<StructureLink> | null, upgraderLinkId: Id<StructureLink> | null): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, linkId, upgraderLinkId)
+    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, linkId, upgraderLinkId, false)
   }
 
   public processShortDescription(): string {
     return roomLink(this.parentRoomName)
+  }
+
+  public setDrainStorage(): void {
+    processLog(this, `${coloredText("[Warning]", "warn")} ${roomLink(this.parentRoomName)} drain storage`)
+    this.drainStorage = true
   }
 
   public runOnTick(): void {
@@ -102,10 +114,10 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     }
 
     const body = ((): BodyPartConstant[] => {
-      if (resources.controller.level >= 8) {
-        return [MOVE, CARRY, CARRY, CARRY, CARRY]
+      if (resources.controller.level < 8 || this.drainStorage === true) {
+        return [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
       }
-      return [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
+      return [MOVE, CARRY, CARRY, CARRY, CARRY]
     })()
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
@@ -148,6 +160,10 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   private newDistributorTask(creep: Creep, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
     if (creep.pos.isEqualTo(this.position) !== true) {
       return MoveToTask.create(this.position, 0)
+    }
+
+    if (this.drainStorage === true) {
+      return this.drainStorageTask(creep, resources)
     }
 
     const storage = resources.activeStructures.storage
@@ -267,14 +283,26 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   }
 
   private transferEnergyTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
-    const [energySource, energyStore] = ((): [EnergyStore, EnergyStore] => {
+    const energySources = ((): [EnergyStore, EnergyStore] | null => {
+      const terminalEnergyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      const storageEnergyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY)
+      const minimumEnergy = 40000
+      if (terminalEnergyAmount < minimumEnergy && storageEnergyAmount < minimumEnergy) {
+        if (creep.store.getUsedCapacity() <= 0) {
+          return null
+        }
+      }
       const needEnergy = resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null
-      if (needEnergy === true) {
+      if (needEnergy === true && terminalEnergyAmount >= minimumEnergy) {
         return [terminal, storage]
       } else {
         return [storage, terminal]
       }
     })()
+    if (energySources == null) {
+      return null
+    }
+    const [energySource, energyStore] = energySources
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
@@ -310,4 +338,38 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, RESOURCE_ENERGY))
   }
 
+  private drainStorageTask(creep: Creep, resources: OwnedRoomResource): CreepTask | null {
+    if (creep.ticksToLive != null && creep.ticksToLive < 3 && creep.store.getUsedCapacity() <= 0) {
+      creep.say("dying")
+      return null
+    }
+    const terminal = resources.activeStructures.terminal
+    const storage = resources.activeStructures.storage
+    if (terminal == null || storage == null) {
+      processLog(this, `No terminal or storage ${roomLink(this.parentRoomName)}`)
+      creep.say("no storage")
+      return null
+    }
+
+    const creepResourceType = Object.keys(creep.store)[0]
+    if (creepResourceType != null && isResourceConstant(creepResourceType) && creep.store.getUsedCapacity(creepResourceType) > 0) {
+      return RunApiTask.create(TransferResourceApiWrapper.create(terminal, creepResourceType))
+    }
+    const storageResourceTypes = Object.keys(storage.store) as ResourceConstant[]
+    const storageResourceType = storageResourceTypes.sort((lhs, rhs) => {
+      if (lhs === RESOURCE_ENERGY) {
+        return 1
+      }
+      if (rhs === RESOURCE_ENERGY) {
+        return -1
+      }
+      return 0
+    })[0]
+    if (storageResourceType != null && isResourceConstant(storageResourceType) && storage.store.getUsedCapacity(storageResourceType) > 0) {
+      return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, storageResourceType))
+    }
+    processLog(this, `Storage empty ${roomLink(this.parentRoomName)}`)
+    creep.say("nth to do")
+    return null
+  }
 }

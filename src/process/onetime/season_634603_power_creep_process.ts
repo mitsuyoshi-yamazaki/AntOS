@@ -9,6 +9,8 @@ import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { randomDirection } from "utility/constants"
+import { OperatingSystem } from "os/os"
+import { moveToRoom } from "script/move_to_room"
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */
@@ -75,10 +77,48 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
   }
 
   private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
+    if (powerCreep.room == null) {
+      PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    if (powerCreep.room.name !== this.parentRoomName) {
+      moveToRoom(powerCreep, this.parentRoomName, [])
+      this.runGenerateOps(powerCreep, true, null)
+      return
+    }
+
     if (objects.controller.isPowerEnabled !== true) {
       this.enablePower(powerCreep, objects.controller)
       return
     }
+
+    const opsStore = ((): StructureTerminal | StructureStorage | null => {
+      const storage = objects.activeStructures.storage
+      if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return storage
+      }
+      const terminal = objects.activeStructures.terminal
+      if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return terminal
+      }
+      return null
+    })()
+
+    // if (this.hasPower(powerCreep, PWR_OPERATE_TOWER) === true) {
+    //   let hostileHealerMaxPower = 0
+    //   let healerPowerSum = 0
+    //   objects.hostiles.creeps.forEach(hostileCreep => {
+    //     const healPower = CreepBody.power(hostileCreep.body, "heal")
+    //     if (healPower > hostileHealerMaxPower) {
+    //       hostileHealerMaxPower = healPower
+    //     }
+    //     healerPowerSum += healPower
+    //   })
+    //   if (hostileHealerMaxPower >= 300 || healerPowerSum >= 600) {
+    // Operate Tower
+    //   }
+    // }
 
     const powerSpawn = objects.activeStructures.powerSpawn
     let isMoving = false
@@ -97,17 +137,6 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
 
     const spawn = objects.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
-      const opsStore = ((): StructureTerminal | StructureStorage | null => {
-        const storage = objects.activeStructures.storage
-        if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-          return storage
-        }
-        const terminal = objects.activeStructures.terminal
-        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-          return terminal
-        }
-        return null
-      })()
       isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)
     }
 

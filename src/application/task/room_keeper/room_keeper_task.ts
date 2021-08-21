@@ -194,7 +194,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   // ---- Wall ---- //
   private runWallBuilder(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
     if (roomResource.controller.level <= 4) {
-      return
+      const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      if (energyAmount < 70000) {
+        return
+      }
+
     }
     if (this.children.wallBuilder == null) {
       this.children.wallBuilder = WallBuilderTask.create(this.roomName)
@@ -205,6 +209,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Research ---- //
   private runResearchTask(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    if (roomResource.controller.level < GameConstants.structure.availability.lab) {
+      this.children.research = null
+      return
+    }
+
     const researchCompounds = roomResource.roomInfo.config?.researchCompounds
     if (researchCompounds == null) {
       this.children.research = null
@@ -315,7 +324,14 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         if (targetRoom == null || targetRoom.terminal == null) {
           return false
         }
-        return (targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) > 20000
+        if ((targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) < 20000) {
+          return false
+        }
+        const targetRoomEnergyAmount = targetRoom.terminal.store.getUsedCapacity(RESOURCE_ENERGY) + (targetRoom.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+        if (targetRoomEnergyAmount > 500000) {
+          return false
+        }
+        return true
       })
       .sort((lhs, rhs) => {
         if (lhs.priority === rhs.priority) {
@@ -339,13 +355,26 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Power Bank ---- //
   private runPowerBankTasks(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
+    const removeFindPowerBankTask = () => {
+      if(this.children.findPowerBank != null) {
+        this.children.findPowerBank = null
+      }
+    }
     if (Environment.world !== "season 3") {
+      removeFindPowerBankTask()
+      return
+    }
+    if (roomResource.controller.level <= 5) {
+      removeFindPowerBankTask()
       return
     }
     if (roomResource.roomInfo.config?.disablePowerHarvesting === true) {
-      if (this.children.findPowerBank != null) {
-        this.children.findPowerBank = null
-      }
+      removeFindPowerBankTask()
+      return
+    }
+    const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    if (energyAmount < 70000) {
       return
     }
 
@@ -402,7 +431,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
-    const spawnOperatingRooms: RoomName[] = ["W14S28", "W9S24"]
+    const spawnOperatingRooms: RoomName[] = ["W21S23"]
     let processCount = spawnOperatingRooms.includes(this.roomName) === true ? 2 : 1
     if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
       return false

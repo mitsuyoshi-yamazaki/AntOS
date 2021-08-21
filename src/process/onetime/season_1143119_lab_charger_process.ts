@@ -13,7 +13,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RoomName } from "utility/room_name"
-import { isMineralBoostConstant } from "utility/resource"
+import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import { RoomResources } from "room_resource/room_resources"
 
 export type Season1143119LabChargerProcessLabInfo = {
   boost: MineralBoostConstant
@@ -32,11 +33,21 @@ export interface Season1143119LabChargerProcessState extends ProcessState {
 
 // Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
 
-// 3Towers
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W6S29 labs=6111e92d9c09be5e07e92f70:ZO,6111d8c310194018d132a7f7:LHO2,61122f11f72716515c8a5dce:KHO2,61125d5eaa2f2224b1896196:XGHO2")
+// 3Towers full boosted ranged attacker
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W9S24 labs=60f967be396ad538632751b5:XZHO2,60f92938993e4f921d6487aa:XKHO2,6106ee55706bd84a378e1ee7:XLHO2,61073ced8f86f51bf3f51e78:XGHO2")
+
+// tier3 4towers dismantler
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W21S23 labs=61085d0c464512bdf3c72008:XZHO2,61084244e3f522438c8577a0:XZH2O,610836368631b6143cd4cd0c:XLHO2,610d21b256c81947c9e72d78:XKHO2,610d4472e3f5226d9687a54c:XGHO2")
+
+// collect
+// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 labs=61072e7d8631b61addd464c2:XZHO2,6107707f22b7dd084bded966:XZH2O,6107c31e36a5b7de9159d0de:XLHO2")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
+
+  public get boosts(): MineralBoostConstant[] {
+    return this.labStates.map(labState => labState.boost)
+  }
 
   private constructor(
     public readonly launchTime: number,
@@ -74,8 +85,8 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
-    if (objects == null) {
+    const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (resources == null) {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
@@ -92,19 +103,31 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       }
     })
 
-    const terminal = objects.activeStructures.terminal
+    const terminal = resources.activeStructures.terminal
     if (terminal == null) {
       PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(this.parentRoomName)}`)
       return
     }
 
-    const hasResource = labs.some(labInfo => (terminal.store.getUsedCapacity(labInfo.boost) > 0))
+    const needResourceTransfer = ((): boolean => {
+      for (const labInfo of labs) {
+        if (terminal.store.getUsedCapacity(labInfo.boost) <= 0) {
+          continue
+        }
+        if (labInfo.lab.mineralType != null && labInfo.lab.store.getFreeCapacity(labInfo.lab.mineralType) <= 0) {
+          continue
+        }
+        return true
+      }
+      return false
+    })()
+    const shouldCollectResources = resources.roomInfo.config?.collectResources ?? false
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (hasResource === true && creepCount < 1) {
+    if (creepCount < 1 && (needResourceTransfer === true || shouldCollectResources === true)) {
       this.requestCreep()
     }
 
-    this.runCreep(terminal, labs)
+    this.runCreep(terminal, labs, shouldCollectResources)
   }
 
   private requestCreep(): void {
@@ -120,19 +143,23 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): void {
+  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.creepTask(creep, terminal, labs),
+      creep => this.creepTask(creep, terminal, labs, shouldCollectResources),
       () => true,
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
+      creep.say("dying")
       return null
+    }
+    if (shouldCollectResources === true) {
+      return this.collectResourceTask(creep, terminal, labs)
     }
 
     if (creep.store.getUsedCapacity() > 0) {
@@ -192,6 +219,31 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
         return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
       }
     }
+    creep.say("boosted")
+    return null
+  }
+
+  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
+    creep.say("collect")
+    if (creep.store.getUsedCapacity() > 0) {
+      const resourceType = Object.keys(creep.store)[0]
+      if (resourceType != null && isResourceConstant(resourceType)) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+      }
+      PrimitiveLogger.programError(`${this.identifier} ${resourceType} is not resource constant ${roomLink(this.parentRoomName)}`)
+      return null
+    }
+
+    for (const labInfo of labs) {
+      if (labInfo.lab.mineralType == null) {
+        continue
+      }
+      if (labInfo.lab.store.getUsedCapacity(labInfo.lab.mineralType) <= 0) {
+        continue
+      }
+      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
+    }
+    creep.say("no mineral")
     return null
   }
 }

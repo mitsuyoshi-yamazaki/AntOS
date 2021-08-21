@@ -21,7 +21,9 @@ import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_a
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 
-const numberOfCreeps = 10
+const minimumNumberOfCreeps = 6
+const defaultNumberOfCreeps = 10
+const increasedNumberOfCreeps = 15
 
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
@@ -100,6 +102,22 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const numberOfCreeps = ((): number => {
+      if (this.targetRoomName === "W11S14" || this.targetRoomName === "W17S11") {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom == null) {
+          return increasedNumberOfCreeps
+        }
+        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length <= 0) {
+          return increasedNumberOfCreeps
+        }
+      }
+      if (this.targetRoomName === "W15S8") {
+        return minimumNumberOfCreeps
+      }
+      return defaultNumberOfCreeps
+    })()
+
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
       taskIdentifier: this.taskIdentifier,
@@ -120,14 +138,12 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     if (targetRoomObjects == null) {
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
         const sources = creep.room.find(FIND_SOURCES)
-        if (sources.length > 0) {
-          const source = sources[Game.time % sources.length]
-          if (source != null) {
-            return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
-          }
-          creep.say("no source")
-          return null
+        const source = sources[Game.time % sources.length]
+        if (source != null) {
+          return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
         }
+        creep.say("no source")
+        return null
       } else {
         const constructionSite = creep.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES)
         if (constructionSite != null) {
@@ -136,20 +152,9 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
         return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
       }
-      return null
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      if (creep.ticksToLive != null && creep.ticksToLive < 400) {
-        const spawn = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
-        if (spawn != null && spawn.room.energyAvailable > 150) {
-          const cost = bodyCost(creep.body.map(b => b.type))
-          if (cost > spawn.room.energyCapacityAvailable) {
-            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
-          }
-        }
-      }
-
       const droppedEnergy = this.getDroppedEnergy(creep.pos, targetRoomObjects)
       if (droppedEnergy != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
@@ -157,14 +162,14 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
       const source = targetRoomObjects.getSource(creep.pos)
       if (source != null) {
-        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
       }
       creep.say("no source")
       return null
     }
 
     if (targetRoomObjects.controller.level < 2) {
-      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller))
+      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), {reusePath: 3, ignoreSwamp: false})
     }
 
     const structureToCharge = targetRoomObjects.getStructureToCharge(creep.pos)
@@ -177,13 +182,23 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
     }
 
+    if (creep.ticksToLive != null && creep.ticksToLive < 400) {
+      const spawn = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } }) as StructureSpawn | null
+      if (spawn != null && spawn.room.energyAvailable > 150) {
+        const cost = bodyCost(creep.body.map(b => b.type))
+        if (cost > spawn.room.energyCapacityAvailable) {
+          return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+        }
+      }
+    }
+
     // const constructionSite = targetRoomObjects.getConstructionSite()
     const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
-    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller))
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), { reusePath: 3, ignoreSwamp: false })
   }
 
   private getDroppedEnergy(position: RoomPosition, targetRoomObjects: OwnedRoomObjects): Resource | null {

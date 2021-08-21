@@ -1,8 +1,6 @@
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ProcessLog } from "os/infrastructure/runtime_memory"
 import { OperatingSystem } from "os/os"
-import { ProcessInfo } from "os/os_process_info"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"

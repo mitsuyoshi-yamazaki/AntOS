@@ -1,7 +1,6 @@
-import { SourceKeeper } from "game/source_keeper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName, isAnyCreep } from "prototype/creep"
-import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
@@ -38,6 +37,15 @@ function rotationFor(fromDirection: Direction, toDirection: Direction): "left" |
   }
   return rotateDirection(fromDirection, toDirection)
 }
+const rotationDirectionMap: { [direction in Direction]: Direction } = {
+  1: LEFT,
+  7: BOTTOM,
+  5: RIGHT,
+  3: TOP,
+}
+function leftRotationDirectionOf(direction: Direction): Direction {
+  return rotationDirectionMap[direction]
+}
 
 type MoveToRoomStatus = "in progress" | "close to room exit" | "close to destination"
 export type QuadAttackTargetType = AnyCreep | AnyStructure
@@ -51,6 +59,9 @@ type MoveToRoomQuadTask = {
   roomName: RoomName
   waypoints: RoomName[]
   quadFormed: boolean
+  wait: boolean
+  backward: boolean
+  healBeforeEnter: boolean
 }
 type MoveToQuadTask = {
   taskType: "move to"
@@ -75,13 +86,12 @@ type MoveQuadTask = StayQuadTask | MoveToRoomQuadTask | MoveToQuadTask | FleeQua
 export interface QuadState extends State {
   t: "Quad"
 
-  lastLeaderPosition: RoomPosition
   direction: Direction
-  exitingDirection: Direction | null
-  previousTargetId: Id<QuadAttackTargetType> | null
+  nextDirection: Direction | null
   leaderRotationPositionState: RoomPositionState | null
   leaderName: CreepName
   followerNames: CreepName[]
+  automaticRotationEnabled: boolean
 }
 
 interface QuadInterface {
@@ -95,6 +105,7 @@ interface QuadInterface {
 
   // ---- Position ---- //
   inRoom(roomName: RoomName): boolean
+  allCreepsInSameRoom(): boolean
   getMinRangeTo(position: RoomPosition): number
   getMaxRangeTo(position: RoomPosition): number
   isQuadForm(): boolean
@@ -107,7 +118,7 @@ interface QuadInterface {
   say(message: string): void
 
   // ---- Move ---- //
-  moveToRoom(roomName: RoomName, waypoints: RoomName[], quadFormed?: boolean): void
+  moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean }): void
   moveTo(position: RoomPosition, range: number): void
   fleeFrom(position: RoomPosition, range: number): void
   keepQuadForm(): void
@@ -175,27 +186,24 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   private constructor(
-    private lastLeaderPosition: RoomPosition,
     private direction: Direction,
-    private exitingDirection: Direction | null,
-    private previousTargetId: Id<QuadAttackTargetType> | null,
+    private nextDirection: Direction | null,
     private leaderRotationPosition: RoomPosition | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
+    public automaticRotationEnabled: boolean,
   ) {
-    this.lastLeaderPosition = this.pos
   }
 
   public encode(): QuadState {
     return {
       t: "Quad",
-      lastLeaderPosition: this.lastLeaderPosition,
       direction: this.direction,
-      exitingDirection: this.exitingDirection,
-      previousTargetId: this.previousTargetId,
+      nextDirection: this.nextDirection,
       leaderRotationPositionState: this.leaderRotationPosition?.encode() ?? null,
       leaderName: this.leaderCreep.name,
       followerNames: this.followerCreeps.map(creep => creep.name),
+      automaticRotationEnabled: this.automaticRotationEnabled,
     }
   }
 
@@ -211,22 +219,27 @@ export class Quad implements Stateful, QuadInterface {
     if (leader == null) {
       return null
     }
-    const leaderRotationPosition = ((): RoomPosition | null => {
-      if (state.leaderRotationPositionState == null) {
+    const decodePosition = (roomPositionState: RoomPositionState | null): RoomPosition | null => {
+      if (roomPositionState == null) {
         return null
       }
-      return decodeRoomPosition(state.leaderRotationPositionState)
-    })()
-    return new Quad(state.lastLeaderPosition, state.direction, state.exitingDirection, state.previousTargetId, leaderRotationPosition, leader, followerCreeps)
+      return decodeRoomPosition(roomPositionState)
+    }
+    const leaderRotationPosition = decodePosition(state.leaderRotationPositionState)
+    return new Quad(state.direction, state.nextDirection, leaderRotationPosition, leader, followerCreeps, state.automaticRotationEnabled ?? true)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(leaderCreep.pos, TOP, null, null, null, leaderCreep, followerCreeps)
+    return new Quad(TOP, null, null, leaderCreep, followerCreeps, true)
   }
 
   // ---- Position ---- //
   public inRoom(roomName: RoomName): boolean {
     return this.creeps.every(creep => (creep.room.name === roomName))
+  }
+
+  public allCreepsInSameRoom(): boolean {
+    return this.inRoom(this.leaderCreep.room.name)
   }
 
   public getMinRangeTo(position: RoomPosition): number {
@@ -248,10 +261,22 @@ export class Quad implements Stateful, QuadInterface {
         return true
       }
       const position = this.pos.positionTo(directionFromTopRight)
-      if (position == null || creep.pos.isEqualTo(position) !== true) {
-        return false
+      if (position != null) {
+        if (creep.pos.isEqualTo(position) === true) {
+          return true
+        } else {
+          const nextRoomEdgePosition = position.nextRoomEdgePosition()
+          if (nextRoomEdgePosition != null && creep.pos.isEqualTo(nextRoomEdgePosition) === true) {
+            return true
+          }
+        }
+      } else {
+        const nextRoomEdgePosition = this.pos.nextRoomPositionTo(directionFromTopRight)
+        if (nextRoomEdgePosition != null && creep.pos.isEqualTo(nextRoomEdgePosition) === true) {
+          return true
+        }
       }
-      return true
+      return false
     }
 
     if (checkPosition(1, this.absoluteQuadFollowerDirection(BOTTOM)) !== true) {
@@ -286,17 +311,30 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Action ---- //
-  public say(message: string): void {
-    this.creeps[0]?.say(message)
+  public say(message: string, toPublic?: boolean): void {
+    this.creeps[0]?.say(message, toPublic)
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed?: boolean): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, backward?: boolean, healBeforeEnter?: boolean}): void {
+    switch (this.moveTask.taskType) {
+    case "rotate":
+      if (this.isQuadForm() === true) {
+        return
+      }
+      break
+    default:
+      break
+    }
+
     this.moveTask = {
       taskType: "move to room",
       roomName: destinationRoomName,
       waypoints: waypoints,
-      quadFormed: quadFormed ?? false,
+      quadFormed: options?.quadFormed ?? false,
+      wait: options?.wait ?? false,
+      backward: options?.backward ?? false,
+      healBeforeEnter: options?.healBeforeEnter ?? false,
     }
   }
 
@@ -322,6 +360,16 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public fleeFrom(position: RoomPosition, range: number): void {
+    switch (this.moveTask.taskType) {
+    case "rotate":
+      if (this.isQuadForm() === true) {
+        return
+      }
+      break
+    default:
+      break
+    }
+
     this.moveTask = {
       taskType: "flee",
       position,
@@ -330,107 +378,18 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public keepQuadForm(): void {
-    this.moveTask = {
-      taskType: "form"
-    }
-  }
-
-  private rotateTo(target: QuadAttackTargetType): void {
-    if (target.room == null || this.room.name !== target.room.name) {
-      return
-    }
     switch (this.moveTask.taskType) {
-    case "flee":
-      return
+    case "rotate":
+      if (this.isQuadForm() === true) {
+        return
+      }
+      break
     default:
       break
     }
-    const direction = this.directionTo(target)
-    if (direction == null || direction === this.direction) {
-      if (direction == null) {
-        this.leaderCreep.say("no dir")
-      }
-      PrimitiveLogger.log(`next direction ${direction} (current: ${this.direction})`)
-      return
-    }
 
     this.moveTask = {
-      taskType: "rotate",
-      direction,
-    }
-  }
-
-  private directionTo(target: QuadAttackTargetType): Direction | null {
-    const neighbourPositions = target.pos.positionsInRange(1, {
-      excludeItself: true,
-      excludeStructures: true,
-      excludeTerrainWalls: true,
-      excludeWalkableStructures: false,
-    })
-    const availableDirections: Direction[] = []
-    const availablePositionsForDirection: [Direction, DirectionConstant, DirectionConstant][] = [
-      [BOTTOM, TOP_LEFT, TOP],
-      [BOTTOM, TOP, TOP_RIGHT],
-      [LEFT, TOP_RIGHT, RIGHT],
-      [LEFT, RIGHT, BOTTOM_RIGHT],
-      [TOP, BOTTOM_RIGHT, BOTTOM],
-      [TOP, BOTTOM, BOTTOM_LEFT],
-      [RIGHT, BOTTOM_LEFT, LEFT],
-      [RIGHT, LEFT, TOP_LEFT],
-    ]
-
-    const creepNames = this.creeps.map(creep => creep.name)
-    availablePositionsForDirection.forEach(([targetDirection, direction1, direction2]) => {
-      const position1 = target.pos.positionTo(direction1)
-      const position2 = target.pos.positionTo(direction2)
-      if (position1 == null || position2 == null) {
-        return
-      }
-      if (neighbourPositions.every(position => position.isEqualTo(position1) !== true)) {
-        return
-      }
-      if (neighbourPositions.every(position => position.isEqualTo(position2) !== true)) {
-        return
-      }
-      const pathFinderOptions: FindPathOpts = {
-        costCallback: quadCostCallback(creepNames, targetDirection),
-        range: 1,
-        ignoreCreeps: true,
-        maxRooms: 1,
-        maxOps: 500,
-      }
-
-      const nextSteps = this.room.findPath(this.pos, position1, pathFinderOptions)
-      if (nextSteps.length <= 0) {
-        return
-      }
-      availableDirections.push(targetDirection)
-    })
-    if (availableDirections.includes(this.direction) === true) {
-      return this.direction
-    }
-    const rawDirection = this.rawDirectionTo(target.pos)
-    if (availableDirections.includes(rawDirection) === true) {
-      return rawDirection
-    }
-    return availableDirections[0] ?? null
-  }
-
-  private rawDirectionTo(position: RoomPosition): Direction {
-    const dx = position.x - this.leaderCreep.pos.x
-    const dy = position.y - this.leaderCreep.pos.y
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) {
-        return RIGHT
-      } else {
-        return LEFT
-      }
-    } else {
-      if (dy > 0) {
-        return BOTTOM
-      } else {
-        return TOP
-      }
+      taskType: "form"
     }
   }
 
@@ -439,13 +398,31 @@ export class Quad implements Stateful, QuadInterface {
     if (this.leaderRotationPosition != null && this.leaderCreep.pos.isEqualTo(this.leaderRotationPosition) === true) {
       this.leaderRotationPosition = null
     }
+
+    if (this.nextDirection != null) {
+      if (this.nextDirection === this.direction) {
+        this.nextDirection = null
+      } else {
+        this.moveTask = {
+          taskType: "rotate",
+          direction: this.nextDirection,
+        }
+      }
+    }
   }
 
   public run(): void {
     // this.followerCreeps[0]?.say(this.moveTask.taskType)
     switch (this.moveTask.taskType) {
     case "move to room":
-      this.runMoveToRoom(this.moveTask.roomName, this.moveTask.waypoints, this.moveTask.quadFormed)
+      this.runMoveToRoom(
+        this.moveTask.roomName,
+        this.moveTask.waypoints,
+        this.moveTask.quadFormed,
+        this.moveTask.wait,
+        this.moveTask.backward,
+        this.moveTask.healBeforeEnter,
+      )
       break
     case "move to":
       this.runMoveTo(this.moveTask.position, this.moveTask.range)
@@ -467,7 +444,7 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean): void {
+  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, backward: boolean, healBeforeEnter: boolean): void {
     if (quadFormed !== true) {
       const status = this.getMoveToRoomStatus(this.pos, this.room, destinationRoomName, waypoints)
       switch (status) {
@@ -477,9 +454,11 @@ export class Quad implements Stateful, QuadInterface {
         return
 
       case "close to room exit": {
-        const quadRange = this.getMaxRangeTo(this.pos)
-        if (quadRange != null && quadRange <= 5) {
-          moveToRoom(this.leaderCreep, destinationRoomName, waypoints, 1)
+        if (wait !== true) {
+          const quadRange = this.getMaxRangeTo(this.pos)  // FixMe: 部屋の境界付近で近づけない場合スタックする
+          if (quadRange <= 5) {
+            moveToRoom(this.leaderCreep, destinationRoomName, waypoints, 1)
+          }
         }
         this.follow()
         return
@@ -500,9 +479,23 @@ export class Quad implements Stateful, QuadInterface {
     if (this.room.name === destinationRoomName) {
       return
     }
-    const nextPosition = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
-    this.leaderCreep.moveTo(nextPosition, this.moveToOptions(2))
-    this.moveFollowersToNextPosition(nextPosition, 2)
+    const nextMove = moveToRoomQuad(this.leaderCreep, destinationRoomName, waypoints, this.creeps.map(creep => creep.name), this.direction)
+    if (nextMove == null) {
+      return
+    }
+    const {moveDirection, exitDirection} = nextMove
+    if (backward === true) {
+      const quadDirection = oppositeDirectionMap[exitDirection]
+      if (this.direction !== quadDirection) {
+        this.nextDirection = quadDirection
+      }
+    }
+
+    if (healBeforeEnter === true && this.damage > 0) {
+      return
+    }
+    this.leaderCreep.move(moveDirection)
+    this.moveFollowersToNextDirection(moveDirection)
   }
 
   /**
@@ -519,19 +512,29 @@ export class Quad implements Stateful, QuadInterface {
 
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
+      if (this.automaticRotationEnabled === true && this.leaderCreep.pos.isNearTo(position) !== true) {
+        this.runRotateTask(leftRotationDirectionOf(this.direction))
+      }
       return
     }
+    const pathFindingRange = ((): number => {
+      if (this.leaderCreep.pos.getRangeTo(position) <= 2) {
+        return 1
+      }
+      return Math.max(range, 2)
+    })()
 
+    const quadCreepNames = this.creeps.map(creep => creep.name)
     const pathFinderOptions: FindPathOpts = {
-      costCallback: quadCostCallback(this.creeps.map(creep => creep.name), this.direction),
-      range: 0,
+      costCallback: quadCostCallback(quadCreepNames, this.direction),
+      range: pathFindingRange,
       ignoreCreeps: true,
       maxRooms: 1,
     }
 
     const nextSteps = this.room.findPath(this.pos, position, pathFinderOptions) // Room間移動は対応していない
     if (nextSteps[0] == null) {
-      this.say("no path")
+      this.say(`np${position.x},${position.y}`)
       return
     }
     if (showPath === true) {
@@ -540,9 +543,30 @@ export class Quad implements Stateful, QuadInterface {
         this.room.visual.text(`${index}`, p, { color: "#ffffff" })
       })
     }
-    const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, this.room.name)
-    this.leaderCreep.moveTo(nextPosition, this.moveToOptions(1))
-    this.moveFollowersToNextPosition(nextPosition, 1)
+    try {
+      const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, this.room.name)
+      const nextPositions: (RoomPosition | null)[] = [
+        nextPosition,
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM)),
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(LEFT)),
+        nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM_LEFT)),
+      ]
+      const hasObstacle = nextPositions.some(quadNextPosition => {
+        if (quadNextPosition == null) {
+          return false
+        }
+        return hasObstacleObjectAt(quadNextPosition, quadCreepNames, true)
+      })
+      if (hasObstacle === true) {
+        this.say("blocked")
+        return
+      }
+    } catch (e) {
+      PrimitiveLogger.programError(`Quad.runMoveTo() failed ${e} ${roomLink(this.room.name)}`)
+    }
+    const nextDirection = nextSteps[0].direction
+    this.leaderCreep.move(nextDirection)
+    this.moveFollowersToNextDirection(nextDirection)
   }
 
   private runFleeFrom(position: RoomPosition, range: number): void {
@@ -588,9 +612,9 @@ export class Quad implements Stateful, QuadInterface {
         topRight.room.visual.text(`${index}`, p, { color: "#ffffff" })
       })
     }
-    const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, topRight.room.name)
-    topRight.moveTo(nextPosition, this.moveToOptions(2))
-    this.moveFollowersToNextPosition(nextPosition, 1)
+    const nextDirection = nextSteps[0].direction
+    this.leaderCreep.move(nextDirection)
+    this.moveFollowersToNextDirection(nextDirection)
   }
 
   private runKeepQuadForm(): void {
@@ -737,19 +761,17 @@ export class Quad implements Stateful, QuadInterface {
 
   private align(): void {
     const leaderRotationPosition = ((): RoomPosition | null => {
-      const position = this.leaderRotationPosition ?? null
-      if (position != null && this.leaderCreep.pos.isEqualTo(position) === true) {
+      if (this.leaderRotationPosition != null && this.leaderCreep.pos.isEqualTo(this.leaderRotationPosition) === true) {
         this.leaderRotationPosition = null
         return null
       }
-      this.leaderRotationPosition = position
-      return position
+      return this.leaderRotationPosition
     })()
 
     if (leaderRotationPosition != null) {
-      this.leaderCreep.say("rotate")
-      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1, true))
-      this.moveFollowersToNextPosition(leaderRotationPosition, 2)
+      this.say("rotate")
+      this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))  // FixMe: target room直前でrotateしようとしてclose to destinationから抜けてしまうのではないか
+      this.moveFollowersToNexPosition(leaderRotationPosition)
       return
     }
 
@@ -776,19 +798,17 @@ export class Quad implements Stateful, QuadInterface {
       }
     }
 
-    const leaderPosition = ((): RoomPosition => {
+    const nextDirection = ((): DirectionConstant | null => {
       if (this.leaderCreep.pos.isEqualTo(leaderAvoidEdgePosition) !== true) {
         if (hasObstacle(leaderAvoidEdgePosition) === true) {
-          const leaderAvoidObstaclePosition = leaderAvoidEdgePosition.positionTo(this.absoluteQuadDirection(RIGHT))
-          if (leaderAvoidObstaclePosition != null) {
-            this.leaderCreep.say("avoid-o1")
-            this.leaderCreep.moveTo(leaderAvoidObstaclePosition, this.moveToOptions(1, true))
-            return leaderAvoidObstaclePosition
-          }
+          this.say("avoid-o1")
+          return this.absoluteQuadDirection(RIGHT)
         }
-        this.leaderCreep.say("avoid-e")
-        this.leaderCreep.moveTo(leaderAvoidEdgePosition, this.moveToOptions(1, true))
-        return leaderAvoidEdgePosition
+        this.say("avoid-e")
+        if (leaderAvoidEdgePosition.isEqualTo(this.leaderCreep.pos) === true) {
+          return null
+        }
+        return this.leaderCreep.pos.getDirectionTo(leaderAvoidEdgePosition)
       }
 
       const followerDirections: QuadFollowerDirection[] = [
@@ -803,21 +823,21 @@ export class Quad implements Stateful, QuadInterface {
           continue
         }
         if (hasObstacle(followerPosition) === true) {
-          const direction = oppositeDirections(absoluteDirection)[Game.time % 3] ?? oppositeDirection(absoluteDirection)
-          const leaderAvoidObstaclePosition = leaderAvoidEdgePosition.positionTo(direction)
-          if (leaderAvoidObstaclePosition != null) {
-            this.leaderCreep.say("avoid-o2")
-            this.leaderCreep.move(direction)
-            return leaderAvoidObstaclePosition
-          }
+          this.say("avoid-o2")
+          return oppositeDirections(absoluteDirection)[Game.time % 3] ?? oppositeDirection(absoluteDirection)
         }
       }
 
       this.leaderCreep.say("align")
-      return this.leaderCreep.pos
+      return null
     })()
 
-    this.moveFollowersToNextPosition(leaderPosition, 2, false)  // 動かないことがあった
+    if (nextDirection != null) {
+      this.leaderCreep.move(nextDirection)
+      this.moveFollowersToNextDirection(nextDirection)
+      return
+    }
+    this.moveFollowersToNexPosition(this.leaderCreep.pos)
   }
 
   private canMove(): boolean {
@@ -834,29 +854,29 @@ export class Quad implements Stateful, QuadInterface {
     return this.isQuadForm()
   }
 
-  private moveFollowersToNextPosition(nextPosition: RoomPosition, maxRooms: number, ignoreCreeps?: boolean): void {
-    if (this.exitingDirection == null) {
-      const exitPosition = this.quadExitPosition()
-      if (nextPosition.x <= exitPosition.minX) {
-        this.exitingDirection = LEFT
-      } else if (nextPosition.x >= exitPosition.maxX) {
-        this.exitingDirection = RIGHT
-      } else if (nextPosition.y <= exitPosition.minY) {
-        this.exitingDirection = TOP
-      } else if (nextPosition.y >= exitPosition.maxY) {
-        this.exitingDirection = BOTTOM
-      } else {
-        this.exitingDirection = null
+  private moveFollowersToNextDirection(direction: DirectionConstant): void {
+    const move = (creepIndex: number): void => {
+      const creep = this.creeps[creepIndex]
+      if (creep == null || creep.spawning === true) {
+        return
       }
+      creep.move(direction)
     }
 
+    move(1)
+    move(2)
+    move(3)
+  }
+
+  private moveFollowersToNexPosition(nextPosition: RoomPosition): void {
     const move = (creepIndex: number, directionFromTopRight: DirectionConstant): void => {
       const creep = this.creeps[creepIndex]
       if (creep == null || creep.spawning === true) {
         return
       }
       const position = nextPosition.positionTo(directionFromTopRight) ?? nextPosition.nextRoomPositionTo(directionFromTopRight)
-      creep.moveTo(position, this.moveToOptions(maxRooms, ignoreCreeps))
+      const ignoreCreeps = creep.pos.getRangeTo(position) > 1 ? false : true
+      creep.moveTo(position, this.moveToOptions(2, ignoreCreeps))
     }
 
     move(1, this.absoluteQuadFollowerDirection(BOTTOM))
@@ -918,9 +938,9 @@ export class Quad implements Stateful, QuadInterface {
   private moveToOptions(maxRooms: number, ignoreCreeps?: boolean): MoveToOpts {
     return {
       maxRooms,
-      maxOps: 200,
+      maxOps: 500,
       reusePath: 0,
-      ignoreCreeps: ignoreCreeps ?? false,
+      ignoreCreeps: ignoreCreeps ?? true,
     }
   }
 
@@ -987,21 +1007,29 @@ export class Quad implements Stateful, QuadInterface {
         this.rangedAttackCreep(creep, mainTarget, [...optionalTargets])
       }
       if (creep.getActiveBodyparts(ATTACK) > 0) {
-        const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
-        if (nearbyTarget != null) {
-          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
-            this.previousTargetId = nearbyTarget.id
-            this.rotateTo(nearbyTarget)
+        const nearbyTarget = ((): QuadAttackTargetType | null => {
+          if (mainTarget != null && mainTarget.pos.isNearTo(creep.pos) === true) {
+            return mainTarget
           }
+          return creep.pos.findInRange(optionalTargets, 1)[0] ?? null
+        })()
+        if (nearbyTarget != null) {
           creep.attack(nearbyTarget)
         }
       } else if (creep.getActiveBodyparts(WORK) > 0) {
-        const nearbyTarget = mainTarget ?? creep.pos.findInRange(optionalTargets, 1)[0]
-        if (nearbyTarget != null && !isAnyCreep(nearbyTarget)) {
-          if (this.previousTargetId == null || nearbyTarget.id !== this.previousTargetId) {
-            this.previousTargetId = nearbyTarget.id
-            this.rotateTo(nearbyTarget)
+        const nearbyTarget = ((): AnyStructure | null => {
+          if (mainTarget != null && !isAnyCreep(mainTarget) && mainTarget.pos.isNearTo(creep.pos) === true) {
+            return mainTarget
           }
+          const nearbyTargets = creep.pos.findInRange(optionalTargets, 1)
+          for (const target of nearbyTargets) {
+            if (!isAnyCreep(target)) {
+              return target
+            }
+          }
+          return null
+        })()
+        if (nearbyTarget != null) {
           creep.dismantle(nearbyTarget)
         }
       }
@@ -1018,9 +1046,17 @@ export class Quad implements Stateful, QuadInterface {
         if (target != null) {
           creep.attack(target)
         }
+      } else if (creep.getActiveBodyparts(WORK) > 0) {
+        const nearbyTargets = creep.pos.findInRange(targets, 1)
+        for (const target of nearbyTargets) {
+          if (isAnyCreep(target)) {
+            continue
+          }
+          creep.dismantle(target)
+          break
+        }
       }
     })
-    this.previousTargetId = null
   }
 
   private rangedAttackCreep(creep: Creep, mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]): void {
@@ -1090,7 +1126,7 @@ function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): 
     return hasObstacleObjectAt(position, excludedCreepNames) === true ? "obstacle" : "plain"
   }
   case "swamp": {
-    return hasObstacleObjectAt(position, excludedCreepNames) ? "obstacle" : "swamp"
+    return hasObstacleObjectAt(position, excludedCreepNames) === true ? "obstacle" : "swamp"
   }
   case "wall":
     return "obstacle"
@@ -1100,6 +1136,10 @@ function getFieldType(position: RoomPosition, excludedCreepNames: CreepName[]): 
   }
 }
 
+const walkableStructures: StructureConstant[] = [
+  STRUCTURE_ROAD,
+  STRUCTURE_CONTAINER,
+]
 const unbreakableStructureTypes: StructureConstant[] = [
   STRUCTURE_KEEPER_LAIR,
   STRUCTURE_CONTROLLER,
@@ -1108,7 +1148,8 @@ const unbreakableStructureTypes: StructureConstant[] = [
   STRUCTURE_INVADER_CORE,
 ]
 
-function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[]): boolean {
+function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[], markDestructiveStructureAsObstacle?: boolean): boolean {
+  const structureAsObstacle = markDestructiveStructureAsObstacle ?? false
   return position.look().some(obj => {
     switch (obj.type) {
     case "creep":
@@ -1118,7 +1159,10 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (excludedCreepNames.includes(obj.creep.name)) {
         return false
       }
-      return true
+      if (obj.creep.my === true) {
+        return true
+      }
+      return false
     case "powerCreep":
       return true
 
@@ -1127,13 +1171,19 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (structure == null) {
         return false
       }
-      if (structure.hits <= 5000) {
-        return false
-      }
       if (unbreakableStructureTypes.includes(structure.structureType) === true) {
         return true
       }
-      return false
+      if (walkableStructures.includes(structure.structureType) === true) {
+        return false
+      }
+      if (structureAsObstacle === true) {
+        return true
+      }
+      if (structure.hits <= 5000) {
+        return false
+      }
+      return true
     }
 
     default:
@@ -1152,23 +1202,6 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
     if (positionsToAvoid != null) {
       positionsToAvoid.forEach(position => {
-        costMatrix.set(position.x, position.y, obstacleCost)
-      })
-    }
-
-    if (room.roomType === "source_keeper") {
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-      const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-      const sourceKeeperPositions = sourceKeepers
-        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
-
-      sourceKeeperPositions.forEach(position => {
         costMatrix.set(position.x, position.y, obstacleCost)
       })
     }
@@ -1214,9 +1247,13 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
         const position = new RoomPosition(x, y, roomName)
         if (position.isRoomEdge === true) {
-          costMatrix.set(x, y, exitPositionCost)
+          if (costMatrix.get(x, y) < exitPositionCost) {
+            costMatrix.set(x, y, exitPositionCost)
+          }
           getObstaclePositions(position).forEach(p => {
-            costMatrix.set(p.x, p.y, exitPositionCost)
+            if (costMatrix.get(p.x, p.y) < exitPositionCost) {
+              costMatrix.set(p.x, p.y, exitPositionCost)
+            }
           })
           continue
         }
@@ -1227,8 +1264,10 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
           break
 
         case "swamp":
-          getObstaclePositions(position).forEach(p => {
+          if (costMatrix.get(x, y) < swampCost) {
             costMatrix.set(x, y, swampCost)
+          }
+          getObstaclePositions(position).forEach(p => {
             if (costMatrix.get(p.x, p.y) < swampCost) {
               costMatrix.set(p.x, p.y, swampCost)
             }
@@ -1245,26 +1284,28 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       }
     }
 
+    // for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
+    //   for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
+    //     const costDescription = ((): string => {
+    //       const cost = costMatrix.get(x, y)
+    //       if (cost === obstacleCost) {
+    //         return "■"
+    //       }
+    //       return `${cost}`
+    //     })()
+    //     room.visual.text(costDescription, x, y)
+    //   }
+    // }
+
     return costMatrix
   }
 }
 
-function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[], excludedCreepNames: CreepName[], quadDirection: Direction): RoomPosition {
+function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomName[], excludedCreepNames: CreepName[], quadDirection: Direction): {moveDirection: DirectionConstant, exitDirection: Direction} | null {
   try {
     const creepRoom = creep.room
-
-    if (creep.pos.x === 0) {
-      return creep.pos.positionTo(RIGHT) ?? creep.pos
-    } else if (creep.pos.x === 49) {
-      return creep.pos.positionTo(LEFT) ?? creep.pos
-    } else if (creep.pos.y === 0) {
-      return creep.pos.positionTo(BOTTOM) ?? creep.pos
-    } else if (creep.pos.y === 49) {
-      return creep.pos.positionTo(TOP) ?? creep.pos
-    }
-
     if (creepRoom.name === targetRoomName) {
-      return creep.pos
+      return null
     }
 
     const destinationRoomName = ((): RoomName => {
@@ -1288,11 +1329,11 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     const exit = creepRoom.findExitTo(destinationRoomName)
     if (exit === ERR_NO_PATH) {
       creep.say("no exit")
-      return creep.pos
+      return null
     } else if (exit === ERR_INVALID_ARGS) {
       creep.say("invalid")
       PrimitiveLogger.fatal(`Room.findExitTo() returns ERR_INVALID_ARGS (${exit}), room ${roomLink(creepRoom.name)} to ${roomLink(destinationRoomName)}`)
-      return creep.pos
+      return null
     }
 
     const exitFlag = creepRoom.find(FIND_FLAGS).find(flag => {
@@ -1326,13 +1367,13 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit, pathFinderOptions)
     if (exitPosition == null) {
       creep.say(`no path1-${exit}`)
-      return creep.pos
+      return null
     }
 
     const nextSteps = creep.room.findPath(creep.pos, exitPosition, pathFinderOptions) // Room間移動は対応していない
     if (nextSteps[0] == null) {
       creep.say("no path2")
-      return creep.pos
+      return null
     }
     if (showPath === true) {
       nextSteps.forEach((step, index) => {  // FixMe: デバッグコード
@@ -1340,10 +1381,13 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
         creep.room.visual.text(`${index}`, p, { color: "#ffffff" })
       })
     }
-    return new RoomPosition(nextSteps[0].x, nextSteps[0].y, creep.room.name)
+    return {
+      moveDirection: nextSteps[0].direction,
+      exitDirection: exit,
+    }
   } catch (e) {
     PrimitiveLogger.programError(`moveToRoomQuad() failed: ${e}`)
     creep.say("error")
-    return creep.pos
+    return null
   }
 }

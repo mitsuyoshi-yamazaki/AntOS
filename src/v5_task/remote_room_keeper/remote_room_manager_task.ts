@@ -77,7 +77,7 @@ export class RemoteRoomManagerTask extends Task {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
-      if (task.targetRoomName !== "W4S24") {
+      if (task.targetRoomName !== "W27S9") {
         return false
       }
       return true

@@ -31,7 +31,21 @@ export class RoomInvadedProblemFinder implements ProblemFinder {
     }
     const roomObjects = World.rooms.getOwnedRoomObjects(this.roomName)
     if (roomObjects != null && roomObjects.controller.safeMode == null) {
-      problemSolvers.push(ActivateSafemodeProblemSolver.create(this.identifier, this.roomName))
+      const shouldActivateSafemode = ((): boolean => {
+        for (const hostileCreep of roomObjects.hostiles.creeps) {
+          if (hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0 || hostileCreep.getActiveBodyparts(WORK) > 0) {
+            return true
+          }
+          const constructionSites = hostileCreep.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 4)
+          if (constructionSites.length > 0) {
+            return true
+          }
+        }
+        return false
+      })()
+      if (shouldActivateSafemode === true) {
+        problemSolvers.push(ActivateSafemodeProblemSolver.create(this.identifier, this.roomName))
+      }
     }
     // TODO: 低レベルではcreepを退避させる
 

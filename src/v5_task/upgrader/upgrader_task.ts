@@ -137,11 +137,18 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       }
       return Game.getObjectById(this.linkId)
     })()
-    if (container == null && link == null) {
+    const [sourcePosition1, sourcePosition2] = ((): [RoomPosition | null, RoomPosition | null] => {
+      if (container != null) {
+        return [container.pos, link?.pos ?? null]
+      }
+      return [link?.pos ?? null, null]
+    })()
+
+    if (sourcePosition1 == null) {
       return null
     }
 
-    const emptyPosition = this.emptyPosition()
+    const emptyPosition = this.emptyPosition(sourcePosition1, sourcePosition2)
     if (emptyPosition == null) {
       creep.say("no dest")
       return null
@@ -209,8 +216,25 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     return [body, numberOfCreeps]
   }
 
-  private emptyPosition(): RoomPosition | null {
-    const emptyPositions = this.upgraderPositions.filter(position => position.v5TargetedBy.length <= 0)
+  private emptyPosition(sourcePosition1: RoomPosition, sourcePosition2: RoomPosition | null): RoomPosition | null {
+    const emptyPositions = this.upgraderPositions.filter(position => {
+      if (position.v5TargetedBy.length > 0) {
+        return false
+      }
+      if (sourcePosition2 == null) {
+        if (position.isNearTo(sourcePosition1) !== true) {
+          return false
+        }
+        return true
+      }
+      if (position.isNearTo(sourcePosition1) !== true) {
+        return false
+      }
+      if (position.isNearTo(sourcePosition2) !== true) {
+        return false
+      }
+      return true
+    })
     if (emptyPositions[0] == null) {
       PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
       return null

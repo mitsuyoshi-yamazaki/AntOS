@@ -39,3 +39,17 @@ export function oppositeDirections(direction: DirectionConstant): DirectionConst
     return [RIGHT, BOTTOM_RIGHT, BOTTOM]
   }
 }
+
+const directionNameMap: {[direction in DirectionConstant]: string} = {
+  1: "top",
+  2: "top_right",
+  3: "right",
+  4: "bottom_right",
+  5: "bottom",
+  6: "bottom_left",
+  7: "left",
+  8: "top_left",
+}
+export function directionName(direction: DirectionConstant): string {
+  return directionNameMap[direction]
+}

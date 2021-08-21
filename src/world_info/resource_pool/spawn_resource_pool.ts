@@ -30,37 +30,45 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
     const requests = sortRequests(mergeRequests(rawRequests))
 
     // idleSpawns.forEach(spawn => {
-    const request = requests.shift()
-    if (request == null) {
-      return
-    }
-    const creepName = generateUniqueId(request.codename)
-    const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
-    const cost = bodyCost(body)
-    if (cost > spawn.room.energyCapacityAvailable) {
-      PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
-      return
-    }
-    const memory: V5CreepMemory = {
-      v: "v5",
-      p: request.parentRoomName ?? this.parentRoomName,
-      r: request.roles,
-      t: request.initialTask?.encode() ?? null,
-      i: request.taskIdentifier,
-    }
-    const result = spawn.spawnCreep(body, creepName, { memory: memory })
-    switch (result) {
-    case OK: {
-      const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
-      if (creep != null) {
-        creep.v5task = request.initialTask
+    const requestCount = requests.length
+    for (let i = 0; i < requestCount; i += 1) {
+      const request = requests.shift()
+      if (request == null) {
+        return
       }
-      break
-    }
-    case ERR_NOT_ENOUGH_ENERGY:
-      break
-    default:
-      PrimitiveLogger.programError(`${spawn.name} in ${roomLink(this.parentRoomName)} faild to spawn ${result}, task: ${request.taskIdentifier}, creep name: ${creepName}, body(length: ${body.length}): ${body}`)
+      if (request.roles == null) {
+        PrimitiveLogger.programError(`SpawnPool.spawnCreeps() request.role is null ${request.roles}, task id: ${request.taskIdentifier}, ${roomLink(spawn.room.name)}`)
+        continue
+      }
+      const creepName = generateUniqueId(request.codename)
+      const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
+      const cost = bodyCost(body)
+      if (cost > spawn.room.energyCapacityAvailable) {
+        PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
+        continue
+      }
+      const memory: V5CreepMemory = {
+        v: "v5",
+        p: request.parentRoomName ?? this.parentRoomName,
+        r: request.roles,
+        t: request.initialTask?.encode() ?? null,
+        i: request.taskIdentifier,
+      }
+      const result = spawn.spawnCreep(body, creepName, { memory: memory })
+      switch (result) {
+      case OK: {
+        const creep = Game.creeps[creepName]  // spawnCreep()が成功した瞬間に生成される
+        if (creep != null) {
+          creep.v5task = request.initialTask
+        }
+        return  // ここはreturn
+      }
+      case ERR_NOT_ENOUGH_ENERGY:
+        return  // ここはreturn
+      default:
+        PrimitiveLogger.programError(`${spawn.name} in ${roomLink(this.parentRoomName)} faild to spawn ${result}, task: ${request.taskIdentifier}, creep name: ${creepName}, body(length: ${body.length}): ${body}`)
+        break
+      }
     }
     // })
   }

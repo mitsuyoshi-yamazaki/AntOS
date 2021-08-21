@@ -6,6 +6,13 @@ import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { GameConstants } from "utility/constants"
+import { CreepBody } from "utility/creep_body"
+
+type TargetInfo = {
+  target: AnyCreep
+  maxTicksToKill: number | null
+  minimumTicksToEscape: number
+}
 
 export interface TowerInterceptionProblemSolverState extends ProblemSolverState {
   /** room name */
@@ -46,76 +53,173 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const target = ((): AnyCreep | null => {
-      const hostileCreeps: AnyCreep[] = [
-        ...objects.hostiles.creeps,
-        ...objects.hostiles.powerCreeps,
-      ]
-
-      if (this.targetId != null && ((Game.time % 29) !== 3)) {
-        const stored = Game.getObjectById(this.targetId)
-        if (stored != null && stored.room != null && stored.room.name === this.roomName) {
-          if (stored.hits < stored.hitsMax) {
-            return stored
-          }
-          const min = GameConstants.room.edgePosition.min
-          const max = GameConstants.room.edgePosition.max
-          const otherTargets = hostileCreeps.filter(creep => {
-            if (creep.id === this.targetId) {
-              return false
-            }
-            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
-              return false
-            }
-            return true
-          })
-          const target = objects.controller.pos.findClosestByRange(otherTargets)
-          if (target != null) {
-            return target
-          }
-          return stored
-        }
-        this.targetId = null
-      }
-      if (this.roomName === "W6S27") {
-        const min = GameConstants.room.edgePosition.min + 2
-        const max = GameConstants.room.edgePosition.max - 2
-        const hostileInsideRoom = hostileCreeps.filter(creep => {
-          if (creep.pos.y >= 25 && creep.pos.x <= 10) {
-            return false
-          }
-          if (creep.pos.x < (min + 2) || creep.pos.x > (max - 2) || creep.pos.y < min || creep.pos.y > max) {
-            return false
-          }
-          return true
-        })
-        return objects.controller.pos.findClosestByRange(hostileInsideRoom)
-      }
-
-      const min = GameConstants.room.edgePosition.min
-      const max = GameConstants.room.edgePosition.max
-      const hostileInsideRoom = ((): AnyCreep[] => {
-        if ((Game.time % 21) < 7) {
-          return hostileCreeps
-        }
-        return hostileCreeps.filter(creep => {
-          if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
-            return false
-          }
-          return true
-        })
-      })()
-      return objects.controller.pos.findClosestByRange(hostileInsideRoom)
-    })()
-
-    if (target == null) {
+    const targetInfo = this.attackTarget(objects)
+    if (targetInfo == null) {
       this.targetId = null
       return TaskStatus.Finished
     }
+
+    const target = targetInfo.target
     this.targetId = target.id
     World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(target, TowerPoolTaskPriority.Urgent))
+
+    const text = `${targetInfo.maxTicksToKill}|${targetInfo.minimumTicksToEscape}`
+    objects.controller.room.visual.text(text, target.pos, {color: "#FFFFFF"})
 
     // TODO: エネルギー足りなくなったらproblemを出す
     return TaskStatus.InProgress
   }
+
+  private attackTarget(objects: OwnedRoomObjects): TargetInfo | null {
+    const towerPositions = objects.activeStructures.towers
+      .filter(tower => tower.store.getUsedCapacity(RESOURCE_ENERGY) > 10)
+      .map(tower => tower.pos)
+
+    if (towerPositions.length <= 0) {
+      return null
+    }
+
+    const hostileCreeps: AnyCreep[] = [
+      ...objects.hostiles.creeps,
+      ...objects.hostiles.powerCreeps,
+    ]
+
+    // killできないとなったら諦めて別targetを選定
+    const targetInfo = hostileCreeps.map(target => {
+      if (target instanceof Creep) {
+        const healPower = CreepBody.power(target.body, "heal")
+        const canMove = target.getActiveBodyparts(MOVE) > 0
+        return calculateTargetInfo(target, healPower, canMove, towerPositions)
+      } else {
+        return calculateTargetInfo(target, 0, true, towerPositions)
+      }
+    })
+    const currentTarget = ((): AnyCreep | null => {
+      if (this.targetId == null) {
+        return null
+      }
+      return Game.getObjectById(this.targetId)
+    })()
+
+    const canKill = (ticksToKill: number, ticksToEscape: number): boolean => {
+      return (ticksToKill - ticksToEscape) < 3
+    }
+
+    if (currentTarget != null) {
+      const currentTargetId = currentTarget.id
+      const currentTargetInfo = targetInfo.find(info => info.target.id === currentTargetId)
+      if (currentTargetInfo != null && currentTargetInfo.maxTicksToKill != null) {
+        if (canKill(currentTargetInfo.maxTicksToKill, currentTargetInfo.minimumTicksToEscape) === true) {
+          return currentTargetInfo
+        }
+      }
+    }
+
+    // キルしやすい順
+    targetInfo.sort((lhs, rhs) => {
+      if (lhs.maxTicksToKill != null && rhs.maxTicksToKill == null) {
+        return -1
+      }
+      if (lhs.maxTicksToKill == null && rhs.maxTicksToKill != null) {
+        return 1
+      }
+      if (lhs.maxTicksToKill != null && rhs.maxTicksToKill != null) {
+        const canKillLhs = canKill(lhs.maxTicksToKill, lhs.minimumTicksToEscape)
+        const canKillRhs = canKill(rhs.maxTicksToKill, rhs.minimumTicksToEscape)
+        if (canKillLhs === true && canKillRhs !== true) {
+          return -1
+        }
+        if (canKillLhs !== true && canKillRhs === true) {
+          return 1
+        }
+        if (canKillLhs === true && canKillRhs === true) {
+          return lhs.maxTicksToKill - rhs.maxTicksToKill
+        }
+      }
+      return 0
+    })
+
+    const nextTargetInfo = targetInfo[0]
+    if (nextTargetInfo == null) {
+      return null
+    }
+    const towerMinimumRange = towerPositions
+      .map(position => position.getRangeTo(nextTargetInfo.target.pos))
+      .sort()[0]
+    if (towerMinimumRange != null && towerMinimumRange < 12) {
+      return nextTargetInfo
+    }
+    if (nextTargetInfo.maxTicksToKill == null) {
+      return null
+    }
+    if (nextTargetInfo.maxTicksToKill > (nextTargetInfo.minimumTicksToEscape * 2)) {
+      return null
+    }
+    return nextTargetInfo
+  }
+}
+
+const roomMinExit = GameConstants.room.edgePosition.min
+const roomMaxExit = GameConstants.room.edgePosition.max
+const maxTicksToKillLimit = 100
+
+function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boolean, towerPositions: RoomPosition[]): TargetInfo {
+  const exitDistanceX = Math.min(target.pos.x - roomMinExit, roomMaxExit - target.pos.x)
+  const exitDistanceY = Math.min(target.pos.y - roomMinExit, roomMaxExit - target.pos.y)
+  const minimumTicksToEscape = Math.min(exitDistanceX, exitDistanceY)
+
+  if (target.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}}).length > 0) {
+    return {
+      target,
+      maxTicksToKill: null,
+      minimumTicksToEscape,
+    }
+  }
+
+  const towerRanges = towerPositions.map(towerPosition => towerPosition.getRangeTo(target.pos))
+  const maxTicksToKill = ((): number | null => {
+    if (canMove !== true) {
+      const totalTowerDamage = towerRanges.reduce((result, current) => {
+        return result + towerDamage(current)
+      }, 0)
+      const totalDamage = totalTowerDamage - healPower
+      if (totalDamage <= 0) {
+        return null
+      }
+      return Math.ceil(target.hits / totalDamage)
+    }
+
+    let targetHits = target.hits
+
+    for (let i = 0; i < maxTicksToKillLimit; i += 1) {
+      const totalTowerDamage = towerRanges.reduce((result, current) => {
+        return result + towerDamage(current + i)
+      }, 0)
+      const totalDamage = totalTowerDamage - healPower
+      if (totalDamage <= 0) {
+        return null
+      }
+      targetHits -= totalDamage
+      if (targetHits <= 0) {
+        return i + 1
+      }
+    }
+    return maxTicksToKillLimit
+  })()
+
+  return {
+    target,
+    maxTicksToKill,
+    minimumTicksToEscape,
+  }
+}
+
+function towerDamage(range: number): number {
+  if (range >= 20) {
+    return 150
+  }
+  if (range <= 5) {
+    return 600
+  }
+  return 600 - ((range - 5) * 30)
 }

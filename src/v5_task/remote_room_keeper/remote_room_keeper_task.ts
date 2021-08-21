@@ -8,6 +8,7 @@ import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { World } from "world_info/world_info"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -79,6 +80,20 @@ export class RemoteRoomKeeperTask extends Task {
       if (remoteRooms.includes(this.targetRoomName) === true && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
         this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
       }
+    }
+
+    const workerToRemove = this.children.find(task => {
+      if (!(task instanceof RemoteRoomWorkerTask)) {
+        return false
+      }
+      if (task.targetRoomName !== "W7S29") {
+        return false
+      }
+      return true
+    })
+    if (workerToRemove != null) {
+      PrimitiveLogger.log(`${this.taskIdentifier} removed child task ${workerToRemove.taskIdentifier}`)
+      this.removeChildTask(workerToRemove)
     }
 
     // this.checkInvasion()

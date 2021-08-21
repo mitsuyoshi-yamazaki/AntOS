@@ -17,6 +17,9 @@ import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_t
 import { bodyCost, createCreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
+import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
+
+let randomSeed = 0
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -31,6 +34,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   private readonly codename: string
   private readonly numberOfCreeps: number
+  private saying = 0
 
   private constructor(
     public readonly startTime: number,
@@ -43,8 +47,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
 
     const numberOfCreeps: { [roomName: string]: number } = {
-      "W6S29": 6,
-      "W21S23": 5,
+      "W6S29": 4,
 
       // shard3
       "W51S29": 4,
@@ -90,10 +93,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
-      if (droppedEnergy != null) {
-        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
-      }
+      // OwnedRoomHaulerTask が行う
+      // const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
+      // if (droppedEnergy != null) {
+      //   return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
+      // }
 
       if (creep.ticksToLive != null && creep.ticksToLive < 400) {
         const spawn = objects.activeStructures.spawns[0]
@@ -118,7 +122,16 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         }
       }
 
-      creep.say("no task")
+      if (this.saying !== Game.time) {
+        this.saying = Game.time
+        creep.say("no task")
+      }
+      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
+        randomSeed += 1
+        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
+          return RandomMoveTask.create()
+        }
+      }
       return null
     }
 
@@ -155,7 +168,16 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
           }
         }
       }
-      creep.say("no task")
+      if (this.saying !== Game.time) {
+        this.saying = Game.time
+        creep.say("no task")
+      }
+      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
+        randomSeed += 1
+        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
+          return RandomMoveTask.create()
+        }
+      }
       return null
     }
   }

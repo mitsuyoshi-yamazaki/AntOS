@@ -14,8 +14,6 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
-import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
-import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
@@ -26,34 +24,9 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { CreepBody } from "utility/creep_body"
 
-const useSwampRunner = false as boolean
-
-const numberOfCreeps = 2
-
-const swampRunnerRoles: CreepRole[] = [CreepRole.SwampRunner, CreepRole.Mover]
-const swampRunnerBody: BodyPartConstant[] = [
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  MOVE,
-]
-
-const haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
-const haulerBody: BodyPartConstant[] = [
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, CARRY, CARRY, CARRY, CARRY,
-  CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
-  CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
-  CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
-]
+const maxNumberOfCreeps = 2
 
 export interface Season1521073SendResourceProcessState extends ProcessState {
   /** parent room name */
@@ -67,13 +40,10 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
 
 // Game.io("launch -l Season1521073SendResourceProcess room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27")
 // Game.io("launch -l Season1521073SendResourceProcess room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25")
+// Game.io("launch -l Season1521073SendResourceProcess room_name=W17S11 target_room_name=W15S8 waypoints=W17S10,W15S10,W15S8")
 export class Season1521073SendResourceProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
-
-  private readonly isSwampRunner: boolean
-  private readonly roles: CreepRole[]
-  private readonly body: BodyPartConstant[]
 
   private constructor(
     public readonly launchTime: number,
@@ -84,15 +54,6 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
-
-    if (useSwampRunner === true) {
-      this.roles = swampRunnerRoles
-      this.body = swampRunnerBody
-    } else {
-      this.roles = haulerRoles
-      this.body = haulerBody
-    }
-    this.isSwampRunner = this.roles.includes(CreepRole.SwampRunner)
   }
 
   public encode(): Season1521073SendResourceProcessState {
@@ -139,20 +100,34 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     if (energyStore == null) {
       return
     }
+    const numberOfCreeps = ((): number => {
+      if (objects.activeStructures.storage == null) {
+        return 0
+      }
+      const energyAmount = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
+        + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      if (energyAmount < 70000) {
+        return 0
+      }
+      if (objects.activeStructures.terminal == null) {
+        return 1
+      }
+      return maxNumberOfCreeps
+    })()
     if (creeps.length < numberOfCreeps && targetRoomObjects.activeStructures.terminal == null) {
-      this.requestCreep()
+      this.requestCreep(CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20))
     }
 
     this.runCreep(energyStore, targetRoomObjects)
   }
 
-  private requestCreep(): void {
+  private requestCreep(body: BodyPartConstant[]): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
-      numberOfCreeps,
+      numberOfCreeps: 1,
       codename: this.codename,
-      roles: this.roles,
-      body: this.body,
+      roles: [CreepRole.Hauler, CreepRole.Mover],
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -173,6 +148,11 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3)) {
         return RunApiTask.create(SuicideApiWrapper.create())
+      }
+      if (creep.room.name !== this.parentRoomName) {
+        const waypoints = [...this.waypoints]
+        waypoints.reverse()
+        return MoveToRoomTask.create(this.parentRoomName, waypoints)
       }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energyStore, RESOURCE_ENERGY))
     }
@@ -199,10 +179,6 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       } else {
         return MoveToTask.create(targetObject.pos, 1)
       }
-    }
-
-    if (this.isSwampRunner === true) {
-      return SwampRunnerTransferTask.create(TransferResourceApiWrapper.create(chargeableStructure, RESOURCE_ENERGY))
     }
 
     const options: SequentialTaskOptions = {
