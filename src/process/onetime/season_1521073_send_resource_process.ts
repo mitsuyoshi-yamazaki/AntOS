@@ -149,6 +149,11 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3)) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
+      if (creep.room.name !== this.parentRoomName) {
+        const waypoints = [...this.waypoints]
+        waypoints.reverse()
+        return MoveToRoomTask.create(this.parentRoomName, waypoints)
+      }
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energyStore, RESOURCE_ENERGY))
     }
 
