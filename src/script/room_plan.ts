@@ -106,7 +106,7 @@ export function parseLabs(room: Room): Result<{ inputLab1: StructureLab, inputLa
 }
 
 export function showRoomPlan(controller: StructureController): string {
-  const result = calculateRoomPlan(controller)
+  const result = calculateRoomPlan(controller, true)
   switch (result.resultType) {
   case "succeeded":
     return "ok"
@@ -115,16 +115,242 @@ export function showRoomPlan(controller: StructureController): string {
   }
 }
 
-export function calculateRoomPlan(controller: StructureController): Result<void, string> {
+export function calculateRoomPlan(controller: StructureController, dryRun: boolean): Result<void, string> {
   const firstSpawnPosition = calculateFirstSpawnPosition(controller)
   if (firstSpawnPosition == null) {
     return Result.Failed("Failed to calculate first spawn position")
   }
-
   PrimitiveLogger.log(`calculateRoomPlan() first spawn position: ${firstSpawnPosition}`)
-  // room.visual.text("*", firstSpawnPosition, {color: "#ff0000"})
 
-  return Result.Succeeded(undefined)
+  const result = ErrorMapper.wrapLoop((): Result<void, string> => {
+    return placeFlags(controller, firstSpawnPosition, dryRun)
+  }, "placeFlags()")()
+
+  if (result == null) {
+    return Result.Failed("Syntax error")
+  }
+  return result
+}
+
+function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<void, string> {
+  const room = controller.room
+  const placeFlag = (position: RoomPosition, mark: LayoutMark): void => {
+    const flagColor = flagColors[mark]
+    if (flagColor == null) {
+      return
+    }
+    if (dryRun === true) {
+      room.visual.text(mark, position, {color: "#ffffff"})
+    } else {
+      room.createFlag(position, undefined, flagColor)
+    }
+  }
+
+  let spawnCount = GameConstants.structure.maxCount[STRUCTURE_SPAWN] + GameConstants.structure.maxCount[STRUCTURE_POWER_SPAWN]
+  let towerCount = GameConstants.structure.maxCount[STRUCTURE_TOWER]
+  let extensionCount = GameConstants.structure.maxCount[STRUCTURE_EXTENSION]
+  const decreaseStructureCount = (mark: LayoutMark): void => {
+    switch (mark) {
+    case LayoutMark.Spawn:
+      spawnCount -= 1
+      break
+    case LayoutMark.Tower:
+      towerCount -= 1
+      break
+    case LayoutMark.Extension:
+      extensionCount -= 1
+      break
+    default:
+      break
+    }
+  }
+
+  const sources = room.find(FIND_SOURCES)
+  const hasObstacle = (position: RoomPosition, mark: LayoutMark): boolean => {
+    const terrain = position.lookFor(LOOK_TERRAIN)[0]
+    switch (terrain) {
+    case "plain":
+    case "swamp":
+      if (mark === LayoutMark.Road) {
+        return false
+      }
+      if (position.getRangeTo(controller) <= 3) {
+        return true
+      }
+      if (sources.some(source => source.pos.getRangeTo(position) <= 2) === true) {
+        return true
+      }
+      return false
+    case "wall":
+    default:
+      return true
+    }
+  }
+
+  const nextBlockPositions: RoomPosition[] = []
+  const usedBlockPositions: RoomPosition[] = []
+  const placeLayout = (layout: LayoutMark[][], position: RoomPosition): void => {
+    const positionIndex = nextBlockPositions.indexOf(position)
+    if (positionIndex >= 0) {
+      nextBlockPositions.splice(positionIndex, 1)
+    }
+
+    let placedMarks = 0
+    layout.forEach((row, j) => {
+      row.forEach((mark, i) => {
+        if (flagColors[mark] == null) {
+          return
+        }
+        try {
+          const markPosition = new RoomPosition(position.x + i, position.y + j, position.roomName)
+          if (hasObstacle(markPosition, mark) !== true) {
+            placeFlag(markPosition, mark)
+            decreaseStructureCount(mark)
+            placedMarks += 1
+          }
+        } catch {
+          return
+        }
+      })
+    })
+
+    if (placedMarks > 2) {
+      neighbourBlockPositions(position).forEach(neighbourBlockPosition => {
+        if (usedBlockPositions.some(usedBlockPosition => usedBlockPosition.isEqualTo(neighbourBlockPosition)) === true) {
+          return
+        }
+        usedBlockPositions.push(neighbourBlockPosition)
+        nextBlockPositions.push(neighbourBlockPosition)
+      })
+    }
+  }
+
+  const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
+  usedBlockPositions.push(centerBlockPosition)
+  placeLayout(centerLayout, centerBlockPosition)
+  room.visual.text("6", firstSpawnPosition, { color: "#ff0000" })
+
+  const maxBlockCount = 30
+  for (let i = 0; i < maxBlockCount; i += 1) {
+    if (nextBlockPositions.length <= 0) {
+      if (spawnCount > 0 || towerCount > 0 || extensionCount > 0) {
+        return Result.Failed(`placeFlags() no empty position to place ${roomLink(room.name)}`)
+      }
+      return Result.Succeeded(undefined)
+    }
+
+    const blockPositions = [...nextBlockPositions]
+    for (const blockPosition of blockPositions) {
+      const centerMark = ((): LayoutMark | null => {
+        if (towerCount > 0) {
+          return LayoutMark.Tower
+        }
+        if (spawnCount > 0) {
+          return LayoutMark.Spawn
+        }
+        if (extensionCount > 0) {
+          return LayoutMark.Extension
+        }
+        return null
+      })()
+      if (centerMark == null) {
+        return Result.Succeeded(undefined)
+      }
+      placeLayout(extensionLayout(centerMark), blockPosition)
+    }
+  }
+  return Result.Failed(`placeFlags() max block count reached ${roomLink(room.name)}`)
+}
+
+type LayoutMarkBlank = "."
+type LayoutMarkRoad = "-"
+type LayoutMarkStorage = "s"
+type LayoutMarkTerminal = "t"
+type LayoutMarkLink = "i"
+type LayoutMarkLab = "l"
+type LayoutMarkContainer = "c"
+type LayoutMarkTower = "o"
+type LayoutMarkSpawn = "6"
+type LayoutMarkNuker = "n"
+type LayoutMarkExtension = "x"
+type LayoutMark = LayoutMarkBlank
+  | LayoutMarkRoad
+  | LayoutMarkStorage
+  | LayoutMarkTerminal
+  | LayoutMarkLink
+  | LayoutMarkLab
+  | LayoutMarkContainer
+  | LayoutMarkTower
+  | LayoutMarkSpawn
+  | LayoutMarkNuker
+  | LayoutMarkExtension
+
+type LayoutMarkKey = "Blank" | "Road" | "Storage" | "Terminal" | "Link" | "Lab" | "Container" | "Tower" | "Spawn" | "Nuker" | "Extension"
+const LayoutMark: {[index in LayoutMarkKey]: LayoutMark} = {
+  Blank: ".",
+  Road: "-",
+  Storage: "s",
+  Terminal: "t",
+  Link: "i",
+  Lab: "l",
+  Container: "c",
+  Tower: "o",
+  Spawn: "6",
+  Nuker: "n",
+  Extension: "x",
+}
+
+const flagColors: { [mark in LayoutMark]?: ColorConstant } = {
+  // ".": null
+  "-": COLOR_BROWN,
+  "s": COLOR_GREEN,
+  "t": COLOR_PURPLE,
+  "i": COLOR_ORANGE,
+  "l": COLOR_BLUE,
+  // "c":
+  "o": COLOR_RED,
+  "6": COLOR_GREY,
+  "n": COLOR_CYAN,
+  "x": COLOR_WHITE,
+}
+
+const centerLayout: LayoutMark[][] = [
+  [".", ".", "-", ".", "."],
+  [".", "-", "s", "-", "."],
+  ["-", "i", ".", "6", "-"],
+  [".", "-", "t", "-", "."],
+  [".", ".", "-", ".", "."],
+]
+
+function extensionLayout(centerMark: LayoutMark): LayoutMark[][] {
+  const ctr = centerMark
+  return [
+    [".", ".", "-", ".", "."],
+    [".", "-", "x", "-", "."],
+    ["-", "x", ctr, "x", "-"],
+    [".", "-", "x", "-", "."],
+    [".", ".", "-", ".", "."],
+  ]
+}
+
+const neighbourBlockDiff: { i: number, j: number }[] = [
+  { i: -4, j: 0 },
+  { i: -2, j: -2 },
+  { i: 0, j: -4 },
+  { i: 2, j: -2 },
+  { i: 4, j: 0 },
+  { i: 2, j: 2 },
+  { i: 0, j: 4 },
+  { i: -2, j: 2 },
+]
+function neighbourBlockPositions(position: RoomPosition): RoomPosition[] {
+  return neighbourBlockDiff.flatMap(diff => {
+    try {
+      return new RoomPosition(position.x + diff.i, position.y + diff.j, position.roomName)
+    } catch {
+      return []
+    }
+  })
 }
 
 function calculateFirstSpawnPosition(controller: StructureController): RoomPosition | null {
@@ -136,7 +362,7 @@ function calculateFirstSpawnPosition(controller: StructureController): RoomPosit
 
   const positions = ErrorMapper.wrapLoop((): RoomPosition[] => {
     return roomOpenPositions(room)
-  }, "V5TaskTargetCache.clearCache()")()
+  }, "roomOpenPositions()")()
 
   if (positions == null || positions.length <= 0) {
     return null
