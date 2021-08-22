@@ -282,11 +282,19 @@ function placeLinkFor(controller: StructureController, dryRun: boolean): void {
     }
   })
 
-  const linkPositionInfo = positionInfo.sort((lhs, rhs) => {
+  const sortedPositionInfo = positionInfo.sort((lhs, rhs) => {
     return rhs.neighbourCount - lhs.neighbourCount
-  })[0]
+  })
+  const linkPositionInfo = sortedPositionInfo.shift()
   if (linkPositionInfo != null) {
     placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun)
+
+    const containerPositionInfo = sortedPositionInfo.find(positionInfo => {
+      return positionInfo.position.getRangeTo(linkPositionInfo.position) === 1
+    })
+    if (containerPositionInfo != null) {
+      placeFlag(containerPositionInfo.position, LayoutMark.Container, controller.room, dryRun)
+    }
   }
 }
 
@@ -350,7 +358,7 @@ const flagColors: { [mark in LayoutMark]?: ColorConstant } = {
   "t": COLOR_PURPLE,
   "i": COLOR_ORANGE,
   "l": COLOR_BLUE,
-  // "c": COLOR_YELLOW,
+  "c": COLOR_YELLOW,
   "o": COLOR_RED,
   "6": COLOR_GREY,
   "n": COLOR_CYAN,

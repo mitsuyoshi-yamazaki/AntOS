@@ -16,6 +16,7 @@ const colorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_GREY, STRUCTURE_SPAWN],
   [COLOR_CYAN, STRUCTURE_NUKER],
   [COLOR_WHITE, STRUCTURE_EXTENSION],
+  [COLOR_YELLOW, STRUCTURE_CONTAINER],
 ])
 
 const structurePriority: StructureConstant[] = [
@@ -100,6 +101,7 @@ export class CreateConstructionSiteTask extends Task {
       }
       return [true, true]
     })()
+    const shouldPlaceContainer = room.controller.level >= 4
 
     const sortedFlags = flags.sort((lhs, rhs) => {
       const lStructureType = colorMap.get(lhs.color)
@@ -133,6 +135,9 @@ export class CreateConstructionSiteTask extends Task {
         continue
       }
       if (structureType === STRUCTURE_ROAD && shouldPlaceRoads !== true) {
+        continue
+      }
+      if (structureType === STRUCTURE_CONTAINER && shouldPlaceContainer !== true) {
         continue
       }
       const result = room.createConstructionSite(flag.pos, structureType)
