@@ -139,6 +139,9 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     if (flagColor == null) {
       return
     }
+    if (position.lookFor(LOOK_FLAGS).length > 0) {
+      return
+    }
     if (dryRun === true) {
       room.visual.text(mark, position, {color: "#ffffff"})
     } else {
@@ -165,25 +168,34 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     }
   }
 
+  const edgeMargin = 5
+  const minStructurePosition = GameConstants.room.edgePosition.min + edgeMargin
+  const maxStructurePosition = GameConstants.room.edgePosition.max - edgeMargin
   const sources = room.find(FIND_SOURCES)
-  const hasObstacle = (position: RoomPosition, mark: LayoutMark): boolean => {
+  const canPlace = (position: RoomPosition, mark: LayoutMark): boolean => {
     const terrain = position.lookFor(LOOK_TERRAIN)[0]
     switch (terrain) {
     case "plain":
     case "swamp":
       if (mark === LayoutMark.Road) {
+        return true
+      }
+      if (position.x < minStructurePosition || position.x > maxStructurePosition) {
+        return false
+      }
+      if (position.y < minStructurePosition || position.y > maxStructurePosition) {
         return false
       }
       if (position.getRangeTo(controller) <= 3) {
-        return true
+        return false
       }
       if (sources.some(source => source.pos.getRangeTo(position) <= 2) === true) {
-        return true
+        return false
       }
-      return false
+      return true
     case "wall":
     default:
-      return true
+      return false
     }
   }
 
@@ -203,7 +215,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
         }
         try {
           const markPosition = new RoomPosition(position.x + i, position.y + j, position.roomName)
-          if (hasObstacle(markPosition, mark) !== true) {
+          if (canPlace(markPosition, mark) === true) {
             placeFlag(markPosition, mark)
             decreaseStructureCount(mark)
             placedMarks += 1
