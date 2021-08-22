@@ -131,6 +131,13 @@ export class OperatingSystem {
     return Result.Succeeded(process.constructor.name)
   }
 
+  /** @deprecated */
+  public respawned(): void {
+    [...this.processes.entries()].forEach(([processId,]) => {
+      this.processes.delete(processId)
+    })
+  }
+
   public processInfoOf(processId: ProcessId): ProcessInfo | null {
     const processInfo = this.processes.get(processId)
     if (processInfo == null) {

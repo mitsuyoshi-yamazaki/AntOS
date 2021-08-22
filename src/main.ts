@@ -9,6 +9,7 @@ import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { Migration } from "utility/migration"
 import { ShortVersion, SystemInfo } from "utility/system_info"
+import { isRespawned, resetOldSpawnData } from "script/respawn"
 
 Initializer.init()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
@@ -24,6 +25,12 @@ const mainLoop = () => {
   ErrorMapper.wrapLoop(() => {
     Initializer.tick()
   }, `Initializer.tick`)()
+
+  ErrorMapper.wrapLoop((): void => {
+    if (isRespawned() === true) {
+      resetOldSpawnData()
+    }
+  }, `Respawn`)()
 
   if (Game.shard.name === "shard2") {
     ErrorMapper.wrapLoop(() => {
