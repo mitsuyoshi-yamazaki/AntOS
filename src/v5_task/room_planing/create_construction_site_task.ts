@@ -87,9 +87,19 @@ export class CreateConstructionSiteTask extends Task {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
     }
-    if (World.rooms.getAllOwnedRooms().length > 1 && room.controller.level <= 2) {
-      return
-    }
+
+    const [shouldPlaceExtensions, shouldPlaceRoads] = ((): [boolean, boolean] => {
+      if (World.rooms.getAllOwnedRooms().length <= 1) {
+        if (room.controller.level <= 3) {
+          return [true, false]
+        }
+        return [true, true]
+      }
+      if (room.controller.level <= 3) {
+        return [false, false]
+      }
+      return [true, true]
+    })()
 
     const sortedFlags = flags.sort((lhs, rhs) => {
       const lStructureType = colorMap.get(lhs.color)
@@ -117,6 +127,12 @@ export class CreateConstructionSiteTask extends Task {
     for (const flag of sortedFlags) {
       const structureType = colorMap.get(flag.color)
       if (structureType == null) {
+        continue
+      }
+      if (structureType === STRUCTURE_EXTENSION && shouldPlaceExtensions !== true) {
+        continue
+      }
+      if (structureType === STRUCTURE_ROAD && shouldPlaceRoads !== true) {
         continue
       }
       const result = room.createConstructionSite(flag.pos, structureType)
