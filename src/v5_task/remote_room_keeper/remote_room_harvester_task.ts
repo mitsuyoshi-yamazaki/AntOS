@@ -25,6 +25,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -40,6 +41,8 @@ export interface RemoteRoomHarvesterTaskState extends TaskState {
   co: {
     /** id */
     i: Id<StructureContainer> | null
+
+    noContainerPosition: boolean
   }
 }
 
@@ -63,6 +66,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     public readonly targetRoomName: RoomName,
     public readonly sourceId: Id<Source>,
     private containerId: Id<StructureContainer> | null,
+    private noContainerPosition: boolean,
   ) {
     super(startTime, children)
 
@@ -79,19 +83,20 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       i: this.sourceId,
       co: {
         i: this.containerId ?? null,
+        noContainerPosition: this.noContainerPosition,
       },
     }
   }
 
   public static decode(state: RemoteRoomHarvesterTaskState, children: Task[]): RemoteRoomHarvesterTask | null {
-    return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i)
+    return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i, state.co.noContainerPosition ?? false)
   }
 
   public static create(roomName: RoomName, source: Source): RemoteRoomHarvesterTask {
     const targetRoomName = source.room.name
     const children: Task[] = [
     ]
-    return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null)
+    return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null, false)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -115,7 +120,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     const problemFinders: ProblemFinder[] = []
 
-    if (container == null) {
+    if (container == null && this.noContainerPosition !== true) {
       this.checkContainer(objects, childTaskResults.finishedTasks, source)
     }
 
@@ -131,7 +136,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     container: StructureContainer | null,
   ): ProblemFinder[] {
     const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
-    const minimumCreepCount = this.containerId == null ? 3 : 1
+    const isBuildingContainer = (this.containerId == null) && (this.noContainerPosition !== true)
+    const minimumCreepCount = isBuildingContainer ? 3 : 1
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -142,7 +148,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       if (targetRoom != null && (targetRoom.controller == null || targetRoom.controller.reservation == null || targetRoom.controller.reservation.username === Game.user.name)) {
         const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
         if (invaded !== true) {
-          const isConstructing = (container == null) || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
+          const isConstructing = isBuildingContainer || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
           problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
         }
       }
@@ -150,7 +156,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     this.checkProblemFinders(problemFinders)
 
-    if (container != null) {  // container == nullの場合はBuildContainerTaskがcreepを制御する
+    if (isBuildingContainer !== true) {  // container == nullの場合はBuildContainerTaskがcreepを制御する
       World.resourcePools.assignTasks(
         objects.controller.room.name,
         this.taskIdentifier,
@@ -253,19 +259,22 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
   private newTaskForHarvester(
     creep: Creep,
     source: Source,
-    container: StructureContainer,
+    container: StructureContainer | null,
   ): CreepTask | null {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
-      const harvestPosition = container.pos
-      if (creep.pos.isEqualTo(harvestPosition) === true) {
-        return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
+      if (container != null) {
+        const harvestPosition = container.pos
+        if (creep.pos.isEqualTo(harvestPosition) === true) {
+          return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
+        }
+        return MoveToTask.create(harvestPosition, 0)
       }
-      return MoveToTask.create(harvestPosition, 0)
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
     }
 
-    if (container.hits < container.hitsMax * 0.8) {
+    if (container != null && container.hits < container.hitsMax * 0.8) {
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
 
@@ -329,24 +338,40 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 }, {
       maxRooms: 2,
       maxOps: 6000,
+      swampCost: 2,
     })
-    // if (resultPath.incomplete === true) {
-    //   PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
-    //   return  // TODO: 毎tick行わないようにする
-    // }
 
     const path = resultPath.path
-    if (path.length <= 0) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
-      return  // TODO: 毎tick行わないようにする
-    }
-    const position = path[path.length - 1]
-    if (position == null || position.isNearTo(source.pos) !== true) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete: ${resultPath.incomplete}, path: ${resultPath.path}, pos: ${position}`)
-      return  // TODO: 毎tick行わないようにする
-    }
-    this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
+    const lastPathPosition = ((): RoomPosition | null => {
+      if (path.length <= 0) {
+        PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
+        return null
+      }
+      const position = path[path.length - 1]
+      if (position == null || position.isNearTo(source.pos) !== true) {
+        return null
+      }
+      return position
+    })()
+    const containerPosition = ((): RoomPosition | null => {
+      if (lastPathPosition != null) {
+        return lastPathPosition
+      }
+      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete: ${resultPath.incomplete}, path: ${resultPath.path}`)
+      const options: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeStructures: true,
+        excludeTerrainWalls: true,
+        excludeWalkableStructures: false,
+      }
+      return source.pos.positionsInRange(1, options)[0] ?? null
+    })()
 
+    if (containerPosition != null) {
+      this.addChildTask(BuildContainerTask.create(roomName, containerPosition, this.taskIdentifier))
+    } else {
+      this.noContainerPosition = true
+    }
     return
   }
 
