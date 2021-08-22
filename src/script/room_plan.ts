@@ -5,6 +5,7 @@ import { ValuedArrayMap, ValuedMapMap } from "utility/valued_collection"
 import { Result } from "utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 
 export function showOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {
   const room = Game.rooms[roomName]
@@ -134,20 +135,6 @@ export function calculateRoomPlan(controller: StructureController, dryRun: boole
 
 function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<void, string> {
   const room = controller.room
-  const placeFlag = (position: RoomPosition, mark: LayoutMark): void => {
-    const flagColor = flagColors[mark]
-    if (flagColor == null) {
-      return
-    }
-    if (position.lookFor(LOOK_FLAGS).length > 0) {
-      return
-    }
-    if (dryRun === true) {
-      room.visual.text(mark, position, {color: "#ffffff"})
-    } else {
-      room.createFlag(position, undefined, flagColor)
-    }
-  }
 
   let spawnCount = GameConstants.structure.maxCount[STRUCTURE_SPAWN] + GameConstants.structure.maxCount[STRUCTURE_POWER_SPAWN]
   let towerCount = GameConstants.structure.maxCount[STRUCTURE_TOWER]
@@ -216,7 +203,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
         try {
           const markPosition = new RoomPosition(position.x + i, position.y + j, position.roomName)
           if (canPlace(markPosition, mark) === true) {
-            placeFlag(markPosition, mark)
+            placeFlag(markPosition, mark, room, dryRun)
             decreaseStructureCount(mark)
             placedMarks += 1
           }
@@ -236,6 +223,8 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
       })
     }
   }
+
+  placeLinkFor(controller, dryRun)
 
   const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
   usedBlockPositions.push(centerBlockPosition)
@@ -272,6 +261,48 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     }
   }
   return Result.Failed(`placeFlags() max block count reached ${roomLink(room.name)}`)
+}
+
+function placeLinkFor(controller: StructureController, dryRun: boolean): void {
+  const options: RoomPositionFilteringOptions = {
+    excludeItself: true,
+    excludeStructures: true,
+    excludeWalkableStructures: true,
+    excludeTerrainWalls: true,
+  }
+  const positions = controller.pos.positionsInRange(GameConstants.creep.actionRange.upgradeController, options)
+  const positionInfo = [...positions].map(position => {
+    const neighbourCount = positions.filter(p => {
+      return p.getRangeTo(position) === 1
+    }).length
+
+    return {
+      position,
+      neighbourCount,
+    }
+  })
+
+  const linkPositionInfo = positionInfo.sort((lhs, rhs) => {
+    return rhs.neighbourCount - lhs.neighbourCount
+  })[0]
+  if (linkPositionInfo != null) {
+    placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun)
+  }
+}
+
+function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun: boolean): void {
+  const flagColor = flagColors[mark]
+  if (flagColor == null) {
+    return
+  }
+  if (position.lookFor(LOOK_FLAGS).length > 0) {
+    return
+  }
+  if (dryRun === true) {
+    room.visual.text(mark, position, { color: "#ffffff" })
+  } else {
+    room.createFlag(position, undefined, flagColor)
+  }
 }
 
 type LayoutMarkBlank = "."
@@ -319,7 +350,7 @@ const flagColors: { [mark in LayoutMark]?: ColorConstant } = {
   "t": COLOR_PURPLE,
   "i": COLOR_ORANGE,
   "l": COLOR_BLUE,
-  // "c":
+  // "c": COLOR_YELLOW,
   "o": COLOR_RED,
   "6": COLOR_GREY,
   "n": COLOR_CYAN,
