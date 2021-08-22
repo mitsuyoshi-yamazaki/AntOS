@@ -9,6 +9,7 @@ import { World } from "world_info/world_info"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Environment } from "utility/environment"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -75,9 +76,33 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
-    if (remoteRooms != null && objects.activeStructures.storage) {
-      if (remoteRooms.includes(this.targetRoomName) === true && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+    if (targetRoom != null && targetRoom.controller != null) {
+      const controller = targetRoom.controller
+      const shouldLaunchRemoteRoomWorker = ((): boolean => {
+        if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
+          return false
+        }
+        if (objects.activeStructures.storage == null) {
+          return false
+        }
+        const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
+        if (remoteRooms != null) {
+          if (remoteRooms.includes(this.targetRoomName) === true) {
+            return true
+          }
+        }
+        if (Environment.world === "season 3") {
+          return false
+        }
+        if (controller.my === true || controller.owner != null || (controller.reservation != null && controller.reservation.username !== Game.user.name)) {
+          return false
+        }
+        if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
+          return false
+        }
+        return true
+      })()
+      if (shouldLaunchRemoteRoomWorker === true) {
         this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
       }
     }
