@@ -143,7 +143,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const problemFinders: ProblemFinder[] = [
     ]
 
-    if (objects.activeStructures.storage != null) {
+    if (objects.controller.level > 2) {
       const targetRoom = World.rooms.get(this.targetRoomName)
       if (targetRoom != null && (targetRoom.controller == null || targetRoom.controller.reservation == null || targetRoom.controller.reservation.username === Game.user.name)) {
         const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))

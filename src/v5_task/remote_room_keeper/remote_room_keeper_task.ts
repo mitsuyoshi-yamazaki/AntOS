@@ -55,6 +55,10 @@ export class RemoteRoomKeeperTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
+    if (objects.controller.level < 3) {
+      return TaskStatus.InProgress
+    }
+
     const problemFinders: ProblemFinder[] = [
       new RoomInvisibleProblemFinder(objects, this.targetRoomName),
     ]
