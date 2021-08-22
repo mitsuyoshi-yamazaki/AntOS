@@ -94,34 +94,22 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
-    const [sourcePosition1, sourcePosition2] = ((): [RoomPosition | null, RoomPosition | null] => {
-      const container = objects.roomInfo.upgrader?.container
-      const link = ((): StructureLink | null => {
-        if (this.linkId == null) {
-          return null
-        }
-        return Game.getObjectById(this.linkId)
-      })()
-      if (container != null) {
-        return [container.pos, link?.pos ?? null]
+    const container = objects.roomInfo.upgrader?.container
+    const link = ((): StructureLink | null => {
+      if (this.linkId == null) {
+        return null
       }
-      return [link?.pos ?? null, null]
+      return Game.getObjectById(this.linkId)
     })()
 
-    if (sourcePosition1 == null) {
+    if (container == null && link == null) {
       this.availablePositions = []
     } else {
       this.availablePositions = this.upgraderPositions.filter(position => {
-        if (sourcePosition2 == null) {
-          if (position.isNearTo(sourcePosition1) !== true) {
-            return false
-          }
-          return true
-        }
-        if (position.isNearTo(sourcePosition1) !== true) {
+        if (container != null && position.getRangeTo(container.pos) > 1) {
           return false
         }
-        if (position.isNearTo(sourcePosition2) !== true) {
+        if (link != null && position.getRangeTo(link) !== 1) {
           return false
         }
         return true
@@ -232,10 +220,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
-      if (objects.constructionSites.length > 0) {
-        return 1
-      }
-      return this.availablePositions.length
+      return Math.max(this.availablePositions.length - 1, 3)  // 全位置を埋めるとHaulerが入って来れなくなるため
     })()
 
     return [body, numberOfCreeps]
