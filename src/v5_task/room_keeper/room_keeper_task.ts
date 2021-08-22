@@ -10,6 +10,10 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { RemoteRoomManagerTask } from "v5_task/remote_room_keeper/remote_room_manager_task"
 import { TaskState } from "v5_task/task_state"
 import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/owned_room_damaged_creep_problem_finder"
+import { RoomResources } from "room_resource/room_resources"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { coloredText, roomLink } from "utility/log"
+import { calculateRoomPlan } from "script/room_plan"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -63,6 +67,25 @@ export class RoomKeeperTask extends Task {
     // if (this.children.find(task => task instanceof RemoteRoomManagerTask) == null) {  // TODO: 一時コード
     //   this.addChildTask(RemoteRoomManagerTask.create(this.roomName))
     // }
+
+    const ownedRoomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (ownedRoomResource != null) {
+      if (ownedRoomResource.roomInfo.roomPlanDefined == null) {
+        ownedRoomResource.roomInfo.roomPlanDefined = true
+      }
+      if (ownedRoomResource.roomInfo.roomPlanDefined !== true) {
+        ownedRoomResource.roomInfo.roomPlanDefined = true
+        const result = calculateRoomPlan(objects.controller, false)
+        switch (result.resultType) {
+        case "succeeded":
+          PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} place room layout`)
+          break
+        case "failed":
+          PrimitiveLogger.fatal(`${roomLink(this.roomName)} ${result.reason}`)
+          break
+        }
+      }
+    }
 
     return TaskStatus.InProgress
   }

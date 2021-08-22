@@ -44,6 +44,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     readonly outputLabs: Id<StructureLab>[]
   }
   highestRcl: number
+  roomPlanDefined: boolean
 
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
@@ -71,5 +72,6 @@ export function buildOwnedRoomInfo(normalRoomInfo?: NormalRoomInfo): OwnedRoomIn
     energyStoreStructureIds: normalRoomInfo?.energyStoreStructureIds ?? [],
     resourceInsufficiencies: {},
     highestRcl: 1,
+    roomPlanDefined: false,
   }
 }
