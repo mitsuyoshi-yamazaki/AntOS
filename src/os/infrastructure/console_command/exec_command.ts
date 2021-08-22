@@ -566,7 +566,11 @@ export class ExecCommand implements ConsoleCommand {
     if (room == null) {
       return `No visible to ${roomLink(roomName)}`
     }
+    const controller = room.controller
+    if (controller == null) {
+      return `No controller in ${roomLink(roomName)}`
+    }
 
-    return showRoomPlan(room)
+    return showRoomPlan(controller)
   }
 }

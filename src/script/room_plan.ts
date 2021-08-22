@@ -105,8 +105,8 @@ export function parseLabs(room: Room): Result<{ inputLab1: StructureLab, inputLa
   })
 }
 
-export function showRoomPlan(room: Room): string {
-  const result = calculateRoomPlan(room)
+export function showRoomPlan(controller: StructureController): string {
+  const result = calculateRoomPlan(controller)
   switch (result.resultType) {
   case "succeeded":
     return "ok"
@@ -115,8 +115,8 @@ export function showRoomPlan(room: Room): string {
   }
 }
 
-export function calculateRoomPlan(room: Room): Result<void, string> {
-  const firstSpawnPosition = calculateFirstSpawnPosition(room)
+export function calculateRoomPlan(controller: StructureController): Result<void, string> {
+  const firstSpawnPosition = calculateFirstSpawnPosition(controller)
   if (firstSpawnPosition == null) {
     return Result.Failed("Failed to calculate first spawn position")
   }
@@ -127,7 +127,8 @@ export function calculateRoomPlan(room: Room): Result<void, string> {
   return Result.Succeeded(undefined)
 }
 
-function calculateFirstSpawnPosition(room: Room): RoomPosition | null {
+function calculateFirstSpawnPosition(controller: StructureController): RoomPosition | null {
+  const room = controller.room
   const spawn = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] as StructureSpawn | null
   if (spawn != null) {
     return spawn.pos
@@ -137,10 +138,23 @@ function calculateFirstSpawnPosition(room: Room): RoomPosition | null {
     return roomOpenPositions(room)
   }, "V5TaskTargetCache.clearCache()")()
 
-  if (positions == null) {
+  if (positions == null || positions.length <= 0) {
     return null
   }
-  return positions[0] ?? null
+
+  const sources = room.find(FIND_SOURCES)
+  const distanceScores = positions.map(position => {
+    const controllerDistance = position.findPathTo(controller).length
+    const sourceDistance = sources.reduce((result, current) => result + position.findPathTo(current).length, 0)
+    const distanceScore = controllerDistance + sourceDistance
+    return {
+      position,
+      distanceScore,
+    }
+  })
+  return distanceScores.sort((lhs, rhs) => {
+    return lhs.distanceScore - rhs.distanceScore
+  })[0]?.position ?? null
 }
 
 function roomOpenPositions(room: Room): RoomPosition[] {
