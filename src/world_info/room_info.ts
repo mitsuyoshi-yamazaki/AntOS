@@ -1,8 +1,5 @@
-import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { RoomPathMemory } from "prototype/room"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
-import { calculateSourceRoute } from "script/pathfinder"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { RoomName } from "utility/room_name"
@@ -395,15 +392,6 @@ export class OwnedRoomObjects {
       }
     })
 
-    if (spawns[0] != null) {
-      calculateSourceRouteIn(room, this.sources, spawns[0].pos)
-    } else {
-      const spawnConstructionSite = this.constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
-      if (spawnConstructionSite != null) {
-        calculateSourceRouteIn(room, this.sources, spawnConstructionSite.pos)
-      }
-    }
-
     this.activeStructures = {
       spawns,
       extensions,
@@ -512,44 +500,6 @@ export class OwnedRoomObjects {
   public getRepairStructure(): AnyStructure | null {
     return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
-}
-
-function calculateSourceRouteIn(room: Room, sources: Source[], destination: RoomPosition): void {
-  ErrorMapper.wrapLoop((): void => {
-    const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
-    if (room.memory.p == null) {
-      room.memory.p = pathInMemory
-    }
-
-    sources.forEach(source => {
-      const sourcePath = pathInMemory.s[source.id]
-      if (sourcePath === "no path") {
-        return
-      }
-      if (sourcePath != null) {
-        return
-      }
-      const result = calculateSourceRoute(source.id, destination)
-      switch (result.resultType) {
-      case "succeeded": {
-        const path = result.value.path.path
-          .map(position => ({ x: position.x, y: position.y }))
-          .splice(3, result.value.path.path.length - 3)
-        path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
-        pathInMemory.s[source.id] = {
-          p: path,
-          d: { x: destination.x, y: destination.y },
-        }
-        console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
-        break
-      }
-      case "failed":
-        pathInMemory.s[source.id] = "no path"
-        console.log(`source path cannot found: ${result.reason}`)
-        break
-      }
-    })
-  }, "calculateSourceRouteIn()")()
 }
 
 export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {

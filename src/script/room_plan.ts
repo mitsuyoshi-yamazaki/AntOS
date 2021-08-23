@@ -123,17 +123,35 @@ export function calculateRoomPlan(controller: StructureController, dryRun: boole
   }
   PrimitiveLogger.log(`calculateRoomPlan() first spawn position: ${firstSpawnPosition}`)
 
-  const result = ErrorMapper.wrapLoop((): Result<{ center: RoomPosition }, string> => {
+  const result = ErrorMapper.wrapLoop((): Result<{ center: RoomPosition, upgraderContainerPosition: RoomPosition | null }, string> => {
     return placeFlags(controller, firstSpawnPosition, dryRun)
   }, "placeFlags()")()
 
   if (result == null) {
     return Result.Failed("Syntax error")
   }
+
+  if (result.resultType === "succeeded") {
+    const room = controller.room
+    const routeCenterPosition = result.value.center
+    const upgradeContainerPosition = result.value.upgraderContainerPosition
+
+    if (upgradeContainerPosition != null) {
+      ErrorMapper.wrapLoop((): void => {
+        placeRoadOnRoute(room, routeCenterPosition, upgradeContainerPosition, 1, dryRun)
+      }, "placeRoadOnRoute() upgrader")()
+    }
+
+    room.find(FIND_SOURCES).forEach(source => {
+      ErrorMapper.wrapLoop((): void => {
+        placeRoadOnRoute(room, routeCenterPosition, source.pos, 2, dryRun)
+      }, "placeRoadOnRoute() source")()
+    })
+  }
   return result
 }
 
-function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<{ center: RoomPosition }, string> {
+function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<{ center: RoomPosition, upgraderContainerPosition: RoomPosition | null}, string> {
   const room = controller.room
 
   let spawnCount = GameConstants.structure.maxCount[STRUCTURE_SPAWN] + GameConstants.structure.maxCount[STRUCTURE_POWER_SPAWN]
@@ -226,7 +244,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     }
   }
 
-  placeLinkFor(controller, dryRun)
+  const {upgraderEnergySourcePosition} = placeLinkFor(controller, dryRun)
 
   const centerPosition = new RoomPosition(firstSpawnPosition.x - 1, firstSpawnPosition.y - 0, firstSpawnPosition.roomName)
   const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
@@ -240,7 +258,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
       if (spawnCount > 0 || towerCount > 0 || extensionCount > 0) {
         return Result.Failed(`placeFlags() no empty position to place ${roomLink(room.name)}`)
       }
-      return Result.Succeeded({ center: centerPosition})
+      return Result.Succeeded({ center: centerPosition, upgraderContainerPosition: upgraderEnergySourcePosition})
     }
 
     const blockPositions = [...nextBlockPositions]
@@ -258,7 +276,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
         return null
       })()
       if (centerMark == null) {
-        return Result.Succeeded({ center: centerPosition })
+        return Result.Succeeded({ center: centerPosition, upgraderContainerPosition: upgraderEnergySourcePosition})
       }
       placeLayout(extensionLayout(centerMark), blockPosition)
     }
@@ -266,7 +284,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
   return Result.Failed(`placeFlags() max block count reached ${roomLink(room.name)}`)
 }
 
-function placeLinkFor(controller: StructureController, dryRun: boolean): void {
+function placeLinkFor(controller: StructureController, dryRun: boolean): { upgraderEnergySourcePosition: RoomPosition | null} {
   const options: RoomPositionFilteringOptions = {
     excludeItself: true,
     excludeStructures: true,
@@ -289,15 +307,25 @@ function placeLinkFor(controller: StructureController, dryRun: boolean): void {
     return rhs.neighbourCount - lhs.neighbourCount
   })
   const linkPositionInfo = sortedPositionInfo.shift()
-  if (linkPositionInfo != null) {
-    placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun)
-
-    const containerPositionInfo = sortedPositionInfo.find(positionInfo => {
-      return positionInfo.position.getRangeTo(linkPositionInfo.position) === 1
-    })
-    if (containerPositionInfo != null) {
-      placeFlag(containerPositionInfo.position, LayoutMark.Container, controller.room, dryRun)
+  if (linkPositionInfo == null) {
+    return {
+      upgraderEnergySourcePosition: null,
     }
+  }
+
+  placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun)
+
+  const containerPositionInfo = sortedPositionInfo.find(positionInfo => {
+    return positionInfo.position.getRangeTo(linkPositionInfo.position) === 1
+  })
+  if (containerPositionInfo == null) {
+    return {
+      upgraderEnergySourcePosition: linkPositionInfo.position,
+    }
+  }
+  placeFlag(containerPositionInfo.position, LayoutMark.Container, controller.room, dryRun)
+  return {
+    upgraderEnergySourcePosition: containerPositionInfo.position,
   }
 }
 
@@ -564,4 +592,14 @@ function neighbourPositions(x: number, y: number): { x: number, y: number }[] {
     }
   }
   return result
+}
+
+function placeRoadOnRoute(room: Room, startPosition: RoomPosition, destination: RoomPosition, roadRange: number, dryRun: boolean): void {
+  const route = PathFinder.search(startPosition, { pos: destination, range: 1 })
+  route.path.forEach(position => {
+    if (position.getRangeTo(destination) < roadRange) {
+      return
+    }
+    placeFlag(position, LayoutMark.Road, room, dryRun)
+  })
 }
