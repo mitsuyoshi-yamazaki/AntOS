@@ -96,8 +96,11 @@ export class CreateConstructionSiteTask extends Task {
         }
         return [true, true]
       }
-      if (room.controller.level <= 3) {
+      if (room.controller.level < 3) {
         return [false, false]
+      }
+      if (room.controller.level < 4) {
+        return [true, false]
       }
       return [true, true]
     })()

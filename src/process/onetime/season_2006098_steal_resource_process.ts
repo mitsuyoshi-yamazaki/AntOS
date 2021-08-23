@@ -18,7 +18,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { isResourceConstant, MineralBoostConstant } from "utility/resource"
+import { isResourceConstant, MineralBoostConstant, MineralConstant } from "utility/resource"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "process/process_log"
@@ -29,6 +29,8 @@ const resourcePriority: ResourceConstant[] = [
   ...MineralBoostConstant,  // 添字の大きいほうが優先
   RESOURCE_OPS,
   RESOURCE_POWER,
+  ...MineralConstant,
+  RESOURCE_ENERGY,
 ]
 
 type State = "in progress" | "finished"
@@ -49,6 +51,7 @@ export interface Season2006098StealResourceProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season2006098StealResourceProcess room_name=W17S11 target_room_name=W21S8 waypoints=W17S10,W20S10,W20S8 target_id=6114b54b0bc98d0ba852e751")
+// Game.io("launch -l Season2006098StealResourceProcess room_name=W48S33 target_room_name=W48S32 waypoints=W48S32 target_id=61031cf1e37c036c62965c79")
 export class Season2006098StealResourceProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -146,7 +149,7 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
     }
 
     if (creep.store.getUsedCapacity() <= 0) {
-      if (creep.ticksToLive != null && (creep.ticksToLive < (GameConstants.creep.life.lifeTime / 2))) {
+      if (creep.ticksToLive != null && (creep.ticksToLive < (GameConstants.creep.life.lifeTime / 5))) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
       if (creep.room.name === this.parentRoomName) {
