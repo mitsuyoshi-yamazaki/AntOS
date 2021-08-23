@@ -94,6 +94,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
+    this.checkEnergySource(objects)
+
     const container = objects.roomInfo.upgrader?.container
     const link = ((): StructureLink | null => {
       if (this.linkId == null) {
@@ -115,13 +117,14 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
         return true
       })
     }
+    if (this.availablePositions.length <= 0) {
+      return TaskStatus.InProgress
+    }
 
     super.runTask(objects, childTaskResults)
 
     const problemFinders: ProblemFinder[] = [
     ]
-
-    this.checkLink(objects)
 
     this.checkProblemFinders(problemFinders)
 
@@ -234,21 +237,34 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return true
     })
     if (emptyPositions[0] == null) {
-      PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
+      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position (${this.upgraderPositions})`)
       return null
     }
     return emptyPositions[0]
   }
 
-  private checkLink(objects: OwnedRoomObjects): void {
-    if (this.linkId != null || (Game.time % 2099) !== 0) {
+  private checkEnergySource(objects: OwnedRoomObjects): void {
+    if (((Game.time + this.startTime) % 197) !== 17) {
       return
     }
-
-    const link = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
-    if (link == null) {
-      return
+    if (this.linkId == null) {
+      const link = objects.controller.pos.findInRange(FIND_MY_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+      if (link != null) {
+        this.linkId = link.id
+      }
     }
-    this.linkId = link.id
+    if (objects.roomInfo.upgrader?.container == null) {
+      const container = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
+      if (container != null) {
+        if (objects.roomInfo.upgrader == null) {
+          objects.roomInfo.upgrader = {
+            link: null,
+            container,
+          }
+        } else {
+          objects.roomInfo.upgrader.container = container
+        }
+      }
+    }
   }
 }
