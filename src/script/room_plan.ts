@@ -204,8 +204,42 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     }
   }
 
-  const nextBlockPositions: RoomPosition[] = []
-  const usedBlockPositions: RoomPosition[] = []
+  const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
+  const layeredPositionDirections: DirectionConstant[][] = [
+    [],
+    [RIGHT],
+    [LEFT],
+    [TOP_RIGHT],
+    [BOTTOM_RIGHT],
+    [TOP_LEFT],
+    [BOTTOM_LEFT],
+    [TOP],
+    [BOTTOM],
+    [TOP_RIGHT, TOP_RIGHT],
+    [BOTTOM_RIGHT, BOTTOM_RIGHT],
+    [TOP_LEFT, TOP_LEFT],
+    [BOTTOM_LEFT, BOTTOM_LEFT],
+    [TOP_RIGHT, RIGHT],
+    [BOTTOM_RIGHT, RIGHT],
+    [TOP_LEFT, LEFT],
+    [BOTTOM_LEFT, LEFT],
+  ]
+  const nextBlockPositions: RoomPosition[] = layeredPositionDirections.flatMap(directions => {
+    const getPosition = (position: RoomPosition): RoomPosition | null => {
+      const direction = directions.shift()
+      if (direction == null) {
+        return position
+      }
+      const nextPosition = neighbourBlockPosition(position, direction)
+      if (nextPosition == null) {
+        return null
+      }
+      return getPosition(nextPosition)
+    }
+    return getPosition(centerBlockPosition) ?? []
+  })
+
+  const usedBlockPositions: RoomPosition[] = [...nextBlockPositions]
   const placeLayout = (layout: LayoutMark[][], position: RoomPosition): void => {
     const positionIndex = nextBlockPositions.indexOf(position)
     if (positionIndex >= 0) {
@@ -247,7 +281,6 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
   const {upgraderEnergySourcePosition} = placeLinkFor(controller, dryRun)
 
   const centerPosition = new RoomPosition(firstSpawnPosition.x - 1, firstSpawnPosition.y - 0, firstSpawnPosition.roomName)
-  const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
   usedBlockPositions.push(centerBlockPosition)
   placeLayout(centerLayout, centerBlockPosition)
   room.visual.text("6", firstSpawnPosition, { color: "#ff0000" })
@@ -430,24 +463,32 @@ function extensionLayout(centerMark: LayoutMark): LayoutMark[][] {
   ]
 }
 
-const neighbourBlockDiff: { i: number, j: number }[] = [
-  { i: -4, j: 0 },
-  { i: 4, j: 0 },
-  { i: -2, j: -2 },
-  { i: 2, j: -2 },
-  { i: 2, j: 2 },
-  { i: -2, j: 2 },
-  { i: 0, j: -4 },
-  { i: 0, j: 4 },
-]
+const neighbourBlockDiff: { [direction in DirectionConstant]: { i: number, j: number } } = {
+  [LEFT]: { i: -4, j: 0 },
+  [RIGHT]: { i: 4, j: 0 },
+  [TOP_LEFT]: { i: -2, j: -2 },
+  [TOP_RIGHT]: { i: 2, j: -2 },
+  [BOTTOM_RIGHT]: { i: 2, j: 2 },
+  [BOTTOM_LEFT]: { i: -2, j: 2 },
+  [TOP]: { i: 0, j: -4 },
+  [BOTTOM]: { i: 0, j: 4 },
+}
 function neighbourBlockPositions(position: RoomPosition): RoomPosition[] {
-  return neighbourBlockDiff.flatMap(diff => {
+  return Array.from(Object.values(neighbourBlockDiff)).flatMap(diff => {
     try {
       return new RoomPosition(position.x + diff.i, position.y + diff.j, position.roomName)
     } catch {
       return []
     }
   })
+}
+function neighbourBlockPosition(position: RoomPosition, direction: DirectionConstant): RoomPosition | null {
+  try {
+    const diff = neighbourBlockDiff[direction]
+    return new RoomPosition(position.x + diff.i, position.y + diff.j, position.roomName)
+  } catch {
+    return null
+  }
 }
 
 function calculateFirstSpawnPosition(controller: StructureController): RoomPosition | null {
