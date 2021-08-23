@@ -414,30 +414,34 @@ function calculateFirstSpawnPosition(controller: StructureController): RoomPosit
     return spawn.pos
   }
 
-  const positions = ErrorMapper.wrapLoop((): RoomPosition[] => {
+  const positionScores = ErrorMapper.wrapLoop((): { position: RoomPosition, score: number }[] => {
     return roomOpenPositions(room)
   }, "roomOpenPositions()")()
 
-  if (positions == null || positions.length <= 0) {
+  if (positionScores == null || positionScores.length <= 0) {
     return null
   }
 
+  const topPositionScores = positionScores
+    .sort((lhs, rhs) => lhs.score - rhs.score)
+  topPositionScores.splice(20, topPositionScores.length) // 計算量削減のため
+
   const sources = room.find(FIND_SOURCES)
-  const distanceScores = positions.map(position => {
-    const controllerDistance = position.findPathTo(controller).length
-    const sourceDistance = sources.reduce((result, current) => result + position.findPathTo(current).length, 0)
-    const distanceScore = controllerDistance + sourceDistance
+  const distanceScores = topPositionScores.map(positionScore => {
+    const controllerDistance = positionScore.position.findPathTo(controller).length
+    const sourceDistance = sources.reduce((result, current) => result + positionScore.position.findPathTo(current).length, 0)
+    const distanceScore = controllerDistance + sourceDistance * 0.3
     return {
-      position,
-      distanceScore,
+      position: positionScore.position,
+      score: positionScore.score * 10 + distanceScore,
     }
   })
   return distanceScores.sort((lhs, rhs) => {
-    return lhs.distanceScore - rhs.distanceScore
+    return lhs.score - rhs.score
   })[0]?.position ?? null
 }
 
-function roomOpenPositions(room: Room): RoomPosition[] {
+function roomOpenPositions(room: Room): {position: RoomPosition, score: number}[] {
   const min = GameConstants.room.edgePosition.min
   const max = GameConstants.room.edgePosition.max
   const edgeMargin = 2
@@ -469,36 +473,35 @@ function roomOpenPositions(room: Room): RoomPosition[] {
 
   if (scores.size <= 0) {
     PrimitiveLogger.log(`roomOpenPositions() no walls in room ${roomLink(room.name)}`)
-    return [new RoomPosition(25, 25, room.name)]
+    return [{
+      position: new RoomPosition(25, 25, room.name),
+      score: minScore,
+    }]
   }
   for (let score = maxScore; score >= minScore; score -= 1) {
     fillScore(score, scores)
   }
 
   const margin = 5
-  const minMargin = min + margin
-  const maxMargin = max - margin
+  const minMargin = min + margin * 2  // room planの中心は外側に寄りすぎない
+  const maxMargin = max - margin * 2
 
-  let minimumScore = maxScore
-  const result: RoomPosition[] = []
+  const result: { position: RoomPosition, score: number }[] = []
   for (let y = minMargin; y <= maxMargin; y += 1) {
     for (let x = minMargin; x <= maxMargin; x += 1) {
       const score = scores.getValueFor(y).get(x) ?? maxScore
       // room.visual.text(`${score}`, x, y, { color: "#ffffff" })
       try {
-        if (score < minimumScore) {
-          minimumScore = score
-          result.splice(0, result.length)
-          result.push(new RoomPosition(x, y, room.name))
-        } else if (score === minimumScore) {
-          result.push(new RoomPosition(x, y, room.name))
-        }
+        result.push({
+          position: new RoomPosition(x, y, room.name),
+          score: score
+        })
       } catch (e) {
         PrimitiveLogger.programError(`roomOpenPositions() failed ${e}`)
       }
     }
   }
-  PrimitiveLogger.log(`roomOpenPositions() minium score: ${minimumScore} ${roomLink(room.name)}`)
+  PrimitiveLogger.log(`roomOpenPositions() ${roomLink(room.name)}`)
   return result
 }
 
