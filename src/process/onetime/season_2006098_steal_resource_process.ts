@@ -156,6 +156,18 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
   }
 
   private newTaskFor(creep: Creep, store: StructureStorage | StructureTerminal): CreepTask | null {
+    if (creep.room.name === this.parentRoomName) {
+      const resourceType = Object.keys(creep.store).find(resource => {
+        if (!isResourceConstant(resource)) {
+          return false
+        }
+        return true
+      }) as ResourceConstant | null
+      if (resourceType != null) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(store, resourceType))
+      }
+    }
+
     if (creep.room.name === this.targetRoomName) {
       const target = Game.getObjectById(this.targetId)
       if (target != null) {
@@ -199,21 +211,7 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       }
     }
 
-    if (creep.room.name !== this.parentRoomName) {
-      return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, []))
-    }
-
-    const resourceType = Object.keys(creep.store).find(resource => {
-      if (!isResourceConstant(resource)) {
-        return false
-      }
-      return true
-    }) as ResourceConstant | null
-    if (resourceType == null) {
-      creep.say("?")
-      return null
-    }
-    return MoveToTargetTask.create(TransferResourceApiWrapper.create(store, resourceType))
+    return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, []))
   }
 
   private resourceToSteal(target: TargetType): ResourceConstant | null {
