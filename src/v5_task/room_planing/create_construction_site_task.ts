@@ -90,7 +90,7 @@ export class CreateConstructionSiteTask extends Task {
       }
       return objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
     })()
-    this.placeConstructionSite(objects.controller.room, objects.flags, centerPosition)
+    this.placeConstructionSite(objects.controller.room, [...objects.flags], centerPosition)
 
     return TaskStatus.InProgress
   }
@@ -149,8 +149,20 @@ export class CreateConstructionSiteTask extends Task {
       if (structureType === STRUCTURE_EXTENSION && shouldPlaceExtensions !== true) {
         continue
       }
-      if (structureType === STRUCTURE_ROAD && shouldPlaceRoads !== true) {
-        continue
+      if (structureType === STRUCTURE_ROAD) {
+        if (shouldPlaceRoads !== true) {
+          continue
+        }
+        const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
+        if (placedStructure.length > 0) {
+          flag.remove()
+          continue
+        }
+        const otherFlags = flag.pos.findInRange(FIND_FLAGS, 0)
+        if (otherFlags.length > 0) {
+          flag.remove()
+          continue
+        }
       }
       if (structureType === STRUCTURE_CONTAINER && shouldPlaceContainer !== true) {
         continue
