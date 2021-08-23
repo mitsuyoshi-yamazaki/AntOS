@@ -194,7 +194,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
       nextBlockPositions.splice(positionIndex, 1)
     }
 
-    let placedMarks = 0
+    let placedStructures = 0
     layout.forEach((row, j) => {
       row.forEach((mark, i) => {
         if (flagColors[mark] == null) {
@@ -205,7 +205,9 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
           if (canPlace(markPosition, mark) === true) {
             placeFlag(markPosition, mark, room, dryRun)
             decreaseStructureCount(mark)
-            placedMarks += 1
+            if (mark !== LayoutMark.Road) {
+              placedStructures += 1
+            }
           }
         } catch {
           return
@@ -213,7 +215,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
       })
     })
 
-    if (placedMarks > 2) {
+    if (placedStructures >= 4) {
       neighbourBlockPositions(position).forEach(neighbourBlockPosition => {
         if (usedBlockPositions.some(usedBlockPosition => usedBlockPosition.isEqualTo(neighbourBlockPosition)) === true) {
           return
