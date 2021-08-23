@@ -24,12 +24,13 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
   attackerType: AttackerType
 }
 
-// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20 attacker_type=attacker")
-// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20 attacker_type=attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W21S23 waypoints=W20S23 patrol_rooms=W20S20,W30S20 attacker_type=large_ranged_attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S20,W20S20 attacker_type=large_ranged_attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W24S29 waypoints=W24S30 patrol_rooms=W23S30,W20S30,W20S21 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W27S26 waypoints=W28S26,W28S25,W30S25 patrol_rooms=W30S30,W30S19 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W6S29 waypoints=W6S30 patrol_rooms=W0S30,W10S30 attacker_type=attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W9S24 waypoints=W10S24 patrol_rooms=W10S22,W10S30 attacker_type=large_ranged_attacker")
+// Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W15S8 waypoints=W15S10 patrol_rooms=W24S10,W16S10 attacker_type=large_ranged_attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -137,7 +138,15 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       break
     }
 
-    const shouldPauseTask = (moved === true || movement.moved === true || movement.attackedTarget != null)
+    const shouldPauseTask = ((): boolean => {
+      if (moved === true || movement.moved === true || movement.attackedTarget != null) {
+        return true
+      }
+      if (creep.room.find(FIND_STRUCTURES, { filter: {structureType: STRUCTURE_POWER_BANK}}).length > 0) {
+        return true
+      }
+      return false
+    })()
     if (creep.v5task?.pause != null) {
       creep.v5task.pause(shouldPauseTask)
     }
