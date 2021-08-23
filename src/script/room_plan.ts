@@ -204,6 +204,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
     }
   }
 
+  const centerPosition = new RoomPosition(firstSpawnPosition.x - 1, firstSpawnPosition.y - 0, firstSpawnPosition.roomName)
   const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
   const layeredPositionDirections: DirectionConstant[][] = [
     [],
@@ -255,7 +256,16 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
         try {
           const markPosition = new RoomPosition(position.x + i, position.y + j, position.roomName)
           if (canPlace(markPosition, mark) === true) {
-            placeFlag(markPosition, mark, room, dryRun)
+            const roadOnSwamp = ((): boolean => {
+              if (mark !== LayoutMark.Road) {
+                return false
+              }
+              if (markPosition.getRangeTo(centerPosition) >= 4) {
+                return false
+              }
+              return true
+            })()
+            placeFlag(markPosition, mark, room, dryRun, roadOnSwamp)
             decreaseStructureCount(mark)
             if (mark !== LayoutMark.Road) {
               placedStructures += 1
@@ -280,7 +290,6 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
 
   const {upgraderEnergySourcePosition} = placeLinkFor(controller, dryRun)
 
-  const centerPosition = new RoomPosition(firstSpawnPosition.x - 1, firstSpawnPosition.y - 0, firstSpawnPosition.roomName)
   usedBlockPositions.push(centerBlockPosition)
   placeLayout(centerLayout, centerBlockPosition)
   room.visual.text("6", firstSpawnPosition, { color: "#ff0000" })
@@ -346,7 +355,7 @@ function placeLinkFor(controller: StructureController, dryRun: boolean): { upgra
     }
   }
 
-  placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun)
+  placeFlag(linkPositionInfo.position, LayoutMark.Link, controller.room, dryRun, false)
 
   const containerPositionInfo = sortedPositionInfo.find(positionInfo => {
     return positionInfo.position.getRangeTo(linkPositionInfo.position) === 1
@@ -356,13 +365,13 @@ function placeLinkFor(controller: StructureController, dryRun: boolean): { upgra
       upgraderEnergySourcePosition: linkPositionInfo.position,
     }
   }
-  placeFlag(containerPositionInfo.position, LayoutMark.Container, controller.room, dryRun)
+  placeFlag(containerPositionInfo.position, LayoutMark.Container, controller.room, dryRun, false)
   return {
     upgraderEnergySourcePosition: containerPositionInfo.position,
   }
 }
 
-function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun: boolean): void {
+function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun: boolean, roadOnSwamp: boolean): void {
   const flagColor = flagColors[mark]
   if (flagColor == null) {
     return
@@ -373,7 +382,7 @@ function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun:
   if (dryRun === true) {
     room.visual.text(mark, position, { color: "#ffffff" })
   } else {
-    if (mark === LayoutMark.Road) {
+    if (roadOnSwamp === true && mark === LayoutMark.Road) {
       const terrain = position.lookFor(LOOK_TERRAIN)[0]
       switch (terrain) {
       case "swamp":
@@ -641,6 +650,6 @@ function placeRoadOnRoute(room: Room, startPosition: RoomPosition, destination: 
     if (position.getRangeTo(destination) < roadRange) {
       return
     }
-    placeFlag(position, LayoutMark.Road, room, dryRun)
+    placeFlag(position, LayoutMark.Road, room, dryRun, true)
   })
 }
