@@ -85,6 +85,10 @@ export const GameConstants = {
   source: {
     regenerationDuration: 300,
   },
+  link: {
+    loss: LINK_LOSS_RATIO,
+    capaity: LINK_CAPACITY,
+  },
   power: PowerGameConstants,
   structure: StructureGameConstants,
 }

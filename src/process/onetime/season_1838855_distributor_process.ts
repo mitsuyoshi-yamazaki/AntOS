@@ -21,6 +21,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { CreepBody } from "utility/creep_body"
+import { GameConstants } from "utility/constants"
 
 type EnergyStore = StructureTerminal | StructureStorage
 
@@ -141,7 +142,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     if (link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
       return
     }
-    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+    const linkConstants = GameConstants.link
+    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) >= (linkConstants.capaity * linkConstants.loss)) {
       return
     }
     link.transferEnergy(upgraderLink)
