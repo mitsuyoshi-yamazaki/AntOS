@@ -156,7 +156,7 @@ export class BuildContainerTask extends Task {
         this.constructionSiteId = constructionSite.id as Id<ConstructionSite<STRUCTURE_CONTAINER>>
         return
       }
-      PrimitiveLogger.fatal(`createConstructionSite returns ERR_INVALID_TARGET ${this.taskIdentifier}`)
+      PrimitiveLogger.fatal(`${this.taskIdentifier} createConstructionSite returns ERR_INVALID_TARGET ${this.targetPosition}`)
       return
     }
     case ERR_NOT_OWNER:

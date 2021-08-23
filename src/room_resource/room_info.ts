@@ -1,6 +1,8 @@
 // import { OwnedRoomPlan, RemoteHarvestRoomPlan } from "application/task/worker/room_plan/room_plan"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
+import { Timestamp } from "utility/timestamp"
 
 type ResourceInsufficiencyPriorityRequired = 0
 type ResourceInsufficiencyPriorityOptional = 1
@@ -24,6 +26,11 @@ export interface BasicRoomInfo {
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
   // roomPlan: RemoteHarvestRoomPlan | null
+
+  observedAt: Timestamp
+  owner: { claimingUser: string } | { reservingUser: string } | null
+  readonly numberOfSources: number
+  readonly neighbourRoomNames: RoomName[]
 }
 
 /**
@@ -64,6 +71,49 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 }
 
 export type RoomInfoType = NormalRoomInfo | OwnedRoomInfo
+
+function getOwnerInfo(room: Room): { claimingUser: string } | { reservingUser: string } | null {
+  if (room.controller == null) {
+    return null
+  }
+  if (room.controller.owner != null) {
+    return {
+      claimingUser: room.controller.owner.username
+    }
+  }
+  if (room.controller.reservation != null) {
+    return {
+      reservingUser: room.controller.reservation.username
+    }
+  }
+  return null
+}
+
+export function updateNormalRoomInfo(room: Room, roomInfo: NormalRoomInfo): void {
+  roomInfo.observedAt = Game.time
+  roomInfo.owner = getOwnerInfo(room)
+}
+
+export function buildNormalRoomInfo(room: Room): NormalRoomInfo {
+  const neighbourRoomNames = ((): RoomName[] => {
+    const exits = Game.map.describeExits(room.name)
+    if (exits == null) { // sim環境ではundefinedが返る
+      return []
+    }
+    return Array.from(Object.values(exits))
+  })()
+
+  return {
+    v: ShortVersion.v6,
+    roomType: "normal",
+    observedAt: Game.time,
+    owner: getOwnerInfo(room),
+    numberOfSources: room.find(FIND_SOURCES).length,
+    neighbourRoomNames,
+    energySourceStructureIds: [],
+    energyStoreStructureIds: [],
+  }
+}
 
 export function buildOwnedRoomInfo(normalRoomInfo?: NormalRoomInfo): OwnedRoomInfo {
   return {

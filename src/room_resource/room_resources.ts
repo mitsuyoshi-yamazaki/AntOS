@@ -6,7 +6,7 @@ import { RoomName } from "utility/room_name"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
-import { buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiencyPriority, RoomInfoType } from "./room_info"
+import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiencyPriority, RoomInfoType, updateNormalRoomInfo } from "./room_info"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -17,6 +17,7 @@ interface RoomResourcesInterface {
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
+  getRoomInfo(roomName: RoomName): RoomInfoType | null
 
   // ---- Inter Room Resource ---- //
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority}[]
@@ -46,6 +47,8 @@ export const RoomResources: RoomResourcesInterface = {
         ownedRoomResources.set(roomName, ownedRoomResource)
         roomResources.set(roomName, ownedRoomResource)
       }
+
+      updateRoomInfo(room)
     })
   },
 
@@ -75,6 +78,10 @@ export const RoomResources: RoomResourcesInterface = {
     const roomResource = buildNormalRoomResource(room.controller)
     roomResources.set(roomName, roomResource)
     return roomResource
+  },
+
+  getRoomInfo(roomName: RoomName): RoomInfoType | null {
+    return Memory.v6RoomInfo[roomName] ?? null
   },
 
   // ---- Inter Room Resource ---- //
@@ -117,6 +124,22 @@ function enumerateCreeps(): void {
     })()
 
     creeps.push(creep)
+  }
+}
+
+function updateRoomInfo(room: Room): void {
+  const storedRoomInfo = RoomResources.getRoomInfo(room.name)
+  if(storedRoomInfo == null) {
+    Memory.v6RoomInfo[room.name] = createRoomInfo(room)
+    return
+  }
+
+  switch (storedRoomInfo.roomType) {
+  case "normal":
+    updateNormalRoomInfo(room, storedRoomInfo)
+    break
+  case "owned":
+    break
   }
 }
 
@@ -192,4 +215,11 @@ function saveRoomInfo(): void {
     }
     Memory.v6RoomInfo[roomName] = roomInfo
   })
+}
+
+function createRoomInfo(room: Room): RoomInfoType {
+  if (room.controller != null && room.controller.my === true) {
+    return buildOwnedRoomInfo()
+  }
+  return buildNormalRoomInfo(room)
 }

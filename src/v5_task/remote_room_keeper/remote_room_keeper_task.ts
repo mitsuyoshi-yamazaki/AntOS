@@ -104,6 +104,9 @@ export class RemoteRoomKeeperTask extends Task {
         if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
           return false
         }
+        if (Environment.world === "persistent world" && Environment.shard === "shard3" && this.targetRoomName === "W47S34") {
+          return false
+        }
         return true
       })()
       if (shouldLaunchRemoteRoomWorker === true) {
@@ -115,10 +118,10 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (task.targetRoomName !== "W7S29") {
-        return false
+      if (Environment.world === "persistent world" && Environment.shard === "shard3" && task.targetRoomName === "W47S34") {  // 起動中のRemoteRoomWorkerを削除したい場合
+        return true
       }
-      return true
+      return false
     })
     if (workerToRemove != null) {
       PrimitiveLogger.log(`${this.taskIdentifier} removed child task ${workerToRemove.taskIdentifier}`)
