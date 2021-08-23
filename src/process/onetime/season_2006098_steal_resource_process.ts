@@ -18,23 +18,19 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { isResourceConstant, MineralBoostConstant, MineralConstant } from "utility/resource"
-import { OwnedRoomObjects } from "world_info/room_info"
+import { isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "process/process_log"
 import { OperatingSystem } from "os/os"
 
-const numberOfCreeps = 6
 const resourcePriority: ResourceConstant[] = [
   ...MineralBoostConstant,  // 添字の大きいほうが優先
   RESOURCE_OPS,
   RESOURCE_POWER,
-  ...MineralConstant,
-  RESOURCE_ENERGY,
 ]
 
 type State = "in progress" | "finished"
-type TargetType = StructureStorage
+type TargetType = StructureStorage | StructureTerminal | StructureFactory
 
 export interface Season2006098StealResourceProcessState extends ProcessState {
   /** parent room name */
@@ -48,6 +44,7 @@ export interface Season2006098StealResourceProcessState extends ProcessState {
 
   targetId: Id<TargetType>
   state: State
+  takeAll: boolean
 }
 
 // Game.io("launch -l Season2006098StealResourceProcess room_name=W17S11 target_room_name=W21S8 waypoints=W17S10,W20S10,W20S8 target_id=6114b54b0bc98d0ba852e751")
@@ -64,6 +61,7 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
     public readonly waypoints: RoomName[],
     private readonly targetId: Id<TargetType>,
     private state: State,
+    private readonly takeAll: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -79,15 +77,16 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       w: this.waypoints,
       targetId: this.targetId,
       state: this.state,
+      takeAll: this.takeAll,
     }
   }
 
   public static decode(state: Season2006098StealResourceProcessState): Season2006098StealResourceProcess {
-    return new Season2006098StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state)
+    return new Season2006098StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll ?? true)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>): Season2006098StealResourceProcess {
-    return new Season2006098StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress")
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean): Season2006098StealResourceProcess {
+    return new Season2006098StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll)
   }
 
   public processShortDescription(): string {
@@ -101,12 +100,35 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       return
     }
 
+    const resourceStore = ((): StructureTerminal | StructureStorage | null => {
+      if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.my === true) {
+        return objects.activeStructures.terminal
+      }
+      if (objects.activeStructures.storage != null && objects.activeStructures.storage.my === true) {
+        return objects.activeStructures.storage
+      }
+      return null
+    } )()
+    if (resourceStore == null) {
+      return
+    }
+
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (this.state === "finished" && creepCount <= 0) {
       processLog(this, `${coloredText("[Finished]", "info")} no more valuable resources in ${roomLink(this.targetRoomName)}`)
       OperatingSystem.os.suspendProcess(this.processId)
       return
     }
+    const numberOfCreeps = ((): number => {
+      const targetRoom = Game.rooms[this.targetRoomName]
+      if (targetRoom?.controller != null && targetRoom.controller.my === true) {
+        return 1
+      }
+      if (objects.controller.level <= 4) {
+        return 3
+      }
+      return 6
+    })()
     if (this.state !== "finished" && creepCount < numberOfCreeps) {
       this.requestHauler(objects.controller.room.energyCapacityAvailable)
     }
@@ -115,7 +137,7 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newTaskFor(creep, objects),
+      creep => this.newTaskFor(creep, resourceStore),
       () => true,
     )
   }
@@ -133,12 +155,24 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
     })
   }
 
-  private newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
+  private newTaskFor(creep: Creep, store: StructureStorage | StructureTerminal): CreepTask | null {
     if (creep.room.name === this.targetRoomName) {
       const target = Game.getObjectById(this.targetId)
       if (target != null) {
         if (creep.store.getFreeCapacity() > 0) {
           const resourceType = this.resourceToSteal(target)
+          const shouldFinish = ((): boolean => {
+            if (resourceType == null) {
+              return true
+            }
+            if (this.takeAll !== true && resourcePriority.includes(resourceType) !== true) {
+              return true
+            }
+            return false
+          })()
+          if (shouldFinish === true) {
+            this.state = "finished"
+          }
           if (resourceType != null) {
             return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(target, resourceType)))
           }
@@ -149,7 +183,13 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
     }
 
     if (creep.store.getUsedCapacity() <= 0) {
-      if (creep.ticksToLive != null && (creep.ticksToLive < (GameConstants.creep.life.lifeTime / 5))) {
+      const lifeTime = ((): number => {
+        if (this.parentRoomName === this.targetRoomName) {
+          return 50
+        }
+        return (GameConstants.creep.life.lifeTime / 5)
+      })()
+      if (creep.ticksToLive != null && (creep.ticksToLive < lifeTime)) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
       if (creep.room.name === this.parentRoomName) {
@@ -173,11 +213,6 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       creep.say("?")
       return null
     }
-    const store = objects.activeStructures.terminal ?? objects.activeStructures.storage
-    if (store == null) {
-      creep.say("no store")
-      return null
-    }
     return MoveToTargetTask.create(TransferResourceApiWrapper.create(store, resourceType))
   }
 
@@ -186,10 +221,6 @@ export class Season2006098StealResourceProcess implements Process, Procedural {
       .sort((lhs, rhs) => {
         return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)
       })[0]
-    if (resourceType == null || resourcePriority.includes(resourceType) !== true) {
-      this.state = "finished"
-      return null
-    }
-    return resourceType
+    return resourceType ?? null
   }
 }

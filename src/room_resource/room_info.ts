@@ -1,6 +1,5 @@
-// import { OwnedRoomPlan, RemoteHarvestRoomPlan } from "application/task/worker/room_plan/room_plan"
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
-import { RoomName, roomTypeOf } from "utility/room_name"
+import { RoomName } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
 import { Timestamp } from "utility/timestamp"
 

@@ -1048,7 +1048,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>)
+      return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true)
     })
     return Result.Succeeded(process)
   }
