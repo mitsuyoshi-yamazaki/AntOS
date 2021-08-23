@@ -312,7 +312,22 @@ function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun:
   if (dryRun === true) {
     room.visual.text(mark, position, { color: "#ffffff" })
   } else {
-    room.createFlag(position, undefined, flagColor)
+    if (mark === LayoutMark.Road) {
+      const terrain = position.lookFor(LOOK_TERRAIN)[0]
+      switch (terrain) {
+      case "swamp":
+        room.createConstructionSite(position, STRUCTURE_ROAD)
+        break
+      case "plain":
+        room.createFlag(position, undefined, flagColor)
+        break
+      case "wall":
+      default:
+        break
+      }
+    } else {
+      room.createFlag(position, undefined, flagColor)
+    }
   }
 }
 
