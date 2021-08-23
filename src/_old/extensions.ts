@@ -15,6 +15,7 @@ import { isV4CreepMemory } from "prototype/creep"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
 import type { RoomInfoType } from "room_resource/room_info"
 import type { GameInfoMemory } from "game/game_info"
+import { Environment } from "utility/environment"
 
 const cost_matrixes = new Map<string, CostMatrix>()
 console.log(`Initialize cost_matrixes`)
@@ -30,6 +31,7 @@ declare global {
 
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
+    environment: string
 
     // Alliance
     LOANlist: string[]
@@ -241,6 +243,7 @@ export function tick(): void {
     name: 'Mitsuyoshi',
   }
   Game.systemInfo = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version}`
+  Game.environment = `${Environment.world}: ${Environment.shard}`
 
   Game.empire = {
     name: Game.user.name,
