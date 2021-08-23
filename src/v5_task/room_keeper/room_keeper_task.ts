@@ -14,6 +14,8 @@ import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { calculateRoomPlan } from "script/room_plan"
+import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
+import { OperatingSystem } from "os/os"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -70,19 +72,45 @@ export class RoomKeeperTask extends Task {
 
     const ownedRoomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (ownedRoomResource != null) {
-      if (ownedRoomResource.roomInfo.roomPlanDefined == null) {
-        ownedRoomResource.roomInfo.roomPlanDefined = true
-      }
-      if (ownedRoomResource.roomInfo.roomPlanDefined !== true) {
-        ownedRoomResource.roomInfo.roomPlanDefined = true
-        const result = calculateRoomPlan(objects.controller, false)
-        switch (result.resultType) {
-        case "succeeded":
-          PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} place room layout`)
-          break
-        case "failed":
-          PrimitiveLogger.fatal(`${roomLink(this.roomName)} ${result.reason}`)
-          break
+      if (ownedRoomResource.roomInfo.roomPlan == null) {  // FixMe: roomInfo.roomPlanのMigration処理：流したら消す
+        const distributorProcess = ((): Season1838855DistributorProcess | null => {
+          return OperatingSystem.os.listAllProcesses()
+            .map(processInfo => processInfo.process)
+            .find(process => {
+              if (!(process instanceof Season1838855DistributorProcess)) {
+                return false
+              }
+              if (process.parentRoomName !== this.roomName) {
+                return false
+              }
+              return true
+            }) as Season1838855DistributorProcess | null
+        })()
+
+        if (distributorProcess != null) {
+          ownedRoomResource.roomInfo.roomPlan = {
+            centerPosition: {
+              x: distributorProcess.position.x,
+              y: distributorProcess.position.y,
+            }
+          }
+        } else {
+          const result = calculateRoomPlan(objects.controller, false)
+          switch (result.resultType) {
+          case "succeeded":
+            PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
+            ownedRoomResource.roomInfo.roomPlan = {
+              centerPosition: {
+                x: result.value.center.x,
+                y: result.value.center.y,
+              }
+            }
+            break
+          case "failed":
+            PrimitiveLogger.fatal(`${roomLink(this.roomName)} ${result.reason}`)
+            break
+          }
+
         }
       }
     }

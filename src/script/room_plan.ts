@@ -116,14 +116,14 @@ export function showRoomPlan(controller: StructureController): string {
   }
 }
 
-export function calculateRoomPlan(controller: StructureController, dryRun: boolean): Result<void, string> {
+export function calculateRoomPlan(controller: StructureController, dryRun: boolean): Result<{center: RoomPosition}, string> {
   const firstSpawnPosition = calculateFirstSpawnPosition(controller)
   if (firstSpawnPosition == null) {
     return Result.Failed("Failed to calculate first spawn position")
   }
   PrimitiveLogger.log(`calculateRoomPlan() first spawn position: ${firstSpawnPosition}`)
 
-  const result = ErrorMapper.wrapLoop((): Result<void, string> => {
+  const result = ErrorMapper.wrapLoop((): Result<{ center: RoomPosition }, string> => {
     return placeFlags(controller, firstSpawnPosition, dryRun)
   }, "placeFlags()")()
 
@@ -133,7 +133,7 @@ export function calculateRoomPlan(controller: StructureController, dryRun: boole
   return result
 }
 
-function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<void, string> {
+function placeFlags(controller: StructureController, firstSpawnPosition: RoomPosition, dryRun: boolean): Result<{ center: RoomPosition }, string> {
   const room = controller.room
 
   let spawnCount = GameConstants.structure.maxCount[STRUCTURE_SPAWN] + GameConstants.structure.maxCount[STRUCTURE_POWER_SPAWN]
@@ -226,6 +226,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
 
   placeLinkFor(controller, dryRun)
 
+  const centerPosition = new RoomPosition(firstSpawnPosition.x - 1, firstSpawnPosition.y - 0, firstSpawnPosition.roomName)
   const centerBlockPosition = new RoomPosition(firstSpawnPosition.x - 3, firstSpawnPosition.y - 2, firstSpawnPosition.roomName)
   usedBlockPositions.push(centerBlockPosition)
   placeLayout(centerLayout, centerBlockPosition)
@@ -237,7 +238,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
       if (spawnCount > 0 || towerCount > 0 || extensionCount > 0) {
         return Result.Failed(`placeFlags() no empty position to place ${roomLink(room.name)}`)
       }
-      return Result.Succeeded(undefined)
+      return Result.Succeeded({ center: centerPosition})
     }
 
     const blockPositions = [...nextBlockPositions]
@@ -255,7 +256,7 @@ function placeFlags(controller: StructureController, firstSpawnPosition: RoomPos
         return null
       })()
       if (centerMark == null) {
-        return Result.Succeeded(undefined)
+        return Result.Succeeded({ center: centerPosition })
       }
       placeLayout(extensionLayout(centerMark), blockPosition)
     }
@@ -386,13 +387,13 @@ function extensionLayout(centerMark: LayoutMark): LayoutMark[][] {
 
 const neighbourBlockDiff: { i: number, j: number }[] = [
   { i: -4, j: 0 },
-  { i: -2, j: -2 },
-  { i: 0, j: -4 },
-  { i: 2, j: -2 },
   { i: 4, j: 0 },
+  { i: -2, j: -2 },
+  { i: 2, j: -2 },
   { i: 2, j: 2 },
-  { i: 0, j: 4 },
   { i: -2, j: 2 },
+  { i: 0, j: -4 },
+  { i: 0, j: 4 },
 ]
 function neighbourBlockPositions(position: RoomPosition): RoomPosition[] {
   return neighbourBlockDiff.flatMap(diff => {

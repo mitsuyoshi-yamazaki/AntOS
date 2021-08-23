@@ -132,7 +132,7 @@ export class OperatingSystem {
   }
 
   /** @deprecated */
-  public respawned(): void {
+  public respawned(): void {  // TODO: reboot(quitAll?: boolean) のようなメソッドに変更する
     [...this.processes.entries()].forEach(([processId,]) => {
       this.processes.delete(processId)
     })

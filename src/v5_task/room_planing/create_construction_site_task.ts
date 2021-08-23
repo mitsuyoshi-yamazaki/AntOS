@@ -5,6 +5,7 @@ import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
+import { RoomResources } from "room_resource/room_resources"
 
 const colorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
@@ -77,7 +78,18 @@ export class CreateConstructionSiteTask extends Task {
     if (Game.time % 17 !== 3) {
       return TaskStatus.InProgress
     }
-    const centerPosition: RoomPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
+    const centerPosition = ((): RoomPosition => {
+      const resources = RoomResources.getOwnedRoomResource(this.roomName)
+      if (resources != null && resources.roomInfo.roomPlan != null) {
+        const center = resources.roomInfo.roomPlan.centerPosition
+        try {
+          return new RoomPosition(center.x, center.y, this.roomName)
+        } catch (e) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} failed to build RoomPosition object for ${center.x},${center.y} ${roomLink(this.roomName)}`)
+        }
+      }
+      return objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
+    })()
     this.placeConstructionSite(objects.controller.room, objects.flags, centerPosition)
 
     return TaskStatus.InProgress
