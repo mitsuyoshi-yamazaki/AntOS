@@ -6,6 +6,7 @@ import { Result } from "utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { generateUniqueId } from "utility/unique_id"
 
 export function showOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {
   const room = Game.rooms[roomName]
@@ -106,8 +107,8 @@ export function parseLabs(room: Room): Result<{ inputLab1: StructureLab, inputLa
   })
 }
 
-export function showRoomPlan(controller: StructureController): string {
-  const result = calculateRoomPlan(controller, true)
+export function showRoomPlan(controller: StructureController, dryRun: boolean): string {
+  const result = calculateRoomPlan(controller, dryRun)
   switch (result.resultType) {
   case "succeeded":
     return "ok"
@@ -389,14 +390,14 @@ function placeFlag(position: RoomPosition, mark: LayoutMark, room: Room, dryRun:
         room.createConstructionSite(position, STRUCTURE_ROAD)
         break
       case "plain":
-        room.createFlag(position, undefined, flagColor)
+        room.createFlag(position, generateUniqueId(), flagColor)
         break
       case "wall":
       default:
         break
       }
     } else {
-      room.createFlag(position, undefined, flagColor)
+      room.createFlag(position, generateUniqueId(), flagColor)
     }
   }
 }
