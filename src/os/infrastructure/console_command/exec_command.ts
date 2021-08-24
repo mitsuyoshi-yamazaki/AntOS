@@ -571,7 +571,8 @@ export class ExecCommand implements ConsoleCommand {
       return `No controller in ${roomLink(roomName)}`
     }
     const dryRun = (args.get("dry_run") ?? "1") === "1"
+    const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
 
-    return showRoomPlan(controller, dryRun)
+    return showRoomPlan(controller, dryRun, showsCostMatrix)
   }
 }

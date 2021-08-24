@@ -13,9 +13,9 @@ import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/own
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
-import { calculateRoomPlan } from "script/room_plan"
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
+import { RoomPlanner } from "room_plan/room_planner"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -95,7 +95,8 @@ export class RoomKeeperTask extends Task {
             }
           }
         } else {
-          const result = calculateRoomPlan(objects.controller, false)
+          const roomPlanner = new RoomPlanner(objects.controller, {dryRun: false})
+          const result = roomPlanner.run()
           switch (result.resultType) {
           case "succeeded":
             PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
