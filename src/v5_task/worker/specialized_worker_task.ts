@@ -14,7 +14,7 @@ import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/h
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
-import { bodyCost, createCreepBody } from "utility/creep_body"
+import { bodyCost, createCreepBody, CreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
 import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
@@ -77,6 +77,26 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    const creepCount = World.resourcePools.countCreeps(this.roomName, null, () => true)
+    if (creepCount < 2) {
+      const body = ((): BodyPartConstant[] => {
+        const haulerBody = this.haulerBody(objects)
+        if (objects.controller.room.energyAvailable < CreepBody.cost(haulerBody)) {
+          return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE]
+        }
+        return haulerBody
+      })()
+      return {
+        necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
+        taskIdentifier: null,
+        numberOfCreeps: this.numberOfCreeps,
+        codename: this.codename,
+        initialTask: null,
+        priority: CreepSpawnRequestPriority.High,
+        body,
+      }
+    }
+
     const haulerCount = World.resourcePools.countCreeps(this.roomName, null, creep => (creep.roles.includes(CreepRole.Worker) !== true))
     if (haulerCount <= 0) {
       return this.haulerCreepRequest(objects)
