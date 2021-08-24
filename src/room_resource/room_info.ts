@@ -26,12 +26,14 @@ export interface BasicRoomInfo {
   readonly energyStoreStructureIds: Id<EnergyStore>[]
 }
 
+type RoomOwner = { ownerType: "claim", username: string } | { ownerType: "reserve", username: string }
+
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
   // roomPlan: RemoteHarvestRoomPlan | null
 
   observedAt: Timestamp
-  owner: { claimingUser: string } | { reservingUser: string } | null
+  owner: RoomOwner | null
 }
 
 /**
@@ -73,18 +75,20 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 
 export type RoomInfoType = NormalRoomInfo | OwnedRoomInfo
 
-function getOwnerInfo(room: Room): { claimingUser: string } | { reservingUser: string } | null {
+function getOwnerInfo(room: Room): RoomOwner | null {
   if (room.controller == null) {
     return null
   }
   if (room.controller.owner != null) {
     return {
-      claimingUser: room.controller.owner.username
+      ownerType: "claim",
+      username: room.controller.owner.username
     }
   }
   if (room.controller.reservation != null) {
     return {
-      reservingUser: room.controller.reservation.username
+      ownerType: "reserve",
+      username: room.controller.reservation.username
     }
   }
   return null

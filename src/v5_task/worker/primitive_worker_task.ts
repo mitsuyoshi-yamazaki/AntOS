@@ -6,7 +6,7 @@ import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
-import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { MoveToTargetTask, MoveToTargetTaskOptions } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { World } from "world_info/world_info"
@@ -23,12 +23,22 @@ import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_e
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { NormalRoomInfo } from "room_resource/room_info"
+
+function moveToOptions(): MoveToTargetTaskOptions {
+  return {
+    reusePath: 0,
+    ignoreSwamp: false,
+  }
+}
 
 export interface PrimitiveWorkerTaskState extends TaskState {
   /** room name */
   r: RoomName
 
   neighboursToObserve: RoomName[]
+  sourceEmptyNeighbourCounts: {[sourceId: string]: number}
 }
 
 /**
@@ -42,6 +52,7 @@ export class PrimitiveWorkerTask extends Task {
     public readonly children: Task[],
     public readonly roomName: RoomName,
     private readonly neighboursToObserve: RoomName[],
+    private readonly sourceEmptyNeighbourCounts: { [sourceId: string]: number },
   ) {
     super(startTime, children)
 
@@ -55,11 +66,12 @@ export class PrimitiveWorkerTask extends Task {
       c: this.children.map(task => task.encode()),
       r: this.roomName,
       neighboursToObserve: this.neighboursToObserve,
+      sourceEmptyNeighbourCounts: this.sourceEmptyNeighbourCounts,
     }
   }
 
   public static decode(state: PrimitiveWorkerTaskState, children: Task[]): PrimitiveWorkerTask {
-    return new PrimitiveWorkerTask(state.s, children, state.r, state.neighboursToObserve ?? [])
+    return new PrimitiveWorkerTask(state.s, children, state.r, state.neighboursToObserve ?? [], state.sourceEmptyNeighbourCounts ?? {})
   }
 
   public static create(roomName: RoomName): PrimitiveWorkerTask {
@@ -75,7 +87,7 @@ export class PrimitiveWorkerTask extends Task {
         return true
       })
     })()
-    return new PrimitiveWorkerTask(Game.time, [], roomName, neighboursToObserve)
+    return new PrimitiveWorkerTask(Game.time, [], roomName, neighboursToObserve, {})
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
@@ -83,11 +95,33 @@ export class PrimitiveWorkerTask extends Task {
     const filterTaskIdentifier = null
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
+    const neighbourRoomNames = RoomResources.getRoomInfo(this.roomName)?.neighbourRoomNames ?? []
+    const harvestableNeighbourRooms: {roomName: RoomName, roomInfo: NormalRoomInfo}[] = neighbourRoomNames.flatMap(neighbourRoomName => {
+      const neighbourRoomInfo = RoomResources.getRoomInfo(neighbourRoomName)
+      if (neighbourRoomInfo == null) {
+        return []
+      }
+      if (neighbourRoomInfo.roomType !== "normal") {
+        return []
+      }
+      if (neighbourRoomInfo.owner != null) {
+        return []
+      }
+      if (neighbourRoomInfo.numberOfSources <= 0) {
+        return []
+      }
+      return {
+        roomName: neighbourRoomName,
+        roomInfo: neighbourRoomInfo,
+      }
+    })
+
     const problemFinders: ProblemFinder[] = [
     ]
 
     if (objects.roomInfo.bootstrapping !== true) {
-      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier))
+      const neighbourRoomSourceCount = harvestableNeighbourRooms.reduce((result, current) => result + current.roomInfo.numberOfSources, 0)
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, neighbourRoomSourceCount))
     }
 
     this.checkProblemFinders(problemFinders)
@@ -97,7 +131,7 @@ export class PrimitiveWorkerTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskFor(creep, objects)
+        return this.newTaskFor(creep, objects, harvestableNeighbourRooms.map(info => info.roomName))
       },
       creepPoolFilter,
     )
@@ -106,8 +140,8 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   // ---- Problem Solver ---- //
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
-    const creepSpec = this.creepSpec(objects)
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null, neighbourRoomSourceCount: number): ProblemFinder {
+    const creepSpec = this.creepSpec(objects, neighbourRoomSourceCount)
 
     const roomName = objects.controller.room.name
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, creepSpec.creepCount)
@@ -137,7 +171,7 @@ export class PrimitiveWorkerTask extends Task {
     return problemFinderWrapper
   }
 
-  private creepSpec(objects: OwnedRoomObjects): { creepCount: number, body: BodyPartConstant[] } {
+  private creepSpec(objects: OwnedRoomObjects, neighbourRoomSourceCount: number): { creepCount: number, body: BodyPartConstant[] } {
     const bodyUnit = ((): BodyPartConstant[] => {
       // if (objects.controller.room.energyCapacityAvailable <= 300) {
       return [WORK, MOVE, CARRY]
@@ -145,28 +179,20 @@ export class PrimitiveWorkerTask extends Task {
       // return [WORK, MOVE, MOVE, CARRY]
     })()
     const body = CreepBody.create([], bodyUnit, objects.controller.room.energyCapacityAvailable, 6)
-    const neighbourRoomSourceCount = ((): number => {
-      const roomInfo = RoomResources.getRoomInfo(this.roomName)
-      if (roomInfo == null) {
-        return 0
-      }
-      return roomInfo.neighbourRoomNames.reduce((result, current) => {
-        const neighbourRoomInfo = RoomResources.getRoomInfo(current)
-        if (neighbourRoomInfo == null) {
-          return result
-        }
-        return result + neighbourRoomInfo.numberOfSources
-      }, 0)
-    })()
 
     const workCount = body.filter(b => b === WORK).length
     const ownedRoomSourceEnergyCapacity = objects.sources.reduce((result, current) => result + current.energyCapacity, 0)
     const estimatedUnownedSourceCapacity = 1500
     const estimatedNeighbourSourceEnergyCapacity = neighbourRoomSourceCount * estimatedUnownedSourceCapacity
-    const energyCapacity = ownedRoomSourceEnergyCapacity + estimatedNeighbourSourceEnergyCapacity
-    const requiredWorkCount = ((energyCapacity / 300) / GameConstants.creep.actionPower.harvest) * 2 // *2は移動等
+
+    const getRequiredCreepCount = (energyCapacity: number, multiplier: number): number => {
+      const rawCreepCount = ((energyCapacity / 300) / GameConstants.creep.actionPower.harvest) / workCount
+      return Math.ceil(rawCreepCount * multiplier)
+    }
+
+    const requiredCreepCount = getRequiredCreepCount(ownedRoomSourceEnergyCapacity, 3) + getRequiredCreepCount(estimatedNeighbourSourceEnergyCapacity, 4)
     const maxCreepCount = objects.sources.length * 8 + neighbourRoomSourceCount * 10
-    const creepCount = Math.min(Math.ceil(requiredWorkCount / workCount), maxCreepCount)
+    const creepCount = Math.min(requiredCreepCount, maxCreepCount)
 
     return {
       creepCount,
@@ -175,13 +201,13 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   // ---- Creep Task ---- //
-  private newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
+  private newTaskFor(creep: Creep, objects: OwnedRoomObjects, harvestableNeighbourRooms: RoomName[]): CreepTask | null {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
       const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
       if (droppedEnergy != null) {
-        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
+        return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy), moveToOptions())
       }
 
       if (creep.ticksToLive != null && creep.ticksToLive < 400) {
@@ -190,7 +216,7 @@ export class PrimitiveWorkerTask extends Task {
         if (spawn != null && room.energyAvailable > 150) {
           const cost = bodyCost(creep.body.map(b => b.type))
           if (cost > room.energyCapacityAvailable) {
-            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn))
+            return MoveToTargetTask.create(TempRenewApiWrapper.create(spawn), moveToOptions())
           }
         }
       }
@@ -213,27 +239,89 @@ export class PrimitiveWorkerTask extends Task {
         }
       }
 
-      const source = objects.getSource(creep.pos)
-      if (source == null) {
+      const harvestTask = this.getHarvestTaskFor(creep, objects, harvestableNeighbourRooms)
+      if (harvestTask == null) {
+        creep.say("no source")
         return null
       }
-      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+      return harvestTask
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)
     if (structureToCharge != null) {
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge), moveToOptions())
     }
 
     const damagedStructure = objects.getRepairStructure()
     if (damagedStructure != null) {
-      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure))
+      return MoveToTargetTask.create(RepairApiWrapper.create(damagedStructure), moveToOptions())
     }
     const constructionSite = objects.getConstructionSite(creep.pos)
     if (constructionSite != null) {
-      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), moveToOptions())
     }
 
-    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller, 1), { reusePath: 3, ignoreSwamp: false })
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller, 1), moveToOptions())
+  }
+
+  private getHarvestTaskFor(creep: Creep, objects: OwnedRoomObjects, harvestableNeighbourRooms: RoomName[]): CreepTask | null {
+    if (creep.room.name !== this.roomName) {
+      const source = creep.room.find(FIND_SOURCES).sort((lhs, rhs) => {
+        return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
+      })[0]
+      if (source != null) {
+        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), moveToOptions())
+      }
+    }
+
+    const workPartCount = creep.body.filter(body => body.type === WORK).length
+
+    const ownedRoomSource = objects.sources.find(source => {
+      if (source.energy <= 0 && source.ticksToRegeneration > 20) {
+        return false
+      }
+      const neighbourCount = this.sourceNeighbourCount(source)
+      const maxWorkCount = Math.ceil(((source.energyCapacity / 300) / GameConstants.creep.actionPower.harvest))
+      const creepEnergyCapacity = Math.ceil(maxWorkCount / workPartCount)
+      const creepCapacity = Math.min(creepEnergyCapacity, neighbourCount) + 1
+      return source.v5TargetedBy.length < creepCapacity
+    })
+
+    if (ownedRoomSource != null) {
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(ownedRoomSource), moveToOptions())
+    }
+
+    const neighbourSources: Source[] = []
+    for (const harvestableNeighbourRoom of harvestableNeighbourRooms) {
+      const room = Game.rooms[harvestableNeighbourRoom]
+      if (room == null) {
+        return MoveToRoomTask.create(harvestableNeighbourRoom, [])
+      }
+      neighbourSources.push(...room.find(FIND_SOURCES))
+    }
+
+    const targetSource = neighbourSources.sort((lhs, rhs) => {
+      return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
+    })[0] ?? objects.sources[0]
+    if (targetSource != null) {
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(targetSource), moveToOptions())
+    }
+    return null
+  }
+
+  private sourceNeighbourCount(source: Source): number {
+    const storedValue = this.sourceEmptyNeighbourCounts[source.id]
+    if (storedValue != null) {
+      return storedValue
+    }
+    const options: RoomPositionFilteringOptions = {
+      excludeItself: true,
+      excludeStructures: true,
+      excludeWalkableStructures: false,
+      excludeTerrainWalls: true,
+    }
+    const neighbourCount = source.pos.positionsInRange(1, options).length
+    this.sourceEmptyNeighbourCounts[source.id] = neighbourCount
+    return neighbourCount
   }
 }
