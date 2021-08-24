@@ -153,11 +153,27 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
     const stored = Memory.v6RoomInfo[controller.room.name]
     if (stored != null) {
       if (stored.roomType === "owned") {
+
+        // FixMe: Migration: 消す
+        if (stored.neighbourRoomNames == null) {
+          const getNeighbourRoomNames = (room: Room): RoomName[] => {
+            const exits = Game.map.describeExits(room.name)
+            if (exits == null) { // sim環境ではundefinedが返る
+              return []
+            }
+            return Array.from(Object.values(exits))
+          }
+          stored.neighbourRoomNames = getNeighbourRoomNames(controller.room)
+        }
+        if (stored.numberOfSources == null) {
+          stored.numberOfSources = controller.room.find(FIND_SOURCES).length
+        }
+
         return stored
       }
       return buildOwnedRoomInfo(stored)
     }
-    return buildOwnedRoomInfo()
+    return buildOwnedRoomInfo(controller.room)
   })()
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
@@ -219,7 +235,7 @@ function saveRoomInfo(): void {
 
 function createRoomInfo(room: Room): RoomInfoType {
   if (room.controller != null && room.controller.my === true) {
-    return buildOwnedRoomInfo()
+    return buildOwnedRoomInfo(room)
   }
   return buildNormalRoomInfo(room)
 }

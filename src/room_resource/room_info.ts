@@ -17,6 +17,10 @@ export interface BasicRoomInfo {
   readonly v: ShortVersionV6
   readonly roomType: "normal" | "owned"
 
+  // FixMe: readonlyにする
+  numberOfSources: number
+  neighbourRoomNames: RoomName[]
+
   // ---- Structure ---- //
   readonly energySourceStructureIds: Id<EnergySource>[]
   readonly energyStoreStructureIds: Id<EnergyStore>[]
@@ -28,8 +32,6 @@ export interface NormalRoomInfo extends BasicRoomInfo {
 
   observedAt: Timestamp
   owner: { claimingUser: string } | { reservingUser: string } | null
-  readonly numberOfSources: number
-  readonly neighbourRoomNames: RoomName[]
 }
 
 /**
@@ -93,34 +95,60 @@ export function updateNormalRoomInfo(room: Room, roomInfo: NormalRoomInfo): void
   roomInfo.owner = getOwnerInfo(room)
 }
 
-export function buildNormalRoomInfo(room: Room): NormalRoomInfo {
-  const neighbourRoomNames = ((): RoomName[] => {
-    const exits = Game.map.describeExits(room.name)
-    if (exits == null) { // sim環境ではundefinedが返る
-      return []
-    }
-    return Array.from(Object.values(exits))
-  })()
+function getNeighbourRoomNames(room: Room): RoomName[] {
+  const exits = Game.map.describeExits(room.name)
+  if (exits == null) { // sim環境ではundefinedが返る
+    return []
+  }
+  return Array.from(Object.values(exits))
+}
 
+export function buildNormalRoomInfo(room: Room): NormalRoomInfo {
   return {
     v: ShortVersion.v6,
     roomType: "normal",
     observedAt: Game.time,
     owner: getOwnerInfo(room),
     numberOfSources: room.find(FIND_SOURCES).length,
-    neighbourRoomNames,
+    neighbourRoomNames: getNeighbourRoomNames(room),
     energySourceStructureIds: [],
     energyStoreStructureIds: [],
   }
 }
 
-export function buildOwnedRoomInfo(normalRoomInfo?: NormalRoomInfo): OwnedRoomInfo {
+export function buildOwnedRoomInfo(arg: NormalRoomInfo | Room): OwnedRoomInfo {
+  if (arg instanceof Room) {
+    return createOwnedRoomInfo(arg)
+  } else {
+    return buildOwnedRoomInfoFrom(arg)
+  }
+}
+
+function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
   return {
     v: ShortVersion.v6,
     roomType: "owned",
+    numberOfSources: room.find(FIND_SOURCES).length,
+    neighbourRoomNames: getNeighbourRoomNames(room),
     chargeStructureIds: [],
-    energySourceStructureIds: normalRoomInfo?.energySourceStructureIds ?? [],
-    energyStoreStructureIds: normalRoomInfo?.energyStoreStructureIds ?? [],
+    energySourceStructureIds: [],
+    energyStoreStructureIds: [],
+    resourceInsufficiencies: {},
+    highestRcl: 1,
+    roomPlan: null,
+  }
+}
+
+
+function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
+  return {
+    v: ShortVersion.v6,
+    roomType: "owned",
+    numberOfSources: normalRoomInfo.numberOfSources,
+    neighbourRoomNames: normalRoomInfo.neighbourRoomNames,
+    chargeStructureIds: [],
+    energySourceStructureIds: normalRoomInfo.energySourceStructureIds ?? [],
+    energyStoreStructureIds: normalRoomInfo.energyStoreStructureIds ?? [],
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
