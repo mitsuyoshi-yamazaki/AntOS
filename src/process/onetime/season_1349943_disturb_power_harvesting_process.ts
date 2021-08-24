@@ -219,8 +219,15 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       processLog(this, `Found target ${attackedTarget} in ${roomLink(creep.room.name)}`)
 
       if (canMove === true) {
-        if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
-          this.fleeFrom(closestHostile.pos, creep, 4)
+        if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
+          const hostileRange = closestHostile.pos.getRangeTo(creep)
+          if (hostileRange <= 2) {
+            this.fleeFrom(closestHostile.pos, creep, 4)
+          } else if (hostileRange === 3) {
+            // stay
+          } else {
+            creep.moveTo(closestHostile)
+          }
         } else {
           creep.moveTo(closestHostile)
         }
@@ -240,20 +247,21 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
         return false
       }
     })()
-    const hostiles = creep.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
-      if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
+    const hostiles = creep.room.find(FIND_HOSTILE_CREEPS).filter(hostileCreep => {
+      if (this.whitelistedUsernames.includes(hostileCreep.owner.username) === true) {
         return false
       }
-      if (creep.ticksToLive == null || creep.ticksToLive < 50) {
+      if (hostileCreep.ticksToLive == null || hostileCreep.ticksToLive < 50) {
         return false
       }
-      if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
+      // if (hostileCreep.getActiveBodyparts(MOVE) <= 0 && hostileCreep.getActiveBodyparts(HEAL) <= 0) {
+      //   return false
+      // }
+      const hasAttackParts = (hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0)
+      if (isMeleeAttacker === true && hasAttackParts === true) {
         return false
       }
-      if (isMeleeAttacker === true && (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)) {
-        return false
-      }
-      return creep.getActiveBodyparts(CARRY) > 0 || creep.getActiveBodyparts(HEAL) > 0
+      return hostileCreep.getActiveBodyparts(CARRY) > 0 || hostileCreep.getActiveBodyparts(HEAL) > 0 || hasAttackParts === true
     })
     if (hostiles.length <= 0) {
       return null
