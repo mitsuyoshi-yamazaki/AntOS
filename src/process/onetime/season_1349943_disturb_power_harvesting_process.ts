@@ -142,9 +142,9 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
       if (moved === true || movement.moved === true || movement.attackedTarget != null) {
         return true
       }
-      if (creep.room.find(FIND_STRUCTURES, { filter: {structureType: STRUCTURE_POWER_BANK}}).length > 0) {
-        return true
-      }
+      // if (creep.room.find(FIND_STRUCTURES, { filter: {structureType: STRUCTURE_POWER_BANK}}).length > 0) {
+      //   return true
+      // }
       return false
     })()
     if (creep.v5task?.pause != null) {
