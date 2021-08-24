@@ -103,7 +103,8 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       taskOutputs.problems.push(new MissingActiveStructureProblem(this.roomName, STRUCTURE_TERMINAL))
       return taskOutputs
     }
-    if (terminal.store.getUsedCapacity(compound) >= compoundAmount) {
+    const storedCompoundAmount = terminal.store.getUsedCapacity(compound) + (roomResource.activeStructures.storage?.store.getUsedCapacity(compound) ?? 0)
+    if (storedCompoundAmount >= compoundAmount) {
       taskOutputs.logs.push({
         taskIdentifier: this.identifier,
         logEventType: "event",
