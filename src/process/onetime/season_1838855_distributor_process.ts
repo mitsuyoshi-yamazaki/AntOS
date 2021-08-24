@@ -46,8 +46,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     public readonly position: RoomPosition,
-    public readonly linkId: Id<StructureLink> | null,
-    public readonly upgraderLinkId: Id<StructureLink> | null,
+    public linkId: Id<StructureLink> | null,
+    public upgraderLinkId: Id<StructureLink> | null,
     private drainStorage: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
@@ -91,6 +91,10 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return
     }
 
+    if ((Game.time % 263) === 13) {
+      this.checkLink(resources)
+    }
+
     const getLink = ((linkId: Id<StructureLink> | null): StructureLink | null => {
       if (linkId == null) {
         return null
@@ -123,6 +127,29 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       creep => this.newDistributorTask(creep, link, resources),
       () => true,
     )
+  }
+
+  private checkLink(resources: OwnedRoomResource): void {
+    if (this.linkId == null) {
+      const roomPlan = resources.roomInfo.roomPlan
+      if (roomPlan != null) {
+        try {
+          const roomCenter = new RoomPosition(roomPlan.centerPosition.x, roomPlan.centerPosition.y, this.parentRoomName)
+          const link = roomCenter.findInRange(FIND_MY_STRUCTURES, 1, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+          if (link != null) {
+            this.linkId = link.id
+          }
+        } catch {
+          //
+        }
+      }
+    }
+    if (this.upgraderLinkId == null) {
+      const upgraderLink = resources.controller.pos.findInRange(FIND_MY_STRUCTURES, 3, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+      if (upgraderLink != null) {
+        this.upgraderLinkId = upgraderLink.id
+      }
+    }
   }
 
   private requestDistributor(body: BodyPartConstant[]): void {
