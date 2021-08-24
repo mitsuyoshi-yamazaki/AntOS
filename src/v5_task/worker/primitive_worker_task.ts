@@ -161,6 +161,6 @@ export class PrimitiveWorkerTask extends Task {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
-    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller), { reusePath: 3, ignoreSwamp: false })
+    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller, 1), { reusePath: 3, ignoreSwamp: false })
   }
 }
