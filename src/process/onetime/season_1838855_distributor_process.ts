@@ -105,7 +105,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount < 1) {
-      if (resources.activeStructures.storage != null || resources.activeStructures.terminal != null) {
+      if ((resources.controller.level > 4 && resources.activeStructures.storage != null) || resources.activeStructures.terminal != null) {
         const body = ((): BodyPartConstant[] => {
           if (resources.controller.level < 8 || this.drainStorage === true) {
             return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 8)
