@@ -23,9 +23,9 @@ const colorMap = new Map<ColorConstant, StructureConstant>([
 const structurePriority: StructureConstant[] = [
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
+  STRUCTURE_EXTENSION,
   STRUCTURE_STORAGE,
   STRUCTURE_TERMINAL,
-  STRUCTURE_EXTENSION,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
   STRUCTURE_LAB,
@@ -158,8 +158,8 @@ export class CreateConstructionSiteTask extends Task {
           flag.remove()
           continue
         }
-        const otherFlags = flag.pos.findInRange(FIND_FLAGS, 0)
-        if (otherFlags.length > 0) {
+        const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
+        if (constructionSites.length > 0) {
           flag.remove()
           continue
         }
