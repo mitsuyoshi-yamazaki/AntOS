@@ -13,8 +13,8 @@ import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_a
 import { RoomName } from "utility/room_name"
 import { processLog } from "process/process_log"
 import { roomLink } from "utility/log"
-import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
 import { bodyCost } from "utility/creep_body"
+import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
 
 const numberOfAttackers = 1
 
@@ -58,6 +58,17 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
 
   public runOnTick(): void {
     const invadedRoomNames: RoomName[] = []
+    // const remoteRoomNamesToDefend: {parent: RoomName, target: RoomName}[] = OperatingSystem.os.listAllProcesses()
+    //   .flatMap(processInfo => {
+    //     const process = processInfo.process
+    //     if (!(process instanceof RemoteRoomHarvesterTask)) {
+    //       return []
+    //     }
+    //     return {
+    //       parent: process.roomName,
+    //       target: process.targetRoomName,
+    //     }
+    //   })
 
     remoteRoomNamesToDefend.forEach((targetRoomNames, parentRoomName) => {
       invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
