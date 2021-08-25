@@ -171,6 +171,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     ErrorMapper.wrapLoop((): void => {
       this.runWallBuilder(roomResource, requestHandlerInputs, taskPriority)
     }, "runWallBuilder()")()
+    ErrorMapper.wrapLoop((): void => {
+      if ((Game.time % 937) === 17) {
+        this.createRampart(roomResource)
+      }
+    }, "createRampart()")()
 
     const safeModeOutput = this.children.safeMode.runSafely(roomResource)
     this.concatRequests(safeModeOutput, this.children.safeMode.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
@@ -205,6 +210,17 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const outputs = this.children.wallBuilder.runSafely(roomResource)
     this.concatRequests(outputs, this.children.wallBuilder.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
+  }
+
+  private createRampart(roomResource: OwnedRoomResource): void {
+    if (roomResource.activeStructures.storage == null) {
+      return
+    }
+    const position = roomResource.activeStructures.storage.pos
+    if (position.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}}).length > 0) {
+      return
+    }
+    roomResource.room.createConstructionSite(position, STRUCTURE_RAMPART)
   }
 
   // ---- Research ---- //
