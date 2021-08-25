@@ -187,7 +187,7 @@ export class PrimitiveWorkerTask extends Task {
 
     const getRequiredCreepCount = (energyCapacity: number, multiplier: number): number => {
       const rawCreepCount = ((energyCapacity / 300) / GameConstants.creep.actionPower.harvest) / workCount
-      return Math.ceil(rawCreepCount * multiplier)
+      return Math.ceil(rawCreepCount * multiplier) + objects.controller.level
     }
 
     const requiredCreepCount = getRequiredCreepCount(ownedRoomSourceEnergyCapacity, 3) + getRequiredCreepCount(estimatedNeighbourSourceEnergyCapacity, 4)
