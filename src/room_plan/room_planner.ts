@@ -173,7 +173,7 @@ export class RoomPlanner {
                 if (mark !== LayoutMark.Road) {
                   return false
                 }
-                if (markPosition.getRangeTo(centerPosition) >= 4) {
+                if (markPosition.getRangeTo(centerPosition) >= 5) {
                   return false
                 }
                 return true
