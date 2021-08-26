@@ -80,7 +80,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
     if (targetRoomObjects != null) {
-      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.controller.level >= 3) {
+      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.activeStructures.storage != null) {
         this.takeOverCreeps()
         targetRoomObjects.roomInfo.bootstrapping = false
         return TaskStatus.Finished
