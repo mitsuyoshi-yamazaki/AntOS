@@ -254,7 +254,13 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       }
     }
     if (objects.roomInfo.upgrader?.container == null) {
-      const container = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
+      const containers = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_CONTAINER } }) as StructureContainer[]
+      const container = containers.find(c => {
+        if (c.pos.findInRange(FIND_SOURCES, 1).length > 0) {
+          return false
+        }
+        return true
+      })
       if (container != null) {
         if (objects.roomInfo.upgrader == null) {
           objects.roomInfo.upgrader = {
