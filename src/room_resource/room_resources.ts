@@ -6,7 +6,7 @@ import { RoomName } from "utility/room_name"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
-import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiencyPriority, RoomInfoType, updateNormalRoomInfo } from "./room_info"
+import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiency, RoomInfoType, updateNormalRoomInfo } from "./room_info"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -20,7 +20,7 @@ interface RoomResourcesInterface {
   getRoomInfo(roomName: RoomName): RoomInfoType | null
 
   // ---- Inter Room Resource ---- //
-  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority}[]
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -85,8 +85,8 @@ export const RoomResources: RoomResourcesInterface = {
   },
 
   // ---- Inter Room Resource ---- //
-  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] {
-    const result: { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] = []
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency }[] {
+    const result: { roomName: RoomName, priority: ResourceInsufficiency }[] = []
     ownedRoomResources.forEach((ownedRoomResource, roomName) => {
       const insufficientResourcePriority = ownedRoomResource.roomInfo.resourceInsufficiencies[resourceType]
       if (insufficientResourcePriority == null) {

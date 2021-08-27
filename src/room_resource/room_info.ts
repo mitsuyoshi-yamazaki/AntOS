@@ -3,15 +3,7 @@ import { RoomName } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
 import { Timestamp } from "utility/timestamp"
 
-type ResourceInsufficiencyPriorityRequired = 0
-type ResourceInsufficiencyPriorityOptional = 1
-const resourceInsufficiencyPriorityRequired: ResourceInsufficiencyPriorityRequired = 0
-const resourceInsufficiencyPriorityOptional: ResourceInsufficiencyPriorityOptional = 1
-export type ResourceInsufficiencyPriority = ResourceInsufficiencyPriorityRequired | ResourceInsufficiencyPriorityOptional
-export const ResourceInsufficiencyPriority = {
-  Required: resourceInsufficiencyPriorityRequired,
-  Optional: resourceInsufficiencyPriorityOptional,
-}
+export type ResourceInsufficiency = number | "optional" | "urgent"
 
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6
@@ -60,7 +52,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
 
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
-  readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiencyPriority }
+  readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiency }
 
   config?: {
     disablePowerHarvesting?: boolean
