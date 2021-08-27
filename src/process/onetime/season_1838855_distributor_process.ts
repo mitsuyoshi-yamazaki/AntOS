@@ -36,7 +36,7 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-// Game.io("launch -l Season1838855DistributorProcess room_name=W45S19 pos=34,13 link_id=60ee10f36707ad69c1e776fd upgrader_link_id=60ee0ee54341835d9212dcf1")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W51S29 pos=24,21")
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -71,8 +71,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     return new Season1838855DistributorProcess(state.l, state.i, state.p, decodeRoomPosition(state.position), state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition, linkId: Id<StructureLink> | null, upgraderLinkId: Id<StructureLink> | null): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, linkId, upgraderLinkId, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition): Season1838855DistributorProcess {
+    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, null, null, false)
   }
 
   public processShortDescription(): string {

@@ -16,4 +16,12 @@ const scripts = {
   removeFlags: () => {
     Game.rooms["W53S7"].find(FIND_FLAGS).forEach(flag => flag.remove())
   },
+
+  /**
+   * - 1. distributor　processを起動
+   * - 2. room_infoを削除
+   */
+  v5Migration: () => {
+    Game.rooms.W51S29.find(FIND_MY_CREEPS).filter(c => (c.getActiveBodyparts(CARRY) > 0) && (c.memory.v == null)).forEach(c => {c.memory = {v: "v5", p: "W51S29",r: ["hauler", "mover"],t: null,i: null,}})
+  }
 }

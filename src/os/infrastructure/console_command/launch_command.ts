@@ -988,24 +988,6 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const linkId = args.get("link_id") as Id<StructureLink> | null
-    const upgraderLinkId = args.get("upgrader_link_id") as Id<StructureLink> | null
-    const validateLinkId = (id: Id<StructureLink> | null): boolean => {
-      if (id == null) {
-        return true
-      }
-      const link = Game.getObjectById(id)
-      if (link instanceof StructureLink) {
-        return true
-      }
-      return false
-    }
-    if (validateLinkId(linkId) !== true) {
-      return Result.Failed("Invalid link_id")
-    }
-    if (validateLinkId(upgraderLinkId) !== true) {
-      return Result.Failed("Invalid upgrader_link_id")
-    }
     const rawPosition = args.get("pos")
     if (rawPosition == null) {
       return this.missingArgumentError("pos")
@@ -1022,7 +1004,7 @@ export class LaunchCommand implements ConsoleCommand {
     try {
       const position = new RoomPosition(x, y, roomName)
       const process = OperatingSystem.os.addProcess(processId => {
-        return Season1838855DistributorProcess.create(processId, roomName, position, linkId, upgraderLinkId)
+        return Season1838855DistributorProcess.create(processId, roomName, position)
       })
       return Result.Succeeded(process)
     } catch (e) {

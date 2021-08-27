@@ -21,6 +21,8 @@ import { MissingTargetStructureProblem } from "application/problem/creep/missing
 import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 
+const disableMineralHarvesting = true as boolean
+
 type OwnedRoomMineralHarvesterTaskOutput = void
 type OwnedRoomMineralHarvesterTaskProblemTypes = UnexpectedProblem
 type OwnedRoomMineralHarvesterTaskOutputs = TaskOutputs<OwnedRoomMineralHarvesterTaskOutput, OwnedRoomMineralHarvesterTaskProblemTypes>
@@ -66,7 +68,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
 
   public run(roomResource: OwnedRoomResource): OwnedRoomMineralHarvesterTaskOutputs {
     const taskOutputs: OwnedRoomMineralHarvesterTaskOutputs = emptyTaskOutputs()
-    if (roomResource.roomInfo.config?.disableMineralHarvesting === true) {
+    if (disableMineralHarvesting === true || roomResource.roomInfo.config?.disableMineralHarvesting === true) { // FixMe:
       return taskOutputs
     }
 

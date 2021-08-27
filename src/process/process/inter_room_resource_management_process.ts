@@ -70,6 +70,7 @@ type OwnedRoomResource = {
 }
 
 const requiredEmptySpace = 30000
+const transactionCostRound = 10000
 const requiredCompounds = new Map<ResourceConstant, number>([
   [RESOURCE_CATALYZED_UTRIUM_ACID, 10000],
   [RESOURCE_CATALYZED_KEANIUM_ALKALIDE, 10000],
@@ -286,7 +287,7 @@ class ResourceTransferer {
 
     return energyInsufficientRooms
       .sort((lhs, rhs) => {
-        if (Math.floor(lhs.priority / 100) !== Math.floor(rhs.priority / 100)) {
+        if (Math.floor(lhs.priority / transactionCostRound) !== Math.floor(rhs.priority / transactionCostRound)) {
           return lhs.priority < rhs.priority ? -1 : 1
         }
         return lhs.maxAmount > rhs.maxAmount ? -1 : 1
@@ -321,7 +322,7 @@ class ResourceTransferer {
 
     return freeSpaceRooms
       .sort((lhs, rhs) => {
-        if (Math.floor(lhs.priority / 100) !== Math.floor(rhs.priority / 100)) {
+        if (Math.floor(lhs.priority / transactionCostRound) !== Math.floor(rhs.priority / transactionCostRound)) {
           return lhs.priority < rhs.priority ? -1 : 1
         }
         return lhs.maxAmount > rhs.maxAmount ? -1 : 1

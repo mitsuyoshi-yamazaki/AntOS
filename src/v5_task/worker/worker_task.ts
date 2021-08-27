@@ -148,7 +148,9 @@ export class WorkerTask extends Task {
       return
     }
     if (objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {  // TODO: 条件を詰める
-      return
+      if (objects.controller.level <= 5) {
+        return
+      }
     }
     this.removeChildTask(generalWorkerTask)
 
