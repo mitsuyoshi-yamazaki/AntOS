@@ -13,20 +13,12 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { OperatingSystem } from "os/os"
+import { CreepBody } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 const dismantlerRole: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
-const dismantlerBody: BodyPartConstant[] = [
-  WORK, WORK, WORK, WORK, WORK,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  WORK, WORK, WORK, WORK, WORK,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  WORK, WORK, WORK, WORK, WORK,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  WORK, WORK, WORK, WORK, WORK,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  WORK, WORK, WORK, WORK, WORK,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-]
 
 export interface Season1244215GenericDismantleProcessState extends ProcessState {
   /** parent room name */
@@ -42,14 +34,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
 }
 
-// W11S23
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 target_id=60fc5711993e4f522b65b17b")
-
-// W21S15
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 target_id=6116d6929c09bed4d8eb8845")
-
-// W25S22 left
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 target_id=60f08cd682dcacf3ceb47972")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S33 target_room_name=W47S34 waypoints=W47S34 target_id=60fd17ee37db5498c5e52d00")
 export class Season1244215GenericDismantleProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -107,7 +92,13 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       if (creeps[0] != null) {
         this.creepName = creeps[0].name
       } else {
-        this.requestDismantler()
+        const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
+        if (resources == null) {
+          PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
+          return
+        }
+
+        this.requestDismantler(resources)
         return
       }
     }
@@ -186,13 +177,19 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     return creep.pos.findClosestByRange(hostileStructures) ?? null
   }
 
-  private requestDismantler(): void {
+  private requestDismantler(resources: OwnedRoomResource): void {
+    const bodyUnit: BodyPartConstant[] = [
+      WORK, WORK, WORK, WORK, WORK,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+    ]
+    const body = CreepBody.create([], bodyUnit, resources.room.energyCapacityAvailable, 5)
+
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: dismantlerRole,
-      body: dismantlerBody,
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
