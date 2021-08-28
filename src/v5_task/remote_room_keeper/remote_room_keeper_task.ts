@@ -10,6 +10,7 @@ import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Environment } from "utility/environment"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -60,8 +61,31 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const problemFinders: ProblemFinder[] = [
-      new RoomInvisibleProblemFinder(objects, this.targetRoomName),
     ]
+
+    const shouldCheckInvisibility = ((): boolean => {
+      const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
+      if (targetRoomInfo == null) {
+        return true
+      }
+      switch (targetRoomInfo.roomType) {
+      case "owned":
+        return false
+      case "normal":
+        break
+      }
+      if (targetRoomInfo.owner == null) {
+        return true
+      }
+      if (((Game.time + this.startTime) % 4099) < 100) {
+        return true
+      }
+      return false
+    })()
+    if (shouldCheckInvisibility === true) {
+      problemFinders.push(new RoomInvisibleProblemFinder(objects, this.targetRoomName))
+    }
+
     this.checkProblemFinders(problemFinders)
 
     // if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
@@ -107,6 +131,9 @@ export class RemoteRoomKeeperTask extends Task {
         if (Environment.world === "persistent world" && Environment.shard === "shard3" && this.targetRoomName === "W47S34") {
           return false
         }
+        if (Environment.world === "persistent world" && Environment.shard === "shard2" && this.roomName === "W53S5" && this.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
+          return false
+        }
         return true
       })()
       if (shouldLaunchRemoteRoomWorker === true) {
@@ -118,7 +145,7 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard3" && task.targetRoomName === "W47S34") {  // 起動中のRemoteRoomWorkerを削除したい場合
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W53S5" && task.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
         return true
       }
       return false
