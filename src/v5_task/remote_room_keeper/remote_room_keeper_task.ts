@@ -63,6 +63,10 @@ export class RemoteRoomKeeperTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
+    const ownerNameWhitelist: string[] = [
+      Invader.username,
+      Game.user.name,
+    ]
     const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
     const shouldCheckInvisibility = ((): boolean => {
       if (targetRoomInfo == null) {
@@ -77,10 +81,10 @@ export class RemoteRoomKeeperTask extends Task {
       if (targetRoomInfo.owner == null) {
         return true
       }
-      if (targetRoomInfo.owner.ownerType === "reserve" && targetRoomInfo.owner.username === Invader.username) {
+      if (targetRoomInfo.owner.ownerType === "reserve" && ownerNameWhitelist.includes(targetRoomInfo.owner.username) === true) {
         return true
       }
-      if (((Game.time + this.startTime) % 4099) < 100) {
+      if (((Game.time + this.startTime) % 1511) < 40) {
         return true
       }
       return false
@@ -132,7 +136,10 @@ export class RemoteRoomKeeperTask extends Task {
           return false
         }
         if (targetRoomInfo.owner != null) {
-          if (targetRoomInfo.owner.ownerType !== "reserve" || targetRoomInfo.owner.username !== Invader.username) {
+          if (targetRoomInfo.owner.ownerType === "claim") {
+            return false
+          }
+          if (ownerNameWhitelist.includes(targetRoomInfo.owner.username) !== true) {
             return false
           }
         }
