@@ -180,38 +180,39 @@ class ResourceTransferer {
         }
       }
 
-      const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
-        for (const resourceType of resources.sortedResourceTypes) {
-          if (resourceType === RESOURCE_ENERGY) {
-            continue
-          }
-          const requiredAmount = requiredCompounds.get(resourceType) ?? 0
-          const sendAmount = Math.max(resources.terminal.store.getUsedCapacity(resourceType) - requiredAmount, 0)
-          if (sendAmount <= 0) {
-            continue
-          }
-          return {
-            resourceType,
-            sendAmount,
-          }
-        }
-        return null
-      })()
+      // Resourceをまとめないので循環してしまう
+      // const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
+      //   for (const resourceType of resources.sortedResourceTypes) {
+      //     if (resourceType === RESOURCE_ENERGY) {
+      //       continue
+      //     }
+      //     const requiredAmount = requiredCompounds.get(resourceType) ?? 0
+      //     const sendAmount = Math.max(resources.terminal.store.getUsedCapacity(resourceType) - requiredAmount, 0)
+      //     if (sendAmount <= 0) {
+      //       continue
+      //     }
+      //     return {
+      //       resourceType,
+      //       sendAmount,
+      //     }
+      //   }
+      //   return null
+      // })()
 
-      if (excessResource != null) {
-        const target = this.resourceInsufficientTarget(roomName, excessResource.resourceType) ?? this.freeSpaceRoom(roomName, excessResource.resourceType)
-        if (target != null) {
-          const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-          const sendAmount = Math.min(excessResource.sendAmount, target.maxAmount, energyAmount)
-          if (sendAmount > 0) {
-            const log = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
-            if (log != null) {
-              logs.push(log)
-            }
-            return
-          }
-        }
-      }
+      // if (excessResource != null) {
+      //   const target = this.resourceInsufficientTarget(roomName, excessResource.resourceType) ?? this.freeSpaceRoom(roomName, excessResource.resourceType)
+      //   if (target != null) {
+      //     const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      //     const sendAmount = Math.min(excessResource.sendAmount, target.maxAmount, energyAmount)
+      //     if (sendAmount > 0) {
+      //       const log = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
+      //       if (log != null) {
+      //         logs.push(log)
+      //       }
+      //       return
+      //     }
+      //   }
+      // }
     })
 
     return logs

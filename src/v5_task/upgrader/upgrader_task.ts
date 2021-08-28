@@ -136,12 +136,6 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    const container = objects.roomInfo.upgrader?.container
-    if (container == null) {
-      // console.log(`${this.taskIdentifier} no container`)
-      return null
-    }
-
     const [body, numberOfCreeps] = this.upgraderBody(objects)
 
     return {
