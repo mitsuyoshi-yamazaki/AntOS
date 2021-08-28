@@ -54,8 +54,9 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
   }
 }
 
+type StorageSpace = "full" | "almost full" | "empty space"
 type OwnedRoomResource = {
-  readonly isFull: boolean
+  readonly storageSpace: StorageSpace
   readonly terminal: StructureTerminal
   readonly storage: StructureStorage
   readonly roomInfo: OwnedRoomInfo
@@ -114,7 +115,15 @@ class ResourceTransferer {
 
       const terminalFreeCapacity = terminal.store.getFreeCapacity()
       const storageFreeCapacity = storage.store.getFreeCapacity()
-      const isFull = terminalFreeCapacity < requiredEmptySpace || storageFreeCapacity < 100000
+      const storageSpace = ((): StorageSpace => {
+        if (terminalFreeCapacity < requiredEmptySpace || storageFreeCapacity < 100000) {
+          return "full"
+        }
+        if ((storageFreeCapacity + storage.store.getUsedCapacity(RESOURCE_ENERGY)) < 300000) {
+          return "full"
+        }
+        return "empty space"
+      })()
       const storedResourceTypes: { resourceType: ResourceConstant, amount: number }[] = []
       const enumerateResources = (store: StoreDefinition): void => {
         const resourceTypes = Object.keys(store) as ResourceConstant[]
@@ -134,7 +143,7 @@ class ResourceTransferer {
       })
 
       this.ownedRoomResources.set(resources.room.name, {
-        isFull,
+        storageSpace,
         terminal,
         storage,
         roomInfo: resources.roomInfo,
@@ -146,7 +155,7 @@ class ResourceTransferer {
         }
       })
 
-      if (isFull !== true) {
+      if (storageSpace === "empty space") {
         addResourceStore(terminal.store, resources.room.name)
         addResourceStore(storage.store, resources.room.name)
       }
@@ -160,7 +169,7 @@ class ResourceTransferer {
     }
 
     this.ownedRoomResources.forEach((resources, roomName) => {
-      if (resources.isFull !== true) {
+      if (resources.storageSpace === "empty space") {
         return
       }
       if (resources.isCoolingDown === true) {
@@ -180,7 +189,6 @@ class ResourceTransferer {
         }
       }
 
-      // Resourceをまとめないので循環してしまう
       // const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
       //   for (const resourceType of resources.sortedResourceTypes) {
       //     if (resourceType === RESOURCE_ENERGY) {
