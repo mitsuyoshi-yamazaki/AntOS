@@ -1,6 +1,5 @@
 import { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
 import { ShortVersion, ShortVersionV5, ShortVersionV6 } from "utility/system_info"
-import { CreepStatus, CreepType } from "_old/creep"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
@@ -71,7 +70,7 @@ export function isAnyCreep(arg: any): arg is AnyCreep {
 }
 
 // ---- Memory ---- //
-export type CreepMemory = V6CreepMemory | V5CreepMemory | V4CreepMemory
+export type CreepMemory = V6CreepMemory | V5CreepMemory
 
 export interface V6CreepMemory {
   /** system version */
@@ -120,55 +119,6 @@ export interface V5CreepMemory {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isV5CreepMemory(arg: any): arg is V5CreepMemory {
   return arg.v === ShortVersion.v5
-}
-
-export interface V4CreepMemory {
-  /** @deprecated Old codebase */
-  squad_name: string
-
-  /** @deprecated Old codebase */
-  status: CreepStatus
-
-  /** @deprecated Old codebase */
-  type: CreepType
-
-  /** @deprecated Old codebase */
-  birth_time: number
-
-  /** @deprecated Old codebase */
-  should_silent?: boolean
-
-  /** @deprecated Old codebase */
-  should_notify_attack: boolean
-
-  /** @deprecated Old codebase */
-  let_thy_die: boolean
-
-  /** @deprecated Old codebase */
-  debug?: boolean
-
-  /** @deprecated Old codebase */
-  stop?: boolean
-
-  /** @deprecated Old codebase */
-  destination_room_name?: string
-
-  /** @deprecated Old codebase */
-  withdraw_target?: string            // something that has energy
-
-  /** @deprecated Old codebase */
-  withdraw_resources_target?: string  // something that has store
-
-  /** @deprecated Old codebase */
-  pickup_target?: string
-
-  /** @deprecated Old codebase */
-  no_path?: DirectionConstant
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function isV4CreepMemory(arg: any): arg is V4CreepMemory {
-  return arg.v == null
 }
 
 // 毎tick呼び出すこと

@@ -82,23 +82,8 @@ export class ErrorMapper {
 
   public static wrapLoop<T>(loop: () => T, label?: string): () => T | null {
     return (): T | null => {
-      const measure_cpu_usage: boolean = !(!Memory.debug.cpu.show_usage)
-      let before_cpu: number | undefined
-
-      if (measure_cpu_usage && label) {
-        before_cpu = Game.cpu.getUsed()
-      }
-
       try {
-        const result = loop()
-
-        if (measure_cpu_usage && label) {
-          const get_used = Math.round((Game.cpu.getUsed() - before_cpu!) * 100) / 100
-          if (get_used > Memory.debug.cpu.threshold) {
-            console.log(`CPU ${label} [${get_used}]`)
-          }
-        }
-        return result
+        return loop()
       } catch (e) {
         if (e instanceof Error) {
           let full_message = ""

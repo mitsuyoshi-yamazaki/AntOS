@@ -1,7 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { isV5CreepMemory } from "prototype/creep"
-import { MoveHarvestEnergyTask, MoveHarvestEnergyTaskState } from "./combined_task/move_harvest_energy_task"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./meta_task/move_to_room_task"
 import { MoveToTargetTask, MoveToTargetTaskState } from "./combined_task/move_to_target_task"
 import { SequentialTask, SequentialTaskState } from "./combined_task/sequential_task"
@@ -29,7 +28,6 @@ export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   // ---- Combined task ---- //
-  "MoveHarvestEnergyTask" = (state: CreepTaskState) => MoveHarvestEnergyTask.decode(state as unknown as MoveHarvestEnergyTaskState)
   "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as unknown as MoveToTargetTaskState)
   "SequentialTask" = (state: CreepTaskState) => {
     const children: (CreepTask | null)[] = (state as unknown as SequentialTaskState).c.map(childState => decodeCreepTaskFromState(childState))

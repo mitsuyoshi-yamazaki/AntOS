@@ -57,6 +57,7 @@ export const Creeps: CreepsInterface = {
         delete Memory.creeps[creepName]
         continue
       }
+      creep.notifyWhenAttacked(false)
       if (!isV5CreepMemory(creep.memory)) {
         continue
       }

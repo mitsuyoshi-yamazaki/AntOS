@@ -1,13 +1,8 @@
 import _ from "lodash"
-import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { init as extensionInit, tick as extensionTick } from "_old/extensions"
-import { init as creepInit } from "_old/creep"
-import { init as spawnInit } from "_old/spawn"
-import { tick as roomTick } from "_old/room"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
 import { SystemInfo } from "utility/system_info"
-import { isV4CreepMemory } from "prototype/creep"
 
 export function init(): void {
   const now = Game.time
@@ -44,24 +39,8 @@ export function init(): void {
     Memory.v6RoomInfo = {}
   }
 
-  if (!Memory.empires) {
-    Memory.empires = {}
-  }
-
-  if (Memory.squads == null) {
-    Memory.squads = {}
-  }
-
   if (Memory.rooms == null) {
     Memory.rooms = {}
-  }
-
-  if (Memory.sectors == null) {
-    Memory.sectors = {}
-  }
-
-  if (!Memory.regions) {
-    Memory.regions = {}
   }
 
   if (!Memory.cpu) {
@@ -70,34 +49,8 @@ export function init(): void {
     }
   }
 
-  if (!Memory.migrations) {
-    Memory.migrations = {
-      list: [],
-    }
-  }
-
-  if (!Memory.debug) {
-    Memory.debug = {
-      show_visuals: null,
-      show_path: false,
-      show_costmatrix: null,
-      test_send_resources: false,
-      cpu: {
-        show_usage: false,
-        threshold: 0,
-        stop_threshold: 150,
-      }
-    }
-  }
-
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
-  }
-
-  if (Memory.trading == null) {
-    Memory.trading = {
-      stop: true
-    }
   }
 
   extensionInit()
@@ -105,15 +58,6 @@ export function init(): void {
 
 export function tick(): void {
   const time = Game.time
-
-  if ((time % 2099) == 0) {
-    Memory.debug.show_visuals = null
-    Memory.debug.show_path = false
-  }
-
-  if ((time % 97) == 29) {
-    Memory.debug.show_costmatrix = null
-  }
 
   const cpu_ticks = 20
   if (Memory.cpu_usages.length > cpu_ticks) {
@@ -202,68 +146,5 @@ export function tick(): void {
     console.log(`CPU usage: ${usage}, ave: ${ave}, bucket: ${b} at ${Game.time}`)
   }
 
-  Game.reactions = {}
-
-  for (const resource_type of Object.keys(REACTIONS)) {
-    const reactions = REACTIONS[resource_type]!
-
-    for (const ingredient_type of Object.keys(reactions)) {
-      const compound_type = reactions[ingredient_type]!
-      Game.reactions[compound_type]! = {
-        lhs: resource_type as ResourceConstant,
-        rhs: ingredient_type as ResourceConstant,
-      }
-    }
-  }
-
   extensionTick()
-
-  ErrorMapper.wrapLoop(() => {
-    Game.populateLOANlist()
-  }, `populateLOANlist`)()
-
-  roomTick()
-
-  for (const room_name in Game.rooms) {
-    const room = Game.rooms[room_name]!
-    room.initialize()
-  }
-
-  // Followings set functions to prototype, and the prototypes are reset every tick
-  spawnInit()
-  creepInit()
-
-  Game.squad_creeps = {}
-
-  for (const creep_name in Game.creeps) {
-    const creep = Game.creeps[creep_name]!
-    if (!isV4CreepMemory(creep.memory)) {
-      continue
-    }
-
-    const squad_name = creep.memory.squad_name
-
-    if (!squad_name) {
-      continue
-    }
-
-    if (!Game.squad_creeps[squad_name]) {
-      Game.squad_creeps[squad_name] = []
-    }
-
-    Game.squad_creeps[squad_name]!.push(creep)
-  }
 }
-
-/**
- * Memory structure
- * root
- * |- game
- * |- empire
- * |- spawn(StructureSpawn.memory)
- * |  |- squad_names
- * |- squads
- * |  |- squad_name
- * |- creep(Creep.memory)
- *    |- squad_name
- */

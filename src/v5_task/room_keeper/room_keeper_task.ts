@@ -108,7 +108,7 @@ export class RoomKeeperTask extends Task {
             }
             try {
               const centerPosition = new RoomPosition(result.value.center.x, result.value.center.y, this.roomName)
-              OperatingSystem.os.addProcess(processId => Season1838855DistributorProcess.create(processId, this.roomName, centerPosition, null, null))
+              OperatingSystem.os.addProcess(processId => Season1838855DistributorProcess.create(processId, this.roomName, centerPosition))
             } catch (e) {
               PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
             }

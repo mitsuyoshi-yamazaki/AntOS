@@ -8,9 +8,9 @@ import { TaskRequestHandler, TaskRequestHandlerInputs } from "./task_request_han
 import { GameConstants } from "utility/constants"
 import { Season3FindPowerBankTask, Season3FindPowerBankTaskPowerBankInfo, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
 import { TaskPrioritizer, TaskPrioritizerPrioritizedTasks, TaskPrioritizerTaskEstimation } from "./task_prioritizer"
-import { ObserveTaskPerformance, ObserveTaskPerformanceState } from "application/task_profit/observe_task_performance"
-import { EconomyTaskPerformance, EconomyTaskPerformanceState } from "application/task_profit/economy_task_performance"
-import type { TaskPerformance, TaskPerformanceState } from "application/task_profit"
+import { ObserveTaskPerformance } from "application/task_profit/observe_task_performance"
+import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
+import type { TaskPerformance } from "application/task_profit"
 import type { AnyTask } from "application/any_task"
 import { CreepName } from "prototype/creep"
 import { CreepTaskAssignTaskRequest } from "application/task_request"
@@ -25,7 +25,7 @@ import { ResearchTask, ResearchTaskState } from "../research/research_task"
 import { parseLabs } from "script/room_plan"
 import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
 import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
-import { ConsumeTaskPerformance, ConsumeTaskPerformanceState } from "application/task_profit/consume_task_performance"
+import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
 import { Environment } from "utility/environment"
 import { findRoomRoute } from "utility/map"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
@@ -427,7 +427,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   // ---- Prioritize ---- //
   private prioritizeTasks(roomResource: OwnedRoomResource): TaskPrioritizerPrioritizedTasks {
-    const economyTasks: AnyTask<EconomyTaskPerformance, EconomyTaskPerformanceState>[] = []
+    const economyTasks: AnyTask<EconomyTaskPerformance>[] = []
     if (this.children.mineralHarvester != null) {
       economyTasks.push(this.children.mineralHarvester)
     }
@@ -435,17 +435,17 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       economyTasks.push(this.children.research)
     }
 
-    const observeTasks: AnyTask<ObserveTaskPerformance, ObserveTaskPerformanceState>[] = []
+    const observeTasks: AnyTask<ObserveTaskPerformance>[] = []
     if (this.children.findPowerBank != null) {
       observeTasks.push(this.children.findPowerBank)
     }
 
-    const consumeTasks: AnyTask<ConsumeTaskPerformance, ConsumeTaskPerformanceState>[] = []
+    const consumeTasks: AnyTask<ConsumeTaskPerformance>[] = []
     if (this.children.wallBuilder != null) {
       consumeTasks.push(this.children.wallBuilder)
     }
 
-    const getEstimations = <Performance extends TaskPerformance, PerformanceState extends TaskPerformanceState>(tasks: AnyTask<Performance, PerformanceState>[]): TaskPrioritizerTaskEstimation<Performance>[] => {
+    const getEstimations = <Performance extends TaskPerformance>(tasks: AnyTask<Performance>[]): TaskPrioritizerTaskEstimation<Performance>[] => {
       return tasks.map(task => ({
         taskIdentifier: task.identifier,
         estimate: task.estimate(roomResource),
