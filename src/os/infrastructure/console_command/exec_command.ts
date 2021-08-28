@@ -54,6 +54,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.setBoostLabs()
     case "show_room_plan":
       return this.showRoomPlan()
+    case "mineral":
+      return this.showHarvestableMinerals()
     default:
       return "Invalid script type"
     }
@@ -574,5 +576,17 @@ export class ExecCommand implements ConsoleCommand {
     const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
 
     return showRoomPlan(controller, dryRun, showsCostMatrix)
+  }
+
+  private showHarvestableMinerals(): CommandExecutionResult {
+    const harvestableMinerals = ResourceManager.harvestableMinerals()
+    const result: string[] = []
+    result.push("Harvestable:")
+    result.push(...Array.from(harvestableMinerals.owned.entries()).map(([resourceType, roomNames]) => `- ${coloredResourceType(resourceType)}: ${roomNames.map(r => roomLink(r)).join(", ")}`))
+    result.push("Harvestable in SK rooms:")
+    result.push(...Array.from(harvestableMinerals.sourceKeeper.entries()).map(([resourceType, roomNames]) => `- ${coloredResourceType(resourceType)}: ${roomNames.map(r => roomLink(r)).join(", ")}`))
+    result.push("Not harvestable:")
+    result.push(harvestableMinerals.notHarvestable.map(r => coloredResourceType(r)).join(","))
+    return `\n${result.join("\n")}`
   }
 }

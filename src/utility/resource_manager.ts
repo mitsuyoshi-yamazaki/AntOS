@@ -1,8 +1,10 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType, roomLink } from "./log"
+import { MineralConstant } from "./resource"
 import { Result, ResultFailed } from "./result"
 import { RoomName } from "./room_name"
+import { ValuedArrayMap } from "./valued_collection"
 
 let list = null as Map<ResourceConstant, number> | null
 let resourceInRoom = null as Map<RoomName, number> | null
@@ -10,6 +12,10 @@ let resourceInRoom = null as Map<RoomName, number> | null
 interface ResourceManagerInterface {
   beforeTick(): void
   afterTick(): void
+
+  // ---- Mineral ---- //
+  /** sourceKeeperは未実装 */ // TODO:
+  harvestableMinerals(): { owned: Map<ResourceConstant, RoomName[]>, sourceKeeper: Map<ResourceConstant, RoomName[]>, notHarvestable: ResourceConstant[]}
 
   // ---- Check Resource Amount ---- //
   list(): Map<ResourceConstant, number>
@@ -27,6 +33,42 @@ export const ResourceManager: ResourceManagerInterface = {
   },
 
   afterTick(): void {
+  },
+
+  // ---- Mineral ---- //
+  harvestableMinerals(): { owned: Map<ResourceConstant, RoomName[]>, sourceKeeper: Map<ResourceConstant, RoomName[]>, notHarvestable: ResourceConstant[] } {
+    const owned = new ValuedArrayMap<ResourceConstant, RoomName>()
+    const sourceKeeper = new ValuedArrayMap<ResourceConstant, RoomName>()
+    const notHarvestable: ResourceConstant[] = [
+      ...MineralConstant
+    ]
+
+    RoomResources.getOwnedRoomResources().forEach(resources => {
+      const roomName = resources.room.name
+      resources.room.find(FIND_MINERALS).forEach(mineral => {
+        owned.getValueFor(mineral.mineralType).push(roomName)
+      })
+    })
+
+    const removeHarvestableResourceType = (resourceType: ResourceConstant): void => {
+      const index = notHarvestable.indexOf(resourceType)
+      if (index < 0) {
+        return
+      }
+      notHarvestable.splice(index, 1)
+    }
+    owned.forEach((roomName, resourceType) => {
+      removeHarvestableResourceType(resourceType)
+    })
+    sourceKeeper.forEach((roomName, resourceType) => {
+      removeHarvestableResourceType(resourceType)
+    })
+
+    return {
+      owned,
+      sourceKeeper,
+      notHarvestable,
+    }
   },
 
   // ---- Check Resource Amount ---- //
