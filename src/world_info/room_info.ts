@@ -381,7 +381,7 @@ export class OwnedRoomObjects {
     // if (chargeableStructures.length <= 0) {
     chargeableStructures.push(...chargeableLabs)
     // }
-    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)) {
       chargeableStructures.push(nuker)
     }
 
@@ -431,10 +431,11 @@ export class OwnedRoomObjects {
   }
 
   public getSource(position: RoomPosition): Source | null {
-    if (this.sources.length <= 0) {
+    const sources = this.sources.filter(source => source.energy > 0)
+    if (sources.length <= 0) {
       return null
     }
-    return this.sources.reduce((lhs, rhs) => {
+    return sources.reduce((lhs, rhs) => {
       const lTargetedBy = lhs.v5TargetedBy.length
       const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
