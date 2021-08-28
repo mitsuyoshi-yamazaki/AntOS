@@ -58,18 +58,6 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
 
   public runOnTick(): void {
     const invadedRoomNames: RoomName[] = []
-    // const remoteRoomNamesToDefend: {parent: RoomName, target: RoomName}[] = OperatingSystem.os.listAllProcesses()
-    //   .flatMap(processInfo => {
-    //     const process = processInfo.process
-    //     if (!(process instanceof RemoteRoomHarvesterTask)) {
-    //       return []
-    //     }
-    //     return {
-    //       parent: process.roomName,
-    //       target: process.targetRoomName,
-    //     }
-    //   })
-
     remoteRoomNamesToDefend.forEach((targetRoomNames, parentRoomName) => {
       invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
     })

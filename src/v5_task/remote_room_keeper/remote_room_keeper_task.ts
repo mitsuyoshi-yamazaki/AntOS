@@ -5,12 +5,12 @@ import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "v5_task/task_state"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
-import { World } from "world_info/world_info"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Environment } from "utility/environment"
 import { RoomResources } from "room_resource/room_resources"
+import { Invader } from "game/invader"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -63,8 +63,8 @@ export class RemoteRoomKeeperTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
+    const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
     const shouldCheckInvisibility = ((): boolean => {
-      const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
       if (targetRoomInfo == null) {
         return true
       }
@@ -75,6 +75,9 @@ export class RemoteRoomKeeperTask extends Task {
         break
       }
       if (targetRoomInfo.owner == null) {
+        return true
+      }
+      if (targetRoomInfo.owner.ownerType === "reserve" && targetRoomInfo.owner.username === Invader.username) {
         return true
       }
       if (((Game.time + this.startTime) % 4099) < 100) {
@@ -103,11 +106,14 @@ export class RemoteRoomKeeperTask extends Task {
       this.removeChildTask(harvesterTask)
     }
 
-    const targetRoom = World.rooms.get(this.targetRoomName)
-    if (targetRoom != null && targetRoom.controller != null) {
-      const controller = targetRoom.controller
+    const targetRoom = Game.rooms[this.targetRoomName]
+    if (targetRoom != null && targetRoomInfo != null && targetRoomInfo.roomType === "normal") {
       const shouldLaunchRemoteRoomWorker = ((): boolean => {
         if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
+          const remoteRoomNames = remoteRoomNamesToDefend.getValueFor(this.roomName)
+          if (remoteRoomNames.includes(this.targetRoomName) !== true) {
+            remoteRoomNames.push(this.targetRoomName)
+          }
           return false
         }
         if (objects.activeStructures.storage == null) {
@@ -119,19 +125,18 @@ export class RemoteRoomKeeperTask extends Task {
             return true
           }
         }
+        if (Environment.world === "persistent world" && Environment.shard === "shard2" && this.roomName === "W53S5" && this.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
+          return false
+        }
         if (Environment.world === "season 3") {
           return false
         }
-        if (controller.my === true || controller.owner != null || (controller.reservation != null && controller.reservation.username !== Game.user.name)) {
-          return false
+        if (targetRoomInfo.owner != null) {
+          if (targetRoomInfo.owner.ownerType !== "reserve" || targetRoomInfo.owner.username !== Invader.username) {
+            return false
+          }
         }
         if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
-          return false
-        }
-        if (Environment.world === "persistent world" && Environment.shard === "shard3" && this.targetRoomName === "W47S34") {
-          return false
-        }
-        if (Environment.world === "persistent world" && Environment.shard === "shard2" && this.roomName === "W53S5" && this.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
           return false
         }
         return true
