@@ -1,9 +1,11 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomSectorNameOf } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
+import { ValuedArrayMap } from "utility/valued_collection"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []
@@ -111,7 +113,20 @@ export const Rooms: RoomsInterface = {
 
     if (Game.time % 107 === 13) {
       roomVersions.forEach((roomNames, version) => {
-        console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+        if (roomNames.length <= 6) {
+          PrimitiveLogger.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+          return
+        }
+        const sectors = new ValuedArrayMap<string, RoomName>()
+        roomNames.forEach(roomName => {
+          const sectorName = roomSectorNameOf(roomName)
+          if (sectorName == null) {
+            PrimitiveLogger.programError(`Cannot get sector name of ${roomLink(roomName)}`)
+            return
+          }
+          sectors.getValueFor(sectorName).push(roomName)
+        })
+        PrimitiveLogger.log(`${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, roomNames]) => `- ${sectorName}: ${roomNames.map(r => roomLink(r)).join(", ")}`).join("\n")}`)
       })
     }
 
