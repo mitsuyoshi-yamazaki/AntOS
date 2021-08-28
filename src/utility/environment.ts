@@ -1,8 +1,9 @@
 type PersistentWorld = "persistent world"
 type SimulationWorld = "simulation"
 type Season3 = "season 3"
+type BotArena = "botarena"
 
-type World = PersistentWorld | SimulationWorld | Season3
+type World = PersistentWorld | SimulationWorld | Season3 | BotArena
 type ShardName = string
 
 export interface Environment {
@@ -16,8 +17,14 @@ const world = ((): World => {
     return "simulation"
   case "shardSeason":
     return "season 3"
-  default:
+  case "shard0":
+  case "shard1":
+  case "shard2":
+  case "shard3":
     return "persistent world"
+  case "botarena":
+  default:
+    return "botarena"
   }
 })()
 

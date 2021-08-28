@@ -27,9 +27,6 @@ export const remoteRoomNamesToDefend = ((): ValuedArrayMap<RoomName, RoomName> =
       return new ValuedArrayMap<RoomName, RoomName>([
       ])
     }
-  case "simulation":
-    return new ValuedArrayMap<RoomName, RoomName>([
-    ])
   case "season 3":
     return new ValuedArrayMap<RoomName, RoomName>([
       ["W27S26", ["W27S27", "W27S25"]], // "W28S26"
@@ -47,6 +44,11 @@ export const remoteRoomNamesToDefend = ((): ValuedArrayMap<RoomName, RoomName> =
       ["W15S8", ["W16S8", "W15S9", "W14S8"]],
       ["W26S9", ["W26S8"]],
       ["W5S21", ["W6S21", "W5S22", "W4S21"]],
+    ])
+  case "simulation":
+  case "botarena":
+  default:
+    return new ValuedArrayMap<RoomName, RoomName>([
     ])
   }
 })()
