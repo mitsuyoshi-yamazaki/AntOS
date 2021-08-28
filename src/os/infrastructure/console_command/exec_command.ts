@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
+import { findPath, findPathToSource, placeRoadConstructionMarks } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
@@ -30,8 +30,6 @@ export class ExecCommand implements ConsoleCommand {
       return this.findPath()
     case "findPathToSource":
       return this.findPathToSource()
-    case "showCachedSourcePath":
-      return this.showCachedSourcePath()
     case "showOldRoomPlan":
       return this.showOldRoomPlan()
     case "placeOldRoomPlan":
@@ -112,17 +110,6 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return findPathToSource(spawnName, sourceId as Id<Source>)
-  }
-
-  private showCachedSourcePath(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const sourceId = args.get("source_id")
-    if (sourceId == null) {
-      return this.missingArgumentError("source_id")
-    }
-
-    return showCachedSourcePath(sourceId as Id<Source>)
   }
 
   private showOldRoomPlan(): CommandExecutionResult {

@@ -159,49 +159,6 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
 //   // TODO: 既存のパスに重ならないようなcost matrix
 // }
 
-export function showCachedSourcePath(sourceId: Id<Source>): string {
-  const source = Game.getObjectById(sourceId)
-  if (source == null) {
-    return `Invalid source ID ${sourceId}`
-  }
-
-  const cachedPath = getCachedPathFor(source)
-  if (cachedPath == null) {
-    return `No cached source path for source ${sourceId} in ${roomLink(source.room.name)}`
-  }
-
-  const visual = source.room.visual
-  cachedPath.forEach(position => visual.text("*", position.x, position.y))
-  return "ok"
-}
-
-// Roomに持たせる
-const sourcePathCache = new Map<Id<Source>, RoomPosition[]>()
-
-export function getCachedPathFor(source: Source): RoomPosition[] | null {
-  const cachedPath = sourcePathCache.get(source.id)
-  if (cachedPath != null) {
-    if (cachedPath.length <= 0) {
-      return null
-    } else {
-      return cachedPath
-    }
-  }
-  if (source.room.memory.p == null) {
-    sourcePathCache.set(source.id, [])
-    return null
-  }
-  const memoryCachedPath = source.room.memory.p.s[source.id]
-  if (memoryCachedPath == null || memoryCachedPath === "no path") {
-    sourcePathCache.set(source.id, [])
-    return null
-  }
-  const roomName = source.room.name
-  const roomPositions = memoryCachedPath.p.map(position => new RoomPosition(position.x, position.y, roomName))
-  sourcePathCache.set(source.id, roomPositions)
-  return roomPositions
-}
-
 /**
  * - Owned roomにはflagを、そうでなければConstructionSiteを配置する
  * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
