@@ -22,6 +22,6 @@ const scripts = {
    * - 2. room_infoを削除
    */
   v5Migration: () => {
-    Game.rooms.W54S7.find(FIND_MY_CREEPS).filter(c => (c.getActiveBodyparts(CARRY) > 0) && (c.memory.v == null)).forEach(c => { c.memory = { v: "v5", p: "W54S7",r: ["hauler", "mover"],t: null,i: null,}})
+    Game.rooms.W53S5.find(FIND_MY_CREEPS).filter(c => (c.getActiveBodyparts(CARRY) > 0) && (c.memory.v == null)).forEach(c => { c.memory = { v: "v5", p: "W53S5",r: ["hauler", "mover"],t: null,i: null,}})
   }
 }

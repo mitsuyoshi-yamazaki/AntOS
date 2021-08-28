@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomTypeOf } from "utility/room_name"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "v5_task/general/general_creep_worker_task"
@@ -20,10 +20,25 @@ import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
+import { RoomResources } from "room_resource/room_resources"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
 const increasedNumberOfCreeps = 15
+
+function neighboursToObserve(roomName: RoomName): RoomName[] {
+  const exits = Game.map.describeExits(roomName)
+  if (exits == null) { // sim環境ではundefinedが返る
+    return []
+  }
+  return Array.from(Object.values(exits)).filter(neighbourRoomName => {
+    if (roomTypeOf(neighbourRoomName) !== "normal") {
+      return false
+    }
+    return true
+  })
+}
+
 
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
@@ -34,6 +49,8 @@ export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
 
   /** waypoints */
   w: RoomName[]
+
+  neighboursToObserve: RoomName[]
 }
 
 /**
@@ -50,7 +67,8 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     public readonly children: Task[],
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
-    private readonly waypoints: RoomName[]
+    private readonly waypoints: RoomName[],
+    private readonly neighboursToObserve: RoomName[],
   ) {
     super(startTime, children, parentRoomName)
 
@@ -65,16 +83,17 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       c: this.children.map(task => task.encode()),
       r: this.parentRoomName,
       tr: this.targetRoomName,
-      w: this.waypoints
+      w: this.waypoints,
+      neighboursToObserve: this.neighboursToObserve,
     }
   }
 
   public static decode(state: UpgradeToRcl3TaskState, children: Task[]): UpgradeToRcl3Task {
-    return new UpgradeToRcl3Task(state.s, children, state.r, state.tr, state.w)
+    return new UpgradeToRcl3Task(state.s, children, state.r, state.tr, state.w, state.neighboursToObserve)
   }
 
   public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): UpgradeToRcl3Task {
-    return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints)
+    return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints, neighboursToObserve(targetRoomName))
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -131,7 +150,18 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
   public newTaskFor(creep: Creep): CreepTask | null {
     if (creep.room.name !== this.targetRoomName) {
-      return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+        const creepRoomInfo = RoomResources.getRoomInfo(creep.room.name)
+        if (creepRoomInfo != null && creepRoomInfo.neighbourRoomNames.includes(this.targetRoomName) === true) {
+          const source = creep.room.find(FIND_SOURCES).sort((lhs, rhs) => {
+            return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
+          })[0]
+          if (source != null) {
+            return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+          }
+        }
+        return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      }
     }
 
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
@@ -164,8 +194,25 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       if (source != null) {
         return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
       }
-      creep.say("no source")
-      return null
+
+      if (this.neighboursToObserve.length > 0) {
+        const removeRoomName = (roomName: RoomName): void => {
+          const index = this.neighboursToObserve.indexOf(roomName)
+          if (index < 0) {
+            return
+          }
+          this.neighboursToObserve.splice(index, 1)
+        }
+        for (const neighbourRoomName of [...this.neighboursToObserve]) {
+          removeRoomName(neighbourRoomName)
+          const neighbourRoomInfo = RoomResources.getRoomInfo(neighbourRoomName)
+          if (neighbourRoomInfo != null) {
+            continue
+          }
+          return MoveToRoomTask.create(neighbourRoomName, [])
+        }
+      }
+      return this.getNeighbourHarvestTaskFor(creep)
     }
 
     if (targetRoomObjects.controller.level < 2) {
@@ -217,6 +264,48 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     return droppedResources.reduce((lhs, rhs) => {
       return lhs.pos.getRangeTo(position) < rhs.pos.getRangeTo(position) ? lhs : rhs
     })
+  }
+
+  private getNeighbourHarvestTaskFor(creep: Creep): CreepTask | null {
+    const resources = RoomResources.getOwnedRoomResource(this.targetRoomName)
+    if (resources?.roomInfo == null) {
+      return null
+    }
+
+    const harvestableNeighbourRooms: RoomName[] = resources.roomInfo.neighbourRoomNames.flatMap(neighbourRoomName => {
+      const neighbourRoomInfo = RoomResources.getRoomInfo(neighbourRoomName)
+      if (neighbourRoomInfo == null) {
+        return []
+      }
+      if (neighbourRoomInfo.roomType !== "normal") {
+        return []
+      }
+      if (neighbourRoomInfo.owner != null) {
+        return []
+      }
+      if (neighbourRoomInfo.numberOfSources <= 0) {
+        return []
+      }
+      return neighbourRoomName
+    })
+
+    const neighbourSources: Source[] = []
+    for (const harvestableNeighbourRoom of harvestableNeighbourRooms) {
+      const room = Game.rooms[harvestableNeighbourRoom]
+      if (room == null) {
+        return MoveToRoomTask.create(harvestableNeighbourRoom, [])
+      }
+      neighbourSources.push(...room.find(FIND_SOURCES))
+    }
+
+    const targetSource = neighbourSources.sort((lhs, rhs) => {
+      return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
+    })[0]
+    if (targetSource != null) {
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(targetSource))
+    }
+    creep.say("nothing")
+    return null
   }
 
   // ---- Creep Body ---- //
