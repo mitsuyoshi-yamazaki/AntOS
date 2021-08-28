@@ -154,6 +154,12 @@ export class RoomCoordinate {
       return RoomCoordinate.create("SE", 0, this.y).roomName
     }
   }
+
+  public sectorName(): string {
+    const x = Math.floor(this.x / 10) * 10 + 5
+    const y = Math.floor(this.y / 10) * 10 + 5
+    return RoomCoordinate.create(this.direction, x, y).roomName
+  }
 }
 
 export function roomTypeOf(roomName: RoomName): RoomType | null {
@@ -161,7 +167,15 @@ export function roomTypeOf(roomName: RoomName): RoomType | null {
   if (coordinate == null) {
     return null
   }
-  return roomTypeFromCoordinate(coordinate)
+  return coordinate.roomType
+}
+
+export function roomSectorNameOf(roomName: RoomName): string | null {
+  const coordinate = RoomCoordinate.parse(roomName)
+  if (coordinate == null) {
+    return null
+  }
+  return coordinate.sectorName()
 }
 
 function roomTypeFromCoordinate(roomCoordinate: RoomCoordinate): RoomType {
