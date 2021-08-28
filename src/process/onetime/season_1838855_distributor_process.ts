@@ -13,7 +13,6 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OperatingSystem } from "os/os"
 import { processLog } from "process/process_log"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
@@ -21,6 +20,8 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { CreepBody } from "utility/creep_body"
+import { GameConstants } from "utility/constants"
 
 type EnergyStore = StructureTerminal | StructureStorage
 
@@ -35,18 +36,7 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-// Game.io("launch -l Season1838855DistributorProcess room_name=W6S29 pos=26,36 link_id=610b604e550481c7f76f8e98 upgrader_link_id=610b7ec24645122963c87887")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W6S27 pos=14,17 link_id=6116b45395328f410083221f upgrader_link_id=6116bfc03819de00286d3873")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W21S23 pos=24,22 link_id=610b564f5504812b426f89ed upgrader_link_id=610b5d807c129561c313bbf2")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W3S24 pos=13,14")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W9S24 pos=24,32")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W14S28 pos=32,29")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W24S29 pos=17,9")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W27S26 pos=18,13")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W29S25 pos=24,9 link_id=6116b1e1c7daf82aff322119 upgrader_link_id=6116b4b1dcb0c172dcfa0449")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W17S11 pos=22,7 link_id=611c2c851019407b1137652e upgrader_link_id=611c2e57f727165f398f0568")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W15S8 pos=32,30 link_id=6120351704ed50f9c27e572f upgrader_link_id=61203b57ec66aca26d9b8327")
-// Game.io("launch -l Season1838855DistributorProcess room_name=W26S9 pos=32,25 link_id=611fd7359c09beee5bef89bd upgrader_link_id=611fd94daacc2648e7168200")
+// Game.io("launch -l Season1838855DistributorProcess room_name=W51S29 pos=24,21")
 export class Season1838855DistributorProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -56,8 +46,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     public readonly position: RoomPosition,
-    public readonly linkId: Id<StructureLink> | null,
-    public readonly upgraderLinkId: Id<StructureLink> | null,
+    public linkId: Id<StructureLink> | null,
+    public upgraderLinkId: Id<StructureLink> | null,
     private drainStorage: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
@@ -81,8 +71,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     return new Season1838855DistributorProcess(state.l, state.i, state.p, decodeRoomPosition(state.position), state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition, linkId: Id<StructureLink> | null, upgraderLinkId: Id<StructureLink> | null): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, linkId, upgraderLinkId, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition): Season1838855DistributorProcess {
+    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, null, null, false)
   }
 
   public processShortDescription(): string {
@@ -101,6 +91,10 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return
     }
 
+    if ((Game.time % 263) === 13) {
+      this.checkLink(resources)
+    }
+
     const getLink = ((linkId: Id<StructureLink> | null): StructureLink | null => {
       if (linkId == null) {
         return null
@@ -113,16 +107,17 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       this.runLinks(link, upgraderLink)
     }
 
-    const body = ((): BodyPartConstant[] => {
-      if (resources.controller.level < 8 || this.drainStorage === true) {
-        return [MOVE, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY]
-      }
-      return [MOVE, CARRY, CARRY, CARRY, CARRY]
-    })()
-
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount < 1) {
-      this.requestDistributor(body)
+      if ((resources.controller.level > 4 && resources.activeStructures.storage != null) || resources.activeStructures.terminal != null) {
+        const body = ((): BodyPartConstant[] => {
+          if (resources.controller.level < 8 || this.drainStorage === true) {
+            return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 8)
+          }
+          return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 4)
+        })()
+        this.requestDistributor(body)
+      }
     }
 
     World.resourcePools.assignTasks(
@@ -132,6 +127,29 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       creep => this.newDistributorTask(creep, link, resources),
       () => true,
     )
+  }
+
+  private checkLink(resources: OwnedRoomResource): void {
+    if (this.linkId == null) {
+      const roomPlan = resources.roomInfo.roomPlan
+      if (roomPlan != null) {
+        try {
+          const roomCenter = new RoomPosition(roomPlan.centerPosition.x, roomPlan.centerPosition.y, this.parentRoomName)
+          const link = roomCenter.findInRange(FIND_MY_STRUCTURES, 1, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+          if (link != null) {
+            this.linkId = link.id
+          }
+        } catch {
+          //
+        }
+      }
+    }
+    if (this.upgraderLinkId == null) {
+      const upgraderLink = resources.controller.pos.findInRange(FIND_MY_STRUCTURES, 3, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+      if (upgraderLink != null) {
+        this.upgraderLinkId = upgraderLink.id
+      }
+    }
   }
 
   private requestDistributor(body: BodyPartConstant[]): void {
@@ -151,7 +169,8 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     if (link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
       return
     }
-    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+    const linkConstants = GameConstants.link
+    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) >= (linkConstants.capaity * linkConstants.loss)) {
       return
     }
     link.transferEnergy(upgraderLink)
@@ -172,8 +191,6 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return this.transferEnergyToLinkTask(creep, storage, link)
     }
     if (storage == null || terminal == null) {
-      PrimitiveLogger.fatal(`${this.identifier} no active storage or terminal in ${roomLink(this.parentRoomName)}`)
-      OperatingSystem.os.suspendProcess(this.processId)
       return null
     }
 

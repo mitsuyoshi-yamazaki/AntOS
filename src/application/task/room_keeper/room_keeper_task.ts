@@ -18,9 +18,6 @@ import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_p
 import { AnyTaskProblem } from "application/any_problem"
 import { coloredText, roomLink } from "utility/log"
 import { RoomKeeperPerformance } from "application/task_profit/owned_room_performance"
-import { ResourceInsufficiencyPriority } from "room_resource/room_info"
-import { RoomResources } from "room_resource/room_resources"
-import { TaskLogRequest } from "application/task_logger"
 import { OperatingSystem } from "os/os"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
@@ -171,6 +168,11 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     ErrorMapper.wrapLoop((): void => {
       this.runWallBuilder(roomResource, requestHandlerInputs, taskPriority)
     }, "runWallBuilder()")()
+    ErrorMapper.wrapLoop((): void => {
+      if ((Game.time % 937) === 17) {
+        this.createRampart(roomResource)
+      }
+    }, "createRampart()")()
 
     const safeModeOutput = this.children.safeMode.runSafely(roomResource)
     this.concatRequests(safeModeOutput, this.children.safeMode.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
@@ -183,10 +185,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     taskOutputs.problems.push(...unresolvedProblems)
 
     this.checkResourceInsufficiency(roomResource)
-    const sendSurplusResourceLog = this.sendSurplusResource(roomResource)
-    if (sendSurplusResourceLog != null) {
-      taskOutputs.logs.push(sendSurplusResourceLog)
-    }
 
     return taskOutputs
   }
@@ -205,6 +203,17 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const outputs = this.children.wallBuilder.runSafely(roomResource)
     this.concatRequests(outputs, this.children.wallBuilder.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
+  }
+
+  private createRampart(roomResource: OwnedRoomResource): void {
+    if (roomResource.activeStructures.storage == null) {
+      return
+    }
+    const position = roomResource.activeStructures.storage.pos
+    if (position.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}}).length > 0) {
+      return
+    }
+    roomResource.room.createConstructionSite(position, STRUCTURE_RAMPART)
   }
 
   // ---- Research ---- //
@@ -288,69 +297,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       })
       return
     }
-    roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = ResourceInsufficiencyPriority.Optional
-  }
-
-  private sendSurplusResource(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    const terminal = roomResource.activeStructures.terminal
-    if (terminal == null) {
-      return null
-    }
-    const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-    if ((((Game.time + this.startTime) % 797) !== 73) && energyAmount < 150000) {
-      return null
-    }
-    if (roomResource.controller.level < 8) {
-      return null
-    }
-    if (roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
-      return null
-    }
-    if (energyAmount < 20000) {
-      return null
-    }
-    if (energyAmount < 100000) {
-      if (roomResource.activeStructures.storage == null || roomResource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 300000) {
-        return null
-      }
-    }
-    const sendAmount = Math.min(energyAmount / 2, 50000)
-    const energyInsufficientRoom = RoomResources.getResourceInsufficientRooms(RESOURCE_ENERGY)
-      .filter(room => {
-        if (room.roomName === this.roomName) {
-          return false
-        }
-        const targetRoom = Game.rooms[room.roomName]
-        if (targetRoom == null || targetRoom.terminal == null) {
-          return false
-        }
-        if ((targetRoom.terminal.store.getFreeCapacity(RESOURCE_ENERGY) - sendAmount) < 20000) {
-          return false
-        }
-        const targetRoomEnergyAmount = targetRoom.terminal.store.getUsedCapacity(RESOURCE_ENERGY) + (targetRoom.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-        if (targetRoomEnergyAmount > 500000) {
-          return false
-        }
-        return true
-      })
-      .sort((lhs, rhs) => {
-        if (lhs.priority === rhs.priority) {
-          return Game.market.calcTransactionCost(sendAmount, this.roomName, lhs.roomName) - Game.market.calcTransactionCost(sendAmount, this.roomName, rhs.roomName)
-        }
-        return lhs.priority - rhs.priority
-      })[0]
-
-    if (energyInsufficientRoom == null) {
-      return null
-    }
-    const result = terminal.send(RESOURCE_ENERGY, sendAmount, energyInsufficientRoom.roomName)
-    const resultDescription: string = result === OK ? "" : `${coloredText("[Failed] ", "error")}`
-    const energyDescription = `Sent ${sendAmount}energy`
-    return {
-      taskIdentifier: this.identifier,
-      logEventType: "event",
-      message: `${resultDescription}${coloredText(energyDescription, "info")} from ${roomLink(this.roomName)} to ${roomLink(energyInsufficientRoom.roomName)}`
-    }
+    roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = "optional"
   }
 
   // ---- Power Bank ---- //

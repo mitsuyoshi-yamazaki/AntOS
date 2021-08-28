@@ -1,5 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "utility/room_name"
+import { Rooms } from "world_info/room_info"
 import { ResourcePoolType } from "./resource_pool"
 
 /** 別タスクの実行中であっても上書きする */
@@ -87,6 +88,21 @@ export class TowerPool implements ResourcePoolType<StructureTower> {
 
     if (task == null) {
       return
+    }
+    if (task.towerTaskType === "heal") {
+      const enemyAttackerExists = ((): boolean => {
+        const objects = Rooms.getOwnedRoomObjects(this.parentRoomName)
+        if (objects == null) {
+          return false
+        }
+        if (objects.hostiles.creeps.some(hostileCreep => hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0) === true) {
+          return true
+        }
+        return false
+      })()
+      if (enemyAttackerExists === true) {
+        return
+      }
     }
     this.towers.forEach(tower => {
       runTask(task, tower)

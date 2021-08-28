@@ -40,6 +40,27 @@ const StructureAvailability: { [structureType in BuildableStructureConstant]: nu
   factory: 7,
 }
 
+const spawnMaxCount = Environment.world === "season 3" ? 1 : 3
+const StructureMaxCount: { [structureType in BuildableStructureConstant]: number } = {
+  extension: 60,
+  rampart: 2500,
+  road: 2500,
+  spawn: spawnMaxCount,
+  link: 6,
+  constructedWall: 2500,
+  storage: 1,
+  tower: 6,
+  observer: 1,
+  powerSpawn: 1,
+  extractor: 1,
+  lab: 10,
+  terminal: 1,
+  container: 5,
+  nuker: 1,
+  factory: 1,
+}
+
 export const StructureGameConstants = {
   availability: StructureAvailability,
+  maxCount: StructureMaxCount,
 }

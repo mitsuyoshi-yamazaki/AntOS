@@ -39,8 +39,8 @@
     "ts-polyfill": "^3.8.2"
   },
   "scripts": {
-    "deploy": "rollup -c",
-    "test": "jest"
+    "deploy": "rollup -c && echo '\\007'",
+    "test": "jest && echo '\\007'"
   },
   "jest": {
     "collectCoverage": false,

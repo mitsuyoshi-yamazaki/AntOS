@@ -9,6 +9,8 @@ import { World } from "world_info/world_info"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
 import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Environment } from "utility/environment"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface RemoteRoomKeeperTaskState extends TaskState {
   /** room name */
@@ -54,9 +56,36 @@ export class RemoteRoomKeeperTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
+    if (objects.controller.level < 3) {
+      return TaskStatus.InProgress
+    }
+
     const problemFinders: ProblemFinder[] = [
-      new RoomInvisibleProblemFinder(objects, this.targetRoomName),
     ]
+
+    const shouldCheckInvisibility = ((): boolean => {
+      const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
+      if (targetRoomInfo == null) {
+        return true
+      }
+      switch (targetRoomInfo.roomType) {
+      case "owned":
+        return false
+      case "normal":
+        break
+      }
+      if (targetRoomInfo.owner == null) {
+        return true
+      }
+      if (((Game.time + this.startTime) % 4099) < 100) {
+        return true
+      }
+      return false
+    })()
+    if (shouldCheckInvisibility === true) {
+      problemFinders.push(new RoomInvisibleProblemFinder(objects, this.targetRoomName))
+    }
+
     this.checkProblemFinders(problemFinders)
 
     // if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
@@ -75,9 +104,39 @@ export class RemoteRoomKeeperTask extends Task {
     }
 
     const targetRoom = World.rooms.get(this.targetRoomName)
-    const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
-    if (remoteRooms != null && objects.activeStructures.storage) {
-      if (remoteRooms.includes(this.targetRoomName) === true && targetRoom != null && this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
+    if (targetRoom != null && targetRoom.controller != null) {
+      const controller = targetRoom.controller
+      const shouldLaunchRemoteRoomWorker = ((): boolean => {
+        if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
+          return false
+        }
+        if (objects.activeStructures.storage == null) {
+          return false
+        }
+        const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
+        if (remoteRooms != null) {
+          if (remoteRooms.includes(this.targetRoomName) === true) {
+            return true
+          }
+        }
+        if (Environment.world === "season 3") {
+          return false
+        }
+        if (controller.my === true || controller.owner != null || (controller.reservation != null && controller.reservation.username !== Game.user.name)) {
+          return false
+        }
+        if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
+          return false
+        }
+        if (Environment.world === "persistent world" && Environment.shard === "shard3" && this.targetRoomName === "W47S34") {
+          return false
+        }
+        if (Environment.world === "persistent world" && Environment.shard === "shard2" && this.roomName === "W53S5" && this.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
+          return false
+        }
+        return true
+      })()
+      if (shouldLaunchRemoteRoomWorker === true) {
         this.addChildTask(RemoteRoomWorkerTask.create(this.roomName, targetRoom))
       }
     }
@@ -86,10 +145,10 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (task.targetRoomName !== "W7S29") {
-        return false
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W53S5" && task.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
+        return true
       }
-      return true
+      return false
     })
     if (workerToRemove != null) {
       PrimitiveLogger.log(`${this.taskIdentifier} removed child task ${workerToRemove.taskIdentifier}`)

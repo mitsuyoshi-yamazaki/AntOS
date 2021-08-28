@@ -4,6 +4,7 @@ import { GameConstants } from "utility/constants"
 import { ValuedArrayMap } from "utility/valued_collection"
 import { Result } from "utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { RoomPlanner } from "room_plan/room_planner"
 
 export function showOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {
   const room = Game.rooms[roomName]
@@ -102,4 +103,18 @@ export function parseLabs(room: Room): Result<{ inputLab1: StructureLab, inputLa
     inputLab2,
     outputLabs,
   })
+}
+
+export function showRoomPlan(controller: StructureController, dryRun: boolean, showsCostMatrix: boolean): string {
+  const roomPlanner = new RoomPlanner(controller, {dryRun, showsCostMatrix})
+  const result = roomPlanner.run()
+  switch (result.resultType) {
+  case "succeeded":
+    if (dryRun === true || showsCostMatrix === true) {
+      return `dry_run: ${dryRun}, show_cost_matrix: ${showsCostMatrix}`
+    }
+    return "ok"
+  case "failed":
+    return result.reason
+  }
 }

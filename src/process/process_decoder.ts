@@ -33,6 +33,7 @@ import { Season2006098StealResourceProcess, Season2006098StealResourceProcessSta
 import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessState } from "./onetime/season_2055924_send_resources_process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
+import { InterRoomResourceManagementProcess, InterRoomResourceManagementProcessState } from "./process/inter_room_resource_management_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
@@ -52,6 +53,7 @@ class ProcessTypes {
   "RoomKeeperProcess" = (state: ProcessState) => RoomKeeperProcess.decode(state as unknown as RoomKeeperProcessState)
   "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
   "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
+  "InterRoomResourceManagementProcess" = (state: ProcessState) => InterRoomResourceManagementProcess.decode(state as unknown as InterRoomResourceManagementProcessState)
 
   // ---- v6 Process ---- //
   "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)

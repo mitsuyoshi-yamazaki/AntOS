@@ -5,6 +5,7 @@ import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
+import { RoomResources } from "room_resource/room_resources"
 
 const colorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
@@ -16,14 +17,15 @@ const colorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_GREY, STRUCTURE_SPAWN],
   [COLOR_CYAN, STRUCTURE_NUKER],
   [COLOR_WHITE, STRUCTURE_EXTENSION],
+  [COLOR_YELLOW, STRUCTURE_CONTAINER],
 ])
 
 const structurePriority: StructureConstant[] = [
   STRUCTURE_TOWER,
   STRUCTURE_SPAWN,
+  STRUCTURE_EXTENSION,
   STRUCTURE_STORAGE,
   STRUCTURE_TERMINAL,
-  STRUCTURE_EXTENSION,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
   STRUCTURE_LAB,
@@ -76,8 +78,19 @@ export class CreateConstructionSiteTask extends Task {
     if (Game.time % 17 !== 3) {
       return TaskStatus.InProgress
     }
-    const centerPosition: RoomPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
-    this.placeConstructionSite(objects.controller.room, objects.flags, centerPosition)
+    const centerPosition = ((): RoomPosition => {
+      const resources = RoomResources.getOwnedRoomResource(this.roomName)
+      if (resources != null && resources.roomInfo.roomPlan != null) {
+        const center = resources.roomInfo.roomPlan.centerPosition
+        try {
+          return new RoomPosition(center.x, center.y, this.roomName)
+        } catch (e) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} failed to build RoomPosition object for ${center.x},${center.y} ${roomLink(this.roomName)}`)
+        }
+      }
+      return objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
+    })()
+    this.placeConstructionSite(objects.controller.room, [...objects.flags], centerPosition)
 
     return TaskStatus.InProgress
   }
@@ -87,9 +100,23 @@ export class CreateConstructionSiteTask extends Task {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
     }
-    if (World.rooms.getAllOwnedRooms().length > 1 && room.controller.level <= 2) {
-      return
-    }
+
+    const [shouldPlaceExtensions, shouldPlaceRoads] = ((): [boolean, boolean] => {
+      if (World.rooms.getAllOwnedRooms().length <= 1) {
+        if (room.controller.level <= 3) {
+          return [true, false]
+        }
+        return [true, true]
+      }
+      if (room.controller.level < 3) {
+        return [false, false]
+      }
+      if (room.controller.level < 4) {
+        return [true, false]
+      }
+      return [true, true]
+    })()
+    const shouldPlaceContainer = room.controller.level >= 4
 
     const sortedFlags = flags.sort((lhs, rhs) => {
       const lStructureType = colorMap.get(lhs.color)
@@ -117,6 +144,27 @@ export class CreateConstructionSiteTask extends Task {
     for (const flag of sortedFlags) {
       const structureType = colorMap.get(flag.color)
       if (structureType == null) {
+        continue
+      }
+      if (structureType === STRUCTURE_EXTENSION && shouldPlaceExtensions !== true) {
+        continue
+      }
+      if (structureType === STRUCTURE_ROAD) {
+        if (shouldPlaceRoads !== true) {
+          continue
+        }
+        const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
+        if (placedStructure.length > 0) {
+          flag.remove()
+          continue
+        }
+        const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
+        if (constructionSites.length > 0) {
+          flag.remove()
+          continue
+        }
+      }
+      if (structureType === STRUCTURE_CONTAINER && shouldPlaceContainer !== true) {
         continue
       }
       const result = room.createConstructionSite(flag.pos, structureType)

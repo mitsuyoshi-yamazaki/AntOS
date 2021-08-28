@@ -10,19 +10,22 @@ type UpgradeControllerApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRE
 export interface UpgradeControllerApiWrapperState extends CreepApiWrapperState {
   /** target id */
   i: Id<StructureController>
+
+  range: number
 }
 
 export class UpgradeControllerApiWrapper implements ApiWrapper<Creep, UpgradeControllerApiWrapperResult>, TargetingApiWrapper {
   public readonly shortDescription = "upgrade"
-  public readonly range = 3
   private constructor(
     public readonly target: StructureController,
+    public readonly range: number,
   ) { }
 
   public encode(): UpgradeControllerApiWrapperState {
     return {
       t: "UpgradeControllerApiWrapper",
       i: this.target.id,
+      range: this.range,
     }
   }
 
@@ -31,11 +34,11 @@ export class UpgradeControllerApiWrapper implements ApiWrapper<Creep, UpgradeCon
     if (source == null) {
       return null
     }
-    return new UpgradeControllerApiWrapper(source)
+    return new UpgradeControllerApiWrapper(source, state.range ?? 3)
   }
 
-  public static create(target: StructureController): UpgradeControllerApiWrapper {
-    return new UpgradeControllerApiWrapper(target)
+  public static create(target: StructureController, range?: number): UpgradeControllerApiWrapper {
+    return new UpgradeControllerApiWrapper(target, range ?? 3)
   }
 
   public run(creep: Creep): UpgradeControllerApiWrapperResult {

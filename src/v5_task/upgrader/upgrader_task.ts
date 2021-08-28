@@ -31,6 +31,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
 
   private readonly codename: string
+  private availablePositions: RoomPosition[] = []
 
   private constructor(
     public readonly startTime: number,
@@ -93,12 +94,37 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
+    this.checkEnergySource(objects)
+
+    const container = objects.roomInfo.upgrader?.container
+    const link = ((): StructureLink | null => {
+      if (this.linkId == null) {
+        return null
+      }
+      return Game.getObjectById(this.linkId)
+    })()
+
+    if (container == null && link == null) {
+      this.availablePositions = []
+    } else {
+      this.availablePositions = this.upgraderPositions.filter(position => {
+        if (container != null && position.getRangeTo(container.pos) > 1) {
+          return false
+        }
+        if (link != null && position.getRangeTo(link) !== 1) {
+          return false
+        }
+        return true
+      })
+    }
+    if (this.availablePositions.length <= 0) {
+      return TaskStatus.InProgress
+    }
+
     super.runTask(objects, childTaskResults)
 
     const problemFinders: ProblemFinder[] = [
     ]
-
-    this.checkLink(objects)
 
     this.checkProblemFinders(problemFinders)
 
@@ -110,12 +136,6 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    const container = objects.roomInfo.upgrader?.container
-    if (container == null) {
-      // console.log(`${this.taskIdentifier} no container`)
-      return null
-    }
-
     const [body, numberOfCreeps] = this.upgraderBody(objects)
 
     return {
@@ -137,18 +157,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       }
       return Game.getObjectById(this.linkId)
     })()
-    const [sourcePosition1, sourcePosition2] = ((): [RoomPosition | null, RoomPosition | null] => {
-      if (container != null) {
-        return [container.pos, link?.pos ?? null]
-      }
-      return [link?.pos ?? null, null]
-    })()
 
-    if (sourcePosition1 == null) {
-      return null
-    }
-
-    const emptyPosition = this.emptyPosition(sourcePosition1, sourcePosition2)
+    const emptyPosition = this.emptyPosition()
     if (emptyPosition == null) {
       creep.say("no dest")
       return null
@@ -207,50 +217,54 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
-      if (objects.constructionSites.length > 0) {
-        return 1
-      }
-      return 3
+      return Math.max(this.availablePositions.length - 1, 3)  // 全位置を埋めるとHaulerが入って来れなくなるため
     })()
 
     return [body, numberOfCreeps]
   }
 
-  private emptyPosition(sourcePosition1: RoomPosition, sourcePosition2: RoomPosition | null): RoomPosition | null {
-    const emptyPositions = this.upgraderPositions.filter(position => {
+  private emptyPosition(): RoomPosition | null {
+    const emptyPositions = this.availablePositions.filter(position => {
       if (position.v5TargetedBy.length > 0) {
-        return false
-      }
-      if (sourcePosition2 == null) {
-        if (position.isNearTo(sourcePosition1) !== true) {
-          return false
-        }
-        return true
-      }
-      if (position.isNearTo(sourcePosition1) !== true) {
-        return false
-      }
-      if (position.isNearTo(sourcePosition2) !== true) {
         return false
       }
       return true
     })
     if (emptyPositions[0] == null) {
-      PrimitiveLogger.fatal(`[Program bug] UpgraderTask dosen't have empty position (${this.upgraderPositions})`)
+      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position (${this.upgraderPositions})`)
       return null
     }
     return emptyPositions[0]
   }
 
-  private checkLink(objects: OwnedRoomObjects): void {
-    if (this.linkId != null || (Game.time % 2099) !== 0) {
+  private checkEnergySource(objects: OwnedRoomObjects): void {
+    if (((Game.time + this.startTime) % 197) !== 17) {
       return
     }
-
-    const link = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
-    if (link == null) {
-      return
+    if (this.linkId == null) {
+      const link = objects.controller.pos.findInRange(FIND_MY_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+      if (link != null) {
+        this.linkId = link.id
+      }
     }
-    this.linkId = link.id
+    if (objects.roomInfo.upgrader?.container == null) {
+      const containers = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_CONTAINER } }) as StructureContainer[]
+      const container = containers.find(c => {
+        if (c.pos.findInRange(FIND_SOURCES, 1).length > 0) {
+          return false
+        }
+        return true
+      })
+      if (container != null) {
+        if (objects.roomInfo.upgrader == null) {
+          objects.roomInfo.upgrader = {
+            link: null,
+            container,
+          }
+        } else {
+          objects.roomInfo.upgrader.container = container
+        }
+      }
+    }
   }
 }

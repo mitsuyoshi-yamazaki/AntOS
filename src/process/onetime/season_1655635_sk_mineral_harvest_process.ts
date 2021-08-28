@@ -187,7 +187,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
           const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
           this.requestCreep(this.attackerRoles, this.attackerBody, priority)
         } else {
-          if (harvesters[0] == null || (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100)) {
+          if (harvesters[0] == null || (harvesters.length <= 1 &&  (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
             this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
           } else {
             if (haulers.length < 1) {

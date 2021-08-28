@@ -78,12 +78,17 @@ export const GameConstants = {
       build: BUILD_POWER,
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
+      harvest: HARVEST_POWER,
     },
     actionCost: creepActionEnergyCost,
     boostCost: LAB_BOOST_MINERAL,
   },
   source: {
     regenerationDuration: 300,
+  },
+  link: {
+    loss: LINK_LOSS_RATIO,
+    capaity: LINK_CAPACITY,
   },
   power: PowerGameConstants,
   structure: StructureGameConstants,

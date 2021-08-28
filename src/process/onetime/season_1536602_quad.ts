@@ -1,7 +1,5 @@
-import { SourceKeeper } from "game/source_keeper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepName } from "prototype/creep"
-import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { moveToRoom } from "script/move_to_room"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
@@ -539,22 +537,22 @@ function quadCostCallback(positionsToAvoid?: RoomPosition[]): (roomName: RoomNam
       })
     }
 
-    if (room.roomType === "source_keeper") {
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-      const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-      const sourceKeeperPositions = sourceKeepers
-        .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
+    // if (room.roomType === "source_keeper") {
+    //   const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+    //     excludeItself: false,
+    //     excludeTerrainWalls: false,
+    //     excludeStructures: false,
+    //     excludeWalkableStructures: false,
+    //   }
+    //   const sourceKeepers = room.find(FIND_HOSTILE_CREEPS)
+    //     .filter(creep => creep.owner.username === SourceKeeper.username)
+    //   const sourceKeeperPositions = sourceKeepers
+    //     .flatMap(creep => creep.pos.positionsInRange(5, roomPositionFilteringOptions))
 
-      sourceKeeperPositions.forEach(position => {
-        costMatrix.set(position.x, position.y, obstacleCost)
-      })
-    }
+    //   sourceKeeperPositions.forEach(position => {
+    //     costMatrix.set(position.x, position.y, obstacleCost)
+    //   })
+    // }
 
     const obstacleDirections: DirectionConstant[] = [
       TOP,

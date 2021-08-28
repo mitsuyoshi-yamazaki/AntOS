@@ -600,9 +600,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
       if (this.whitelistedUsernames.includes(c.owner.username) === true) {
         return false
       }
-      if (c.getActiveBodyparts(MOVE) <= 0 && c.getActiveBodyparts(HEAL) <= 0) {
-        return false
-      }
+      // if (c.getActiveBodyparts(MOVE) <= 0 && c.getActiveBodyparts(HEAL) <= 0) {
+      //   return false
+      // }
       return c.getActiveBodyparts(ATTACK) > 0 || c.getActiveBodyparts(CARRY) > 0 || c.getActiveBodyparts(RANGED_ATTACK) > 0 || c.getActiveBodyparts(HEAL) > 0
     })
     const target = creep.pos.findClosestByRange(hostileCreeps)

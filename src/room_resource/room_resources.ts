@@ -6,7 +6,7 @@ import { RoomName } from "utility/room_name"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
-import { buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiencyPriority, RoomInfoType } from "./room_info"
+import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiency, RoomInfoType, updateNormalRoomInfo } from "./room_info"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -17,9 +17,10 @@ interface RoomResourcesInterface {
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
+  getRoomInfo(roomName: RoomName): RoomInfoType | null
 
   // ---- Inter Room Resource ---- //
-  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority}[]
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -46,6 +47,8 @@ export const RoomResources: RoomResourcesInterface = {
         ownedRoomResources.set(roomName, ownedRoomResource)
         roomResources.set(roomName, ownedRoomResource)
       }
+
+      updateRoomInfo(room)
     })
   },
 
@@ -77,9 +80,13 @@ export const RoomResources: RoomResourcesInterface = {
     return roomResource
   },
 
+  getRoomInfo(roomName: RoomName): RoomInfoType | null {
+    return Memory.v6RoomInfo[roomName] ?? null
+  },
+
   // ---- Inter Room Resource ---- //
-  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] {
-    const result: { roomName: RoomName, priority: ResourceInsufficiencyPriority }[] = []
+  getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency }[] {
+    const result: { roomName: RoomName, priority: ResourceInsufficiency }[] = []
     ownedRoomResources.forEach((ownedRoomResource, roomName) => {
       const insufficientResourcePriority = ownedRoomResource.roomInfo.resourceInsufficiencies[resourceType]
       if (insufficientResourcePriority == null) {
@@ -120,6 +127,22 @@ function enumerateCreeps(): void {
   }
 }
 
+function updateRoomInfo(room: Room): void {
+  const storedRoomInfo = RoomResources.getRoomInfo(room.name)
+  if(storedRoomInfo == null) {
+    Memory.v6RoomInfo[room.name] = createRoomInfo(room)
+    return
+  }
+
+  switch (storedRoomInfo.roomType) {
+  case "normal":
+    updateNormalRoomInfo(room, storedRoomInfo)
+    break
+  case "owned":
+    break
+  }
+}
+
 function buildNormalRoomResource(controller: StructureController): NormalRoomResource {
   const roomInfo = Memory.v6RoomInfo[controller.room.name] ?? null
   return new NormalRoomResource(controller, roomInfo)
@@ -130,11 +153,27 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
     const stored = Memory.v6RoomInfo[controller.room.name]
     if (stored != null) {
       if (stored.roomType === "owned") {
+
+        // FixMe: Migration: 消す
+        if (stored.neighbourRoomNames == null) {
+          const getNeighbourRoomNames = (room: Room): RoomName[] => {
+            const exits = Game.map.describeExits(room.name)
+            if (exits == null) { // sim環境ではundefinedが返る
+              return []
+            }
+            return Array.from(Object.values(exits))
+          }
+          stored.neighbourRoomNames = getNeighbourRoomNames(controller.room)
+        }
+        if (stored.numberOfSources == null) {
+          stored.numberOfSources = controller.room.find(FIND_SOURCES).length
+        }
+
         return stored
       }
       return buildOwnedRoomInfo(stored)
     }
-    return buildOwnedRoomInfo()
+    return buildOwnedRoomInfo(controller.room)
   })()
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
@@ -192,4 +231,11 @@ function saveRoomInfo(): void {
     }
     Memory.v6RoomInfo[roomName] = roomInfo
   })
+}
+
+function createRoomInfo(room: Room): RoomInfoType {
+  if (room.controller != null && room.controller.my === true) {
+    return buildOwnedRoomInfo(room)
+  }
+  return buildNormalRoomInfo(room)
 }

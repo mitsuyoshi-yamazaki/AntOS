@@ -14,10 +14,11 @@ import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/h
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_task/general/general_creep_worker_task"
-import { bodyCost, createCreepBody } from "utility/creep_body"
+import { bodyCost, createCreepBody, CreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
 import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
+import { RoomResources } from "room_resource/room_resources"
 
 let randomSeed = 0
 
@@ -33,7 +34,6 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   public readonly taskIdentifier: TaskIdentifier
 
   private readonly codename: string
-  private readonly numberOfCreeps: number
   private saying = 0
 
   private constructor(
@@ -45,14 +45,6 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
-
-    const numberOfCreeps: { [roomName: string]: number } = {
-      "W6S29": 4,
-
-      // shard3
-      "W51S29": 4,
-    }
-    this.numberOfCreeps = numberOfCreeps[this.roomName] ?? 3
   }
 
   public encode(): SpecializedWorkerTaskState {
@@ -77,17 +69,64 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    const haulerCount = World.resourcePools.countCreeps(this.roomName, null, creep => (creep.roles.includes(CreepRole.Worker) !== true))
-    if (haulerCount <= 0) {
-      return this.haulerCreepRequest(objects)
+    const creepCount = World.resourcePools.countCreeps(this.roomName, null, () => true)
+    const numberOfCreeps = ((): number => {
+      const resources = RoomResources.getOwnedRoomResource(this.roomName)
+      if (resources == null) {
+        return 3
+      }
+      if (resources.roomInfo.roomPlan == null) {
+        return 3
+      }
+      const center = resources.roomInfo.roomPlan.centerPosition
+      try {
+        const centerPosition = new RoomPosition(center.x, center.y, this.roomName)
+        const controllerRange = resources.controller.pos.getRangeTo(centerPosition)
+        const requiredCount = Math.max(Math.floor(controllerRange / 4) + 1, 3)
+        if (resources.controller.level > 5) {
+          return requiredCount <= 3 ? 3 : 4
+        }
+        return requiredCount
+      } catch {
+        return 3
+      }
+    })()
+    if (creepCount < 2) {
+      const body = ((): BodyPartConstant[] => {
+        const haulerBody = this.haulerBody(objects)
+        if (objects.controller.room.energyAvailable < CreepBody.cost(haulerBody)) {
+          return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE]
+        }
+        return haulerBody
+      })()
+      return {
+        necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
+        taskIdentifier: null,
+        numberOfCreeps,
+        codename: this.codename,
+        initialTask: null,
+        priority: CreepSpawnRequestPriority.High,
+        body,
+      }
     }
-    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
-    if (objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true)) || objects.damagedStructures.length > 0) {
-      // this.removeBuilderCreepRequest() // CreepInsufficiencyProblemSolverは毎tick Finishするため不要
-      return this.builderCreepRequest(objects)
+
+    const needBuilder = ((): boolean => {
+      const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+      const needRepair = objects.damagedStructures.length > 0
+      const needBuild = objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true))
+      if (needRepair !== true && needBuild !== true) {
+        return false
+      }
+      const builderCount = World.resourcePools.countCreeps(this.roomName, null, creep => (creep.roles.includes(CreepRole.Worker) === true))
+      if (builderCount < 2) {
+        return true
+      }
+      return false
+    })()
+    if (needBuilder === true) {
+      return this.builderCreepRequest(objects, numberOfCreeps)
     } else {
-      // this.removeHaulerCreepRequest()
-      return this.haulerCreepRequest(objects)
+      return this.haulerCreepRequest(objects, numberOfCreeps)
     }
   }
 
@@ -207,11 +246,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   //   }
   // }
 
-  private builderCreepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest {
+  private builderCreepRequest(objects: OwnedRoomObjects, numberOfCreeps: number): GeneralCreepWorkerTaskCreepRequest {
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps: this.numberOfCreeps,
+      numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,
@@ -219,11 +258,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
   }
 
-  private haulerCreepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest {
+  private haulerCreepRequest(objects: OwnedRoomObjects, numberOfCreeps: number): GeneralCreepWorkerTaskCreepRequest {
     return {
       necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
       taskIdentifier: null,
-      numberOfCreeps: this.numberOfCreeps,
+      numberOfCreeps,
       codename: this.codename,
       initialTask: null,
       priority: CreepSpawnRequestPriority.Medium,

@@ -20,24 +20,9 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
   g: number | null
 }
 
-// Game.io("message 34351666000 parent_room_name=W52S28 target_room_name=W52S25 waypoints=W51S28,W51S26")
-// Game.io("message 387872000 parent_room_name=W24S29 target_room_name=W14S28 waypoints=W23S29,W23S30,W14S30")
-// Game.io("message 544054000 parent_room_name=W14S28 target_room_name=W9S24 waypoints=W14S30,W10S30")
-// Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W1S25 waypoints=W8S25")
-// Game.io("message 544054000 parent_room_name=W1S25 target_room_name=E5S23 waypoints=E0S25,E0S24,E3S24,E3S23,E5S23 target_gcl=6")
-// Game.io("message 544054000 parent_room_name=W1S25 target_room_name=W3S24 waypoints=W1S24,W2S24,W2S23 target_gcl=6")
-// Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W23S30,W20S30,W20S23 target_gcl=7")
-// Game.io("message 544054000 parent_room_name=W24S29 target_room_name=W21S23 waypoints=W24S23 target_gcl=7")
-// Game.io("message 544054000 parent_room_name=W3S24 target_room_name=W6S29 waypoints=W3S25,W5S25,W5S29 target_gcl=7")
-// Game.io("message 544054000 parent_room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27 target_gcl=8")
-// Game.io("message 544054000 parent_room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25 target_gcl=9")
-// Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W11S14 waypoints=W10S24,W10S14 target_gcl=9")
-// Game.io("message 544054000 parent_room_name=W21S23 target_room_name=W17S11 waypoints=W20S23,W20S10,W17S10 claim_parent_room_name=W11S14 claim_waypoints=W10S14,W10S10,W17S10 target_gcl=9")
-// Game.io("message 544054000 parent_room_name=W17S11 target_room_name=W15S8 waypoints=W17S10,W15S10,W15S8 target_gcl=9")
-// Game.io("message 544054000 parent_room_name=W17S11 target_room_name=W26S9 waypoints=W17S10,W26S10 target_gcl=10")
-// Game.io("message parent_room_name=W53S36 target_room_name=W49S42 waypoints=W51S36,W51S38,W50S38,W50S43,W49S43 target_gcl=42")
+// Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W5S21 waypoints=W10S24,W10S20,W5S20 target_gcl=11")
 // Game.io("message 29614512000 parent_room_name=W51S29 target_room_name=W48S33 waypoints=W50S30,W50S33 target_gcl=42")
-// Game.io("message 29614512000 parent_room_name=W51S29 target_room_name=W47S33 waypoints=W50S30,W50S33 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W48S12 target_room_name=W53S17 waypoints=W48S11,W50S11,W50S16,W53S16 target_gcl=42")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,

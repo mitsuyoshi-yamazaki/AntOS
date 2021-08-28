@@ -1,6 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { findPath, findPathToSource, placeRoadConstructionMarks, showCachedSourcePath } from "script/pathfinder"
-import { describeLabs, placeOldRoomPlan, showOldRoomPlan } from "script/room_plan"
+import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
@@ -52,6 +52,10 @@ export class ExecCommand implements ConsoleCommand {
       return this.resource()
     case "set_boost_labs":
       return this.setBoostLabs()
+    case "show_room_plan":
+      return this.showRoomPlan()
+    case "mineral":
+      return this.showHarvestableMinerals()
     default:
       return "Invalid script type"
     }
@@ -551,5 +555,38 @@ export class ExecCommand implements ConsoleCommand {
     resources.roomInfo.config.boostLabs = labIds
 
     return `\n${outputs.join("\n")}`
+  }
+
+  private showRoomPlan(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `No visible to ${roomLink(roomName)}`
+    }
+    const controller = room.controller
+    if (controller == null) {
+      return `No controller in ${roomLink(roomName)}`
+    }
+    const dryRun = (args.get("dry_run") ?? "1") === "1"
+    const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
+
+    return showRoomPlan(controller, dryRun, showsCostMatrix)
+  }
+
+  private showHarvestableMinerals(): CommandExecutionResult {
+    const harvestableMinerals = ResourceManager.harvestableMinerals()
+    const result: string[] = []
+    result.push("Harvestable:")
+    result.push(...Array.from(harvestableMinerals.owned.entries()).map(([resourceType, roomNames]) => `- ${coloredResourceType(resourceType)}: ${roomNames.map(r => roomLink(r)).join(", ")}`))
+    result.push("Harvestable in SK rooms:")
+    result.push(...Array.from(harvestableMinerals.sourceKeeper.entries()).map(([resourceType, roomNames]) => `- ${coloredResourceType(resourceType)}: ${roomNames.map(r => roomLink(r)).join(", ")}`))
+    result.push("Not harvestable:")
+    result.push(harvestableMinerals.notHarvestable.map(r => coloredResourceType(r)).join(","))
+    return `\n${result.join("\n")}`
   }
 }

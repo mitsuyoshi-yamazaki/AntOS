@@ -103,7 +103,8 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       taskOutputs.problems.push(new MissingActiveStructureProblem(this.roomName, STRUCTURE_TERMINAL))
       return taskOutputs
     }
-    if (terminal.store.getUsedCapacity(compound) >= compoundAmount) {
+    const storedCompoundAmount = terminal.store.getUsedCapacity(compound) + (roomResource.activeStructures.storage?.store.getUsedCapacity(compound) ?? 0)
+    if (storedCompoundAmount >= compoundAmount) {
       taskOutputs.logs.push({
         taskIdentifier: this.identifier,
         logEventType: "event",
@@ -120,12 +121,30 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       })
     })
 
-    const creepCount = roomResource.runningCreepInfo(this.identifier).length
-    const ingredients = MineralCompoundIngredients[compound]
-    const ingrendient1Available = (terminal.store.getUsedCapacity(ingredients.lhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.lhs) > 0))
-    const ingrendient2Available = (terminal.store.getUsedCapacity(ingredients.rhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.rhs) > 0))
-    const resourceAvailable = ingrendient1Available && ingrendient2Available
-    if (resourceAvailable && creepCount < 1) {
+    const shouldSpawn = ((): boolean => {
+      if (roomResource.runningCreepInfo(this.identifier).length >= 1) {
+        return false
+      }
+      const ingredients = MineralCompoundIngredients[compound]
+      const ingrendient1Available = (terminal.store.getUsedCapacity(ingredients.lhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.lhs) > 0))
+      const ingrendient2Available = (terminal.store.getUsedCapacity(ingredients.rhs) > 0) || labs.outputLabs.some(lab => (lab.store.getUsedCapacity(ingredients.rhs) > 0))
+      const resourceAvailable = ingrendient1Available && ingrendient2Available
+      if (resourceAvailable === true) {
+        return true
+      }
+      const hasOutputCompounds = labs.outputLabs.some(lab => {
+        if (lab.mineralType == null) {
+          return false
+        }
+        return lab.store.getUsedCapacity(lab.mineralType) > 0
+      })
+      if (hasOutputCompounds === true) {
+        return true
+      }
+      return false
+    })()
+
+    if (shouldSpawn === true) {
       taskOutputs.spawnRequests.push(this.labChargerSpawnRequest(roomResource))
     }
 

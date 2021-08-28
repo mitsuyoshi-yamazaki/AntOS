@@ -23,6 +23,7 @@ export type ChargeTarget = StructureExtension | StructureSpawn | StructureTower 
 
 declare global {
   interface RoomMemory {
+    /** @deprecated */
     p?: RoomPathMemory
 
     /** @deprecated Old codebase */

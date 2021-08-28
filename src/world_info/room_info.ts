@@ -1,12 +1,11 @@
-import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { RoomPathMemory } from "prototype/room"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
-import { calculateSourceRoute } from "script/pathfinder"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { RoomName } from "utility/room_name"
+import { RoomName, roomSectorNameOf } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
+import { ValuedArrayMap } from "utility/valued_collection"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []
@@ -114,7 +113,20 @@ export const Rooms: RoomsInterface = {
 
     if (Game.time % 107 === 13) {
       roomVersions.forEach((roomNames, version) => {
-        console.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+        if (roomNames.length <= 6) {
+          PrimitiveLogger.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+          return
+        }
+        const sectors = new ValuedArrayMap<string, RoomName>()
+        roomNames.forEach(roomName => {
+          const sectorName = roomSectorNameOf(roomName)
+          if (sectorName == null) {
+            PrimitiveLogger.programError(`Cannot get sector name of ${roomLink(roomName)}`)
+            return
+          }
+          sectors.getValueFor(sectorName).push(roomName)
+        })
+        PrimitiveLogger.log(`${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, roomNames]) => `- ${sectorName}: ${roomNames.map(r => roomLink(r)).join(", ")}`).join("\n")}`)
       })
     }
 
@@ -369,7 +381,7 @@ export class OwnedRoomObjects {
     // if (chargeableStructures.length <= 0) {
     chargeableStructures.push(...chargeableLabs)
     // }
-    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)) {
       chargeableStructures.push(nuker)
     }
 
@@ -395,15 +407,6 @@ export class OwnedRoomObjects {
       }
     })
 
-    if (spawns[0] != null) {
-      calculateSourceRouteIn(room, this.sources, spawns[0].pos)
-    } else {
-      const spawnConstructionSite = this.constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
-      if (spawnConstructionSite != null) {
-        calculateSourceRouteIn(room, this.sources, spawnConstructionSite.pos)
-      }
-    }
-
     this.activeStructures = {
       spawns,
       extensions,
@@ -428,10 +431,11 @@ export class OwnedRoomObjects {
   }
 
   public getSource(position: RoomPosition): Source | null {
-    if (this.sources.length <= 0) {
+    const sources = this.sources.filter(source => source.energy > 0)
+    if (sources.length <= 0) {
       return null
     }
-    return this.sources.reduce((lhs, rhs) => {
+    return sources.reduce((lhs, rhs) => {
       const lTargetedBy = lhs.v5TargetedBy.length
       const rTargetedBy = rhs.v5TargetedBy.length
       if (lTargetedBy === rTargetedBy) {
@@ -512,44 +516,6 @@ export class OwnedRoomObjects {
   public getRepairStructure(): AnyStructure | null {
     return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
-}
-
-function calculateSourceRouteIn(room: Room, sources: Source[], destination: RoomPosition): void {
-  ErrorMapper.wrapLoop((): void => {
-    const pathInMemory: RoomPathMemory = room.memory.p ?? { s: {} }
-    if (room.memory.p == null) {
-      room.memory.p = pathInMemory
-    }
-
-    sources.forEach(source => {
-      const sourcePath = pathInMemory.s[source.id]
-      if (sourcePath === "no path") {
-        return
-      }
-      if (sourcePath != null) {
-        return
-      }
-      const result = calculateSourceRoute(source.id, destination)
-      switch (result.resultType) {
-      case "succeeded": {
-        const path = result.value.path.path
-          .map(position => ({ x: position.x, y: position.y }))
-          .splice(3, result.value.path.path.length - 3)
-        path.push(...result.value.harvestPositions.map(position => ({ x: position.x, y: position.y })))
-        pathInMemory.s[source.id] = {
-          p: path,
-          d: { x: destination.x, y: destination.y },
-        }
-        console.log(`source path calculated with ${result.value.harvestPositions.length} harvest position`)
-        break
-      }
-      case "failed":
-        pathInMemory.s[source.id] = "no path"
-        console.log(`source path cannot found: ${result.reason}`)
-        break
-      }
-    })
-  }, "calculateSourceRouteIn()")()
 }
 
 export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
