@@ -88,20 +88,8 @@ class CompoundManager {
 
 class ResourceTransferer {
   private readonly ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
-  // private readonly resourceStores = new ValuedArrayMap<ResourceConstant, RoomName>()
 
   public constructor() {
-    // const addResourceStore = (store: StoreDefinition, roomName: RoomName) => {
-    //   const resourceTypes = Object.keys(store) as ResourceConstant[]
-    //   resourceTypes.forEach(resourceType => {
-    //     const roomNames = this.resourceStores.getValueFor(resourceType)
-    //     if (roomNames.includes(roomName) === true) {
-    //       return
-    //     }
-    //     roomNames.push(roomName)
-    //   })
-    // }
-
     RoomResources.getOwnedRoomResources().forEach(resources => {
       const terminal = resources.activeStructures.terminal
       const storage = resources.activeStructures.storage
@@ -154,11 +142,6 @@ class ResourceTransferer {
           storage: storageFreeCapacity,
         }
       })
-
-      // if (storageSpace === "empty space") {
-      //   addResourceStore(terminal.store, resources.room.name)
-      //   addResourceStore(storage.store, resources.room.name)
-      // }
     })
   }
 
