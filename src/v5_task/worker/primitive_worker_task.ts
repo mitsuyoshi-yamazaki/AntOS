@@ -192,7 +192,7 @@ export class PrimitiveWorkerTask extends Task {
 
     const requiredCreepCount = getRequiredCreepCount(ownedRoomSourceEnergyCapacity, 3) + getRequiredCreepCount(estimatedNeighbourSourceEnergyCapacity, 4)
     const maxCreepCount = objects.sources.length * 8 + neighbourRoomSourceCount * 10
-    const creepCount = Math.min(requiredCreepCount, maxCreepCount)
+    const creepCount = Math.min(requiredCreepCount, maxCreepCount, 60)
 
     return {
       creepCount,
@@ -221,7 +221,7 @@ export class PrimitiveWorkerTask extends Task {
         }
       }
 
-      if (this.neighboursToObserve.length > 0 && objects.controller.level >= 2) {
+      if (this.neighboursToObserve.length > 0) {
         const removeRoomName = (roomName: RoomName): void => {
           const index = this.neighboursToObserve.indexOf(roomName)
           if (index < 0) {
