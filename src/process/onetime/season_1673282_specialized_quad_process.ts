@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { isRoomName, RoomCoordinate, RoomName } from "utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -242,6 +242,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       const roomNames = rawRooms.split(",")
       if (rawRooms.length <= 0 || roomNames.length <= 0) {
         return "no target room specified"
+      }
+      if (roomNames.some(roomName => !isRoomName(roomName)) === true) {
+        return `invalid room name ${roomNames}`
       }
       const targetRoomName = roomNames.pop()
       if (targetRoomName == null) {
