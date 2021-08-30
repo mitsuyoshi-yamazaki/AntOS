@@ -31,6 +31,7 @@ export const quadTypes = [
   "tier3-2tower-attacker",
   "tier3-3tower-attacker",
   "tier3-3tower-dismantler",
+  "tier3-6tower-dismantler",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -78,6 +79,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler":
+    case "tier3-6tower-dismantler":
       return [...tier3DismantlerFullBoosts]
     case "tier3-3tower-dismantler-attacker":
       return [...tier3DismantlerAttackerFullBoosts]
@@ -115,6 +117,7 @@ export class QuadSpec {
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
     case "tier3-3tower-dismantler":
+    case "tier3-6tower-dismantler":
       return 4
     }
   }
@@ -239,6 +242,12 @@ export class QuadSpec {
       } else {
         return tier33Tower2DismantlerDismantlerSpec
       }
+    case "tier3-6tower-dismantler":
+      if (creepInsufficiency <= 3) {
+        return tier36TowerDismantlerHealerSpec
+      } else {
+        return tier36TowerDismantlerDismantlerSpec
+      }
     }
   }
 
@@ -266,6 +275,7 @@ export class QuadSpec {
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler-attacker":
     case "tier3-3tower-dismantler":
+    case "tier3-6tower-dismantler":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
@@ -822,10 +832,10 @@ const tier33TowerAttackerHealerSpec: CreepBodySpec = {
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
     RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
     HEAL, HEAL, HEAL, HEAL, HEAL,
     HEAL, HEAL,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
   ]
 }
 
@@ -847,3 +857,37 @@ const tier33Tower2DismantlerDismantlerSpec: CreepBodySpec = {
   ]
 }
 const tier33Tower2DismantlerHealerSpec = { ...tier33TowerAttackerHealerSpec}
+
+// ---- tier3-6tower-dismantler ---- //
+const tier36TowerDismantlerDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier36TowerDismantlerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL,
+  ]
+}
