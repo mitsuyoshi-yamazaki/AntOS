@@ -102,6 +102,9 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d360-dismantler targets=")
 // tier0-d360-dismantler left
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier0-d360-dismantler targets=")
+
+// W51S7 tier3-3tower-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W54S7 target_room_name=W51S7 waypoints=W51S7 quad_type=tier3-3tower-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string

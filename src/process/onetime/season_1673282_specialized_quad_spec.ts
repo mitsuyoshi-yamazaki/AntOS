@@ -30,6 +30,7 @@ export const quadTypes = [
   "tier3-3tower-dismantler-attacker",
   "tier3-2tower-attacker",
   "tier3-3tower-attacker",
+  "tier3-3tower-dismantler",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -76,6 +77,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler":
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
+    case "tier3-3tower-dismantler":
       return [...tier3DismantlerFullBoosts]
     case "tier3-3tower-dismantler-attacker":
       return [...tier3DismantlerAttackerFullBoosts]
@@ -112,6 +114,7 @@ export class QuadSpec {
     case "tier3-3tower-dismantler-attacker":
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
+    case "tier3-3tower-dismantler":
       return 4
     }
   }
@@ -230,6 +233,12 @@ export class QuadSpec {
       } else {
         return tier33TowerAttackerHealerSpec
       }
+    case "tier3-3tower-dismantler":
+      if (creepInsufficiency <= 2) {
+        return tier33Tower2DismantlerHealerSpec
+      } else {
+        return tier33Tower2DismantlerDismantlerSpec
+      }
     }
   }
 
@@ -256,6 +265,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler-attacker":
+    case "tier3-3tower-dismantler":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
@@ -818,3 +828,22 @@ const tier33TowerAttackerHealerSpec: CreepBodySpec = {
     MOVE, MOVE, MOVE, MOVE, MOVE,
   ]
 }
+
+// ---- tier3-3tower-dismantler ---- //
+const tier33Tower2DismantlerDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+const tier33Tower2DismantlerHealerSpec = { ...tier33TowerAttackerHealerSpec}
