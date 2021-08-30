@@ -48,7 +48,6 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
     if (logs.length <= 0) {
       logs.push("No resource transfer")
     }
-    logs.unshift("")
     logs.forEach(log => processLog(this, log))
   }
 }
@@ -147,6 +146,15 @@ class ResourceTransferer {
 
   public run(): string[] {
     const logs: string[] = []
+    const disableEnergyTransfer = Memory.gameInfo.disableEnergyTransfer === true
+    const disableResourceTransfer = Memory.gameInfo.disableResourceTransfer === true
+    if (disableEnergyTransfer === true && disableResourceTransfer === true) {
+      logs.push("Disabled all resource transfer")
+    } else if (disableEnergyTransfer === true) {
+      logs.push("Disabled energy transfer")
+    } else if (disableResourceTransfer === true) {
+      logs.push("Disabled resource transfer")
+    }
     if (this.ownedRoomResources.size <= 1) {
       return logs
     }
@@ -165,7 +173,7 @@ class ResourceTransferer {
         return
       }
 
-      if (terminalEnergyAmount > 100000 && resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] == null) {
+      if (disableEnergyTransfer !== true && terminalEnergyAmount > 100000 && resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] == null) {
         const target = this.resourceInsufficientTarget(roomName, RESOURCE_ENERGY)
         if (target != null) {
           const sendAmount = Math.min(Math.ceil((terminalEnergyAmount - 50000) / 2), target.maxAmount)
@@ -177,35 +185,37 @@ class ResourceTransferer {
         }
       }
 
-      const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
-        for (const resourceType of resources.sortedResourceTypes) {
-          if (resourceType === RESOURCE_ENERGY) {
-            continue
-          }
-          const requiredAmount = requiredCompounds.get(resourceType) ?? 0
-          const sendAmount = Math.max(resources.terminal.store.getUsedCapacity(resourceType) - requiredAmount, 0)
-          if (sendAmount <= 0) {
-            continue
-          }
-          return {
-            resourceType,
-            sendAmount,
-          }
-        }
-        return null
-      })()
-
-      if (excessResource != null) {
-        const target = this.resourceInsufficientTarget(roomName, excessResource.resourceType) ?? this.freeSpaceRoom(roomName, excessResource.resourceType)
-        if (target != null) {
-          const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-          const sendAmount = Math.min(excessResource.sendAmount, target.maxAmount, energyAmount)
-          if (sendAmount > 0) {
-            const log = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
-            if (log != null) {
-              logs.push(log)
+      if (disableResourceTransfer !== true) {
+        const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
+          for (const resourceType of resources.sortedResourceTypes) {
+            if (resourceType === RESOURCE_ENERGY) {
+              continue
             }
-            return
+            const requiredAmount = requiredCompounds.get(resourceType) ?? 0
+            const sendAmount = Math.max(resources.terminal.store.getUsedCapacity(resourceType) - requiredAmount, 0)
+            if (sendAmount <= 0) {
+              continue
+            }
+            return {
+              resourceType,
+              sendAmount,
+            }
+          }
+          return null
+        })()
+
+        if (excessResource != null) {
+          const target = this.resourceInsufficientTarget(roomName, excessResource.resourceType) ?? this.freeSpaceRoom(roomName, excessResource.resourceType)
+          if (target != null) {
+            const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+            const sendAmount = Math.min(excessResource.sendAmount, target.maxAmount, energyAmount)
+            if (sendAmount > 0) {
+              const log = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
+              if (log != null) {
+                logs.push(log)
+              }
+              return
+            }
           }
         }
       }
