@@ -3,9 +3,9 @@ import { findPath, findPathToSource, placeRoadConstructionMarks } from "script/p
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
-import { isV5CreepMemory } from "prototype/creep"
+import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
@@ -16,6 +16,8 @@ import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
+import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -333,11 +335,22 @@ export class ExecCommand implements ConsoleCommand {
       return `Target ${targetId} does not exists`
     }
 
-    if (!isV5CreepMemory(creep.memory)) {
-      return `Creep ${creepName} is not v5`
+    const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
+    if (resourceType == null) {
+      return "nothing to transfer"
     }
-    creep.memory.t = MoveToTargetTask.create(TransferResourceApiWrapper.create(target, RESOURCE_POWER)).encode()
-    return "ok"
+    if (!isResourceConstant(resourceType)) {
+      return `${resourceType} is not resource type`
+    }
+    if (isV5CreepMemory(creep.memory)) {
+      creep.memory.t = MoveToTargetTaskV5.create(TransferResourceApiWrapper.create(target, resourceType)).encode()
+      return `transfer ${resourceType}`
+    }
+    if (isV6CreepMemory(creep.memory)) {
+      creep.memory.t = MoveToTargetTask.create(TransferApiWrapper.create(target, resourceType)).encode()
+      return `transfer ${resourceType}`
+    }
+    return `Creep ${creepName} is not neither v5 or v6`
   }
 
   private pickup(): CommandExecutionResult {
@@ -379,7 +392,7 @@ export class ExecCommand implements ConsoleCommand {
       return `Creep ${creepName} is not v5`
     }
     const tasks: CreepTask[] = [
-      MoveToTargetTask.create(apiWrapper),
+      MoveToTargetTaskV5.create(apiWrapper),
     ]
     creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
     return "ok"
@@ -483,9 +496,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W9S24 labs=60f967be396ad538632751b5,60f92938993e4f921d6487aa,6106ee55706bd84a378e1ee7,61073ced8f86f51bf3f51e78,610711ff76863065bc6e1410")
-  // Game.io("exec set_boost_labs room_name=W21S23 labs=61084244e3f522438c8577a0,610d4472e3f5226d9687a54c,610d21b256c81947c9e72d78,6118cc28e1d3505dfdaa0e55,61085d0c464512bdf3c72008,611855a895328ffc2e83e8d2")
-  // Game.io("exec set_boost_labs room_name=W6S29 labs=6111e92d9c09be5e07e92f70,6111d8c310194018d132a7f7,611207e4c7daf842982fe70a,61122f11f72716515c8a5dce,61125d5eaa2f2224b1896196")
+  // Game.io("exec set_boost_labs room_name=W54S7 labs=5b9982765d439a46dcd0333c,5ba123b99b6fbc04b99ab258,5bb2a960c7713c07c244ab59,5bb38b5a0f67111d8408385d,5bb3aa128c52350adbf74014")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
