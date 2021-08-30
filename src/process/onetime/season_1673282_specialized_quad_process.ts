@@ -105,18 +105,21 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W51S7 tier3-3tower-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W54S7 target_room_name=W51S7 waypoints=W51S7 quad_type=tier3-3tower-dismantler targets=")
+
+// W47S7 tier3-6tower-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S7 waypoints=W48S7 quad_type=tier3-6tower-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
-  private readonly codename: string
 
+  private readonly codename: string
   private readonly quadSpec: QuadSpec
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
+    public targetRoomName: RoomName,
+    public waypoints: RoomName[],
     private readonly quadType: QuadType,
     private readonly creepNames: CreepName[],
     private quadState: QuadState | null,
@@ -233,6 +236,20 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
       return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
+    }
+    if (message.startsWith("change target ")) {
+      const rawRooms = message.slice(14)
+      const roomNames = rawRooms.split(",")
+      if (rawRooms.length <= 0 || roomNames.length <= 0) {
+        return "no target room specified"
+      }
+      const targetRoomName = roomNames.pop()
+      if (targetRoomName == null) {
+        return "can't retrieve target room"
+      }
+      this.waypoints = roomNames
+      this.targetRoomName = targetRoomName
+      return `target room: ${this.targetRoomName}, waypoints: ${roomNames} set`
     }
     if (message.length <= 0) {
       return "Empty message"
@@ -517,6 +534,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     const targetPriority = ((): StructureConstant[] => {
       return [ // 添字の大きい方が優先
+        STRUCTURE_LAB,
         STRUCTURE_POWER_SPAWN,
         STRUCTURE_TERMINAL,
         STRUCTURE_EXTENSION,

@@ -496,7 +496,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W54S7 labs=5b9982765d439a46dcd0333c,5ba123b99b6fbc04b99ab258,5bb2a960c7713c07c244ab59,5bb38b5a0f67111d8408385d,5bb3aa128c52350adbf74014")
+  // Game.io("exec set_boost_labs room_name=W48S6 labs=5b3ec0561ca96b59438c5536,5b4f220fd871ba7bf45aa186,5b4f51ece15e100251fad206,5b35bcb1cb21c464f0ca2a2c,5b3ec6854e66ea3377c7b2b4")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
