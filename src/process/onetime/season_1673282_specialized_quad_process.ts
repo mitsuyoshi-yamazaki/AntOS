@@ -26,7 +26,7 @@ type AttackTarget = AnyCreep | AnyStructure
 type ManualOperations = {
   targetIds: Id<AttackTarget>[]
   direction: TOP | BOTTOM | LEFT | RIGHT | null
-  action: "flee" | "drain" | null
+  action: "flee" | "noflee" | "drain" | null
   message: string | null
   automaticRotationEnabled: boolean | null
 }
@@ -108,6 +108,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W47S7 tier3-6tower-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S7 waypoints=W48S7 quad_type=tier3-6tower-dismantler targets=")
+
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S9 waypoints=W47S9 quad_type=tier0-d360-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
@@ -189,6 +191,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (message === "flee") {
       this.manualOperations.action = "flee"
       return "action: flee"
+    }
+    if (message === "noflee") {
+      this.manualOperations.action = "noflee"
+      return "action: noflee"
     }
     if (message === "drain") {
       this.manualOperations.action = "drain"
@@ -399,7 +405,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
     }
 
-    if (quad.damagePercent * 4 > 0.15) {
+    if (this.manualOperations.action !== "noflee" && quad.damagePercent * 4 > 0.15) {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
         return
@@ -414,6 +420,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       break
     }
+    case "noflee":
+      break
     case "drain":
       if (this.towerCharged(quad.room) === true) {
         this.drain(quad)
