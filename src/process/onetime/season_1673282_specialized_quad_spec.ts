@@ -17,6 +17,7 @@ export const quadTypes = [
   "tier0-d450-rcl7",
   "tier0-d360-dismantler",
   "tier0-d360-dismantler-rcl7",
+  "tier0-d900",
   "tier0-swamp-attacker",
   "tier1-d750",
   "no-defence-3tower",
@@ -63,6 +64,7 @@ export class QuadSpec {
     case "tier0-d450-rcl7":
     case "tier0-d360-dismantler":
     case "tier0-d360-dismantler-rcl7":
+    case "tier0-d900":
     case "tier0-swamp-attacker":
       return [...noBoosts]
     case "tier1-d750":
@@ -103,6 +105,7 @@ export class QuadSpec {
     case "tier0-d450-rcl7":
     case "tier0-d360-dismantler":
     case "tier0-d360-dismantler-rcl7":
+    case "tier0-d900":
     case "tier0-swamp-attacker":
     case "tier3-d2000-dismantler-swamp":
     case "tier1-d750":
@@ -160,6 +163,8 @@ export class QuadSpec {
       return tire0h10HealerSpec
     case "tier0-d450-rcl7":
       return tire0h10HealerRCL7Spec
+    case "tier0-d900":
+      return tire0h20HealerSpec
     case "tier0-swamp-attacker":
       if (creepInsufficiency <= 1) {
         return tier0SwampAttackerAttackerSpec
@@ -276,6 +281,7 @@ export class QuadSpec {
     case "tier3-3tower-dismantler-attacker":
     case "tier3-3tower-dismantler":
     case "tier3-6tower-dismantler":
+    case "tier0-d900":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
@@ -408,6 +414,20 @@ const tire0DismantlerSpec: CreepBodySpec = {
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
     WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+  ]
+}
+
+// ---- tier0-d900 ---- //
+const tire0h20HealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE,
+    HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE,
+    HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE, HEAL, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE, MOVE, MOVE,
   ]
 }
