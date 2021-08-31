@@ -113,6 +113,11 @@ export class RemoteRoomKeeperTask extends Task {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null && targetRoomInfo != null && targetRoomInfo.roomType === "normal") {
       const shouldLaunchRemoteRoomWorker = ((): boolean => {
+        const resources = RoomResources.getOwnedRoomResource(this.roomName)
+        const excludedRemotes = resources?.roomInfo.config?.excludedRemotes
+        if (excludedRemotes != null && excludedRemotes.includes(this.targetRoomName) === true) {
+          return false
+        }
         if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
           const remoteRoomNames = remoteRoomNamesToDefend.getValueFor(this.roomName)
           if (remoteRoomNames.includes(this.targetRoomName) !== true) {
@@ -128,9 +133,6 @@ export class RemoteRoomKeeperTask extends Task {
           if (remoteRooms.includes(this.targetRoomName) === true) {
             return true
           }
-        }
-        if (Environment.world === "persistent world" && Environment.shard === "shard2" && this.roomName === "W53S5" && this.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
-          return false
         }
         if (Environment.world === "season 3") {
           return false
@@ -157,7 +159,7 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W53S5" && task.targetRoomName === "W53S6") {  // 起動中のRemoteRoomWorkerを削除したい場合
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W53S5" && task.targetRoomName === "W53S4") {  // 起動中のRemoteRoomWorkerを削除したい場合
         return true
       }
       return false

@@ -62,6 +62,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     researchCompounds?: { [index in MineralCompoundConstant]?: number }
     collectResources?: boolean
     boostLabs?: Id<StructureLab>[]
+    excludedRemotes?: RoomName[]
   }
 }
 
