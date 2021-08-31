@@ -112,6 +112,7 @@ export class RoomKeeperTask extends Task {
             } catch (e) {
               PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
             }
+            this.removeLeftoverStructures(objects.controller.room)
             break
           case "failed":
             PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
@@ -123,5 +124,26 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private removeLeftoverStructures(room: Room): void {
+    const excludedHostileStructures: StructureConstant[] = [
+      STRUCTURE_STORAGE,
+      STRUCTURE_TERMINAL,
+      STRUCTURE_FACTORY,
+    ]
+    room.find(FIND_HOSTILE_STRUCTURES).forEach(structure => {
+      if (excludedHostileStructures.includes(structure.structureType) === true) {
+        return
+      }
+      structure.destroy()
+    })
+
+    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).forEach(structure => {
+      structure.destroy()
+    })
+    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).forEach(structure => {
+      structure.destroy()
+    })
   }
 }
