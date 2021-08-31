@@ -28,6 +28,8 @@ import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_a
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
   r: RoomName
+
+  storageDistance: number | null
 }
 
 export class OwnedRoomHaulerTask extends Task {
@@ -41,6 +43,7 @@ export class OwnedRoomHaulerTask extends Task {
     public readonly startTime: number,
     public readonly children: Task[],
     public readonly roomName: RoomName,
+    private storageDistance: number | null,
   ) {
     super(startTime, children)
 
@@ -53,15 +56,16 @@ export class OwnedRoomHaulerTask extends Task {
       s: this.startTime,
       c: this.children.map(task => task.encode()),
       r: this.roomName,
+      storageDistance: this.storageDistance,
     }
   }
 
   public static decode(state: OwnedRoomHaulerTaskState, children: Task[]): OwnedRoomHaulerTask | null {
-    return new OwnedRoomHaulerTask(state.s, children, state.r)
+    return new OwnedRoomHaulerTask(state.s, children, state.r, state.storageDistance)
   }
 
   public static create(roomName: RoomName, energySources: EnergySourceTask[]): OwnedRoomHaulerTask {
-    return new OwnedRoomHaulerTask(Game.time, energySources, roomName)
+    return new OwnedRoomHaulerTask(Game.time, energySources, roomName, null)
   }
 
   public description(): string {
@@ -81,7 +85,17 @@ export class OwnedRoomHaulerTask extends Task {
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
     const energyCapacity = objects.sources.reduce((result, current) => result + current.energyCapacity, 0)
-    const minimumCreepCount = Math.ceil(energyCapacity / 3000)
+    const minimumCreepCount = ((): number => {
+      const baseCount = Math.ceil(energyCapacity / 3000)
+      if (this.storageDistance == null) {
+        const storage = objects.activeStructures.storage
+        if (storage == null) {
+          return baseCount
+        }
+        this.storageDistance = objects.sources.reduce((result, current) => result + current.pos.getRangeTo(storage.pos), 0)
+      }
+      return Math.max(Math.ceil((baseCount / 2) * (this.storageDistance / 10)), baseCount)
+    })()
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
