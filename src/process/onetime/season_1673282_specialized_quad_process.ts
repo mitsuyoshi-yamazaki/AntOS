@@ -111,7 +111,7 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W46S9 tier3-6tower-dismantler
 // [Boost Needed]: XZHO2: 1200, XZH2O: 540, XGHO2: 2640, XLHO2: 720, XKHO2: 900
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S9 waypoints=W47S9 quad_type=tier3-6tower-dismantler targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W49S5 waypoints=W48S5 quad_type=tier3-6tower-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 

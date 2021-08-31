@@ -17,6 +17,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
 
+const attackControllerCooldownTime = 1000
+
 export interface World35440623DowngradeControllerProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -26,7 +28,7 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   lastSpawnTime: Timestamp
 }
 
-// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W48S6 target_room_names=W49S6,W49S7,W49S6,W48S5,W48S4,W48S7,W47S7,W47S6,W47S9")
+// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W48S6 target_room_names=W47S7,W47S6,W47S9,W46S9,W44S7,W43S7,S43S6")
 export class World35440623DowngradeControllerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -36,7 +38,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     private readonly targetRoomNames: RoomName[],
-    private readonly currentTargetRoomNames: RoomName[],
+    private currentTargetRoomNames: RoomName[],
     private lastSpawnTime: Timestamp,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomNames}`
@@ -64,7 +66,8 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   public processShortDescription(): string {
-    return this.targetRoomNames.map(roomName => roomLink(roomName)).join(",")
+    const ticksToSpawn = Math.max(attackControllerCooldownTime - (Game.time - this.lastSpawnTime), 0)
+    return `${ticksToSpawn} to go, ${this.targetRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
 
   public runOnTick(): void {
@@ -75,10 +78,10 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    const attackControllerCooldownTime = 1000
-    if (creepCount < 1 && (Game.time - attackControllerCooldownTime - 50) > this.lastSpawnTime) {
+    if (creepCount < 1 && (Game.time - attackControllerCooldownTime) > this.lastSpawnTime) {
       const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       if (energyAmount > 70000) {
+        this.currentTargetRoomNames = [...this.targetRoomNames]
         this.spawnDowngrader(resources.room.energyCapacityAvailable)
       }
     }
@@ -106,6 +109,10 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   private newTaskFor(creep: Creep): CreepTask | null {
+    if (creep.ticksToLive == null) {
+      this.lastSpawnTime = Game.time
+    }
+
     const controller = creep.room.controller
     if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > 0) {
       const moveToNextRoomTask = this.moveToNextRoomTask()
