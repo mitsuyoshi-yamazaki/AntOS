@@ -109,8 +109,9 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // W47S7 tier3-6tower-dismantler
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S7 waypoints=W48S7 quad_type=tier3-6tower-dismantler targets=")
 
-// W46S9 tier0-d900
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S9 waypoints=W47S9 quad_type=tier0-d900 targets=")
+// W46S9 tier3-6tower-dismantler
+// [Boost Needed]: XZHO2: 1200, XZH2O: 540, XGHO2: 2640, XLHO2: 720, XKHO2: 900
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S9 waypoints=W47S9 quad_type=tier3-6tower-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
@@ -232,7 +233,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return "automatic rotation disabled"
     }
     const direction = parseInt(message, 10)
-    if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
+    if (message.length <= 1 && isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
       if (this.quadState == null) {
         if (this.creepNames.length > 0) {
           return "quad died"
@@ -265,7 +266,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return "Empty message"
     }
     this.manualOperations.targetIds.unshift(message as Id<AnyStructure | AnyCreep>)
-    return "ok"
+    return `target ${message} set`
   }
 
   public runOnTick(): void {
