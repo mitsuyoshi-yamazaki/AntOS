@@ -1,7 +1,7 @@
 import { SystemInfo } from "utility/system_info"
 
 export const Sign = {
-  sign: function (room: Room): string {
+  sign(room: Room): string {
     if (room.controller == null) {
       return ""
     }
@@ -11,7 +11,12 @@ export const Sign = {
       return `at ${Game.time}`
     }
   },
-  signForOwnedRoom: function (): string {
+
+  signForOwnedRoom(): string {
     return `v${SystemInfo.application.version} at ${Game.time}`
+  },
+
+  signForHostileRoom(): string {
+    return "🍣"
   },
 }

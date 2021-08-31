@@ -769,10 +769,12 @@ export class Quad implements Stateful, QuadInterface {
     })()
 
     if (leaderRotationPosition != null) {
+      // if (this.isQuadForm() === true) {
       this.say("rotate")
       this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))  // FixMe: target room直前でrotateしようとしてclose to destinationから抜けてしまうのではないか
       this.moveFollowersToNexPosition(leaderRotationPosition)
       return
+      // }
     }
 
     const leaderAvoidEdgePosition = ((): RoomPosition => {
