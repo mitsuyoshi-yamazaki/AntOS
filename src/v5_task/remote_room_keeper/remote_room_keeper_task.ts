@@ -159,7 +159,7 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W53S5" && task.targetRoomName === "W53S4") {  // 起動中のRemoteRoomWorkerを削除したい場合
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W52S28" && task.targetRoomName === "W52S29") {  // 起動中のRemoteRoomWorkerを削除したい場合
         return true
       }
       return false
