@@ -1,13 +1,13 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { isRoomName, RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
 import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { CreepName } from "prototype/creep"
+import { CreepName, isV5CreepMemory } from "prototype/creep"
 import { processLog } from "process/process_log"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
@@ -17,6 +17,7 @@ import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 const dismantlerRole: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
 
@@ -30,12 +31,12 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   /** waypoints */
   w: RoomName[]
 
-  targetId: Id<AnyStructure>
+  targetIds: Id<AnyStructure>[]
   creepName: CreepName | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S33 target_room_name=W47S34 waypoints=W47S34 target_id=60fd17ee37db5498c5e52d00")
-export class Season1244215GenericDismantleProcess implements Process, Procedural {
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W48S6 target_room_name=W47S8 waypoints=W47S8 target_id=606af6a0ba95066cfbef01fd")
+export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
 
@@ -43,10 +44,10 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
+    public targetRoomName: RoomName,
+    public waypoints: RoomName[],
     private creepName: CreepName | null,
-    private targetId: Id<AnyStructure>,
+    private targetIds: Id<AnyStructure>[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -61,16 +62,20 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       tr: this.targetRoomName,
       w: this.waypoints,
       creepName: this.creepName,
-      targetId: this.targetId,
+      targetIds: this.targetIds,
     }
   }
 
   public static decode(state: Season1244215GenericDismantleProcessState): Season1244215GenericDismantleProcess {
-    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetId)
+    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure>): Season1244215GenericDismantleProcess {
-    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetId)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null): Season1244215GenericDismantleProcess {
+    const targetIds: Id<AnyStructure>[] = []
+    if (targetId != null) {
+      targetIds.push(targetId)
+    }
+    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds)
   }
 
   public processShortDescription(): string {
@@ -84,6 +89,64 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       return "running"
     })()
     return `${roomLink(this.targetRoomName)} ${creepDescription}`
+  }
+
+  public didReceiveMessage(message: string): string {
+    if (message === "clear") {
+      this.targetIds.splice(0, this.targetIds.length)
+      return "target cleared"
+    }
+    if (message === "status") {
+      const creepDescription = ((): string => {
+        if (this.creepName == null) {
+          return "not spawned"
+        }
+        const creep = Game.creeps[this.creepName]
+        if (creep == null) {
+          return "creep died"
+        }
+        return `${creep.name} in ${roomLink(creep.room.name)}`
+      })()
+      const descriptions: string[] = [
+        creepDescription,
+        (this.targetIds.length <= 0 ? "no targets" : `targets: ${this.targetIds.join(",")}`),
+      ]
+      return descriptions.join(", ")
+    }
+    if (message.startsWith("change target ")) {
+      const rawRooms = message.slice(14)
+      const roomNames = rawRooms.split(",")
+      if (rawRooms.length <= 0 || roomNames.length <= 0) {
+        return "no target room specified"
+      }
+      if (roomNames.some(roomName => !isRoomName(roomName)) === true) {
+        return `invalid room name ${roomNames}`
+      }
+      const targetRoomName = roomNames.pop()
+      if (targetRoomName == null) {
+        return "can't retrieve target room"
+      }
+      if (this.creepName != null) {
+        const creep = Game.creeps[this.creepName]
+        if (creep != null && isV5CreepMemory(creep.memory)) {
+          creep.memory.t = null
+        }
+      }
+      this.waypoints = roomNames
+      this.targetRoomName = targetRoomName
+      return `target room: ${this.targetRoomName}, waypoints: ${roomNames} set`
+    }
+    if (message.length <= 0) {
+      return "Empty message"
+    }
+    this.targetIds.unshift(message as Id<AnyStructure>)
+    if (this.creepName != null) {
+      const creep = Game.creeps[this.creepName]
+      if (creep != null && isV5CreepMemory(creep.memory)) {
+        creep.memory.t = null
+      }
+    }
+    return `target ${message} set`
   }
 
   public runOnTick(): void {
@@ -149,11 +212,32 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   private getTarget(creep: Creep): AnyStructure | null {
-    const target = Game.getObjectById(this.targetId)
+    const target = ((): AnyStructure | null => {
+      const targetIds = [...this.targetIds]
+      for (let i = 0; i < this.targetIds.length; i += 1) {
+        const targetId = targetIds.shift()
+        if (targetId == null) {
+          return null
+        }
+        const storedTarget = Game.getObjectById(targetId)
+        if (storedTarget == null) {
+          processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
+          const index = this.targetIds.indexOf(targetId)
+          if (index >= 0) {
+            this.targetIds.splice(index, 1)
+          }
+          return null
+        }
+        if (storedTarget.room.name !== creep.room.name) {
+          return null
+        }
+        return storedTarget
+      }
+      return null
+    })()
     if (target != null) {
       return target
     }
-    processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
 
     const excluded: StructureConstant[] = [STRUCTURE_CONTROLLER]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
