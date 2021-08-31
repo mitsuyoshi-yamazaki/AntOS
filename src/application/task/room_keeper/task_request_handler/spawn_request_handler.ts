@@ -51,17 +51,22 @@ export class SpawnRequestHandler {
           if (futureRequest == null) {
             return null
           }
+          futureRequests.shift()
           return futureRequest
         }
         if (futureRequest == null) {
+          currentRequests.shift()
           return currentRequest
         }
         if (currentRequest.spawnTimeCost < futureRequest.neededIn) {
+          currentRequests.shift()
           return currentRequest
         }
         if (currentRequest.priority < futureRequest.priority) {
+          currentRequests.shift()
           return currentRequest
         } else {
+          futureRequests.shift()
           return futureRequest
         }
       })()
