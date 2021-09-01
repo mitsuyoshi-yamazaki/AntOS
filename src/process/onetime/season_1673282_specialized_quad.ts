@@ -929,7 +929,7 @@ export class Quad implements Stateful, QuadInterface {
       if (previousCreep == null || previousCreep.spawning === true || creep == null) {
         return
       }
-      creep.moveTo(previousCreep.pos, this.moveToOptions(2))
+      creep.moveTo(previousCreep.pos, this.moveToOptions(2, false))
     }
 
     follow(1)
