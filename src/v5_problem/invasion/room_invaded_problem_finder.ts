@@ -30,7 +30,7 @@ export class RoomInvadedProblemFinder implements ProblemFinder {
       problemSolvers.push(TowerInterceptionProblemSolver.create(this.identifier, this.roomName))
     }
     const roomObjects = World.rooms.getOwnedRoomObjects(this.roomName)
-    if (roomObjects != null && roomObjects.controller.safeMode == null) {
+    if (this.objects.roomInfo.bootstrapping !== true && roomObjects != null && roomObjects.controller.safeMode == null) {
       const shouldActivateSafemode = ((): boolean => {
         for (const hostileCreep of roomObjects.hostiles.creeps) {
           if (hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0 || hostileCreep.getActiveBodyparts(WORK) > 0) {
