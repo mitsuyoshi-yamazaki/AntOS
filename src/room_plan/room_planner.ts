@@ -438,6 +438,11 @@ function calculateFirstSpawnPosition(controller: StructureController, showsCostM
     return spawn.pos
   }
 
+  const spawnFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREY)
+  if (spawnFlag != null) {
+    return spawnFlag.pos
+  }
+
   const positionScores = ErrorMapper.wrapLoop((): { position: RoomPosition, score: number }[] => {
     return roomOpenPositions(room, showsCostMatrix)
   }, "roomOpenPositions()")()
