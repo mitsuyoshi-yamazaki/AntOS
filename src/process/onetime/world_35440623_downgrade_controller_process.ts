@@ -18,6 +18,7 @@ import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
 
 const attackControllerCooldownTime = 1000
+const attackControllerInterval = attackControllerCooldownTime + 100
 
 export interface World35440623DowngradeControllerProcessState extends ProcessState {
   /** parent room name */
@@ -66,7 +67,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   public processShortDescription(): string {
-    const ticksToSpawn = Math.max(attackControllerCooldownTime - (Game.time - this.lastSpawnTime), 0)
+    const ticksToSpawn = Math.max(attackControllerInterval - (Game.time - this.lastSpawnTime), 0)
     return `${ticksToSpawn} to go, ${this.targetRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
 
@@ -78,7 +79,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount < 1 && (Game.time - attackControllerCooldownTime) > this.lastSpawnTime) {
+    if (creepCount < 1 && (Game.time - attackControllerInterval) > this.lastSpawnTime) {
       const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       if (energyAmount > 70000) {
         this.currentTargetRoomNames = [...this.targetRoomNames]
