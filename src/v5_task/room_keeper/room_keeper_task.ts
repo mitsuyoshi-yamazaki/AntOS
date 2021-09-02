@@ -134,7 +134,17 @@ export class RoomKeeperTask extends Task {
     ]
     room.find(FIND_HOSTILE_STRUCTURES).forEach(structure => {
       if (excludedHostileStructures.includes(structure.structureType) === true) {
-        return
+        try {
+          const store = (structure as { store?: StoreDefinition }).store
+          if (store == null) {
+            return
+          }
+          if (store.getUsedCapacity() > 0) {
+            return
+          }
+        } catch (e) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} removeLeftoverStructures() failed: ${e}`)
+        }
       }
       structure.destroy()
     })
