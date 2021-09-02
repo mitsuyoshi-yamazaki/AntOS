@@ -10,7 +10,7 @@ import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "./process_log"
-import { RoomName } from "utility/room_name"
+import { isRoomName, RoomName } from "utility/room_name"
 
 export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */
@@ -22,7 +22,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
 
 // Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W5S21 waypoints=W10S24,W10S20,W5S20 target_gcl=11")
 // Game.io("message 29614512000 parent_room_name=W51S29 target_room_name=W48S33 waypoints=W50S30,W50S33 target_gcl=42")
-// Game.io("message 34351858000 parent_room_name=W48S6 target_room_name=W43S5 waypoints=W47S7 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W48S6 target_room_name=W47S4 waypoints=W48S3 target_gcl=42")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
@@ -92,19 +92,18 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
-    if (message === "clear") {
-      const childTasks = [...this.tasks]
-      if (childTasks.length <= 0) {
-        return "No tasks to remove"
+    if (message.startsWith("clear ") === true) {
+      const roomName = message.slice(6)
+      if (!isRoomName(roomName)) {
+        return `${roomName} is not room name`
       }
 
-      const removedRoomNames: RoomName[] = []
-
-      childTasks.forEach(task => {
-        removedRoomNames.push(task.targetRoomName)
-        this.removeTask(task)
-      })
-      return `Removed boostrap tasks for ${removedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+      const childTask = this.tasks.find(task => task.targetRoomName === roomName)
+      if (childTask == null) {
+        return `${roomLink(roomName)} is not bootstrapping`
+      }
+      this.removeTask(childTask)
+      return `Removed boostrap task for ${roomLink(roomName)}`
     }
 
     const args = new Map<string, string>()
