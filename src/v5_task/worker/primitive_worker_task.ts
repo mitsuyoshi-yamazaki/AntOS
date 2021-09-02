@@ -101,7 +101,7 @@ export class PrimitiveWorkerTask extends Task {
       if (neighbourRoomInfo == null) {
         return []
       }
-      if (neighbourRoomInfo.roomType !== "normal") {
+      if (neighbourRoomInfo.roomType !== "normal" || roomTypeOf(neighbourRoomName) !== "normal") {
         return []
       }
       if (neighbourRoomInfo.owner != null) {
