@@ -12,6 +12,23 @@ import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
 
+export function shouldSpawnBootstrapCreeps(targetRoomName: RoomName): boolean {
+  const targetRoomInfo = RoomResources.getRoomInfo(targetRoomName)
+  if (targetRoomInfo == null) {
+    return true
+  }
+  if (targetRoomInfo.roomType !== "normal") {
+    return false
+  }
+  if (targetRoomInfo.owner == null) {
+    return true
+  }
+  if (targetRoomInfo.owner.ownerType === "claim") {
+    return false
+  }
+  return true
+}
+
 export interface ClaimRoomTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
   r: RoomName
@@ -80,6 +97,10 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
+    if (shouldSpawnBootstrapCreeps(this.targetRoomName) !== true) {
+      return null
+    }
+
     const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
     const body = ((): BodyPartConstant[] => {
       const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
