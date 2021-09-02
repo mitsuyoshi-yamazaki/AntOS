@@ -813,9 +813,25 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("waypoints")
     }
     const waypoints = rawWaypoints.split(",")
+    const rawFinishWorking = args.get("finish_working")
+    if (rawFinishWorking == null) {
+      return this.missingArgumentError("finish_working")
+    }
+    const finishWorking = parseInt(rawFinishWorking, 10)
+    if (isNaN(finishWorking) === true) {
+      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
+    }
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints)
+      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints, finishWorking, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }

@@ -17,7 +17,6 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
-import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { OwnedRoomObjects } from "world_info/room_info"
@@ -25,8 +24,6 @@ import { EnergyChargeableStructure } from "prototype/room_object"
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepBody } from "utility/creep_body"
-
-const maxNumberOfCreeps = 2
 
 export interface Season1521073SendResourceProcessState extends ProcessState {
   /** parent room name */
@@ -36,11 +33,11 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
   w: RoomName[]
 
   targetRoomName: RoomName
+  finishWorking: number
+  maxNumberOfCreeps: number
 }
 
-// Game.io("launch -l Season1521073SendResourceProcess room_name=W6S29 target_room_name=W6S27 waypoints=W5S29,W5S27")
-// Game.io("launch -l Season1521073SendResourceProcess room_name=W27S26 target_room_name=W29S25 waypoints=W28S26,W28S25")
-// Game.io("launch -l Season1521073SendResourceProcess room_name=W17S11 target_room_name=W15S8 waypoints=W17S10,W15S10,W15S8")
+// Game.io("launch -l Season1521073SendResourceProcess room_name=W48S6 target_room_name=W49S6 waypoints=W49S6 finish_working=100 creeps=1")
 export class Season1521073SendResourceProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -51,6 +48,8 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
+    private readonly finishWorking: number,
+    private readonly maxNumberOfCreeps: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -64,15 +63,17 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       p: this.parentRoomName,
       targetRoomName: this.targetRoomName,
       w: this.waypoints,
+      finishWorking: this.finishWorking,
+      maxNumberOfCreeps: this.maxNumberOfCreeps,
     }
   }
 
   public static decode(state: Season1521073SendResourceProcessState): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w)
+    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w, state.finishWorking, state.maxNumberOfCreeps)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[],): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], finishWorking: number, maxNumberOfCreeps: number): Season1521073SendResourceProcess {
+    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, finishWorking, maxNumberOfCreeps)
   }
 
   public processShortDescription(): string {
@@ -112,7 +113,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       if (objects.activeStructures.terminal == null) {
         return 1
       }
-      return maxNumberOfCreeps
+      return this.maxNumberOfCreeps
     })()
     if (creeps.length < numberOfCreeps && targetRoomObjects.activeStructures.terminal == null) {
       this.requestCreep(CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20))
@@ -146,7 +147,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
 
   private creepTask(creep: Creep, energyStore: StructureTerminal | StructureStorage, targetRoomObjects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime / 3)) {
+      if (creep.ticksToLive != null && creep.ticksToLive < this.finishWorking) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
       if (creep.room.name !== this.parentRoomName) {
