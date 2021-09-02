@@ -78,6 +78,11 @@ const requiredCompounds = new Map<ResourceConstant, number>([
   [RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE, 10000],
   [RESOURCE_CATALYZED_GHODIUM_ALKALIDE, 10000],
 ])
+const excludedResourceTypes: ResourceConstant[] = [
+  RESOURCE_ENERGY,
+  RESOURCE_POWER,
+  RESOURCE_OPS,
+]
 
 class CompoundManager {
   public run(): string[] {
@@ -188,7 +193,7 @@ class ResourceTransferer {
       if (disableResourceTransfer !== true) {
         const excessResource = ((): { resourceType: ResourceConstant, sendAmount: number } | null => {
           for (const resourceType of resources.sortedResourceTypes) {
-            if (resourceType === RESOURCE_ENERGY) {
+            if (excludedResourceTypes.includes(resourceType) === true) {
               continue
             }
             const requiredAmount = requiredCompounds.get(resourceType) ?? 0
