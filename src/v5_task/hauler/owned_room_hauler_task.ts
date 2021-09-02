@@ -94,7 +94,8 @@ export class OwnedRoomHaulerTask extends Task {
         }
         this.storageDistance = objects.sources.reduce((result, current) => result + current.pos.getRangeTo(storage.pos), 0)
       }
-      return Math.max(Math.ceil((baseCount / 2) * (this.storageDistance / 10)), baseCount)
+      const countBasedOnDistance = Math.ceil((baseCount / 2) * (this.storageDistance / 10)) * 0.8
+      return Math.max(countBasedOnDistance, baseCount)
     })()
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
