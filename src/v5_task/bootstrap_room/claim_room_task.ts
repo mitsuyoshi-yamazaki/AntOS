@@ -18,12 +18,12 @@ export function shouldSpawnBootstrapCreeps(targetRoomName: RoomName): boolean {
     return true
   }
   if (targetRoomInfo.roomType !== "normal") {
-    return false
+    return true
   }
   if (targetRoomInfo.owner == null) {
     return true
   }
-  if (targetRoomInfo.owner.ownerType === "claim") {
+  if (targetRoomInfo.owner.ownerType === "claim" && targetRoomInfo.owner.username !== Game.user.name) {
     return false
   }
   return true
