@@ -16,6 +16,7 @@ import { coloredText, roomLink } from "utility/log"
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
+import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -153,6 +154,9 @@ export class RoomKeeperTask extends Task {
       structure.destroy()
     })
     room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).forEach(structure => {
+      if (structure.hits >= WallBuilderTaskMaxWallHits) {
+        return
+      }
       structure.destroy()
     })
   }
