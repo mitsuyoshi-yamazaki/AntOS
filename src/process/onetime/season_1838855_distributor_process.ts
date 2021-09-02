@@ -300,15 +300,9 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   }
 
   private transferEnergyTask(creep: Creep, storage: StructureStorage, terminal: StructureTerminal, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
-    const energySources = ((): [EnergyStore, EnergyStore] | null => {
+    const energySources = ((): [EnergyStore, EnergyStore] => {
       const terminalEnergyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-      const storageEnergyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY)
       const minimumEnergy = 40000
-      if (terminalEnergyAmount < minimumEnergy && storageEnergyAmount < minimumEnergy) {
-        if (creep.store.getUsedCapacity() <= 0) {
-          return null
-        }
-      }
       const needEnergy = resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null
       if (needEnergy === true && terminalEnergyAmount >= minimumEnergy) {
         return [terminal, storage]
@@ -332,17 +326,17 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
     }
 
-    if (link == null || link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
-      const energyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-      if (energyAmount > 700000 && energySource instanceof StructureTerminal) {
-        processLog(this, `Has enough energy ${roomLink(this.parentRoomName)}`)
-        return null
-      }
-    }
-    if ((energySource instanceof StructureStorage) && energySource.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
-      processLog(this, `Not enough energy in ${energySource} ${roomLink(this.parentRoomName)}`)
-      return null
-    }
+    // if (link == null || link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+    //   const energyAmount = storage.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+    //   if (energyAmount > 700000 && energySource instanceof StructureTerminal) {
+    //     processLog(this, `Has enough energy ${roomLink(this.parentRoomName)}`)
+    //     return null
+    //   }
+    // }
+    // if ((energySource instanceof StructureStorage) && energySource.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
+    //   processLog(this, `Not enough energy in ${energySource} ${roomLink(this.parentRoomName)}`)
+    //   return null
+    // }
     return RunApiTask.create(WithdrawResourceApiWrapper.create(energySource, RESOURCE_ENERGY))
   }
 
