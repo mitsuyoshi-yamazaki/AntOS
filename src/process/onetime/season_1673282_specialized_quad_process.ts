@@ -111,12 +111,12 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // W46S9 tier3-6tower-dismantler
 // [Boost Needed]: XZHO2: 1200, XZH2O: 540, XGHO2: 2640, XLHO2: 720, XKHO2: 900
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W49S5 waypoints=W48S5 quad_type=tier3-6tower-dismantler targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W49S4 waypoints=W48S5 quad_type=tier3-6tower-dismantler targets=")
 
 // W43S5 invader-core-attacker
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W43S5 waypoints=W47S7 quad_type=invader-core-attacker targets=")
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S5 waypoints=W47S7,W46S7 quad_type=tier1-invader-core-lv1 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W44S3 waypoints=W48S3,W47S3,W44S4 quad_type=tier3-6tower-tank targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
@@ -552,6 +552,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     const targetPriority = ((): StructureConstant[] => {
       return [ // 添字の大きい方が優先
+        STRUCTURE_INVADER_CORE,
         STRUCTURE_LAB,
         STRUCTURE_POWER_SPAWN,
         STRUCTURE_TERMINAL,
