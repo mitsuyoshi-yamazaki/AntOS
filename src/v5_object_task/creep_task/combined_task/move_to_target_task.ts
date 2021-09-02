@@ -41,7 +41,7 @@ export class MoveToTargetTask implements CreepTask {
 
   private constructor(
     public readonly startTime: number,
-    private readonly apiWrapper: MoveToTargetTaskApiWrapper,
+    public readonly apiWrapper: MoveToTargetTaskApiWrapper,
     private readonly options: MoveToTargetTaskOptions,
     private lastPosition: Position | null,
   ) {

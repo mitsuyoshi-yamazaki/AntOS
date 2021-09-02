@@ -9,6 +9,8 @@ import { generateCodename } from "utility/unique_id"
 import { MoveClaimControllerTask } from "v5_object_task/creep_task/combined_task/move_claim_controller_task"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
+import { RoomResources } from "room_resource/room_resources"
+import { CreepBody } from "utility/creep_body"
 
 export interface ClaimRoomTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -79,6 +81,17 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
     const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
+    const body = ((): BodyPartConstant[] => {
+      const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
+      const resources = RoomResources.getOwnedRoomResource(this.roomName)
+      if (resources == null) {
+        return defaultBody
+      }
+      if (CreepBody.cost(defaultBody) > resources.room.energyCapacityAvailable) {
+        return [MOVE, CLAIM]
+      }
+      return defaultBody
+    })()
 
     return {
       necessaryRoles: [CreepRole.Claimer],
@@ -87,7 +100,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       codename: this.codename,
       initialTask: creepTask,
       priority: CreepSpawnRequestPriority.Medium,
-      body: [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
+      body,
     }
   }
 

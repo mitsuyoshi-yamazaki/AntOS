@@ -1,5 +1,34 @@
 
 /*
+shard 3
+calls		time		avg		function
+2631		658.0		0.250		Creep.moveTo
+2332		479.6		0.206		Creep.move
+1964		417.4		0.213		Creep.moveByPath
+2641		224.9		0.085		Creep.withdraw
+963		161.4		0.168		Creep.harvest
+600		134.3		0.224		Creep.upgradeController
+1616		103.0		0.064		Creep.transfer
+367		99.9		0.272		RoomPosition.findPathTo
+367		95.4		0.260		Room.findPath
+741		45.8		0.062		Room.createConstructionSite
+193		41.1		0.213		Creep.repair
+10235		29.2		0.003		Room.find
+100		22.0		0.220		Creep.reserveController
+7897		17.0		0.002		RoomPosition.getRangeTo
+5544		12.6		0.002		RoomPosition.isNearTo
+6007		11.1		0.002		RoomPosition.encode
+3041		5.9		0.002		RoomPosition.isEqualTo
+619		5.8		0.009		RoomPosition.findInRange
+1364		4.0		0.003		RoomPosition.inRangeTo
+253		3.2		0.013		RoomPosition.lookFor
+187		3.1		0.017		RoomPosition.findClosestByPath
+9		1.8		0.199		Spawn.spawnCreep
+253		1.8		0.007		Room.lookForAt
+76		1.4		0.018		Creep.pickup
+117		1.0		0.008		Creep.say
+Avg: 23.05	Total: 2259.25	Ticks: 98
+
 Season 3
 calls		time		avg		function
 10419		2536.6		0.243		Creep.moveTo
