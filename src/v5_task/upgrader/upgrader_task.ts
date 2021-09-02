@@ -16,6 +16,8 @@ import type { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wra
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { bodyCost } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
+import { coloredText } from "utility/log"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -242,7 +244,31 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return
     }
     if (this.linkId == null) {
-      const link = objects.controller.pos.findInRange(FIND_MY_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+      const roomCenterPosition = ((): RoomPosition | null => {
+        const centerPosition = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.roomPlan?.centerPosition
+        if (centerPosition == null) {
+          return null
+        }
+        try {
+          return new RoomPosition(centerPosition.x, centerPosition.y, this.roomName)
+        } catch (e) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} checkEnergySource() failed: ${e}`)
+          return null
+        }
+      })()
+      const links = objects.controller.pos.findInRange(FIND_MY_STRUCTURES, 4, { filter: { structureType: STRUCTURE_LINK } }) as StructureLink[]
+      const link = links.find(l => {
+        if (l.pos.findInRange(FIND_SOURCES, 2).length > 0) {
+          return false
+        }
+        if (roomCenterPosition == null) {
+          return true
+        }
+        if (l.pos.getRangeTo(roomCenterPosition) <= 1) {
+          return false
+        }
+        return true
+      })
       if (link != null) {
         this.linkId = link.id
       }
