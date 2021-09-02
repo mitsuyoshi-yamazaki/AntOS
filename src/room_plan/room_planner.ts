@@ -35,22 +35,26 @@ export class RoomPlanner {
     }
     PrimitiveLogger.log(`First spawn position: ${firstSpawnPositions.firstSpawnPosition}, manually flagged room center: ${firstSpawnPositions.roomCenter}`)
 
-    if (firstSpawnPositions.roomCenter != null) {
-      return Result.Succeeded({center: firstSpawnPositions.roomCenter})
-    }
+    const room = controller.room
 
-    const result = ErrorMapper.wrapLoop((): Result<{ center: RoomPosition, upgraderContainerPosition: RoomPosition | null }, string> => {
-      return this.placeFlags(firstSpawnPositions.firstSpawnPosition)
-    }, "placeFlags()")()
+    const result = ((): Result<{ center: RoomPosition }, string> | null => {
+      if (firstSpawnPositions.roomCenter != null) {
+        this.placeExtensionFlags(room, firstSpawnPositions.roomCenter)
+        return Result.Succeeded({ center: firstSpawnPositions.roomCenter })
+      }
+
+      return ErrorMapper.wrapLoop((): Result<{ center: RoomPosition }, string> => {
+        return this.placeFlags(firstSpawnPositions.firstSpawnPosition)
+      }, "placeFlags()")()
+    })()
 
     if (result == null) {
       return Result.Failed("Unexpected placeFlags() error")
     }
 
     if (result.resultType === "succeeded") {
-      const room = controller.room
       const routeCenterPosition = result.value.center
-      const upgradeContainerPosition = result.value.upgraderContainerPosition
+      const upgradeContainerPosition = this.placeLinks()
 
       if (upgradeContainerPosition != null) {
         ErrorMapper.wrapLoop((): void => {
@@ -67,7 +71,7 @@ export class RoomPlanner {
     return result
   }
 
-  private placeFlags(firstSpawnPosition: RoomPosition): Result<{ center: RoomPosition, upgraderContainerPosition: RoomPosition | null }, string> {
+  private placeFlags(firstSpawnPosition: RoomPosition): Result<{ center: RoomPosition }, string> {
     const controller = this.controller
     const room = controller.room
 
@@ -205,8 +209,6 @@ export class RoomPlanner {
       }
     }
 
-    const { upgraderEnergySourcePosition } = this.placeLinks()
-
     usedBlockPositions.push(centerBlockPosition)
     placeLayout(centerLayout, centerBlockPosition)
     room.visual.text("6", firstSpawnPosition, { color: "#ff0000" })
@@ -217,7 +219,7 @@ export class RoomPlanner {
         if (spawnCount > 0 || towerCount > 0 || extensionCount > 0) {
           return Result.Failed(`placeFlags() no empty position to place ${roomLink(room.name)}`)
         }
-        return Result.Succeeded({ center: centerPosition, upgraderContainerPosition: upgraderEnergySourcePosition })
+        return Result.Succeeded({ center: centerPosition })
       }
 
       const blockPositions = [...nextBlockPositions]
@@ -235,7 +237,7 @@ export class RoomPlanner {
           return null
         })()
         if (centerMark == null) {
-          return Result.Succeeded({ center: centerPosition, upgraderContainerPosition: upgraderEnergySourcePosition })
+          return Result.Succeeded({ center: centerPosition })
         }
         placeLayout(extensionLayout(centerMark), blockPosition)
       }
@@ -243,7 +245,7 @@ export class RoomPlanner {
     return Result.Failed(`placeFlags() max block count reached ${roomLink(room.name)}`)
   }
 
-  private placeLinks(): { upgraderEnergySourcePosition: RoomPosition | null } {
+  private placeLinks(): RoomPosition | null {
     const options: RoomPositionFilteringOptions = {
       excludeItself: true,
       excludeStructures: true,
@@ -267,9 +269,7 @@ export class RoomPlanner {
     })
     const linkPositionInfo = sortedPositionInfo.shift()
     if (linkPositionInfo == null) {
-      return {
-        upgraderEnergySourcePosition: null,
-      }
+      return null
     }
 
     this.placeFlag(linkPositionInfo.position, LayoutMark.Link, false)
@@ -278,14 +278,10 @@ export class RoomPlanner {
       return positionInfo.position.getRangeTo(linkPositionInfo.position) === 1
     })
     if (containerPositionInfo == null) {
-      return {
-        upgraderEnergySourcePosition: linkPositionInfo.position,
-      }
+      return linkPositionInfo.position
     }
     this.placeFlag(containerPositionInfo.position, LayoutMark.Container, false)
-    return {
-      upgraderEnergySourcePosition: containerPositionInfo.position,
-    }
+    return containerPositionInfo.position
   }
 
   private placeFlag(position: RoomPosition, mark: LayoutMark, roadOnSwamp: boolean): void {
@@ -333,6 +329,51 @@ export class RoomPlanner {
       }
       this.placeFlag(position, LayoutMark.Road, true)
     })
+  }
+
+  private placeExtensionFlags(room: Room, centerPosition: RoomPosition): void {
+    const checkedPositions: RoomPosition[] = [
+      centerPosition,
+    ]
+    let extensionCount = GameConstants.structure.maxCount[STRUCTURE_EXTENSION]
+
+    const roadPositions = room.find(FIND_FLAGS)
+      .flatMap(flag => {
+        if (flag.color !== COLOR_BROWN) {
+          return []
+        }
+        return {
+          position: flag.pos,
+          range: flag.pos.getRangeTo(centerPosition),
+        }
+      })
+      .sort((lhs, rhs) => {
+        return lhs.range - rhs.range
+      })
+
+    for (const roadPosition of roadPositions) {
+      for (const p of roadPosition.position.neighbours()) {
+        if (extensionCount <= 0) {
+          return
+        }
+        if (p.findInRange(FIND_FLAGS, 0).length > 0) {
+          continue
+        }
+        if (checkedPositions.some(checkedPosition => checkedPosition.isEqualTo(p)) === true) {
+          continue
+        }
+        checkedPositions.push(p)
+        if (p.lookFor(LOOK_TERRAIN)[0] === "wall") {
+          continue
+        }
+        this.placeFlag(p, LayoutMark.Extension, false)
+        extensionCount -= 1
+      }
+    }
+
+    if (extensionCount > 0) {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} ${extensionCount} extensions left`)
+    }
   }
 }
 
