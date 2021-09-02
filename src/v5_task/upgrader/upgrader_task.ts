@@ -17,7 +17,6 @@ import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_e
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
-import { coloredText } from "utility/log"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -271,6 +270,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       })
       if (link != null) {
         this.linkId = link.id
+        PrimitiveLogger.log(`${this.taskIdentifier} link id set: link ${link.pos}`)
       }
     }
     if (objects.roomInfo.upgrader?.container == null) {
