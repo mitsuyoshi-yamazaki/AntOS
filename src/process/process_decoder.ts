@@ -35,6 +35,7 @@ import { World35440623DowngradeControllerProcess, World35440623DowngradeControll
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
 import { InterRoomResourceManagementProcess, InterRoomResourceManagementProcessState } from "./process/inter_room_resource_management_process"
+import { ObserveRoomProcess, ObserveRoomProcessState } from "./process/observe_room_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
@@ -55,6 +56,7 @@ class ProcessTypes {
   "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
   "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
   "InterRoomResourceManagementProcess" = (state: ProcessState) => InterRoomResourceManagementProcess.decode(state as unknown as InterRoomResourceManagementProcessState)
+  "ObserveRoomProcess" = (state: ProcessState) => ObserveRoomProcess.decode(state as unknown as ObserveRoomProcessState)
 
   // ---- v6 Process ---- //
   "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
