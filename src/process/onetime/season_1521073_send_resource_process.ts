@@ -24,6 +24,7 @@ import { EnergyChargeableStructure } from "prototype/room_object"
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepBody } from "utility/creep_body"
+import { OperatingSystem } from "os/os"
 
 export interface Season1521073SendResourceProcessState extends ProcessState {
   /** parent room name */
@@ -77,7 +78,8 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    return `${creepCount}cr, ${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`
   }
 
   public runOnTick(): void {
@@ -85,6 +87,10 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
     if (objects == null || targetRoomObjects == null) {
       PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} or ${roomLink(this.targetRoomName)} lost`)
+      return
+    }
+    if (targetRoomObjects.activeStructures.terminal != null) {
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
 
@@ -115,7 +121,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       }
       return this.maxNumberOfCreeps
     })()
-    if (creeps.length < numberOfCreeps && targetRoomObjects.activeStructures.terminal == null) {
+    if (creeps.length < numberOfCreeps) {
       this.requestCreep(CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20))
     }
 
