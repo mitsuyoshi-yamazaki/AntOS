@@ -35,7 +35,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W48S12 target_room_name=W45S9 waypoints=W47S10,W46S10,W44S9 target_id=5fff73b0ed5e41453a568e63")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W48S6 target_room_name=W49S7 waypoints=W49S6 target_id=60b0e6f2e5c169b842f2737b")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   private readonly codename: string
@@ -177,6 +177,14 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
 
   private runCreep(creep: Creep): void {
     if (creep.v5task != null) {
+      if ((creep.v5task instanceof MoveToTargetTask) && (creep.v5task.apiWrapper instanceof DismantleApiWrapper)) {
+        if (creep.pos.isNearTo(creep.v5task.apiWrapper.target) !== true) {
+          const nearbyStructure = creep.pos.findInRange(FIND_HOSTILE_STRUCTURES, 1)[0]
+          if (nearbyStructure != null) {
+            creep.dismantle(nearbyStructure)
+          }
+        }
+      }
       return
     }
 
@@ -239,7 +247,10 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       return target
     }
 
-    const excluded: StructureConstant[] = [STRUCTURE_CONTROLLER]
+    const excluded: StructureConstant[] = [
+      STRUCTURE_CONTROLLER,
+      STRUCTURE_STORAGE,
+    ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
       STRUCTURE_ROAD,
       STRUCTURE_STORAGE,
@@ -249,7 +260,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_SPAWN,
       STRUCTURE_TOWER,
     ]
-    const hostileStructures = creep.room.find(FIND_STRUCTURES)
+    const hostileStructure = creep.room.find(FIND_STRUCTURES)
       .filter(structure => (excluded.includes(structure.structureType) !== true))
       .sort((lhs, rhs) => {
         const priority = targetPriority.indexOf(rhs.structureType) - targetPriority.indexOf(lhs.structureType)
@@ -257,8 +268,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
           return priority
         }
         return lhs.pos.getRangeTo(creep.pos) - rhs.pos.getRangeTo(creep.pos)
-      })
-    return creep.pos.findClosestByRange(hostileStructures) ?? null
+      })[0]
+    return hostileStructure ?? null
   }
 
   private requestDismantler(resources: OwnedRoomResource): void {
