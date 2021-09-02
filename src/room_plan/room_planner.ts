@@ -1,4 +1,4 @@
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { GameConstants } from "utility/constants"
 import { ValuedArrayMap, ValuedMapMap } from "utility/valued_collection"
 import { Result } from "utility/result"
@@ -29,14 +29,18 @@ export class RoomPlanner {
 
     const controller = this.controller
 
-    const firstSpawnPosition = calculateFirstSpawnPosition(controller, this.showsCostMatrix)
-    if (firstSpawnPosition == null) {
+    const firstSpawnPositions = calculateFirstSpawnPosition(controller, this.showsCostMatrix)
+    if (firstSpawnPositions == null) {
       return Result.Failed("Failed to calculate first spawn position")
     }
-    PrimitiveLogger.log(`First spawn position: ${firstSpawnPosition}`)
+    PrimitiveLogger.log(`First spawn position: ${firstSpawnPositions.firstSpawnPosition}, manually flagged room center: ${firstSpawnPositions.roomCenter}`)
+
+    if (firstSpawnPositions.roomCenter != null) {
+      return Result.Succeeded({center: firstSpawnPositions.roomCenter})
+    }
 
     const result = ErrorMapper.wrapLoop((): Result<{ center: RoomPosition, upgraderContainerPosition: RoomPosition | null }, string> => {
-      return this.placeFlags(firstSpawnPosition)
+      return this.placeFlags(firstSpawnPositions.firstSpawnPosition)
     }, "placeFlags()")()
 
     if (result == null) {
@@ -431,16 +435,40 @@ function neighbourBlockPosition(position: RoomPosition, direction: DirectionCons
   }
 }
 
-function calculateFirstSpawnPosition(controller: StructureController, showsCostMatrix: boolean): RoomPosition | null {
+function calculateFirstSpawnPosition(controller: StructureController, showsCostMatrix: boolean): { firstSpawnPosition: RoomPosition, roomCenter: RoomPosition | null} | null {
   const room = controller.room
   const spawn = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] as StructureSpawn | null
   if (spawn != null) {
-    return spawn.pos
+    return { firstSpawnPosition: spawn.pos, roomCenter: null}
   }
 
-  const spawnFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREY)
-  if (spawnFlag != null) {
-    return spawnFlag.pos
+  const spawnFlags = room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_GREY)
+  if (spawnFlags.length === 1 && spawnFlags[0] != null) {
+    return { firstSpawnPosition: spawnFlags[0].pos, roomCenter: null }
+  }
+  if (spawnFlags.length > 1) {
+    const storageFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREEN)
+    const terminalFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_PURPLE)
+    if (storageFlag == null || terminalFlag == null) {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} manually flagged but no storage or terminal flag in ${roomLink(room.name)}`)
+      return null
+    }
+    const centerPosition = storageFlag.pos.neighbours().find(position => {
+      if (terminalFlag.pos.getRangeTo(position) !== 1) {
+        return false
+      }
+      return spawnFlags.some(spawnFlag => spawnFlag.pos.getRangeTo(position) === 1)
+    })
+    if (centerPosition == null) {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} manually flagged but center position cannot be determined in ${roomLink(room.name)}`)
+      return null
+    }
+    const firstSpawnFlag = spawnFlags.find(spawnFlag => spawnFlag.pos.getRangeTo(centerPosition) === 1)
+    if (firstSpawnFlag == null) {
+      PrimitiveLogger.programError(`first spawn flag cannot be determined in ${roomLink(room.name)}`)
+      return null
+    }
+    return { firstSpawnPosition: firstSpawnFlag.pos, roomCenter: centerPosition }
   }
 
   const positionScores = ErrorMapper.wrapLoop((): { position: RoomPosition, score: number }[] => {
@@ -465,9 +493,14 @@ function calculateFirstSpawnPosition(controller: StructureController, showsCostM
       score: positionScore.score * 10 + distanceScore,
     }
   })
-  return distanceScores.sort((lhs, rhs) => {
+  const spawnPosition = distanceScores.sort((lhs, rhs) => {
     return lhs.score - rhs.score
-  })[0]?.position ?? null
+  })[0]?.position
+
+  if (spawnPosition == null) {
+    return null
+  }
+  return { firstSpawnPosition: spawnPosition, roomCenter: null }
 }
 
 function roomOpenPositions(room: Room, showsCostMatrix: boolean): { position: RoomPosition, score: number }[] {
