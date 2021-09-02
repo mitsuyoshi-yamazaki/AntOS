@@ -95,7 +95,20 @@ export class MoveToRoomTask implements CreepTask {
       return nextWaypoint
     })()
 
-    const reusePath = 20
+    const reusePath = ((): number => {
+      const defaultValue = 20
+      const controller = creep.room.controller
+      if (controller == null) {
+        return defaultValue
+      }
+      if (controller.owner != null) {
+        return 3
+      }
+      if (controller.reservation != null) {
+        return 5
+      }
+      return defaultValue
+    })()
     const noPathFindingOptions: MoveToOpts = {
       noPathFinding: true,
       reusePath,
