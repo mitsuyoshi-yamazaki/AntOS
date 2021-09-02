@@ -92,7 +92,7 @@ export class OwnedRoomHaulerTask extends Task {
         if (storage == null) {
           return baseCount
         }
-        this.storageDistance = objects.sources.reduce((result, current) => result + current.pos.getRangeTo(storage.pos), 0)
+        this.storageDistance = objects.sources.reduce((result, current) => result + current.pos.findPathTo(storage.pos).length, 0)
       }
       const countBasedOnDistance = Math.ceil((baseCount / 2) * (this.storageDistance / 10)) * 0.8
       return Math.max(countBasedOnDistance, baseCount)
@@ -103,7 +103,7 @@ export class OwnedRoomHaulerTask extends Task {
     ]
 
     if (objects.activeStructures.storage != null) {
-      const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Medium)
+      const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
       problemFinders.push(problemFinder)
     }
 

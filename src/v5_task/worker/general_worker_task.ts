@@ -85,7 +85,8 @@ export class GeneralWorkerTask extends Task {
 
   // ---- Problem Solver ---- //
   private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, roles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
-    const roomName = objects.controller.room.name
+    const room = objects.controller.room
+    const roomName = room.name
     const minimumCreepCount = ((): number => {
       if (objects.activeStructures.storage == null) {
         return 5
@@ -96,7 +97,8 @@ export class GeneralWorkerTask extends Task {
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, roles, filterTaskIdentifier, minimumCreepCount)
 
     const noCreeps = problemFinder.creepCount < 2
-    const body = noCreeps ? [CARRY, WORK, MOVE] : this.workerBody(objects)
+    const energyCapacity = noCreeps === true ? room.energyAvailable : room.energyCapacityAvailable
+    const body = this.workerBody(energyCapacity)
     const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
 
     const problemFinderWrapper: ProblemFinder = {
@@ -120,7 +122,7 @@ export class GeneralWorkerTask extends Task {
     return problemFinderWrapper
   }
 
-  private workerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
+  private workerBody(energyCapacity: number): BodyPartConstant[] {
     const maximumCarryUnitCount = 6 // TODO: 算出する
     const unit: BodyPartConstant[] = [CARRY, WORK, MOVE]
 
@@ -132,7 +134,6 @@ export class GeneralWorkerTask extends Task {
       return result
     })
 
-    const energyCapacity = objects.controller.room.energyCapacityAvailable
     for (let i = maximumCarryUnitCount; i >= 1; i -= 1) {
       const body = constructBody(i)
       const cost = bodyCost(body)
