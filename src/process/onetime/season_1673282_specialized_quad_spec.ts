@@ -34,6 +34,7 @@ export const quadTypes = [
   "tier3-3tower-attacker",
   "tier3-3tower-dismantler",
   "tier3-6tower-dismantler",
+  "tier3-6tower-tank",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -91,6 +92,8 @@ export class QuadSpec {
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
       return [...tier3AttackerBoosts]
+    case "tier3-6tower-tank":
+      return [...tier3HealBoosts]
     }
   }
 
@@ -102,6 +105,7 @@ export class QuadSpec {
       return 4
     case "invader-core-attacker":
     case "tier1-invader-core-lv1":
+    case "tier3-6tower-tank":
       return 3
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
@@ -263,6 +267,8 @@ export class QuadSpec {
       } else {
         return tier36TowerDismantlerDismantlerSpec
       }
+    case "tier3-6tower-tank":
+      return tier36TowerTankHealerSpec
     }
   }
 
@@ -293,6 +299,7 @@ export class QuadSpec {
     case "tier3-6tower-dismantler":
     case "tier0-d900":
     case "tier1-invader-core-lv1":
+    case "tier3-6tower-tank":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
@@ -965,3 +972,22 @@ const tier36TowerDismantlerHealerSpec: CreepBodySpec = {
     HEAL, HEAL, HEAL,
   ]
 }
+
+// ---- tier3-6tower-tank ---- //
+const tier36TowerTankHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.Healer, CreepRole.RangedAttacker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL,
+  ]
+}
+
+const tier3HealBoosts: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+]
