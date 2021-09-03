@@ -9,7 +9,7 @@ import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { moveToRoom } from "script/move_to_room"
 
 const testing = false

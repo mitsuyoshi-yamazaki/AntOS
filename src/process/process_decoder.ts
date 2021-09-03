@@ -1,5 +1,4 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { LoggerProcess, LoggerProcessState } from "os/process/logger"
 import { TestProcess, TestProcessState } from "process/test/test_process"
 import { BootstrapRoomManagerProcess, BootstrapRoomManagerProcessState } from "./bootstrap_room_manager_process"
 import { Season1022818Attack2TowerRoomProcess, Season1022818Attack2TowerRoomProcessState } from "./onetime/season_1022818_attack_2tower_room_process"
@@ -47,7 +46,6 @@ export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "TestProcess" = (state: ProcessState) => TestProcess.decode(state as unknown as TestProcessState)
-  "LoggerProcess" = (state: ProcessState) => LoggerProcess.decode(state as unknown as LoggerProcessState)
   "BuyPixelProcess" = (state: ProcessState) => BuyPixelProcess.decode(state as unknown as BuyPixelProcessState)
   "UpgradePowerCreepProcess" = (state: ProcessState) => UpgradePowerCreepProcess.decode(state as unknown as UpgradePowerCreepProcessState)
 

@@ -7,7 +7,7 @@ import { ProcessState } from "./process_state"
 import { RoomKeeperTask, RoomKeeperTaskOutputs, RoomKeeperTaskState } from "application/task/room_keeper/room_keeper_task"
 import { RoomResources } from "room_resource/room_resources"
 import { TaskLogRequest } from "application/task_logger"
-import { processLog } from "./process_log"
+import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { bodyDescription } from "utility/creep_body"
 

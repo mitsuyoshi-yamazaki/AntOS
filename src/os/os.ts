@@ -3,8 +3,6 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import type { Process, ProcessId } from "process/process"
 import { isProcedural } from "process/procedural"
 import { RootProcess } from "./infrastructure/root"
-import { RuntimeMemory, ProcessLog } from "./infrastructure/runtime_memory"
-import { LoggerProcess } from "./process/logger"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
 import { init as initCreepPrototype } from "prototype/creep"
@@ -15,6 +13,7 @@ import type { ProcessState } from "process/process_state"
 import { decodeProcessFrom } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
+import { LoggerMemory } from "./infrastructure/logger"
 
 interface ProcessMemory {
   /** running */
@@ -35,6 +34,7 @@ export interface OSMemory {
     /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
     shouldReadMemory?: boolean
   }
+  logger: LoggerMemory
 }
 
 function init(): void {
@@ -68,7 +68,6 @@ export class OperatingSystem {
   private readonly rootProcess = new RootProcess()
   private readonly processes = new Map<ProcessId, InternalProcessInfo>()
   private readonly processIdsToKill: ProcessId[] = []
-  private runtimeMemory: RuntimeMemory = {processLogs: []}
 
   private constructor() {
     // !!!! 起動処理がOSアクセスを行う場合があるため、起動時に一度だけ行う処理はsetup()内部で実行すること !!!! //
@@ -163,29 +162,6 @@ export class OperatingSystem {
     })
   }
 
-  // ---- Runtime Memory Access ---- //
-  // - [ ] 任意のkeyに対するAPIに書き換える
-  public addProcessLog(log: ProcessLog): void {
-    this.runtimeMemory.processLogs.push(log)
-  }
-
-  public processLogs(): ProcessLog[] {
-    return this.runtimeMemory.processLogs.concat([])
-  }
-
-  public clearProcessLogs(): void {
-    this.runtimeMemory.processLogs.splice(0, this.runtimeMemory.processLogs.length)
-  }
-
-  // FixMe: プロセス特定の仕組みを実装する
-  public getLoggerProcess(): LoggerProcess | null {
-    const processInfo = Array.from(this.processes.values()).find(processInfo => processInfo.process instanceof LoggerProcess)
-    if (processInfo == null) {
-      return null
-    }
-    return processInfo.process as LoggerProcess
-  }
-
   // ---- Run ---- //
   private setup(): void {
     ErrorMapper.wrapLoop(() => {
@@ -242,6 +218,9 @@ export class OperatingSystem {
       Memory.os = {
         p: [],
         config: {},
+        logger: {
+          filteringProcessIds: [],
+        }
       }
     }
     if (Memory.os.p == null) {
@@ -249,6 +228,11 @@ export class OperatingSystem {
     }
     if (Memory.os.config == null) {
       Memory.os.config = {}
+    }
+    if (Memory.os.logger == null) {
+      Memory.os.logger = {
+        filteringProcessIds: [],
+      }
     }
   }
 
@@ -318,6 +302,10 @@ export class OperatingSystem {
       }
       console.log(`Kill process ${processInfo.process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
       this.processes.delete(processId)
+      const loggerIndex = Memory.os.logger.filteringProcessIds.indexOf(processId)
+      if (loggerIndex >= 0) {
+        Memory.os.logger.filteringProcessIds.splice(loggerIndex, 1)
+      }
     })
     this.processIdsToKill.splice(0, this.processIdsToKill.length)
   }

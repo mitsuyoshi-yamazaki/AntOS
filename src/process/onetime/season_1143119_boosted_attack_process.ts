@@ -12,7 +12,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 import { CreepName } from "prototype/creep"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { moveToRoom } from "script/move_to_room"
 import { GameConstants } from "utility/constants"

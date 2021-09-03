@@ -7,7 +7,7 @@ import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { Season634603PowerCreepProcess } from "./season_634603_power_creep_process"
 import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
@@ -148,12 +148,7 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
   private launchPowerCreepProcess(): void {
     processLog(this, `${coloredText("[Arrived]", "info")} Power creep ${this.powerCreepName} arrived in ${roomLink(this.toRoomName)}`)
 
-    const process = OperatingSystem.os.addProcess(processId => Season634603PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName))
-    const logger = OperatingSystem.os.getLoggerProcess()
-    if (logger == null) {
-      return
-    }
-    logger.didReceiveMessage(`add id ${process.processId}`)
+    OperatingSystem.os.addProcess(processId => Season634603PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName))
   }
 
   private fleeFrom(position: RoomPosition, creep: AnyCreep, range: number): void {

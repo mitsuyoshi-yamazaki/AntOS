@@ -5,7 +5,7 @@ import { coloredText } from "utility/log"
 import { ProcessState } from "../process_state"
 import { GameConstants } from "utility/constants"
 import { Environment } from "utility/environment"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 
 export interface BuyPixelProcessState extends ProcessState {
 }

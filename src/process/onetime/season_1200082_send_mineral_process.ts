@@ -5,7 +5,7 @@ import { ProcessState } from "process/process_state"
 import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "utility/room_name"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 
 export interface Season1200082SendMineralProcessState extends ProcessState {
   /** parent room name */

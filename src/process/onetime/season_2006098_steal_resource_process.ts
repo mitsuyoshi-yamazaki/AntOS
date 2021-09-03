@@ -20,7 +20,7 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
 
 const resourcePriority: ResourceConstant[] = [

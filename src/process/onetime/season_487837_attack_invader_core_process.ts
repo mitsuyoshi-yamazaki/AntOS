@@ -11,7 +11,7 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_api_wrapper"
 import { RoomName } from "utility/room_name"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { roomLink } from "utility/log"
 import { bodyCost } from "utility/creep_body"
 import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"

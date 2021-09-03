@@ -12,7 +12,7 @@ import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } f
 import { SourceKeeper } from "game/source_keeper"
 import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 
 interface Season845677Attack1TowerProcessSquad {
   leaderCreepName: CreepName

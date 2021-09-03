@@ -10,7 +10,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { defaultMoveToOptions } from "prototype/creep"
 import { randomDirection } from "utility/constants"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 
 export const season1262745GuardRemoteRoomProcessCreepType = [
   "ranged-attacker",

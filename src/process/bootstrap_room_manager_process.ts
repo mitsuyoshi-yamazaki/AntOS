@@ -9,7 +9,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
-import { processLog } from "./process_log"
+import { processLog } from "os/infrastructure/logger"
 import { isRoomName, RoomName } from "utility/room_name"
 
 export interface BootstrapRoomManagerProcessState extends ProcessState {

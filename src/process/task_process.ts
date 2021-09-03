@@ -8,7 +8,7 @@ import { ProcessState } from "./process_state"
 import { Task } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"
 import { isLaunchableTask, LaunchableTask } from "v5_task/launchable_task"
-import { processLog } from "./process_log"
+import { processLog } from "os/infrastructure/logger"
 
 type TaskProcessTask = Task & LaunchableTask
 
