@@ -22,6 +22,11 @@ export const Spawns: SpawnsInterface = {
       //   delete Memory.spawns[spawnName]
       //   return
       // }
+      if (spawn.room.name === "W45S3") {  // FixMe:
+        if (spawn.isActive() !== true) {
+          return
+        }
+      }
       allSpawns.push(spawn)
     })
 

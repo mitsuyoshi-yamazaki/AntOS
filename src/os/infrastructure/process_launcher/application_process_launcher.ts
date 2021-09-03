@@ -11,11 +11,13 @@ import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredText, roomLink } from "utility/log"
+import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
     this.checkRoomKeeperProcess(processList, processLauncher)
     this.checkBoostrapRoomManagerProcess(processList, processLauncher)
+    this.checkAttackInvaderCoreProcess(processList, processLauncher)
   }
 
   private checkRoomKeeperProcess(processList: Process[], processLauncher: ProcessLauncher): void {
@@ -70,5 +72,12 @@ export class ApplicationProcessLauncher {
       return
     }
     processLauncher(processId => BootstrapRoomManagerProcess.create(processId))
+  }
+
+  private checkAttackInvaderCoreProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    if (processList.some(process => process instanceof Season487837AttackInvaderCoreProcess) === true) {
+      return
+    }
+    processLauncher(processId => Season487837AttackInvaderCoreProcess.create(processId))
   }
 }

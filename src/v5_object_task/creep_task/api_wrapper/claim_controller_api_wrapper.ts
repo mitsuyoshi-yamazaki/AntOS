@@ -40,7 +40,7 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
   }
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
-    const result = creep.claimController(this.target)
+    const result = (this.target.reservation == null) ? creep.claimController(this.target) : creep.attackController(this.target)
     creep.signController(this.target, Sign.signForOwnedRoom())
 
     switch (result) {
@@ -61,6 +61,7 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
       creep.reserveController(this.target)
       return IN_PROGRESS
 
+    case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
     case ERR_FULL:
     default:

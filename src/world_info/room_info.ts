@@ -114,7 +114,7 @@ export const Rooms: RoomsInterface = {
     if (Game.time % 107 === 13) {
       roomVersions.forEach((roomNames, version) => {
         if (roomNames.length <= 6) {
-          PrimitiveLogger.log(`${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+          PrimitiveLogger.log(`${roomNames.length} ${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
           return
         }
         const sectors = new ValuedArrayMap<string, RoomName>()
@@ -126,7 +126,7 @@ export const Rooms: RoomsInterface = {
           }
           sectors.getValueFor(sectorName).push(roomName)
         })
-        PrimitiveLogger.log(`${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, roomNames]) => `- ${sectorName}: ${roomNames.map(r => roomLink(r)).join(", ")}`).join("\n")}`)
+        PrimitiveLogger.log(`${roomNames.length} ${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, roomNames]) => `- ${sectorName}: ${roomNames.map(r => roomLink(r)).join(", ")}`).join("\n")}`)
       })
     }
 

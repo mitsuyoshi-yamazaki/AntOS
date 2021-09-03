@@ -46,6 +46,8 @@ import { isQuadType, quadTypes } from "process/onetime/season_1673282_specialize
 import { Season2006098StealResourceProcess } from "process/onetime/season_2006098_steal_resource_process"
 import { Season2055924SendResourcesProcess } from "process/onetime/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
+import { World35440623DowngradeControllerProcess } from "process/onetime/world_35440623_downgrade_controller_process"
+import { ObserveRoomProcess } from "process/process/observe_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -164,6 +166,12 @@ export class LaunchCommand implements ConsoleCommand {
     case "InterRoomResourceManagementProcess":
       result = this.launchInterRoomResourceManagementProcess()
       break
+    case "World35440623DowngradeControllerProcess":
+      result = this.launchWorld35440623DowngradeControllerProcess()
+      break
+    case "ObserveRoomProcess":
+      result = this.launchObserveRoomProcess()
+      break
     default:
       break
     }
@@ -203,6 +211,18 @@ export class LaunchCommand implements ConsoleCommand {
       result.set(key, value)
     })
     return result
+  }
+
+  private parseInt(args: Map<string, string>, argumentName: string): number | string {
+    const rawValue = args.get(argumentName)
+    if (rawValue == null) {
+      return `Missing ${argumentName} argument`
+    }
+    const value = parseInt(rawValue, 10)
+    if (isNaN(value) === true) {
+      return `${argumentName} is not a number ${rawValue}`
+    }
+    return value
   }
 
   private missingArgumentError(argumentName: string): ResultFailed<string> {
@@ -809,9 +829,25 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("waypoints")
     }
     const waypoints = rawWaypoints.split(",")
+    const rawFinishWorking = args.get("finish_working")
+    if (rawFinishWorking == null) {
+      return this.missingArgumentError("finish_working")
+    }
+    const finishWorking = parseInt(rawFinishWorking, 10)
+    if (isNaN(finishWorking) === true) {
+      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
+    }
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
 
     const process = OperatingSystem.os.addProcess(processId => {
-      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints)
+      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints, finishWorking, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
@@ -1056,6 +1092,47 @@ export class LaunchCommand implements ConsoleCommand {
   private launchInterRoomResourceManagementProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(processId => {
       return InterRoomResourceManagementProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchWorld35440623DowngradeControllerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const rawTargetRoomNames = args.get("target_room_names")
+    if (rawTargetRoomNames == null) {
+      return this.missingArgumentError("target_room_names")
+    }
+    const targetRoomNames = rawTargetRoomNames.split(",")
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return World35440623DowngradeControllerProcess.create(processId, roomName, targetRoomNames)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchObserveRoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const duration = this.parseInt(args, "duration")
+    if (typeof duration === "string") {
+      return Result.Failed(duration)
+    }
+
+    const process = OperatingSystem.os.addProcess(processId => {
+      return ObserveRoomProcess.create(processId, roomName, targetRoomName, duration)
     })
     return Result.Succeeded(process)
   }

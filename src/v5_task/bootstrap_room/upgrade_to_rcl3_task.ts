@@ -21,6 +21,7 @@ import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_a
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
+import { shouldSpawnBootstrapCreeps } from "./claim_room_task"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
@@ -121,6 +122,10 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
+    if (shouldSpawnBootstrapCreeps(this.targetRoomName) !== true) {
+      return null
+    }
+
     const numberOfCreeps = ((): number => {
       if (this.targetRoomName === "W11S14" || this.targetRoomName === "W17S11") {
         const targetRoom = Game.rooms[this.targetRoomName]
@@ -277,7 +282,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       if (neighbourRoomInfo == null) {
         return []
       }
-      if (neighbourRoomInfo.roomType !== "normal") {
+      if (neighbourRoomInfo.roomType !== "normal" || roomTypeOf(neighbourRoomName) !== "normal") {
         return []
       }
       if (neighbourRoomInfo.owner != null) {

@@ -31,9 +31,11 @@ import { Season1673282SpecializedQuadProcess, Season1673282SpecializedQuadProces
 import { Season1838855DistributorProcess, Season1838855DistributorProcessState } from "./onetime/season_1838855_distributor_process"
 import { Season2006098StealResourceProcess, Season2006098StealResourceProcessState } from "./onetime/season_2006098_steal_resource_process"
 import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessState } from "./onetime/season_2055924_send_resources_process"
+import { World35440623DowngradeControllerProcess, World35440623DowngradeControllerProcessState } from "./onetime/world_35440623_downgrade_controller_process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
 import { InterRoomResourceManagementProcess, InterRoomResourceManagementProcessState } from "./process/inter_room_resource_management_process"
+import { ObserveRoomProcess, ObserveRoomProcessState } from "./process/observe_room_process"
 import type { Process } from "./process"
 import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
@@ -54,6 +56,7 @@ class ProcessTypes {
   "BootstrapRoomManagerProcess" = (state: ProcessState) => BootstrapRoomManagerProcess.decode(state as unknown as BootstrapRoomManagerProcessState)
   "TaskProcess" = (state: ProcessState) => TaskProcess.decode(state as unknown as TaskProcessState)
   "InterRoomResourceManagementProcess" = (state: ProcessState) => InterRoomResourceManagementProcess.decode(state as unknown as InterRoomResourceManagementProcessState)
+  "ObserveRoomProcess" = (state: ProcessState) => ObserveRoomProcess.decode(state as unknown as ObserveRoomProcessState)
 
   // ---- v6 Process ---- //
   "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
@@ -88,6 +91,7 @@ class ProcessTypes {
   "Season1838855DistributorProcess" = (state: ProcessState) => Season1838855DistributorProcess.decode(state as unknown as Season1838855DistributorProcessState)
   "Season2006098StealResourceProcess" = (state: ProcessState) => Season2006098StealResourceProcess.decode(state as unknown as Season2006098StealResourceProcessState)
   "Season2055924SendResourcesProcess" = (state: ProcessState) => Season2055924SendResourcesProcess.decode(state as unknown as Season2055924SendResourcesProcessState)
+  "World35440623DowngradeControllerProcess" = (state: ProcessState) => World35440623DowngradeControllerProcess.decode(state as unknown as World35440623DowngradeControllerProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

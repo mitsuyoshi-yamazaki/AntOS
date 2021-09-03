@@ -769,10 +769,12 @@ export class Quad implements Stateful, QuadInterface {
     })()
 
     if (leaderRotationPosition != null) {
+      // if (this.isQuadForm() === true) {
       this.say("rotate")
       this.leaderCreep.moveTo(leaderRotationPosition, this.moveToOptions(1))  // FixMe: target room直前でrotateしようとしてclose to destinationから抜けてしまうのではないか
       this.moveFollowersToNexPosition(leaderRotationPosition)
       return
+      // }
     }
 
     const leaderAvoidEdgePosition = ((): RoomPosition => {
@@ -927,7 +929,7 @@ export class Quad implements Stateful, QuadInterface {
       if (previousCreep == null || previousCreep.spawning === true || creep == null) {
         return
       }
-      creep.moveTo(previousCreep.pos, this.moveToOptions(2))
+      creep.moveTo(previousCreep.pos, this.moveToOptions(2, false))
     }
 
     follow(1)
@@ -1211,26 +1213,26 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       case TOP:
         return [
           TOP,
-          TOP_RIGHT,
           RIGHT,
+          TOP_RIGHT,
         ]
       case RIGHT:
         return [
           RIGHT,
-          BOTTOM_RIGHT,
           BOTTOM,
+          BOTTOM_RIGHT,
         ]
       case BOTTOM:
         return [
           BOTTOM,
-          BOTTOM_LEFT,
           LEFT,
+          BOTTOM_LEFT,
         ]
       case LEFT:
         return [
           LEFT,
-          TOP_LEFT,
           TOP,
+          TOP_LEFT,
         ]
       }
     })()

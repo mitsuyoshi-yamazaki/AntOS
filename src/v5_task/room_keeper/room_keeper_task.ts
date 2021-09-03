@@ -16,6 +16,7 @@ import { coloredText, roomLink } from "utility/log"
 import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
+import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -112,6 +113,7 @@ export class RoomKeeperTask extends Task {
             } catch (e) {
               PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
             }
+            this.removeLeftoverStructures(objects.controller.room)
             break
           case "failed":
             PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
@@ -123,5 +125,39 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private removeLeftoverStructures(room: Room): void {
+    const excludedHostileStructures: StructureConstant[] = [
+      STRUCTURE_STORAGE,
+      STRUCTURE_TERMINAL,
+      STRUCTURE_FACTORY,
+    ]
+    room.find(FIND_HOSTILE_STRUCTURES).forEach(structure => {
+      if (excludedHostileStructures.includes(structure.structureType) === true) {
+        try {
+          const store = (structure as { store?: StoreDefinition }).store
+          if (store == null) {
+            return
+          }
+          if (store.getUsedCapacity() > 0) {
+            return
+          }
+        } catch (e) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} removeLeftoverStructures() failed: ${e}`)
+        }
+      }
+      structure.destroy()
+    })
+
+    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).forEach(structure => {
+      structure.destroy()
+    })
+    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).forEach(structure => {
+      if (structure.hits >= WallBuilderTaskMaxWallHits) {
+        return
+      }
+      structure.destroy()
+    })
   }
 }

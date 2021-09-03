@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { isRoomName, RoomCoordinate, RoomName } from "utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -26,7 +26,7 @@ type AttackTarget = AnyCreep | AnyStructure
 type ManualOperations = {
   targetIds: Id<AttackTarget>[]
   direction: TOP | BOTTOM | LEFT | RIGHT | null
-  action: "flee" | "drain" | null
+  action: "flee" | "noflee" | "drain" | null
   message: string | null
   automaticRotationEnabled: boolean | null
 }
@@ -102,18 +102,33 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d360-dismantler targets=")
 // tier0-d360-dismantler left
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier0-d360-dismantler targets=")
+
+// W51S7 tier3-3tower-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W54S7 target_room_name=W51S7 waypoints=W51S7 quad_type=tier3-3tower-dismantler targets=")
+
+// W47S7 tier3-6tower-dismantler
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S7 waypoints=W48S7 quad_type=tier3-6tower-dismantler targets=")
+
+// W46S9 tier3-6tower-dismantler
+// [Boost Needed]: XZHO2: 1200, XZH2O: 540, XGHO2: 2640, XLHO2: 720, XKHO2: 900
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W49S4 waypoints=W48S5 quad_type=tier3-6tower-dismantler targets=")
+
+// W43S5 invader-core-attacker
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W43S5 waypoints=W47S7 quad_type=invader-core-attacker targets=")
+
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W44S3 waypoints=W48S3,W47S3,W44S4 quad_type=tier3-6tower-tank targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
-  private readonly codename: string
 
+  private readonly codename: string
   private readonly quadSpec: QuadSpec
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
+    public targetRoomName: RoomName,
+    public waypoints: RoomName[],
     private readonly quadType: QuadType,
     private readonly creepNames: CreepName[],
     private quadState: QuadState | null,
@@ -184,6 +199,10 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.manualOperations.action = "flee"
       return "action: flee"
     }
+    if (message === "noflee") {
+      this.manualOperations.action = "noflee"
+      return "action: noflee"
+    }
     if (message === "drain") {
       this.manualOperations.action = "drain"
       return "action: drain"
@@ -219,7 +238,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return "automatic rotation disabled"
     }
     const direction = parseInt(message, 10)
-    if (isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
+    if (message.length <= 1 && isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
       if (this.quadState == null) {
         if (this.creepNames.length > 0) {
           return "quad died"
@@ -231,11 +250,28 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
       return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
     }
+    if (message.startsWith("change target ")) {
+      const rawRooms = message.slice(14)
+      const roomNames = rawRooms.split(",")
+      if (rawRooms.length <= 0 || roomNames.length <= 0) {
+        return "no target room specified"
+      }
+      if (roomNames.some(roomName => !isRoomName(roomName)) === true) {
+        return `invalid room name ${roomNames}`
+      }
+      const targetRoomName = roomNames.pop()
+      if (targetRoomName == null) {
+        return "can't retrieve target room"
+      }
+      this.waypoints = roomNames
+      this.targetRoomName = targetRoomName
+      return `target room: ${this.targetRoomName}, waypoints: ${roomNames} set`
+    }
     if (message.length <= 0) {
       return "Empty message"
     }
     this.manualOperations.targetIds.unshift(message as Id<AnyStructure | AnyCreep>)
-    return "ok"
+    return `target ${message} set`
   }
 
   public runOnTick(): void {
@@ -376,7 +412,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
     }
 
-    if (quad.damagePercent * 4 > 0.15) {
+    if (this.manualOperations.action !== "noflee" && quad.damagePercent * 4 > 0.15) {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
         return
@@ -391,6 +427,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       break
     }
+    case "noflee":
+      break
     case "drain":
       if (this.towerCharged(quad.room) === true) {
         this.drain(quad)
@@ -514,6 +552,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     const targetPriority = ((): StructureConstant[] => {
       return [ // 添字の大きい方が優先
+        STRUCTURE_INVADER_CORE,
+        STRUCTURE_LAB,
         STRUCTURE_POWER_SPAWN,
         STRUCTURE_TERMINAL,
         STRUCTURE_EXTENSION,

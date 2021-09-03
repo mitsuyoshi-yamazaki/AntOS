@@ -16,6 +16,8 @@ import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_
 import { BuildWallTask } from "object_task/creep_task/task/build_wall_task"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
 
+export const WallBuilderTaskMaxWallHits = 5000000
+
 const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
   STRUCTURE_RAMPART,
@@ -79,7 +81,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
 
       if (energyAmount > 80000) {
-        const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : 5000000
+        const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : WallBuilderTaskMaxWallHits
         const walls: (StructureWall | StructureRampart)[] = [
           ...roomResource.walls,
           ...roomResource.ramparts,
