@@ -1213,26 +1213,26 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       case TOP:
         return [
           TOP,
-          TOP_RIGHT,
           RIGHT,
+          TOP_RIGHT,
         ]
       case RIGHT:
         return [
           RIGHT,
-          BOTTOM_RIGHT,
           BOTTOM,
+          BOTTOM_RIGHT,
         ]
       case BOTTOM:
         return [
           BOTTOM,
-          BOTTOM_LEFT,
           LEFT,
+          BOTTOM_LEFT,
         ]
       case LEFT:
         return [
           LEFT,
-          TOP_LEFT,
           TOP,
+          TOP_LEFT,
         ]
       }
     })()
