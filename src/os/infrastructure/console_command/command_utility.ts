@@ -1,7 +1,15 @@
 import { Result } from "utility/result"
 
-export function parseProcessId(args: string[]): Result<number, string> {
-  const rawProcessId = args[0]
+export function parseProcessId(arg: string[] | string | undefined): Result<number, string> {
+  const rawProcessId = ((): string | undefined => {
+    if (arg == null) {
+      return undefined
+    }
+    if (typeof arg === "string") {
+      return arg
+    }
+    return arg[0]
+  })()
   if (rawProcessId == null) {
     return Result.Failed("Missing process ID argument")
   }

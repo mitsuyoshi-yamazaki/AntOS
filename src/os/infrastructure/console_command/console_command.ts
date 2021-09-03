@@ -8,6 +8,7 @@ const consoleCommandTypes = [
   "process",
   "message",
   "memory",
+  "log",
 ] as const
 type ConsoleCommandType = typeof consoleCommandTypes[number]
 
@@ -91,5 +92,11 @@ export const commandDefinitions: ConsoleCommandDefinition[] = [
     description: "Edit memory contents",
     options: [],
     args: "Operation type name, arguments key1=value1 key2=value2 ..."
+  },
+  {
+    command: "log",
+    description: "Edit log filter",
+    options: [],
+    args: "Command (add|remove|clear), Process ID"
   },
 ]
