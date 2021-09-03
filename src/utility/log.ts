@@ -31,6 +31,7 @@ function baseUrl(): string {
     switch (Environment.world) {
     case "persistent world":
     case "simulation":
+    case "botarena":
       return "a"
     case "season 3":
       return "season"
