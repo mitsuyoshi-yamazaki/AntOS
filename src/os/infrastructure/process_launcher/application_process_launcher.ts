@@ -36,8 +36,6 @@ export class ApplicationProcessLauncher {
 
     World.rooms.getAllOwnedRooms().forEach(room => {
       switch (Migration.roomVersion(room.name)) {
-      case ShortVersion.v3:
-        return
       case ShortVersion.v5:
         if (roomsWithV5KeeperProcess.includes(room.name) !== true) {
           this.launchV5RoomKeeperProcess(room.name, processLauncher)

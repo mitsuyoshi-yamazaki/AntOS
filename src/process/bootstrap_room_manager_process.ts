@@ -161,10 +161,6 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return `target_gcl is not a number (${targetGcl})`
     }
 
-    if (Migration.roomVersion(parentRoomName) === ShortVersion.v3) {
-      return `v3 room ${roomLink(parentRoomName)} is not supported`
-    }
-
     const targetRoom = World.rooms.get(targetRoomName)
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
       const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}})
