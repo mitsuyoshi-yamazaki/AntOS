@@ -261,7 +261,15 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_TOWER,
     ]
     const hostileStructure = creep.room.find(FIND_STRUCTURES)
-      .filter(structure => (excluded.includes(structure.structureType) !== true))
+      .filter(structure => {
+        if ((structure as {my?: boolean}).my === true) {
+          return false
+        }
+        if (excluded.includes(structure.structureType) === true) {
+          return false
+        }
+        return true
+      })
       .sort((lhs, rhs) => {
         const priority = targetPriority.indexOf(rhs.structureType) - targetPriority.indexOf(lhs.structureType)
         if (priority !== 0) {
