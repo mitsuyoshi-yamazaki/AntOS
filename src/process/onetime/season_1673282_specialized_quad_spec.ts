@@ -299,11 +299,11 @@ export class QuadSpec {
     case "tier3-3tower-dismantler":
     case "tier3-6tower-dismantler":
     case "tier0-d900":
-    case "tier1-invader-core-lv1":
     case "tier3-6tower-tank":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
+    case "tier1-invader-core-lv1":
       return true
     }
   }
