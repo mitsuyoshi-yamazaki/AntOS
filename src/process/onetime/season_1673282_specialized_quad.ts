@@ -1161,10 +1161,7 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (excludedCreepNames.includes(obj.creep.name)) {
         return false
       }
-      if (obj.creep.my === true) {
-        return true
-      }
-      return false
+      return true
     case "powerCreep":
       return true
 
