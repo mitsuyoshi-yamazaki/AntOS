@@ -6,7 +6,6 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
-import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
@@ -15,9 +14,9 @@ import { coloredResourceType, roomLink } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
-import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
+import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -370,18 +369,21 @@ export class ExecCommand implements ConsoleCommand {
     // if (creep.v5task != null) {
     //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
     // }
-    const apiWrapper = ((): PickupApiWrapper | WithdrawResourceApiWrapper | string => {
+    const apiWrapper = ((): WithdrawApiWrapper | string => {
       const target = Game.getObjectById(targetId)
       if (target == null) {
         return `Target ${targetId} does not exists`
       }
       if (target instanceof Resource) {
-        return PickupApiWrapper.create(target)
+        return WithdrawApiWrapper.create(target)
       }
-      if ((target instanceof Tombstone) && target.store.getUsedCapacity(RESOURCE_POWER) > 0 ) {
-        return WithdrawResourceApiWrapper.create(target, RESOURCE_POWER)
+      if (!(target instanceof Tombstone) && !(target instanceof StructureContainer) && !(target instanceof Ruin)) {
+        return `Unsupported target type ${target}`
       }
-      return `Unsupported target type ${target}`
+      if (target.store.getUsedCapacity() > 0 ) {
+        return WithdrawApiWrapper.create(target)
+      }
+      return `Nothing to pickup ${target}`
     })()
 
     if (typeof apiWrapper === "string") {
