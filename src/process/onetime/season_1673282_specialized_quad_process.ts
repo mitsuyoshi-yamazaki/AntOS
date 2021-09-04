@@ -31,6 +31,11 @@ type ManualOperations = {
   automaticRotationEnabled: boolean | null
 }
 
+type TargetRoomInfo = {
+  readonly roomName: RoomName
+  readonly waypoints: RoomName[]
+}
+
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -41,10 +46,11 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   creepNames: CreepName[]
   quadState: QuadState | null
   manualOperations: ManualOperations
-  // lastTowerAttack:
+  // lastTowerAttack: // TODO:
+  nextTargets: TargetRoomInfo[]
 }
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W57S27 target_room_name=W56S27 waypoints=W56S28 quad_type=invader-core-attacker targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S7 waypoints=W48S7 quad_type=tier1-invader-core-lv1 targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
@@ -61,6 +67,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     private readonly creepNames: CreepName[],
     private quadState: QuadState | null,
     private readonly manualOperations: ManualOperations,
+    private readonly nextTargets: TargetRoomInfo[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -80,11 +87,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       creepNames: this.creepNames,
       quadState: this.quadState,
       manualOperations: this.manualOperations,
+      nextTargets: this.nextTargets,
     }
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations)
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets ?? [])
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
@@ -99,7 +107,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       message: null,
       automaticRotationEnabled: null,
     }
-    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations)
+    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations, [])
   }
 
   public processShortDescription(): string {
@@ -114,6 +122,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
     if (message === "status") {
       const descriptions: string[] = [
+        `targets: ${roomLink(this.targetRoomName)},${this.nextTargets.map(n => roomLink(n.roomName)).join(",")}`,
         (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
         (this.manualOperations.targetIds.length <= 0 ? "no targets" : `targets: ${this.manualOperations.targetIds.join(",")}`),
       ]
@@ -178,10 +187,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
       return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
     }
-    if (message.startsWith("change target ")) {
-      const rawRooms = message.slice(14)
-      const roomNames = rawRooms.split(",")
-      if (rawRooms.length <= 0 || roomNames.length <= 0) {
+    const parseTargetRoomInfo = (rawInfo: string): TargetRoomInfo | string => {
+      const roomNames = rawInfo.split(",")
+      if (rawInfo.length <= 0 || roomNames.length <= 0) {
         return "no target room specified"
       }
       if (roomNames.some(roomName => !isRoomName(roomName)) === true) {
@@ -191,9 +199,33 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (targetRoomName == null) {
         return "can't retrieve target room"
       }
-      this.waypoints = roomNames
-      this.targetRoomName = targetRoomName
-      return `target room: ${this.targetRoomName}, waypoints: ${roomNames} set`
+      return {
+        roomName: targetRoomName,
+        waypoints: roomNames,
+      }
+    }
+    const changeTargetCommand = "change target "
+    if (message.startsWith(changeTargetCommand)) {
+      const rawRooms = message.slice(changeTargetCommand.length)
+      const roomInfo = parseTargetRoomInfo(rawRooms)
+      if (typeof roomInfo === "string") {
+        return roomInfo
+      }
+      this.waypoints = roomInfo.waypoints
+      this.targetRoomName = roomInfo.roomName
+      const nextTargetsInfo = this.nextTargets.length > 0 ? `, ${this.nextTargets.length} following targets cleared` : ""
+      this.nextTargets.splice(0, this.nextTargets.length)
+      return `target room: ${roomInfo.roomName}, waypoints: ${roomInfo.waypoints} set${nextTargetsInfo}`
+    }
+    const addTargetCommand = "add target "
+    if (message.startsWith(addTargetCommand)) {
+      const rawRooms = message.slice(addTargetCommand.length)
+      const roomInfo = parseTargetRoomInfo(rawRooms)
+      if (typeof roomInfo === "string") {
+        return roomInfo
+      }
+      this.nextTargets.push(roomInfo)
+      return `target room: ${roomInfo.roomName}, waypoints: ${roomInfo.waypoints} added`
     }
     if (message.length <= 0) {
       return "Empty message"
@@ -365,7 +397,16 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       break
     }
 
-    const { mainTarget, optionalTargets } = this.attackTargets(quad)
+    const { mainTarget, optionalTargets, mainObjectiveAchieved } = this.attackTargets(quad)
+    if (mainObjectiveAchieved === true) {
+      const nextTargetInfo = this.nextTargets.shift()
+      if (nextTargetInfo != null) {
+        processLog(this, `${coloredText("[Quad]", "warn")} target ${roomLink(this.targetRoomName)} finished, heading to ${roomLink(nextTargetInfo.roomName)}`)
+        this.targetRoomName = nextTargetInfo.roomName
+        this.waypoints = nextTargetInfo.waypoints
+      }
+    }
+
     if (mainTarget == null && optionalTargets.length <= 0) {
       const damagedCreeps = this.damagedMyCreepsInRoom(quad)
       const closestDamagedCreep = quad.pos.findClosestByPath(damagedCreeps)
@@ -459,7 +500,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     quad.moveToRoom(closestNeighbourRoom, [], { quadFormed: true })
   }
 
-  private attackTargets(quad: Quad): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[] }  {
+  private attackTargets(quad: Quad): { mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[], mainObjectiveAchieved: boolean }  {
     const position = quad.pos
     const room = quad.room
 
@@ -483,13 +524,19 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         STRUCTURE_INVADER_CORE,
         STRUCTURE_LAB,
         STRUCTURE_POWER_SPAWN,
-        STRUCTURE_TERMINAL,
         STRUCTURE_EXTENSION,
+        STRUCTURE_TERMINAL,
         STRUCTURE_SPAWN,
         STRUCTURE_TOWER,
         STRUCTURE_INVADER_CORE,
       ]
     })()
+    const mainTargetStructures: StructureConstant[] = [
+      STRUCTURE_TERMINAL,
+      STRUCTURE_SPAWN,
+      STRUCTURE_TOWER,
+      STRUCTURE_INVADER_CORE,
+    ]
     const excludedStructureTypes: StructureConstant[] = [
       STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
       STRUCTURE_CONTROLLER,
@@ -510,6 +557,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     if (mainTarget == null) {
       mainTarget = targetStructures.shift() ?? null
     }
+    const mainObjectiveAchieved = targetStructures.every(structure => mainTargetStructures.includes(structure.structureType) !== true)
 
     optionalTargets.push(...targetStructures)
 
@@ -569,12 +617,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return {
         mainTarget: roads.shift() ?? null,
         optionalTargets: roads,
+        mainObjectiveAchieved,
       }
     }
 
     return {
       mainTarget,
       optionalTargets,
+      mainObjectiveAchieved,
     }
   }
 
