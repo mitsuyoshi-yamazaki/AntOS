@@ -153,13 +153,22 @@ export class CreateConstructionSiteTask extends Task {
         if (shouldPlaceRoads !== true) {
           continue
         }
-        const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
-        if (placedStructure.length > 0) {
-          flag.remove()
-          continue
-        }
-        const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
-        if (constructionSites.length > 0) {
+        const hasStructure = ((): boolean => {
+          const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
+          if (placedStructure.length > 0) {
+            return true
+          }
+          const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
+          if (constructionSites.length > 0) {
+            return true
+          }
+          const hasStructureFlag = flag.pos.findInRange(FIND_FLAGS, 0).some(f => f.color !== COLOR_BROWN)
+          if (hasStructureFlag === true) {
+            return true
+          }
+          return false
+        })()
+        if (hasStructure === true) {
           flag.remove()
           continue
         }
