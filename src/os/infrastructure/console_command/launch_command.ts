@@ -182,14 +182,8 @@ export class LaunchCommand implements ConsoleCommand {
     switch (result.resultType) {
     case "succeeded": {
       const detail = ""
-      if (this.options.get("-l") != null) { // TODO:
-        // const logger = OperatingSystem.os.getLoggerProcess()
-        // if (logger) {
-        //   const loggerResult = logger.didReceiveMessage(`add id ${result.value.processId}`)
-        //   detail = `, ${loggerResult}`
-        // } else {
-        //   detail = ", missing logger process"
-        // }
+      if (this.options.get("-l") != null) {
+        Memory.os.logger.filteringProcessIds.push(result.value.processId)
       }
       return `Launched ${result.value.constructor.name}, PID: ${result.value.processId}${detail}`
     }
