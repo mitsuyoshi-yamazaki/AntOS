@@ -174,7 +174,7 @@ class ResourceTransferer {
 
       const terminalEnergyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
       const storageEnergyAmount = resources.storage.store.getUsedCapacity(RESOURCE_ENERGY)
-      if (terminalEnergyAmount < 50000 || storageEnergyAmount < 50000 || (terminalEnergyAmount + storageEnergyAmount) < 200000) {
+      if (terminalEnergyAmount < 50000 || (terminalEnergyAmount + storageEnergyAmount) < 200000) {
         return
       }
 
