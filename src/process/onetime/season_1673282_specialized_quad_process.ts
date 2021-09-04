@@ -41,84 +41,10 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   creepNames: CreepName[]
   quadState: QuadState | null
   manualOperations: ManualOperations
+  // lastTowerAttack:
 }
 
-// W11S23
-// test-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=test-dismantler targets=")
-// tier0-d450
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d450 targets=")
-// top
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 quad_type=tier0-d450 targets=")
-// tier3-3tower-full-ranged-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier3-3tower-full-ranged-attacker targets=")
-// tier0-swamp-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-swamp-attacker targets=")
-// tier0-d360-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier0-d360-dismantler targets=")
-// top
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W10S22,W11S22 quad_type=tier0-d360-dismantler targets=")
-// test-boosted-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=test-boosted-attacker targets=")
-// tier3-3tower-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W9S24 target_room_name=W11S23 waypoints=W10S24,W11S24 quad_type=tier3-3tower-attacker targets=")
-
-// W1S28
-// tier0-swamp-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-swamp-attacker targets=")
-// tier0-d450-rcl7
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W1S28 waypoints=W6S30,W0S30,W0S28 quad_type=tier0-d450-rcl7 targets=")
-
-// W21S15
-// tier0-d360-dismantler-rcl7
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 quad_type=tier0-d360-dismantler-rcl7 targets=")
-// tier1-d750
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S15 waypoints=W20S23,W20S14 quad_type=tier1-d750 targets=")
-
-// W18S17
-// tier3-4tower-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W18S17 waypoints=W20S23,W20S17 quad_type=tier3-4tower-dismantler targets=")
-
-// W2S29
-// tier3-4tower-1dismantler-rcl7
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W2S29 waypoints=W6S30,W2S30 quad_type=tier3-4tower-1dismantler-rcl7 targets=")
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W6S29 target_room_name=W2S29 waypoints=W6S30,W2S30 quad_type=tier3-4tower-1dismantler-rcl7 targets=")
-
-// W17S19 tier0-2tower-drain-minimum
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W17S19 waypoints=W20S23,W20S20,W17S20 quad_type=tier0-2tower-drain-minimum targets=")
-
-// W21S8 tier0-d360-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier0-d360-dismantler targets=")
-// tier1-d750
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier1-d750 targets=")
-// tier3-2tower-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W21S8 waypoints=W20S23,W20S8 quad_type=tier3-2tower-attacker targets=")
-
-// W25S22 tier3-3tower-dismantler-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier3-3tower-dismantler-attacker targets=")
-// tier0-d450
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d450 targets=")
-// tier0-d360-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W25S20,W25S21 quad_type=tier0-d360-dismantler targets=")
-// tier0-d360-dismantler left
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W21S23 target_room_name=W25S22 waypoints=W20S23,W20S20,W23S20,W23S21,W24S21,W24S22 quad_type=tier0-d360-dismantler targets=")
-
-// W51S7 tier3-3tower-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W54S7 target_room_name=W51S7 waypoints=W51S7 quad_type=tier3-3tower-dismantler targets=")
-
-// W47S7 tier3-6tower-dismantler
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W47S7 waypoints=W48S7 quad_type=tier3-6tower-dismantler targets=")
-
-// W46S9 tier3-6tower-dismantler
-// [Boost Needed]: XZHO2: 1200, XZH2O: 540, XGHO2: 2640, XLHO2: 720, XKHO2: 900
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W49S4 waypoints=W48S5 quad_type=tier3-6tower-dismantler targets=")
-
-// W43S5 invader-core-attacker
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W43S5 waypoints=W47S7 quad_type=invader-core-attacker targets=")
-
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W44S3 waypoints=W48S3,W47S3,W44S4 quad_type=tier3-6tower-tank targets=")
-
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W19N6 target_room_name=W16N3 waypoints=W16N6 quad_type=tier0-d900 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W57S27 target_room_name=W56S27 waypoints=W56S28 quad_type=invader-core-attacker targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
@@ -561,6 +487,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         STRUCTURE_EXTENSION,
         STRUCTURE_SPAWN,
         STRUCTURE_TOWER,
+        STRUCTURE_INVADER_CORE,
       ]
     })()
     const excludedStructureTypes: StructureConstant[] = [

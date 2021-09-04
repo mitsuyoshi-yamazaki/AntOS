@@ -6,8 +6,6 @@ import { World } from "world_info/world_info"
 import { decodeTasksFrom } from "v5_task/task_decoder"
 import { ProcessState } from "./process_state"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { Migration } from "utility/migration"
-import { ShortVersion } from "utility/system_info"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "os/infrastructure/logger"
 import { isRoomName, RoomName } from "utility/room_name"
@@ -20,9 +18,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
   g: number | null
 }
 
-// Game.io("message 544054000 parent_room_name=W9S24 target_room_name=W5S21 waypoints=W10S24,W10S20,W5S20 target_gcl=11")
-// Game.io("message 29614512000 parent_room_name=W51S29 target_room_name=W48S33 waypoints=W50S30,W50S33 target_gcl=42")
-// Game.io("message 34351858000 parent_room_name=W48S6 target_room_name=W41S7 waypoints=W48S7 claim_parent_room_name=W43S7 claim_waypoints=W41S7 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W57S27 target_room_name=W55S27 waypoints=W56S28,W56S27 target_gcl=42")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,

@@ -104,9 +104,10 @@ export class QuadSpec {
     case "test-boosted-attacker":
       return 4
     case "invader-core-attacker":
-    case "tier1-invader-core-lv1":
     case "tier3-6tower-tank":
       return 3
+    case "tier1-invader-core-lv1":
+      return 2
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
