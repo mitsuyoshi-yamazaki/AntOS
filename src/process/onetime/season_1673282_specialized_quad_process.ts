@@ -554,11 +554,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         }
         return lhs.pos.getRangeTo(position) - rhs.pos.getRangeTo(position)
       })
+    const mainObjectiveAchieved = targetStructures.every(structure => mainTargetStructures.includes(structure.structureType) !== true)
+
     if (mainTarget == null) {
       mainTarget = targetStructures.shift() ?? null
     }
-    const mainObjectiveAchieved = targetStructures.every(structure => mainTargetStructures.includes(structure.structureType) !== true)
-
     optionalTargets.push(...targetStructures)
 
     const hostileAttackers: Creep[] = []
