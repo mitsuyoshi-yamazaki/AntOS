@@ -29,7 +29,7 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   lastSpawnTime: Timestamp
 }
 
-// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W48S6 target_room_names=W47S7,W47S6,W47S9,W46S9,W44S7,W43S7,S43S6")
+// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W45S9 target_room_names=W46S9,W45S8,W44S7,W43S6,W42S7,W41S8")
 export class World35440623DowngradeControllerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
@@ -81,9 +81,16 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount < 1 && (Game.time - attackControllerInterval) > this.lastSpawnTime) {
       const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-      if (energyAmount > 70000) {
+      const body = CreepBody.create([], [CLAIM, MOVE], resources.room.energyCapacityAvailable, 20)
+      const minimumEnergy = ((): number => {
+        if (resources.controller.level >= 8) {
+          return 70000
+        }
+        return 40000
+      })()
+      if (energyAmount > minimumEnergy) {
         this.currentTargetRoomNames = [...this.targetRoomNames]
-        this.spawnDowngrader(resources.room.energyCapacityAvailable)
+        this.spawnDowngrader(body)
       }
     }
 
@@ -96,13 +103,13 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     )
   }
 
-  private spawnDowngrader(energyCapacity: number): void {
+  private spawnDowngrader(body: BodyPartConstant[]): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Claimer, CreepRole.Mover],
-      body: CreepBody.create([], [CLAIM, MOVE], energyCapacity, 20),
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
