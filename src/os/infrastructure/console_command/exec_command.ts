@@ -58,6 +58,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showHarvestableMinerals()
     case "room_config":
       return this.configureRoomInfo()
+    case "check_alliance":
+      return this.checkAlliance()
     default:
       return "Invalid script type"
     }
@@ -636,5 +638,29 @@ export class ExecCommand implements ConsoleCommand {
     }
     roomInfo.config.excludedRemotes.push(remoteRoomName)
     return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
+  }
+
+  private checkAlliance(): CommandExecutionResult {
+    const playerName = this.args[1]
+    if (playerName == null || playerName.length <= 0) {
+      return "No playername"
+    }
+    const LOANuser = "LeagueOfAutomatedNations"
+    const LOANsegment = 99
+
+    if ((typeof RawMemory.foreignSegment == "undefined") || (RawMemory.foreignSegment.username !== LOANuser) || (RawMemory.foreignSegment.id !== LOANsegment)) {
+      RawMemory.setActiveForeignSegment(LOANuser, LOANsegment)
+      return "Execute this command in the next tick again to retrieve foreign memory segment"
+    }
+    if (RawMemory.foreignSegment.data == null) {
+      return `Unexpectedly ${LOANuser} segment was null`
+    }
+    const LOANdata = JSON.parse(RawMemory.foreignSegment.data) as { [index: string]: string[] }
+    for (const [alliance, usernames] of Object.entries(LOANdata)) {
+      if (usernames.includes(playerName) === true) {
+        return `${playerName} found in alliance ${alliance}`
+      }
+    }
+    return `${playerName} is not joined any alliances`
   }
 }
