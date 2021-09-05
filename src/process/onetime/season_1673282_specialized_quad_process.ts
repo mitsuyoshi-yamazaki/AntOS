@@ -409,11 +409,18 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
     if (mainTarget == null && optionalTargets.length <= 0) {
       const damagedCreeps = this.damagedMyCreepsInRoom(quad)
-      const closestDamagedCreep = quad.pos.findClosestByPath(damagedCreeps)
-      if (closestDamagedCreep != null) {
-        quad.moveTo(closestDamagedCreep.pos, 1)
+      if (damagedCreeps.length > 0) {
+        const closestDamagedCreep = quad.pos.findClosestByPath(damagedCreeps)
+        if (closestDamagedCreep != null) {
+          quad.moveTo(closestDamagedCreep.pos, 1)
+        }
+        quad.heal(damagedCreeps)
+        return
       }
-      quad.heal(damagedCreeps)
+      const waitingPosition = quad.room.controller?.pos ?? new RoomPosition(25, 25, quad.room.name)
+      if (quad.getMaxRangeTo(waitingPosition) > 5) {
+        quad.moveTo(waitingPosition, 4)
+      }
       return
     }
 
