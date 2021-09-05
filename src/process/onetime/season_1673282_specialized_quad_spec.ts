@@ -10,6 +10,7 @@ export const quadTypes = [
   "test-dismantler",
   "test-attacker",
   "test-boosted-attacker",
+  "scout",
   "invader-core-attacker",
   "tier0-d100-attacker",
   "tier0-2tower-drain-minimum",
@@ -56,6 +57,7 @@ export class QuadSpec {
     switch (this.quadType) {
     case "test-dismantler":
     case "test-attacker":
+    case "scout":
       return [...noBoosts]
     case "test-boosted-attacker":
       return [...testAttackBoosts]
@@ -108,6 +110,8 @@ export class QuadSpec {
       return 3
     case "tier1-invader-core-lv1":
       return 2
+    case "scout":
+      return 1
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
@@ -153,6 +157,11 @@ export class QuadSpec {
         return testAttackerSpec
       } else {
         return testHealerSpec
+      }
+    case "scout":
+      return {
+        roles: [CreepRole.Scout, CreepRole.Mover],
+        body: [MOVE],
       }
     case "invader-core-attacker":
       if (creepInsufficiency >= 2) {
@@ -278,6 +287,7 @@ export class QuadSpec {
     case "test-dismantler":
     case "test-attacker":
     case "test-boosted-attacker":
+    case "scout":
     case "invader-core-attacker":
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":

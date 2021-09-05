@@ -50,7 +50,7 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   nextTargets: TargetRoomInfo[]
 }
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S7 waypoints=W48S7 quad_type=tier1-invader-core-lv1 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W45S31 target_room_name=W13N6 waypoints=W45S35,W15N5 quad_type=scout targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
 
