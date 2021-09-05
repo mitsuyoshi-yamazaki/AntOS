@@ -3,6 +3,8 @@ import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { coloredText } from "utility/log"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
@@ -61,29 +63,17 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
-    // const keeperExists = this.children.some(task => {
-    //   if (!(task instanceof RemoteRoomKeeperTask)) {
-    //     return false
-    //   }
-    //   if (task.targetRoomName !== "W4S24") {
-    //     return false
-    //   }
-    //   return true
-    // })
-    // if (keeperExists !== true && this.roomName === "W3S24") {
-    //   this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, "W4S24"))
-    // }
     const keeper = this.children.find(task => {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
-      if (task.targetRoomName !== "W27S9") {
-        return false
+      if (task.targetRoomName === "W42S2") {
+        return true
       }
-      return true
+      return false
     })
     if (keeper != null) {
-      console.log(`${this.roomName} removed ${keeper.taskIdentifier}`)
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remove remote room keeper task`)
       this.removeChildTask(keeper)
     }
 

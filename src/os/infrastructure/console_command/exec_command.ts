@@ -17,6 +17,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
+import { OwnedRoomInfo } from "room_resource/room_info"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -55,6 +56,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showRoomPlan()
     case "mineral":
       return this.showHarvestableMinerals()
+    case "room_config":
+      return this.configureRoomInfo()
     default:
       return "Invalid script type"
     }
@@ -588,5 +591,50 @@ export class ExecCommand implements ConsoleCommand {
     result.push("Not harvestable:")
     result.push(harvestableMinerals.notHarvestable.map(r => coloredResourceType(r)).join(","))
     return `\n${result.join("\n")}`
+  }
+
+  private configureRoomInfo(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const roomInfo = Memory.v6RoomInfo[roomName]
+    if (roomInfo == null) {
+      return `No roomInfo object in memory ${roomLink(roomName)}`
+    }
+    if (roomInfo.roomType !== "owned") {
+      return `Room ${roomLink(roomName)} is not mine`
+    }
+
+    const setting = args.get("setting")
+    switch (setting) {
+    case "excludedRemotes":
+      return this.addExcludedRemoteRoom(roomName, roomInfo, args)
+    default:
+      return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
+    }
+  }
+
+  private addExcludedRemoteRoom(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const remoteRoomName = args.get("remote_room_name")
+    if (remoteRoomName == null) {
+      return this.missingArgumentError("remote_room_name")
+    }
+    if (!isRoomName(remoteRoomName)) {
+      return `Invalid remote_room_name ${remoteRoomName}`
+    }
+    if (roomInfo.config == null) {
+      roomInfo.config = {}
+    }
+    if (roomInfo.config.excludedRemotes == null) {
+      roomInfo.config.excludedRemotes = []
+    }
+    if (roomInfo.config.excludedRemotes.includes(remoteRoomName) === true) {
+      return `${roomLink(remoteRoomName)} is already excluded`
+    }
+    roomInfo.config.excludedRemotes.push(remoteRoomName)
+    return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
   }
 }
