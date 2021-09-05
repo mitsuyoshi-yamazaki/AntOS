@@ -29,11 +29,15 @@ export interface UpgradePowerCreepProcessState extends ProcessState {
  *     - add update reservation to the end of the stack
  */
 export class UpgradePowerCreepProcess implements Process, Procedural, MessageObserver {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly reservedUpdates: UpdateInfo[],
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): UpgradePowerCreepProcessState {
     return {

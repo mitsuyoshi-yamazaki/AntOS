@@ -8,11 +8,15 @@ export interface TestProcessState extends ProcessState {
 }
 
 export class TestProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly testMemory: string | null,
-  ) {}
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): TestProcessState {
     return {

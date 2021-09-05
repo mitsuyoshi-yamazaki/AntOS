@@ -81,6 +81,10 @@ export interface Season1022818Attack2TowerRoomProcessState extends ProcessState 
 
 // for RCL7
 export class Season1022818Attack2TowerRoomProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

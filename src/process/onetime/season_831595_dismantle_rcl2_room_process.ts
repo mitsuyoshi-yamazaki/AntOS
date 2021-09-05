@@ -33,6 +33,10 @@ export interface Season831595DismantleRcl2RoomProcessState extends ProcessState 
 // Game.io("launch -l Season831595DismantleRcl2RoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S23,W2S23")
 // Game.io("launch -l Season831595DismantleRcl2RoomProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25")
 export class Season831595DismantleRcl2RoomProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

@@ -132,6 +132,10 @@ export interface Season1536602QuadAttackerProcessState extends ProcessState {
 // tire0-300
 // Game.io("launch -l Season1536602QuadAttackerProcess room_name=W14S28 target_room_name=W13S27 waypoints=W14S30,W12S30,W12S28,W13S28 creep_type=tire0-300 targets=61001ce3cb384f6a69de7b20,61001d1f5587d3796206f939")
 export class Season1536602QuadAttackerProcess implements Process, Procedural, MessageObserver {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

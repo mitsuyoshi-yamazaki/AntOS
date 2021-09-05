@@ -23,6 +23,8 @@ export interface V6RoomKeeperProcessState extends ProcessState {
 }
 
 export class V6RoomKeeperProcess implements Process, Procedural, MessageObserver {
+  public readonly taskIdentifier: string
+
   public get roomName(): RoomName {
     return this.task.roomName
   }
@@ -32,7 +34,9 @@ export class V6RoomKeeperProcess implements Process, Procedural, MessageObserver
     public readonly processId: ProcessId,
     private readonly task: RoomKeeperTask,
     private readonly logFilter: LogFilter,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): V6RoomKeeperProcessState {
     return {

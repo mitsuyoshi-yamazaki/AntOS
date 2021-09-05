@@ -43,6 +43,10 @@ export interface Season1655635SKMineralHarvestProcessState extends ProcessState 
 // X
 // Game.io("launch -l Season1655635SKMineralHarvestProcess room_name=W6S27 target_room_name=W6S26 waypoints=W6S26")
 export class Season1655635SKMineralHarvestProcess implements Process, Procedural, MessageObserver {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

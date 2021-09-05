@@ -45,6 +45,10 @@ export interface Season1249418SendHugeCreepProcessState extends ProcessState {
 
 // Game.io("launch -l Season1249418SendHugeCreepProcess room_name=W14S28 target_room_name=W6S29 waypoints=W14S30,W6S30")
 export class Season1249418SendHugeCreepProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

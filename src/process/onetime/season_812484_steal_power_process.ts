@@ -53,6 +53,10 @@ export interface Season812484StealPowerProcessState extends ProcessState {
 }
 
 export class Season812484StealPowerProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   private readonly identifier: string
   private readonly codename: string
 

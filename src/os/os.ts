@@ -14,18 +14,22 @@ import { decodeProcessFrom } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
 import { LoggerMemory } from "./infrastructure/logger"
+import { PrimitiveLogger } from "./infrastructure/primitive_logger"
 
 interface ProcessMemory {
   /** running */
-  r: boolean
+  readonly r: boolean
 
   /** process state */
-  s: ProcessState
+  readonly s: ProcessState
+
+  readonly childProcessIds: ProcessId[]
 }
 
 interface InternalProcessInfo {
   running: boolean
-  process: Process
+  readonly process: Process
+  readonly childProcessIds: ProcessId[]
 }
 
 export interface OSMemory {
@@ -48,9 +52,92 @@ function updatePrototypes(): void {
   initPowerCreepPrototype()
   initStructureSpawnPrototype()
   initRoomPrototype()
+
+  // ErrorMapper.wrapLoop(() => {
+  //   initRoomPositionPrototype()
+  // })()
+  // ErrorMapper.wrapLoop(() => {
+  //   initRoomObjectPrototype()
+  // })()
+  // ErrorMapper.wrapLoop(() => {
+  //   initCreepPrototype()
+  // })()
+  // ErrorMapper.wrapLoop(() => {
+  //   initPowerCreepPrototype()
+  // })()
+  // ErrorMapper.wrapLoop(() => {
+  //   initStructureSpawnPrototype()
+  // })()
+  // ErrorMapper.wrapLoop(() => {
+  //   initRoomPrototype()
+  // })()
 }
 
-const processLauncher: ProcessLauncher = (launcher: (processId: ProcessId) => Process) => OperatingSystem.os.addProcess(launcher)
+const processLauncher: ProcessLauncher = (parentProcessId: ProcessId | null, launcher: (processId: ProcessId) => Process) => OperatingSystem.os.addProcess(parentProcessId, launcher)
+
+
+class ProcessStore {
+  private readonly processes = new Map<ProcessId, InternalProcessInfo>()
+  private readonly parentProcessIds = new Map<ProcessId, ProcessId>()
+
+  public get(processId: ProcessId): InternalProcessInfo | null {
+    return this.processes.get(processId) ?? null
+  }
+
+  public add(process: Process, parentProcessId: ProcessId | null): void {
+    if (parentProcessId != null) {
+      const parentProcessInfo = this.processes.get(parentProcessId)
+      if (parentProcessInfo == null) {
+        PrimitiveLogger.programError(`Processes.addProcess() unknown parent process ID ${parentProcessId} for process ${process.processId} ${process.taskIdentifier}`)
+      } else {
+        parentProcessInfo.childProcessIds.push(process.processId)
+      }
+    }
+    const processInfo: InternalProcessInfo = {
+      process,
+      running: true,
+      childProcessIds: [],
+    }
+    this.processes.set(process.processId, processInfo)
+  }
+
+  public remove(processId: ProcessId): void {
+    const processInfo = this.get(processId)
+    if (processInfo == null) {
+      PrimitiveLogger.programError(`Trying to remove non existent process ${processId}`)
+      return
+    }
+    processInfo.childProcessIds.forEach(childProcessId => {
+      this.parentProcessIds.delete(childProcessId)
+    })
+    this.processes.delete(processId)
+  }
+
+  public replace(processes: InternalProcessInfo[]): void {
+    this.clear()
+
+    processes.forEach(processInfo => {
+      const processId = processInfo.process.processId
+      this.processes.set(processId, processInfo)
+
+      processInfo.childProcessIds.forEach(childProcessId => {
+        if (this.parentProcessIds.has(childProcessId) === true) {
+          PrimitiveLogger.programError(`ProcessStore.replace() found more than 1 parent for ${childProcessId} (${processId}, ${this.parentProcessIds.get(childProcessId)})`)
+        }
+        this.parentProcessIds.set(childProcessId, processId)
+      })
+    })
+  }
+
+  public clear(): void {
+    this.processes.clear()
+    this.parentProcessIds.clear()
+  }
+
+  public list(): InternalProcessInfo[] {
+    return Array.from(this.processes.values())
+  }
+}
 
 /**
  * - https://zenn.dev/mitsuyoshi/scraps/3917e7502ef385
@@ -66,7 +153,7 @@ export class OperatingSystem {
   private didSetup = false
   private processIndex = 0
   private readonly rootProcess = new RootProcess()
-  private readonly processes = new Map<ProcessId, InternalProcessInfo>()
+  private readonly processStore = new ProcessStore()
   private readonly processIdsToKill: ProcessId[] = []
 
   private constructor() {
@@ -74,24 +161,20 @@ export class OperatingSystem {
   }
 
   // ---- Process ---- //
-  public addProcess<T extends Process>(maker: (processId: ProcessId) => T): T {
+  public addProcess<T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
-    const processInfo: InternalProcessInfo = {
-      process,
-      running: true,
-    }
-    this.processes.set(processId, processInfo)
-    console.log(`Launch process ${process.constructor.name}, ID: ${processId}`)
+    this.processStore.add(process, parentProcessId)
+    PrimitiveLogger.log(`Launch process ${process.taskIdentifier}, ID: ${processId}`)
     return process
   }
 
   public processOf(processId: ProcessId): Process | null {
-    return this.processes.get(processId)?.process ?? null
+    return this.processStore.get(processId)?.process ?? null
   }
 
   public suspendProcess(processId: ProcessId): Result<string, string> {
-    const processInfo = this.processes.get(processId)
+    const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
       return Result.Failed(`No process with ID ${processId}`)
     }
@@ -104,7 +187,7 @@ export class OperatingSystem {
   }
 
   public resumeProcess(processId: ProcessId): Result<string, string> {
-    const processInfo = this.processes.get(processId)
+    const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
       return Result.Failed(`No process with ID ${processId}`)
     }
@@ -132,13 +215,11 @@ export class OperatingSystem {
 
   /** @deprecated */
   public respawned(): void {  // TODO: reboot(quitAll?: boolean) のようなメソッドに変更する
-    [...this.processes.entries()].forEach(([processId,]) => {
-      this.processes.delete(processId)
-    })
+    this.processStore.clear()
   }
 
   public processInfoOf(processId: ProcessId): ProcessInfo | null {
-    const processInfo = this.processes.get(processId)
+    const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
       return null
     }
@@ -151,7 +232,7 @@ export class OperatingSystem {
   }
 
   public listAllProcesses(): ProcessInfo[] {
-    return Array.from(this.processes.values()).map(processInfo => {
+    return this.processStore.list().map(processInfo => {
       const info: ProcessInfo = {
         processId: processInfo.process.processId,
         type: processInfo.process.constructor.name,
@@ -237,29 +318,31 @@ export class OperatingSystem {
   }
 
   private restoreProcesses(): void {
-    this.processes.clear()
-    Memory.os.p.forEach(processStateMemory => {
+    const processInfo: InternalProcessInfo[] = Memory.os.p.flatMap(processStateMemory => {
       const process = decodeProcessFrom(processStateMemory.s)
       if (process == null) {
         this.sendOSError(`Unrecognized stateful process type ${processStateMemory.s.t}, ${processStateMemory.s.i}`)
-        return
+        return []
       }
-      const processInfo: InternalProcessInfo = {
+      return {
         process,
-        running: processStateMemory.r === true
+        running: processStateMemory.r === true,
+        childProcessIds: processStateMemory.childProcessIds ?? [],
       }
-      this.processes.set(process.processId, processInfo)
     })
+
+    this.processStore.replace(processInfo)
   }
 
   private storeProcesses(): void {
     const processesMemory: ProcessMemory[] = []
-    Array.from(this.processes.values()).forEach(processInfo => {
+    this.processStore.list().forEach(processInfo => {
       const process = processInfo.process
       ErrorMapper.wrapLoop(() => {
         processesMemory.push({
           r: processInfo.running,
           s: process.encode(),
+          childProcessIds: processInfo.childProcessIds,
         })
       }, "OperatingSystem.storeProcesses()")()
     })
@@ -268,7 +351,7 @@ export class OperatingSystem {
 
   // ---- Execution ---- //
   private runProceduralProcesses(): void {
-    Array.from(this.processes.values()).forEach(processInfo => {
+    this.processStore.list().forEach(processInfo => {
       if (processInfo.running !== true) {
         return
       }
@@ -289,24 +372,40 @@ export class OperatingSystem {
   }
 
   private sendOSError(message: string): void {
-    console.log(`[OS Error] ${message}`)
+    PrimitiveLogger.fatal(`[OS Error] ${message}`)
   }
 
   // ---- Kill ---- //
   private killProcesses(): void {
-    this.processIdsToKill.forEach(processId => {
-      const processInfo = this.processes.get(processId)
+    const messages: string[] = []
+
+    const spaces = "                                                  " // 50 spaces
+    const getIndent = (indent: number): string => spaces.slice(0, indent * 2)
+    const kill = (processId: ProcessId, indent: number): void => {
+      const processInfo = this.processStore.get(processId)
       if (processInfo == null) {
-        this.sendOSError(`[Program bug] Trying to kill non existent process ${processId}`)
+        this.sendOSError(`Trying to kill non existent process ${processId}`)
         return
       }
-      console.log(`Kill process ${processInfo.process.constructor.name}, ID: ${processId}`) // TODO: 呼び出し元で表示し、消す
-      this.processes.delete(processId)
+
+      messages.push(`${getIndent(indent)}- ${processId}: ${processInfo.process.taskIdentifier}`)
+      this.processStore.remove(processId)
+
       const loggerIndex = Memory.os.logger.filteringProcessIds.indexOf(processId)
       if (loggerIndex >= 0) {
         Memory.os.logger.filteringProcessIds.splice(loggerIndex, 1)
       }
+
+      processInfo.childProcessIds.forEach(childProcessId => kill(childProcessId, indent + 1))
+    }
+
+    this.processIdsToKill.forEach(processId => {
+      kill(processId, 0)
     })
     this.processIdsToKill.splice(0, this.processIdsToKill.length)
+
+    if (messages.length > 0) {
+      PrimitiveLogger.log(`Kill process\n${messages.join("\n")}`)
+    }
   }
 }

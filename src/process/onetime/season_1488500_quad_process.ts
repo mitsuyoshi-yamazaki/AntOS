@@ -294,6 +294,10 @@ export interface Season1488500QuadProcessState extends ProcessState {
 
 // Game.io("launch -l Season1488500QuadProcess room_name=W21S23 target_room_name=W22S22 waypoints=W22S23")
 export class Season1488500QuadProcess implements Process, Procedural, MessageObserver {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

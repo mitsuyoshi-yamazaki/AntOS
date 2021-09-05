@@ -17,13 +17,17 @@ export interface ObserveRoomProcessState extends ProcessState {
 
 // Game.io("launch -l ObserveRoomProcess room_name=W48S6 target_room_name=W47S6 duration=100")
 export class ObserveRoomProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly until: Timestamp,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): ObserveRoomProcessState {
     return {

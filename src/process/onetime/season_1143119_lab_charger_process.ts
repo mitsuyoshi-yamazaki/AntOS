@@ -42,6 +42,10 @@ export interface Season1143119LabChargerProcessState extends ProcessState {
 // collect
 // Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 labs=61072e7d8631b61addd464c2:XZHO2,6107707f22b7dd084bded966:XZH2O,6107c31e36a5b7de9159d0de:XLHO2")
 export class Season1143119LabChargerProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

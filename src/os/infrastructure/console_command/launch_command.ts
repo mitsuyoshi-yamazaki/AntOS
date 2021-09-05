@@ -225,7 +225,7 @@ export class LaunchCommand implements ConsoleCommand {
 
   // ---- Launcher ---- //
   private launchTestProcess(): LaunchCommandResult {
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return TestProcess.create(processId)
     })
     return Result.Succeeded(process)
@@ -249,14 +249,14 @@ export class LaunchCommand implements ConsoleCommand {
     const waypoints = rawWaypoints.split(",")
 
     const task = RouteCheckTask.create(roomName, targetRoomName, waypoints)
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return TaskProcess.create(processId, task)
     })
     return Result.Succeeded(process)
   }
 
   private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season487837AttackInvaderCoreProcess.create(processId)
     })
     return Result.Succeeded(process)
@@ -267,7 +267,7 @@ export class LaunchCommand implements ConsoleCommand {
     const targetRoomName = "W21S14"
     const waypoints: RoomName[] = ["W24S30", "W20S30", "W20S14"]
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season553093AttackRcl3RoomProcess.create(processId, parentRoomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -298,7 +298,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints, numberOfCreeps)
     })
     return Result.Succeeded(process)
@@ -316,7 +316,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`No power spawn in ${roomLink(roomName)}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn.id)
     })
     return Result.Succeeded(process)
@@ -334,7 +334,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("power_creep_name")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season634603PowerCreepProcess.create(processId, roomName, powerCreepName)
     })
     return Result.Succeeded(process)
@@ -381,7 +381,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`${coloredText("[Dry Run]", "warn")} Season701205PowerHarvesterSwampRunnerProcess ${roomLink(targetRoomName)}, ${neighbourCount} attacker points`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount)
     })
     return Result.Succeeded(process)
@@ -404,7 +404,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season812484StealPowerProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -429,7 +429,7 @@ export class LaunchCommand implements ConsoleCommand {
 
     const waitingPosition = new RoomPosition(10, 48, roomName)
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season845677Attack1TowerProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition)
     })
     return Result.Succeeded(process)
@@ -445,7 +445,7 @@ export class LaunchCommand implements ConsoleCommand {
 
     const task = RoomKeeperTask.create(roomName)
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return V6RoomKeeperProcess.create(processId, task)
     })
     return Result.Succeeded(process)
@@ -473,7 +473,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("power_creep_name")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season989041MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreepName)
     })
     return Result.Succeeded(process)
@@ -504,7 +504,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Unsupported attack_type ${attackType}, available: ${["dismantle", "downgrade"]}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1022818Attack2TowerRoomProcess.create(processId, roomName, targetRoomName, waypoints, attackType as Season1022818Attack2TowerRoomProcessAttackType)
     })
     return Result.Succeeded(process)
@@ -515,7 +515,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Environment ${Environment.world} does not support pixel`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return BuyPixelProcess.create(processId)
     })
     return Result.Succeeded(process)
@@ -543,7 +543,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1105755HarvestMineralProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -582,7 +582,7 @@ export class LaunchCommand implements ConsoleCommand {
       })
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1143119LabChargerProcess.create(processId, roomName, labStates)
     })
     return Result.Succeeded(process)
@@ -618,7 +618,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Not supported tower_count ${parsedTowerCount}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2 | 3))
     })
     return Result.Succeeded(process)
@@ -636,7 +636,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("target_room_name")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1200082SendMineralProcess.create(processId, roomName, targetRoomName)
     })
     return Result.Succeeded(process)
@@ -663,7 +663,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("target_id")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>)
     })
     return Result.Succeeded(process)
@@ -686,7 +686,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1249418SendHugeCreepProcess.create(processId, roomName, targetRoomName, waypoints, "ranged attacker")
     })
     return Result.Succeeded(process)
@@ -724,7 +724,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Invalid creep type ${creepType}, options: ${season1262745GuardRemoteRoomProcessCreepType}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, numberOfCreeps)
     })
     return Result.Succeeded(process)
@@ -755,7 +755,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Invalid attacker type: ${attackerType}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker" | "large_ranged_attacker"))
     })
     return Result.Succeeded(process)
@@ -778,7 +778,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season831595DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -801,7 +801,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1488500QuadProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -840,7 +840,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints, finishWorking, numberOfCreeps)
     })
     return Result.Succeeded(process)
@@ -875,7 +875,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Unrecognizeable creep type ${creepType}, creep types: ${season1536602QuadAttackerProcessCreepType}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1536602QuadAttackerProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], creepType)
     })
     return Result.Succeeded(process)
@@ -898,7 +898,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1606052SKHarvesterProcess.create(processId, roomName, targetRoomName, waypoints, false)
     })
     return Result.Succeeded(process)
@@ -940,14 +940,14 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Invalid withdraw resource type ${withdrawResourceType}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1627101FetchResourceProcess.create(processId, roomName, targetRoomName, waypoints, transferResourceType, withdrawResourceType)
     })
     return Result.Succeeded(process)
   }
 
   private launchUpgradePowerCreepProcess(): LaunchCommandResult {
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return UpgradePowerCreepProcess.create(processId)
     })
     return Result.Succeeded(process)
@@ -970,7 +970,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const waypoints = rawWaypoints.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1655635SKMineralHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
@@ -1005,7 +1005,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`Unrecognizeable quad type ${quadType}, quad types: ${quadTypes}`)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1673282SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
     })
     return Result.Succeeded(process)
@@ -1033,7 +1033,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     try {
       const position = new RoomPosition(x, y, roomName)
-      const process = OperatingSystem.os.addProcess(processId => {
+      const process = OperatingSystem.os.addProcess(null, processId => {
         return Season1838855DistributorProcess.create(processId, roomName, position)
       })
       return Result.Succeeded(process)
@@ -1063,7 +1063,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("target_id")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true)
     })
     return Result.Succeeded(process)
@@ -1077,14 +1077,14 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("room_name")
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2055924SendResourcesProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }
 
   private launchInterRoomResourceManagementProcess(): LaunchCommandResult {
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return InterRoomResourceManagementProcess.create(processId)
     })
     return Result.Succeeded(process)
@@ -1103,7 +1103,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const targetRoomNames = rawTargetRoomNames.split(",")
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return World35440623DowngradeControllerProcess.create(processId, roomName, targetRoomNames)
     })
     return Result.Succeeded(process)
@@ -1125,7 +1125,7 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(duration)
     }
 
-    const process = OperatingSystem.os.addProcess(processId => {
+    const process = OperatingSystem.os.addProcess(null, processId => {
       return ObserveRoomProcess.create(processId, roomName, targetRoomName, duration)
     })
     return Result.Succeeded(process)

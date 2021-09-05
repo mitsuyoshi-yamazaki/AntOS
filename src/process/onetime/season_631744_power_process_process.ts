@@ -28,6 +28,10 @@ export interface Season631744PowerProcessProcessState extends ProcessState {
 }
 
 export class Season631744PowerProcessProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   private readonly identifier: string
   private readonly codename: string
 

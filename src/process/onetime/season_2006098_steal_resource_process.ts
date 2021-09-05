@@ -50,6 +50,10 @@ export interface Season2006098StealResourceProcessState extends ProcessState {
 // Game.io("launch -l Season2006098StealResourceProcess room_name=W17S11 target_room_name=W21S8 waypoints=W17S10,W20S10,W20S8 target_id=6114b54b0bc98d0ba852e751")
 // Game.io("launch -l Season2006098StealResourceProcess room_name=W48S33 target_room_name=W48S32 waypoints=W48S32 target_id=61031cf1e37c036c62965c79")
 export class Season2006098StealResourceProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

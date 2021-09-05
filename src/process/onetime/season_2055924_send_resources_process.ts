@@ -18,6 +18,10 @@ export interface Season2055924SendResourcesProcessState extends ProcessState {
 
 // Game.io("launch -l Season2055924SendResourcesProcess room_name=W6S27")
 export class Season2055924SendResourcesProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

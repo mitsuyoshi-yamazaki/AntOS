@@ -14,6 +14,8 @@ export interface RoomKeeperProcessState extends ProcessState {
 }
 
 export class RoomKeeperProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   public get roomName(): RoomName {
     return this.task.roomName
   }
@@ -22,7 +24,9 @@ export class RoomKeeperProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly task: RoomKeeperTask,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): RoomKeeperProcessState {
     return {

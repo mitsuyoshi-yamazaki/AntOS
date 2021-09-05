@@ -118,6 +118,10 @@ export interface Season1143119BoostedAttackProcessState extends ProcessState {
 // Game.io("launch -l Season1143119BoostedAttackProcess room_name=W3S24 target_room_name=W2S24 waypoints=W3S25,W2S25, tower_count=1")
 // Game.io("launch -l Season1143119BoostedAttackProcess room_name=W3S24 target_room_name=W6S27 waypoints=W3S25,W6S25,W6S26 tower_count=0")
 export class Season1143119BoostedAttackProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

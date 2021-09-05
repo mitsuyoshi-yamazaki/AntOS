@@ -31,6 +31,10 @@ export interface Season989041MovePowerCreepProcessState extends ProcessState {
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W9S24 to_room_name=W15S8 waypoints=W10S24,W10S10,W15S10 power_creep_name=power_creep_0000")
 // Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W6S29 to_room_name=W17S11 waypoints=W6S30,W10S30,W10S10,W17S10 power_creep_name=power_creep_0002")
 export class Season989041MovePowerCreepProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   private readonly identifier: string
 
   private constructor(
@@ -148,7 +152,7 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
   private launchPowerCreepProcess(): void {
     processLog(this, `${coloredText("[Arrived]", "info")} Power creep ${this.powerCreepName} arrived in ${roomLink(this.toRoomName)}`)
 
-    OperatingSystem.os.addProcess(processId => Season634603PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName))
+    OperatingSystem.os.addProcess(null, (processId => Season634603PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName)))
   }
 
   private fleeFrom(position: RoomPosition, creep: AnyCreep, range: number): void {

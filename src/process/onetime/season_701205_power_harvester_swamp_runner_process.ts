@@ -114,6 +114,9 @@ export class Season701205PowerHarvesterSwampRunnerProcess implements Process, Pr
     return this.pickupFinished
   }
 
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
   private readonly identifier: string
   private readonly codename: string
   private readonly estimatedTicksToRoom: number

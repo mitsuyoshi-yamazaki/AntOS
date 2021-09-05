@@ -401,7 +401,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
-    OperatingSystem.os.addProcess(processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints, powerBankInfo.nearbySquareCount))
+    OperatingSystem.os.addProcess(null, (processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints, powerBankInfo.nearbySquareCount)))
   }
 
   // ---- Request Handling ---- //

@@ -28,6 +28,10 @@ Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
 Game.io("launch -l Season634603PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
 export class Season634603PowerCreepProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   private readonly identifier: string
 
   private constructor(

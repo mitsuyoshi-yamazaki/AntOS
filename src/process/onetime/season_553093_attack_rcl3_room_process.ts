@@ -36,6 +36,9 @@ export interface Season553093AttackRcl3RoomProcessState extends ProcessState {
 }
 
 export class Season553093AttackRcl3RoomProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
   public readonly identifier: string
   private readonly codename: string
 

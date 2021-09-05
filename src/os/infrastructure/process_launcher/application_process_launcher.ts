@@ -56,26 +56,26 @@ export class ApplicationProcessLauncher {
 
   private launchV5RoomKeeperProcess(roomName: RoomName, processLauncher: ProcessLauncher): void {
     const roomKeeperTask = V5RoomKeeperTask.create(roomName)
-    processLauncher(processId => RoomKeeperProcess.create(processId, roomKeeperTask))
+    processLauncher(null, processId => RoomKeeperProcess.create(processId, roomKeeperTask))
   }
 
   private launchV6RoomKeeperProcess(roomName: RoomName, processLauncher: ProcessLauncher): void {
     PrimitiveLogger.log(`${coloredText("[Launched]", "info")} V6RoomKeeperProcess ${roomLink(roomName)}`)
     const roomKeeperTask = RoomKeeperTask.create(roomName)
-    processLauncher(processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
+    processLauncher(null, processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
   }
 
   private checkBoostrapRoomManagerProcess(processList: Process[], processLauncher: ProcessLauncher): void {
     if (processList.some(process => process instanceof BootstrapRoomManagerProcess) === true) {
       return
     }
-    processLauncher(processId => BootstrapRoomManagerProcess.create(processId))
+    processLauncher(null, processId => BootstrapRoomManagerProcess.create(processId))
   }
 
   private checkAttackInvaderCoreProcess(processList: Process[], processLauncher: ProcessLauncher): void {
     if (processList.some(process => process instanceof Season487837AttackInvaderCoreProcess) === true) {
       return
     }
-    processLauncher(processId => Season487837AttackInvaderCoreProcess.create(processId))
+    processLauncher(null, processId => Season487837AttackInvaderCoreProcess.create(processId))
   }
 }

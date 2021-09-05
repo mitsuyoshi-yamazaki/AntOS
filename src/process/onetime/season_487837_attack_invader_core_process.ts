@@ -24,6 +24,8 @@ export interface Season487837AttackInvaderCoreProcessState extends ProcessState 
 // controller.reservation.username = Invader
 // invaderCore.level = 0
 export class Season487837AttackInvaderCoreProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private readonly codename: string
   private readonly roles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
   private readonly body: BodyPartConstant[] = [ // costs 1040 >= RCL4
@@ -37,6 +39,7 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
     public readonly launchTime: number,
     public readonly processId: ProcessId,
   ) {
+    this.taskIdentifier = this.constructor.name
     this.codename = generateCodename(this.constructor.name, this.launchTime)
   }
 

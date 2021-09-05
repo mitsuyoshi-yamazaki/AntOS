@@ -12,10 +12,14 @@ export interface BuyPixelProcessState extends ProcessState {
 
 // Game.io("launch -l BuyPixelProcess")
 export class BuyPixelProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): BuyPixelProcessState {
     return {

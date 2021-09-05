@@ -18,11 +18,15 @@ export interface TaskProcessState extends ProcessState {
 }
 
 export class TaskProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly task: TaskProcessTask,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): TaskProcessState {
     return {

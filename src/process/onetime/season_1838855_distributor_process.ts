@@ -38,6 +38,10 @@ export interface Season1838855DistributorProcessState extends ProcessState {
 
 // Game.io("launch -l Season1838855DistributorProcess room_name=W51S29 pos=24,21")
 export class Season1838855DistributorProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

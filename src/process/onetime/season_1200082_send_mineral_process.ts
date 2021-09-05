@@ -16,6 +16,10 @@ export interface Season1200082SendMineralProcessState extends ProcessState {
 }
 
 export class Season1200082SendMineralProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
 
   private constructor(

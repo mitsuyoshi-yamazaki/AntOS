@@ -33,6 +33,10 @@ export interface Season1349943DisturbPowerHarvestingProcessState extends Process
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W15S8 waypoints=W15S10 patrol_rooms=W24S10,W16S10 attacker_type=large_ranged_attacker")
 // Game.io("launch -l Season1349943DisturbPowerHarvestingProcess room_name=W26S9 waypoints=W26S10 patrol_rooms=W22S10,W30S10 attacker_type=large_ranged_attacker")
 export class Season1349943DisturbPowerHarvestingProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

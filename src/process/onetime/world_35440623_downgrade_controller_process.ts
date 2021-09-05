@@ -31,6 +31,10 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
 
 // Game.io("launch -l World35440623DowngradeControllerProcess room_name=W45S9 target_room_names=W46S9,W45S8,W44S7,W43S6,W42S7,W41S8")
 export class World35440623DowngradeControllerProcess implements Process, Procedural {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
   private readonly codename: string
 

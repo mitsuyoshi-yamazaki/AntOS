@@ -52,6 +52,10 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
 
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W45S31 target_room_name=W13N6 waypoints=W45S35,W15N5 quad_type=scout targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
+  public get taskIdentifier(): string {
+    return this.identifier
+  }
+
   public readonly identifier: string
 
   private readonly codename: string
@@ -846,7 +850,7 @@ function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): 
 
   showRequiredBoosts()
 
-  OperatingSystem.os.addProcess(processId => {
+  OperatingSystem.os.addProcess(null, processId => {
     return Season1143119LabChargerProcess.create(processId, parentRoomName, labInfo)
   })
 }
