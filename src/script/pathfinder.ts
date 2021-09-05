@@ -175,6 +175,7 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     ignoreCreeps: true,
     ignoreDestructibleStructures: true,
     ignoreRoads: false,
+    swampCost: 2,
     maxRooms: 3,
   }
 

@@ -15,7 +15,7 @@ export interface ObserveRoomProcessState extends ProcessState {
   readonly until: Timestamp
 }
 
-// Game.io("launch -l ObserveRoomProcess room_name=W57S27 target_room_name=W55S27 duration=100")
+// Game.io("launch -l ObserveRoomProcess room_name=W48S6 target_room_name=W47S6 duration=100")
 export class ObserveRoomProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
