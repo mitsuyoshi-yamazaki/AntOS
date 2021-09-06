@@ -1,7 +1,6 @@
 import { Result } from "utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import type { Process, ProcessId } from "process/process"
-import { isProcedural } from "process/procedural"
 import { RootProcess } from "./infrastructure/root"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
 import { init as initRoomObjectPrototype } from "prototype/room_object"
@@ -373,16 +372,21 @@ export class OperatingSystem {
 
   // ---- Execution ---- //
   private runProceduralProcesses(): void {
-    this.processStore.list().forEach(processInfo => {
-      if (this.processStore.isRunning(processInfo.process.processId) !== true) {
-        return
-      }
+    const runningProcessInfo = this.processStore.list().filter(processInfo => this.processStore.isRunning(processInfo.process.processId) === true)
+    runningProcessInfo.forEach(processInfo => {
+      ErrorMapper.wrapLoop((): void => {
+        if (processInfo.process.runBeforeTick == null) {
+          return
+        }
+        processInfo.process.runBeforeTick()
+      }, `Procedural process ${processInfo.process.processId} runBeforeTick()`)()
+    })
+
+    runningProcessInfo.forEach(processInfo => {
       const process = processInfo.process
-      if (isProcedural(process)) {
-        ErrorMapper.wrapLoop(() => {
-          process.runOnTick()
-        }, `Procedural process ${process.processId} run()`)()
-      }
+      ErrorMapper.wrapLoop((): void => {
+        process.runOnTick()
+      }, `Procedural process ${process.processId} run()`)()
     })
   }
 

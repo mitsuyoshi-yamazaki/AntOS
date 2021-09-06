@@ -39,8 +39,12 @@ export class TestProcess implements Process, Procedural {
     return `Test process at ${Game.time}`
   }
 
+  public runBeforeTick(): void {
+    processLog(this, `TestProcess.runBeforeTick() at ${Math.floor(Game.time / 20) * 20}, ${this.testMemory}`)
+  }
+
   public runOnTick(): void {
-    processLog(this, `Test log at ${Math.floor(Game.time / 20) * 20}, ${this.testMemory}`)
+    processLog(this, `TestProcess.run() at ${Math.floor(Game.time / 20) * 20}, ${this.testMemory}`)
   }
 }
 

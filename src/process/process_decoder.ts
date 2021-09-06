@@ -40,7 +40,6 @@ import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
 import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
-// import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
