@@ -133,7 +133,7 @@ export class WorkerTask extends Task {
 
   // ---- Private ---- //
   private checkPrimitiveWorkerTask(primitiveWorkerTask: PrimitiveWorkerTask, objects: OwnedRoomObjects): void {
-    if (objects.activeStructures.storage == null || objects.activeStructures.storage.my != null) { // TODO: 条件を詰める
+    if (objects.activeStructures.storage == null || objects.activeStructures.storage.my !== true) { // TODO: 条件を詰める
       return
     }
     this.removeChildTask(primitiveWorkerTask)
@@ -144,7 +144,7 @@ export class WorkerTask extends Task {
   }
 
   private checkGeneralWorkerTask(generalWorkerTask: GeneralWorkerTask, objects: OwnedRoomObjects): void {
-    if (objects.activeStructures.storage == null || objects.activeStructures.storage.my != null) {
+    if (objects.activeStructures.storage == null || objects.activeStructures.storage.my !== true) {
       return
     }
     if (objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {  // TODO: 条件を詰める
