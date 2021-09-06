@@ -48,6 +48,7 @@ import { Season2055924SendResourcesProcess } from "process/onetime/season_205592
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { World35440623DowngradeControllerProcess } from "process/onetime/world_35440623_downgrade_controller_process"
 import { ObserveRoomProcess } from "process/process/observe_room_process"
+import { World35587255ScoutRoomProcess } from "process/onetime/world_35587255_scout_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -174,6 +175,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "ObserveRoomProcess":
       result = this.launchObserveRoomProcess()
+      break
+    case "World35587255ScoutRoomProcess":
+      result = this.launchWorld35587255ScoutRoomProcess()
       break
     default:
       break
@@ -1153,6 +1157,20 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return ObserveRoomProcess.create(processId, roomName, targetRoomName, duration)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchWorld35587255ScoutRoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return World35587255ScoutRoomProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }

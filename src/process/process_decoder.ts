@@ -31,6 +31,7 @@ import { Season1838855DistributorProcess, Season1838855DistributorProcessState }
 import { Season2006098StealResourceProcess, Season2006098StealResourceProcessState } from "./onetime/season_2006098_steal_resource_process"
 import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessState } from "./onetime/season_2055924_send_resources_process"
 import { World35440623DowngradeControllerProcess, World35440623DowngradeControllerProcessState } from "./onetime/world_35440623_downgrade_controller_process"
+import { World35587255ScoutRoomProcess, World35587255ScoutRoomProcessState } from "./onetime/world_35587255_scout_room_process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
 import { InterRoomResourceManagementProcess, InterRoomResourceManagementProcessState } from "./process/inter_room_resource_management_process"
@@ -90,6 +91,7 @@ class ProcessTypes {
   "Season2006098StealResourceProcess" = (state: ProcessState) => Season2006098StealResourceProcess.decode(state as unknown as Season2006098StealResourceProcessState)
   "Season2055924SendResourcesProcess" = (state: ProcessState) => Season2055924SendResourcesProcess.decode(state as unknown as Season2055924SendResourcesProcessState)
   "World35440623DowngradeControllerProcess" = (state: ProcessState) => World35440623DowngradeControllerProcess.decode(state as unknown as World35440623DowngradeControllerProcessState)
+  "World35587255ScoutRoomProcess" = (state: ProcessState) => World35587255ScoutRoomProcess.decode(state as unknown as World35587255ScoutRoomProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {
