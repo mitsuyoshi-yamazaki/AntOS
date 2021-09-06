@@ -25,7 +25,6 @@ export interface World35588848GclManagerProcessState extends ProcessState {
   readonly attackInfo: { [roomName: string]: AttackRoomInfo }
 }
 
-// Game.io("launch -l World35588848GclManagerProcess room_name=W19N6")
 export class World35588848GclManagerProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -80,6 +79,7 @@ export class World35588848GclManagerProcess implements Process, Procedural {
     this.lastGcl = gcl
 
     this.manageBootstrap()
+    this.launchAttacker()
   }
 
   private manageBootstrap(): void {
@@ -245,5 +245,9 @@ export class World35588848GclManagerProcess implements Process, Procedural {
       },
       Game.gcl.level,
     )
+  }
+
+  private launchAttacker(): void {
+
   }
 }

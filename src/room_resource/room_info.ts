@@ -18,7 +18,7 @@ export interface BasicRoomInfo {
   readonly energyStoreStructureIds: Id<EnergyStore>[]
 }
 
-type RoomOwner = { ownerType: "claim", username: string } | { ownerType: "reserve", username: string }
+type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean } | { ownerType: "reserve", username: string }
 
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
@@ -73,8 +73,16 @@ function getOwnerInfo(room: Room): RoomOwner | null {
     return null
   }
   if (room.controller.owner != null) {
+    const isAlive = ((): boolean => {
+      if (room.find(FIND_HOSTILE_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length > 0) {
+        return true
+      }
+      return false
+    })()
     return {
       ownerType: "claim",
+      isAlive,
+      safemodeEnabled: room.controller.safeMode != null,
       username: room.controller.owner.username
     }
   }
