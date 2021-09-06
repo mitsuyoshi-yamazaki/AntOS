@@ -175,7 +175,7 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     ignoreCreeps: true,
     ignoreDestructibleStructures: true,
     ignoreRoads: false,
-    swampCost: 2,
+    swampCost: 1, // FixMe: 最短経路のうちSwampを極力通らないようにする: CostMatrixのcostはintegerなので、plainのコストを上げることで相対差を小さくする
     maxRooms: 3,
   }
 

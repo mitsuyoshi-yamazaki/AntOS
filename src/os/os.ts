@@ -91,6 +91,7 @@ class ProcessStore {
         PrimitiveLogger.programError(`Processes.addProcess() unknown parent process ID ${parentProcessId} for process ${process.processId} ${process.taskIdentifier}`)
       } else {
         parentProcessInfo.childProcessIds.push(process.processId)
+        this.parentProcessIds.set(process.processId, parentProcessId)
       }
     }
     const processInfo: InternalProcessInfo = {
@@ -141,6 +142,22 @@ class ProcessStore {
 
   public list(): InternalProcessInfo[] {
     return Array.from(this.processes.values())
+  }
+
+  public isRunning(processId: ProcessId): boolean {
+    const processInfo = this.processes.get(processId)
+    if (processInfo == null) {
+      PrimitiveLogger.programError(`Processes.isRunning() unknown process ID ${processId}`)
+      return false
+    }
+    if (processInfo.running !== true) {
+      return false
+    }
+    const parentId = this.parentProcessIds.get(processId)
+    if (parentId == null) {
+      return true
+    }
+    return this.isRunning(parentId)
   }
 }
 
@@ -357,7 +374,7 @@ export class OperatingSystem {
   // ---- Execution ---- //
   private runProceduralProcesses(): void {
     this.processStore.list().forEach(processInfo => {
-      if (processInfo.running !== true) {
+      if (this.processStore.isRunning(processInfo.process.processId) !== true) {
         return
       }
       const process = processInfo.process
@@ -393,11 +410,11 @@ export class OperatingSystem {
         return
       }
 
-      messages.push(`${getIndent(indent)}- ${processId}: ${processInfo.process.taskIdentifier}`)
       const result = this.processStore.remove(processId)
       if (result == null) {
         return
       }
+      const additionalInfo: string[] = []
       const { parentProcessId } = result
       if (parentProcessId != null) {
         const parentProcessInfo = this.processStore.get(parentProcessId)
@@ -409,9 +426,12 @@ export class OperatingSystem {
             this.sendOSError(`Missing child process ${processId}, ${processInfo.process.taskIdentifier}, parent: ${parentProcessId}, ${parentProcessInfo.process.taskIdentifier}`)
           } else {
             parentProcessInfo.childProcessIds.splice(index, 1)
+            additionalInfo.push(`removed from parent ${parentProcessId}`)
           }
         }
       }
+
+      messages.push(`${getIndent(indent)}- ${processId}: ${processInfo.process.taskIdentifier} ${additionalInfo.join(",")}`)
 
       const loggerIndex = Memory.os.logger.filteringProcessIds.indexOf(processId)
       if (loggerIndex >= 0) {
@@ -429,5 +449,7 @@ export class OperatingSystem {
     if (messages.length > 0) {
       PrimitiveLogger.log(`Kill process\n${messages.join("\n")}`)
     }
+
+    this.storeProcesses()
   }
 }
