@@ -152,7 +152,7 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
   private getTargetRooms(): RoomName[] {
     const parentRoomName = this.parentRoomName
     const roomsToAvoid: RoomName[] = []
-    const rooms: RoomName[] = []
+    const rooms: { roomName: RoomName, distanceFromParent: number }[] = []
     const parentRoomCoordinate = RoomCoordinate.parse(parentRoomName)
     if (parentRoomCoordinate == null) {
       PrimitiveLogger.fatal(`${this.identifier} cannot retrieve room coordinate for ${roomLink(parentRoomName)}`)
@@ -201,7 +201,10 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
         case "observed":
           break
         case "normal":
-          rooms.push(roomName)
+          rooms.push({
+            roomName,
+            distanceFromParent: Game.map.getRoomLinearDistance(roomName, parentRoomName),
+          })
           break
         case "hostile":
           roomsToAvoid.push(roomName)
@@ -227,23 +230,31 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
     const roomCount = rooms.length
 
     for (let i = 0; i < roomCount; i += 1) {
-      const closestRoom = rooms.sort((lhs, rhs) => {
-        return Game.map.getRoomLinearDistance(roomName, lhs) - Game.map.getRoomLinearDistance(roomName, rhs)
+      const roomDistances: { roomName: RoomName, distanceFromParent: number, distanceFromRoom: number }[] = rooms.map(r => ({
+        roomName: r.roomName,
+        distanceFromParent: r.distanceFromParent,
+        distanceFromRoom: Game.map.getRoomLinearDistance(r.roomName, roomName),
+      }))
+      const closestRoom = roomDistances.sort((lhs, rhs) => {
+        if (lhs.distanceFromRoom === rhs.distanceFromRoom) {
+          return lhs.distanceFromParent - rhs.distanceFromParent
+        }
+        return lhs.distanceFromRoom - rhs.distanceFromRoom
       })[0]
       if (closestRoom == null) {
         return result
       }
-      const route = Game.map.findRoute(roomName, closestRoom, {routeCallback})
+      const route = Game.map.findRoute(roomName, closestRoom.roomName, {routeCallback})
       if (route === ERR_NO_PATH) {
-        PrimitiveLogger.fatal(`World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom)}`)
+        PrimitiveLogger.fatal(`World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`)
         return result
       }
-      const index = rooms.indexOf(closestRoom)
+      const index = rooms.findIndex(r => r.roomName === closestRoom.roomName)
       if (index >= 0) {
         rooms.splice(index, 1)
       }
       result.push(...route.map(r => r.room))
-      roomName = closestRoom
+      roomName = closestRoom.roomName
     }
 
     return result
