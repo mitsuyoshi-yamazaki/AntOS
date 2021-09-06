@@ -5,6 +5,7 @@ import { TowerInterceptionProblemSolver } from "v5_task/defence/tower_intercepti
 import { OwnedRoomObjects } from "world_info/room_info"
 import { ActivateSafemodeProblemSolver } from "v5_task/defence/activate_safemode_task"
 import { World } from "world_info/world_info"
+import { Environment } from "utility/environment"
 
 // TODO: プレイヤーによる攻撃をroom_attacked_problem_finderに分離する
 export class RoomInvadedProblemFinder implements ProblemFinder {
@@ -30,7 +31,7 @@ export class RoomInvadedProblemFinder implements ProblemFinder {
       problemSolvers.push(TowerInterceptionProblemSolver.create(this.identifier, this.roomName))
     }
     const roomObjects = World.rooms.getOwnedRoomObjects(this.roomName)
-    if (this.objects.roomInfo.bootstrapping !== true && roomObjects != null && roomObjects.controller.safeMode == null) {
+    if ((this.objects.roomInfo.bootstrapping !== true || Environment.isAutomatic() === true) && roomObjects != null && roomObjects.controller.safeMode == null) {
       const shouldActivateSafemode = ((): boolean => {
         for (const hostileCreep of roomObjects.hostiles.creeps) {
           if (hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0 || hostileCreep.getActiveBodyparts(WORK) > 0) {
