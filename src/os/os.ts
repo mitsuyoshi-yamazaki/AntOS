@@ -399,6 +399,10 @@ export class OperatingSystem {
 
   // ---- Kill ---- //
   private killProcesses(): void {
+    if (this.processIdsToKill.length <= 0) {
+      return
+    }
+
     const messages: string[] = []
 
     const spaces = "                                                  " // 50 spaces
