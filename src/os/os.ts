@@ -101,16 +101,21 @@ class ProcessStore {
     this.processes.set(process.processId, processInfo)
   }
 
-  public remove(processId: ProcessId): void {
+  public remove(processId: ProcessId): {parentProcessId: ProcessId | null} | null {
     const processInfo = this.get(processId)
     if (processInfo == null) {
       PrimitiveLogger.programError(`Trying to remove non existent process ${processId}`)
-      return
+      return null
     }
+    const parentProcessId = this.parentProcessIds.get(processId) ?? null
     processInfo.childProcessIds.forEach(childProcessId => {
       this.parentProcessIds.delete(childProcessId)
     })
     this.processes.delete(processId)
+
+    return {
+      parentProcessId,
+    }
   }
 
   public replace(processes: InternalProcessInfo[]): void {
@@ -389,7 +394,24 @@ export class OperatingSystem {
       }
 
       messages.push(`${getIndent(indent)}- ${processId}: ${processInfo.process.taskIdentifier}`)
-      this.processStore.remove(processId)
+      const result = this.processStore.remove(processId)
+      if (result == null) {
+        return
+      }
+      const { parentProcessId } = result
+      if (parentProcessId != null) {
+        const parentProcessInfo = this.processStore.get(parentProcessId)
+        if (parentProcessInfo == null) {
+          this.sendOSError(`Missing parent process ${parentProcessId}, child: ${processId}, ${processInfo.process.taskIdentifier}`)
+        } else {
+          const index = parentProcessInfo.childProcessIds.indexOf(processId)
+          if (index < 0) {
+            this.sendOSError(`Missing child process ${processId}, ${processInfo.process.taskIdentifier}, parent: ${parentProcessId}, ${parentProcessInfo.process.taskIdentifier}`)
+          } else {
+            parentProcessInfo.childProcessIds.splice(index, 1)
+          }
+        }
+      }
 
       const loggerIndex = Memory.os.logger.filteringProcessIds.indexOf(processId)
       if (loggerIndex >= 0) {

@@ -43,3 +43,41 @@ export class TestProcess implements Process, Procedural {
     processLog(this, `Test log at ${Math.floor(Game.time / 20) * 20}, ${this.testMemory}`)
   }
 }
+
+export interface TestChildProcessState extends ProcessState {
+}
+
+export class TestChildProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
+  private constructor(
+    public readonly launchTime: number,
+    public readonly processId: ProcessId,
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
+
+  public encode(): TestChildProcessState {
+    return {
+      t: "TestChildProcess",
+      l: this.launchTime,
+      i: this.processId,
+    }
+  }
+
+  public static decode(state: TestChildProcessState): TestChildProcess {
+    return new TestChildProcess(state.l, state.i)
+  }
+
+  public static create(processId: ProcessId): TestChildProcess {
+    return new TestChildProcess(Game.time, processId)
+  }
+
+  public processDescription(): string {
+    return "child"
+  }
+
+  public runOnTick(): void {
+    processLog(this, `Child log at ${Math.floor(Game.time / 20) * 20}`)
+  }
+}

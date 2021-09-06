@@ -1,5 +1,5 @@
 import { Process } from "process/process"
-import { TestProcess } from "process/test/test_process"
+import { TestChildProcess, TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
@@ -63,6 +63,9 @@ export class LaunchCommand implements ConsoleCommand {
     switch (this.args[0]) {
     case "TestProcess":
       result = this.launchTestProcess()
+      break
+    case "TestChildProcess":
+      result = this.launchTestChildProcess()
       break
     case "RouteCheckTask":
       result = this.launchRouteCheckTask()
@@ -227,6 +230,29 @@ export class LaunchCommand implements ConsoleCommand {
   private launchTestProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(null, processId => {
       return TestProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchTestChildProcess(): LaunchCommandResult {
+    const rawParentProcessId = this.args[1]
+    if (rawParentProcessId == null) {
+      return Result.Failed("Missing parent process ID")
+    }
+    const parentProcessId = parseInt(rawParentProcessId, 10)
+    if (isNaN(parentProcessId) === true) {
+      return Result.Failed(`Parent process ID is not a number ${rawParentProcessId}`)
+    }
+    const parentProcess = OperatingSystem.os.processOf(parentProcessId)
+    if (parentProcess == null) {
+      return Result.Failed(`No process ${parentProcessId}`)
+    }
+    if (!(parentProcess instanceof TestProcess)) {
+      return Result.Failed(`Parent process ${parentProcessId} is not TestProcess`)
+    }
+
+    const process = OperatingSystem.os.addProcess(parentProcessId, processId => {
+      return TestChildProcess.create(processId)
     })
     return Result.Succeeded(process)
   }
