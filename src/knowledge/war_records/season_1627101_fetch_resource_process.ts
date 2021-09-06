@@ -34,6 +34,7 @@ export interface Season1627101FetchResourceProcessState extends ProcessState {
 }
 
 // Game.io("launch -l Season1627101FetchResourceProcess room_name=W24S29 target_room_name=W21S28 waypoints=W22S29,W22S28 transfer=none withdraw=H")
+/** 他人の部屋から資源を回収する */
 export class Season1627101FetchResourceProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

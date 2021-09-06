@@ -23,4 +23,6 @@ export const epicScenes: { description: string, url: string }[] = [
  * - Pathfinder.searchオプションのfleeは離れたいrangeを設定しないと値を返さない
  * - Dismantler, Attackerは常時自己再生をしていないので二発耐えられないといけない
  * - createFlag()/remove()実行tickで状態が変化しない
+ * - BotArena等にデプロイするにはscreepsmod-authにパスワードを設定する必要がある
+ *   - https://github.com/ScreepsMods/screepsmod-auth
  */
