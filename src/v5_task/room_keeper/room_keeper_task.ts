@@ -17,6 +17,8 @@ import { Season1838855DistributorProcess } from "process/onetime/season_1838855_
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
 import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
+import { Environment } from "utility/environment"
+import { World35587255ScoutRoomProcess } from "process/onetime/world_35587255_scout_room_process"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -110,6 +112,16 @@ export class RoomKeeperTask extends Task {
             try {
               const centerPosition = new RoomPosition(result.value.center.x, result.value.center.y, this.roomName)
               OperatingSystem.os.addProcess(null, processId => Season1838855DistributorProcess.create(processId, this.roomName, centerPosition))
+
+              switch (Environment.world) {
+              case "persistent world":
+              case "simulation":
+              case "season 3":
+                break
+              case "botarena":
+                OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
+                break
+              }
             } catch (e) {
               PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
             }
