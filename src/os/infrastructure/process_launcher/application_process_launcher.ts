@@ -21,12 +21,7 @@ export class ApplicationProcessLauncher {
     this.checkBoostrapRoomManagerProcess(processList, processLauncher)
     this.checkAttackInvaderCoreProcess(processList, processLauncher)
 
-    switch (Environment.world) {
-    case "persistent world":
-    case "simulation":
-    case "season 3":
-      break
-    case "botarena":
+    if (Environment.isAutomatic() === true) {
       this.checkGCLManagerProcess(processList, processLauncher)
     }
   }

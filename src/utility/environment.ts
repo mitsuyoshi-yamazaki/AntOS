@@ -9,6 +9,7 @@ type ShardName = string
 export interface Environment {
   world: World
   shard: ShardName
+  isAutomatic(): boolean
 }
 
 const world = ((): World => {
@@ -31,4 +32,15 @@ const world = ((): World => {
 export const Environment: Environment = {
   world,
   shard: Game.shard.name,
+
+  isAutomatic(): boolean {  // TODO: メモリからも設定可能にする
+    switch (world) {
+    case "persistent world":
+    case "season 3":
+    case "simulation":
+      return false
+    case "botarena":
+      return true
+    }
+  },
 }
