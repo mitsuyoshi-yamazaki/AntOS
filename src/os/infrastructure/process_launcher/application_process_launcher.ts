@@ -12,12 +12,23 @@ import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
+import { World35588848GclManagerProcess } from "process/onetime/world_35588848_gcl_manager_process"
+import { Environment } from "utility/environment"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
     this.checkRoomKeeperProcess(processList, processLauncher)
     this.checkBoostrapRoomManagerProcess(processList, processLauncher)
     this.checkAttackInvaderCoreProcess(processList, processLauncher)
+
+    switch (Environment.world) {
+    case "persistent world":
+    case "simulation":
+    case "season 3":
+      break
+    case "botarena":
+      this.checkGCLManagerProcess(processList, processLauncher)
+    }
   }
 
   private checkRoomKeeperProcess(processList: Process[], processLauncher: ProcessLauncher): void {
@@ -77,5 +88,12 @@ export class ApplicationProcessLauncher {
       return
     }
     processLauncher(null, processId => Season487837AttackInvaderCoreProcess.create(processId))
+  }
+
+  private checkGCLManagerProcess(processList: Process[], processLauncher: ProcessLauncher): void {
+    if (processList.some(process => process instanceof World35588848GclManagerProcess) === true) {
+      return
+    }
+    processLauncher(null, processId => World35588848GclManagerProcess.create(processId))
   }
 }

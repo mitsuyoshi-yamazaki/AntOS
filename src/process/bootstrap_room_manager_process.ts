@@ -9,6 +9,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "os/infrastructure/logger"
 import { isRoomName, RoomName } from "utility/room_name"
+import { Result } from "utility/result"
 
 export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */
@@ -52,6 +53,10 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
 
   public processShortDescription(): string {
     return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")}`
+  }
+
+  public claimingRoomCount(): number {
+    return this.tasks.length
   }
 
   public runOnTick(): void {
@@ -161,20 +166,30 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return `target_gcl is not a number (${targetGcl})`
     }
 
+    const result = this.addBootstrapRoom(parentRoomName, targetRoomName, waypoints, claimInfo, parsedTargetGcl)
+    switch (result.resultType) {
+    case "succeeded":
+      return result.value
+    case "failed":
+      return result.reason
+    }
+  }
+
+  public addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[]}, targetGcl: number | null): Result<string, string> {
     const targetRoom = World.rooms.get(targetRoomName)
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
-      const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}})
+      const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })
       if (spawn.length > 0) {
-        return `${roomLink(targetRoomName)} is already mine`
+        return Result.Failed(`${roomLink(targetRoomName)} is already mine`)
       }
     }
     const bootstrappingRoomNames = this.tasks.map(task => task.targetRoomName)
     if (bootstrappingRoomNames.includes(targetRoomName) === true) {
-      return `BootstrapRoomTask to ${roomLink(targetRoomName)} already launched`
+      return Result.Failed(`BootstrapRoomTask to ${roomLink(targetRoomName)} already launched`)
     }
 
     this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints, claimInfo.parentRoomName, claimInfo.waypoints))
-    this.nextGcl = parsedTargetGcl
+    this.nextGcl = targetGcl
 
     const parentInfo = ((): string => {
       if (parentRoomName === claimInfo.parentRoomName) {
@@ -182,7 +197,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       }
       return `${roomLink(parentRoomName)}, claim: ${roomLink(claimInfo.parentRoomName)}`
     })()
-    return `Launched BootstrapRoomTask ${roomLink(targetRoomName)} (parent: ${parentInfo})`
+    return Result.Succeeded(`Launched BootstrapRoomTask ${roomLink(targetRoomName)} (parent: ${parentInfo})`)
   }
 
   // ---- Private ---- //

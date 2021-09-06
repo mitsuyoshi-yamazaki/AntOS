@@ -18,6 +18,7 @@ interface RoomResourcesInterface {
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
   getRoomInfo(roomName: RoomName): RoomInfoType | null
+  getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[]
 
   // ---- Inter Room Resource ---- //
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
@@ -82,6 +83,10 @@ export const RoomResources: RoomResourcesInterface = {
 
   getRoomInfo(roomName: RoomName): RoomInfoType | null {
     return Memory.v6RoomInfo[roomName] ?? null
+  },
+
+  getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[] {
+    return Object.entries(Memory.v6RoomInfo).map(([roomName, roomInfo]) => ({roomName, roomInfo}))
   },
 
   // ---- Inter Room Resource ---- //
