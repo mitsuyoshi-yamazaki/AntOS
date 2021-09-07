@@ -28,6 +28,7 @@ const structurePriority: StructureConstant[] = [
   STRUCTURE_TERMINAL,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
+  STRUCTURE_CONTAINER,
   STRUCTURE_LAB,
   STRUCTURE_NUKER,
 ]
