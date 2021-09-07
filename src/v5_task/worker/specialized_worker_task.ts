@@ -70,6 +70,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
     const creepCount = World.resourcePools.countCreeps(this.roomName, null, () => true)
+    const energyAmount = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    const lackOfEnergy = energyAmount < 10000
+
     const numberOfCreeps = ((): number => {
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
@@ -86,6 +90,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         if (resources.controller.level > 5) {
           return requiredCount <= 3 ? 3 : 4
         }
+        if (lackOfEnergy === true) {
+          return Math.min(requiredCount, 4)
+        }
         return requiredCount
       } catch {
         return 3
@@ -93,14 +100,25 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     })()
     if (creepCount < 2) {
       const body = ((): BodyPartConstant[] => {
-        const haulerBody = this.haulerBody(objects)
-        if (objects.controller.room.energyAvailable < CreepBody.cost(haulerBody)) {
-          return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE]
+        if (lackOfEnergy !== true) {
+          const haulerBody = this.haulerBody(objects)
+          if (objects.controller.room.energyAvailable < CreepBody.cost(haulerBody)) {
+            return [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE]
+          }
+          return haulerBody
         }
-        return haulerBody
+        const builderBody = this.builderBody(objects)
+        if (objects.controller.room.energyAvailable < CreepBody.cost(builderBody)) {
+          return [CARRY, WORK, MOVE]
+        }
+        return builderBody
       })()
+      const roles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
+      if (body.includes(WORK) === true) {
+        roles.push(CreepRole.Worker)
+      }
       return {
-        necessaryRoles: [CreepRole.Hauler, CreepRole.Mover],
+        necessaryRoles: roles,
         taskIdentifier: null,
         numberOfCreeps,
         codename: this.codename,
@@ -111,6 +129,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
 
     const needBuilder = ((): boolean => {
+      if (lackOfEnergy === true) {
+        return true
+      }
       const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
       const needRepair = objects.damagedStructures.length > 0
       const needBuild = objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true))

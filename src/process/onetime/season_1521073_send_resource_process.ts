@@ -38,7 +38,8 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
   maxNumberOfCreeps: number
 }
 
-// Game.io("launch -l Season1521073SendResourceProcess room_name=W48S6 target_room_name=W49S6 waypoints=W49S6 finish_working=100 creeps=1")
+// Game.io("launch -l Season1521073SendResourceProcess room_name=W51S29 target_room_name=W39S31 waypoints=W51S30,W40S30 finish_working=100 creeps=2")
+/** Haulerによる輸送 */
 export class Season1521073SendResourceProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
