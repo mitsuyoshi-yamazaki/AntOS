@@ -5,4 +5,7 @@
  *   - 6500 to RCL3
  *   - 6900 1st tower
  *   - 20000 RCL4
+ * - v7.0.22 botarena
+ *   - 8500 1st tower
+ *   - 23400 storage
  */
