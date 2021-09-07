@@ -23,12 +23,16 @@ interface ProcessMemory {
   readonly s: ProcessState
 
   readonly childProcessIds: ProcessId[]
+  readonly executionPriority: number
 }
 
 interface InternalProcessInfo {
   running: boolean
   readonly process: Process
   readonly childProcessIds: ProcessId[]
+
+  /** 最上位（親なし）が0 */
+  readonly executionPriority: number
 }
 
 export interface OSMemory {
@@ -51,25 +55,6 @@ function updatePrototypes(): void {
   initPowerCreepPrototype()
   initStructureSpawnPrototype()
   initRoomPrototype()
-
-  // ErrorMapper.wrapLoop(() => {
-  //   initRoomPositionPrototype()
-  // })()
-  // ErrorMapper.wrapLoop(() => {
-  //   initRoomObjectPrototype()
-  // })()
-  // ErrorMapper.wrapLoop(() => {
-  //   initCreepPrototype()
-  // })()
-  // ErrorMapper.wrapLoop(() => {
-  //   initPowerCreepPrototype()
-  // })()
-  // ErrorMapper.wrapLoop(() => {
-  //   initStructureSpawnPrototype()
-  // })()
-  // ErrorMapper.wrapLoop(() => {
-  //   initRoomPrototype()
-  // })()
 }
 
 const processLauncher: ProcessLauncher = (parentProcessId: ProcessId | null, launcher: (processId: ProcessId) => Process) => OperatingSystem.os.addProcess(parentProcessId, launcher)
@@ -84,6 +69,7 @@ class ProcessStore {
   }
 
   public add(process: Process, parentProcessId: ProcessId | null): void {
+    let executionPriority = 0
     if (parentProcessId != null) {
       const parentProcessInfo = this.processes.get(parentProcessId)
       if (parentProcessInfo == null) {
@@ -91,12 +77,14 @@ class ProcessStore {
       } else {
         parentProcessInfo.childProcessIds.push(process.processId)
         this.parentProcessIds.set(process.processId, parentProcessId)
+        executionPriority = parentProcessInfo.executionPriority + 1
       }
     }
     const processInfo: InternalProcessInfo = {
       process,
       running: true,
       childProcessIds: [],
+      executionPriority,
     }
     this.processes.set(process.processId, processInfo)
   }
@@ -349,6 +337,7 @@ export class OperatingSystem {
         process,
         running: processStateMemory.r === true,
         childProcessIds: processStateMemory.childProcessIds ?? [],
+        executionPriority: processStateMemory.executionPriority ?? 0,
       }
     })
 
@@ -364,6 +353,7 @@ export class OperatingSystem {
           r: processInfo.running,
           s: process.encode(),
           childProcessIds: processInfo.childProcessIds,
+          executionPriority: processInfo.executionPriority,
         })
       }, "OperatingSystem.storeProcesses()")()
     })
@@ -372,7 +362,12 @@ export class OperatingSystem {
 
   // ---- Execution ---- //
   private runProceduralProcesses(): void {
-    const runningProcessInfo = this.processStore.list().filter(processInfo => this.processStore.isRunning(processInfo.process.processId) === true)
+    const runningProcessInfo = this.processStore.list()
+      .filter(processInfo => this.processStore.isRunning(processInfo.process.processId) === true)
+      .sort((lhs, rhs) => {
+        return rhs.executionPriority - lhs.executionPriority
+      })
+
     runningProcessInfo.forEach(processInfo => {
       ErrorMapper.wrapLoop((): void => {
         if (processInfo.process.runBeforeTick == null) {
