@@ -1328,6 +1328,7 @@ function moveToRoomQuad(creep: Creep, targetRoomName: RoomName, waypoints: RoomN
     const exit = creepRoom.findExitTo(destinationRoomName)
     if (exit === ERR_NO_PATH) {
       creep.say("no exit")
+      PrimitiveLogger.fatal(`Quad findExitTo() returns ERR_NO_PATH, from ${roomLink(creepRoom.name)} to ${roomLink(destinationRoomName)}`)
       return null
     } else if (exit === ERR_INVALID_ARGS) {
       creep.say("invalid")

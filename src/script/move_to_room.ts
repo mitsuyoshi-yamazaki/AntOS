@@ -143,6 +143,8 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     }
     const exit = creepRoom.findExitTo(destinationRoomName)
     if (exit === ERR_NO_PATH) {
+      creep.say("no exit")
+      PrimitiveLogger.fatal(`creep findExitTo() returns ERR_NO_PATH, from ${roomLink(creepRoom.name)} to ${roomLink(destinationRoomName)}`)
       return "no exit"
     } else if (exit === ERR_INVALID_ARGS) {
       PrimitiveLogger.fatal(`Room.findExitTo() returns ERR_INVALID_ARGS (${exit}), room ${roomLink(creepRoom.name)} to ${roomLink(destinationRoomName)}`)
