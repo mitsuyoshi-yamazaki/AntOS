@@ -24,6 +24,7 @@ import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessSta
 import { World35440623DowngradeControllerProcess, World35440623DowngradeControllerProcessState } from "./onetime/world_35440623_downgrade_controller_process"
 import { World35587255ScoutRoomProcess, World35587255ScoutRoomProcessState } from "./onetime/world_35587255_scout_room_process"
 import { World35588848GclManagerProcess, World35588848GclManagerProcessState } from "./onetime/world_35588848_gcl_manager_process"
+// import { World35591718AllianceRequestProcess, World35591718AllianceRequestProcessState } from "./onetime/world_35591718_alliance_request_process"
 import { BuyPixelProcess, BuyPixelProcessState } from "./process/buy_pixel_process"
 import { UpgradePowerCreepProcess, UpgradePowerCreepProcessState } from "./process/upgrade_power_creep_process"
 import { InterRoomResourceManagementProcess, InterRoomResourceManagementProcessState } from "./process/inter_room_resource_management_process"
@@ -33,6 +34,7 @@ import type { ProcessState } from "./process_state"
 import { RoomKeeperProcess, RoomKeeperProcessState } from "./room_keeper_process"
 import { TaskProcess, TaskProcessState } from "./task_process"
 import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_process"
+import { PrioritizerProcess, PrioritizerProcessState } from "./application/prioritizer_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
@@ -51,6 +53,9 @@ class ProcessTypes {
 
   // ---- v6 Process ---- //
   "V6RoomKeeperProcess" = (state: ProcessState) => V6RoomKeeperProcess.decode(state as unknown as V6RoomKeeperProcessState)
+
+  // ---- Application ---- //
+  "PrioritizerProcess" = (state: ProcessState) => PrioritizerProcess.decode(state as unknown as PrioritizerProcessState)
 
   // ---- Onetime processes ---- //
   "Season487837AttackInvaderCoreProcess" = (state: ProcessState) => Season487837AttackInvaderCoreProcess.decode(state as unknown as Season487837AttackInvaderCoreProcessState)
@@ -76,6 +81,7 @@ class ProcessTypes {
   "World35440623DowngradeControllerProcess" = (state: ProcessState) => World35440623DowngradeControllerProcess.decode(state as unknown as World35440623DowngradeControllerProcessState)
   "World35587255ScoutRoomProcess" = (state: ProcessState) => World35587255ScoutRoomProcess.decode(state as unknown as World35587255ScoutRoomProcessState)
   "World35588848GclManagerProcess" = (state: ProcessState) => World35588848GclManagerProcess.decode(state as unknown as World35588848GclManagerProcessState)
+  // "World35591718AllianceRequestProcess" = (state: ProcessState) => World35591718AllianceRequestProcess.decode(state as unknown as World35591718AllianceRequestProcessState)
 }
 
 export function decodeProcessFrom(state: ProcessState): Process | null {

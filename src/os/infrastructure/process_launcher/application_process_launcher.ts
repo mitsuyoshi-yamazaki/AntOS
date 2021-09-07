@@ -15,6 +15,7 @@ import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487
 import { World35588848GclManagerProcess } from "process/onetime/world_35588848_gcl_manager_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
+import { PrioritizerProcess } from "process/application/prioritizer_process"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
@@ -22,6 +23,7 @@ export class ApplicationProcessLauncher {
     let hasBootstrapManagerProcess = false as boolean
     let hasAttackInvaderCoreProcess = false as boolean
     let hasGclManagerProcess = false as boolean
+    let hasPrioritizerProcess = false as boolean
 
     processList.forEach(process => {
       if (process instanceof RoomKeeperProcess) {
@@ -39,6 +41,9 @@ export class ApplicationProcessLauncher {
       if (process instanceof World35588848GclManagerProcess) {
         hasGclManagerProcess = true
       }
+      if (process instanceof PrioritizerProcess) {
+        hasPrioritizerProcess = true
+      }
     })
 
     this.checkRoomKeeperProcess(roomKeeperMap, processLauncher)
@@ -50,6 +55,9 @@ export class ApplicationProcessLauncher {
     }
     if (Environment.isAutomatic() === true && hasGclManagerProcess !== true) {
       this.launchGCLManagerProcess(processLauncher)
+    }
+    if (hasPrioritizerProcess !== true) {
+      this.launchPrioritizerProcess(processLauncher)
     }
   }
 
@@ -98,5 +106,9 @@ export class ApplicationProcessLauncher {
 
   private launchGCLManagerProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => World35588848GclManagerProcess.create(processId))
+  }
+
+  private launchPrioritizerProcess(processLauncher: ProcessLauncher): void {
+    processLauncher(null, processId => PrioritizerProcess.create(processId))
   }
 }
