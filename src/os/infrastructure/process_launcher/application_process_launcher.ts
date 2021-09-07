@@ -14,31 +14,48 @@ import { coloredText, roomLink } from "utility/log"
 import { Season487837AttackInvaderCoreProcess } from "process/onetime/season_487837_attack_invader_core_process"
 import { World35588848GclManagerProcess } from "process/onetime/world_35588848_gcl_manager_process"
 import { Environment } from "utility/environment"
+import { ValuedArrayMap } from "utility/valued_collection"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
-    this.checkRoomKeeperProcess(processList, processLauncher)
-    this.checkBoostrapRoomManagerProcess(processList, processLauncher)
-    this.checkAttackInvaderCoreProcess(processList, processLauncher)
+    const roomKeeperMap = new ValuedArrayMap<ShortVersion, RoomName>()
+    let hasBootstrapManagerProcess = false as boolean
+    let hasAttackInvaderCoreProcess = false as boolean
+    let hasGclManagerProcess = false as boolean
 
-    if (Environment.isAutomatic() === true) {
-      this.checkGCLManagerProcess(processList, processLauncher)
+    processList.forEach(process => {
+      if (process instanceof RoomKeeperProcess) {
+        roomKeeperMap.getValueFor(ShortVersion.v5).push(process.roomName)
+      }
+      if (process instanceof V6RoomKeeperProcess) {
+        roomKeeperMap.getValueFor(ShortVersion.v6).push(process.roomName)
+      }
+      if (process instanceof BootstrapRoomManagerProcess) {
+        hasBootstrapManagerProcess = true
+      }
+      if (process instanceof Season487837AttackInvaderCoreProcess) {
+        hasAttackInvaderCoreProcess = true
+      }
+      if (process instanceof World35588848GclManagerProcess) {
+        hasGclManagerProcess = true
+      }
+    })
+
+    this.checkRoomKeeperProcess(roomKeeperMap, processLauncher)
+    if (hasBootstrapManagerProcess !== true) {
+      this.launchBoostrapRoomManagerProcess(processLauncher)
+    }
+    if (hasAttackInvaderCoreProcess !== true) {
+      this.launchAttackInvaderCoreProcess(processLauncher)
+    }
+    if (Environment.isAutomatic() === true && hasGclManagerProcess !== true) {
+      this.launchGCLManagerProcess(processLauncher)
     }
   }
 
-  private checkRoomKeeperProcess(processList: Process[], processLauncher: ProcessLauncher): void {
-    const roomsWithV5KeeperProcess = processList.map(process => {
-      if (process instanceof RoomKeeperProcess) {
-        return process.roomName
-      }
-      return null
-    })
-    const roomsWithV6KeeperProcess = processList.map(process => {
-      if (process instanceof V6RoomKeeperProcess) {
-        return process.roomName
-      }
-      return null
-    })
+  private checkRoomKeeperProcess(roomKeeperMap: Map<ShortVersion, RoomName[]>, processLauncher: ProcessLauncher): void {
+    const roomsWithV5KeeperProcess = roomKeeperMap.get(ShortVersion.v5) ?? []
+    const roomsWithV6KeeperProcess = roomKeeperMap.get(ShortVersion.v6) ?? []
 
     World.rooms.getAllOwnedRooms().forEach(room => {
       switch (Migration.roomVersion(room.name)) {
@@ -71,24 +88,15 @@ export class ApplicationProcessLauncher {
     processLauncher(null, processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
   }
 
-  private checkBoostrapRoomManagerProcess(processList: Process[], processLauncher: ProcessLauncher): void {
-    if (processList.some(process => process instanceof BootstrapRoomManagerProcess) === true) {
-      return
-    }
+  private launchBoostrapRoomManagerProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => BootstrapRoomManagerProcess.create(processId))
   }
 
-  private checkAttackInvaderCoreProcess(processList: Process[], processLauncher: ProcessLauncher): void {
-    if (processList.some(process => process instanceof Season487837AttackInvaderCoreProcess) === true) {
-      return
-    }
+  private launchAttackInvaderCoreProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => Season487837AttackInvaderCoreProcess.create(processId))
   }
 
-  private checkGCLManagerProcess(processList: Process[], processLauncher: ProcessLauncher): void {
-    if (processList.some(process => process instanceof World35588848GclManagerProcess) === true) {
-      return
-    }
+  private launchGCLManagerProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => World35588848GclManagerProcess.create(processId))
   }
 }
