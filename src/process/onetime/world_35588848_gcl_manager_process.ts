@@ -244,6 +244,8 @@ export class World35588848GclManagerProcess implements Process, Procedural {
         waypoints: [],
       },
       Game.gcl.level,
+      0,
+      false,
     )
   }
 
