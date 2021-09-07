@@ -52,6 +52,7 @@ export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   w: RoomName[]
 
   neighboursToObserve: RoomName[]
+  requiredEnergy: number
 }
 
 /**
@@ -70,6 +71,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     public readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
     private readonly neighboursToObserve: RoomName[],
+    private readonly requiredEnergy: number,
   ) {
     super(startTime, children, parentRoomName)
 
@@ -86,21 +88,22 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       tr: this.targetRoomName,
       w: this.waypoints,
       neighboursToObserve: this.neighboursToObserve,
+      requiredEnergy: this.requiredEnergy,
     }
   }
 
   public static decode(state: UpgradeToRcl3TaskState, children: Task[]): UpgradeToRcl3Task {
-    return new UpgradeToRcl3Task(state.s, children, state.r, state.tr, state.w, state.neighboursToObserve)
+    return new UpgradeToRcl3Task(state.s, children, state.r, state.tr, state.w, state.neighboursToObserve, state.requiredEnergy ?? 0)
   }
 
-  public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): UpgradeToRcl3Task {
-    return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints, neighboursToObserve(targetRoomName))
+  public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], requiredEnergy: number): UpgradeToRcl3Task {
+    return new UpgradeToRcl3Task(Game.time, [], parentRoomName, targetRoomName, waypoints, neighboursToObserve(targetRoomName), requiredEnergy)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
     if (targetRoomObjects != null) {
-      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.activeStructures.storage != null) {
+      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.activeStructures.storage != null && targetRoomObjects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= this.requiredEnergy) {
         this.takeOverCreeps()
         targetRoomObjects.roomInfo.bootstrapping = false
         return TaskStatus.Finished

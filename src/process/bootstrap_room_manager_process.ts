@@ -19,7 +19,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
   g: number | null
 }
 
-// Game.io("message 34351858000 parent_room_name=W45S31 target_room_name=W39S38 waypoints=W45S32,W44S32,W44S33,W40S33,W40S38 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W51S29 target_room_name=W45S31 waypoints=W51S30,W46S30 target_gcl=42 energy=10000")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
@@ -166,7 +166,24 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return `target_gcl is not a number (${targetGcl})`
     }
 
-    const result = this.addBootstrapRoom(parentRoomName, targetRoomName, waypoints, claimInfo, parsedTargetGcl)
+    const requiredEnergy = ((): number | null => {
+      const rawEnergy = args.get("energy")
+      if (rawEnergy == null) {
+        return 0
+      }
+      const energy = parseInt(rawEnergy, 10)
+      if (isNaN(energy) === true) {
+        return null
+      }
+      return energy
+    })()
+    if (requiredEnergy == null) {
+      return `Invalid energy ${args.get("energy")} is not a number`
+    }
+
+    const ignoreSpawn = args.get("ignore_spawn") === "1"
+
+    const result = this.addBootstrapRoom(parentRoomName, targetRoomName, waypoints, claimInfo, parsedTargetGcl, requiredEnergy, ignoreSpawn)
     switch (result.resultType) {
     case "succeeded":
       return result.value
@@ -175,12 +192,14 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
   }
 
-  public addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[]}, targetGcl: number | null): Result<string, string> {
+  public addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[] }, targetGcl: number | null, requiredEnergy: number, ignoreSpawn: boolean): Result<string, string> {
     const targetRoom = World.rooms.get(targetRoomName)
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
-      const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })
-      if (spawn.length > 0) {
-        return Result.Failed(`${roomLink(targetRoomName)} is already mine`)
+      if (ignoreSpawn !== true) {
+        const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })
+        if (spawn.length > 0) {
+          return Result.Failed(`${roomLink(targetRoomName)} is already mine`)
+        }
       }
     }
     const bootstrappingRoomNames = this.tasks.map(task => task.targetRoomName)
@@ -188,7 +207,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return Result.Failed(`BootstrapRoomTask to ${roomLink(targetRoomName)} already launched`)
     }
 
-    this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints, claimInfo.parentRoomName, claimInfo.waypoints))
+    this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints, claimInfo.parentRoomName, claimInfo.waypoints, requiredEnergy))
     this.nextGcl = targetGcl
 
     const parentInfo = ((): string => {
