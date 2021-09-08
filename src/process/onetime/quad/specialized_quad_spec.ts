@@ -36,6 +36,7 @@ export const quadTypes = [
   "tier3-3tower-dismantler",
   "tier3-6tower-dismantler",
   "tier3-6tower-tank",
+  "tier3-single-d750",
 ] as const
 export type QuadType = typeof quadTypes[number]
 
@@ -96,6 +97,8 @@ export class QuadSpec {
       return [...tier3AttackerBoosts]
     case "tier3-6tower-tank":
       return [...tier3HealBoosts]
+    case "tier3-single-d750":
+      return [...tier3HealRangedAttackBoosts]
     }
   }
 
@@ -111,6 +114,7 @@ export class QuadSpec {
     case "tier1-invader-core-lv1":
       return 2
     case "scout":
+    case "tier3-single-d750":
       return 1
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
@@ -279,6 +283,8 @@ export class QuadSpec {
       }
     case "tier3-6tower-tank":
       return tier36TowerTankHealerSpec
+    case "tier3-single-d750":
+      return tier3SingleD750Spec
     }
   }
 
@@ -310,6 +316,7 @@ export class QuadSpec {
     case "tier3-6tower-dismantler":
     case "tier0-d900":
     case "tier3-6tower-tank":
+    case "tier3-single-d750":
       return false
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
@@ -1001,4 +1008,27 @@ const tier36TowerTankHealerSpec: CreepBodySpec = {
 
 const tier3HealBoosts: MineralBoostConstant[] = [
   RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+]
+
+// ---- tier3-single-d750 ---- //
+const tier3SingleD750Spec: CreepBodySpec = {
+  roles: [CreepRole.Healer, CreepRole.RangedAttacker, CreepRole.Mover],
+  body: [
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL,
+  ]
+}
+
+const tier3HealRangedAttackBoosts: MineralBoostConstant[] = [
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
 ]
