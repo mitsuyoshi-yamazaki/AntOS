@@ -29,7 +29,7 @@ const resourcePriority: ResourceConstant[] = [
   RESOURCE_POWER,
 ]
 
-type State = "in progress" | "finished"
+type State = "stop_spawning" | "in progress" | "finished"
 type TargetType = StructureStorage | StructureTerminal | StructureFactory
 
 export interface StealResourceProcessState extends ProcessState {
@@ -47,8 +47,7 @@ export interface StealResourceProcessState extends ProcessState {
   takeAll: boolean
 }
 
-// Game.io("launch -l StealResourceProcess room_name=W17S11 target_room_name=W21S8 waypoints=W17S10,W20S10,W20S8 target_id=6114b54b0bc98d0ba852e751")
-// Game.io("launch -l StealResourceProcess room_name=W48S33 target_room_name=W48S32 waypoints=W48S32 target_id=61031cf1e37c036c62965c79")
+// Game.io("launch -l StealResourceProcess room_name=W45S31 target_room_name=W46S32 waypoints=W46S32 target_id=60600e57fb105b02dc9f9509")
 export class StealResourceProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -124,9 +123,18 @@ export class StealResourceProcess implements Process, Procedural {
       return
     }
     const numberOfCreeps = ((): number => {
+      if (this.state === "stop_spawning") {
+        return 0
+      }
       const targetRoom = Game.rooms[this.targetRoomName]
-      if (targetRoom?.controller != null && targetRoom.controller.my === true) {
-        return 1
+      if (targetRoom?.controller != null) {
+        if (targetRoom.controller.my === true) {
+          return 1
+        }
+        if (targetRoom.controller.safeMode != null) {
+          this.state = "stop_spawning"
+          return 0
+        }
       }
       if (objects.controller.level <= 4) {
         return 3
