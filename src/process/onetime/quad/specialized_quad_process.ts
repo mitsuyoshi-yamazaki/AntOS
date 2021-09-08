@@ -598,6 +598,7 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     }
     optionalTargets.push(...targetStructures)
 
+    const shouldAttackWorkers = this.target.plan !== "destroy defence facility only"
     const hostileAttackers: Creep[] = []
     const hostileWorkers: AnyCreep[] = position.findInRange(FIND_HOSTILE_POWER_CREEPS, 4)
     const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
@@ -614,7 +615,9 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
       if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
         hostileAttackers.push(creep)
       } else {
-        hostileWorkers.push(creep)
+        if (shouldAttackWorkers === true) {
+          hostileWorkers.push(creep)
+        }
       }
     });
 
