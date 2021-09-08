@@ -541,11 +541,12 @@ export class Quad implements Stateful, QuadInterface {
     try {
       const nextPosition = new RoomPosition(nextSteps[0].x, nextSteps[0].y, this.room.name)
       const nextPositions: (RoomPosition | null)[] = [
-        nextPosition,
         nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM)),
         nextPosition.positionTo(this.absoluteQuadFollowerDirection(LEFT)),
         nextPosition.positionTo(this.absoluteQuadFollowerDirection(BOTTOM_LEFT)),
-      ]
+      ].slice(0, sliceCount(this.creeps.length))
+      nextPositions.unshift(nextPosition)
+
       const hasObstacle = nextPositions.some(quadNextPosition => {
         if (quadNextPosition == null) {
           return false
@@ -852,6 +853,11 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   private moveFollowersToNextDirection(direction: DirectionConstant): void {
+    if (this.followerCreeps.length === 1 && this.followerCreeps[0] != null) {
+      this.followerCreeps[0].move(this.followerCreeps[0].pos.getDirectionTo(this.leaderCreep.pos))
+      return
+    }
+
     const move = (creepIndex: number): void => {
       const creep = this.creeps[creepIndex]
       if (creep == null || creep.spawning === true) {
@@ -1195,6 +1201,13 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
   })
 }
 
+function sliceCount(creepCount: number): number {
+  if (creepCount <= 2) {
+    return 0
+  }
+  return Math.max(creepCount - 1, 0)
+}
+
 function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direction, positionsToAvoid?: RoomPosition[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
   return (roomName: RoomName, costMatrix: CostMatrix): CostMatrix => {
     const room = Game.rooms[roomName]
@@ -1209,12 +1222,6 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       })
     }
 
-    const sliceCount = ((): number => {
-      if (excludedCreepNames.length <= 2) {
-        return 0
-      }
-      return Math.max(excludedCreepNames.length - 1, 0)
-    })()
     const obstacleDirections = ((): DirectionConstant[] => {
       switch (quadDirection) {
       case TOP:
@@ -1242,7 +1249,7 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
           TOP_LEFT,
         ]
       }
-    })().slice(0, sliceCount)
+    })().slice(0, sliceCount(excludedCreepNames.length))
 
     const getObstaclePositions = (position: RoomPosition): RoomPosition[] => {
       return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
