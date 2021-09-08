@@ -134,10 +134,12 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
         (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
         (this.manualOperations.targetIds.length <= 0 ? "no targets" : `targets: ${this.manualOperations.targetIds.join(",")}`),
       ]
+      if (this.target.plan != null) {
+        descriptions.unshift(`plan: ${this.target.plan}`)
+      }
       if (this.target.action != null) {
         descriptions.unshift(`action: ${this.target.action}`)
       }
-      // descriptions.push(`in ${roomLink()}`)
       return descriptions.join(", ")
     }
     if (message === "flee") {
@@ -156,6 +158,14 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
       this.target.action = null
       this.target.message = null
       return "action cleared"
+    }
+    if (message === "planD") {
+      this.target.plan = "destroy defence facility only"
+      return "set destroy defence facility only"
+    }
+    if (message === "clear plan") {
+      this.target.plan = null
+      return "plan cleared"
     }
     if (message.startsWith("say ")) {
       const squadMessage = message.slice(4)
