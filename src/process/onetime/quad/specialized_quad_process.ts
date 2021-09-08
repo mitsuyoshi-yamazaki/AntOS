@@ -13,13 +13,13 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 import { OperatingSystem } from "os/os"
-import { Quad, QuadAttackTargetType, QuadState } from "./season_1673282_specialized_quad"
-import { QuadSpec, QuadType } from "./season_1673282_specialized_quad_spec"
+import { Quad, QuadAttackTargetType, QuadState } from "./specialized_quad"
+import { QuadSpec, QuadType } from "./specialized_quad_spec"
 import { CreepName } from "prototype/creep"
 import { GameConstants } from "utility/constants"
 import { boostableCreepBody } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
-import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "./season_1143119_lab_charger_process"
+import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "../../temporary/season_1143119_lab_charger_process"
 import { directionName } from "utility/direction"
 
 type AttackTarget = AnyCreep | AnyStructure
@@ -36,7 +36,7 @@ type TargetInfo = {
   message: string | null
 }
 
-export interface Season1673282SpecializedQuadProcessState extends ProcessState {
+export interface SpecializedQuadProcessState extends ProcessState {
   /** parent room name */
   readonly p: RoomName
 
@@ -49,8 +49,8 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W45S9 target_room_name=W46S9 waypoints=W46S9 quad_type=test-dismantler targets=")
-export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
+// Game.io("launch -l SpecializedQuadProcess room_name=W45S9 target_room_name=W46S9 waypoints=W46S9 quad_type=test-dismantler targets=")
+export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -80,9 +80,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     this.quadSpec = new QuadSpec(this.quadType)
   }
 
-  public encode(): Season1673282SpecializedQuadProcessState {
+  public encode(): SpecializedQuadProcessState {
     return {
-      t: "Season1673282SpecializedQuadProcess",
+      t: "SpecializedQuadProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -95,11 +95,11 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
   }
 
-  public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.target, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets)
+  public static decode(state: SpecializedQuadProcessState): SpecializedQuadProcess {
+    return new SpecializedQuadProcess(state.l, state.i, state.p, state.target, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): SpecializedQuadProcess {
     const quadSpec = new QuadSpec(quadType)
     if (quadSpec.boosts.length > 0) {
       launchLabChargerProcess(parentRoomName, quadSpec)
@@ -115,7 +115,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       plan: null,
       message: null,
     }
-    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, target, quadType, [], null, manualOperations, [])
+    return new SpecializedQuadProcess(Game.time, processId, parentRoomName, target, quadType, [], null, manualOperations, [])
   }
 
   public processShortDescription(): string {
@@ -815,14 +815,14 @@ function launchLabChargerProcess(parentRoomName: RoomName, quadSpec: QuadSpec): 
   if (existingProcessInfo != null) {
     const process = existingProcessInfo.process
     if (!(process instanceof Season1143119LabChargerProcess)) {
-      PrimitiveLogger.programError(`Season1673282SpecializedQuadProcess program error: ${process} is not Season1143119LabChargerProcess ${roomLink(parentRoomName)}`)
+      PrimitiveLogger.programError(`SpecializedQuadProcess program error: ${process} is not Season1143119LabChargerProcess ${roomLink(parentRoomName)}`)
       return
     }
     if (JSON.stringify(process.boosts.sort()) === JSON.stringify(boosts)) {
       if (existingProcessInfo.running !== true) {
         OperatingSystem.os.resumeProcess(existingProcessInfo.processId)
       }
-      PrimitiveLogger.log(`Season1673282SpecializedQuadProcess use Season1143119LabChargerProcess ${existingProcessInfo.processId} ${roomLink(parentRoomName)}`)
+      PrimitiveLogger.log(`SpecializedQuadProcess use Season1143119LabChargerProcess ${existingProcessInfo.processId} ${roomLink(parentRoomName)}`)
       showRequiredBoosts()
       return
     }

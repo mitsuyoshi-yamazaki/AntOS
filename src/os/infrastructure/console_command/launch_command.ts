@@ -30,9 +30,9 @@ import { Season1606052SKHarvesterProcess } from "process/temporary/season_160605
 import { isMineralBoostConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
-import { Season1673282SpecializedQuadProcess } from "process/temporary/season_1673282_specialized_quad_process"
+import { SpecializedQuadProcess } from "process/onetime/quad/specialized_quad_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
-import { isQuadType, quadTypes } from "process/temporary/season_1673282_specialized_quad_spec"
+import { isQuadType, quadTypes } from "process/onetime/quad/specialized_quad_spec"
 import { Season2006098StealResourceProcess } from "process/temporary/season_2006098_steal_resource_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
@@ -118,8 +118,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season1655635SKMineralHarvestProcess":
       result = this.launchSeason1655635SKMineralHarvestProcess()
       break
-    case "Season1673282SpecializedQuadProcess":
-      result = this.launchSeason1673282SpecializedQuadProcess()
+    case "SpecializedQuadProcess":
+      result = this.launchSpecializedQuadProcess()
       break
     case "Season1838855DistributorProcess":
       result = this.launchSeason1838855DistributorProcess()
@@ -730,7 +730,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1673282SpecializedQuadProcess(): LaunchCommandResult {
+  private launchSpecializedQuadProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -760,7 +760,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1673282SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
+      return SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
     })
     return Result.Succeeded(process)
   }

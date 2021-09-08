@@ -17,7 +17,7 @@ import { Season989041MovePowerCreepProcess, Season989041MovePowerCreepProcessSta
 import { Season1521073SendResourceProcess, Season1521073SendResourceProcessState } from "./temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess, Season1606052SKHarvesterProcessState } from "./temporary/season_1606052_sk_harvester_process"
 import { Season1655635SKMineralHarvestProcess, Season1655635SKMineralHarvestProcessState } from "./temporary/season_1655635_sk_mineral_harvest_process"
-import { Season1673282SpecializedQuadProcess, Season1673282SpecializedQuadProcessState } from "./temporary/season_1673282_specialized_quad_process"
+import { SpecializedQuadProcess, SpecializedQuadProcessState } from "./onetime/quad/specialized_quad_process"
 import { Season1838855DistributorProcess, Season1838855DistributorProcessState } from "./temporary/season_1838855_distributor_process"
 import { Season2006098StealResourceProcess, Season2006098StealResourceProcessState } from "./temporary/season_2006098_steal_resource_process"
 import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessState } from "./temporary/season_2055924_send_resources_process"
@@ -62,7 +62,10 @@ class ProcessTypes {
   "EconomyProcess" = (state: ProcessState) => EconomyProcess.decode(state as unknown as EconomyProcessState)
   "OwnedRoomStaticObjectRequesterProcess" = (state: ProcessState) => OwnedRoomStaticObjectRequesterProcess.decode(state as unknown as OwnedRoomStaticObjectRequesterProcessState)
 
-  // ---- Temporary processes ---- //
+  // ---- Onetime ---- //
+  "SpecializedQuadProcess" = (state: ProcessState) => SpecializedQuadProcess.decode(state as unknown as SpecializedQuadProcessState)
+
+  // ---- Temporary ---- //
   "Season487837AttackInvaderCoreProcess" = (state: ProcessState) => Season487837AttackInvaderCoreProcess.decode(state as unknown as Season487837AttackInvaderCoreProcessState)
   "Season570208DismantleRcl2RoomProcess" = (state: ProcessState) => Season570208DismantleRcl2RoomProcess.decode(state as unknown as Season570208DismantleRcl2RoomProcessState)
   "Season631744PowerProcessProcess" = (state: ProcessState) => Season631744PowerProcessProcess.decode(state as unknown as Season631744PowerProcessProcessState)
@@ -79,7 +82,6 @@ class ProcessTypes {
   "Season1521073SendResourceProcess" = (state: ProcessState) => Season1521073SendResourceProcess.decode(state as unknown as Season1521073SendResourceProcessState)
   "Season1606052SKHarvesterProcess" = (state: ProcessState) => Season1606052SKHarvesterProcess.decode(state as unknown as Season1606052SKHarvesterProcessState)
   "Season1655635SKMineralHarvestProcess" = (state: ProcessState) => Season1655635SKMineralHarvestProcess.decode(state as unknown as Season1655635SKMineralHarvestProcessState)
-  "Season1673282SpecializedQuadProcess" = (state: ProcessState) => Season1673282SpecializedQuadProcess.decode(state as unknown as Season1673282SpecializedQuadProcessState)
   "Season1838855DistributorProcess" = (state: ProcessState) => Season1838855DistributorProcess.decode(state as unknown as Season1838855DistributorProcessState)
   "Season2006098StealResourceProcess" = (state: ProcessState) => Season2006098StealResourceProcess.decode(state as unknown as Season2006098StealResourceProcessState)
   "Season2055924SendResourcesProcess" = (state: ProcessState) => Season2055924SendResourcesProcess.decode(state as unknown as Season2055924SendResourcesProcessState)
