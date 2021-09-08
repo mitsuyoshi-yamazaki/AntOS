@@ -26,27 +26,27 @@ type AttackTarget = AnyCreep | AnyStructure
 type ManualOperations = {
   targetIds: Id<AttackTarget>[]
   direction: TOP | BOTTOM | LEFT | RIGHT | null
-  action: "flee" | "noflee" | "drain" | null
-  message: string | null
 }
 
-type TargetRoomInfo = {
+type TargetInfo = {
   readonly roomName: RoomName
   readonly waypoints: RoomName[]
+  action: "flee" | "noflee" | "drain" | null
+  plan: "destroy defence facility only" | null
+  message: string | null
 }
 
 export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   /** parent room name */
-  p: RoomName
+  readonly p: RoomName
 
-  targetRoomName: RoomName
-  waypoints: RoomName[]
-  quadType: QuadType
-  creepNames: CreepName[]
-  quadState: QuadState | null
-  manualOperations: ManualOperations
+  readonly target: TargetInfo
+  readonly quadType: QuadType
+  readonly creepNames: CreepName[]
+  readonly quadState: QuadState | null
+  readonly manualOperations: ManualOperations
   // lastTowerAttack: // TODO:
-  nextTargets: TargetRoomInfo[]
+  readonly nextTargets: TargetInfo[]
 }
 
 // Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W45S9 target_room_name=W46S9 waypoints=W46S9 quad_type=test-dismantler targets=")
@@ -56,6 +56,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public readonly identifier: string
+  public get targetRoomName(): RoomName {
+    return this.target.roomName
+  }
 
   private readonly codename: string
   private readonly quadSpec: QuadSpec
@@ -64,13 +67,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public targetRoomName: RoomName,
-    public waypoints: RoomName[],
+    private target: TargetInfo,
     private readonly quadType: QuadType,
     private readonly creepNames: CreepName[],
     private quadState: QuadState | null,
     private readonly manualOperations: ManualOperations,
-    private readonly nextTargets: TargetRoomInfo[],
+    private readonly nextTargets: TargetInfo[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -84,8 +86,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
-      targetRoomName: this.targetRoomName,
-      waypoints: this.waypoints,
+      target: this.target,
       quadType: this.quadType,
       creepNames: this.creepNames,
       quadState: this.quadState,
@@ -95,7 +96,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets)
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.target, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
@@ -106,10 +107,15 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     const manualOperations: ManualOperations = {
       targetIds: predefinedTargetIds,
       direction: null,
+    }
+    const target: TargetInfo = {
+      roomName: targetRoomName,
+      waypoints,
       action: null,
+      plan: null,
       message: null,
     }
-    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations, [])
+    return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, target, quadType, [], null, manualOperations, [])
   }
 
   public processShortDescription(): string {
@@ -128,36 +134,36 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         (this.quadState == null ? "no quad" : `direction: ${this.quadState.direction}`),
         (this.manualOperations.targetIds.length <= 0 ? "no targets" : `targets: ${this.manualOperations.targetIds.join(",")}`),
       ]
-      if (this.manualOperations.action != null) {
-        descriptions.unshift(`action: ${this.manualOperations.action}`)
+      if (this.target.action != null) {
+        descriptions.unshift(`action: ${this.target.action}`)
       }
       // descriptions.push(`in ${roomLink()}`)
       return descriptions.join(", ")
     }
     if (message === "flee") {
-      this.manualOperations.action = "flee"
+      this.target.action = "flee"
       return "action: flee"
     }
     if (message === "noflee") {
-      this.manualOperations.action = "noflee"
+      this.target.action = "noflee"
       return "action: noflee"
     }
     if (message === "drain") {
-      this.manualOperations.action = "drain"
+      this.target.action = "drain"
       return "action: drain"
     }
     if (message === "clear action") {
-      this.manualOperations.action = null
-      this.manualOperations.message = null
+      this.target.action = null
+      this.target.message = null
       return "action cleared"
     }
     if (message.startsWith("say ")) {
       const squadMessage = message.slice(4)
       if (squadMessage.length > 0) {
-        this.manualOperations.message = squadMessage
+        this.target.message = squadMessage
         return `set message "${squadMessage}"`
       }
-      this.manualOperations.message = null
+      this.target.message = null
       return "clear message"
     }
     const direction = parseInt(message, 10)
@@ -173,7 +179,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       this.quadState.nextDirection = direction as TOP | BOTTOM | RIGHT | LEFT
       return `direction ${coloredText(directionName(direction as TOP | BOTTOM | RIGHT | LEFT), "info")} set`
     }
-    const parseTargetRoomInfo = (rawInfo: string): TargetRoomInfo | string => {
+    const parseTargetRoomInfo = (rawInfo: string): TargetInfo | string => {
       const roomNames = rawInfo.split(",")
       if (rawInfo.length <= 0 || roomNames.length <= 0) {
         return "no target room specified"
@@ -188,6 +194,9 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return {
         roomName: targetRoomName,
         waypoints: roomNames,
+        action: null,
+        plan: null,
+        message: null,
       }
     }
     const changeTargetCommand = "change target "
@@ -197,8 +206,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (typeof roomInfo === "string") {
         return roomInfo
       }
-      this.waypoints = roomInfo.waypoints
-      this.targetRoomName = roomInfo.roomName
+      this.target = roomInfo
       const nextTargetsInfo = this.nextTargets.length > 0 ? `, ${this.nextTargets.length} following targets cleared` : ""
       this.nextTargets.splice(0, this.nextTargets.length)
       return `target room: ${roomInfo.roomName}, waypoints: ${roomInfo.waypoints} set${nextTargetsInfo}`
@@ -295,14 +303,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       })()
       quad.beforeRun()
       if (isPreparing === true) {
-        quad.moveToRoom(this.targetRoomName, this.waypoints, {wait: true})
+        quad.moveToRoom(this.targetRoomName, this.target.waypoints, {wait: true})
         quad.heal()
       } else {
         this.runQuad(quad)
       }
       quad.run()
-      if (this.manualOperations.message != null) {
-        quad.say(this.manualOperations.message, true)
+      if (this.target.message != null) {
+        quad.say(this.target.message, true)
       }
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
@@ -338,11 +346,12 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
 
   private runQuad(quad: Quad): void {
     if (quad.inRoom(this.targetRoomName) !== true) {
-      if (this.manualOperations.action === "flee" && quad.allCreepsInSameRoom() === true) {
-        this.manualOperations.action = null
+      if (this.target.action === "flee" && quad.allCreepsInSameRoom() === true) {
+        this.target.action = null
       }
-      quad.moveToRoom(this.targetRoomName, this.waypoints, { healBeforeEnter: true })
-      quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+      quad.moveToRoom(this.targetRoomName, this.target.waypoints, { healBeforeEnter: true })
+      const noCollateralDamage = this.target.plan === "destroy defence facility only"
+      quad.passiveAttack(this.hostileCreepsInRoom(quad.room), noCollateralDamage)
       quad.heal()
       return
     }
@@ -354,14 +363,14 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
     }
 
-    if (this.manualOperations.action !== "noflee" && quad.damagePercent * 4 > 0.15) {
+    if (this.target.action !== "noflee" && quad.damagePercent * 4 > 0.15) {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
         return
       }
     }
 
-    switch (this.manualOperations.action) {
+    switch (this.target.action) {
     case "flee": {
       const { succeeded } = this.flee(quad)
       if (succeeded === true) {
@@ -384,8 +393,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       const nextTargetInfo = this.nextTargets.shift()
       if (nextTargetInfo != null) {
         processLog(this, `${coloredText("[Quad]", "warn")} target ${roomLink(this.targetRoomName)} finished, heading to ${roomLink(nextTargetInfo.roomName)}`)
-        this.targetRoomName = nextTargetInfo.roomName
-        this.waypoints = nextTargetInfo.waypoints
+        this.target = nextTargetInfo
       }
     }
 
@@ -407,7 +415,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
     }
 
     quad.heal()
-    quad.attack(mainTarget, optionalTargets)
+    const noCollateralDamage = this.target.plan === "destroy defence facility only"
+    quad.attack(mainTarget, optionalTargets, noCollateralDamage)
     if (mainTarget != null) {
       if (this.quadSpec.canHandleMelee() !== true && (mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
         if (quad.getMinRangeTo(mainTarget.pos) <= 1) {
@@ -429,7 +438,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       return { succeeded: false }
     }
     quad.moveToRoom(closestNeighbourRoom, [], {quadFormed: true})
-    quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+    const noCollateralDamage = this.target.plan === "destroy defence facility only"
+    quad.passiveAttack(this.hostileCreepsInRoom(quad.room), noCollateralDamage)
     quad.heal()
     return { succeeded: true }
   }
@@ -458,7 +468,8 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   private drain(quad: Quad): void {
     quad.say("drain")
     quad.heal()
-    quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
+    const noCollateralDamage = this.target.plan === "destroy defence facility only"
+    quad.passiveAttack(this.hostileCreepsInRoom(quad.room), noCollateralDamage)
 
     const quadPosition = quad.pos
     const threshold = 3
@@ -520,20 +531,47 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
         STRUCTURE_INVADER_CORE,
       ]
     })()
-    const mainTargetStructures: StructureConstant[] = [
-      STRUCTURE_TERMINAL,
-      STRUCTURE_SPAWN,
-      STRUCTURE_TOWER,
-      STRUCTURE_INVADER_CORE,
-    ]
-    const excludedStructureTypes: StructureConstant[] = [
-      STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
-      STRUCTURE_CONTROLLER,
-      // STRUCTURE_RAMPART,
-      STRUCTURE_KEEPER_LAIR,
-      STRUCTURE_POWER_BANK,
-      STRUCTURE_EXTRACTOR,
-    ]
+
+    const [mainTargetStructures, excludedStructureTypes] = ((): [StructureConstant[], StructureConstant[]] => {
+      if (this.target.plan === "destroy defence facility only") {
+        return [
+          [
+            STRUCTURE_TOWER,
+          ],
+          [
+            STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
+            STRUCTURE_CONTROLLER,
+            // STRUCTURE_RAMPART,
+            STRUCTURE_KEEPER_LAIR,
+            STRUCTURE_POWER_BANK,
+            STRUCTURE_EXTRACTOR,
+            STRUCTURE_LINK,
+            STRUCTURE_EXTENSION,
+            STRUCTURE_SPAWN,
+            STRUCTURE_TERMINAL,
+            STRUCTURE_FACTORY,
+            STRUCTURE_LAB,
+          ],
+        ]
+      }
+      return [
+        [
+          STRUCTURE_TERMINAL,
+          STRUCTURE_SPAWN,
+          STRUCTURE_TOWER,
+          STRUCTURE_INVADER_CORE,
+        ],
+        [
+          STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
+          STRUCTURE_CONTROLLER,
+          // STRUCTURE_RAMPART,
+          STRUCTURE_KEEPER_LAIR,
+          STRUCTURE_POWER_BANK,
+          STRUCTURE_EXTRACTOR,
+        ],
+      ]
+    })()
+
     const targetStructures = room.find(FIND_HOSTILE_STRUCTURES)
       .filter(structure => excludedStructureTypes.includes(structure.structureType) !== true)
       .sort((lhs, rhs) => {

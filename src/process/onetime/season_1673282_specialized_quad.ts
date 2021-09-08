@@ -123,8 +123,8 @@ interface QuadInterface {
 
   // ---- Attack ---- //
   heal(targets?: AnyCreep[]): void
-  attack(mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]): void
-  passiveAttack(targets: QuadAttackTargetType[]): void
+  attack(mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[], noCollateralDamage: boolean): void
+  passiveAttack(targets: QuadAttackTargetType[], noCollateralDamage: boolean): void
 
   // ---- Execution ---- //
   beforeRun(): void
@@ -994,10 +994,10 @@ export class Quad implements Stateful, QuadInterface {
     })
   }
 
-  public attack(mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]): void {
+  public attack(mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[], noCollateralDamage: boolean): void {
     this.creeps.forEach(creep => {
       if (creep.getActiveBodyparts(RANGED_ATTACK) > 0) {
-        this.rangedAttackCreep(creep, mainTarget, [...optionalTargets])
+        this.rangedAttackCreep(creep, mainTarget, [...optionalTargets], noCollateralDamage)
       }
       if (creep.getActiveBodyparts(ATTACK) > 0) {
         const nearbyTarget = ((): QuadAttackTargetType | null => {
@@ -1029,10 +1029,10 @@ export class Quad implements Stateful, QuadInterface {
     })
   }
 
-  public passiveAttack(targets: QuadAttackTargetType[]): void {
+  public passiveAttack(targets: QuadAttackTargetType[], noCollateralDamage: boolean): void {
     this.creeps.forEach(creep => {
       if (creep.getActiveBodyparts(RANGED_ATTACK) > 0) {
-        this.rangedAttackCreep(creep, null, targets)
+        this.rangedAttackCreep(creep, null, targets, noCollateralDamage)
       }
       if (creep.getActiveBodyparts(ATTACK) > 0) {
         const target = creep.pos.findInRange(targets, 1)[0]
@@ -1052,10 +1052,10 @@ export class Quad implements Stateful, QuadInterface {
     })
   }
 
-  private rangedAttackCreep(creep: Creep, mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[]): void {
+  private rangedAttackCreep(creep: Creep, mainTarget: QuadAttackTargetType | null, optionalTargets: QuadAttackTargetType[], noCollateralDamage: boolean): void {
     if (mainTarget != null) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (creep.pos.getRangeTo(mainTarget) <= 1 && (mainTarget as any).owner != null) {
+      if (noCollateralDamage !== true && creep.pos.getRangeTo(mainTarget) <= 1 && (mainTarget as any).owner != null) {
         creep.rangedMassAttack()
         return
       } else {
@@ -1066,6 +1066,13 @@ export class Quad implements Stateful, QuadInterface {
     }
 
     if (optionalTargets.length <= 0) {
+      return
+    }
+    if (noCollateralDamage === true) {
+      const closestOptionalTarget = creep.pos.findClosestByRange(optionalTargets)
+      if (closestOptionalTarget != null) {
+        creep.rangedAttack(closestOptionalTarget)
+      }
       return
     }
 
