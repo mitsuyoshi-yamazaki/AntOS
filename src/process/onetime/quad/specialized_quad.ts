@@ -251,6 +251,10 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   public isQuadForm(): boolean {
+    if (this.followerCreeps.length === 1 && this.followerCreeps[0] != null) {
+      return this.followerCreeps[0].pos.getRangeTo(this.leaderCreep.pos) === 1
+    }
+
     const checkPosition = (creepIndex: number, directionFromTopRight: DirectionConstant): boolean => {
       const creep = this.creeps[creepIndex]
       if (creep == null) {
@@ -1205,6 +1209,12 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
       })
     }
 
+    const sliceCount = ((): number => {
+      if (excludedCreepNames.length <= 2) {
+        return 0
+      }
+      return Math.max(excludedCreepNames.length - 1, 0)
+    })()
     const obstacleDirections = ((): DirectionConstant[] => {
       switch (quadDirection) {
       case TOP:
@@ -1232,7 +1242,7 @@ function quadCostCallback(excludedCreepNames: CreepName[], quadDirection: Direct
           TOP_LEFT,
         ]
       }
-    })()
+    })().slice(0, sliceCount)
 
     const getObstaclePositions = (position: RoomPosition): RoomPosition[] => {
       return obstacleDirections.flatMap(direction => position.positionTo(direction) ?? [])
