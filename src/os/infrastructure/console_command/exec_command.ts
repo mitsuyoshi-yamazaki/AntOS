@@ -18,6 +18,7 @@ import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_tas
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { OwnedRoomInfo } from "room_resource/room_info"
+import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -48,6 +49,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.transfer()
     case "pickup":
       return this.pickup()
+    case "dismantle":
+      return this.dismantle()
     case "resource":
       return this.resource()
     case "set_boost_labs":
@@ -371,9 +374,6 @@ export class ExecCommand implements ConsoleCommand {
     if (creep == null) {
       return `Creep ${creepName} doesn't exists`
     }
-    // if (creep.v5task != null) {
-    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    // }
     const apiWrapper = ((): WithdrawApiWrapper | string => {
       const target = Game.getObjectById(targetId)
       if (target == null) {
@@ -402,6 +402,45 @@ export class ExecCommand implements ConsoleCommand {
       MoveToTargetTaskV5.create(apiWrapper),
     ]
     creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+    return "ok"
+  }
+
+  private dismantle(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    const apiWrapper = ((): DismantleApiWrapper | string => {
+      const target = Game.getObjectById(targetId)
+      if (target == null) {
+        return `Target ${targetId} does not exists`
+      }
+      if (target instanceof StructureWall) {
+        return DismantleApiWrapper.create(target)
+      }
+      return `${target} is not supported yet`
+    })()
+
+    if (typeof apiWrapper === "string") {
+      return apiWrapper
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const tasks: CreepTask[] = [
+      MoveToTargetTaskV5.create(apiWrapper),
+    ]
+    creep.memory.t = SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }).encode()
     return "ok"
   }
 
