@@ -60,7 +60,6 @@ type MoveToRoomQuadTask = {
   waypoints: RoomName[]
   quadFormed: boolean
   wait: boolean
-  backward: boolean
   healBeforeEnter: boolean
 }
 type MoveToQuadTask = {
@@ -91,7 +90,6 @@ export interface QuadState extends State {
   leaderRotationPositionState: RoomPositionState | null
   leaderName: CreepName
   followerNames: CreepName[]
-  automaticRotationEnabled: boolean
 }
 
 interface QuadInterface {
@@ -191,7 +189,6 @@ export class Quad implements Stateful, QuadInterface {
     private leaderRotationPosition: RoomPosition | null,
     private leaderCreep: Creep,
     private readonly followerCreeps: Creep[],
-    public automaticRotationEnabled: boolean,
   ) {
   }
 
@@ -203,7 +200,6 @@ export class Quad implements Stateful, QuadInterface {
       leaderRotationPositionState: this.leaderRotationPosition?.encode() ?? null,
       leaderName: this.leaderCreep.name,
       followerNames: this.followerCreeps.map(creep => creep.name),
-      automaticRotationEnabled: this.automaticRotationEnabled,
     }
   }
 
@@ -226,11 +222,11 @@ export class Quad implements Stateful, QuadInterface {
       return decodeRoomPosition(roomPositionState)
     }
     const leaderRotationPosition = decodePosition(state.leaderRotationPositionState)
-    return new Quad(state.direction, state.nextDirection, leaderRotationPosition, leader, followerCreeps, state.automaticRotationEnabled ?? true)
+    return new Quad(state.direction, state.nextDirection, leaderRotationPosition, leader, followerCreeps)
   }
 
   public static create(leaderCreep: Creep, followerCreeps: Creep[]): Quad | null {
-    return new Quad(TOP, null, null, leaderCreep, followerCreeps, true)
+    return new Quad(TOP, null, null, leaderCreep, followerCreeps)
   }
 
   // ---- Position ---- //
@@ -316,7 +312,7 @@ export class Quad implements Stateful, QuadInterface {
   }
 
   // ---- Move ---- //
-  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, backward?: boolean, healBeforeEnter?: boolean}): void {
+  public moveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], options?: { quadFormed?: boolean, wait?: boolean, healBeforeEnter?: boolean}): void {
     switch (this.moveTask.taskType) {
     case "rotate":
       if (this.isQuadForm() === true) {
@@ -333,7 +329,6 @@ export class Quad implements Stateful, QuadInterface {
       waypoints: waypoints,
       quadFormed: options?.quadFormed ?? false,
       wait: options?.wait ?? false,
-      backward: options?.backward ?? false,
       healBeforeEnter: options?.healBeforeEnter ?? false,
     }
   }
@@ -420,7 +415,6 @@ export class Quad implements Stateful, QuadInterface {
         this.moveTask.waypoints,
         this.moveTask.quadFormed,
         this.moveTask.wait,
-        this.moveTask.backward,
         this.moveTask.healBeforeEnter,
       )
       break
@@ -444,7 +438,7 @@ export class Quad implements Stateful, QuadInterface {
     }
   }
 
-  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, backward: boolean, healBeforeEnter: boolean): void {
+  private runMoveToRoom(destinationRoomName: RoomName, waypoints: RoomName[], quadFormed: boolean, wait: boolean, healBeforeEnter: boolean): void {
     if (quadFormed !== true) {
       const status = this.getMoveToRoomStatus(this.pos, this.room, destinationRoomName, waypoints)
       switch (status) {
@@ -484,11 +478,8 @@ export class Quad implements Stateful, QuadInterface {
       return
     }
     const {moveDirection, exitDirection} = nextMove
-    if (backward === true) {
-      const quadDirection = oppositeDirectionMap[exitDirection]
-      if (this.direction !== quadDirection) {
-        this.nextDirection = quadDirection
-      }
+    if (this.direction !== exitDirection) {
+      this.nextDirection = exitDirection
     }
 
     if (healBeforeEnter === true && this.damage > 0) {
@@ -512,7 +503,7 @@ export class Quad implements Stateful, QuadInterface {
 
     const maxRange = this.getMinRangeTo(position)
     if (maxRange <= range) {
-      if (this.automaticRotationEnabled === true && this.leaderCreep.pos.isNearTo(position) !== true) {
+      if (this.leaderCreep.pos.isNearTo(position) !== true) {
         this.runRotateTask(leftRotationDirectionOf(this.direction))
       }
       return

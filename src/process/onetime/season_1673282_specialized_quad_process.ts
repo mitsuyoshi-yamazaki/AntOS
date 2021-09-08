@@ -28,7 +28,6 @@ type ManualOperations = {
   direction: TOP | BOTTOM | LEFT | RIGHT | null
   action: "flee" | "noflee" | "drain" | null
   message: string | null
-  automaticRotationEnabled: boolean | null
 }
 
 type TargetRoomInfo = {
@@ -50,7 +49,7 @@ export interface Season1673282SpecializedQuadProcessState extends ProcessState {
   nextTargets: TargetRoomInfo[]
 }
 
-// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W48S6 target_room_name=W46S5 waypoints=W48S7,W46S7 quad_type=tier1-invader-core-lv1 targets=")
+// Game.io("launch -l Season1673282SpecializedQuadProcess room_name=W45S9 target_room_name=W46S9 waypoints=W46S9 quad_type=test-dismantler targets=")
 export class Season1673282SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -96,7 +95,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
   }
 
   public static decode(state: Season1673282SpecializedQuadProcessState): Season1673282SpecializedQuadProcess {
-    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets ?? [])
+    return new Season1673282SpecializedQuadProcess(state.l, state.i, state.p, state.targetRoomName, state.waypoints, state.quadType, state.creepNames, state.quadState, state.manualOperations, state.nextTargets)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], predefinedTargetIds: Id<AttackTarget>[], quadType: QuadType): Season1673282SpecializedQuadProcess {
@@ -109,7 +108,6 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       direction: null,
       action: null,
       message: null,
-      automaticRotationEnabled: null,
     }
     return new Season1673282SpecializedQuadProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, quadType, [], null, manualOperations, [])
   }
@@ -161,22 +159,6 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       }
       this.manualOperations.message = null
       return "clear message"
-    }
-    if (message === "enable rotation") {
-      if (this.quadState != null) {
-        this.quadState.automaticRotationEnabled = true
-      } else {
-        this.manualOperations.automaticRotationEnabled = true
-      }
-      return "automatic rotation enabled"
-    }
-    if (message === "disable rotation") {
-      if (this.quadState != null) {
-        this.quadState.automaticRotationEnabled = false
-      } else {
-        this.manualOperations.automaticRotationEnabled = false
-      }
-      return "automatic rotation disabled"
     }
     const direction = parseInt(message, 10)
     if (message.length <= 1 && isNaN(direction) !== true && ([TOP, BOTTOM, RIGHT, LEFT] as number[]).includes(direction) === true) {
@@ -322,10 +304,6 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (this.manualOperations.message != null) {
         quad.say(this.manualOperations.message, true)
       }
-      if (this.manualOperations.automaticRotationEnabled != null) {
-        quad.automaticRotationEnabled = this.manualOperations.automaticRotationEnabled
-        this.manualOperations.automaticRotationEnabled = null
-      }
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
       processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}`)
@@ -363,7 +341,7 @@ export class Season1673282SpecializedQuadProcess implements Process, Procedural,
       if (this.manualOperations.action === "flee" && quad.allCreepsInSameRoom() === true) {
         this.manualOperations.action = null
       }
-      quad.moveToRoom(this.targetRoomName, this.waypoints, { backward: false, healBeforeEnter: true })
+      quad.moveToRoom(this.targetRoomName, this.waypoints, { healBeforeEnter: true })
       quad.passiveAttack(this.hostileCreepsInRoom(quad.room))
       quad.heal()
       return
