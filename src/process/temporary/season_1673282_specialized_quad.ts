@@ -1140,12 +1140,14 @@ const walkableStructures: StructureConstant[] = [
   STRUCTURE_ROAD,
   STRUCTURE_CONTAINER,
 ]
-const unbreakableStructureTypes: StructureConstant[] = [
+const obstacleStructureTypes: StructureConstant[] = [
   STRUCTURE_KEEPER_LAIR,
   STRUCTURE_CONTROLLER,
   STRUCTURE_POWER_BANK,
   STRUCTURE_PORTAL,
   STRUCTURE_INVADER_CORE,
+  STRUCTURE_WALL,
+  STRUCTURE_RAMPART,
 ]
 
 function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepName[], markDestructiveStructureAsObstacle?: boolean): boolean {
@@ -1168,7 +1170,7 @@ function hasObstacleObjectAt(position: RoomPosition, excludedCreepNames: CreepNa
       if (structure == null) {
         return false
       }
-      if (unbreakableStructureTypes.includes(structure.structureType) === true) {
+      if (obstacleStructureTypes.includes(structure.structureType) === true) {
         return true
       }
       if (walkableStructures.includes(structure.structureType) === true) {
