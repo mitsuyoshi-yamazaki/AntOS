@@ -20,7 +20,7 @@ import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { OperatingSystem } from "os/os"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "../../process/onetime/season_701205_power_harvester_swamp_runner_process"
+import { Season701205PowerHarvesterSwampRunnerProcess } from "../../process/temporary/season_701205_power_harvester_swamp_runner_process"
 
 const testing = false as boolean
 

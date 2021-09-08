@@ -13,12 +13,12 @@ import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/own
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
-import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
+import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
 import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
 import { Environment } from "utility/environment"
-import { World35587255ScoutRoomProcess } from "process/onetime/world_35587255_scout_room_process"
+import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
