@@ -33,7 +33,7 @@ import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1
 import { SpecializedQuadProcess } from "process/onetime/quad/specialized_quad_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { isQuadType, quadTypes } from "process/onetime/quad/specialized_quad_spec"
-import { Season2006098StealResourceProcess } from "process/temporary/season_2006098_steal_resource_process"
+import { StealResourceProcess } from "process/onetime/steal_resource_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
@@ -124,8 +124,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season1838855DistributorProcess":
       result = this.launchSeason1838855DistributorProcess()
       break
-    case "Season2006098StealResourceProcess":
-      result = this.launchSeason2006098StealResourceProcess()
+    case "StealResourceProcess":
+      result = this.launchStealResourceProcess()
       break
     case "Season2055924SendResourcesProcess":
       result = this.launchSeason2055924SendResourcesProcess()
@@ -796,7 +796,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
   }
 
-  private launchSeason2006098StealResourceProcess(): LaunchCommandResult {
+  private launchStealResourceProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -818,7 +818,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season2006098StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true)
+      return StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true)
     })
     return Result.Succeeded(process)
   }

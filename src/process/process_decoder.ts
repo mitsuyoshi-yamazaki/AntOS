@@ -19,7 +19,7 @@ import { Season1606052SKHarvesterProcess, Season1606052SKHarvesterProcessState }
 import { Season1655635SKMineralHarvestProcess, Season1655635SKMineralHarvestProcessState } from "./temporary/season_1655635_sk_mineral_harvest_process"
 import { SpecializedQuadProcess, SpecializedQuadProcessState } from "./onetime/quad/specialized_quad_process"
 import { Season1838855DistributorProcess, Season1838855DistributorProcessState } from "./temporary/season_1838855_distributor_process"
-import { Season2006098StealResourceProcess, Season2006098StealResourceProcessState } from "./temporary/season_2006098_steal_resource_process"
+import { StealResourceProcess, StealResourceProcessState } from "./onetime/steal_resource_process"
 import { Season2055924SendResourcesProcess, Season2055924SendResourcesProcessState } from "./temporary/season_2055924_send_resources_process"
 import { World35440623DowngradeControllerProcess, World35440623DowngradeControllerProcessState } from "./temporary/world_35440623_downgrade_controller_process"
 import { World35587255ScoutRoomProcess, World35587255ScoutRoomProcessState } from "./temporary/world_35587255_scout_room_process"
@@ -83,7 +83,7 @@ class ProcessTypes {
   "Season1606052SKHarvesterProcess" = (state: ProcessState) => Season1606052SKHarvesterProcess.decode(state as unknown as Season1606052SKHarvesterProcessState)
   "Season1655635SKMineralHarvestProcess" = (state: ProcessState) => Season1655635SKMineralHarvestProcess.decode(state as unknown as Season1655635SKMineralHarvestProcessState)
   "Season1838855DistributorProcess" = (state: ProcessState) => Season1838855DistributorProcess.decode(state as unknown as Season1838855DistributorProcessState)
-  "Season2006098StealResourceProcess" = (state: ProcessState) => Season2006098StealResourceProcess.decode(state as unknown as Season2006098StealResourceProcessState)
+  "StealResourceProcess" = (state: ProcessState) => StealResourceProcess.decode(state as unknown as StealResourceProcessState)
   "Season2055924SendResourcesProcess" = (state: ProcessState) => Season2055924SendResourcesProcess.decode(state as unknown as Season2055924SendResourcesProcessState)
   "World35440623DowngradeControllerProcess" = (state: ProcessState) => World35440623DowngradeControllerProcess.decode(state as unknown as World35440623DowngradeControllerProcessState)
   "World35587255ScoutRoomProcess" = (state: ProcessState) => World35587255ScoutRoomProcess.decode(state as unknown as World35587255ScoutRoomProcessState)
