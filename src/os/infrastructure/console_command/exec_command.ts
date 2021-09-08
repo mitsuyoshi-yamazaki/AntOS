@@ -55,6 +55,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.resource()
     case "set_boost_labs":
       return this.setBoostLabs()
+    case "set_waiting_position":
+      return this.setWaitingPosition()
     case "show_room_plan":
       return this.showRoomPlan()
     case "mineral":
@@ -599,6 +601,45 @@ export class ExecCommand implements ConsoleCommand {
     resources.roomInfo.config.boostLabs = labIds
 
     return `\n${outputs.join("\n")}`
+  }
+
+  private setWaitingPosition(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const resources = RoomResources.getOwnedRoomResource(roomName)
+    if (resources == null) {
+      return `${roomLink(roomName)} is not owned`
+    }
+    const rawPosition = args.get("pos")
+    if (rawPosition == null) {
+      return this.missingArgumentError("pos")
+    }
+    const [rawX, rawY] = rawPosition.split(",")
+    if (rawX == null || rawY == null) {
+      return `Invalid position format: ${rawPosition}, expected pos=x,y`
+    }
+    const x = parseInt(rawX, 10)
+    const y = parseInt(rawY, 10)
+    if (isNaN(x) === true || isNaN(y) === true) {
+      return `Position is not a number: ${rawPosition}`
+    }
+    try {
+      new RoomPosition(x, y, roomName)
+      if (resources.roomInfo.config == null) {
+        resources.roomInfo.config = {}
+      }
+      resources.roomInfo.config.waitingPosition = {
+        x,
+        y,
+      }
+      return `Waiting position in ${roomLink(roomName)} set`
+    } catch (e) {
+      return `Invalid position: ${e} (${rawPosition}, ${roomLink(roomName)})`
+    }
   }
 
   private showRoomPlan(): CommandExecutionResult {

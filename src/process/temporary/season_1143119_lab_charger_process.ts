@@ -15,6 +15,8 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { RoomName } from "utility/room_name"
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomInfo } from "room_resource/room_info"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 export type Season1143119LabChargerProcessLabInfo = {
   boost: MineralBoostConstant
@@ -131,7 +133,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       this.requestCreep()
     }
 
-    this.runCreep(terminal, labs, shouldCollectResources)
+    this.runCreep(terminal, labs, shouldCollectResources, resources.roomInfo)
   }
 
   private requestCreep(): void {
@@ -147,17 +149,17 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean): void {
+  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.creepTask(creep, terminal, labs, shouldCollectResources),
+      creep => this.creepTask(creep, terminal, labs, shouldCollectResources, roomInfo),
       () => true,
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
       creep.say("dying")
       return null
@@ -222,6 +224,22 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
         }
         return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(labInfo.lab, labInfo.lab.mineralType))
       }
+    }
+
+    const waitingPosition = ((): RoomPosition | null => {
+      if (roomInfo.config?.waitingPosition == null) {
+        return null
+      }
+      const { x, y } = roomInfo.config.waitingPosition
+      try {
+        return new RoomPosition(x, y, this.parentRoomName)
+      } catch (e) {
+        PrimitiveLogger.programError(`${this.identifier} cannot retrieve waiting position in ${roomLink(this.parentRoomName)}, ${x},${y}`)
+        return null
+      }
+    })()
+    if (waitingPosition != null && creep.pos.isEqualTo(waitingPosition) !== true) {
+      return MoveToTask.create(waitingPosition, 0)
     }
     creep.say("boosted")
     return null
