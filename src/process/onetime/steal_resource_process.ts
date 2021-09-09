@@ -15,7 +15,6 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
-import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { isResourceConstant, MineralBoostConstant } from "utility/resource"
@@ -45,6 +44,8 @@ export interface StealResourceProcessState extends ProcessState {
   targetId: Id<TargetType>
   state: State
   takeAll: boolean
+  creepCount: number
+  finishWorking: number
 }
 
 // Game.io("launch -l StealResourceProcess room_name=W45S31 target_room_name=W46S32 waypoints=W46S32 target_id=60600e57fb105b02dc9f9509")
@@ -65,6 +66,8 @@ export class StealResourceProcess implements Process, Procedural {
     private readonly targetId: Id<TargetType>,
     private state: State,
     private readonly takeAll: boolean,
+    private readonly creepCount: number,
+    private readonly finishWorking: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -81,19 +84,22 @@ export class StealResourceProcess implements Process, Procedural {
       targetId: this.targetId,
       state: this.state,
       takeAll: this.takeAll,
+      creepCount: this.creepCount,
+      finishWorking: this.finishWorking,
     }
   }
 
   public static decode(state: StealResourceProcessState): StealResourceProcess {
-    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll ?? true)
+    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount ?? 1, state.finishWorking ?? 250)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean): StealResourceProcess {
-    return new StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean, creepCount: number, finishWorkig: number): StealResourceProcess {
+    return new StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll, creepCount, finishWorkig)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.targetRoomName)} ${this.state}`
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    return `${roomLink(this.targetRoomName)} ${this.state}, ${creepCount}cr`
   }
 
   public runOnTick(): void {
@@ -136,10 +142,7 @@ export class StealResourceProcess implements Process, Procedural {
           return 0
         }
       }
-      if (objects.controller.level <= 4) {
-        return 3
-      }
-      return 6
+      return this.creepCount
     })()
     if (this.state !== "finished" && creepCount < numberOfCreeps) {
       this.requestHauler(objects.controller.room.energyCapacityAvailable)
@@ -207,13 +210,7 @@ export class StealResourceProcess implements Process, Procedural {
     }
 
     if (creep.store.getUsedCapacity() <= 0) {
-      const lifeTime = ((): number => {
-        if (this.parentRoomName === this.targetRoomName) {
-          return 50
-        }
-        return (GameConstants.creep.life.lifeTime / 5)
-      })()
-      if (creep.ticksToLive != null && (creep.ticksToLive < lifeTime)) {
+      if (creep.ticksToLive != null && (creep.ticksToLive < this.finishWorking)) {
         return RunApiTask.create(SuicideApiWrapper.create())
       }
       if (creep.room.name === this.parentRoomName) {
@@ -227,6 +224,10 @@ export class StealResourceProcess implements Process, Procedural {
   }
 
   private resourceToSteal(target: TargetType): ResourceConstant | null {
+    if (this.targetRoomName === "W46S32" && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      return RESOURCE_ENERGY
+    }
+
     const resourceType = (Object.keys(target.store) as ResourceConstant[])
       .sort((lhs, rhs) => {
         return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)

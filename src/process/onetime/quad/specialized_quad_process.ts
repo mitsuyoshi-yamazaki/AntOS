@@ -32,7 +32,7 @@ type TargetInfo = {
   readonly roomName: RoomName
   readonly waypoints: RoomName[]
   action: "flee" | "noflee" | "drain" | null
-  plan: "destroy defence facility only" | null
+  plan: "destroy defence facility only" | "leave terminal" | null
   message: string | null
 }
 
@@ -49,7 +49,8 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W46S32 waypoints=W51S30,W46S30 quad_type=tier3-single-d750 targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W48S32 waypoints=W51S30,W48S30 quad_type=tier3-5tower-dismantler targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W41S31 waypoints=W51S30,W41S30 quad_type=tier3-4tower-2dismantler targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -161,7 +162,11 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     }
     if (message === "planD") {
       this.target.plan = "destroy defence facility only"
-      return "set destroy defence facility only"
+      return "set 'destroy defence facility only'"
+    }
+    if (message === "planT") {
+      this.target.plan = "leave terminal"
+      return "set 'leave terminal'"
     }
     if (message === "clear plan") {
       this.target.plan = null
@@ -361,7 +366,11 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
       }
       quad.moveToRoom(this.targetRoomName, this.target.waypoints, { healBeforeEnter: true })
       const noCollateralDamage = this.target.plan === "destroy defence facility only"
-      quad.passiveAttack(this.hostileCreepsInRoom(quad.room), noCollateralDamage)
+      const passiveAttackTargets: QuadAttackTargetType[] = [
+        ...this.hostileCreepsInRoom(quad.room),
+        ...quad.room.find(FIND_HOSTILE_STRUCTURES, { filter: {structureType: STRUCTURE_EXTENSION}}),
+      ]
+      quad.passiveAttack(passiveAttackTargets, noCollateralDamage)
       quad.heal()
       return
     }
@@ -543,18 +552,30 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     })()
 
     const [mainTargetStructures, excludedStructureTypes] = ((): [StructureConstant[], StructureConstant[]] => {
-      if (this.target.plan === "destroy defence facility only") {
+      const defaultTargets =
+        [
+          STRUCTURE_TERMINAL,
+          STRUCTURE_SPAWN,
+          STRUCTURE_TOWER,
+          STRUCTURE_INVADER_CORE,
+        ]
+      const defaultExcludedStructureTypes = [
+        STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
+        STRUCTURE_CONTROLLER,
+        // STRUCTURE_RAMPART,
+        STRUCTURE_KEEPER_LAIR,
+        STRUCTURE_POWER_BANK,
+        STRUCTURE_EXTRACTOR,
+      ]
+
+      switch (this.target.plan) {
+      case "destroy defence facility only":
         return [
           [
             STRUCTURE_TOWER,
           ],
           [
-            STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
-            STRUCTURE_CONTROLLER,
-            // STRUCTURE_RAMPART,
-            STRUCTURE_KEEPER_LAIR,
-            STRUCTURE_POWER_BANK,
-            STRUCTURE_EXTRACTOR,
+            ...defaultExcludedStructureTypes,
             STRUCTURE_LINK,
             STRUCTURE_EXTENSION,
             STRUCTURE_SPAWN,
@@ -563,23 +584,23 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
             STRUCTURE_LAB,
           ],
         ]
+      case "leave terminal":
+        return [
+          [
+            STRUCTURE_SPAWN,
+            STRUCTURE_TOWER,
+            STRUCTURE_INVADER_CORE,
+          ],
+          [
+            ...defaultExcludedStructureTypes,
+            STRUCTURE_TERMINAL,
+          ]
+        ]
+      default:
+        return [
+          defaultTargets, defaultExcludedStructureTypes,
+        ]
       }
-      return [
-        [
-          STRUCTURE_TERMINAL,
-          STRUCTURE_SPAWN,
-          STRUCTURE_TOWER,
-          STRUCTURE_INVADER_CORE,
-        ],
-        [
-          STRUCTURE_STORAGE,  // 攻撃する場合は明示的に設定する
-          STRUCTURE_CONTROLLER,
-          // STRUCTURE_RAMPART,
-          STRUCTURE_KEEPER_LAIR,
-          STRUCTURE_POWER_BANK,
-          STRUCTURE_EXTRACTOR,
-        ],
-      ]
     })()
 
     const targetStructures = room.find(FIND_HOSTILE_STRUCTURES)
@@ -601,9 +622,8 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     const shouldAttackWorkers = this.target.plan !== "destroy defence facility only"
     const hostileAttackers: Creep[] = []
     const hostileWorkers: AnyCreep[] = position.findInRange(FIND_HOSTILE_POWER_CREEPS, 4)
-    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
     position.findInRange(FIND_HOSTILE_CREEPS, 4).forEach(creep => {
-      if (whitelist.includes(creep.owner.username) === true) {
+      if (this.isHostile(creep.owner) !== true) {
         return
       }
 
@@ -643,22 +663,34 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     optionalTargets.unshift(...hostileAttackers)
 
     if (mainTarget == null) {
-      const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS).filter(creep => whitelist.includes(creep.owner.username) !== true)
+      const hostileCreepsInRoom = room.find(FIND_HOSTILE_CREEPS).filter(creep => {
+        if (this.isHostile(creep.owner) !== true) {
+          return false
+        }
+        if (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0 || creep.getActiveBodyparts(HEAL) > 0) {
+          return true
+        }
+        if (shouldAttackWorkers === true) {
+          return true
+        }
+        return false
+      })
       mainTarget = position.findClosestByPath(hostileCreepsInRoom)
     }
 
     if (mainTarget == null && optionalTargets.length <= 0) {
-      const roads = quad.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
-        .filter(road => road.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length <= 0)
-        .sort((lhs, rhs) => {
-          return lhs.pos.getRangeTo(position) - rhs.pos.getRangeTo(position)
-        })
+      // TODO: whitelistを実装したら入れる
+      // const roads = quad.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+      //   .filter(road => road.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length <= 0)
+      //   .sort((lhs, rhs) => {
+      //     return lhs.pos.getRangeTo(position) - rhs.pos.getRangeTo(position)
+      //   })
 
-      return {
-        mainTarget: roads.shift() ?? null,
-        optionalTargets: roads,
-        mainObjectiveAchieved,
-      }
+      // return {
+      //   mainTarget: roads.shift() ?? null,
+      //   optionalTargets: roads,
+      //   mainObjectiveAchieved,
+      // }
     }
 
     return {
@@ -669,16 +701,27 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
   }
 
   private hostileCreepsInRoom(room: Room): AnyCreep[] {
-    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
-    const filter = (creep: AnyCreep): boolean => {
-      if (whitelist.includes(creep.owner.username) === true) {
+    const shouldAttackWorkers = this.target.plan !== "destroy defence facility only"
+    const creeps = room.find(FIND_HOSTILE_CREEPS).filter(creep => {
+      if (shouldAttackWorkers !== true) {
+        if (creep.getActiveBodyparts(ATTACK) === 0 && creep.getActiveBodyparts(RANGED_ATTACK) === 0 && creep.getActiveBodyparts(HEAL) === 0) {
+          return false
+        }
+      }
+      if (this.isHostile(creep.owner) !== true) {
         return false
       }
       return true
-    }
+    })
+    const powerCreeps = room.find(FIND_HOSTILE_POWER_CREEPS).filter(powerCreep => {
+      if (this.isHostile(powerCreep.owner) !== true) {
+        return false
+      }
+      return true
+    })
     return [
-      ...room.find(FIND_HOSTILE_CREEPS).filter(filter),
-      ...room.find(FIND_HOSTILE_POWER_CREEPS).filter(filter),
+      ...creeps,
+      ...powerCreeps,
     ]
   }
 
@@ -801,6 +844,10 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
       }
     }
     return true
+  }
+
+  private isHostile(user: Owner): boolean {
+    return Game.isEnemy(user)
   }
 }
 

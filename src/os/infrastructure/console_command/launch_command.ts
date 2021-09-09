@@ -816,9 +816,25 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetId == null) {
       return this.missingArgumentError("target_id")
     }
+    const rawFinishWorking = args.get("finish_working")
+    if (rawFinishWorking == null) {
+      return this.missingArgumentError("finish_working")
+    }
+    const finishWorking = parseInt(rawFinishWorking, 10)
+    if (isNaN(finishWorking) === true) {
+      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
+    }
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true)
+      return StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true, numberOfCreeps, finishWorking)
     })
     return Result.Succeeded(process)
   }
