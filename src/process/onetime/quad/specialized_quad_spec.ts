@@ -112,9 +112,9 @@ export class QuadSpec {
     case "test-attacker":
     case "test-boosted-attacker":
       return 4
-    case "invader-core-attacker":
     case "tier3-6tower-tank":
       return 3
+    case "invader-core-attacker":
     case "tier1-invader-core-lv1":
       return 2
     case "scout":
@@ -390,6 +390,8 @@ const testAttackBoosts: MineralBoostConstant[] = [
 const invaderCoreAttackerAttacker: CreepBodySpec = {
   roles: [CreepRole.Attacker, CreepRole.Mover],
   body: [
+    ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
     ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
     MOVE, MOVE, MOVE, MOVE, MOVE,
   ],
