@@ -688,6 +688,28 @@ export class ExecCommand implements ConsoleCommand {
     }
     const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
 
+    if (showsCostMatrix !== true) {
+      const roomResource = RoomResources.getOwnedRoomResource(roomName)
+      const storedWallPositions = roomResource?.roomInfo.roomPlan?.wallPositions
+      if (storedWallPositions != null) {
+        if (storedWallPositions.length <= 0) {
+          return `Wall already placed in ${roomLink(roomName)}`
+        }
+        storedWallPositions.forEach(wallPosition => {
+          const wallType = ((): string => {
+            switch (wallPosition.wallType) {
+            case STRUCTURE_WALL:
+              return "W"
+            case STRUCTURE_RAMPART:
+              return "R"
+            }
+          })()
+          room.visual.text(wallType, wallPosition.x, wallPosition.y, {color: "#FF0000"})
+        })
+        return "ok"
+      }
+    }
+
     const wallPositions = calculateWallPositions(room, showsCostMatrix)
     if (typeof wallPositions === "string") {
       return wallPositions
