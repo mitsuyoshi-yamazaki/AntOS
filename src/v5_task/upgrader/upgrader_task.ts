@@ -276,6 +276,10 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
         this.linkId = link.id
         PrimitiveLogger.log(`${this.taskIdentifier} link id set: link ${link.pos}`)
       }
+    } else {
+      if (Game.getObjectById(this.linkId) == null) {
+        this.linkId = null
+      }
     }
     if (objects.roomInfo.upgrader?.container == null) {
       const containers = objects.controller.pos.findInRange(FIND_STRUCTURES, 4, { filter: { structureType: STRUCTURE_CONTAINER } }) as StructureContainer[]
