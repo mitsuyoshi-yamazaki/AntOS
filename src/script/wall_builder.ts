@@ -19,7 +19,7 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
 
   const minScore = min
   const terrainWallScore = minScore
-  const importantStructureScore = minScore + 1
+  const importantStructureScore = terrainWallScore + 1
 
   const scores = new ValuedMapMap<number, number, number>()
   const setNeighbourScore = (position: RoomPosition, score: number): void => {
@@ -77,15 +77,16 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
   const roomMin = min + margin
   const roomMax = max - margin
 
-  const wallPositions: WallPosition[] = []
+  const wallPositions: {position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL}[] = []
 
   for (let y = roomMin; y <= roomMax; y += 1) {
     for (let x = roomMin; x <= roomMax; x += 1) {
       const score = scores.getValueFor(y).get(x)
       if (score !== wallScore) {
         if (showsCostMatrix === true) {
-          const text = score != null ? `${score}` : "-"
-          room.visual.text(text, x, y, { color: "#FFFFFF" })
+          if (score != null) {
+            room.visual.text(`${score}`, x, y, { color: "#FFFFFF" })
+          }
         }
         continue
       }
@@ -109,19 +110,28 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
         case 0:
           room.visual.text("n", x, y, { color: "#FFFFFF" })
           break
-        case 1:
-          room.visual.text("W", x, y, { color: "#FF0000" })
+        case 1: {
+          const wallType = ((): STRUCTURE_WALL | STRUCTURE_RAMPART => {
+            if (position.lookFor(LOOK_STRUCTURES).length > 0) {
+              return STRUCTURE_RAMPART
+            }
+            if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
+              return STRUCTURE_RAMPART
+            }
+            if (position.lookFor(LOOK_FLAGS).length > 0) {
+              return STRUCTURE_RAMPART
+            }
+            return STRUCTURE_WALL
+          })()
           wallPositions.push({
-            x,
-            y,
-            wallType: STRUCTURE_WALL,
+            position,
+            wallType,
           })
           break
+        }
         default:
-          room.visual.text("R", x, y, { color: "#FF0000" })
           wallPositions.push({
-            x,
-            y,
+            position,
             wallType: STRUCTURE_RAMPART,
           })
           break
@@ -133,5 +143,102 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
     }
   }
 
-  return wallPositions
+  return trimUnreacheableWalls(room, wallPositions)
+}
+
+function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL }[]): WallPosition[] {
+  const min = GameConstants.room.edgePosition.min
+  const max = GameConstants.room.edgePosition.max
+
+  const minScore = min
+  const terrainWallScore = minScore
+  const wallScore = terrainWallScore + 1
+  const entranceScore = wallScore + 1
+  const maxScore = max
+
+  const scores = new ValuedMapMap<number, number, number>()
+  const setNeighbourScore = (position: RoomPosition, score: number): void => {
+    const neighbourScore = score + 1
+    position.neighbours().forEach(neighbourPosition => {
+      const storedNeighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
+      if (storedNeighbourScore != null && neighbourScore >= storedNeighbourScore) {
+        return
+      }
+      if (storedNeighbourScore == null) {
+        if (neighbourPosition.lookFor(LOOK_TERRAIN)[0] === "wall") {
+          scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, terrainWallScore)
+          return
+        }
+      }
+      scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, neighbourScore)
+    })
+  }
+
+  wallPositions.forEach(position => {
+    scores.getValueFor(position.position.y).set(position.position.x, wallScore)
+  })
+
+  room.find(FIND_EXIT).forEach(exit => {
+    scores.getValueFor(exit.y).set(exit.x, entranceScore)
+  })
+
+  const iterateScore = (targetScore: number): void => {
+    scores.forEach((row, y) => {
+      row.forEach((score, x) => {
+        if (score !== targetScore) {
+          return
+        }
+        try {
+          const position = new RoomPosition(x, y, room.name)
+          setNeighbourScore(position, targetScore)
+        } catch (e) {
+          PrimitiveLogger.programError(`showWallPlanOf() RoomPosition ${e}`)
+        }
+      })
+    })
+  }
+
+  for (let i = entranceScore; i <= maxScore; i += 1) {
+    iterateScore(i)
+  }
+
+  const result: WallPosition[] = wallPositions.flatMap(position => {
+    const isReachable = position.position.neighbours().some(neighbourPosition => {
+      const score = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
+      if (score == null) {
+        return false
+      }
+      if (score === wallScore || score === terrainWallScore) {
+        return false
+      }
+      return true
+    })
+
+    if (isReachable === true) {
+      const text = ((): string => {
+        switch (position.wallType) {
+        case STRUCTURE_RAMPART:
+          return "R"
+        case STRUCTURE_WALL:
+          return "W"
+        }
+      })()
+      room.visual.text(text, position.position.x, position.position.y, { color: "#FF0000" })
+
+      return {
+        x: position.position.x,
+        y: position.position.y,
+        wallType: position.wallType,
+      }
+    }
+    return []
+  })
+
+  scores.forEach((row, y) => {
+    row.forEach((score, x) => {
+      room.visual.text(`${score}`, x, y, { color: "#FFFF00" })
+    })
+  })
+
+  return result
 }

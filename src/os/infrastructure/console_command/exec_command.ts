@@ -687,6 +687,11 @@ export class ExecCommand implements ConsoleCommand {
       return `No visible to ${roomLink(roomName)}`
     }
     const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
+    return this.showWallPlanOf(room, showsCostMatrix)
+  }
+
+  private showWallPlanOf(room: Room, showsCostMatrix: boolean): CommandExecutionResult {
+    const roomName = room.name
 
     if (showsCostMatrix !== true) {
       const roomResource = RoomResources.getOwnedRoomResource(roomName)
@@ -704,7 +709,7 @@ export class ExecCommand implements ConsoleCommand {
               return "R"
             }
           })()
-          room.visual.text(wallType, wallPosition.x, wallPosition.y, {color: "#FF0000"})
+          room.visual.text(wallType, wallPosition.x, wallPosition.y, { color: "#FF0000" })
         })
         return "ok"
       }
