@@ -10,7 +10,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
@@ -19,6 +19,13 @@ import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
+import { Process } from "process/process"
+import { OperatingSystem } from "os/os"
+import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
+import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
+import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
+import { RoomKeeperProcess } from "process/room_keeper_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -65,6 +72,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.configureRoomInfo()
     case "check_alliance":
       return this.checkAlliance()
+    case "unclaim":
+      return this.unclaim()
     default:
       return "Invalid script type"
     }
@@ -742,5 +751,106 @@ export class ExecCommand implements ConsoleCommand {
       }
     }
     return `${playerName} is not joined any alliances`
+  }
+
+  private unclaim(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const dryRun = (args.get("dry_run") === "0") !== true
+
+    const room = Game.rooms[roomName]
+    if (room == null || room.controller == null || room.controller.my !== true) {
+      return `${roomLink(roomName)} is not owned`
+    }
+
+    return this.unclaimRoom(room, dryRun)
+  }
+
+  private unclaimRoom(room: Room, dryRun: boolean): CommandExecutionResult {
+    const processes: Process[] = OperatingSystem.os.listAllProcesses().flatMap(processInfo => {
+      const process = processInfo.process
+      if (process instanceof RoomKeeperProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof V6RoomKeeperProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season1838855DistributorProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season2055924SendResourcesProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season1143119LabChargerProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      return []
+    })
+
+    const constructionSiteCounts = new Map<StructureConstant, number>()
+    const constructionSites = room.find(FIND_CONSTRUCTION_SITES)
+    constructionSites.forEach(constructionSite => {
+      const structureType = constructionSite.structureType
+      const count = constructionSiteCounts.get(structureType) ?? 0
+      constructionSiteCounts.set(structureType, count + 1)
+    })
+
+    const messages: string[] = []
+
+    const processDescriptions = processes.map(process => {
+      const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
+      return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
+    })
+    messages.push(coloredText("Processes to remove:", "info"))
+    messages.push(...processDescriptions)
+
+    const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
+      return `- ${tab(structureType, Tab.medium)}: ${count}`
+    })
+    messages.push(coloredText("Construction sites to remove:", "info"))
+    messages.push(...constructionSiteDescriptions)
+
+    if (dryRun === true) {
+      messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
+    } else {
+      const result = room.controller?.unclaim()
+      switch (result) {
+      case OK:
+        break
+      default:
+        messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
+        return messages.join("\n")
+      }
+
+      messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
+
+      processes.forEach(process => {
+        OperatingSystem.os.killProcess(process.processId)
+      })
+      constructionSites.forEach(constructionSite => {
+        constructionSite.remove()
+      })
+    }
+
+    return messages.join("\n")
   }
 }

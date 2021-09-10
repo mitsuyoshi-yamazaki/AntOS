@@ -1,13 +1,12 @@
 import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
 import { ProcessId } from "process/process"
+import { Tab, tab } from "utility/log"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
-const veryLargeTab = 50
-const mediumTab = 20
-const smallTab = 10
-type Tab = number
-
+const veryLargeTab = Tab.veryLarge
+const mediumTab = Tab.medium
+const smallTab = Tab.small
 const spaces = "                                                  " // 50 spaces
 
 export class ProcessCommand implements ConsoleCommand {
@@ -148,8 +147,6 @@ export class ProcessCommand implements ConsoleCommand {
 
   // ---- Text ---- //
   private tab(text: string, tabs: Tab): string {
-    const numberOfSpaces = Math.max(tabs - text.length, 0)
-    const spacer = spaces.slice(0, numberOfSpaces)
-    return `${text}${spacer}`
+    return tab(text, tabs)
   }
 }
