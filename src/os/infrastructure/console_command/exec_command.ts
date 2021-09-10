@@ -748,50 +748,29 @@ export class ExecCommand implements ConsoleCommand {
     const roomMin = min + margin
     const roomMax = max - margin
 
-    let top = roomMax
-    let bottom = roomMin
-    let left = roomMax
-    let right = roomMin
+    const wallPositions: RoomPosition[] = []
 
     for (let y = roomMin; y <= roomMax; y += 1) {
       for (let x = roomMin; x <= roomMax; x += 1) {
         const score = scores.getValueFor(y).get(x)
-        if (score == null) {
-          continue
-        }
         if (score !== wallScore) {
-          continue
-        }
-        if (y < top) {
-          top = y
-        }
-        if (y > bottom) {
-          bottom = y
-        }
-        if (x < left) {
-          left = x
-        }
-        if (x > right) {
-          right = x
-        }
-      }
-    }
-
-    for (let y = roomMin; y <= roomMax; y += 1) {
-      for (let x = roomMin; x <= roomMax; x += 1) {
-        if (x !== left && x !== right && y !== top && y !== bottom) {
           if (showsCostMatrix === true) {
-            const score = scores.getValueFor(y).get(x)
             const text = score != null ? `${score}` : "-"
             room.visual.text(text, x, y, { color: "#FFFFFF" })
           }
           continue
         }
         room.visual.text("*", x, y, { color: "#FF0000" })
+
+        try {
+          wallPositions.push(new RoomPosition(x, y, room.name))
+        } catch (e) {
+          PrimitiveLogger.programError(`showWallPlanOf() RoomPosition ${e}`)
+        }
       }
     }
 
-    return `top: ${top}, bottom: ${bottom}, left: ${left}, right: ${right}`
+    return `${wallPositions.length} walls`
   }
 
   private showHarvestableMinerals(): CommandExecutionResult {
