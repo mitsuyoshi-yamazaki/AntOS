@@ -49,8 +49,7 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W48S32 waypoints=W51S30,W48S30 quad_type=tier3-5tower-dismantler targets=")
-// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W41S31 waypoints=W51S30,W41S30 quad_type=tier3-4tower-2dismantler targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W51S29 target_room_name=W47S34 waypoints=W51S30,W50S30,W50S33,W48S33,W48S34 quad_type=invader-core-attacker targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -540,7 +539,6 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
 
     const targetPriority = ((): StructureConstant[] => {
       return [ // 添字の大きい方が優先
-        STRUCTURE_INVADER_CORE,
         STRUCTURE_LAB,
         STRUCTURE_POWER_SPAWN,
         STRUCTURE_EXTENSION,
