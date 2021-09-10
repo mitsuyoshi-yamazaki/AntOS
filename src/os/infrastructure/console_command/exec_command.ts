@@ -697,7 +697,9 @@ export class ExecCommand implements ConsoleCommand {
     const max = GameConstants.room.edgePosition.max
 
     const minScore = min
-    // const maxScore = max
+    const terrainWallScore = minScore
+    const importantStructureScore = minScore + 1
+
     const scores = new ValuedMapMap<number, number, number>()
     const setNeighbourScore = (position: RoomPosition, score: number): void => {
       const neighbourScore = score + 1
@@ -705,6 +707,12 @@ export class ExecCommand implements ConsoleCommand {
         const storedNeighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
         if (storedNeighbourScore != null && neighbourScore >= storedNeighbourScore) {
           return
+        }
+        if (storedNeighbourScore == null) {
+          if (neighbourPosition.lookFor(LOOK_TERRAIN)[0] === "wall") {
+            scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, terrainWallScore)
+            return
+          }
         }
         scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, neighbourScore)
       })
@@ -720,7 +728,7 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     positionsToDefend.forEach(position => {
-      scores.getValueFor(position.y).set(position.x, minScore)
+      scores.getValueFor(position.y).set(position.x, importantStructureScore)
     })
 
     const iterateScore = (targetScore: number): void => {
@@ -739,8 +747,8 @@ export class ExecCommand implements ConsoleCommand {
       })
     }
 
-    const wallScore = minScore + 3
-    for (let i = minScore; i <= wallScore; i += 1) {
+    const wallScore = importantStructureScore + 3
+    for (let i = importantStructureScore; i <= wallScore; i += 1) {
       iterateScore(i)
     }
 
@@ -748,7 +756,7 @@ export class ExecCommand implements ConsoleCommand {
     const roomMin = min + margin
     const roomMax = max - margin
 
-    const wallPositions: RoomPosition[] = []
+    const wallPositions: { position: RoomPosition, type: STRUCTURE_RAMPART | STRUCTURE_WALL }[] = []
 
     for (let y = roomMin; y <= roomMax; y += 1) {
       for (let x = roomMin; x <= roomMax; x += 1) {
@@ -760,10 +768,42 @@ export class ExecCommand implements ConsoleCommand {
           }
           continue
         }
-        room.visual.text("*", x, y, { color: "#FF0000" })
 
         try {
-          wallPositions.push(new RoomPosition(x, y, room.name))
+          const position = new RoomPosition(x, y, room.name)
+          const outsidePositionCount = position.neighbours()
+            .filter(neighbourPosition => {
+              const neighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
+              if (neighbourScore == null) {
+                return true
+              }
+              if (neighbourScore > wallScore) {
+                return true
+              }
+              return false
+            })
+            .length
+
+          switch (outsidePositionCount) {
+          case 0:
+            room.visual.text("n", x, y, { color: "#FFFFFF" })
+            break
+          case 1:
+            room.visual.text("W", x, y, { color: "#FF0000" })
+            wallPositions.push({
+              position,
+              type: STRUCTURE_WALL,
+            })
+            break
+          default:
+            room.visual.text("R", x, y, { color: "#FF0000" })
+            wallPositions.push({
+              position,
+              type: STRUCTURE_RAMPART,
+            })
+            break
+          }
+          wallPositions.push()
         } catch (e) {
           PrimitiveLogger.programError(`showWallPlanOf() RoomPosition ${e}`)
         }
