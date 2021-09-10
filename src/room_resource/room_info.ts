@@ -1,4 +1,5 @@
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
+import { WallPosition } from "script/wall_builder"
 import { RoomName } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
 import { Timestamp } from "utility/timestamp"
@@ -47,7 +48,8 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   }
   highestRcl: number
   roomPlan: {
-    centerPosition: {x: number, y: number}
+    centerPosition: { x: number, y: number }
+    wallPositions?: WallPosition[]
   } | null
 
   // ---- Inter Room ---- //
