@@ -204,10 +204,6 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   }
 
   private checkWallPositions(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    if (roomResource.room.name !== "W43S5") {
-      return null
-    }
-
     if (roomResource.controller.level < wallAvailableLevel) {
       return null
     }
