@@ -26,6 +26,8 @@ import { Season1838855DistributorProcess } from "process/temporary/season_183885
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
 import { RoomKeeperProcess } from "process/room_keeper_process"
+import { GameConstants } from "utility/constants"
+import { ValuedMapMap } from "utility/valued_collection"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -66,6 +68,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.setWaitingPosition()
     case "show_room_plan":
       return this.showRoomPlan()
+    case "show_wall_plan":
+      return this.showWallPlan()
     case "mineral":
       return this.showHarvestableMinerals()
     case "room_config":
@@ -670,6 +674,124 @@ export class ExecCommand implements ConsoleCommand {
     const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
 
     return showRoomPlan(controller, dryRun, showsCostMatrix)
+  }
+
+  private showWallPlan(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `No visible to ${roomLink(roomName)}`
+    }
+    const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
+
+    return this.showWallPlanOf(room, showsCostMatrix)
+  }
+
+  private showWallPlanOf(room: Room, showsCostMatrix: boolean): CommandExecutionResult {
+    const min = GameConstants.room.edgePosition.min
+    const max = GameConstants.room.edgePosition.max
+
+    const minScore = min
+    // const maxScore = max
+    const scores = new ValuedMapMap<number, number, number>()
+    const setNeighbourScore = (position: RoomPosition, score: number): void => {
+      const neighbourScore = score + 1
+      position.neighbours().forEach(neighbourPosition => {
+        const storedNeighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
+        if (storedNeighbourScore != null && neighbourScore >= storedNeighbourScore) {
+          return
+        }
+        scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, neighbourScore)
+      })
+    }
+
+    const positionsToDefend: RoomPosition[] = [
+      ...room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION } }).map(extension => extension.pos),
+      ...room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_WHITE).map(flag => flag.pos),
+    ]
+
+    if (positionsToDefend.length < (GameConstants.structure.maxCount.extension * 0.8)) {
+      return `Lack of extensions: ${positionsToDefend.length} found (${GameConstants.structure.maxCount.extension} expected)`
+    }
+
+    positionsToDefend.forEach(position => {
+      scores.getValueFor(position.y).set(position.x, minScore)
+    })
+
+    const iterateScore = (targetScore: number): void => {
+      scores.forEach((row, y) => {
+        row.forEach((score, x) => {
+          if (score !== targetScore) {
+            return
+          }
+          try {
+            const position = new RoomPosition(x, y, room.name)
+            setNeighbourScore(position, targetScore)
+          } catch (e) {
+            PrimitiveLogger.programError(`showWallPlanOf() RoomPosition ${e}`)
+          }
+        })
+      })
+    }
+
+    const wallScore = minScore + 3
+    for (let i = minScore; i <= wallScore; i += 1) {
+      iterateScore(i)
+    }
+
+    const margin = 2
+    const roomMin = min + margin
+    const roomMax = max - margin
+
+    let top = roomMax
+    let bottom = roomMin
+    let left = roomMax
+    let right = roomMin
+
+    for (let y = roomMin; y <= roomMax; y += 1) {
+      for (let x = roomMin; x <= roomMax; x += 1) {
+        const score = scores.getValueFor(y).get(x)
+        if (score == null) {
+          continue
+        }
+        if (score !== wallScore) {
+          continue
+        }
+        if (y < top) {
+          top = y
+        }
+        if (y > bottom) {
+          bottom = y
+        }
+        if (x < left) {
+          left = x
+        }
+        if (x > right) {
+          right = x
+        }
+      }
+    }
+
+    for (let y = roomMin; y <= roomMax; y += 1) {
+      for (let x = roomMin; x <= roomMax; x += 1) {
+        if (x !== left && x !== right && y !== top && y !== bottom) {
+          if (showsCostMatrix === true) {
+            const score = scores.getValueFor(y).get(x)
+            const text = score != null ? `${score}` : "-"
+            room.visual.text(text, x, y, { color: "#FFFFFF" })
+          }
+          continue
+        }
+        room.visual.text("*", x, y, { color: "#FF0000" })
+      }
+    }
+
+    return `top: ${top}, bottom: ${bottom}, left: ${left}, right: ${right}`
   }
 
   private showHarvestableMinerals(): CommandExecutionResult {
