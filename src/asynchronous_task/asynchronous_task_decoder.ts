@@ -8,7 +8,7 @@ class AsynchronousTaskTypes {
   "TestAsynchronousTask" = (state: AsynchronousTaskState) => TestAsynchronousTask.decode(state as unknown as TestAsynchronousTaskState)
 }
 
-export function decodeProcessFrom(state: AsynchronousTaskState): AsynchronousTask | null {
+export function decodeAsynchronousTaskFrom(state: AsynchronousTaskState): AsynchronousTask | null {
   let decoded: AsynchronousTask | null = null
   ErrorMapper.wrapLoop(() => {
     const maker = (new AsynchronousTaskTypes())[state.t]
