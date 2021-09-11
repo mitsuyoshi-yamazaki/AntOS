@@ -37,6 +37,8 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
+    case "manual":  // 何か手動の一時的なスクリプトを動かす際に用いる
+      return this.runOnetimeScript()
     case "findPath":
       return this.findPath()
     case "findPathToSource":
@@ -105,6 +107,23 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
+  private runOnetimeScript(): CommandExecutionResult {
+    const unownedOwnedRoomNames: RoomName[] = []
+
+    Object.entries(Memory.v6RoomInfo).forEach(([roomName, roomInfo]) => {
+      if (roomInfo.roomType !== "owned") {
+        return
+      }
+
+      const room = Game.rooms[roomName]
+      if (room == null || room.controller == null || room.controller.my !== true) {
+        unownedOwnedRoomNames.push(roomName)
+      }
+    })
+
+    return `Unowned room names: ${unownedOwnedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+  }
+
   private findPath(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -950,6 +969,8 @@ export class ExecCommand implements ConsoleCommand {
       constructionSites.forEach(constructionSite => {
         constructionSite.remove()
       })
+
+      RoomResources.removeRoomInfo(room.name)
     }
 
     return messages.join("\n")

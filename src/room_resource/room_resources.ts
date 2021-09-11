@@ -7,6 +7,8 @@ import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
 import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiency, RoomInfoType, updateNormalRoomInfo } from "./room_info"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -19,6 +21,7 @@ interface RoomResourcesInterface {
   getRoomResource(roomName: RoomName): RoomResource | null
   getRoomInfo(roomName: RoomName): RoomInfoType | null
   getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[]
+  removeRoomInfo(roomName: RoomName): void
 
   // ---- Inter Room Resource ---- //
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
@@ -28,11 +31,13 @@ const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
 const roomResources = new Map<RoomName, RoomResource>()
 const allCreeps = new Map<RoomName, V6Creep[]>()
 const creepProblems = new Map<CreepName, Problem[]>()
+const roomInfoToRemove: RoomName[] = []
 
 export const RoomResources: RoomResourcesInterface = {
   // ---- Lifecycle ---- //
   beforeTick(): void {
     roomResources.clear()
+    roomInfoToRemove.splice(0, roomInfoToRemove.length)
     enumerateCreeps()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
@@ -87,6 +92,10 @@ export const RoomResources: RoomResourcesInterface = {
 
   getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[] {
     return Object.entries(Memory.v6RoomInfo).map(([roomName, roomInfo]) => ({roomName, roomInfo}))
+  },
+
+  removeRoomInfo(roomName: RoomName): void {
+    roomInfoToRemove.push(roomName)
   },
 
   // ---- Inter Room Resource ---- //
@@ -235,6 +244,14 @@ function saveRoomInfo(): void {
       return
     }
     Memory.v6RoomInfo[roomName] = roomInfo
+  })
+
+  roomInfoToRemove.forEach(roomName => {
+    if (Memory.v6RoomInfo[roomName] == null) {
+      PrimitiveLogger.programError(`removeRoomInfo() trying to remove inexistence room info ${roomLink(roomName)}`)
+      return
+    }
+    delete Memory.v6RoomInfo[roomName]
   })
 }
 
