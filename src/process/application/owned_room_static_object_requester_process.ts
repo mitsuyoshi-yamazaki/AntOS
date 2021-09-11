@@ -54,6 +54,11 @@ export class OwnedRoomStaticObjectRequesterProcess implements Process, Procedura
 
   }
 
+  /**
+   * - どこへ運ぶかは固定（最も近い部屋
+   *   - RoomがClaim/Unclaim/受け取り状況が変わったら再計算
+   * - Creepの調達先は動的
+   */
   private sourceRequest(source: Source): SourceRequest {
     return {
       source,
