@@ -2,6 +2,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "utility/constants"
 import { roomLink } from "utility/log"
 import { ValuedMapMap } from "utility/valued_collection"
+import { constructionSiteFlagColorMap } from "v5_task/room_planing/create_construction_site_task"
 
 export type WallPosition = {
   x: number
@@ -37,15 +38,33 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
       }
       scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, neighbourScore)
     })
-
   }
 
-  const positionsToDefend: RoomPosition[] = [
-    ...room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION } }).map(extension => extension.pos),
-    ...room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }).map(extension => extension.pos),
-    ...room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_WHITE).map(flag => flag.pos),
-    ...room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_BLUE).map(flag => flag.pos),
+  const importantFlagColors: ColorConstant[] = [
+    COLOR_GREEN,
+    COLOR_PURPLE,
+    COLOR_BLUE,
+    COLOR_RED,
+    COLOR_GREY,
+    COLOR_CYAN,
+    COLOR_WHITE,
   ]
+  const importantStructureTypes: StructureConstant[] = importantFlagColors.flatMap(color => constructionSiteFlagColorMap.get(color) ?? [])
+  const positionsToDefend: RoomPosition[] = []
+
+  room.find(FIND_MY_STRUCTURES).forEach(structure => {
+    if (importantStructureTypes.includes(structure.structureType) !== true) {
+      return
+    }
+    positionsToDefend.push(structure.pos)
+  })
+
+  room.find(FIND_FLAGS).forEach(flag => {
+    if (importantFlagColors.includes(flag.color) !== true) {
+      return
+    }
+    positionsToDefend.push(flag.pos)
+  })
 
   if (positionsToDefend.length < (GameConstants.structure.maxCount.extension * 0.8)) {
     return `Lack of extensions: ${positionsToDefend.length} found (${GameConstants.structure.maxCount.extension} expected)`
@@ -76,70 +95,75 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
     iterateScore(i)
   }
 
-  const margin = 2
+  const margin = 1
   const roomMin = min + margin
   const roomMax = max - margin
 
   const wallPositions: {position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL}[] = []
 
-  for (let y = roomMin; y <= roomMax; y += 1) {
-    for (let x = roomMin; x <= roomMax; x += 1) {
-      const score = scores.getValueFor(y).get(x)
+  for (let j = min; j <= max; j += 1) {
+    for (let i = min; i <= max; i += 1) {
+      const score = scores.getValueFor(j).get(i)
       if (score !== wallScore) {
         if (showsCostMatrix === true) {
           if (score != null) {
-            room.visual.text(`${score}`, x, y, { color: "#FFFFFF" })
+            room.visual.text(`${score}`, i, j, { color: "#FFFFFF" })
           }
         }
         continue
       }
 
+      const x = Math.min(Math.max(i, roomMin), roomMax)
+      const y = Math.min(Math.max(j, roomMin), roomMax)
+
       try {
         const position = new RoomPosition(x, y, room.name)
-        const outsidePositionCount = position.neighbours()
-          .filter(neighbourPosition => {
-            const neighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
-            if (neighbourScore == null) {
-              return true
-            }
-            if (neighbourScore > wallScore) {
-              return true
-            }
-            return false
-          })
-          .length
+        const wallType = ((): STRUCTURE_WALL | STRUCTURE_RAMPART | null => {
+          if (x !== i || y !== j) {
+            return STRUCTURE_RAMPART  // Roomの淵に設置する部分は未完成
+          }
+          const outsidePositionCount = position.neighbours()
+            .filter(neighbourPosition => {
+              const neighbourScore = scores.getValueFor(neighbourPosition.y).get(neighbourPosition.x)
+              if (neighbourScore == null) {
+                return true
+              }
+              if (neighbourScore > wallScore) {
+                return true
+              }
+              return false
+            })
+            .length
 
-        switch (outsidePositionCount) {
-        case 0:
-          room.visual.text("n", x, y, { color: "#FFFFFF" })
-          break
-        case 1: {
-          const wallType = ((): STRUCTURE_WALL | STRUCTURE_RAMPART => {
-            if (position.lookFor(LOOK_STRUCTURES).length > 0) {
-              return STRUCTURE_RAMPART
-            }
-            if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
-              return STRUCTURE_RAMPART
-            }
-            if (position.lookFor(LOOK_FLAGS).length > 0) {
-              return STRUCTURE_RAMPART
-            }
-            return STRUCTURE_WALL
-          })()
+          switch (outsidePositionCount) {
+          case 0:
+            return null
+          case 1:
+            return ((): STRUCTURE_WALL | STRUCTURE_RAMPART => {
+              if (position.lookFor(LOOK_STRUCTURES).length > 0) {
+                return STRUCTURE_RAMPART
+              }
+              if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
+                return STRUCTURE_RAMPART
+              }
+              if (position.lookFor(LOOK_FLAGS).length > 0) {
+                return STRUCTURE_RAMPART
+              }
+              return STRUCTURE_WALL
+            })()
+          default:
+            return STRUCTURE_RAMPART
+          }
+        })()
+
+        if (wallType != null) {
           wallPositions.push({
             position,
             wallType,
           })
-          break
+        } else {
+          room.visual.text("n", x, y, { color: "#FFFFFF" })
         }
-        default:
-          wallPositions.push({
-            position,
-            wallType: STRUCTURE_RAMPART,
-          })
-          break
-        }
-        wallPositions.push()
       } catch (e) {
         PrimitiveLogger.programError(`showWallPlanOf() RoomPosition ${e}`)
       }
