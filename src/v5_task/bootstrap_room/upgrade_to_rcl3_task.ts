@@ -22,6 +22,7 @@ import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { shouldSpawnBootstrapCreeps } from "./claim_room_task"
+import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
@@ -103,7 +104,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
     if (targetRoomObjects != null) {
-      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.activeStructures.storage != null && targetRoomObjects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= this.requiredEnergy) {
+      if (targetRoomObjects.activeStructures.spawns.length > 0 && targetRoomObjects.activeStructures.storage != null && targetRoomObjects.activeStructures.storage.my === true && targetRoomObjects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) >= this.requiredEnergy) {
         this.takeOverCreeps()
         targetRoomObjects.roomInfo.bootstrapping = false
         return TaskStatus.Finished
@@ -201,6 +202,21 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       const source = targetRoomObjects.getSource(creep.pos)
       if (source != null) {
         return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
+      }
+
+      const energySource = ((): StructureStorage | StructureTerminal | null => {
+        const storage = targetRoomObjects.activeStructures.storage
+        if (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          return storage
+        }
+        const terminal = targetRoomObjects.activeStructures.terminal
+        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          return terminal
+        }
+        return null
+      })()
+      if (energySource != null) {
+        return MoveToTargetTask.create(WithdrawApiWrapper.create(energySource))
       }
 
       if (this.neighboursToObserve.length > 0) {
