@@ -140,7 +140,11 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
             return null
           case 1:
             return ((): STRUCTURE_WALL | STRUCTURE_RAMPART => {
-              if (position.lookFor(LOOK_STRUCTURES).length > 0) {
+              if (room.controller != null && position.getRangeTo(room.controller.pos) <= GameConstants.creep.actionRange.upgradeController) {
+                return STRUCTURE_RAMPART
+              }
+              const structures = position.lookFor(LOOK_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_WALL)
+              if (structures.length > 0) {
                 return STRUCTURE_RAMPART
               }
               if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
@@ -209,12 +213,14 @@ function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPositi
     scores.getValueFor(exit.y).set(exit.x, entranceScore)
   })
 
-  const iterateScore = (targetScore: number): void => {
+  const iterateScore = (targetScore: number): { finished: boolean } => {
+    let finished = true
     scores.forEach((row, y) => {
       row.forEach((score, x) => {
         if (score !== targetScore) {
           return
         }
+        finished = false
         try {
           const position = new RoomPosition(x, y, room.name)
           setNeighbourScore(position, targetScore)
@@ -223,10 +229,15 @@ function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPositi
         }
       })
     })
+    return {finished}
   }
 
-  for (let i = entranceScore; i <= maxScore; i += 1) {
-    iterateScore(i)
+  const timeoutScore = maxScore * 4
+  for (let i = entranceScore; i <= timeoutScore; i += 1) {
+    const { finished } = iterateScore(i)
+    if (finished === true) {
+      break
+    }
   }
 
   const result: WallPosition[] = wallPositions.flatMap(position => {
