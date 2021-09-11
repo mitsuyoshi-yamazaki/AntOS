@@ -19,6 +19,7 @@ import { RoomPlanner } from "room_plan/room_planner"
 import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
 import { Environment } from "utility/environment"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { GameConstants } from "utility/constants"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -125,6 +126,7 @@ export class RoomKeeperTask extends Task {
             } catch (e) {
               PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
             }
+            this.removeLeftoverFlags(objects.controller.room)
             this.removeLeftoverStructures(objects.controller.room)
             break
           case "failed":
@@ -137,6 +139,17 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private removeLeftoverFlags(room: Room): void {
+    const min = GameConstants.room.edgePosition.min
+    const max = GameConstants.room.edgePosition.max
+    room.find(FIND_FLAGS).forEach(flag => {
+      if (flag.pos.x !== min && flag.pos.x !== max && flag.pos.y !== min && flag.pos.y !== max) {
+        return
+      }
+      flag.remove()
+    })
   }
 
   private removeLeftoverStructures(room: Room): void {
