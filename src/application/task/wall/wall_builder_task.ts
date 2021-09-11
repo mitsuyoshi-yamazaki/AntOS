@@ -204,10 +204,6 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   }
 
   private checkWallPositions(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    const coordinate = RoomCoordinate.parse(roomResource.room.name)
-    if (coordinate == null || coordinate.sectorName() !== "W55S15") {
-      return null
-    }
     if (roomResource.controller.level < wallAvailableLevel) {
       return null
     }
