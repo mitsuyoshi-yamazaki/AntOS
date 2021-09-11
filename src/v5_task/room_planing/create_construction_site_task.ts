@@ -7,7 +7,7 @@ import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 
-const colorMap = new Map<ColorConstant, StructureConstant>([
+export const constructionSiteFlagColorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
   [COLOR_GREEN, STRUCTURE_STORAGE],
   [COLOR_PURPLE, STRUCTURE_TERMINAL],
@@ -120,11 +120,11 @@ export class CreateConstructionSiteTask extends Task {
     const shouldPlaceContainer = room.controller.level >= 4
 
     const sortedFlags = flags.sort((lhs, rhs) => {
-      const lStructureType = colorMap.get(lhs.color)
+      const lStructureType = constructionSiteFlagColorMap.get(lhs.color)
       if (lStructureType == null) {
         return 1
       }
-      const rStructureType = colorMap.get(rhs.color)
+      const rStructureType = constructionSiteFlagColorMap.get(rhs.color)
       if (rStructureType == null) {
         return -1
       }
@@ -143,7 +143,7 @@ export class CreateConstructionSiteTask extends Task {
     })
 
     for (const flag of sortedFlags) {
-      const structureType = colorMap.get(flag.color)
+      const structureType = constructionSiteFlagColorMap.get(flag.color)
       if (structureType == null) {
         continue
       }

@@ -51,6 +51,7 @@ export class OwnedRoomStaticObjectRequesterProcess implements Process, Procedura
 
     const sources = room.find(FIND_SOURCES)
     const sourceRequests = sources.map(source => this.sourceRequest(source))
+
   }
 
   private sourceRequest(source: Source): SourceRequest {

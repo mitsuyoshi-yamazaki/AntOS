@@ -759,7 +759,7 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
-  // Game.io("exec room_config room_name=W48S6 setting=excludedRemotes remote_room_name=W48S5")
+  // Game.io("exec room_config room_name=W44S8 setting=excludedRemotes remote_room_name=W44S7")
   // Game.io("exec room_config room_name=W43S5 setting=wallPositions action=remove")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()

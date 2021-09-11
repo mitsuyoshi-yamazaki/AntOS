@@ -35,7 +35,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W51S29 target_room_name=W46S32 waypoints=W46S30 target_id=613924ba08069d76ac139e7c")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S15 target_room_name=W47S16 waypoints=W47S16 target_id=5aebb86259326e11aba8887d")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
