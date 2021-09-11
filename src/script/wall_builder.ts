@@ -37,11 +37,14 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
       }
       scores.getValueFor(neighbourPosition.y).set(neighbourPosition.x, neighbourScore)
     })
+
   }
 
   const positionsToDefend: RoomPosition[] = [
     ...room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_EXTENSION } }).map(extension => extension.pos),
+    ...room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }).map(extension => extension.pos),
     ...room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_WHITE).map(flag => flag.pos),
+    ...room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_BLUE).map(flag => flag.pos),
   ]
 
   if (positionsToDefend.length < (GameConstants.structure.maxCount.extension * 0.8)) {
@@ -143,10 +146,10 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
     }
   }
 
-  return trimUnreacheableWalls(room, wallPositions)
+  return trimUnreacheableWalls(room, wallPositions, showsCostMatrix)
 }
 
-function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL }[]): WallPosition[] {
+function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL }[], showsCostMatrix: boolean): WallPosition[] {
   const min = GameConstants.room.edgePosition.min
   const max = GameConstants.room.edgePosition.max
 
@@ -234,11 +237,13 @@ function trimUnreacheableWalls(room: Room, wallPositions: { position: RoomPositi
     return []
   })
 
-  scores.forEach((row, y) => {
-    row.forEach((score, x) => {
-      room.visual.text(`${score}`, x, y, { color: "#FFFF00" })
+  if (showsCostMatrix === true) {
+    scores.forEach((row, y) => {
+      row.forEach((score, x) => {
+        room.visual.text(`${score}`, x, y, { color: "#FFFF00" })
+      })
     })
-  })
+  }
 
   return result
 }
