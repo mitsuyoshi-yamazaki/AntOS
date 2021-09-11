@@ -95,32 +95,55 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
     iterateScore(i)
   }
 
-  const margin = 1
+  const margin = 2
   const roomMin = min + margin
   const roomMax = max - margin
 
   const wallPositions: {position: RoomPosition, wallType: STRUCTURE_RAMPART | STRUCTURE_WALL}[] = []
 
-  for (let j = min; j <= max; j += 1) {
-    for (let i = min; i <= max; i += 1) {
-      const score = scores.getValueFor(j).get(i)
-      if (score !== wallScore) {
+  for (let y = min; y <= max; y += 1) {
+    for (let x = min; x <= max; x += 1) {
+      const score = scores.getValueFor(y).get(x)
+      const positionStatus = ((): "wall" | "edge wall" | "none" => {
+        if (score == null || score === terrainWallScore) {
+          return "none"
+        }
+        const isEdgePosition = x === roomMin || x === roomMax || y === roomMin || y === roomMax
+        if (score <= wallScore && isEdgePosition === true) {
+          return "edge wall"
+        }
+        if (score !== wallScore) {
+          return "none"
+        }
+        if (x < roomMin || x > roomMax || y < roomMin || y > roomMax) {
+          return "none"
+        }
+        return "wall"
+      })()
+
+      if (positionStatus === "none") {
         if (showsCostMatrix === true) {
           if (score != null) {
-            room.visual.text(`${score}`, i, j, { color: "#FFFFFF" })
+            room.visual.text(`${score}`, x, y, { color: "#FFFFFF" })
           }
         }
         continue
       }
 
-      const x = Math.min(Math.max(i, roomMin), roomMax)
-      const y = Math.min(Math.max(j, roomMin), roomMax)
-
       try {
         const position = new RoomPosition(x, y, room.name)
         const wallType = ((): STRUCTURE_WALL | STRUCTURE_RAMPART | null => {
-          if (x !== i || y !== j) {
-            return STRUCTURE_RAMPART  // Roomの淵に設置する部分は未完成
+          if (positionStatus === "edge wall") {
+            if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
+              return STRUCTURE_WALL
+            }
+            return STRUCTURE_RAMPART
+          }
+          if (x === roomMin + 1 || x === roomMax - 1 || y === roomMin + 1 || y === roomMax - 1) {
+            if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
+              return STRUCTURE_WALL
+            }
+            return STRUCTURE_RAMPART
           }
           const outsidePositionCount = position.neighbours()
             .filter(neighbourPosition => {
@@ -155,8 +178,12 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
               }
               return STRUCTURE_WALL
             })()
-          default:
+          default: {
+            if (position.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_WALL}}).length > 0) {
+              return STRUCTURE_WALL
+            }
             return STRUCTURE_RAMPART
+          }
           }
         })()
 
