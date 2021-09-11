@@ -69,6 +69,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.showRoomPlan()
     case "show_wall_plan":
       return this.showWallPlan()
+    // case "check_existing_walls":
+    //   return this.checkExistingWalls()
     case "mineral":
       return this.showHarvestableMinerals()
     case "room_config":
@@ -723,6 +725,28 @@ export class ExecCommand implements ConsoleCommand {
     return `${wallPositions.length} walls`
   }
 
+  // private checkExistingWalls(): CommandExecutionResult {
+  //   const roomHasWalls: RoomName[] = []
+  //   const roomWithoutWalls: RoomName[] = []
+
+  //   RoomResources.getOwnedRoomResources().forEach(roomResource => {
+  //     const roomPlan = roomResource.roomInfo.roomPlan
+  //     if (roomPlan == null) {
+  //       return
+  //     }
+  //     const room = roomResource.room
+  //     const wallCount = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).length + room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }).length
+  //     if (wallCount > 20) {
+  //       roomPlan.wallPositions = []
+  //       roomHasWalls.push(roomResource.room.name)
+  //     } else {
+  //       roomWithoutWalls.push(roomResource.room.name)
+  //     }
+  //   })
+
+  //   return `rooms have walls:\n${roomHasWalls.map(roomName => roomLink(roomName)).join(",")}\nrooms don't have walls:\n${roomWithoutWalls.map(roomName => roomLink(roomName)).join(",")}`
+  // }
+
   private showHarvestableMinerals(): CommandExecutionResult {
     const harvestableMinerals = ResourceManager.harvestableMinerals()
     const result: string[] = []
@@ -735,6 +759,8 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
+  // Game.io("exec room_config room_name=W48S6 setting=excludedRemotes remote_room_name=W48S5")
+  // Game.io("exec room_config room_name=W45S3 setting=wallPositions action=remove")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -754,6 +780,8 @@ export class ExecCommand implements ConsoleCommand {
     switch (setting) {
     case "excludedRemotes":
       return this.addExcludedRemoteRoom(roomName, roomInfo, args)
+    case "wallPositions":
+      return this.configureWallPositions(roomName, roomInfo, args)
     default:
       return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
     }
@@ -778,6 +806,28 @@ export class ExecCommand implements ConsoleCommand {
     }
     roomInfo.config.excludedRemotes.push(remoteRoomName)
     return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
+  }
+
+  private configureWallPositions(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const roomPlan = roomInfo.roomPlan
+    if (roomPlan == null) {
+      return `${roomLink(roomName)} doesn't have room plan`
+    }
+
+    const action = args.get("action")
+    if (action == null) {
+      return this.missingArgumentError("action")
+    }
+    switch (action) {
+    case "remove":
+      roomPlan.wallPositions = undefined
+      return "ok"
+    case "set_it_done":
+      roomPlan.wallPositions = []
+      return "ok"
+    default:
+      return `Invalid action ${action}`
+    }
   }
 
   private checkAlliance(): CommandExecutionResult {
