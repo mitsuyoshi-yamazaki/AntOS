@@ -24,6 +24,7 @@ export const quadTypes = [
   "tier1-invader-core-lv1",
   "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
+  "tier3-3tower-minimum-dismantler",
   "tier3-3tower-full-ranged-attacker",
   "tier3-4tower-dismantler",
   "tier3-4tower-dismantler-rcl7",
@@ -90,6 +91,7 @@ export class QuadSpec {
     case "tier3-4tower-1dismantler-rcl7":
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler":
+    case "tier3-3tower-minimum-dismantler":
     case "tier3-4tower-2dismantler":
     case "tier3-5tower-dismantler":
     case "tier3-6tower-dismantler":
@@ -112,6 +114,7 @@ export class QuadSpec {
     case "test-attacker":
     case "test-boosted-attacker":
       return 4
+    case "tier3-3tower-minimum-dismantler":
     case "tier3-6tower-tank":
       return 3
     case "invader-core-attacker":
@@ -227,6 +230,12 @@ export class QuadSpec {
       }
     case "no-defence-3tower":
       return noDefence3TowerAttackerSpec
+    case "tier3-3tower-minimum-dismantler":
+      if (creepInsufficiency <= 2) {
+        return tier33TowerMinimumDismantlerHealerSpec
+      } else {
+        return tier33TowerMinimumDismantlerDismantlerSpec
+      }
     case "tier3-3tower-full-ranged-attacker":
       return tier33TowerFullRangedAttackerSpec
     case "tier3-4tower-dismantler":
@@ -323,6 +332,7 @@ export class QuadSpec {
     case "tier3-d2000-dismantler-swamp":
     case "tier1-d750":
     case "no-defence-3tower":
+    case "tier3-3tower-minimum-dismantler":
     case "tier3-3tower-full-ranged-attacker":
     case "tier3-4tower-dismantler":
     case "tier3-4tower-dismantler-rcl7":
@@ -673,6 +683,34 @@ const tier3DismantlerBoost1: MineralBoostConstant[] = [
   RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
   RESOURCE_CATALYZED_ZYNTHIUM_ACID,
 ]
+
+// ---- tier3-3tower-minimum-dismantler ---- //
+const tier33TowerMinimumDismantlerDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+  ]
+}
+const tier33TowerMinimumDismantlerHealerSpec: CreepBodySpec = {
+  roles: [CreepRole.RangedAttacker, CreepRole.Healer, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE,
+    HEAL, HEAL, HEAL, HEAL, HEAL,
+    HEAL,
+  ]
+}
 
 // ---- tier3-3tower-full-ranged-attacker ---- //
 const tier33TowerFullRangedAttackerSpec: CreepBodySpec = {

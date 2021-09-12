@@ -49,7 +49,7 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W45S9 target_room_name=W45S7 waypoints=W45S7 quad_type=invader-core-attacker targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W48S12 target_room_name=W1N37 waypoints=W47S13,W47S15,W45S15,W5N35,W3N35,W3N36,W2N36,W2N37, quad_type=tier3-3tower-minimum-dismantler targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
