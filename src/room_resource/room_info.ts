@@ -1,8 +1,9 @@
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
-import { WallPosition } from "script/wall_builder"
-import { RoomName } from "utility/room_name"
+import type { WallPosition } from "script/wall_builder"
+import type { RoomName } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
-import { Timestamp } from "utility/timestamp"
+import type { Timestamp } from "utility/timestamp"
+import { VirtualStructure } from "./virtual_structure"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
@@ -49,6 +50,9 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   highestRcl: number
   roomPlan: {
     centerPosition: { x: number, y: number }
+    // virtualStructures: VirtualStructure[]
+
+    /** @deprecated */
     wallPositions?: WallPosition[]
   } | null
 

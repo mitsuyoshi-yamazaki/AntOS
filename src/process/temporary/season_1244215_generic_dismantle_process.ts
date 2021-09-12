@@ -33,9 +33,10 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 
   targetIds: Id<AnyStructure>[]
   creepName: CreepName | null
+  action: "specified target only" | null
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S15 target_room_name=W47S16 waypoints=W47S16 target_id=5aebb86259326e11aba8887d")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S15 target_room_name=W1N36 waypoints=W45S15,W5N35,W1N35 target_id=5cd6d64cff72e9065409bffa")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -52,6 +53,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     public waypoints: RoomName[],
     private creepName: CreepName | null,
     private targetIds: Id<AnyStructure>[],
+    private action: "specified target only" | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -67,11 +69,12 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       w: this.waypoints,
       creepName: this.creepName,
       targetIds: this.targetIds,
+      action: this.action,
     }
   }
 
   public static decode(state: Season1244215GenericDismantleProcessState): Season1244215GenericDismantleProcess {
-    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds)
+    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds, state.action)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null): Season1244215GenericDismantleProcess {
@@ -79,7 +82,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     if (targetId != null) {
       targetIds.push(targetId)
     }
-    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds)
+    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds, null)
   }
 
   public processShortDescription(): string {
@@ -139,6 +142,14 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       this.waypoints = roomNames
       this.targetRoomName = targetRoomName
       return `target room: ${this.targetRoomName}, waypoints: ${roomNames} set`
+    }
+    if (message === "specified target only") {
+      this.action = "specified target only"
+      return '"specified target only" set'
+    }
+    if (message === "clear action") {
+      this.action = null
+      return "action cleared"
     }
     if (message.length <= 0) {
       return "Empty message"
@@ -249,6 +260,9 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     })()
     if (target != null) {
       return target
+    }
+    if (this.action === "specified target only") {
+      return null
     }
 
     const excluded: StructureConstant[] = [
