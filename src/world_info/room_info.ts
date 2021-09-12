@@ -282,6 +282,9 @@ export class OwnedRoomObjects {
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -291,6 +294,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -300,6 +306,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -318,6 +327,9 @@ export class OwnedRoomObjects {
         checkDecayed(structure)
         break
       case STRUCTURE_STORAGE:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -327,6 +339,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -336,6 +351,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_POWER_SPAWN:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -345,6 +363,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_LAB:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -353,6 +374,9 @@ export class OwnedRoomObjects {
         }
         break
       case STRUCTURE_NUKER:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }

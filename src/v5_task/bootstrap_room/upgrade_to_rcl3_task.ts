@@ -23,6 +23,7 @@ import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_
 import { RoomResources } from "room_resource/room_resources"
 import { shouldSpawnBootstrapCreeps } from "./claim_room_task"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
+import { GameConstants } from "utility/constants"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
@@ -40,6 +41,25 @@ function neighboursToObserve(roomName: RoomName): RoomName[] {
     return true
   })
 }
+
+type EnergySourceStructureType = StructureTerminal
+  | StructureStorage
+  | StructureFactory
+  | StructureLink
+  | StructureLab
+  | StructureExtension
+  | StructureSpawn
+  | StructureTower
+export const leftoverStructurePriority: StructureConstant[] = [ // 添字の大きい方が優先
+  STRUCTURE_TERMINAL,
+  STRUCTURE_STORAGE,
+  STRUCTURE_FACTORY,
+  STRUCTURE_LINK,
+  STRUCTURE_LAB,
+  STRUCTURE_EXTENSION,
+  STRUCTURE_SPAWN,
+  STRUCTURE_TOWER,
+]
 
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
@@ -109,14 +129,14 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         return TaskStatus.Finished
       }
       targetRoomObjects.roomInfo.bootstrapping = true
+
+      this.removeEmptyHostileStructures(targetRoomObjects.controller.room)
     }
 
     super.runTask(objects, childTaskResults)
 
     const problemFinders: ProblemFinder[] = [
     ]
-
-    this.removeEmptyHostileStructures(objects.controller.room)
 
     this.checkProblemFinders(problemFinders)
 
@@ -201,24 +221,74 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
       }
 
-      const source = targetRoomObjects.getSource(creep.pos)
-      if (source != null) {
-        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
-      }
-
-      const energySource = ((): StructureStorage | StructureTerminal | null => {
-        const storage = targetRoomObjects.activeStructures.storage
-        if (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          return storage
+      // FixMe: 順番直す
+      const energySource = ((): EnergySourceStructureType | Ruin | null => {
+        const targetRoom = targetRoomObjects.controller.room
+        const targetRuin = targetRoom.find(FIND_RUINS)
+          .filter(ruin => {
+            if (ruin.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+              return false
+            }
+            return true
+          })
+          .sort((lhs, rhs) => {
+            return creep.pos.getRangeTo(lhs) - creep.pos.getRangeTo(rhs)
+          })[0]
+        if (targetRuin != null) {
+          return targetRuin
         }
-        const terminal = targetRoomObjects.activeStructures.terminal
-        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          return terminal
+
+        const maxDistance = GameConstants.room.edgePosition.max
+        const hostileStructures: EnergySourceStructureType[] = targetRoom.find(FIND_HOSTILE_STRUCTURES)
+          .flatMap(structure => {
+            if (structure instanceof StructureTower) {
+              return structure
+            }
+            if (structure instanceof StructureSpawn) {
+              return structure
+            }
+            if (structure instanceof StructureExtension) {
+              return structure
+            }
+            if (structure instanceof StructureLink) {
+              return structure
+            }
+            if (structure instanceof StructureLab) {
+              return structure
+            }
+            if (structure instanceof StructureFactory) {
+              return structure
+            }
+            if (structure instanceof StructureStorage) {
+              return structure
+            }
+            if (structure instanceof StructureTerminal) {
+              return structure
+            }
+            return []
+          })
+        const scoredHostileStructures: [EnergySourceStructureType, number][] = hostileStructures.map(structure => {
+          const index = leftoverStructurePriority.indexOf(structure.structureType)
+          const range = creep.pos.getRangeTo(structure.pos)
+          return [structure, (index * maxDistance) + (maxDistance - range)]
+        })
+        scoredHostileStructures.sort((lhs, rhs) => {
+          return rhs[1] - lhs[1]
+        })
+
+        const target = scoredHostileStructures[0] ?? null
+        if (target != null) {
+          return target[0]
         }
         return null
       })()
       if (energySource != null) {
         return MoveToTargetTask.create(WithdrawApiWrapper.create(energySource))
+      }
+
+      const source = targetRoomObjects.getSource(creep.pos)
+      if (source != null) {
+        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), { reusePath: 3, ignoreSwamp: false })
       }
 
       if (this.neighboursToObserve.length > 0) {
@@ -353,16 +423,15 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     World.resourcePools.takeOverCreeps(this.parentRoomName, this.taskIdentifier, null, this.targetRoomName)
   }
 
-  // ---- ---- //
+  // ---- Energy source structures ---- //
   private removeEmptyHostileStructures(room: Room): void {
     room.find(FIND_HOSTILE_STRUCTURES)
       .forEach(structure => {
         const store = (structure as {store?: StoreDefinition}).store
-        if (store == null) {
-          return
-        }
-        if (store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          return
+        if (store != null) {
+          if (store.getUsedCapacity(RESOURCE_ENERGY) > 0 || (store.getUsedCapacity() || 0) > 0) {
+            return
+          }
         }
         structure.destroy()
       })

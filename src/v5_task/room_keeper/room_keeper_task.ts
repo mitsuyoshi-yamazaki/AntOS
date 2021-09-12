@@ -20,6 +20,7 @@ import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_t
 import { Environment } from "utility/environment"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { GameConstants } from "utility/constants"
+import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -153,14 +154,8 @@ export class RoomKeeperTask extends Task {
   }
 
   private removeLeftoverStructures(room: Room): void {
-    const excludedHostileStructures: StructureConstant[] = [
-      STRUCTURE_STORAGE,
-      STRUCTURE_TERMINAL,
-      STRUCTURE_FACTORY,
-      STRUCTURE_EXTENSION,
-      STRUCTURE_TOWER,
-      STRUCTURE_SPAWN,
-      STRUCTURE_LINK,
+    const excludedHostileStructures = [
+      ...leftoverStructurePriority
     ]
     const wallTypes: StructureConstant[] = [
       STRUCTURE_WALL,
@@ -168,6 +163,13 @@ export class RoomKeeperTask extends Task {
     ]
 
     room.find(FIND_STRUCTURES).forEach(structure => {
+      if ((structure as { my?: boolean }).my === true) {
+        if (structure.structureType !== STRUCTURE_CONTROLLER) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} iterating owned structure: ${structure}`)
+        }
+        return
+      }
+
       if (wallTypes.includes(structure.structureType) === true) {
         if (structure.hits >= WallBuilderTaskMaxWallHits) {
           return
