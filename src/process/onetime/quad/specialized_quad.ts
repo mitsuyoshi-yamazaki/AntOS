@@ -930,6 +930,26 @@ export class Quad implements Stateful, QuadInterface {
       if (previousCreep == null || previousCreep.spawning === true || creep == null) {
         return
       }
+      if (previousCreep.room.name !== creep.room.name) {
+        if (Game.map.getRoomLinearDistance(creep.room.name, previousCreep.room.name) > 1) {
+          const portals = (creep.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_PORTAL } }) as StructurePortal[])
+            .filter(portal => {
+              if (!(portal.destination instanceof RoomPosition)) {
+                return false
+              }
+              if (portal.destination.roomName !== previousCreep.room.name) {
+                return false
+              }
+              return true
+            })
+          const portal = creep.pos.findClosestByPath(portals)
+          if (portal != null) {
+            creep.moveTo(portal.pos, this.moveToOptions(1, false))
+            return
+          }
+          PrimitiveLogger.programError(`Unexpected quad follower position ${creep.pos}, ${previousCreep.pos}`)
+        }
+      }
       creep.moveTo(previousCreep.pos, this.moveToOptions(2, false))
     }
 
