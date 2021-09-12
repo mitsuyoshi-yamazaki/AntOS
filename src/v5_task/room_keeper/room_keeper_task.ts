@@ -157,8 +157,26 @@ export class RoomKeeperTask extends Task {
       STRUCTURE_STORAGE,
       STRUCTURE_TERMINAL,
       STRUCTURE_FACTORY,
+      STRUCTURE_EXTENSION,
+      STRUCTURE_TOWER,
+      STRUCTURE_SPAWN,
+      STRUCTURE_LINK,
     ]
-    room.find(FIND_HOSTILE_STRUCTURES).forEach(structure => {
+    const wallTypes: StructureConstant[] = [
+      STRUCTURE_WALL,
+      // STRUCTURE_RAMPART, // 現在は対処できないので削除
+    ]
+
+    room.find(FIND_STRUCTURES).forEach(structure => {
+      if (wallTypes.includes(structure.structureType) === true) {
+        if (structure.hits >= WallBuilderTaskMaxWallHits) {
+          return
+        }
+
+        structure.destroy()
+        return
+      }
+
       if (excludedHostileStructures.includes(structure.structureType) === true) {
         try {
           const store = (structure as { store?: StoreDefinition }).store
@@ -171,17 +189,10 @@ export class RoomKeeperTask extends Task {
         } catch (e) {
           PrimitiveLogger.programError(`${this.taskIdentifier} removeLeftoverStructures() failed: ${e}`)
         }
-      }
-      structure.destroy()
-    })
-
-    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).forEach(structure => {
-      structure.destroy()
-    })
-    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).forEach(structure => {
-      if (structure.hits >= WallBuilderTaskMaxWallHits) {
+        structure.destroy()
         return
       }
+
       structure.destroy()
     })
   }

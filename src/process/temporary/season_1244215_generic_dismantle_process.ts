@@ -36,6 +36,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   action: "specified target only" | null
 }
 
+// Season1244215GenericDismantleProcess_35718139_W47S15_W1N36
 // Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S15 target_room_name=W1N36 waypoints=W45S15,W5N35,W1N35 target_id=5cd6d64cff72e9065409bffa")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {

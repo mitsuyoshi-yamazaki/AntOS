@@ -41,7 +41,6 @@ function neighboursToObserve(roomName: RoomName): RoomName[] {
   })
 }
 
-
 export interface UpgradeToRcl3TaskState extends GeneralCreepWorkerTaskState {
   /** parent room name */
   r: RoomName
@@ -116,6 +115,9 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
     const problemFinders: ProblemFinder[] = [
     ]
+
+    this.removeEmptyHostileStructures(objects.controller.room)
+
     this.checkProblemFinders(problemFinders)
 
     return TaskStatus.InProgress
@@ -349,5 +351,20 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   // ---- Take Over Creeps ---- //
   private takeOverCreeps(): void {
     World.resourcePools.takeOverCreeps(this.parentRoomName, this.taskIdentifier, null, this.targetRoomName)
+  }
+
+  // ---- ---- //
+  private removeEmptyHostileStructures(room: Room): void {
+    room.find(FIND_HOSTILE_STRUCTURES)
+      .forEach(structure => {
+        const store = (structure as {store?: StoreDefinition}).store
+        if (store == null) {
+          return
+        }
+        if (store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          return
+        }
+        structure.destroy()
+      })
   }
 }
