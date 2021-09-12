@@ -158,12 +158,20 @@ export class StealResourceProcess implements Process, Procedural {
   }
 
   private requestHauler(energyCapacity: number): void {
+    const body = ((): BodyPartConstant[] => {
+      if (this.targetRoomName === this.parentRoomName) {
+        return CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 6)
+      } else {
+        return CreepBody.create([], [CARRY, MOVE], energyCapacity, 12)
+      }
+    })()
+
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
-      body: CreepBody.create([], [CARRY, MOVE], energyCapacity, 12),
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
@@ -224,10 +232,6 @@ export class StealResourceProcess implements Process, Procedural {
   }
 
   private resourceToSteal(target: TargetType): ResourceConstant | null {
-    if (this.targetRoomName === "W46S32" && target.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      return RESOURCE_ENERGY
-    }
-
     const resourceType = (Object.keys(target.store) as ResourceConstant[])
       .sort((lhs, rhs) => {
         return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)
