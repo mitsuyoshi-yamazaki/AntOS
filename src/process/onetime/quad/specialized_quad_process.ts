@@ -49,7 +49,7 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W48S12 target_room_name=W1N37 waypoints=W47S13,W47S15,W45S15,W5N35,W3N35,W3N36,W2N36,W2N37, quad_type=tier3-3tower-minimum-dismantler targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W47S15 target_room_name=W3N35 waypoints=W45S15,W5N35 quad_type=test-attacker targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -437,10 +437,16 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
     quad.attack(mainTarget, optionalTargets, noCollateralDamage)
     if (mainTarget != null) {
       if (this.quadSpec.canHandleMelee() !== true && (mainTarget instanceof Creep) && mainTarget.getActiveBodyparts(ATTACK) > 0) {
-        if (quad.getMinRangeTo(mainTarget.pos) <= 1) {
-          quad.fleeFrom(mainTarget.pos, 2)
+        const minimumRange = ((): number => {
+          if (mainTarget.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+            return 1
+          }
+          return 2
+        })()
+        if (quad.getMinRangeTo(mainTarget.pos) <= minimumRange) {
+          quad.fleeFrom(mainTarget.pos, minimumRange + 1)
         } else {
-          quad.moveTo(mainTarget.pos, 2)
+          quad.moveTo(mainTarget.pos, minimumRange + 1)
         }
       } else {
         quad.moveTo(mainTarget.pos, 1)
