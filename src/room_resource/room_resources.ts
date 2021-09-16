@@ -36,6 +36,7 @@ const roomInfoToRemove: RoomName[] = []
 export const RoomResources: RoomResourcesInterface = {
   // ---- Lifecycle ---- //
   beforeTick(): void {
+    ownedRoomResources.clear()
     roomResources.clear()
     roomInfoToRemove.splice(0, roomInfoToRemove.length)
     enumerateCreeps()
