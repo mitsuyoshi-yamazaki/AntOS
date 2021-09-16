@@ -22,8 +22,8 @@ import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { shouldSpawnBootstrapCreeps } from "./claim_room_task"
-import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { GameConstants } from "utility/constants"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
@@ -221,69 +221,26 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
       }
 
-      // FixMe: 順番直す
-      const energySource = ((): EnergySourceStructureType | Ruin | null => {
-        const targetRoom = targetRoomObjects.controller.room
-        const targetRuin = targetRoom.find(FIND_RUINS)
-          .filter(ruin => {
-            if (ruin.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-              return false
-            }
+      const sourceAvailable = ((): boolean => {
+        return targetRoomObjects.sources.some(source => {
+          if (source.v5TargetedBy.length > 1) {
+            return false
+          }
+          if (source.energy > 100) {
             return true
-          })
-          .sort((lhs, rhs) => {
-            return creep.pos.getRangeTo(lhs) - creep.pos.getRangeTo(rhs)
-          })[0]
-        if (targetRuin != null) {
-          return targetRuin
-        }
-
-        const maxDistance = GameConstants.room.edgePosition.max
-        const hostileStructures: EnergySourceStructureType[] = targetRoom.find(FIND_HOSTILE_STRUCTURES)
-          .flatMap(structure => {
-            if (structure instanceof StructureTower) {
-              return structure
-            }
-            if (structure instanceof StructureSpawn) {
-              return structure
-            }
-            if (structure instanceof StructureExtension) {
-              return structure
-            }
-            if (structure instanceof StructureLink) {
-              return structure
-            }
-            if (structure instanceof StructureLab) {
-              return structure
-            }
-            if (structure instanceof StructureFactory) {
-              return structure
-            }
-            if (structure instanceof StructureStorage) {
-              return structure
-            }
-            if (structure instanceof StructureTerminal) {
-              return structure
-            }
-            return []
-          })
-        const scoredHostileStructures: [EnergySourceStructureType, number][] = hostileStructures.map(structure => {
-          const index = leftoverStructurePriority.indexOf(structure.structureType)
-          const range = creep.pos.getRangeTo(structure.pos)
-          return [structure, (index * maxDistance) + (maxDistance - range)]
+          }
+          if (source.ticksToRegeneration < 10) {
+            return true
+          }
+          return false
         })
-        scoredHostileStructures.sort((lhs, rhs) => {
-          return rhs[1] - lhs[1]
-        })
-
-        const target = scoredHostileStructures[0] ?? null
-        if (target != null) {
-          return target[0]
-        }
-        return null
       })()
-      if (energySource != null) {
-        return MoveToTargetTask.create(WithdrawApiWrapper.create(energySource))
+
+      if (sourceAvailable !== true) {
+        const energySource = this.getEnergySourceStructure(creep, targetRoomObjects)
+        if (energySource != null) {
+          return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energySource, RESOURCE_ENERGY))
+        }
       }
 
       const source = targetRoomObjects.getSource(creep.pos)
@@ -401,6 +358,68 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(targetSource))
     }
     creep.say("nothing")
+    return null
+  }
+
+  private getEnergySourceStructure(creep: Creep, targetRoomObjects: OwnedRoomObjects): EnergySourceStructureType | Ruin | null {
+    const targetRoom = targetRoomObjects.controller.room
+    const targetRuin = targetRoom.find(FIND_RUINS)
+      .filter(ruin => {
+        if (ruin.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+          return false
+        }
+        return true
+      })
+      .sort((lhs, rhs) => {
+        return creep.pos.getRangeTo(lhs) - creep.pos.getRangeTo(rhs)
+      })[0]
+    if (targetRuin != null) {
+      return targetRuin
+    }
+
+    const maxDistance = GameConstants.room.edgePosition.max
+    const hostileStructures: EnergySourceStructureType[] = targetRoom.find(FIND_HOSTILE_STRUCTURES)
+      .flatMap(structure => {
+        if (structure instanceof StructureTower) {
+          return structure
+        }
+        if (structure instanceof StructureSpawn) {
+          return structure
+        }
+        if (structure instanceof StructureExtension) {
+          return structure
+        }
+        if (structure instanceof StructureLink) {
+          return structure
+        }
+        if (structure instanceof StructureLab) {
+          return structure
+        }
+        if (structure instanceof StructureFactory) {
+          return structure
+        }
+        if (structure instanceof StructureStorage) {
+          return structure
+        }
+        if (structure instanceof StructureTerminal) {
+          return structure
+        }
+        return []
+      })
+      .filter(structure => structure.store.getUsedCapacity(RESOURCE_ENERGY) > 0)
+    const scoredHostileStructures: [EnergySourceStructureType, number][] = hostileStructures.map(structure => {
+      const index = leftoverStructurePriority.indexOf(structure.structureType)
+      const range = creep.pos.getRangeTo(structure.pos)
+      return [structure, (index * maxDistance) + (maxDistance - range)]
+    })
+    scoredHostileStructures.sort((lhs, rhs) => {
+      return rhs[1] - lhs[1]
+    })
+
+    const target = scoredHostileStructures[0] ?? null
+    if (target != null) {
+      return target[0]
+    }
     return null
   }
 
