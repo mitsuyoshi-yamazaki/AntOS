@@ -78,63 +78,34 @@ export class RoomKeeperTask extends Task {
     const ownedRoomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (ownedRoomResource != null) {
       if (ownedRoomResource.roomInfo.roomPlan == null) {  // FixMe: roomInfo.roomPlanのMigration処理：流したら消す
-        const distributorProcess = ((): Season1838855DistributorProcess | null => {
-          return OperatingSystem.os.listAllProcesses()
-            .map(processInfo => processInfo.process)
-            .find(process => {
-              if (!(process instanceof Season1838855DistributorProcess)) {
-                return false
-              }
-              if (process.parentRoomName !== this.roomName) {
-                return false
-              }
-              return true
-            }) as Season1838855DistributorProcess | null
-        })()
-
-        if (distributorProcess != null) {
+        const roomPlanner = new RoomPlanner(objects.controller, {dryRun: false})
+        const result = roomPlanner.run()
+        switch (result.resultType) {
+        case "succeeded":
+          PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
           ownedRoomResource.roomInfo.roomPlan = {
             centerPosition: {
-              x: distributorProcess.position.x,
-              y: distributorProcess.position.y,
+              x: result.value.center.x,
+              y: result.value.center.y,
             }
           }
-        } else {
-          const roomPlanner = new RoomPlanner(objects.controller, {dryRun: false})
-          const result = roomPlanner.run()
-          switch (result.resultType) {
-          case "succeeded":
-            PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
-            ownedRoomResource.roomInfo.roomPlan = {
-              centerPosition: {
-                x: result.value.center.x,
-                y: result.value.center.y,
-              }
-            }
-            try {
-              const centerPosition = new RoomPosition(result.value.center.x, result.value.center.y, this.roomName)
-              OperatingSystem.os.addProcess(null, processId => Season1838855DistributorProcess.create(processId, this.roomName, centerPosition))
+          OperatingSystem.os.addProcess(null, processId => Season1838855DistributorProcess.create(processId, this.roomName))
 
-              switch (Environment.world) {
-              case "persistent world":
-              case "simulation":
-              case "season 3":
-                break
-              case "botarena":
-                OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
-                break
-              }
-            } catch (e) {
-              PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
-            }
-            this.removeLeftoverFlags(objects.controller.room)
-            this.removeLeftoverStructures(objects.controller.room)
+          switch (Environment.world) {
+          case "persistent world":
+          case "simulation":
+          case "season 3":
             break
-          case "failed":
-            PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
+          case "botarena":
+            OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
             break
           }
-
+          this.removeLeftoverFlags(objects.controller.room)
+          this.removeLeftoverStructures(objects.controller.room)
+          break
+        case "failed":
+          PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
+          break
         }
       }
     }
