@@ -772,28 +772,10 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const rawPosition = args.get("pos")
-    if (rawPosition == null) {
-      return this.missingArgumentError("pos")
-    }
-    const [rawX, rawY] = rawPosition.split(",")
-    if (rawX == null || rawY == null) {
-      return Result.Failed(`Invalid pos format ${rawPosition}, expected pos=x,y`)
-    }
-    const x = parseInt(rawX, 10)
-    const y = parseInt(rawY, 10)
-    if (isNaN(x) === true || isNaN(y) === true) {
-      return Result.Failed(`Invalid pos value ${rawPosition}, expected pos=x,y`)
-    }
-    try {
-      const position = new RoomPosition(x, y, roomName)
-      const process = OperatingSystem.os.addProcess(null, processId => {
-        return Season1838855DistributorProcess.create(processId, roomName, position)
-      })
-      return Result.Succeeded(process)
-    } catch (e) {
-      return Result.Failed(`Invalid pos value ${rawPosition}, expected pos=x,y, ${e}`)
-    }
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return Season1838855DistributorProcess.create(processId, roomName)
+    })
+    return Result.Succeeded(process)
   }
 
   private launchStealResourceProcess(): LaunchCommandResult {

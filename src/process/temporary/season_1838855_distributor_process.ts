@@ -10,7 +10,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition } from "prototype/room_position"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "os/infrastructure/logger"
@@ -29,7 +29,6 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
-  position: RoomPositionState
   linkId: Id<StructureLink> | null
   upgraderLinkId: Id<StructureLink> | null
 
@@ -49,7 +48,6 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public readonly position: RoomPosition,
     public linkId: Id<StructureLink> | null,
     public upgraderLinkId: Id<StructureLink> | null,
     private drainStorage: boolean,
@@ -64,7 +62,6 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
-      position: this.position.encode(),
       linkId: this.linkId,
       upgraderLinkId: this.upgraderLinkId,
       drainStorage: this.drainStorage,
@@ -72,11 +69,11 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   }
 
   public static decode(state: Season1838855DistributorProcessState): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(state.l, state.i, state.p, decodeRoomPosition(state.position), state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
+    return new Season1838855DistributorProcess(state.l, state.i, state.p, state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, position: RoomPosition): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, position, null, null, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName): Season1838855DistributorProcess {
+    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, null, null, false)
   }
 
   public processShortDescription(): string {
@@ -94,6 +91,12 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
       return
     }
+    const distributorPosition = resources.roomInfo.roomPlan?.centerPosition
+    if (distributorPosition == null) {
+      PrimitiveLogger.fatal(`${this.identifier} no room plan ${roomLink(this.parentRoomName)}`)
+      return
+    }
+    const distributorRoomPosition = decodeRoomPosition(distributorPosition, this.parentRoomName)
 
     if ((Game.time % 263) === 13) {
       this.checkLink(resources)
@@ -128,7 +131,7 @@ export class Season1838855DistributorProcess implements Process, Procedural {
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newDistributorTask(creep, link, resources),
+      creep => this.newDistributorTask(creep, link, resources, distributorRoomPosition),
       () => true,
     )
   }
@@ -147,11 +150,19 @@ export class Season1838855DistributorProcess implements Process, Procedural {
           //
         }
       }
+    } else {
+      if (Game.getObjectById(this.linkId) == null) {
+        this.linkId = null
+      }
     }
     if (this.upgraderLinkId == null) {
       const upgraderLink = resources.controller.pos.findInRange(FIND_MY_STRUCTURES, 3, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
       if (upgraderLink != null) {
         this.upgraderLinkId = upgraderLink.id
+      }
+    } else {
+      if (Game.getObjectById(this.upgraderLinkId) == null) {
+        this.upgraderLinkId = null
       }
     }
   }
@@ -180,9 +191,9 @@ export class Season1838855DistributorProcess implements Process, Procedural {
     link.transferEnergy(upgraderLink)
   }
 
-  private newDistributorTask(creep: Creep, link: StructureLink | null, resources: OwnedRoomResource): CreepTask | null {
-    if (creep.pos.isEqualTo(this.position) !== true) {
-      return MoveToTask.create(this.position, 0)
+  private newDistributorTask(creep: Creep, link: StructureLink | null, resources: OwnedRoomResource, position: RoomPosition): CreepTask | null {
+    if (creep.pos.isEqualTo(position) !== true) {
+      return MoveToTask.create(position, 0)
     }
 
     if (this.drainStorage === true) {
