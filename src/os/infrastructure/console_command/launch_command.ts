@@ -39,6 +39,7 @@ import { InterRoomResourceManagementProcess } from "process/process/inter_room_r
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
 import { ObserveRoomProcess } from "process/process/observe_room_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { SKHarvestingProcess } from "process/application/sk_harvesting/sk_harvesting_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -141,6 +142,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "World35587255ScoutRoomProcess":
       result = this.launchWorld35587255ScoutRoomProcess()
+      break
+    case "SKHarvestingProcess":
+      result = this.launchSKHarvestingProcess()
       break
     default:
       break
@@ -893,6 +897,20 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return World35587255ScoutRoomProcess.create(processId, roomName)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSKHarvestingProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return SKHarvestingProcess.create(processId, targetRoomName)
     })
     return Result.Succeeded(process)
   }
