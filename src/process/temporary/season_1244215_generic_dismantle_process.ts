@@ -37,7 +37,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 }
 
 // Season1244215GenericDismantleProcess_35718139_W47S15_W1N36
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W47S15 target_room_name=W1N36 waypoints=W45S15,W5N35,W1N35 target_id=5cd6d64cff72e9065409bffa")
+// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W48S26 target_room_name=W46S23 waypoints=W48S25 target_id=60fb02d24efbff4af804093d")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -268,7 +268,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
 
     const excluded: StructureConstant[] = [
       STRUCTURE_CONTROLLER,
-      STRUCTURE_STORAGE,
+      STRUCTURE_STORAGE,  // storage等を破壊する場合は明示的に指定する
+      STRUCTURE_TERMINAL,
     ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
       STRUCTURE_ROAD,
