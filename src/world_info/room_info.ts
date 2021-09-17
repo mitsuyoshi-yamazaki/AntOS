@@ -297,9 +297,11 @@ export class OwnedRoomObjects {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
-          break
-        }
+        // activeでないExtensionを使用するバグがあるため
+        // https://discord.com/channels/860665589738635336/864238310058754069/888294594977071134
+        // if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        //   break
+        // }
         extensions.push(structure)
         if (structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
           chargeableStructures.push(structure)
