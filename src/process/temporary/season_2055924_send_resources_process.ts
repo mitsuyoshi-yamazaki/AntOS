@@ -92,7 +92,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     }
 
     const sendResourceType = this.sendResourceType(terminal, objects.activeStructures.storage)
-    if (sendResourceType == null || sendResourceType === RESOURCE_ENERGY) {
+    if (sendResourceType == null) {
       return
     }
     this.sendResource(sendResourceType, terminal)
