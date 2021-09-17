@@ -11,7 +11,7 @@ import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequenti
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
-import { isResourceConstant } from "utility/resource"
+import { isMineralCompoundConstant, isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
@@ -369,9 +369,9 @@ export class ExecCommand implements ConsoleCommand {
     if (creep == null) {
       return `Creep ${creepName} doesn't exists`
     }
-    if (creep.v5task != null) {
-      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
     const target = Game.getObjectById(targetId) as TransferResourceApiWrapperTargetType | null
     if (target == null) {
       return `Target ${targetId} does not exists`
@@ -497,20 +497,25 @@ export class ExecCommand implements ConsoleCommand {
       if (args[2] == null || !isRoomName(args[2])) {
         return `Invalid room name ${args[2]}`
       }
-      const amount = ((): number | string | null => {
-        if (args[3] == null) {
-          return null
+      if (args[3] == null) {
+        return "amout is missing (number or \"all\")"
+      }
+      const rawAmount = args[3]
+      const amount = ((): number | "all" | null => {
+        if (rawAmount === "all") {
+          return "all"
         }
-        const parsed = parseInt(args[3], 10)
+        const parsed = parseInt(rawAmount, 10)
         if (isNaN(parsed) === true) {
-          return `amount is not a number ${args[3]}`
+          return null
         }
         return parsed
       })()
-      if (typeof amount === "string") {
-        return amount
+      if (amount == null) {
+        return `Invalid amount ${args[3]} (number or "all")`
       }
-      return this.collectResource(args[1], args[2], amount ?? "all")
+
+      return this.collectResource(args[1], args[2], amount)
     }
     case "list":
     default:
@@ -577,7 +582,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W48S12 labs=5bf24325e1c10060a57d6b6a,5bff88624ee55b2a95a8a6eb,5bff7f49a53d133014f7b1bb,5bff77e92725f7300ec26862,5c21bd97cb34443941570e78")
+  // Game.io("exec set_boost_labs room_name=W52S25 labs=61075b452e398f2b6a74e379,611a9144c45685e987c2f832,6106bcfd6624d780cb2e7f35,6135d65dc2867441a83e627a,61359a95c5c40265ab50dd47")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
@@ -636,6 +641,7 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${outputs.join("\n")}`
   }
 
+  // Game.io("exec set_waiting_position room_name=W52S25 pos=35,21")
   private setWaitingPosition(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -779,7 +785,8 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // Game.io("exec room_config room_name=W44S8 setting=excludedRemotes remote_room_name=W44S7")
-  // Game.io("exec room_config room_name=W45S3 setting=wallPositions action=remove")
+  // Game.io("exec room_config room_name=W47S6 setting=wallPositions action=remove")
+  // Game.io("exec room_config room_name=W52S25 setting=researchCompounds action=show")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -801,8 +808,83 @@ export class ExecCommand implements ConsoleCommand {
       return this.addExcludedRemoteRoom(roomName, roomInfo, args)
     case "wallPositions":
       return this.configureWallPositions(roomName, roomInfo, args)
+    case "researchCompounds":
+      return this.configureResearchCompounds(roomName, roomInfo, args)
     default:
       return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
+    }
+  }
+
+  private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
+      const compoundType = args.get("compound")
+      if (compoundType == null) {
+        return this.missingArgumentError("compound")
+      }
+      if (!isMineralCompoundConstant(compoundType)) {
+        return `${compoundType} is not valid mineral compound type`
+      }
+      const rawAmount = args.get("amount")
+      if (rawAmount == null) {
+        return this.missingArgumentError("amount")
+      }
+      const amount = parseInt(rawAmount, 10)
+      if (isNaN(amount) === true) {
+        return `amount is not a number ${rawAmount}`
+      }
+      return [
+        compoundType,
+        amount
+      ]
+    }
+
+    const action = args.get("action")
+    if (action == null) {
+      return this.missingArgumentError("action")
+    }
+
+    const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
+      if (roomInfo.config == null) {
+        roomInfo.config = {}
+      }
+      if (roomInfo.config.researchCompounds == null) {
+        roomInfo.config.researchCompounds = {}
+      }
+      return roomInfo.config.researchCompounds
+    }
+
+    const getCurentsettings = (): string => {
+      const entries = Object.entries(getResearchCompounds())
+      if (entries.length <= 0) {
+        return "no research compounds"
+      }
+      return entries
+        .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
+        .join("")
+    }
+
+    switch (action) {
+    case "show":
+      return getCurentsettings()
+    case "clear": {
+      const currentSettings = getCurentsettings()
+      if (roomInfo.config == null) {
+        roomInfo.config = {}
+      }
+      roomInfo.config.researchCompounds = {}
+      return `${coloredText("cleared", "info")}: ${currentSettings}`
+    }
+    case "add": {
+      const settings = getCompoundSetting()
+      if (typeof settings === "string") {
+        return settings
+      }
+      const researchCompounds = getResearchCompounds()
+      researchCompounds[settings[0]] = settings[1]
+      return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
+    }
+    default:
+      return `Invalid action ${action}`
     }
   }
 
