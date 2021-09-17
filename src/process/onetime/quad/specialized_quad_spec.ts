@@ -25,6 +25,7 @@ export const quadTypes = [
   "no-defence-3tower",
   "tier3-d2000-dismantler-swamp",
   "tier3-3tower-minimum-dismantler",
+  "tier3-3tower-large-dismantler",
   "tier3-3tower-full-ranged-attacker",
   "tier3-4tower-dismantler",
   "tier3-4tower-dismantler-rcl7",
@@ -92,6 +93,7 @@ export class QuadSpec {
     case "tier3-4tower-rcl7":
     case "tier3-3tower-dismantler":
     case "tier3-3tower-minimum-dismantler":
+    case "tier3-3tower-large-dismantler":
     case "tier3-4tower-2dismantler":
     case "tier3-5tower-dismantler":
     case "tier3-6tower-dismantler":
@@ -110,8 +112,9 @@ export class QuadSpec {
 
   public creepCount(): number {
     switch (this.quadType) {
-    case "test-dismantler":
     case "test-attacker":
+      return 3
+    case "test-dismantler":
     case "test-boosted-attacker":
       return 4
     case "tier3-3tower-minimum-dismantler":
@@ -135,6 +138,7 @@ export class QuadSpec {
     case "tier1-d750":
     case "no-defence-3tower":
     case "tier3-3tower-full-ranged-attacker":
+    case "tier3-3tower-large-dismantler":
     case "tier3-4tower-dismantler":
     case "tier3-4tower-dismantler-rcl7":
     case "tier3-4tower-1dismantler":
@@ -236,6 +240,12 @@ export class QuadSpec {
       } else {
         return tier33TowerMinimumDismantlerDismantlerSpec
       }
+    case "tier3-3tower-large-dismantler":
+      if ((creepInsufficiency % 2) === 0) {
+        return tier33TowerLargeDismantlerDismantlerSpec
+      } else {
+        return tier33TowerMinimumDismantlerHealerSpec
+      }
     case "tier3-3tower-full-ranged-attacker":
       return tier33TowerFullRangedAttackerSpec
     case "tier3-4tower-dismantler":
@@ -333,6 +343,7 @@ export class QuadSpec {
     case "tier1-d750":
     case "no-defence-3tower":
     case "tier3-3tower-minimum-dismantler":
+    case "tier3-3tower-large-dismantler":
     case "tier3-3tower-full-ranged-attacker":
     case "tier3-4tower-dismantler":
     case "tier3-4tower-dismantler-rcl7":
@@ -709,6 +720,24 @@ const tier33TowerMinimumDismantlerHealerSpec: CreepBodySpec = {
     MOVE,
     HEAL, HEAL, HEAL, HEAL, HEAL,
     HEAL,
+  ]
+}
+
+// ---- tier3-3tower-large-dismantler ---- //
+const tier33TowerLargeDismantlerDismantlerSpec: CreepBodySpec = {
+  roles: [CreepRole.Worker, CreepRole.Mover],
+  body: [
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH, TOUGH, TOUGH, TOUGH, TOUGH,
+    TOUGH,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK, WORK,
+    WORK, WORK, WORK, WORK,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
   ]
 }
 
