@@ -6,6 +6,7 @@ import { RemoteRoomHaulerTask } from "./remote_room_harvester_hauler_task"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
 import { ProblemFinder } from "v5_problem/problem_finder"
+import { roomLink } from "utility/log"
 
 export interface RemoteRoomWorkerTaskState extends TaskState {
   /** room name */
@@ -62,8 +63,9 @@ export class RemoteRoomWorkerTask extends Task {
     const problemFinders: ProblemFinder[] = []
     this.checkProblemFinders(problemFinders)
 
-    if (this.targetRoomName === "W27S27" && this.children.some(task => task instanceof RemoteRoomReserveTask) !== true) {
+    if (this.children.some(task => task instanceof RemoteRoomReserveTask) !== true) {
       this.addChildTask(RemoteRoomReserveTask.create(this.roomName, this.targetRoomName))
+      console.log(`Add RemoteRoomReserveTask for ${roomLink(this.targetRoomName)}`)
     }
 
     return TaskStatus.InProgress

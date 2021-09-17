@@ -70,11 +70,11 @@ export class RemoteRoomReserveTask extends Task {
       return TaskStatus.Failed
     }
     if (targetController.owner != null) {
-      return TaskStatus.Failed // TODO: 攻撃等に対するproblem finder
+      return TaskStatus.InProgress
     }
     const excludedUsernames = [Game.user.name, Invader.username]
     if (targetController.reservation != null && excludedUsernames.includes(targetController.reservation.username) !== true) {
-      return TaskStatus.Failed // TODO: 攻撃等に対するproblem finder
+      return TaskStatus.InProgress
     }
 
     problemFinders.push(...this.runReserver(objects, targetController))
