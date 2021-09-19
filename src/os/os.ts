@@ -14,7 +14,7 @@ import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
 import { LoggerMemory } from "./infrastructure/logger"
 import { PrimitiveLogger } from "./infrastructure/primitive_logger"
-import { AsynchronousTask, AsynchronousTaskState } from "asynchronous_task/asynchronous_task"
+import { AsynchronousTask, AsynchronousTaskIdentifier, AsynchronousTaskState } from "asynchronous_task/asynchronous_task"
 import { decodeAsynchronousTaskFrom } from "asynchronous_task/asynchronous_task_decoder"
 
 interface ProcessMemory {
@@ -470,6 +470,10 @@ export class OperatingSystem {
   // ---- Asynchronous Tasks ---- //
   public addAsynchronousTask(task: AsynchronousTask): void {
     Memory.os.asynchronousTasks.push(task.encode())
+  }
+
+  public hasAsynchronousTask(taskIdentifier: AsynchronousTaskIdentifier): boolean {
+    return Memory.os.asynchronousTasks.some(taskState => taskState.taskIdentifier === taskIdentifier)
   }
 
   private executeAsynchronousTasks(): void {
