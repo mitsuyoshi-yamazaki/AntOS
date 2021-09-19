@@ -19,7 +19,7 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
   g: number | null
 }
 
-// Game.io("message 34351858000 parent_room_name=W47S15 target_room_name=W1N36 waypoints=W45S15,W5N35,W1N35 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W48S26 target_room_name=W46S23 waypoints=W49S25,W46S25 target_gcl=42")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 

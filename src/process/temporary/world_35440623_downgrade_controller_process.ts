@@ -29,7 +29,7 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   lastSpawnTime: Timestamp
 }
 
-// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W45S9 target_room_names=W46S9,W45S8,W44S7,W43S6,W42S7,W41S8")
+// Game.io("launch -l World35440623DowngradeControllerProcess room_name=W48S26 target_room_names=W48S25,W46S23,W45S23,W44S23,W44S22")
 export class World35440623DowngradeControllerProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

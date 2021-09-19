@@ -37,6 +37,7 @@ import { V6RoomKeeperProcess, V6RoomKeeperProcessState } from "./v6_room_keeper_
 import { PrioritizerProcess, PrioritizerProcessState } from "./application/prioritizer_process"
 import { EconomyProcess, EconomyProcessState } from "./application/economy_process"
 import { OwnedRoomStaticObjectRequesterProcess, OwnedRoomStaticObjectRequesterProcessState } from "./application/owned_room_static_object_requester_process"
+import { SKHarvestingProcess, SKHarvestingProcessState } from "./application/sk_harvesting/sk_harvesting_process"
 
 export type ProcessTypeIdentifier = keyof ProcessTypes
 class ProcessTypes {
@@ -61,6 +62,7 @@ class ProcessTypes {
   "PrioritizerProcess" = (state: ProcessState) => PrioritizerProcess.decode(state as unknown as PrioritizerProcessState)
   "EconomyProcess" = (state: ProcessState) => EconomyProcess.decode(state as unknown as EconomyProcessState)
   "OwnedRoomStaticObjectRequesterProcess" = (state: ProcessState) => OwnedRoomStaticObjectRequesterProcess.decode(state as unknown as OwnedRoomStaticObjectRequesterProcessState)
+  "SKHarvestingProcess" = (state: ProcessState) => SKHarvestingProcess.decode(state as unknown as SKHarvestingProcessState)
 
   // ---- Onetime ---- //
   "SpecializedQuadProcess" = (state: ProcessState) => SpecializedQuadProcess.decode(state as unknown as SpecializedQuadProcessState)

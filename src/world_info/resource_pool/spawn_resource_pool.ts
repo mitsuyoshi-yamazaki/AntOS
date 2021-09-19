@@ -40,7 +40,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         PrimitiveLogger.programError(`SpawnPool.spawnCreeps() request.role is null ${request.roles}, task id: ${request.taskIdentifier}, ${roomLink(spawn.room.name)}`)
         continue
       }
-      const creepName = generateUniqueId(request.codename)
+      const creepName = request.name ?? generateUniqueId(request.codename)
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
       const cost = bodyCost(body)
       if (cost > spawn.room.energyCapacityAvailable) {
