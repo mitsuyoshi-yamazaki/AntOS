@@ -1,13 +1,13 @@
-import { RoomKeeperProcess } from "process/room_keeper_process"
+import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { RoomName } from "utility/room_name"
 import { RoomKeeperTask as V5RoomKeeperTask } from "v5_task/room_keeper/room_keeper_task"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "utility/system_info"
 import { World } from "world_info/world_info"
-import { BootstrapRoomManagerProcess } from "process/bootstrap_room_manager_process"
+import { BootstrapRoomManagerProcess } from "process/process/bootstrap_room_manager_process"
 import type { Process } from "process/process"
 import type { ProcessLauncher } from "os/os_process_launcher"
-import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
+import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
 import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredText, roomLink } from "utility/log"
@@ -15,7 +15,6 @@ import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_4
 import { World35588848GclManagerProcess } from "process/temporary/world_35588848_gcl_manager_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
-import { PrioritizerProcess } from "process/application/prioritizer_process"
 
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
@@ -23,7 +22,6 @@ export class ApplicationProcessLauncher {
     let hasBootstrapManagerProcess = false as boolean
     let hasAttackInvaderCoreProcess = false as boolean
     let hasGclManagerProcess = false as boolean
-    let hasPrioritizerProcess = false as boolean
 
     processList.forEach(process => {
       if (process instanceof RoomKeeperProcess) {
@@ -41,9 +39,6 @@ export class ApplicationProcessLauncher {
       if (process instanceof World35588848GclManagerProcess) {
         hasGclManagerProcess = true
       }
-      if (process instanceof PrioritizerProcess) {
-        hasPrioritizerProcess = true
-      }
     })
 
     this.checkRoomKeeperProcess(roomKeeperMap, processLauncher)
@@ -55,9 +50,6 @@ export class ApplicationProcessLauncher {
     }
     if (Environment.isAutomatic() === true && hasGclManagerProcess !== true) {
       this.launchGCLManagerProcess(processLauncher)
-    }
-    if (hasPrioritizerProcess !== true) {
-      this.launchPrioritizerProcess(processLauncher)
     }
   }
 
@@ -106,9 +98,5 @@ export class ApplicationProcessLauncher {
 
   private launchGCLManagerProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => World35588848GclManagerProcess.create(processId))
-  }
-
-  private launchPrioritizerProcess(processLauncher: ProcessLauncher): void {
-    processLauncher(null, processId => PrioritizerProcess.create(processId))
   }
 }

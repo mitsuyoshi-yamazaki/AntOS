@@ -6,6 +6,11 @@ import { ProcessState } from "../process_state"
 import { GameConstants } from "utility/constants"
 import { Environment } from "utility/environment"
 import { processLog } from "os/infrastructure/logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("BuyPixelProcess", state => {
+  return BuyPixelProcess.decode(state as BuyPixelProcessState)
+})
 
 export interface BuyPixelProcessState extends ProcessState {
 }

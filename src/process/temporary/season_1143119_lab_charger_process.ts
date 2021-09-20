@@ -17,6 +17,11 @@ import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1143119LabChargerProcess", state => {
+  return Season1143119LabChargerProcess.decode(state as Season1143119LabChargerProcessState)
+})
 
 export type Season1143119LabChargerProcessLabInfo = {
   boost: MineralBoostConstant

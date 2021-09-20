@@ -7,6 +7,11 @@ import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { processLog } from "os/infrastructure/logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
+  return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
+})
 
 export interface InterRoomResourceManagementProcessState extends ProcessState {
 }

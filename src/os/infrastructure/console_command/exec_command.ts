@@ -21,11 +21,11 @@ import { OwnedRoomInfo } from "room_resource/room_info"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
-import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
+import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
-import { RoomKeeperProcess } from "process/room_keeper_process"
+import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 
 export class ExecCommand implements ConsoleCommand {

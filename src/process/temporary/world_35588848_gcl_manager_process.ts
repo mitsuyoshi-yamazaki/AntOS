@@ -8,10 +8,15 @@ import { Timestamp } from "utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
-import { BootstrapRoomManagerProcess } from "process/bootstrap_room_manager_process"
+import { BootstrapRoomManagerProcess } from "process/process/bootstrap_room_manager_process"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
 import { NormalRoomInfo } from "room_resource/room_info"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("World35588848GclManagerProcess", state => {
+  return World35588848GclManagerProcess.decode(state as World35588848GclManagerProcessState)
+})
 
 const firstSafemodeInterval = 20000
 const maxClaimableRoomLinearDistance = 5  // 対角線は距離が倍長いため

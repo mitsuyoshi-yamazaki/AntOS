@@ -11,6 +11,11 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { defaultMoveToOptions } from "prototype/creep"
 import { randomDirection } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1262745GuardRemoteRoomProcess", state => {
+  return Season1262745GuardRemoteRoomProcess.decode(state as Season1262745GuardRemoteRoomProcessState)
+})
 
 export const season1262745GuardRemoteRoomProcessCreepType = [
   "ranged-attacker",

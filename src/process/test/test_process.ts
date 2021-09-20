@@ -2,18 +2,28 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessState } from "process/process_state"
+import { ProcessDecoder } from "process/process_decoder"
+import { MessageObserver } from "os/infrastructure/message_observer"
+
+ProcessDecoder.register("TestProcess", state => {
+  return TestProcess.decode(state as TestProcessState)
+})
+
+ProcessDecoder.register("TestChildProcess", state => {
+  return TestChildProcess.decode(state as TestChildProcessState)
+})
 
 export interface TestProcessState extends ProcessState {
   testMemory: string | null
 }
 
-export class TestProcess implements Process, Procedural {
+export class TestProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    public readonly testMemory: string | null,
+    public testMemory: string | null,
   ) {
     this.taskIdentifier = this.constructor.name
   }
@@ -37,6 +47,15 @@ export class TestProcess implements Process, Procedural {
 
   public processDescription(): string {
     return `Test process at ${Game.time}`
+  }
+
+  public processShortDescription(): string {
+    return this.testMemory ?? ""
+  }
+
+  public didReceiveMessage(message: string): string {
+    this.testMemory = message
+    return `"${message}" set`
   }
 
   public runBeforeTick(): void {

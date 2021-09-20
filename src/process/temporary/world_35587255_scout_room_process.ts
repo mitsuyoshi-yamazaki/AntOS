@@ -16,6 +16,11 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("World35587255ScoutRoomProcess", state => {
+  return World35587255ScoutRoomProcess.decode(state as World35587255ScoutRoomProcessState)
+})
 
 const targetRoomRange = 10
 const normalRoomCheckInterval = 5000

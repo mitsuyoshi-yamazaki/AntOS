@@ -7,6 +7,11 @@ import { processLog } from "os/infrastructure/logger"
 import { PowerCreepName } from "prototype/power_creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { isPowerConstant, PowerConstant, powerName } from "utility/power"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("UpgradePowerCreepProcess", state => {
+  return UpgradePowerCreepProcess.decode(state as UpgradePowerCreepProcessState)
+})
 
 type UpdateInfo = {
   powerCreepName: PowerCreepName

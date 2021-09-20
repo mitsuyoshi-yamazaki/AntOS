@@ -34,6 +34,11 @@ import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_w
 import { SwampRunnerTransferTask } from "v5_object_task/creep_task/meta_task/swamp_runner_transfer_task"
 import { isV5CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season701205PowerHarvesterSwampRunnerProcess", state => {
+  return Season701205PowerHarvesterSwampRunnerProcess.decode(state as Season701205PowerHarvesterSwampRunnerProcessState)
+})
 
 // https://screeps.com/season/#!/history/shardSeason/W26S30?t=1408797
 const swampRunnerEnabled = false as boolean

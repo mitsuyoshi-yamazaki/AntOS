@@ -18,6 +18,11 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { Run1TickTask } from "v5_object_task/creep_task/combined_task/run_1_tick_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season631744PowerProcessProcess", state => {
+  return Season631744PowerProcessProcess.decode(state as Season631744PowerProcessProcessState)
+})
 
 export interface Season631744PowerProcessProcessState extends ProcessState {
   /** parent room name */

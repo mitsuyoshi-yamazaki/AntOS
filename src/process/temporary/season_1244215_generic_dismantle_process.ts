@@ -18,6 +18,11 @@ import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1244215GenericDismantleProcess", state => {
+  return Season1244215GenericDismantleProcess.decode(state as Season1244215GenericDismantleProcessState)
+})
 
 const dismantlerRole: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
 

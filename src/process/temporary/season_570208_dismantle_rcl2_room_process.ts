@@ -16,6 +16,11 @@ import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/disma
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season570208DismantleRcl2RoomProcess", state => {
+  return Season570208DismantleRcl2RoomProcess.decode(state as Season570208DismantleRcl2RoomProcessState)
+})
 
 export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
   /** parent room name */

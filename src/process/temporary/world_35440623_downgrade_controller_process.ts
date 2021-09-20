@@ -16,6 +16,11 @@ import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
+  return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
+})
 
 const attackControllerCooldownTime = 1000
 const attackControllerInterval = attackControllerCooldownTime + 100

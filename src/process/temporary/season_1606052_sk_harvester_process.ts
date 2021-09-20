@@ -10,7 +10,11 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { randomDirection } from "utility/constants"
 import { defaultMoveToOptions } from "prototype/creep"
+import { ProcessDecoder } from "process/process_decoder"
 
+ProcessDecoder.register("Season1606052SKHarvesterProcess", state => {
+  return Season1606052SKHarvesterProcess.decode(state as Season1606052SKHarvesterProcessState)
+})
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.RangedAttacker, CreepRole.Mover]
 const rangedAttackerBody: BodyPartConstant[] = [

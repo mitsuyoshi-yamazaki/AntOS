@@ -3,8 +3,6 @@ import { TestChildProcess, TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
-import { RouteCheckTask } from "v5_task/scout/route_check_task"
-import { TaskProcess } from "process/task_process"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { Season631744PowerProcessProcess } from "process/temporary/season_631744_power_process_process"
@@ -12,14 +10,10 @@ import { World } from "world_info/world_info"
 import { coloredText, roomLink } from "utility/log"
 import { Season634603PowerCreepProcess } from "process/temporary/season_634603_power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
-import { Season845677Attack1TowerProcess } from "process/temporary/season_845677_attack_1tower_process"
-import { V6RoomKeeperProcess } from "process/v6_room_keeper_process"
-import { RoomKeeperTask } from "application/task/room_keeper/room_keeper_task"
 import { Season989041MovePowerCreepProcess } from "process/temporary/season_989041_move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
-import { Season1143119BoostedAttackProcess } from "process/temporary/season_1143119_boosted_attack_process"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isSeason1262745GuardRemoteRoomProcessCreepType, Season1262745GuardRemoteRoomProcess, season1262745GuardRemoteRoomProcessCreepType } from "process/temporary/season_1262745_guard_remote_room_process"
@@ -39,7 +33,7 @@ import { InterRoomResourceManagementProcess } from "process/process/inter_room_r
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
 import { ObserveRoomProcess } from "process/process/observe_room_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
-import { SKHarvestingProcess } from "process/application/sk_harvesting/sk_harvesting_process"
+// import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -59,9 +53,6 @@ export class LaunchCommand implements ConsoleCommand {
     case "TestChildProcess":
       result = this.launchTestChildProcess()
       break
-    case "RouteCheckTask":
-      result = this.launchRouteCheckTask()
-      break
     case "Season487837AttackInvaderCoreProcess":
       result = this.launchSeason487837AttackInvaderCoreProcess()
       break
@@ -77,12 +68,6 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season701205PowerHarvesterSwampRunnerProcess":
       result = this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       break
-    case "Season845677Attack1TowerProcess":
-      result = this.launchSeason845677Attack1TowerProcess()
-      break
-    case "V6RoomKeeperProcess":
-      result = this.launchV6RoomKeeperProcess()
-      break
     case "Season989041MovePowerCreepProcess":
       result = this.launchSeason989041MovePowerCreepProcess()
       break
@@ -91,9 +76,6 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1143119LabChargerProcess":
       result = this.launchSeason1143119LabChargerProcess()
-      break
-    case "Season1143119BoostedAttackProcess":
-      result = this.launchSeason1143119BoostedAttackProcess()
       break
     case "Season1200082SendMineralProcess":
       result = this.launchSeason1200082SendMineralProcess()
@@ -143,9 +125,9 @@ export class LaunchCommand implements ConsoleCommand {
     case "World35587255ScoutRoomProcess":
       result = this.launchWorld35587255ScoutRoomProcess()
       break
-    case "SKHarvestingProcess":
-      result = this.launchSKHarvestingProcess()
-      break
+    // case "World35872159TestDeclarationProcess":
+    //   result = this.launchWorld35872159TestDeclarationProcess()
+    //   break
     default:
       break
     }
@@ -224,30 +206,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(parentProcessId, processId => {
       return TestChildProcess.create(processId)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchRouteCheckTask(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const task = RouteCheckTask.create(roomName, targetRoomName, waypoints)
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return TaskProcess.create(processId, task)
     })
     return Result.Succeeded(process)
   }
@@ -373,47 +331,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason845677Attack1TowerProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const waitingPosition = new RoomPosition(10, 48, roomName)
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season845677Attack1TowerProcess.create(processId, roomName, targetRoomName, waypoints, waitingPosition)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchV6RoomKeeperProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const task = RoomKeeperTask.create(roomName)
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return V6RoomKeeperProcess.create(processId, task)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchSeason989041MovePowerCreepProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -488,42 +405,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1143119LabChargerProcess.create(processId, roomName, labStates)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason1143119BoostedAttackProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const towerCount = args.get("tower_count")
-    if (towerCount == null) {
-      return this.missingArgumentError("tower_count")
-    }
-    const parsedTowerCount = parseInt(towerCount, 10)
-    if (isNaN(parsedTowerCount) === true) {
-      return Result.Failed(`tower_count is not a number (${towerCount})`)
-    }
-    if ([0, 1, 2, 3].includes(parsedTowerCount) !== true) {
-      return Result.Failed(`Not supported tower_count ${parsedTowerCount}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1143119BoostedAttackProcess.create(processId, roomName, targetRoomName, waypoints, parsedTowerCount as (0 | 1 | 2 | 3))
     })
     return Result.Succeeded(process)
   }
@@ -901,17 +782,11 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSKHarvestingProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
+  // private launchWorld35872159TestDeclarationProcess(): LaunchCommandResult {
 
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return SKHarvestingProcess.create(processId, targetRoomName)
-    })
-    return Result.Succeeded(process)
-  }
+  //   const process = OperatingSystem.os.addProcess(null, processId => {
+  //     return World35872159TestDeclarationProcess.create(processId, targetRoomName)
+  //   })
+  //   return Result.Succeeded(process)
+  // }
 }

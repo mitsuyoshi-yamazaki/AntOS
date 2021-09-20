@@ -6,6 +6,11 @@ import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomName } from "utility/room_name"
 import { processLog } from "os/infrastructure/logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1200082SendMineralProcess", state => {
+  return Season1200082SendMineralProcess.decode(state as Season1200082SendMineralProcessState)
+})
 
 export interface Season1200082SendMineralProcessState extends ProcessState {
   /** parent room name */

@@ -6,6 +6,11 @@ import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("AllianceRequestProcess", state => {
+  return AllianceRequestProcess.decode(state as AllianceRequestProcessState)
+})
 
 export interface AllianceRequestProcessState extends ProcessState {
   /** parent room name */

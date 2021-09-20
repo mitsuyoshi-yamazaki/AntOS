@@ -8,6 +8,11 @@ import { RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { OperatingSystem } from "os/os"
 import { RoomResources } from "room_resource/room_resources"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("ObserveRoomProcess", state => {
+  return ObserveRoomProcess.decode(state as ObserveRoomProcessState)
+})
 
 export interface ObserveRoomProcessState extends ProcessState {
   readonly roomName: RoomName

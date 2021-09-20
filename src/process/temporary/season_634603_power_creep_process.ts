@@ -11,6 +11,11 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { randomDirection } from "utility/constants"
 import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season634603PowerCreepProcess", state => {
+  return Season634603PowerCreepProcess.decode(state as Season634603PowerCreepProcessState)
+})
 
 export interface Season634603PowerCreepProcessState extends ProcessState {
   /** parent room name */

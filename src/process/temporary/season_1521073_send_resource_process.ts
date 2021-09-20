@@ -25,6 +25,11 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1521073SendResourceProcess", state => {
+  return Season1521073SendResourceProcess.decode(state as Season1521073SendResourceProcessState)
+})
 
 export interface Season1521073SendResourceProcessState extends ProcessState {
   /** parent room name */

@@ -21,6 +21,11 @@ import { isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("StealResourceProcess", state => {
+  return StealResourceProcess.decode(state as StealResourceProcessState)
+})
 
 const resourcePriority: ResourceConstant[] = [
   ...MineralBoostConstant,  // 添字の大きいほうが優先

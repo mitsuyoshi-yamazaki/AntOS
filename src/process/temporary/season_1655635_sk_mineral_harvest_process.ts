@@ -21,6 +21,11 @@ import { OperatingSystem } from "os/os"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "./season_701205_power_harvester_swamp_runner_process"
 import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1655635SKMineralHarvestProcess", state => {
+  return Season1655635SKMineralHarvestProcess.decode(state as Season1655635SKMineralHarvestProcessState)
+})
 
 const fleeRange = 6
 const keeperLairSpawnTime = 15

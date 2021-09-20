@@ -6,7 +6,12 @@ import { RoomKeeperTask, RoomKeeperTaskState } from "v5_task/room_keeper/room_ke
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { decodeTasksFrom } from "v5_task/task_decoder"
-import { ProcessState } from "./process_state"
+import { ProcessState } from "../process_state"
+import { ProcessDecoder } from "../process_decoder"
+
+ProcessDecoder.register("RoomKeeperProcess", state => {
+  return RoomKeeperProcess.decode(state as RoomKeeperProcessState)
+})
 
 export interface RoomKeeperProcessState extends ProcessState {
   /** task state */

@@ -10,6 +10,11 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "os/infrastructure/logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1349943DisturbPowerHarvestingProcess", state => {
+  return Season1349943DisturbPowerHarvestingProcess.decode(state as Season1349943DisturbPowerHarvestingProcessState)
+})
 
 type AttackerType = "attacker" | "ranged_attacker" | "large_ranged_attacker"
 

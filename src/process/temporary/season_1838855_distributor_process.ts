@@ -22,6 +22,11 @@ import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season1838855DistributorProcess", state => {
+  return Season1838855DistributorProcess.decode(state as Season1838855DistributorProcessState)
+})
 
 type EnergyStore = StructureTerminal | StructureStorage
 

@@ -9,7 +9,7 @@ import { init as initPowerCreepPrototype } from "prototype/power_creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 import { init as initRoomPrototype } from "prototype/room"
 import type { ProcessState } from "process/process_state"
-import { decodeProcessFrom } from "process/process_decoder"
+import { ProcessDecoder } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
 import { LoggerMemory } from "./infrastructure/logger"
@@ -339,17 +339,20 @@ export class OperatingSystem {
 
   private restoreProcesses(): void {
     const processInfo: InternalProcessInfo[] = Memory.os.p.flatMap(processStateMemory => {
-      const process = decodeProcessFrom(processStateMemory.s)
-      if (process == null) {
-        this.sendOSError(`Unrecognized stateful process type ${processStateMemory.s.t}, ${processStateMemory.s.i}`)
-        return []
-      }
-      return {
-        process,
-        running: processStateMemory.r === true,
-        childProcessIds: processStateMemory.childProcessIds ?? [],
-        executionPriority: processStateMemory.executionPriority ?? 0,
-      }
+      const info = ErrorMapper.wrapLoop((): InternalProcessInfo | null => {
+        const process = ProcessDecoder.decode(processStateMemory.s)
+        if (process == null) {
+          this.sendOSError(`Unrecognized stateful process type ${processStateMemory.s.t}, ${processStateMemory.s.i}`)
+          return null
+        }
+        return {
+          process,
+          running: processStateMemory.r === true,
+          childProcessIds: processStateMemory.childProcessIds ?? [],
+          executionPriority: processStateMemory.executionPriority ?? 0,
+        }
+      }, "ProcessDecoder.decode()")()
+      return info || []
     })
 
     this.processStore.replace(processInfo)

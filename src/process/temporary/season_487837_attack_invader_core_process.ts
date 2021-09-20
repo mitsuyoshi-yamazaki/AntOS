@@ -15,6 +15,11 @@ import { processLog } from "os/infrastructure/logger"
 import { roomLink } from "utility/log"
 import { bodyCost } from "utility/creep_body"
 import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season487837AttackInvaderCoreProcess", state => {
+  return Season487837AttackInvaderCoreProcess.decode(state as Season487837AttackInvaderCoreProcessState)
+})
 
 const numberOfAttackers = 1
 

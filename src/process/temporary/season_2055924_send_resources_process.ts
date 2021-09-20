@@ -10,6 +10,11 @@ import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
 import { Season1838855DistributorProcess } from "./season_1838855_distributor_process"
 import { RoomResources } from "room_resource/room_resources"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
+  return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)
+})
 
 export interface Season2055924SendResourcesProcessState extends ProcessState {
   /** parent room name */

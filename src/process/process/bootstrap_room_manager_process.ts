@@ -4,12 +4,17 @@ import { Process, ProcessId } from "process/process"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { decodeTasksFrom } from "v5_task/task_decoder"
-import { ProcessState } from "./process_state"
+import { ProcessState } from "../process_state"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "os/infrastructure/logger"
 import { isRoomName, RoomName } from "utility/room_name"
 import { Result } from "utility/result"
+import { ProcessDecoder } from "../process_decoder"
+
+ProcessDecoder.register("BootstrapRoomManagerProcess", state => {
+  return BootstrapRoomManagerProcess.decode(state as BootstrapRoomManagerProcessState)
+})
 
 export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */

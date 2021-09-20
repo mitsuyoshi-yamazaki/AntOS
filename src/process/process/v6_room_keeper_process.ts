@@ -3,13 +3,18 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
-import { ProcessState } from "./process_state"
+import { ProcessState } from "../process_state"
 import { RoomKeeperTask, RoomKeeperTaskOutputs, RoomKeeperTaskState } from "application/task/room_keeper/room_keeper_task"
 import { RoomResources } from "room_resource/room_resources"
 import { TaskLogRequest } from "application/task_logger"
 import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { bodyDescription } from "utility/creep_body"
+import { ProcessDecoder } from "../process_decoder"
+
+ProcessDecoder.register("V6RoomKeeperProcess", state => {
+  return V6RoomKeeperProcess.decode(state as V6RoomKeeperProcessState)
+})
 
 type LogFilter = {
   spawn: boolean

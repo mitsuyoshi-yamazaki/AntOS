@@ -21,6 +21,11 @@ import { boostableCreepBody } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "../../temporary/season_1143119_lab_charger_process"
 import { directionName } from "utility/direction"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("SpecializedQuadProcess", state => {
+  return SpecializedQuadProcess.decode(state as SpecializedQuadProcessState)
+})
 
 type AttackTarget = AnyCreep | AnyStructure
 type ManualOperations = {
