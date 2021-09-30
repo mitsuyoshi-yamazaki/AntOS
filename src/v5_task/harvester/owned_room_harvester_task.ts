@@ -273,7 +273,9 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     const roomName = objects.controller.room.name
     const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
     if (pathStartPosition == null) {
-      PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
+      if ((Game.time % 17) === 5) {
+        PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
+      }
       return
     }
     const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
