@@ -38,7 +38,7 @@ export const RoomResources: RoomResourcesInterface = {
   beforeTick(): void {
     ownedRoomResources.clear()
     roomResources.clear()
-    roomInfoToRemove.splice(0, roomInfoToRemove.length)
+    // roomInfoToRemove.splice(0, roomInfoToRemove.length)  // execコマンドからの入力が入らないため削除時に削除する
     enumerateCreeps()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
@@ -254,6 +254,7 @@ function saveRoomInfo(): void {
     }
     delete Memory.v6RoomInfo[roomName]
   })
+  roomInfoToRemove.splice(0, roomInfoToRemove.length)
 }
 
 function createRoomInfo(room: Room): RoomInfoType {
