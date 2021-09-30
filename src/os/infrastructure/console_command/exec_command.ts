@@ -27,6 +27,7 @@ import { Season2055924SendResourcesProcess } from "process/temporary/season_2055
 import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
+import { decodeRoomPosition } from "prototype/room_position"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -582,7 +583,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W52S25 labs=61075b452e398f2b6a74e379,611a9144c45685e987c2f832,6106bcfd6624d780cb2e7f35,6135d65dc2867441a83e627a,61359a95c5c40265ab50dd47")
+  // Game.io("exec set_boost_labs room_name=W53S36")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
@@ -592,51 +593,62 @@ export class ExecCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const rawLabs = args.get("labs")
-    if (rawLabs == null) {
-      return this.missingArgumentError("labs")
-    }
-    const labIds: Id<StructureLab>[] = []
-    for (const labId of rawLabs.split(",")) {
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        return `Id ${labId} is not lab ${lab}`
-      }
-      if (lab.room.name !== roomName) {
-        return `Lab ${lab} is not in ${roomLink(roomName)}`
-      }
-      labIds.push(lab.id)
-    }
 
     const resources = RoomResources.getOwnedRoomResource(roomName)
     if (resources == null) {
-      return `Room ${roomName} is not owned`
+      return `Room ${roomLink(roomName)} is not owned`
     }
+
+    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) > 0) {
+      return `${roomLink(roomName)} has boost labs`
+    }
+
     const researchLab = resources.roomInfo.researchLab
-    if (researchLab != null) {
-      for (const labId of labIds) {
-        if (labId === researchLab.inputLab1 || labId === researchLab.inputLab2) {
-          return `Lab ${labId} is set for research input lab ${roomLink(roomName)}`
-        }
-        const index = researchLab.outputLabs.indexOf(labId)
-        if (index < 0) {
-          continue
-        }
-        researchLab.outputLabs.splice(index, 1)
-        outputs.push(`Lab ${labId} is removed from research output lab`)
-      }
+    if (researchLab == null) {
+      return `No research labs in ${roomLink(roomName)}`
     }
+
+    const outputLabs = [...researchLab.outputLabs]
+      .flatMap(labId => {
+        const lab = Game.getObjectById(labId)
+        if (lab == null) {
+          PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
+          return []
+        }
+        return lab
+      })
+
+    if (resources.roomInfo.roomPlan?.centerPosition != null) {
+      const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
+      outputLabs.sort((lhs, rhs) => {
+        return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
+      })
+    }
+
+    const numberOfBoostLabs = 6
+    if (outputLabs.length > numberOfBoostLabs) {
+      outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
+    }
+    const boostLabIds = outputLabs.map(lab => lab.id)
+    boostLabIds.forEach(labId => {
+      const index = researchLab.outputLabs.indexOf(labId)
+      if (index < 0) {
+        return
+      }
+      researchLab.outputLabs.splice(index, 1)
+    })
+    outputs.push(`Removed from research output lab: ${boostLabIds}`)
 
     if (resources.roomInfo.config == null) {
       resources.roomInfo.config = {}
       outputs.push("Add roomInfo.config")
     }
     if (resources.roomInfo.config.boostLabs != null && resources.roomInfo.config.boostLabs.length > 0) {
-      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${labIds.length} labs`)
+      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${boostLabIds.length} labs`)
     } else {
-      outputs.push(`Set ${labIds.length} labs`)
+      outputs.push(`Set ${boostLabIds.length} labs`)
     }
-    resources.roomInfo.config.boostLabs = labIds
+    resources.roomInfo.config.boostLabs = boostLabIds
 
     return `\n${outputs.join("\n")}`
   }
