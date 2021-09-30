@@ -7,7 +7,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
-import { GameConstants, OBSTACLE_COST } from "utility/constants"
+import { GameConstants } from "utility/constants"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */
@@ -132,7 +132,9 @@ export class MoveToRoomTask implements CreepTask {
       }
       options.reusePath = reusePath
 
-      const positionsToAvoid: RoomPosition[] = []
+      const obstacleCost = GameConstants.pathFinder.costs.obstacle
+      const edgeCost = obstacleCost - 1
+      const positionsToAvoid: { position: RoomPosition, cost: number }[] = []
 
       switch (roomTypeOf(creep.room.name)) {
       case "normal":
@@ -151,16 +153,27 @@ export class MoveToRoomTask implements CreepTask {
         }
 
         options.maxOps = 2000
-        const sourceKeeperPositions = creep.room.find(FIND_HOSTILE_CREEPS)
-          .filter(creep => creep.owner.username === SourceKeeper.username)
-          .flatMap(creep => creep.pos.positionsInRange(4, roomPositionFilteringOptions))
+        const sourceKeeperDistance = 4
+        const sourceKeeperPositions: {position: RoomPosition, cost: number}[] = creep.room.find(FIND_HOSTILE_CREEPS)
+          .filter(hostileCreep => hostileCreep.owner.username === SourceKeeper.username)
+          .flatMap(sourceKeeper => {
+            return sourceKeeper.pos.positionsInRange(sourceKeeperDistance, roomPositionFilteringOptions)
+              .map(position => {
+                const cost = position.getRangeTo(sourceKeeper) < sourceKeeperDistance ? obstacleCost : edgeCost
+                return {
+                  position,
+                  cost,
+                }
+              }
+              )
+          })
         positionsToAvoid.push(...sourceKeeperPositions)
         break
       }
 
       case "highway_crossing":
       case "sector_center":
-        positionsToAvoid.push(...portals.map(portal => portal.pos))
+        positionsToAvoid.push(...portals.map(portal => ({position: portal.pos, cost: obstacleCost})))
         break
       }
 
@@ -173,7 +186,7 @@ export class MoveToRoomTask implements CreepTask {
         }
         positionsToAvoid.forEach(position => {
           // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-          costMatrix.set(position.x, position.y, OBSTACLE_COST)
+          costMatrix.set(position.position.x, position.position.y, position.cost)
         })
         return costMatrix
       }
