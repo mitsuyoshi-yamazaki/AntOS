@@ -1,5 +1,7 @@
 import { RoomCoordinate, RoomName, RoomType } from "./room_name"
 
+export type SectorName = RoomName
+
 export class RoomSector {
   public get centerRoomName(): RoomName {
     return this._centerRoomCoordinate.roomName

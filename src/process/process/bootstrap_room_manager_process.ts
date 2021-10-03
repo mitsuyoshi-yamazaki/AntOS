@@ -80,7 +80,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     if (this.queuedTargets.length > 0) {
       descriptions.push(`queued: ${this.queuedTargets.map(target => roomLink(target.targetRoomName)).join(",")}`)
     }
-    return descriptions.join(",")
+    return descriptions.join(", ")
   }
 
   public claimingRoomCount(): number {
