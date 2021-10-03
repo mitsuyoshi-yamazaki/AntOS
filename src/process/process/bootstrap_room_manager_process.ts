@@ -11,6 +11,22 @@ import { processLog } from "os/infrastructure/logger"
 import { isRoomName, RoomName } from "utility/room_name"
 import { Result } from "utility/result"
 import { ProcessDecoder } from "../process_decoder"
+import { RoomResources } from "room_resource/room_resources"
+import { Environment } from "utility/environment"
+
+const numberOfRoomsInShard3 = 3
+
+type TargetRoom = {
+  readonly parentRoomName: RoomName
+  readonly targetRoomName: RoomName
+  readonly waypoints: RoomName[]
+  readonly claimInfo: {
+    readonly parentRoomName: RoomName
+    readonly waypoints: RoomName[]
+  }
+  readonly requiredEnergy: number
+  readonly ignoreSpawn: boolean
+}
 
 ProcessDecoder.register("BootstrapRoomManagerProcess", state => {
   return BootstrapRoomManagerProcess.decode(state as BootstrapRoomManagerProcessState)
@@ -20,11 +36,11 @@ export interface BootstrapRoomManagerProcessState extends ProcessState {
   /** task state */
   s: BootstrapRoomTaskState[]
 
-  /** next GCL */
-  g: number | null
+  readonly queuedTargets: TargetRoom[]
 }
 
-// Game.io("message 34351858000 parent_room_name=W48S26 target_room_name=W46S23 waypoints=W49S25,W46S25 target_gcl=42")
+// Game.io("message 34351858000 parent_room_name=W1N36 target_room_name=W2N41 waypoints=W1N37,W0N37,W0N40,W2N40")
+// Game.io("message 34351858000 parent_room_name=W1N36 target_room_name=E33N15 waypoints=W1N35,W5N35,E35N15")
 export class BootstrapRoomManagerProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
@@ -32,7 +48,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly tasks: BootstrapRoomTask[],
-    private nextGcl: number | null,
+    private readonly queuedTargets: TargetRoom[]
   ) {
     this.taskIdentifier = this.constructor.name
   }
@@ -43,21 +59,28 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       l: this.launchTime,
       i: this.processId,
       s: this.tasks.map(task => task.encode()),
-      g: this.nextGcl,
+      queuedTargets: this.queuedTargets,
     }
   }
 
   public static decode(state: BootstrapRoomManagerProcessState): BootstrapRoomManagerProcess {
     const tasks = state.s.map(taskState => BootstrapRoomTask.decode(taskState, decodeTasksFrom(taskState.c)))
-    return new BootstrapRoomManagerProcess(state.l, state.i, tasks, state.g)
+    return new BootstrapRoomManagerProcess(state.l, state.i, tasks, state.queuedTargets ?? [])
   }
 
   public static create(processId: ProcessId): BootstrapRoomManagerProcess {
-    return new BootstrapRoomManagerProcess(Game.time, processId, [], null)
+    return new BootstrapRoomManagerProcess(Game.time, processId, [], [])
   }
 
   public processShortDescription(): string {
-    return `${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")}`
+    const descriptions: string[] = []
+    if (this.tasks.length > 0) {
+      descriptions.push(`${this.tasks.map(task => roomLink(task.targetRoomName)).join(",")}`)
+    }
+    if (this.queuedTargets.length > 0) {
+      descriptions.push(`queued: ${this.queuedTargets.map(target => roomLink(target.targetRoomName)).join(",")}`)
+    }
+    return descriptions.join(",")
   }
 
   public claimingRoomCount(): number {
@@ -65,8 +88,26 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public runOnTick(): void {
-    if (this.shouldRun() !== true) {
-      return
+    if (this.queuedTargets.length > 0 && this.canAddTarget() === true) {
+      const queuedTarget = this.queuedTargets.shift()
+      if (queuedTarget != null) {
+        const result = this.addBootstrapRoom(
+          queuedTarget.parentRoomName,
+          queuedTarget.targetRoomName,
+          queuedTarget.waypoints,
+          queuedTarget.claimInfo,
+          queuedTarget.requiredEnergy,
+          queuedTarget.ignoreSpawn
+        )
+        switch (result.resultType) {
+        case "succeeded":
+          processLog(this, result.value)
+          break
+        case "failed":
+          processLog(this, result.reason)
+          break
+        }
+      }
     }
 
     const failedTasks: BootstrapRoomTask[] = []
@@ -162,15 +203,6 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return claimInfo
     }
 
-    const targetGcl = args.get("target_gcl")
-    if (targetGcl == null) {
-      return missingArgumentError("target_gcl")
-    }
-    const parsedTargetGcl = parseInt(targetGcl, 10)
-    if (isNaN(parsedTargetGcl) === true) {
-      return `target_gcl is not a number (${targetGcl})`
-    }
-
     const requiredEnergy = ((): number | null => {
       const rawEnergy = args.get("energy")
       if (rawEnergy == null) {
@@ -187,18 +219,30 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
 
     const ignoreSpawn = args.get("ignore_spawn") === "1"
-
-    const result = this.addBootstrapRoom(parentRoomName, targetRoomName, waypoints, claimInfo, parsedTargetGcl, requiredEnergy, ignoreSpawn)
-    switch (result.resultType) {
-    case "succeeded":
-      return result.value
-    case "failed":
-      return result.reason
-    }
+    this.addTargetRoomQueue(
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      claimInfo,
+      requiredEnergy,
+      ignoreSpawn,
+    )
+    return "target queued"
   }
 
-  public addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[] }, targetGcl: number | null, requiredEnergy: number, ignoreSpawn: boolean): Result<string, string> {
-    const targetRoom = World.rooms.get(targetRoomName)
+  public addTargetRoomQueue(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[] }, requiredEnergy: number, ignoreSpawn: boolean): void {
+    this.queuedTargets.push({
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      claimInfo,
+      requiredEnergy,
+      ignoreSpawn,
+    })
+  }
+
+  private addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[] }, requiredEnergy: number, ignoreSpawn: boolean): Result<string, string> {
+    const targetRoom = World.rooms.get(targetRoomName)  // TODO: キューする際にもチェックする
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.my === true && targetRoom.controller.level >= 3) {
       if (ignoreSpawn !== true) {
         const spawn = targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })
@@ -213,7 +257,6 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
 
     this.tasks.push(BootstrapRoomTask.create(parentRoomName, targetRoomName, waypoints, claimInfo.parentRoomName, claimInfo.waypoints, requiredEnergy))
-    this.nextGcl = targetGcl
 
     const parentInfo = ((): string => {
       if (parentRoomName === claimInfo.parentRoomName) {
@@ -225,18 +268,41 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   // ---- Private ---- //
-  private shouldRun(): boolean {
-    if (this.nextGcl == null) {
-      return false
-    }
-    if (this.nextGcl <= Game.gcl.level) {
+  private canAddTarget(): boolean {
+    const targetingRoomCount = ((): number => {
+      const ownedRoomNames = RoomResources.getOwnedRoomResources().map(resource => resource.room.name)
+      this.tasks.forEach(task => {
+        if (ownedRoomNames.includes(task.targetRoomName) !== true) {
+          ownedRoomNames.push(task.targetRoomName)
+        }
+      })
+      return ownedRoomNames.length
+    })()
+
+    const availableRoomCount = ((): number => {
+      if (Environment.hasMultipleShards !== true) {
+        return Game.gcl.level
+      }
+      switch (Environment.shard) {  // TODO:
+      case "shard2":
+        return Game.gcl.level - numberOfRoomsInShard3
+      case "shard3":
+        PrimitiveLogger.programError("BootstrapRoomManagerProcess.canAddTarget() claiming in shard 3 not supported")
+        return numberOfRoomsInShard3
+      default:
+        PrimitiveLogger.programError(`BootstrapRoomManagerProcess.canAddTarget() claiming in ${Environment.shard} not supported`)
+        return 0
+      }
+    })()
+
+    if (availableRoomCount > targetingRoomCount) {
       return true
     }
-    if (this.nextGcl - 1 !== Game.gcl.level) {
-      return false
+    if (availableRoomCount === targetingRoomCount) {
+      const nextLevel = Game.gcl.progressTotal - Game.gcl.progress
+      return nextLevel < 80000  // TODO: 算出する
     }
-    const nextLevel = Game.gcl.progressTotal - Game.gcl.progress
-    return nextLevel < 80000
+    return false
   }
 
   // ---- Task ---- //
