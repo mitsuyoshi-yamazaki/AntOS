@@ -22,9 +22,10 @@ export interface Season2055924SendResourcesProcessState extends ProcessState {
   p: RoomName
 
   readonly targetSectorNames: SectorName[] | null
+  readonly excludes: ResourceConstant[]
 }
 
-// Game.io("launch -l Season2055924SendResourcesProcess room_name=W55S9")
+// Game.io("launch -l Season2055924SendResourcesProcess room_name=W1N36 target_sector_names=W45S5 excluded_resource_types=energy")
 export class Season2055924SendResourcesProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -38,6 +39,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     private readonly targetSectorNames: SectorName[] | null,
+    private readonly excludes: ResourceConstant[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -50,14 +52,15 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
       i: this.processId,
       p: this.parentRoomName,
       targetSectorNames: this.targetSectorNames,
+      excludes: this.excludes,
     }
   }
 
   public static decode(state: Season2055924SendResourcesProcessState): Season2055924SendResourcesProcess {
-    return new Season2055924SendResourcesProcess(state.l, state.i, state.p, state.targetSectorNames)
+    return new Season2055924SendResourcesProcess(state.l, state.i, state.p, state.targetSectorNames, state.excludes ?? [])
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetSectorNames: SectorName[] | null): Season2055924SendResourcesProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetSectorNames: SectorName[] | null, excludedResourceTypes: ResourceConstant[]): Season2055924SendResourcesProcess {
     const distributorProcess = OperatingSystem.os.listAllProcesses()
       .map(processInfo => processInfo.process)
       .find(process => {
@@ -72,11 +75,20 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     } else {
       PrimitiveLogger.fatal(`No distributor process found for ${roomLink(parentRoomName)}`)
     }
-    return new Season2055924SendResourcesProcess(Game.time, processId, parentRoomName, targetSectorNames)
+    return new Season2055924SendResourcesProcess(Game.time, processId, parentRoomName, targetSectorNames, excludedResourceTypes)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)}`
+    const descriptions: string[] = [
+      roomLink(this.parentRoomName),
+    ]
+    if (this.excludes.length > 0) {
+      descriptions.push(`excludes: ${this.excludes.map(resourceType => coloredResourceType(resourceType)).join(",")}`)
+    }
+    if (this.targetSectorNames != null) {
+      descriptions.push(`target sectors: ${this.targetSectorNames.join(",")}`)
+    }
+    return descriptions.join(",")
   }
 
   public runOnTick(): void {
@@ -137,7 +149,8 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
   }
 
   private sendResourceType(terminal: StructureTerminal, storage: StructureStorage | null): ResourceConstant | null {
-    const resourceTypes = Object.keys(terminal.store) as ResourceConstant[]
+    const resourceTypes = (Object.keys(terminal.store) as ResourceConstant[])
+      .filter(resourceType => this.excludes.includes(resourceType) !== true)
     if (storage == null || terminal.store.getFreeCapacity() < 10000) {
       return resourceTypes.sort((lhs, rhs) => {
         if (lhs === RESOURCE_ENERGY) {

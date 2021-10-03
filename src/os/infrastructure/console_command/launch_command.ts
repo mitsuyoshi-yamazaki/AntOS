@@ -21,7 +21,7 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isMineralBoostConstant } from "utility/resource"
+import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { SpecializedQuadProcess } from "process/onetime/quad/specialized_quad_process"
@@ -718,11 +718,27 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const rawSectorNames = args.get("sector_names")
+    const rawSectorNames = args.get("target_sector_names")
     const sectorNames: SectorName[] | null = rawSectorNames != null ? rawSectorNames.split(",") : null
+    const rawExcludedResourceType = args.get("excluded_resource_types")
+    const excludedResourceTypes = ((): ResourceConstant[] | string => {
+      if (rawExcludedResourceType == null) {
+        return []
+      }
+      const resourceTypes = rawExcludedResourceType.split(",")
+      const invalidResourceType = resourceTypes.find(resourceType => !isResourceConstant(resourceType))
+      if (invalidResourceType != null) {
+        return `Invalid resource type ${invalidResourceType}`
+      }
+      return resourceTypes as ResourceConstant[]
+    })()
+
+    if (typeof excludedResourceTypes === "string") {
+      return Result.Failed(excludedResourceTypes)
+    }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season2055924SendResourcesProcess.create(processId, roomName, sectorNames)
+      return Season2055924SendResourcesProcess.create(processId, roomName, sectorNames, excludedResourceTypes)
     })
     return Result.Succeeded(process)
   }
