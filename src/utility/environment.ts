@@ -9,6 +9,8 @@ type ShardName = string
 export interface Environment {
   world: World
   shard: ShardName
+  hasMultipleShards: boolean
+
   isAutomatic(): boolean
 }
 
@@ -29,9 +31,21 @@ const world = ((): World => {
   }
 })()
 
+const hasMultipleShards = ((): boolean => {
+  switch (world) {
+  case "persistent world":
+    return true
+  case "season 3":
+  case "botarena":
+  case "simulation":
+    return false
+  }
+})()
+
 export const Environment: Environment = {
   world,
   shard: Game.shard.name,
+  hasMultipleShards: hasMultipleShards,
 
   isAutomatic(): boolean {  // TODO: メモリからも設定可能にする
     switch (world) {
