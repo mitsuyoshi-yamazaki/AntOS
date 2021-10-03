@@ -16,7 +16,7 @@ import { Environment } from "utility/environment"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
-import { isSeason1262745GuardRemoteRoomProcessCreepType, Season1262745GuardRemoteRoomProcess, season1262745GuardRemoteRoomProcessCreepType } from "process/temporary/season_1262745_guard_remote_room_process"
+import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess, GuardRemoteRoomProcessCreepType } from "process/process/guard_remote_room_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
@@ -82,8 +82,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "Season1200082SendMineralProcess":
       result = this.launchSeason1200082SendMineralProcess()
       break
-    case "Season1262745GuardRemoteRoomProcess":
-      result = this.launchSeason1262745GuardRemoteRoomProcess()
+    case "GuardRemoteRoomProcess":
+      result = this.launchGuardRemoteRoomProcess()
       break
     case "Season1349943DisturbPowerHarvestingProcess":
       result = this.launchSeason1349943DisturbPowerHarvestingProcess()
@@ -459,7 +459,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1262745GuardRemoteRoomProcess(): LaunchCommandResult {
+  private launchGuardRemoteRoomProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -487,12 +487,12 @@ export class LaunchCommand implements ConsoleCommand {
     if (creepType == null) {
       return this.missingArgumentError("creep_type")
     }
-    if (!isSeason1262745GuardRemoteRoomProcessCreepType(creepType)) {
-      return Result.Failed(`Invalid creep type ${creepType}, options: ${season1262745GuardRemoteRoomProcessCreepType}`)
+    if (!isGuardRemoteRoomProcessCreepType(creepType)) {
+      return Result.Failed(`Invalid creep type ${creepType}, options: ${GuardRemoteRoomProcessCreepType}`)
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1262745GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, numberOfCreeps)
+      return GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
