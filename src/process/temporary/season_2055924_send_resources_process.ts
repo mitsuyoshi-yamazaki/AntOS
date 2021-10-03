@@ -111,13 +111,13 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     }
     const destinationRoomName = this.findDestinationFor(resourceType, resourceAmount)
     if (destinationRoomName == null) {
-      processLog(this, `${coloredText("[Info]", "info")} No room to send ${coloredResourceType(resourceType)} from ${roomLink(this.parentRoomName)}`)
+      processLog(this, `${coloredText("[Warning]", "warn")} No room to send ${coloredResourceType(resourceType)} from ${roomLink(this.parentRoomName)}`)
       return
     }
     const result = terminal.send(resourceType, resourceAmount, destinationRoomName)
     switch (result) {
     case OK:
-      processLog(this, `${coloredText("[Info]", "info")} ${coloredResourceType(resourceType)} sent from ${roomLink(this.parentRoomName)} to ${roomLink(destinationRoomName)}`)
+      processLog(this, `${coloredText("[Info]", "info")} ${resourceAmount} ${coloredResourceType(resourceType)} sent from ${roomLink(this.parentRoomName)} to ${roomLink(destinationRoomName)}`)
       break
 
     case ERR_NOT_ENOUGH_RESOURCES:
@@ -163,30 +163,38 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     if (resourceType == null) {
       return null
     }
-    if (storage.store.getUsedCapacity(resourceType) > 0) {
+    const terminalResourceLimitAmount = 20000
+    if (storage.store.getUsedCapacity(resourceType) > 0 && terminal.store.getUsedCapacity(resourceType) < terminalResourceLimitAmount) {
       return null
     }
     return resourceType
   }
 
   private findDestinationFor(resourceType: ResourceConstant, amount: number): RoomName | null {
-    let fallbackRoomName = null as RoomName | null
-    for (const roomResource of RoomResources.getOwnedRoomResources()) {
-      if (roomResource.room.name === this.parentRoomName) {
-        continue
-      }
-      const targetTerminal = roomResource.activeStructures.terminal
-      if (targetTerminal == null) {
-        continue
-      }
-      if ((targetTerminal.store.getFreeCapacity() - amount) < 20000) {
-        continue
-      }
+    const targetTerminals = [...RoomResources.getOwnedRoomResources()]
+      .flatMap(roomResource => {
+        if (roomResource.room.name === this.parentRoomName) {
+          return []
+        }
+        const targetTerminal = roomResource.activeStructures.terminal
+        if (targetTerminal == null) {
+          return []
+        }
+        if ((targetTerminal.store.getFreeCapacity() - amount) < 20000) {
+          return []
+        }
+        return targetTerminal
+      })
+      .sort((lhs, rhs) => {
+        return Game.map.getRoomLinearDistance(lhs.room.name, this.parentRoomName) - Game.map.getRoomLinearDistance(rhs.room.name, this.parentRoomName)
+      })
+
+    for (const targetTerminal of targetTerminals) {
       if (targetTerminal.store.getUsedCapacity(resourceType) > 0) {
-        return roomResource.room.name
+        return targetTerminal.room.name
       }
-      fallbackRoomName = roomResource.room.name
     }
-    return fallbackRoomName
+
+    return targetTerminals[0]?.room.name ?? null
   }
 }
