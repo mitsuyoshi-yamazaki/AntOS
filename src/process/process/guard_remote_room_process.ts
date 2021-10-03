@@ -18,6 +18,7 @@ ProcessDecoder.register("GuardRemoteRoomProcess", state => {
 })
 
 export const GuardRemoteRoomProcessCreepType = [
+  "small-ranged-attacker",
   "ranged-attacker",
   "heavy-ranged-attacker",
 ] as const
@@ -29,7 +30,14 @@ export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemo
 }
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
-const rangedAttackerBody: BodyPartConstant[] = [
+const smallRangedAttackerBody: BodyPartConstant[] = [  // RCL6
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  HEAL, HEAL,
+]
+const rangedAttackerBody: BodyPartConstant[] = [  // RCL7
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -39,8 +47,6 @@ const rangedAttackerBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
-
-const heavyRangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
 const heavyRangedAttackerBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -70,7 +76,7 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   numberOfCreeps: number
 }
 
-// Game.io("launch -l GuardRemoteRoomProcess room_name=W39S31 target_room_name=W37S35 waypoints=W40S32,W40S35 creep_type=ranged-attacker creeps=1")
+// Game.io("launch -l GuardRemoteRoomProcess room_name=W39S31 target_room_name=W37S35 waypoints=W40S32,W40S35 creep_type=small-ranged-attacker creeps=1")
 export class GuardRemoteRoomProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -96,12 +102,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
     this.codename = generateCodename(this.identifier, this.launchTime)
 
     switch (this.creepType) {
+    case "small-ranged-attacker":
+      this.creepRole = rangedAttackerRole
+      this.creepBody = smallRangedAttackerBody
+      break
     case "ranged-attacker":
       this.creepRole = rangedAttackerRole
       this.creepBody = rangedAttackerBody
       break
     case "heavy-ranged-attacker":
-      this.creepRole = heavyRangedAttackerRole
+      this.creepRole = rangedAttackerRole
       this.creepBody = heavyRangedAttackerBody
       break
     }
