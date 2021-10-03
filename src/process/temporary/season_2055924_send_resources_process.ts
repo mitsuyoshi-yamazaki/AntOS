@@ -11,6 +11,7 @@ import { OperatingSystem } from "os/os"
 import { Season1838855DistributorProcess } from "./season_1838855_distributor_process"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
+import { SectorName } from "utility/room_sector"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)
@@ -19,6 +20,8 @@ ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
 export interface Season2055924SendResourcesProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
+
+  readonly targetSectorNames: SectorName[] | null
 }
 
 // Game.io("launch -l Season2055924SendResourcesProcess room_name=W55S9")
@@ -34,6 +37,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
+    private readonly targetSectorNames: SectorName[] | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -45,14 +49,15 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
+      targetSectorNames: this.targetSectorNames,
     }
   }
 
   public static decode(state: Season2055924SendResourcesProcessState): Season2055924SendResourcesProcess {
-    return new Season2055924SendResourcesProcess(state.l, state.i, state.p)
+    return new Season2055924SendResourcesProcess(state.l, state.i, state.p, state.targetSectorNames)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName): Season2055924SendResourcesProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetSectorNames: SectorName[] | null): Season2055924SendResourcesProcess {
     const distributorProcess = OperatingSystem.os.listAllProcesses()
       .map(processInfo => processInfo.process)
       .find(process => {
@@ -67,7 +72,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     } else {
       PrimitiveLogger.fatal(`No distributor process found for ${roomLink(parentRoomName)}`)
     }
-    return new Season2055924SendResourcesProcess(Game.time, processId, parentRoomName)
+    return new Season2055924SendResourcesProcess(Game.time, processId, parentRoomName, targetSectorNames)
   }
 
   public processShortDescription(): string {
@@ -173,6 +178,11 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
   private findDestinationFor(resourceType: ResourceConstant, amount: number): RoomName | null {
     const targetTerminals = [...RoomResources.getOwnedRoomResources()]
       .flatMap(roomResource => {
+        if (this.targetSectorNames != null) {
+          if (this.targetSectorNames.includes(roomResource.room.coordinate.sectorName()) !== true) {
+            return []
+          }
+        }
         if (roomResource.room.name === this.parentRoomName) {
           return []
         }

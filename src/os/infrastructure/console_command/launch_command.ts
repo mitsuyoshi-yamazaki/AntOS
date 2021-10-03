@@ -33,7 +33,9 @@ import { InterRoomResourceManagementProcess } from "process/process/inter_room_r
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
 import { ObserveRoomProcess } from "process/process/observe_room_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
-// import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
+import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
+import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
+import { SectorName } from "utility/room_sector"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -125,9 +127,12 @@ export class LaunchCommand implements ConsoleCommand {
     case "World35587255ScoutRoomProcess":
       result = this.launchWorld35587255ScoutRoomProcess()
       break
-    // case "World35872159TestDeclarationProcess":
-    //   result = this.launchWorld35872159TestDeclarationProcess()
-    //   break
+    case "World35872159TestDeclarationProcess":
+      result = this.launchWorld35872159TestDeclarationProcess()
+      break
+    case "World35872159TestResourcePoolProcess":
+      result = this.launchWorld35872159TestResourcePoolProcess()
+      break
     default:
       break
     }
@@ -713,9 +718,11 @@ export class LaunchCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
+    const rawSectorNames = args.get("sector_names")
+    const sectorNames: SectorName[] | null = rawSectorNames != null ? rawSectorNames.split(",") : null
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season2055924SendResourcesProcess.create(processId, roomName)
+      return Season2055924SendResourcesProcess.create(processId, roomName, sectorNames)
     })
     return Result.Succeeded(process)
   }
@@ -782,11 +789,18 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  // private launchWorld35872159TestDeclarationProcess(): LaunchCommandResult {
+  private launchWorld35872159TestDeclarationProcess(): LaunchCommandResult {
 
-  //   const process = OperatingSystem.os.addProcess(null, processId => {
-  //     return World35872159TestDeclarationProcess.create(processId, targetRoomName)
-  //   })
-  //   return Result.Succeeded(process)
-  // }
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return World35872159TestDeclarationProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchWorld35872159TestResourcePoolProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return World35872159TestResourcePoolProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
 }
