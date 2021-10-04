@@ -1028,6 +1028,8 @@ export class ExecCommand implements ConsoleCommand {
       constructionSiteCounts.set(structureType, count + 1)
     })
 
+    const flags = room.find(FIND_FLAGS)
+
     const messages: string[] = []
 
     const processDescriptions = processes.map(process => {
@@ -1037,11 +1039,16 @@ export class ExecCommand implements ConsoleCommand {
     messages.push(coloredText("Processes to remove:", "info"))
     messages.push(...processDescriptions)
 
-    const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
-      return `- ${tab(structureType, Tab.medium)}: ${count}`
-    })
-    messages.push(coloredText("Construction sites to remove:", "info"))
-    messages.push(...constructionSiteDescriptions)
+    if (constructionSiteCounts.size > 0) {
+      const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
+        return `- ${tab(structureType, Tab.medium)}: ${count}`
+      })
+      messages.push(coloredText("Construction sites to remove:", "info"))
+      messages.push(...constructionSiteDescriptions)
+    }
+    if (flags.length > 0) {
+      messages.push(coloredText(`${flags.length} flags`, "info"))
+    }
 
     if (dryRun === true) {
       messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
@@ -1062,6 +1069,9 @@ export class ExecCommand implements ConsoleCommand {
       })
       constructionSites.forEach(constructionSite => {
         constructionSite.remove()
+      })
+      flags.forEach(flag => {
+        flag.remove()
       })
 
       RoomResources.removeRoomInfo(room.name)
