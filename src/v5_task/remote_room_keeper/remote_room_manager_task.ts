@@ -5,6 +5,7 @@ import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText } from "utility/log"
+import { Environment } from "utility/environment"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
@@ -67,7 +68,7 @@ export class RemoteRoomManagerTask extends Task {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
-      if (task.targetRoomName === "W42S2") {
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W39S38" && task.targetRoomName === "W39S39") {
         return true
       }
       return false
