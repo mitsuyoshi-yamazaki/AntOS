@@ -12,6 +12,7 @@ import { defaultMoveToOptions } from "prototype/creep"
 import { randomDirection } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -132,16 +133,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
   }
 
   public static decode(state: GuardRemoteRoomProcessState): GuardRemoteRoomProcess {
-    const creepType = ((): GuardRemoteRoomProcessCreepType => {
-      switch (state.creepType) {
-      case "ranged-attacker":
-      case "heavy-ranged-attacker":
-        return state.creepType
-      default:
-        return "ranged-attacker"
-      }
-    })()
-    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, creepType, state.numberOfCreeps, state.targetId)
+    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: GuardRemoteRoomProcessCreepType, numberOfCreeps: number): GuardRemoteRoomProcess {
@@ -193,9 +185,13 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
     }
 
     switch (this.creepType) {
+    case "small-ranged-attacker":
     case "ranged-attacker":
     case "heavy-ranged-attacker":
       creeps.forEach(creep => this.runRangedAttacker(creep))
+      break
+    default:
+      PrimitiveLogger.programError(`${this.constructor.name} unhandled creep type ${this.creepType}`)
       break
     }
   }
