@@ -23,6 +23,7 @@ import { TaskState } from "v5_task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -271,25 +272,45 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
 
   private launchBuildContainerTask(objects: OwnedRoomObjects, source: Source): void {
     const roomName = objects.controller.room.name
-    const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
-    if (pathStartPosition == null) {
-      if ((Game.time % 17) === 5) {
-        PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
+    const position = ((): RoomPosition | null => {
+      const options: RoomPositionFilteringOptions = {
+        excludeItself: true,
+        excludeStructures: true,
+        excludeTerrainWalls: true,
+        excludeWalkableStructures: false,
       }
-      return
-    }
-    const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
-    if (resultPath.incomplete === true) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
-      return  // TODO: 毎tick行わないようにする
-    }
+      const neighbourPositions = source.pos.positionsInRange(1, options)
+      if (neighbourPositions.length <= 1 && neighbourPositions[0] != null) {
+        return neighbourPositions[0]
+      }
+      if (source.pos.findInRange(FIND_SOURCES, 2).length >= 2) {
+        const emptyPositions = neighbourPositions.filter(p => p.findInRange(FIND_SOURCES, 1).length <= 1)
+        if (emptyPositions[0] != null) {
+          return emptyPositions[0]
+        }
+      }
 
-    const path = resultPath.path
-    if (path.length <= 0) {
-      PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
-      return  // TODO: 毎tick行わないようにする
-    }
-    const position = path[path.length - 1]
+      const pathStartPosition = objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos
+      if (pathStartPosition == null) {
+        if ((Game.time % 17) === 5) {
+          PrimitiveLogger.fatal(`No spawns or storage ${this.taskIdentifier} in ${roomLink(roomName)}`)
+        }
+        return null
+      }
+      const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 })
+      if (resultPath.incomplete === true) {
+        PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, incomplete path: ${resultPath.path}`)
+        return null  // TODO: 毎tick行わないようにする
+      }
+
+      const path = resultPath.path
+      if (path.length <= 0) {
+        PrimitiveLogger.fatal(`Source route calculation failed ${this.taskIdentifier}, no path`)
+        return null  // TODO: 毎tick行わないようにする
+      }
+      return path[path.length - 1] ?? null
+    })()
+
     if (position != null) {
       this.addChildTask(BuildContainerTask.create(roomName, position, this.taskIdentifier))
     }
