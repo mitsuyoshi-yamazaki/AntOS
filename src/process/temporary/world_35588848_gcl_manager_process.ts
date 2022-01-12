@@ -240,7 +240,7 @@ export class World35588848GclManagerProcess implements Process, Procedural {
       return
     }
 
-    bootstrapRoomManagerProcess.addBootstrapRoom(
+    bootstrapRoomManagerProcess.addTargetRoomQueue(
       parentRoomInfo.room.name,
       roomToClaim.roomName,
       [],
@@ -248,7 +248,6 @@ export class World35588848GclManagerProcess implements Process, Procedural {
         parentRoomName: parentRoomInfo.room.name,
         waypoints: [],
       },
-      Game.gcl.level,
       0,
       false,
     )
