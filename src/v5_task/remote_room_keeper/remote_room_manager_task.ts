@@ -68,7 +68,7 @@ export class RemoteRoomManagerTask extends Task {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W39S38" && task.targetRoomName === "W39S39") {
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W47S2" && task.targetRoomName === "W47S3") {
         return true
       }
       return false

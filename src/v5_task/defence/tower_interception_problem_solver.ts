@@ -83,6 +83,13 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
       ...objects.hostiles.creeps,
       ...objects.hostiles.powerCreeps,
     ]
+    if (this.roomName === "W37S35" && hostileCreeps[0] != null) {
+      return {
+        target: hostileCreeps[0],
+        maxTicksToKill: 1,
+        minimumTicksToEscape: 1,
+      }
+    }
 
     // killできないとなったら諦めて別targetを選定
     const targetInfo = hostileCreeps.map(target => {
@@ -102,7 +109,7 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     })()
 
     const canKill = (ticksToKill: number, ticksToEscape: number): boolean => {
-      return (ticksToKill - ticksToEscape) < 3
+      return (ticksToKill - (ticksToEscape * 3)) < 3
     }
 
     if (currentTarget != null) {
