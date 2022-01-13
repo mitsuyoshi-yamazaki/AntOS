@@ -39,6 +39,20 @@ export function init(): void {
     Memory.v6RoomInfo = {}
   }
 
+  if (Memory.eventMemory == null) {
+    Memory.eventMemory = {
+      roomVisibility: {
+        observingVisibleRooms: []
+      }
+    }
+  } else {
+    if (Memory.eventMemory.roomVisibility == null) {
+      Memory.eventMemory.roomVisibility = {
+        observingVisibleRooms: []
+      }
+    }
+  }
+
   if (Memory.rooms == null) {
     Memory.rooms = {}
   }

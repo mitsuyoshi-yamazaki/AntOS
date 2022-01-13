@@ -15,7 +15,9 @@ import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_4
 import { World35588848GclManagerProcess } from "process/temporary/world_35588848_gcl_manager_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
+// import { } from "process/application/declarative_ai/declaration_application_process"
 
+// TODO: アプリケーションProcessとしてProcess化する
 export class ApplicationProcessLauncher {
   public launchProcess(processList: Process[], processLauncher: ProcessLauncher): void {
     const roomKeeperMap = new ValuedArrayMap<ShortVersion, RoomName>()
