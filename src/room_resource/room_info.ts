@@ -1,7 +1,9 @@
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
-import { RoomName } from "utility/room_name"
+import { Position } from "prototype/room_position"
+import type { WallPosition } from "script/wall_builder"
+import type { RoomName } from "utility/room_name"
 import { ShortVersion, ShortVersionV6 } from "utility/system_info"
-import { Timestamp } from "utility/timestamp"
+import type { Timestamp } from "utility/timestamp"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
@@ -18,7 +20,7 @@ export interface BasicRoomInfo {
   readonly energyStoreStructureIds: Id<EnergyStore>[]
 }
 
-type RoomOwner = { ownerType: "claim", username: string } | { ownerType: "reserve", username: string }
+type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean } | { ownerType: "reserve", username: string }
 
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
@@ -47,7 +49,11 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   }
   highestRcl: number
   roomPlan: {
-    centerPosition: {x: number, y: number}
+    centerPosition: Position
+    // virtualStructures: VirtualStructure[]
+
+    /** @deprecated */
+    wallPositions?: WallPosition[]
   } | null
 
   // ---- Inter Room ---- //
@@ -63,6 +69,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     collectResources?: boolean
     boostLabs?: Id<StructureLab>[]
     excludedRemotes?: RoomName[]
+    waitingPosition?: {x: number, y: number}
   }
 }
 
@@ -73,8 +80,16 @@ function getOwnerInfo(room: Room): RoomOwner | null {
     return null
   }
   if (room.controller.owner != null) {
+    const isAlive = ((): boolean => {
+      if (room.find(FIND_HOSTILE_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length > 0) {
+        return true
+      }
+      return false
+    })()
     return {
       ownerType: "claim",
+      isAlive,
+      safemodeEnabled: room.controller.safeMode != null,
       username: room.controller.owner.username
     }
   }

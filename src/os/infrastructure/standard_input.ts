@@ -13,6 +13,7 @@ import { MessageCommand } from "./console_command/message_command"
 import { ProcessCommand } from "./console_command/process_command"
 import { ResumeCommand } from "./console_command/resume_command"
 import { SuspendCommand } from "./console_command/suspend_command"
+import { LogCommand } from "./console_command/log_command"
 
 export const standardInput = (rawCommand: string): string => {
   let result: string | null = null
@@ -105,5 +106,8 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
 
   case "memory":
     return Result.Succeeded(new MemoryCommand(options, args, rawCommand))
+
+  case "log":
+    return Result.Succeeded(new LogCommand(options, args, rawCommand))
   }
 }

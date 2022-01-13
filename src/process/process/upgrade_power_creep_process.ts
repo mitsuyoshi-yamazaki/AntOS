@@ -3,10 +3,15 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { managePowerCreepLink } from "utility/log"
 import { ProcessState } from "../process_state"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { PowerCreepName } from "prototype/power_creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { isPowerConstant, PowerConstant, powerName } from "utility/power"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("UpgradePowerCreepProcess", state => {
+  return UpgradePowerCreepProcess.decode(state as UpgradePowerCreepProcessState)
+})
 
 type UpdateInfo = {
   powerCreepName: PowerCreepName
@@ -29,11 +34,15 @@ export interface UpgradePowerCreepProcessState extends ProcessState {
  *     - add update reservation to the end of the stack
  */
 export class UpgradePowerCreepProcess implements Process, Procedural, MessageObserver {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly reservedUpdates: UpdateInfo[],
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): UpgradePowerCreepProcessState {
     return {

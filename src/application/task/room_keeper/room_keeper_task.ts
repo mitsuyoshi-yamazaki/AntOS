@@ -19,7 +19,7 @@ import { AnyTaskProblem } from "application/any_problem"
 import { coloredText, roomLink } from "utility/log"
 import { RoomKeeperPerformance } from "application/task_profit/owned_room_performance"
 import { OperatingSystem } from "os/os"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "process/onetime/season_701205_power_harvester_swamp_runner_process"
+import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
 import { ResearchTask, ResearchTaskState } from "../research/research_task"
 import { parseLabs } from "script/room_plan"
@@ -401,9 +401,7 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
-    const process = OperatingSystem.os.addProcess(processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints, powerBankInfo.nearbySquareCount))
-    const logger = OperatingSystem.os.getLoggerProcess()
-    logger?.didReceiveMessage(`add id ${process.processId}`)
+    OperatingSystem.os.addProcess(null, (processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints, powerBankInfo.nearbySquareCount)))
   }
 
   // ---- Request Handling ---- //

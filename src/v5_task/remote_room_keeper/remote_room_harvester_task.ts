@@ -26,6 +26,7 @@ import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api
 import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { GameConstants } from "utility/constants"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -275,6 +276,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     }
 
     if (container != null && container.hits < container.hitsMax * 0.8) {
+      if (creep.pos.getRangeTo(container.pos) > GameConstants.creep.actionRange.repair) {
+        return MoveToTargetTask.create(RepairApiWrapper.create(container))
+      }
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
 
@@ -283,6 +287,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
+    if (creep.pos.getRangeTo(source.pos) > GameConstants.creep.actionRange.harvest) {
+      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+    }
     return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
   }
 

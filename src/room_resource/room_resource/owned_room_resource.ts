@@ -105,6 +105,9 @@ export class OwnedRoomResource extends NormalRoomResource {
 
       switch (structure.structureType) {
       case STRUCTURE_SPAWN:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -114,6 +117,9 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_EXTENSION:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -123,6 +129,9 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_TOWER:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -132,6 +141,9 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_STORAGE:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -141,6 +153,9 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_TERMINAL:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -150,12 +165,18 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         break
       case STRUCTURE_EXTRACTOR:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
         extractor = structure
         break
       case STRUCTURE_OBSERVER:
+        if (structure.my !== true) {
+          break
+        }
         if (shouldCheckActiveness === true && structure.isActive() !== true) {
           break
         }
@@ -165,6 +186,9 @@ export class OwnedRoomResource extends NormalRoomResource {
         this.walls.push(structure)
         break
       case STRUCTURE_RAMPART:
+        if (structure.my !== true) {
+          break
+        }
         this.ramparts.push(structure)
         break
       default:

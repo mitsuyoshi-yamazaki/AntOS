@@ -6,7 +6,7 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "v5_task/task_state"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
-import { remoteRoomNamesToDefend } from "process/onetime/season_487837_attack_invader_core_room_names"
+import { remoteRoomNamesToDefend } from "process/temporary/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Environment } from "utility/environment"
 import { RoomResources } from "room_resource/room_resources"
@@ -159,7 +159,7 @@ export class RemoteRoomKeeperTask extends Task {
       if (!(task instanceof RemoteRoomWorkerTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard3" && task.roomName === "W48S33" && task.targetRoomName === "W49S33") {  // 起動中のRemoteRoomWorkerを削除したい場合
+      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W39S38" && task.targetRoomName === "W39S39") {  // 起動中のRemoteRoomWorkerを削除したい場合: keeper taskを削除する場合はRemoteRoomManagerTaskで行う
         return true
       }
       return false

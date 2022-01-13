@@ -5,17 +5,26 @@ import { ProcessState } from "../process_state"
 import { RoomResources } from "room_resource/room_resources"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo } from "room_resource/room_info"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
+  return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
+})
 
 export interface InterRoomResourceManagementProcessState extends ProcessState {
 }
 
 export class InterRoomResourceManagementProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): InterRoomResourceManagementProcessState {
     return {
@@ -174,7 +183,7 @@ class ResourceTransferer {
 
       const terminalEnergyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
       const storageEnergyAmount = resources.storage.store.getUsedCapacity(RESOURCE_ENERGY)
-      if (terminalEnergyAmount < 50000 || storageEnergyAmount < 50000 || (terminalEnergyAmount + storageEnergyAmount) < 200000) {
+      if (terminalEnergyAmount < 50000 || (terminalEnergyAmount + storageEnergyAmount) < 200000) {
         return
       }
 

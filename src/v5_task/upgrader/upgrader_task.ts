@@ -9,7 +9,7 @@ import { generateCodename } from "utility/unique_id"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
-import { TRANSFER_RESOURCE_RANGE, UPGRADE_CONTROLLER_RANGE } from "utility/constants"
+import { GameConstants, TRANSFER_RESOURCE_RANGE, UPGRADE_CONTROLLER_RANGE } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TargetToPositionTask } from "v5_object_task/creep_task/meta_task/target_to_position_task"
 import type { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
@@ -108,11 +108,15 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
     if (container == null && link == null) {
       this.availablePositions = []
     } else {
+      const controller = objects.controller
       this.availablePositions = this.upgraderPositions.filter(position => {
         if (container != null && position.getRangeTo(container.pos) > 1) {
           return false
         }
-        if (link != null && position.getRangeTo(link) !== 1) {
+        if (link != null && position.getRangeTo(link.pos) !== 1) {
+          return false
+        }
+        if (position.getRangeTo(controller.pos) > GameConstants.creep.actionRange.upgradeController) {
           return false
         }
         return true
@@ -232,7 +236,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return true
     })
     if (emptyPositions[0] == null) {
-      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position (${this.upgraderPositions})`)
+      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position (${this.upgraderPositions.map(position => `${position}: ${position.v5TargetedBy}`)})`)
       return null
     }
     return emptyPositions[0]
@@ -271,6 +275,10 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (link != null) {
         this.linkId = link.id
         PrimitiveLogger.log(`${this.taskIdentifier} link id set: link ${link.pos}`)
+      }
+    } else {
+      if (Game.getObjectById(this.linkId) == null) {
+        this.linkId = null
       }
     }
     if (objects.roomInfo.upgrader?.container == null) {

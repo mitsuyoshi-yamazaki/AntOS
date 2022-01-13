@@ -58,7 +58,7 @@ export class DismantleApiWrapper implements ApiWrapper<Creep, DismantleApiWrappe
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
     default:
-      PrimitiveLogger.fatal(`creep.dismantle() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.dismantle() returns ${result}, ${creep.name}, structure ${this.target} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

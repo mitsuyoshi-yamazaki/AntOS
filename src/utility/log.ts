@@ -26,11 +26,27 @@ export function anyColoredText(text: string, color: string): string {
   return `<span style='color:${color}'>${text}</span>`
 }
 
+export type Tab = number
+export const Tab = {
+  veryLarge: 50,
+  medium: 20,
+  small: 10,
+}
+
+const spaces = "                                                  " // 50 spaces
+
+export function tab(text: string, tabs: Tab): string {
+  const numberOfSpaces = Math.max(tabs - text.length, 0)
+  const spacer = spaces.slice(0, numberOfSpaces)
+  return `${text}${spacer}`
+}
+
 function baseUrl(): string {
   const path = ((): string => {
     switch (Environment.world) {
     case "persistent world":
     case "simulation":
+    case "botarena":
       return "a"
     case "season 3":
       return "season"

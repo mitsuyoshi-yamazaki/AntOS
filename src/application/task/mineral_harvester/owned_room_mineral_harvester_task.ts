@@ -68,12 +68,13 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
 
   public run(roomResource: OwnedRoomResource): OwnedRoomMineralHarvesterTaskOutputs {
     const taskOutputs: OwnedRoomMineralHarvesterTaskOutputs = emptyTaskOutputs()
-    if (disableMineralHarvesting === true || roomResource.roomInfo.config?.disableMineralHarvesting === true) { // FixMe:
-      return taskOutputs
-    }
 
     const mineral = roomResource.mineral
     if (mineral == null) {
+      return taskOutputs
+    }
+
+    if ((mineral.mineralType !== RESOURCE_CATALYST && disableMineralHarvesting === true) || roomResource.roomInfo.config?.disableMineralHarvesting === true) { // FixMe:
       return taskOutputs
     }
 

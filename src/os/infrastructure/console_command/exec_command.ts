@@ -6,18 +6,28 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
-import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, roomLink } from "utility/log"
-import { isResourceConstant } from "utility/resource"
+import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
+import { isMineralCompoundConstant, isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
-import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
+import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
+import { OwnedRoomInfo } from "room_resource/room_info"
+import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
+import { Process } from "process/process"
+import { OperatingSystem } from "os/os"
+import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
+import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
+import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
+import { RoomKeeperProcess } from "process/process/room_keeper_process"
+import { calculateWallPositions } from "script/wall_builder"
+import { decodeRoomPosition } from "prototype/room_position"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -28,6 +38,8 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
+    case "manual":  // 何か手動の一時的なスクリプトを動かす際に用いる
+      return this.runOnetimeScript()
     case "findPath":
       return this.findPath()
     case "findPathToSource":
@@ -48,14 +60,28 @@ export class ExecCommand implements ConsoleCommand {
       return this.transfer()
     case "pickup":
       return this.pickup()
+    case "dismantle":
+      return this.dismantle()
     case "resource":
       return this.resource()
     case "set_boost_labs":
       return this.setBoostLabs()
+    case "set_waiting_position":
+      return this.setWaitingPosition()
     case "show_room_plan":
       return this.showRoomPlan()
+    case "show_wall_plan":
+      return this.showWallPlan()
+    // case "check_existing_walls":
+    //   return this.checkExistingWalls()
     case "mineral":
       return this.showHarvestableMinerals()
+    case "room_config":
+      return this.configureRoomInfo()
+    case "check_alliance":
+      return this.checkAlliance()
+    case "unclaim":
+      return this.unclaim()
     default:
       return "Invalid script type"
     }
@@ -82,6 +108,23 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
+  private runOnetimeScript(): CommandExecutionResult {
+    const unownedOwnedRoomNames: RoomName[] = []
+
+    Object.entries(Memory.v6RoomInfo).forEach(([roomName, roomInfo]) => {
+      if (roomInfo.roomType !== "owned") {
+        return
+      }
+
+      const room = Game.rooms[roomName]
+      if (room == null || room.controller == null || room.controller.my !== true) {
+        unownedOwnedRoomNames.push(roomName)
+      }
+    })
+
+    return `Unowned room names: ${unownedOwnedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+  }
+
   private findPath(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -327,9 +370,9 @@ export class ExecCommand implements ConsoleCommand {
     if (creep == null) {
       return `Creep ${creepName} doesn't exists`
     }
-    if (creep.v5task != null) {
-      return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    }
+    // if (creep.v5task != null) {
+    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
+    // }
     const target = Game.getObjectById(targetId) as TransferResourceApiWrapperTargetType | null
     if (target == null) {
       return `Target ${targetId} does not exists`
@@ -367,21 +410,21 @@ export class ExecCommand implements ConsoleCommand {
     if (creep == null) {
       return `Creep ${creepName} doesn't exists`
     }
-    // if (creep.v5task != null) {
-    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    // }
-    const apiWrapper = ((): PickupApiWrapper | WithdrawResourceApiWrapper | string => {
+    const apiWrapper = ((): WithdrawApiWrapper | string => {
       const target = Game.getObjectById(targetId)
       if (target == null) {
         return `Target ${targetId} does not exists`
       }
       if (target instanceof Resource) {
-        return PickupApiWrapper.create(target)
+        return WithdrawApiWrapper.create(target)
       }
-      if ((target instanceof Tombstone) && target.store.getUsedCapacity(RESOURCE_POWER) > 0 ) {
-        return WithdrawResourceApiWrapper.create(target, RESOURCE_POWER)
+      if (!(target instanceof Tombstone) && !(target instanceof StructureContainer) && !(target instanceof Ruin)) {
+        return `Unsupported target type ${target}`
       }
-      return `Unsupported target type ${target}`
+      if (target.store.getUsedCapacity() > 0 ) {
+        return WithdrawApiWrapper.create(target)
+      }
+      return `Nothing to pickup ${target}`
     })()
 
     if (typeof apiWrapper === "string") {
@@ -395,6 +438,45 @@ export class ExecCommand implements ConsoleCommand {
       MoveToTargetTaskV5.create(apiWrapper),
     ]
     creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+    return "ok"
+  }
+
+  private dismantle(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "target_id")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, targetId] = args
+    if (creepName == null || targetId == null) {
+      return ""
+    }
+
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    const apiWrapper = ((): DismantleApiWrapper | string => {
+      const target = Game.getObjectById(targetId)
+      if (target == null) {
+        return `Target ${targetId} does not exists`
+      }
+      if (target instanceof StructureWall) {
+        return DismantleApiWrapper.create(target)
+      }
+      return `${target} is not supported yet`
+    })()
+
+    if (typeof apiWrapper === "string") {
+      return apiWrapper
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const tasks: CreepTask[] = [
+      MoveToTargetTaskV5.create(apiWrapper),
+    ]
+    creep.memory.t = SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }).encode()
     return "ok"
   }
 
@@ -416,20 +498,25 @@ export class ExecCommand implements ConsoleCommand {
       if (args[2] == null || !isRoomName(args[2])) {
         return `Invalid room name ${args[2]}`
       }
-      const amount = ((): number | string | null => {
-        if (args[3] == null) {
-          return null
+      if (args[3] == null) {
+        return "amout is missing (number or \"all\")"
+      }
+      const rawAmount = args[3]
+      const amount = ((): number | "all" | null => {
+        if (rawAmount === "all") {
+          return "all"
         }
-        const parsed = parseInt(args[3], 10)
+        const parsed = parseInt(rawAmount, 10)
         if (isNaN(parsed) === true) {
-          return `amount is not a number ${args[3]}`
+          return null
         }
         return parsed
       })()
-      if (typeof amount === "string") {
-        return amount
+      if (amount == null) {
+        return `Invalid amount ${args[3]} (number or "all")`
       }
-      return this.collectResource(args[1], args[2], amount ?? "all")
+
+      return this.collectResource(args[1], args[2], amount)
     }
     case "list":
     default:
@@ -496,7 +583,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W48S6 labs=5b3ec0561ca96b59438c5536,5b4f220fd871ba7bf45aa186,5b4f51ece15e100251fad206,5b35bcb1cb21c464f0ca2a2c,5b3ec6854e66ea3377c7b2b4")
+  // Game.io("exec set_boost_labs room_name=W53S36")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
@@ -506,53 +593,104 @@ export class ExecCommand implements ConsoleCommand {
     if (roomName == null) {
       return this.missingArgumentError("room_name")
     }
-    const rawLabs = args.get("labs")
-    if (rawLabs == null) {
-      return this.missingArgumentError("labs")
-    }
-    const labIds: Id<StructureLab>[] = []
-    for (const labId of rawLabs.split(",")) {
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        return `Id ${labId} is not lab ${lab}`
-      }
-      if (lab.room.name !== roomName) {
-        return `Lab ${lab} is not in ${roomLink(roomName)}`
-      }
-      labIds.push(lab.id)
-    }
 
     const resources = RoomResources.getOwnedRoomResource(roomName)
     if (resources == null) {
-      return `Room ${roomName} is not owned`
+      return `Room ${roomLink(roomName)} is not owned`
     }
+
+    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) > 0) {
+      return `${roomLink(roomName)} has boost labs`
+    }
+
     const researchLab = resources.roomInfo.researchLab
-    if (researchLab != null) {
-      for (const labId of labIds) {
-        if (labId === researchLab.inputLab1 || labId === researchLab.inputLab2) {
-          return `Lab ${labId} is set for research input lab ${roomLink(roomName)}`
-        }
-        const index = researchLab.outputLabs.indexOf(labId)
-        if (index < 0) {
-          continue
-        }
-        researchLab.outputLabs.splice(index, 1)
-        outputs.push(`Lab ${labId} is removed from research output lab`)
-      }
+    if (researchLab == null) {
+      return `No research labs in ${roomLink(roomName)}`
     }
+
+    const outputLabs = [...researchLab.outputLabs]
+      .flatMap(labId => {
+        const lab = Game.getObjectById(labId)
+        if (lab == null) {
+          PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
+          return []
+        }
+        return lab
+      })
+
+    if (resources.roomInfo.roomPlan?.centerPosition != null) {
+      const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
+      outputLabs.sort((lhs, rhs) => {
+        return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
+      })
+    }
+
+    const numberOfBoostLabs = 6
+    if (outputLabs.length > numberOfBoostLabs) {
+      outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
+    }
+    const boostLabIds = outputLabs.map(lab => lab.id)
+    boostLabIds.forEach(labId => {
+      const index = researchLab.outputLabs.indexOf(labId)
+      if (index < 0) {
+        return
+      }
+      researchLab.outputLabs.splice(index, 1)
+    })
+    outputs.push(`Removed from research output lab: ${boostLabIds}`)
 
     if (resources.roomInfo.config == null) {
       resources.roomInfo.config = {}
       outputs.push("Add roomInfo.config")
     }
     if (resources.roomInfo.config.boostLabs != null && resources.roomInfo.config.boostLabs.length > 0) {
-      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${labIds.length} labs`)
+      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${boostLabIds.length} labs`)
     } else {
-      outputs.push(`Set ${labIds.length} labs`)
+      outputs.push(`Set ${boostLabIds.length} labs`)
     }
-    resources.roomInfo.config.boostLabs = labIds
+    resources.roomInfo.config.boostLabs = boostLabIds
 
     return `\n${outputs.join("\n")}`
+  }
+
+  // Game.io("exec set_waiting_position room_name=W52S25 pos=35,21")
+  private setWaitingPosition(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const resources = RoomResources.getOwnedRoomResource(roomName)
+    if (resources == null) {
+      return `${roomLink(roomName)} is not owned`
+    }
+    const rawPosition = args.get("pos")
+    if (rawPosition == null) {
+      return this.missingArgumentError("pos")
+    }
+    const [rawX, rawY] = rawPosition.split(",")
+    if (rawX == null || rawY == null) {
+      return `Invalid position format: ${rawPosition}, expected pos=x,y`
+    }
+    const x = parseInt(rawX, 10)
+    const y = parseInt(rawY, 10)
+    if (isNaN(x) === true || isNaN(y) === true) {
+      return `Position is not a number: ${rawPosition}`
+    }
+    try {
+      new RoomPosition(x, y, roomName)
+      if (resources.roomInfo.config == null) {
+        resources.roomInfo.config = {}
+      }
+      resources.roomInfo.config.waitingPosition = {
+        x,
+        y,
+      }
+      return `Waiting position in ${roomLink(roomName)} set`
+    } catch (e) {
+      return `Invalid position: ${e} (${rawPosition}, ${roomLink(roomName)})`
+    }
   }
 
   private showRoomPlan(): CommandExecutionResult {
@@ -576,6 +714,76 @@ export class ExecCommand implements ConsoleCommand {
     return showRoomPlan(controller, dryRun, showsCostMatrix)
   }
 
+  private showWallPlan(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `No visible to ${roomLink(roomName)}`
+    }
+    const showsCostMatrix = (args.get("show_cost_matrix") ?? "0") === "1"
+    return this.showWallPlanOf(room, showsCostMatrix)
+  }
+
+  private showWallPlanOf(room: Room, showsCostMatrix: boolean): CommandExecutionResult {
+    const roomName = room.name
+
+    if (showsCostMatrix !== true) {
+      const roomResource = RoomResources.getOwnedRoomResource(roomName)
+      const storedWallPositions = roomResource?.roomInfo.roomPlan?.wallPositions
+      if (storedWallPositions != null) {
+        if (storedWallPositions.length <= 0) {
+          return `Wall already placed in ${roomLink(roomName)}`
+        }
+        storedWallPositions.forEach(wallPosition => {
+          const wallType = ((): string => {
+            switch (wallPosition.wallType) {
+            case STRUCTURE_WALL:
+              return "W"
+            case STRUCTURE_RAMPART:
+              return "R"
+            }
+          })()
+          room.visual.text(wallType, wallPosition.x, wallPosition.y, { color: "#FF0000" })
+        })
+        return "ok"
+      }
+    }
+
+    const wallPositions = calculateWallPositions(room, showsCostMatrix)
+    if (typeof wallPositions === "string") {
+      return wallPositions
+    }
+
+    return `${wallPositions.length} walls`
+  }
+
+  // private checkExistingWalls(): CommandExecutionResult {
+  //   const roomHasWalls: RoomName[] = []
+  //   const roomWithoutWalls: RoomName[] = []
+
+  //   RoomResources.getOwnedRoomResources().forEach(roomResource => {
+  //     const roomPlan = roomResource.roomInfo.roomPlan
+  //     if (roomPlan == null) {
+  //       return
+  //     }
+  //     const room = roomResource.room
+  //     const wallCount = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).length + room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }).length
+  //     if (wallCount > 20) {
+  //       roomPlan.wallPositions = []
+  //       roomHasWalls.push(roomResource.room.name)
+  //     } else {
+  //       roomWithoutWalls.push(roomResource.room.name)
+  //     }
+  //   })
+
+  //   return `rooms have walls:\n${roomHasWalls.map(roomName => roomLink(roomName)).join(",")}\nrooms don't have walls:\n${roomWithoutWalls.map(roomName => roomLink(roomName)).join(",")}`
+  // }
+
   private showHarvestableMinerals(): CommandExecutionResult {
     const harvestableMinerals = ResourceManager.harvestableMinerals()
     const result: string[] = []
@@ -586,5 +794,289 @@ export class ExecCommand implements ConsoleCommand {
     result.push("Not harvestable:")
     result.push(harvestableMinerals.notHarvestable.map(r => coloredResourceType(r)).join(","))
     return `\n${result.join("\n")}`
+  }
+
+  // Game.io("exec room_config room_name=W44S8 setting=excludedRemotes remote_room_name=W44S7")
+  // Game.io("exec room_config room_name=W47S6 setting=wallPositions action=remove")
+  // Game.io("exec room_config room_name=W52S25 setting=researchCompounds action=show")
+  private configureRoomInfo(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const roomInfo = Memory.v6RoomInfo[roomName]
+    if (roomInfo == null) {
+      return `No roomInfo object in memory ${roomLink(roomName)}`
+    }
+    if (roomInfo.roomType !== "owned") {
+      return `Room ${roomLink(roomName)} is not mine`
+    }
+
+    const setting = args.get("setting")
+    switch (setting) {
+    case "excludedRemotes":
+      return this.addExcludedRemoteRoom(roomName, roomInfo, args)
+    case "wallPositions":
+      return this.configureWallPositions(roomName, roomInfo, args)
+    case "researchCompounds":
+      return this.configureResearchCompounds(roomName, roomInfo, args)
+    default:
+      return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
+    }
+  }
+
+  private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
+      const compoundType = args.get("compound")
+      if (compoundType == null) {
+        return this.missingArgumentError("compound")
+      }
+      if (!isMineralCompoundConstant(compoundType)) {
+        return `${compoundType} is not valid mineral compound type`
+      }
+      const rawAmount = args.get("amount")
+      if (rawAmount == null) {
+        return this.missingArgumentError("amount")
+      }
+      const amount = parseInt(rawAmount, 10)
+      if (isNaN(amount) === true) {
+        return `amount is not a number ${rawAmount}`
+      }
+      return [
+        compoundType,
+        amount
+      ]
+    }
+
+    const action = args.get("action")
+    if (action == null) {
+      return this.missingArgumentError("action")
+    }
+
+    const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
+      if (roomInfo.config == null) {
+        roomInfo.config = {}
+      }
+      if (roomInfo.config.researchCompounds == null) {
+        roomInfo.config.researchCompounds = {}
+      }
+      return roomInfo.config.researchCompounds
+    }
+
+    const getCurentsettings = (): string => {
+      const entries = Object.entries(getResearchCompounds())
+      if (entries.length <= 0) {
+        return "no research compounds"
+      }
+      return entries
+        .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
+        .join("")
+    }
+
+    switch (action) {
+    case "show":
+      return getCurentsettings()
+    case "clear": {
+      const currentSettings = getCurentsettings()
+      if (roomInfo.config == null) {
+        roomInfo.config = {}
+      }
+      roomInfo.config.researchCompounds = {}
+      return `${coloredText("cleared", "info")}: ${currentSettings}`
+    }
+    case "add": {
+      const settings = getCompoundSetting()
+      if (typeof settings === "string") {
+        return settings
+      }
+      const researchCompounds = getResearchCompounds()
+      researchCompounds[settings[0]] = settings[1]
+      return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
+    }
+    default:
+      return `Invalid action ${action}`
+    }
+  }
+
+  private addExcludedRemoteRoom(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const remoteRoomName = args.get("remote_room_name")
+    if (remoteRoomName == null) {
+      return this.missingArgumentError("remote_room_name")
+    }
+    if (!isRoomName(remoteRoomName)) {
+      return `Invalid remote_room_name ${remoteRoomName}`
+    }
+    if (roomInfo.config == null) {
+      roomInfo.config = {}
+    }
+    if (roomInfo.config.excludedRemotes == null) {
+      roomInfo.config.excludedRemotes = []
+    }
+    if (roomInfo.config.excludedRemotes.includes(remoteRoomName) === true) {
+      return `${roomLink(remoteRoomName)} is already excluded`
+    }
+    roomInfo.config.excludedRemotes.push(remoteRoomName)
+    return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
+  }
+
+  private configureWallPositions(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const roomPlan = roomInfo.roomPlan
+    if (roomPlan == null) {
+      return `${roomLink(roomName)} doesn't have room plan`
+    }
+
+    const action = args.get("action")
+    if (action == null) {
+      return this.missingArgumentError("action")
+    }
+    switch (action) {
+    case "remove":
+      roomPlan.wallPositions = undefined
+      return "ok"
+    case "set_it_done":
+      roomPlan.wallPositions = []
+      return "ok"
+    default:
+      return `Invalid action ${action}`
+    }
+  }
+
+  private checkAlliance(): CommandExecutionResult {
+    const playerName = this.args[1]
+    if (playerName == null || playerName.length <= 0) {
+      return "No playername"
+    }
+    const LOANuser = "LeagueOfAutomatedNations"
+    const LOANsegment = 99
+
+    if ((typeof RawMemory.foreignSegment == "undefined") || (RawMemory.foreignSegment.username !== LOANuser) || (RawMemory.foreignSegment.id !== LOANsegment)) {
+      RawMemory.setActiveForeignSegment(LOANuser, LOANsegment)
+      return "Execute this command in the next tick again to retrieve foreign memory segment"
+    }
+    if (RawMemory.foreignSegment.data == null) {
+      return `Unexpectedly ${LOANuser} segment was null`
+    }
+    const LOANdata = JSON.parse(RawMemory.foreignSegment.data) as { [index: string]: string[] }
+    for (const [alliance, usernames] of Object.entries(LOANdata)) {
+      if (usernames.includes(playerName) === true) {
+        return `${playerName} found in alliance ${alliance}`
+      }
+    }
+    return `${playerName} is not joined any alliances`
+  }
+
+  private unclaim(): CommandExecutionResult {
+    const args = this._parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const dryRun = (args.get("dry_run") === "0") !== true
+
+    const room = Game.rooms[roomName]
+    if (room == null || room.controller == null || room.controller.my !== true) {
+      return `${roomLink(roomName)} is not owned`
+    }
+
+    return this.unclaimRoom(room, dryRun)
+  }
+
+  private unclaimRoom(room: Room, dryRun: boolean): CommandExecutionResult {
+    const processes: Process[] = OperatingSystem.os.listAllProcesses().flatMap(processInfo => {
+      const process = processInfo.process
+      if (process instanceof RoomKeeperProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof V6RoomKeeperProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season1838855DistributorProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season2055924SendResourcesProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof Season1143119LabChargerProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      return []
+    })
+
+    const constructionSiteCounts = new Map<StructureConstant, number>()
+    const constructionSites = room.find(FIND_CONSTRUCTION_SITES)
+    constructionSites.forEach(constructionSite => {
+      const structureType = constructionSite.structureType
+      const count = constructionSiteCounts.get(structureType) ?? 0
+      constructionSiteCounts.set(structureType, count + 1)
+    })
+
+    const flags = room.find(FIND_FLAGS)
+
+    const messages: string[] = []
+
+    const processDescriptions = processes.map(process => {
+      const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
+      return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
+    })
+    messages.push(coloredText("Processes to remove:", "info"))
+    messages.push(...processDescriptions)
+
+    if (constructionSiteCounts.size > 0) {
+      const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
+        return `- ${tab(structureType, Tab.medium)}: ${count}`
+      })
+      messages.push(coloredText("Construction sites to remove:", "info"))
+      messages.push(...constructionSiteDescriptions)
+    }
+    if (flags.length > 0) {
+      messages.push(coloredText(`${flags.length} flags`, "info"))
+    }
+
+    if (dryRun === true) {
+      messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
+    } else {
+      const result = room.controller?.unclaim()
+      switch (result) {
+      case OK:
+        break
+      default:
+        messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
+        return messages.join("\n")
+      }
+
+      messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
+
+      processes.forEach(process => {
+        OperatingSystem.os.killProcess(process.processId)
+      })
+      constructionSites.forEach(constructionSite => {
+        constructionSite.remove()
+      })
+      flags.forEach(flag => {
+        flag.remove()
+      })
+
+      RoomResources.removeRoomInfo(room.name)
+    }
+
+    return messages.join("\n")
   }
 }

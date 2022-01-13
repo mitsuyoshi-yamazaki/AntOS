@@ -7,7 +7,7 @@ import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 
-const colorMap = new Map<ColorConstant, StructureConstant>([
+export const constructionSiteFlagColorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
   [COLOR_GREEN, STRUCTURE_STORAGE],
   [COLOR_PURPLE, STRUCTURE_TERMINAL],
@@ -28,6 +28,7 @@ const structurePriority: StructureConstant[] = [
   STRUCTURE_TERMINAL,
   STRUCTURE_LINK,
   STRUCTURE_ROAD,
+  STRUCTURE_CONTAINER,
   STRUCTURE_LAB,
   STRUCTURE_NUKER,
 ]
@@ -119,11 +120,11 @@ export class CreateConstructionSiteTask extends Task {
     const shouldPlaceContainer = room.controller.level >= 4
 
     const sortedFlags = flags.sort((lhs, rhs) => {
-      const lStructureType = colorMap.get(lhs.color)
+      const lStructureType = constructionSiteFlagColorMap.get(lhs.color)
       if (lStructureType == null) {
         return 1
       }
-      const rStructureType = colorMap.get(rhs.color)
+      const rStructureType = constructionSiteFlagColorMap.get(rhs.color)
       if (rStructureType == null) {
         return -1
       }
@@ -142,7 +143,7 @@ export class CreateConstructionSiteTask extends Task {
     })
 
     for (const flag of sortedFlags) {
-      const structureType = colorMap.get(flag.color)
+      const structureType = constructionSiteFlagColorMap.get(flag.color)
       if (structureType == null) {
         continue
       }
@@ -153,13 +154,22 @@ export class CreateConstructionSiteTask extends Task {
         if (shouldPlaceRoads !== true) {
           continue
         }
-        const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
-        if (placedStructure.length > 0) {
-          flag.remove()
-          continue
-        }
-        const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
-        if (constructionSites.length > 0) {
+        const hasStructure = ((): boolean => {
+          const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
+          if (placedStructure.length > 0) {
+            return true
+          }
+          const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
+          if (constructionSites.length > 0) {
+            return true
+          }
+          const hasStructureFlag = flag.pos.findInRange(FIND_FLAGS, 0).some(f => f.color !== COLOR_BROWN)
+          if (hasStructureFlag === true) {
+            return true
+          }
+          return false
+        })()
+        if (hasStructure === true) {
           flag.remove()
           continue
         }

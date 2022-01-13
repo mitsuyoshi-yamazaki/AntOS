@@ -1,4 +1,5 @@
 export interface Procedural {
+  runBeforeTick?(): void
   runOnTick(): void
 }
 

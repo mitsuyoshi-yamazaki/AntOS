@@ -144,8 +144,33 @@ export const ResourceManager: ResourceManagerInterface = {
       if (terminal == null) {
         return
       }
-      const amount = terminal.store.getUsedCapacity(resourceType)
-      const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+      const [amount, energyAmount] = ((): [number, number] => {
+        if (resourceType === RESOURCE_ENERGY) {
+          const terminalEnergyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
+          if (resources.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] != null) {
+            return [
+              0,
+              terminalEnergyAmount,
+            ]
+          }
+          const roomEnergyAmount = terminalEnergyAmount + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+          if (roomEnergyAmount < 120000) {
+            return [
+              0,
+              terminalEnergyAmount,
+            ]
+          }
+          const sendableEnergyAmount = Math.floor(terminalEnergyAmount / 3)
+          return [
+            sendableEnergyAmount,
+            sendableEnergyAmount,
+          ]
+        }
+        return [
+          terminal.store.getUsedCapacity(resourceType),
+          terminal.store.getUsedCapacity(RESOURCE_ENERGY),
+        ]
+      })()
       const sendAmount = ((): number => {
         if (requiredAmount === "all") {
           if (amount > energyAmount) {
@@ -156,6 +181,9 @@ export const ResourceManager: ResourceManagerInterface = {
         }
         return Math.min(Math.min(amount, requiredAmount - sentAmount), energyAmount)
       })()
+      if (sendAmount <= 0) {
+        return
+      }
       const result = terminal.send(resourceType, sendAmount, roomName)
       switch (result) {
       case OK:

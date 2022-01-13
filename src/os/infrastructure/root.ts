@@ -7,14 +7,16 @@ import { isV5CreepMemory, isV6Creep } from "prototype/creep"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
 import { ApplicationProcessLauncher } from "./process_launcher/application_process_launcher"
-import { InfrastructureProcessLauncher } from "./process_launcher/infrastructure_process_launcher"
 import { decodeCreepTask } from "object_task/creep_task/creep_task_decoder"
 import { TaskTargetCache } from "object_task/object_task_target_cache"
 import { ResourceManager } from "utility/resource_manager"
+import { Logger } from "./logger"
+import { ProcessRequestStore } from "os/process_request_store"
+import { EventManager } from "event_handler/event_manager"
 
 export class RootProcess {
-  private readonly infrastructureProcessLauncher = new InfrastructureProcessLauncher()
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
+  private readonly logger = new Logger()
 
   public constructor() {
   }
@@ -37,10 +39,6 @@ export class RootProcess {
     }, "ResourceManager.beforeTick()")()
 
     ErrorMapper.wrapLoop((): void => {
-      this.infrastructureProcessLauncher.launchProcess(processList, processLauncher)
-    }, "RootProcess.infrastructureProcessLauncher.launchProcess()")()
-
-    ErrorMapper.wrapLoop((): void => {
       RoomResources.beforeTick()
     }, "RoomResources.beforeTick()")()
 
@@ -55,9 +53,21 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       this.restoreTasks()
     }, "RootProcess.restoreTasks()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      EventManager.beforeTick()
+    }, "EventManager.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      ProcessRequestStore.beforeTick()
+    }, "ProcessRequestStore.beforeTick()")()
   }
 
   public runAfterTick(): void {
+    ErrorMapper.wrapLoop((): void => {
+      this.logger.run()
+    }, "Logger.run()")()
+
     ErrorMapper.wrapLoop((): void => {
       World.afterTick()
     }, "World.afterTick()")()
@@ -73,6 +83,14 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       ResourceManager.afterTick()
     }, "ResourceManager.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      EventManager.afterTick()
+    }, "EventManager.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      ProcessRequestStore.afterTick()
+    }, "ProcessRequestStore.afterTick()")()
   }
 
   // ---- Private ---- //

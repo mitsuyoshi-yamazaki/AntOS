@@ -7,7 +7,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
-import { GameConstants, OBSTACLE_COST } from "utility/constants"
+import { GameConstants } from "utility/constants"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */
@@ -123,38 +123,70 @@ export class MoveToRoomTask implements CreepTask {
       noPathFindingOptions.swampCost = 1
     }
 
+    const portals = creep.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_PORTAL } }) as StructurePortal[]
+
     const moveToOptions = ((): MoveToOpts => {
       const options: MoveToOpts = defaultMoveToOptions()
       if (this.ignoreSwamp) {
         options.swampCost = 1
       }
       options.reusePath = reusePath
-      if (roomTypeOf(creep.room.name) !== "source_keeper") {
+
+      const obstacleCost = GameConstants.pathFinder.costs.obstacle
+      const edgeCost = obstacleCost - 1
+      const positionsToAvoid: { position: RoomPosition, cost: number }[] = []
+
+      switch (roomTypeOf(creep.room.name)) {
+      case "normal":
+      case "highway":
+        return options
+
+      case "source_keeper": {
+        creep.say("SK room")
+        // 保存されたパスがあれば計算はスキップする
+
+        const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+          excludeItself: false,
+          excludeTerrainWalls: false,
+          excludeStructures: false,
+          excludeWalkableStructures: false,
+        }
+
+        options.maxOps = 2000
+        const sourceKeeperDistance = 4
+        const sourceKeeperPositions: {position: RoomPosition, cost: number}[] = creep.room.find(FIND_HOSTILE_CREEPS)
+          .filter(hostileCreep => hostileCreep.owner.username === SourceKeeper.username)
+          .flatMap(sourceKeeper => {
+            return sourceKeeper.pos.positionsInRange(sourceKeeperDistance, roomPositionFilteringOptions)
+              .map(position => {
+                const cost = position.getRangeTo(sourceKeeper) < sourceKeeperDistance ? obstacleCost : edgeCost
+                return {
+                  position,
+                  cost,
+                }
+              }
+              )
+          })
+        positionsToAvoid.push(...sourceKeeperPositions)
+        break
+      }
+
+      case "highway_crossing":
+      case "sector_center":
+        positionsToAvoid.push(...portals.map(portal => ({position: portal.pos, cost: obstacleCost})))
+        break
+      }
+
+      if (positionsToAvoid.length <= 0) {
         return options
       }
-      creep.say("SK room")
-      // 保存されたパスがあれば計算はスキップする
-
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-
-      options.maxOps = 2000
-      const sourceKeepers = creep.room.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-      const positionsToAvoid = sourceKeepers
-        .flatMap(creep => creep.pos.positionsInRange(4, roomPositionFilteringOptions))
-
       options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
         if (roomName !== creep.room.name) {
           return
         }
         positionsToAvoid.forEach(position => {
           // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-          costMatrix.set(position.x, position.y, OBSTACLE_COST)
+          costMatrix.set(position.position.x, position.position.y, position.cost)
         })
         return costMatrix
       }
@@ -171,52 +203,69 @@ export class MoveToRoomTask implements CreepTask {
       this.exitPosition = null
     }
 
-    const exit = creep.room.findExitTo(destinationRoomName)
-    if (exit === ERR_NO_PATH) {
-      creep.say("no exit")
-      return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
-    } else if (exit === ERR_INVALID_ARGS) {
-      creep.say("invalid")
-      PrimitiveLogger.fatal(`Room.findExitTo() returns ERR_INVALID_ARGS (${exit}), room ${roomLink(creep.room.name)} to ${roomLink(destinationRoomName)}`)
-      return TaskProgressType.InProgress  // 代替できる行動がなく、状況が変わるかもしれないので
-    }
-
-    const exitFlag = creep.room.find(FIND_FLAGS).find(flag => {
-      switch (exit) {
-      case FIND_EXIT_TOP:
-        if (flag.pos.y === GameConstants.room.edgePosition.min) {
-          return true
-        }
-        break
-      case FIND_EXIT_BOTTOM:
-        if (flag.pos.y === GameConstants.room.edgePosition.max) {
-          return true
-        }
-        break
-      case FIND_EXIT_LEFT:
-        if (flag.pos.x === GameConstants.room.edgePosition.min) {
-          return true
-        }
-        break
-      case FIND_EXIT_RIGHT:
-        if (flag.pos.x === GameConstants.room.edgePosition.max) {
-          return true
-        }
-        break
-      default:
-        break
+    const exitPortal = portals.find(portal => {
+      if (!(portal.destination instanceof RoomPosition)) {
+        return false
       }
-      return false
+      if (portal.destination.roomName !== destinationRoomName) {
+        return false
+      }
+      return true
     })
 
-    const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit)
-    if (exitPosition == null) {
-      creep.say("no path")
-      if (creep.room.controller != null) {
-        creep.moveTo(creep.room.controller, defaultMoveToOptions())
-      } else {
-        creep.moveTo(25, 25, defaultMoveToOptions())
+    const exitPosition = ((): RoomPosition | string => {
+      if (exitPortal != null) {
+        return exitPortal.pos
       }
+      const exit = creep.room.findExitTo(destinationRoomName)
+      if (exit === ERR_NO_PATH) {
+        return "no exit"
+      } else if (exit === ERR_INVALID_ARGS) {
+        PrimitiveLogger.fatal(`Room.findExitTo() returns ERR_INVALID_ARGS (${exit}), room ${roomLink(creep.room.name)} to ${roomLink(destinationRoomName)}`)
+        return "invalid"
+      }
+
+      const exitFlag = creep.room.find(FIND_FLAGS).find(flag => {
+        switch (exit) {
+        case FIND_EXIT_TOP:
+          if (flag.pos.y === GameConstants.room.edgePosition.min) {
+            return true
+          }
+          break
+        case FIND_EXIT_BOTTOM:
+          if (flag.pos.y === GameConstants.room.edgePosition.max) {
+            return true
+          }
+          break
+        case FIND_EXIT_LEFT:
+          if (flag.pos.x === GameConstants.room.edgePosition.min) {
+            return true
+          }
+          break
+        case FIND_EXIT_RIGHT:
+          if (flag.pos.x === GameConstants.room.edgePosition.max) {
+            return true
+          }
+          break
+        default:
+          break
+        }
+        return false
+      })
+
+      if (exitFlag != null) {
+        return exitFlag.pos
+      }
+      return creep.pos.findClosestByPath(exit) ?? "no path"
+    })()
+
+    if (typeof exitPosition === "string") {
+      creep.say(exitPosition)
+      // if (creep.room.controller != null) {
+      //   creep.moveTo(creep.room.controller, defaultMoveToOptions())
+      // } else {
+      //   creep.moveTo(25, 25, defaultMoveToOptions())
+      // }
       return TaskProgressType.InProgress  // TODO: よくはまるようなら代替コードを書く
     }
 

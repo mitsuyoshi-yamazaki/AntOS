@@ -3,11 +3,16 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
-import { processLog } from "process/process_log"
+import { processLog } from "os/infrastructure/logger"
 import { RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { OperatingSystem } from "os/os"
 import { RoomResources } from "room_resource/room_resources"
+import { ProcessDecoder } from "process/process_decoder"
+
+ProcessDecoder.register("ObserveRoomProcess", state => {
+  return ObserveRoomProcess.decode(state as ObserveRoomProcessState)
+})
 
 export interface ObserveRoomProcessState extends ProcessState {
   readonly roomName: RoomName
@@ -15,15 +20,19 @@ export interface ObserveRoomProcessState extends ProcessState {
   readonly until: Timestamp
 }
 
-// Game.io("launch -l ObserveRoomProcess room_name=W48S6 target_room_name=W41S7 duration=100")
+// Game.io("launch -l ObserveRoomProcess room_name=W51S29 target_room_name=W44S25 duration=100")
 export class ObserveRoomProcess implements Process, Procedural {
+  public readonly taskIdentifier: string
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly until: Timestamp,
-  ) { }
+  ) {
+    this.taskIdentifier = this.constructor.name
+  }
 
   public encode(): ObserveRoomProcessState {
     return {

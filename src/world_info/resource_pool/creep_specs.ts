@@ -39,6 +39,8 @@ export interface CreepSpawnRequest {
 
   /** 他の部屋へ引き継ぐ場合 */
   parentRoomName: RoomName | null
+
+  name?: string
 }
 
 export function mergeRequests(requests: CreepSpawnRequest[]): CreepSpawnRequest[] {

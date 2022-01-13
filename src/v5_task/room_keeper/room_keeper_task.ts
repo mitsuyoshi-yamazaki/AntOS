@@ -13,10 +13,14 @@ import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/own
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
-import { Season1838855DistributorProcess } from "process/onetime/season_1838855_distributor_process"
+import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
 import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
+import { Environment } from "utility/environment"
+import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { GameConstants } from "utility/constants"
+import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -74,52 +78,34 @@ export class RoomKeeperTask extends Task {
     const ownedRoomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (ownedRoomResource != null) {
       if (ownedRoomResource.roomInfo.roomPlan == null) {  // FixMe: roomInfo.roomPlanのMigration処理：流したら消す
-        const distributorProcess = ((): Season1838855DistributorProcess | null => {
-          return OperatingSystem.os.listAllProcesses()
-            .map(processInfo => processInfo.process)
-            .find(process => {
-              if (!(process instanceof Season1838855DistributorProcess)) {
-                return false
-              }
-              if (process.parentRoomName !== this.roomName) {
-                return false
-              }
-              return true
-            }) as Season1838855DistributorProcess | null
-        })()
-
-        if (distributorProcess != null) {
+        const roomPlanner = new RoomPlanner(objects.controller, {dryRun: false})
+        const result = roomPlanner.run()
+        switch (result.resultType) {
+        case "succeeded":
+          PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
           ownedRoomResource.roomInfo.roomPlan = {
             centerPosition: {
-              x: distributorProcess.position.x,
-              y: distributorProcess.position.y,
+              x: result.value.center.x,
+              y: result.value.center.y,
             }
           }
-        } else {
-          const roomPlanner = new RoomPlanner(objects.controller, {dryRun: false})
-          const result = roomPlanner.run()
-          switch (result.resultType) {
-          case "succeeded":
-            PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} ${roomLink(this.roomName)} placed room layout`)
-            ownedRoomResource.roomInfo.roomPlan = {
-              centerPosition: {
-                x: result.value.center.x,
-                y: result.value.center.y,
-              }
-            }
-            try {
-              const centerPosition = new RoomPosition(result.value.center.x, result.value.center.y, this.roomName)
-              OperatingSystem.os.addProcess(processId => Season1838855DistributorProcess.create(processId, this.roomName, centerPosition))
-            } catch (e) {
-              PrimitiveLogger.fatal(`${this.taskIdentifier} failed to launch distributor process ${e} ${roomLink(this.roomName)}`)
-            }
-            this.removeLeftoverStructures(objects.controller.room)
-            break
-          case "failed":
-            PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
-            break
-          }
+          OperatingSystem.os.addProcess(null, processId => Season1838855DistributorProcess.create(processId, this.roomName))
 
+          switch (Environment.world) {
+          case "persistent world":
+          case "simulation":
+          case "season 3":
+            break
+          case "botarena":
+            OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
+            break
+          }
+          this.removeLeftoverFlags(objects.controller.room)
+          this.removeLeftoverStructures(objects.controller.room)
+          break
+        case "failed":
+          PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
+          break
         }
       }
     }
@@ -127,13 +113,43 @@ export class RoomKeeperTask extends Task {
     return TaskStatus.InProgress
   }
 
+  private removeLeftoverFlags(room: Room): void {
+    const min = GameConstants.room.edgePosition.min
+    const max = GameConstants.room.edgePosition.max
+    room.find(FIND_FLAGS).forEach(flag => {
+      if (flag.pos.x !== min && flag.pos.x !== max && flag.pos.y !== min && flag.pos.y !== max) {
+        return
+      }
+      flag.remove()
+    })
+  }
+
   private removeLeftoverStructures(room: Room): void {
-    const excludedHostileStructures: StructureConstant[] = [
-      STRUCTURE_STORAGE,
-      STRUCTURE_TERMINAL,
-      STRUCTURE_FACTORY,
+    const excludedHostileStructures = [
+      ...leftoverStructurePriority
     ]
-    room.find(FIND_HOSTILE_STRUCTURES).forEach(structure => {
+    const wallTypes: StructureConstant[] = [
+      STRUCTURE_WALL,
+      // STRUCTURE_RAMPART, // 現在は対処できないので削除
+    ]
+
+    room.find(FIND_STRUCTURES).forEach(structure => {
+      if ((structure as { my?: boolean }).my === true) {
+        if (structure.structureType !== STRUCTURE_CONTROLLER) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} iterating owned structure: ${structure}`)
+        }
+        return
+      }
+
+      if (wallTypes.includes(structure.structureType) === true) {
+        if (structure.hits >= WallBuilderTaskMaxWallHits) {
+          return
+        }
+
+        structure.destroy()
+        return
+      }
+
       if (excludedHostileStructures.includes(structure.structureType) === true) {
         try {
           const store = (structure as { store?: StoreDefinition }).store
@@ -146,17 +162,10 @@ export class RoomKeeperTask extends Task {
         } catch (e) {
           PrimitiveLogger.programError(`${this.taskIdentifier} removeLeftoverStructures() failed: ${e}`)
         }
-      }
-      structure.destroy()
-    })
-
-    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).forEach(structure => {
-      structure.destroy()
-    })
-    room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).forEach(structure => {
-      if (structure.hits >= WallBuilderTaskMaxWallHits) {
+        structure.destroy()
         return
       }
+
       structure.destroy()
     })
   }

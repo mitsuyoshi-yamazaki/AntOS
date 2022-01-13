@@ -1,5 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
+import { Environment } from "utility/environment"
 import { coloredText } from "utility/log"
 
 export function isRespawned(): boolean {
@@ -11,6 +12,16 @@ export function isRespawned(): boolean {
   }
   if (Object.keys(Game.rooms).length > 1) {
     return false
+  }
+  const world = Environment.world
+  switch (world) {
+  case "persistent world":
+  case "season 3":
+    PrimitiveLogger.fatal(`No spawn in ${world}`)
+    return false  // TODO:
+  case "botarena":
+  case "simulation":
+    break
   }
   for (const [, room] of Object.entries(Game.rooms)) {
     if (room.controller == null || room.controller.my !== true) {

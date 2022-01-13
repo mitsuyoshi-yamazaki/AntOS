@@ -103,9 +103,6 @@ export class RoomPlanner {
       switch (terrain) {
       case "plain":
       case "swamp":
-        if (mark === LayoutMark.Road) {
-          return true
-        }
         if (position.x < minStructurePosition || position.x > maxStructurePosition) {
           return false
         }
@@ -114,6 +111,9 @@ export class RoomPlanner {
         }
         if (position.getRangeTo(controller) <= 3) {
           return false
+        }
+        if (mark === LayoutMark.Road) {
+          return true
         }
         if (sources.some(source => source.pos.getRangeTo(position) <= 2) === true) {
           return false

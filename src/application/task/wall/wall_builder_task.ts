@@ -2,7 +2,7 @@ import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import type { RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
@@ -15,6 +15,10 @@ import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_tas
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { BuildWallTask } from "object_task/creep_task/task/build_wall_task"
 import { RepairApiWrapper } from "object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { calculateWallPositions } from "script/wall_builder"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { coloredText, roomLink } from "utility/log"
+import { TaskLogRequest } from "application/task_logger"
 
 export const WallBuilderTaskMaxWallHits = 5000000
 
@@ -22,6 +26,7 @@ const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
   STRUCTURE_RAMPART,
 ]
+const wallAvailableLevel = GameConstants.structure.availability.terminal
 
 type WallBuilderTaskOutput = void
 type WallBuilderTaskProblemTypes = UnexpectedProblem
@@ -75,6 +80,14 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
    */
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
     const taskOutputs: WallBuilderTaskOutputs = emptyTaskOutputs()
+
+    if (((Game.time + this.startTime) % 37) === 3) {
+      const wallLog = this.checkWallPositions(roomResource)
+      if (wallLog != null) {
+        taskOutputs.logs.push(wallLog)
+      }
+    }
+
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
     if (creepInfo.length < 1) {
       const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
@@ -188,6 +201,87 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     }
 
     return null
+  }
+
+  private checkWallPositions(roomResource: OwnedRoomResource): TaskLogRequest | null {
+    if (roomResource.controller.level < wallAvailableLevel) {
+      return null
+    }
+    if (roomResource.constructionSites.some(constructionSite => wallTypes.includes(constructionSite.structureType))) {
+      return null
+    }
+
+    const roomPlan = roomResource.roomInfo.roomPlan
+    if (roomPlan == null) {
+      return null
+    }
+    if (roomPlan.wallPositions == null) {
+      const wallPositions = calculateWallPositions(roomResource.room, false)
+      if (typeof wallPositions === "string") {
+        PrimitiveLogger.fatal(`${roomLink(roomResource.room.name)} wall position calculation failed: ${wallPositions}`)
+        return null
+      }
+      PrimitiveLogger.log(`${coloredText("[Wall builder]", "info")} ${wallPositions.length} walls in ${roomLink(roomResource.room.name)}`)
+      roomPlan.wallPositions = wallPositions
+    }
+
+    const position = roomPlan.wallPositions[0]
+    if (position == null) {
+      return null
+    }
+    const result = roomResource.room.createConstructionSite(position.x, position.y, position.wallType)
+    switch (result) {
+    case OK:
+      roomPlan.wallPositions.shift()
+      return null
+
+    case ERR_FULL:
+      return null
+
+    case ERR_INVALID_TARGET: {
+      try {
+        const roomPosition = new RoomPosition(position.x, position.y, roomResource.room.name)
+        const hasWall = ((): boolean => {
+          if (roomPosition.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
+            return true
+          }
+          if (roomPosition.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+            return true
+          }
+          return false
+        })()
+        if (hasWall === true) {
+          roomPlan.wallPositions.shift()
+          return null
+        }
+        if (roomPosition.findInRange(FIND_MY_CONSTRUCTION_SITES, 0).length > 0) {
+          return null
+        }
+      } catch (e) {
+        PrimitiveLogger.programError(`${this.identifier} cannot create RoomPosition ${e}`)
+      }
+      const message = `createConstructionSite() returns ${result} at ${position.x},${position.y} in ${roomLink(roomResource.room.name)}`
+      PrimitiveLogger.programError(`${this.identifier} ${message}`)
+      return {
+        taskIdentifier: this.identifier,
+        message,
+        logEventType: "event",
+      }
+    }
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_ARGS:
+    case ERR_RCL_NOT_ENOUGH:
+    default: {
+      const message = `createConstructionSite() returns ${result} at ${position.x},${position.y} in ${roomLink(roomResource.room.name)}`
+      PrimitiveLogger.programError(`${this.identifier} ${message}`)
+      return {
+        taskIdentifier: this.identifier,
+        message,
+        logEventType: "event",
+      }
+    }
+    }
   }
 
   // ---- Profit ---- //

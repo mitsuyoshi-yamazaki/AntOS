@@ -8,10 +8,15 @@ import { GameConstants } from "utility/constants"
 enum RoomPositionIdType { }
 export type RoomPositionId = string & RoomPositionIdType
 
-export interface RoomPositionState {
-  x: number,
-  y: number,
-  r: RoomName,
+export type Position = {
+  readonly x: number
+  readonly y: number
+}
+
+export type RoomPositionState = {
+  readonly x: number
+  readonly y: number
+  readonly r: RoomName
 }
 
 export interface RoomPositionFilteringOptions {
@@ -294,6 +299,26 @@ export function init(): void {
   }
 }
 
-export function decodeRoomPosition(state: RoomPositionState): RoomPosition {
-  return new RoomPosition(state.x, state.y, state.r)
+export function decodeRoomPosition(state: RoomPositionState): RoomPosition
+export function decodeRoomPosition(position: Position, roomName: RoomName): RoomPosition
+export function decodeRoomPosition(...args: [RoomPositionState] | [Position, RoomName]): RoomPosition {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+  function isRoomPositionState(arg: any): arg is [RoomPositionState] {
+    return arg[0].r !== undefined
+  }
+  if (isRoomPositionState(args)) {
+    const roomPositionState = args[0]
+    try {
+      return new RoomPosition(roomPositionState.x, roomPositionState.y, roomPositionState.r)
+    } catch (e) {
+      PrimitiveLogger.programError(`decodeRoomPosition 1 failed to decode: ${[roomPositionState.x, roomPositionState.y, roomPositionState.r]}`)
+      return new RoomPosition(25, 25, roomPositionState.r)
+    }
+  }
+  try {
+    return new RoomPosition(args[0].x, args[0].y, args[1])
+  } catch (e) {
+    PrimitiveLogger.programError(`decodeRoomPosition 2 failed to decode: ${args}`)
+    return new RoomPosition(25, 25, args[1])
+  }
 }

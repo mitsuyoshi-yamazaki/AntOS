@@ -62,6 +62,7 @@ export class RoomCoordinate {
     return new RoomCoordinate(roomName, direction, x, y)
   }
 
+  /** @deprecated */
   public neighbourRoom(direction: TOP | BOTTOM | LEFT | RIGHT): RoomName {
     switch (direction) {
     case TOP:
@@ -159,6 +160,51 @@ export class RoomCoordinate {
     const x = Math.floor(this.x / 10) * 10 + 5
     const y = Math.floor(this.y / 10) * 10 + 5
     return RoomCoordinate.create(this.direction, x, y).roomName
+  }
+
+  public getRoomCoordinateTo(dx: number, dy: number): RoomCoordinate {
+    const rawX = this.x + dx
+    const rawY = this.y + dy
+
+    const x = ((): number => {
+      if (rawX >= 0) {
+        return rawX
+      }
+      return Math.max(Math.abs(rawX) - 1, 0)
+    })()
+    const y = ((): number => {
+      if (rawY >= 0) {
+        return rawY
+      }
+      return Math.max(Math.abs(rawY) - 1, 0)
+    })()
+    const xDirection = ((): "E" | "W" => {
+      const current = this.direction[1] as "E" | "W"
+      if (rawX >= 0) {
+        return current
+      }
+      switch (current) {
+      case "E":
+        return "W"
+      case "W":
+        return "E"
+      }
+    })()
+    const yDirection = ((): "N" | "S" => {
+      const current = this.direction[0] as "N" | "S"
+      if (rawX >= 0) {
+        return current
+      }
+      switch (current) {
+      case "N":
+        return "S"
+      case "S":
+        return "N"
+      }
+    })()
+
+    const direction = `${yDirection}${xDirection}` as RoomCoordinateDirection
+    return RoomCoordinate.create(direction, x, y)
   }
 }
 
