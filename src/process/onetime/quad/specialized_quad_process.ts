@@ -13,7 +13,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { BoostApiWrapper } from "v5_object_task/creep_task/api_wrapper/boost_api_wrapper"
 import { OperatingSystem } from "os/os"
-import { Quad, QuadAttackTargetType, QuadState } from "./specialized_quad"
+import { QuadAttackTargetType } from "./specialized_quad"
 import { QuadSpec, QuadType } from "./specialized_quad_spec"
 import { CreepName } from "prototype/creep"
 import { GameConstants } from "utility/constants"
@@ -22,6 +22,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "../../temporary/season_1143119_lab_charger_process"
 import { directionName } from "utility/direction"
 import { ProcessDecoder } from "process/process_decoder"
+import { Quad, QuadState } from "../../../../submodules/quad"
 
 ProcessDecoder.register("SpecializedQuadProcess", state => {
   return SpecializedQuadProcess.decode(state as SpecializedQuadProcessState)
@@ -54,7 +55,7 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W53S5 target_room_name=E43N21 waypoints=W55S5,E45N15,E45N16,E44N16,E44N17,E43N17,E40N19,E40N20 quad_type=tier3-3tower-dismantler targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W47S15 target_room_name=W45S15 waypoints=W45S15 quad_type=test-attacker targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier

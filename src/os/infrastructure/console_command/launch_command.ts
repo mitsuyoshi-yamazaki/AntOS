@@ -36,6 +36,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import { SectorName } from "utility/room_sector"
+import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -132,6 +133,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "World35872159TestResourcePoolProcess":
       result = this.launchWorld35872159TestResourcePoolProcess()
+      break
+    case "SubmoduleTestProcess":
+      result = this.launchSubmoduleTestProcess()
       break
     default:
       break
@@ -816,6 +820,13 @@ export class LaunchCommand implements ConsoleCommand {
   private launchWorld35872159TestResourcePoolProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(null, processId => {
       return World35872159TestResourcePoolProcess.create(processId)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSubmoduleTestProcess(): LaunchCommandResult {
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return SubmoduleTestProcess.create(processId)
     })
     return Result.Succeeded(process)
   }
