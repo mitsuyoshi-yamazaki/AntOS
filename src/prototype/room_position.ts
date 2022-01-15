@@ -47,255 +47,259 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(RoomPosition.prototype, "id", {
-    get(): RoomPositionId {
-      return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
-    },
-  })
+  try {
+    Object.defineProperty(RoomPosition.prototype, "id", {
+      get(): RoomPositionId {
+        return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
+      },
+    })
 
-  Object.defineProperty(RoomPosition.prototype, "pos", {
-    get(): RoomPosition {
-      return this
-    },
-  })
+    Object.defineProperty(RoomPosition.prototype, "pos", {
+      get(): RoomPosition {
+        return this
+      },
+    })
 
-  Object.defineProperty(RoomPosition.prototype, "isRoomEdge", {
-    get(): boolean {
-      return this.x === GameConstants.room.edgePosition.min
-        || this.x === GameConstants.room.edgePosition.max
-        || this.y === GameConstants.room.edgePosition.min
-        || this.y === GameConstants.room.edgePosition.max
-    },
-  })
+    Object.defineProperty(RoomPosition.prototype, "isRoomEdge", {
+      get(): boolean {
+        return this.x === GameConstants.room.edgePosition.min
+          || this.x === GameConstants.room.edgePosition.max
+          || this.y === GameConstants.room.edgePosition.min
+          || this.y === GameConstants.room.edgePosition.max
+      },
+    })
 
-  Object.defineProperty(RoomPosition.prototype, "v5TargetedBy", {
-    get(): V5TaskRunnerId[] {
-      return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
-    },
-  })
+    Object.defineProperty(RoomPosition.prototype, "v5TargetedBy", {
+      get(): V5TaskRunnerId[] {
+        return V5TaskTargetCache.targetingTaskRunnerIds(this.id)
+      },
+    })
 
-  RoomPosition.prototype.encode = function (): RoomPositionState {
-    return {
-      x: this.x,
-      y: this.y,
-      r: this.roomName,
-    }
-  }
-
-  RoomPosition.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo {
-    return TaskTargetCache.positionTargetingTaskRunnerInfo(this.id, taskType)
-  }
-
-  RoomPosition.prototype.neighbours = function (clockwise?: boolean): RoomPosition[] {
-    const relativePositions: { i: number, j: number }[] = [
-      { i: -1, j: -1 },
-      { i: 0, j: -1 },
-      { i: 1, j: -1 },
-      { i: 1, j: 0 },
-      { i: 1, j: 1 },
-      { i: 0, j: 1 },
-      { i: -1, j: 1 },
-      { i: -1, j: 0 },
-    ]
-    if (clockwise === false) {
-      relativePositions.reverse()
-    }
-    return relativePositions.reduce((result, current) => {
-      const x = this.x + current.i
-      if (x < 0 || x > 49) {
-        return result
+    RoomPosition.prototype.encode = function (): RoomPositionState {
+      return {
+        x: this.x,
+        y: this.y,
+        r: this.roomName,
       }
-      const y = this.y + current.j
-      if (y < 0 || y > 49) {
-        return result
+    }
+
+    RoomPosition.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo {
+      return TaskTargetCache.positionTargetingTaskRunnerInfo(this.id, taskType)
+    }
+
+    RoomPosition.prototype.neighbours = function (clockwise?: boolean): RoomPosition[] {
+      const relativePositions: { i: number, j: number }[] = [
+        { i: -1, j: -1 },
+        { i: 0, j: -1 },
+        { i: 1, j: -1 },
+        { i: 1, j: 0 },
+        { i: 1, j: 1 },
+        { i: 0, j: 1 },
+        { i: -1, j: 1 },
+        { i: -1, j: 0 },
+      ]
+      if (clockwise === false) {
+        relativePositions.reverse()
       }
-      result.push(new RoomPosition(x, y, this.roomName))
-      return result
-    }, [] as RoomPosition[])
-  }
-
-  RoomPosition.prototype.positionsInRange = function (range: number, options: RoomPositionFilteringOptions): RoomPosition[] {
-    const walkableTerrains: Terrain[] = ["swamp", "plain"]
-    const walkableStructures: StructureConstant[] = [STRUCTURE_CONTAINER, STRUCTURE_ROAD]
-    const positions: RoomPosition[] = []
-
-    for (let j = -range; j <= range; j += 1) {
-      for (let i = -range; i <= range; i += 1) {
-        if (options.excludeItself && i === 0 && j === 0) {
-          continue
-        }
-        const x = this.x + i
+      return relativePositions.reduce((result, current) => {
+        const x = this.x + current.i
         if (x < 0 || x > 49) {
-          continue
+          return result
         }
-        const y = this.y + j
+        const y = this.y + current.j
         if (y < 0 || y > 49) {
-          continue
+          return result
         }
+        result.push(new RoomPosition(x, y, this.roomName))
+        return result
+      }, [] as RoomPosition[])
+    }
 
-        const position = new RoomPosition(x, y, this.roomName)
-        const objects = position.look()
-        let shouldExclude = false
+    RoomPosition.prototype.positionsInRange = function (range: number, options: RoomPositionFilteringOptions): RoomPosition[] {
+      const walkableTerrains: Terrain[] = ["swamp", "plain"]
+      const walkableStructures: StructureConstant[] = [STRUCTURE_CONTAINER, STRUCTURE_ROAD]
+      const positions: RoomPosition[] = []
 
-        for (const obj of objects) {
-          if (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain) !== true) {
-            if (options.excludeTerrainWalls === true) {
-              shouldExclude = true
-              break
+      for (let j = -range; j <= range; j += 1) {
+        for (let i = -range; i <= range; i += 1) {
+          if (options.excludeItself && i === 0 && j === 0) {
+            continue
+          }
+          const x = this.x + i
+          if (x < 0 || x > 49) {
+            continue
+          }
+          const y = this.y + j
+          if (y < 0 || y > 49) {
+            continue
+          }
+
+          const position = new RoomPosition(x, y, this.roomName)
+          const objects = position.look()
+          let shouldExclude = false
+
+          for (const obj of objects) {
+            if (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain) !== true) {
+              if (options.excludeTerrainWalls === true) {
+                shouldExclude = true
+                break
+              }
+            }
+            if (obj.type === LOOK_STRUCTURES && obj.structure != null) {
+              if (options.excludeWalkableStructures === true) {
+                shouldExclude = true
+                break
+              }
+              if (options.excludeStructures === true && walkableStructures.includes(obj.structure.structureType) === false) {
+                shouldExclude = true
+                break
+              }
             }
           }
-          if (obj.type === LOOK_STRUCTURES && obj.structure != null) {
-            if (options.excludeWalkableStructures === true) {
-              shouldExclude = true
-              break
-            }
-            if (options.excludeStructures === true && walkableStructures.includes(obj.structure.structureType) === false) {
-              shouldExclude = true
-              break
-            }
+
+          if (shouldExclude === true) {
+            continue
           }
+          positions.push(position)
         }
+      }
+      return positions
+    }
 
-        if (shouldExclude === true) {
-          continue
+    RoomPosition.prototype.positionTo = function (direction: DirectionConstant): RoomPosition | null {
+      const i = ((): (-1 | 0 | 1) => {
+        switch (direction) {
+        case TOP_LEFT:
+        case LEFT:
+        case BOTTOM_LEFT:
+          return -1
+        case TOP:
+        case BOTTOM:
+          return 0
+        case TOP_RIGHT:
+        case RIGHT:
+        case BOTTOM_RIGHT:
+          return 1
         }
-        positions.push(position)
+      })()
+      const j = ((): (-1 | 0 | 1) => {
+        switch (direction) {
+        case TOP_LEFT:
+        case TOP:
+        case TOP_RIGHT:
+          return -1
+        case LEFT:
+        case RIGHT:
+          return 0
+        case BOTTOM_LEFT:
+        case BOTTOM:
+        case BOTTOM_RIGHT:
+          return 1
+        }
+      })()
+
+      const x = this.x + i
+      const y = this.y + j
+      try {
+        return new RoomPosition(x, y, this.roomName)
+      } catch {
+        return null
       }
     }
-    return positions
-  }
 
-  RoomPosition.prototype.positionTo = function (direction: DirectionConstant): RoomPosition | null {
-    const i = ((): (-1 | 0 | 1) => {
-      switch (direction) {
-      case TOP_LEFT:
-      case LEFT:
-      case BOTTOM_LEFT:
-        return -1
-      case TOP:
-      case BOTTOM:
-        return 0
-      case TOP_RIGHT:
-      case RIGHT:
-      case BOTTOM_RIGHT:
-        return 1
+    RoomPosition.prototype.nextRoomPositionTo = function (direction: DirectionConstant): RoomPosition {
+      const roomCoordinate = RoomCoordinate.parse(this.roomName)
+      if (roomCoordinate == null) {
+        PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() cannot parse room name ${roomLink(this.roomName)}`)
+        return this
       }
-    })()
-    const j = ((): (-1 | 0 | 1) => {
-      switch (direction) {
-      case TOP_LEFT:
-      case TOP:
-      case TOP_RIGHT:
-        return -1
-      case LEFT:
-      case RIGHT:
-        return 0
-      case BOTTOM_LEFT:
-      case BOTTOM:
-      case BOTTOM_RIGHT:
-        return 1
-      }
-    })()
 
-    const x = this.x + i
-    const y = this.y + j
-    try {
-      return new RoomPosition(x, y, this.roomName)
-    } catch {
-      return null
-    }
-  }
+      const i = ((): (-1 | 0 | 1) => {
+        switch (direction) {
+        case TOP_LEFT:
+        case LEFT:
+        case BOTTOM_LEFT:
+          return -1
+        case TOP:
+        case BOTTOM:
+          return 0
+        case TOP_RIGHT:
+        case RIGHT:
+        case BOTTOM_RIGHT:
+          return 1
+        }
+      })()
+      const j = ((): (-1 | 0 | 1) => {
+        switch (direction) {
+        case TOP_LEFT:
+        case TOP:
+        case TOP_RIGHT:
+          return -1
+        case LEFT:
+        case RIGHT:
+          return 0
+        case BOTTOM_LEFT:
+        case BOTTOM:
+        case BOTTOM_RIGHT:
+          return 1
+        }
+      })()
 
-  RoomPosition.prototype.nextRoomPositionTo = function (direction: DirectionConstant): RoomPosition {
-    const roomCoordinate = RoomCoordinate.parse(this.roomName)
-    if (roomCoordinate == null) {
-      PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() cannot parse room name ${roomLink(this.roomName)}`)
-      return this
-    }
-
-    const i = ((): (-1 | 0 | 1) => {
-      switch (direction) {
-      case TOP_LEFT:
-      case LEFT:
-      case BOTTOM_LEFT:
-        return -1
-      case TOP:
-      case BOTTOM:
-        return 0
-      case TOP_RIGHT:
-      case RIGHT:
-      case BOTTOM_RIGHT:
-        return 1
+      // 対角線上の部屋への移動は原理上ありえるがおそらくゲームにそのような地形はないので無視する
+      const x = this.x + i
+      const y = this.y + j
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      try {
+        if (x <= min) {
+          return new RoomPosition(max, y, roomCoordinate.neighbourRoom(LEFT))
+        }
+        if (x >= max) {
+          return new RoomPosition(min, y, roomCoordinate.neighbourRoom(RIGHT))
+        }
+        if (y <= min) {
+          return new RoomPosition(x, max, roomCoordinate.neighbourRoom(TOP))
+        }
+        if (y >= max) {
+          return new RoomPosition(x, min, roomCoordinate.neighbourRoom(BOTTOM))
+        }
+        return new RoomPosition(x, y, this.roomName)
+      } catch (e) {
+        PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() faild: ${e}`)
+        return this
       }
-    })()
-    const j = ((): (-1 | 0 | 1) => {
-      switch (direction) {
-      case TOP_LEFT:
-      case TOP:
-      case TOP_RIGHT:
-        return -1
-      case LEFT:
-      case RIGHT:
-        return 0
-      case BOTTOM_LEFT:
-      case BOTTOM:
-      case BOTTOM_RIGHT:
-        return 1
-      }
-    })()
-
-    // 対角線上の部屋への移動は原理上ありえるがおそらくゲームにそのような地形はないので無視する
-    const x = this.x + i
-    const y = this.y + j
-    const min = GameConstants.room.edgePosition.min
-    const max = GameConstants.room.edgePosition.max
-    try {
-      if (x <= min) {
-        return new RoomPosition(max, y, roomCoordinate.neighbourRoom(LEFT))
-      }
-      if (x >= max) {
-        return new RoomPosition(min, y, roomCoordinate.neighbourRoom(RIGHT))
-      }
-      if (y <= min) {
-        return new RoomPosition(x, max, roomCoordinate.neighbourRoom(TOP))
-      }
-      if (y >= max) {
-        return new RoomPosition(x, min, roomCoordinate.neighbourRoom(BOTTOM))
-      }
-      return new RoomPosition(x, y, this.roomName)
-    } catch (e) {
-      PrimitiveLogger.programError(`RoomPosition.nextRoomPositionTo() faild: ${e}`)
-      return this
-    }
-  }
-
-  RoomPosition.prototype.nextRoomEdgePosition = function (): RoomPosition | null {
-    const roomCoordinate = RoomCoordinate.parse(this.roomName)
-    if (roomCoordinate == null) {
-      PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() cannot parse room name ${roomLink(this.roomName)}`)
-      return this
     }
 
-    const min = GameConstants.room.edgePosition.min
-    const max = GameConstants.room.edgePosition.max
-    try {
-      if (this.x <= min) {
-        return new RoomPosition(max, this.y, roomCoordinate.neighbourRoom(LEFT))
+    RoomPosition.prototype.nextRoomEdgePosition = function (): RoomPosition | null {
+      const roomCoordinate = RoomCoordinate.parse(this.roomName)
+      if (roomCoordinate == null) {
+        PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() cannot parse room name ${roomLink(this.roomName)}`)
+        return this
       }
-      if (this.x >= max) {
-        return new RoomPosition(min, this.y, roomCoordinate.neighbourRoom(RIGHT))
+
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      try {
+        if (this.x <= min) {
+          return new RoomPosition(max, this.y, roomCoordinate.neighbourRoom(LEFT))
+        }
+        if (this.x >= max) {
+          return new RoomPosition(min, this.y, roomCoordinate.neighbourRoom(RIGHT))
+        }
+        if (this.y <= min) {
+          return new RoomPosition(this.x, max, roomCoordinate.neighbourRoom(TOP))
+        }
+        if (this.y >= max) {
+          return new RoomPosition(this.x, min, roomCoordinate.neighbourRoom(BOTTOM))
+        }
+        return null
+      } catch (e) {
+        PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() faild: ${e}`)
+        return null
       }
-      if (this.y <= min) {
-        return new RoomPosition(this.x, max, roomCoordinate.neighbourRoom(TOP))
-      }
-      if (this.y >= max) {
-        return new RoomPosition(this.x, min, roomCoordinate.neighbourRoom(BOTTOM))
-      }
-      return null
-    } catch (e) {
-      PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() faild: ${e}`)
-      return null
     }
+  } catch (e) {
+    PrimitiveLogger.notice(`${e}`)
   }
 }
 
