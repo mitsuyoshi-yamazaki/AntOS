@@ -268,6 +268,9 @@ export class PrimitiveWorkerTask extends Task {
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), moveToOptions())
     }
+    if (objects.constructionSites[0] != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(objects.constructionSites[0]), moveToOptions())
+    }
 
     return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller, 1), moveToOptions())
   }
