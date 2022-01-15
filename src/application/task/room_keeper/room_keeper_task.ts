@@ -307,10 +307,10 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         this.children.findPowerBank = null
       }
     }
-    if (Environment.world !== "season 3") {
-      removeFindPowerBankTask()
-      return
-    }
+    // if (Environment.world !== "season 3") {
+    //   removeFindPowerBankTask()
+    //   return
+    // }
     if (roomResource.controller.level <= 5) {
       removeFindPowerBankTask()
       return

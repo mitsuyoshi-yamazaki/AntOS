@@ -94,7 +94,7 @@ export class RoomKeeperTask extends Task {
           switch (Environment.world) {
           case "persistent world":
           case "simulation":
-          case "season 3":
+          case "season 4":
             break
           case "botarena":
             OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))

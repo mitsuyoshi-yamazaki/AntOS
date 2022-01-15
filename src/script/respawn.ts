@@ -16,7 +16,7 @@ export function isRespawned(): boolean {
   const world = Environment.world
   switch (world) {
   case "persistent world":
-  case "season 3":
+  case "season 4":
     PrimitiveLogger.fatal(`No spawn in ${world}`)
     return false  // TODO:
   case "botarena":

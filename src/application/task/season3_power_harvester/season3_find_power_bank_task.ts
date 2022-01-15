@@ -110,10 +110,10 @@ export class Season3FindPowerBankTask
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
-    if (Environment.world !== "season 3") {
-      PrimitiveLogger.programError(`${this.name} is not supported in ${Environment.world}`)
-      return null
-    }
+    // if (Environment.world !== "season 3") {
+    //   PrimitiveLogger.programError(`${this.name} is not supported in ${Environment.world}`)
+    //   return null
+    // }
     const scoutRoutes = calculateRoomRoutes(roomName)
     if (scoutRoutes == null) {
       return null

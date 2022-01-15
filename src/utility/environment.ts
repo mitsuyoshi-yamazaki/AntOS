@@ -1,9 +1,9 @@
 type PersistentWorld = "persistent world"
 type SimulationWorld = "simulation"
-type Season3 = "season 3"
+type Season4 = "season 4"
 type BotArena = "botarena"
 
-type World = PersistentWorld | SimulationWorld | Season3 | BotArena
+type World = PersistentWorld | SimulationWorld | Season4 | BotArena
 type ShardName = string
 
 export interface Environment {
@@ -19,7 +19,7 @@ const world = ((): World => {
   case "sim":
     return "simulation"
   case "shardSeason":
-    return "season 3"
+    return "season 4"
   case "shard0":
   case "shard1":
   case "shard2":
@@ -35,7 +35,7 @@ const hasMultipleShards = ((): boolean => {
   switch (world) {
   case "persistent world":
     return true
-  case "season 3":
+  case "season 4":
   case "botarena":
   case "simulation":
     return false
@@ -50,7 +50,7 @@ export const Environment: Environment = {
   isAutomatic(): boolean {  // TODO: メモリからも設定可能にする
     switch (world) {
     case "persistent world":
-    case "season 3":
+    case "season 4":
     case "simulation":
       return false
     case "botarena":

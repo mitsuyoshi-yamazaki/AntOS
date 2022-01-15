@@ -48,7 +48,7 @@ function baseUrl(): string {
     case "simulation":
     case "botarena":
       return "a"
-    case "season 3":
+    case "season 4":
       return "season"
     }
   })()

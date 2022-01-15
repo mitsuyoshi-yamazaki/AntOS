@@ -134,9 +134,9 @@ export class RemoteRoomKeeperTask extends Task {
             return true
           }
         }
-        if (Environment.world === "season 3") {
-          return false
-        }
+        // if (Environment.world === "season 3") {
+        //   return false
+        // }
         if (targetRoomInfo.owner != null) {
           if (targetRoomInfo.owner.ownerType === "claim") {
             return false

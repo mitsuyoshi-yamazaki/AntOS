@@ -19,7 +19,7 @@ import { Environment } from "./environment"
 //   STRUCTURE_FACTORY,
 // ]
 
-const powerSpawnAvailableLevel = Environment.world === "season 3" ? 5 : 8
+const powerSpawnAvailableLevel = 8 //Environment.world === "season 3" ? 5 : 8
 
 const StructureAvailability: { [structureType in BuildableStructureConstant]: number } = {
   extension: 1,
@@ -40,7 +40,7 @@ const StructureAvailability: { [structureType in BuildableStructureConstant]: nu
   factory: 7,
 }
 
-const spawnMaxCount = Environment.world === "season 3" ? 1 : 3
+const spawnMaxCount = 3 // Environment.world === "season 3" ? 1 : 3
 const StructureMaxCount: { [structureType in BuildableStructureConstant]: number } = {
   extension: 60,
   rampart: 2500,
