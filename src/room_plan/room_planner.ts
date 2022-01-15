@@ -292,16 +292,17 @@ export class RoomPlanner {
     if (this.flaggedPoints.get(position.y)?.includes(position.x) === true) {
       return
     }
-    this.flaggedPoints.getValueFor(position.y).push(position.x)
-    if (position.lookFor(LOOK_FLAGS).length > 0) {
-      return
-    }
     const room = this.controller.room
     if (this.dryRun === true) {
       if (this.showsCostMatrix !== true) {
         room.visual.text(mark, position, { color: "#ffffff" })
       }
-    } else {
+    }
+    this.flaggedPoints.getValueFor(position.y).push(position.x)
+    if (position.lookFor(LOOK_FLAGS).length > 0) {
+      return
+    }
+    if (this.dryRun !== true) {
       if (roadOnSwamp === true && mark === LayoutMark.Road) {
         const terrain = position.lookFor(LOOK_TERRAIN)[0]
         switch (terrain) {
