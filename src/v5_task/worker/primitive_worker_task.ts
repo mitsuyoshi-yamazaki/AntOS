@@ -147,8 +147,12 @@ export class PrimitiveWorkerTask extends Task {
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, creepSpec.creepCount)
 
     const noCreeps = World.resourcePools.countCreeps(this.roomName, filterTaskIdentifier, () => true) <= 2
-    const body: BodyPartConstant[] = creepSpec.body
-    const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
+    const [body, priority] = ((): [BodyPartConstant[], CreepSpawnRequestPriority] => {
+      if (noCreeps === true) {
+        return [[WORK, CARRY, MOVE], CreepSpawnRequestPriority.Urgent]
+      }
+      return [creepSpec.body, CreepSpawnRequestPriority.Medium]
+    })()
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

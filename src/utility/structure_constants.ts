@@ -1,5 +1,3 @@
-import { Environment } from "./environment"
-
 // const BuildableStructureConstant = [
 //   STRUCTURE_EXTENSION,
 //   STRUCTURE_RAMPART,
