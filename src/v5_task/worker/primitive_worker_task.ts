@@ -192,15 +192,15 @@ export class PrimitiveWorkerTask extends Task {
 
     const requiredCreepCount = getRequiredCreepCount(ownedRoomSourceEnergyCapacity, 3) + getRequiredCreepCount(estimatedNeighbourSourceEnergyCapacity, 4)
     const maxCreepCount = ((): number => {
-      switch (objects.controller.level) {
-      case 1:
+      if (objects.controller.level <= 1) {
         return 12
-      case 2:
+      }
+      if (objects.controller.room.energyCapacityAvailable <= 400) {
         return 20
       }
       return objects.sources.length * 8 + neighbourRoomSourceCount * 10
     })()
-    const creepCount = Math.min(requiredCreepCount, maxCreepCount, 30)
+    const creepCount = Math.min(requiredCreepCount, maxCreepCount, 60)
 
     return {
       creepCount,
