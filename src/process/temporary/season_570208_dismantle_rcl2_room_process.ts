@@ -187,13 +187,6 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep)),
       () => true,
     )
-
-    if (this.numberOfCreeps > 0) {
-      // if (this.checkScoutAttacked() === true) {
-      //   processLog(this, `Scout attacked in ${roomLink(this.targetRoomName)}`)
-      //   this.numberOfCreeps = 0
-      // }
-    }
   }
 
   private sendScout(): void {

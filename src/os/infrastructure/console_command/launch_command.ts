@@ -28,6 +28,7 @@ import { SpecializedQuadProcess } from "process/onetime/quad/specialized_quad_pr
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { isQuadType, quadTypes } from "process/onetime/quad/specialized_quad_spec"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
+// import { ConstructionSaboteurProcess } from "process/onetime/construction_saboteur_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
@@ -136,6 +137,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "SubmoduleTestProcess":
       result = this.launchSubmoduleTestProcess()
+      break
+    case "ConstructionSaboteurProcess":
+      result = this.launchConstructionSaboteurProcess()
       break
     default:
       break
@@ -829,5 +833,37 @@ export class LaunchCommand implements ConsoleCommand {
       return SubmoduleTestProcess.create(processId)
     })
     return Result.Succeeded(process)
+  }
+
+  private launchConstructionSaboteurProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
+
+    // const process = OperatingSystem.os.addProcess(null, processId => {
+    //   return ConstructionSaboteurProcess.create(processId, roomName, targetRoomName, )
+    // })
+    // return Result.Succeeded(process)
+    return Result.Failed("not implemented yet")
   }
 }
