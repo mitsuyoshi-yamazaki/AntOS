@@ -17,6 +17,7 @@ import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { ProcessDecoder } from "process/process_decoder"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("Season570208DismantleRcl2RoomProcess", state => {
   return Season570208DismantleRcl2RoomProcess.decode(state as Season570208DismantleRcl2RoomProcessState)
@@ -37,10 +38,13 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
 
   /** number of creeps */
   n: number
+
+  fleeRange: number
+  stopSpawning: boolean
 }
 
-// Game.io("launch Season570208DismantleRcl2RoomProcess room_name=W45S31 target_room_name=W46S32 waypoints=W46S32 creeps=1")
-export class Season570208DismantleRcl2RoomProcess implements Process, Procedural {
+// Game.io("launch -l Season570208DismantleRcl2RoomProcess room_name=W19S19 target_room_name=W8S25 waypoints=W19S20,W10S20,W10S25 creeps=1")
+export class Season570208DismantleRcl2RoomProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -71,6 +75,8 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     public readonly waypoints: RoomName[],
     private target: AnyStructure | null,
     private numberOfCreeps: number,
+    private fleeRange: number,
+    private stopSpawning: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -86,6 +92,8 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       w: this.waypoints,
       ti: this.target?.id ?? null,
       n: this.numberOfCreeps,
+      fleeRange: this.fleeRange,
+      stopSpawning: this.stopSpawning,
     }
   }
 
@@ -96,15 +104,45 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n)
+    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount)
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false)
   }
 
   public processShortDescription(): string {
     return roomLink(this.targetRoomName)
+  }
+
+  public didReceiveMessage(message: string): string {
+    const components = message.split(" ")
+    const command = components[0]
+    if (command == null) {
+      return "empty message"
+    }
+    switch (command) {
+    case "stop":
+      this.stopSpawning = true
+      return "Spawning stopped"
+    case "resume":
+      this.stopSpawning = false
+      return "Spawning resumed"
+    case "flee": {
+      const rawRange = components[1]
+      if (rawRange == null) {
+        return "No range argument"
+      }
+      const fleeRange = parseInt(rawRange, 10)
+      if (isNaN(fleeRange) === true) {
+        return `Invalid flee range ${rawRange}`
+      }
+      this.fleeRange = fleeRange
+      return `Flee range ${fleeRange} set`
+    }
+    default:
+      return `Invalid command ${command}`
+    }
   }
 
   public runOnTick(): void {
@@ -184,7 +222,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep)),
+      creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep), this.fleeRange),
       () => true,
     )
   }
@@ -200,6 +238,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     //   finishWhenSucceed: false,
     // }
     // const initialTask = SequentialTask.create(childTasks, options)
+
+    if (this.stopSpawning === true) {
+      return
+    }
 
     const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
 
