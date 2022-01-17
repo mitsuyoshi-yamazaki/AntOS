@@ -55,7 +55,7 @@ export interface SpecializedQuadProcessState extends ProcessState {
   readonly nextTargets: TargetInfo[]
 }
 
-// Game.io("launch -l SpecializedQuadProcess room_name=W47S15 target_room_name=W45S15 waypoints=W45S15 quad_type=test-attacker targets=")
+// Game.io("launch -l SpecializedQuadProcess room_name=W19S19 target_room_name=W19S7 waypoints=W20S19,W20S7 quad_type=rcl4-attacker targets=")
 export class SpecializedQuadProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -329,9 +329,6 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
         this.runQuad(quad)
       }
       quad.run()
-      if (this.target.message != null) {
-        quad.say(this.target.message, true)
-      }
       this.quadState = quad.encode()
       const roomInfo = ` in ${roomLink(quad.pos.roomName)}`
       processLog(this, `${quad.numberOfCreeps}creeps${roomInfo}`)
@@ -378,6 +375,10 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
       quad.passiveAttack(passiveAttackTargets, noCollateralDamage)
       quad.heal()
       return
+    }
+
+    if (this.target.message != null) {
+      quad.say(this.target.message, true)
     }
 
     if (quad.room.name === this.targetRoomName && quad.room.controller != null && quad.room.controller.safeMode != null) {
@@ -496,7 +497,6 @@ export class SpecializedQuadProcess implements Process, Procedural, MessageObser
   }
 
   private drain(quad: Quad): void {
-    quad.say("drain")
     quad.heal()
     const noCollateralDamage = this.target.plan === "destroy defence facility only"
     quad.passiveAttack(this.hostileCreepsInRoom(quad.room), noCollateralDamage)

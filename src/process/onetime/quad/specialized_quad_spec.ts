@@ -12,6 +12,7 @@ export const quadTypes = [
   "test-boosted-attacker",
   "scout",
   "invader-core-attacker",
+  "rcl4-attacker",
   "tier0-d100-attacker",
   "tier0-2tower-drain-minimum",
   "tier0-d450",
@@ -67,6 +68,7 @@ export class QuadSpec {
     case "test-boosted-attacker":
       return [...testAttackBoosts]
     case "invader-core-attacker":
+    case "rcl4-attacker":
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
@@ -126,6 +128,7 @@ export class QuadSpec {
     case "scout":
     case "tier3-single-d750":
       return 1
+    case "rcl4-attacker":
     case "tier0-2tower-drain-minimum":
     case "tier0-d100-attacker":
     case "tier0-d450":
@@ -185,6 +188,12 @@ export class QuadSpec {
         return invaderCoreAttackerAttacker
       } else {
         return invaderCoreAttackerHealer
+      }
+    case "rcl4-attacker":
+      if (creepInsufficiency <= 1) {
+        return rcl4AttackerAttacker
+      } else {
+        return rcl4AttackerHealer
       }
     case "tier0-2tower-drain-minimum":
       return tier02TowerDrainMinimum
@@ -359,6 +368,7 @@ export class QuadSpec {
     case "tier3-6tower-tank":
     case "tier3-single-d750":
       return false
+    case "rcl4-attacker":
     case "tier3-2tower-attacker":
     case "tier3-3tower-attacker":
     case "tier1-invader-core-lv1":
@@ -423,6 +433,26 @@ const invaderCoreAttackerHealer: CreepBodySpec = {
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
     MOVE, MOVE, MOVE, MOVE, MOVE,
     HEAL, HEAL,
+  ],
+}
+
+// ---- rcl4-attacker ---- //
+const rcl4AttackerHealer: CreepBodySpec = {
+  roles: [CreepRole.Healer, CreepRole.Mover],
+  body: [
+    HEAL, HEAL, HEAL,
+    MOVE, MOVE, MOVE, MOVE,
+    HEAL,
+  ],
+}
+const rcl4AttackerAttacker: CreepBodySpec = {
+  roles: [CreepRole.Attacker, CreepRole.Mover],
+  body: [
+    ATTACK, ATTACK, MOVE, MOVE,
+    ATTACK, ATTACK, MOVE, MOVE,
+    ATTACK, ATTACK, MOVE, MOVE,
+    ATTACK, ATTACK, MOVE, MOVE,
+    ATTACK, ATTACK, MOVE, MOVE,
   ],
 }
 
