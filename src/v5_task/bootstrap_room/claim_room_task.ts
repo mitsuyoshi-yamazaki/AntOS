@@ -11,8 +11,10 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
 
-export function shouldSpawnBootstrapCreeps(targetRoomName: RoomName): boolean {
+export function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName): boolean {
   const targetRoomInfo = RoomResources.getRoomInfo(targetRoomName)
   if (targetRoomInfo == null) {
     return true
@@ -24,6 +26,24 @@ export function shouldSpawnBootstrapCreeps(targetRoomName: RoomName): boolean {
     return true
   }
   if (targetRoomInfo.owner.ownerType === "claim" && targetRoomInfo.owner.username !== Game.user.name) {
+    return false
+  }
+  const availableEnergy = ((): number => {
+    const roomResource = RoomResources.getOwnedRoomResource(roomName)
+    if (roomResource == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} is not owned`)
+      return 0
+    }
+    const storage = roomResource.activeStructures.storage
+    const terminal = roomResource.activeStructures.terminal
+    if (storage == null || terminal == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage or terminal`)
+      return 0
+    }
+    return (storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+  })()
+
+  if (availableEnergy < 10000) {
     return false
   }
   return true
@@ -97,7 +117,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
-    if (shouldSpawnBootstrapCreeps(this.targetRoomName) !== true) {
+    if (shouldSpawnBootstrapCreeps(this.roomName, this.targetRoomName) !== true) {
       return null
     }
 
