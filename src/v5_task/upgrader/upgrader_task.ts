@@ -197,7 +197,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       }
       const storedEnergy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       const numberOfRooms = RoomResources.getOwnedRoomResources.length
-      if (numberOfRooms <= 2) {
+      if (numberOfRooms <= 1) {
         return storedEnergy > 10000
       }
       return storedEnergy > 130000
