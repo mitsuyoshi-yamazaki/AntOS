@@ -35,7 +35,8 @@ export interface World35587255ScoutRoomProcessState extends ProcessState {
   readonly lastSpawnTime: Timestamp
 }
 
-// Game.io("launch -l World35587255ScoutRoomProcess room_name=W19N6")
+/** 周囲の自動偵察process */
+// Game.io("launch -l World35587255ScoutRoomProcess room_name=W19S19")
 export class World35587255ScoutRoomProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

@@ -25,10 +25,6 @@ interface ScoutRoomProcessState extends ProcessState {
   readonly creepName: CreepName | null
 }
 
-/**
- * - TODO:
- *   - 共通するProcessの同一性判定をする→それがtaskIdentifierか？
- */
 export class ScoutRoomProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
