@@ -24,9 +24,7 @@ import { Season1606052SKHarvesterProcess } from "process/temporary/season_160605
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
-import { SpecializedQuadProcess } from "process/onetime/quad/specialized_quad_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
-import { isQuadType, quadTypes } from "process/onetime/quad/specialized_quad_spec"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
 // import { ConstructionSaboteurProcess } from "process/onetime/construction_saboteur_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
@@ -37,6 +35,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import { SectorName } from "utility/room_sector"
+import { launchQuadProcess } from "process/onetime/attack_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
 
 type LaunchCommandResult = Result<Process, string>
@@ -56,6 +55,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "TestChildProcess":
       result = this.launchTestChildProcess()
+      break
+    case "SpecializedQuadProcess":
+      result = this.launchQuad()
       break
     case "Season487837AttackInvaderCoreProcess":
       result = this.launchSeason487837AttackInvaderCoreProcess()
@@ -104,9 +106,6 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1655635SKMineralHarvestProcess":
       result = this.launchSeason1655635SKMineralHarvestProcess()
-      break
-    case "SpecializedQuadProcess":
-      result = this.launchSpecializedQuadProcess()
       break
     case "Season1838855DistributorProcess":
       result = this.launchSeason1838855DistributorProcess()
@@ -221,6 +220,10 @@ export class LaunchCommand implements ConsoleCommand {
       return TestChildProcess.create(processId)
     })
     return Result.Succeeded(process)
+  }
+
+  private launchQuad(): LaunchCommandResult {
+    return launchQuadProcess(this.parseProcessArguments())
   }
 
   private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
@@ -624,41 +627,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1655635SKMineralHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSpecializedQuadProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawTargets = args.get("targets")
-    if (rawTargets == null) {
-      return this.missingArgumentError("targets")
-    }
-    const targets = rawTargets.split(",")
-    const quadType = args.get("quad_type")
-    if (quadType == null) {
-      return this.missingArgumentError("quad_type")
-    }
-    if (!isQuadType(quadType)) {
-      return Result.Failed(`Unrecognizeable quad type ${quadType}, quad types: ${quadTypes}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
     })
     return Result.Succeeded(process)
   }
