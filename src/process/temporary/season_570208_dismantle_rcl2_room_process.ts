@@ -43,7 +43,6 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
   stopSpawning: boolean
 }
 
-// Game.io("launch -l Season570208DismantleRcl2RoomProcess room_name=W19S19 target_room_name=W8S25 waypoints=W19S20,W10S20,W10S25 creeps=1")
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -145,6 +144,18 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       this.fleeRange = fleeRange
       return `Flee range ${fleeRange} set`
+    }
+    case "creep": {
+      const rawCreeps = components[1]
+      if (rawCreeps == null) {
+        return "No range argument"
+      }
+      const numberOfCreeps = parseInt(rawCreeps, 10)
+      if (isNaN(numberOfCreeps) === true) {
+        return `Invalid creep count ${rawCreeps}`
+      }
+      this.numberOfCreeps = numberOfCreeps
+      return `${numberOfCreeps} creeps set`
     }
     default:
       return `Invalid command ${command}`
