@@ -377,7 +377,13 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
 
     const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
       .filter(site => {
-        return site.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length <= 0
+        if (site.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+          return false
+        }
+        if (site.pos.lookFor(LOOK_TERRAIN)[0] === "wall") {
+          return false
+        }
+        return true
       })
 
     const towerSite = constructionSites.find(site => site.structureType === STRUCTURE_TOWER)
@@ -393,7 +399,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       return targetSite
     }
 
-    return creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
+    return null
   }
 
   private checkScoutAttacked(): boolean {
