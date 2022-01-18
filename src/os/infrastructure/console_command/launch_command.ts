@@ -35,7 +35,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import { SectorName } from "utility/room_sector"
-import { launchQuadProcess } from "process/onetime/attack_process_launcher"
+import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
 
 type LaunchCommandResult = Result<Process, string>
