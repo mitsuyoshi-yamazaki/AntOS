@@ -3,6 +3,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { roomLink } from "utility/log"
+import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 
 ProcessDecoder.register("MapAccessorProcess", state => {
@@ -11,10 +12,12 @@ ProcessDecoder.register("MapAccessorProcess", state => {
 
 const helpCommand = "help"
 const showCommand = "show"
+const setCommand = "set"
 
 const commands = [
   helpCommand,
   showCommand,
+  setCommand,
 ]
 
 interface MapAccessorProcessState extends ProcessState {
@@ -55,23 +58,10 @@ export class MapAccessorProcess implements Process, MessageObserver {
     switch (command) {
     case helpCommand:
       return `Commands: ${commands}`
-
-    case showCommand: {
-      const manual = "show &ltroom_name&gt &ltdestination_room_name&gt"
-      const roomName = components[1]
-      if (roomName == null) {
-        return `Roomname not specified. ${manual}`
-      }
-      const destinationRoomName = components[2]
-      if (destinationRoomName == null) {
-        return `Destination Roomname not specified. ${manual}`
-      }
-      const waypoints = GameMap.getWaypoints(roomName, destinationRoomName)
-      if (waypoints == null) {
-        return `Waypoints not set ${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
-      }
-      return `${roomLink(roomName)} -> ${waypoints.map(name => roomLink(name))} -> ${roomLink(destinationRoomName)}`
-    }
+    case showCommand:
+      return this.showWaypoints(components)
+    case setCommand:
+      return this.setWaypoints(components)
     default:
       return `Invalid command ${command}. "help" to show command list`
     }
@@ -79,5 +69,64 @@ export class MapAccessorProcess implements Process, MessageObserver {
 
   public runOnTick(): void {
     // do nothing
+  }
+
+  private showWaypoints(commandComponents: string[]): string {
+    const manual = "show &ltroom_name&gt &ltdestination_room_name&gt"
+    const roomName = commandComponents[1]
+    if (roomName == null) {
+      return `room_name not specified. ${manual}`
+    }
+    const destinationRoomName = commandComponents[2]
+    if (destinationRoomName == null) {
+      return `destination_room_name not specified. ${manual}`
+    }
+    const waypoints = GameMap.getWaypoints(roomName, destinationRoomName)
+    if (waypoints == null) {
+      return `waypoints not set ${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
+    }
+    return `${roomLink(roomName)} -> ${waypoints.map(name => roomLink(name))} -> ${roomLink(destinationRoomName)}`
+  }
+
+  private setWaypoints(commandComponents: string[]): string {
+    const manual = "set &ltroom_name&gt &ltdestination_room_name&gt &ltwaypoint1,waypoint2,...&gt"
+    const roomName = commandComponents[1]
+    if (roomName == null) {
+      return `room_name not specified. ${manual}`
+    }
+    if (this.isValidRoomName(roomName) !== true) {
+      return `room_name ${roomName} is not valid`
+    }
+    const destinationRoomName = commandComponents[2]
+    if (destinationRoomName == null) {
+      return `destination_room_name not specified. ${manual}`
+    }
+    if (this.isValidRoomName(destinationRoomName) !== true) {
+      return `destination_room_name ${destinationRoomName} is not valid`
+    }
+    const waypoints = ((): RoomName[] => {
+      const rawWaypoints = commandComponents[3]
+      if (rawWaypoints == null) {
+        return []
+      }
+      return rawWaypoints.split(",")
+    })()
+    const invalidWaypoints = waypoints.filter(name => this.isValidRoomName(name) !== true)
+    if (invalidWaypoints.length > 0) {
+      return `waypoints ${invalidWaypoints.join(",")} are not valid`
+    }
+    GameMap.setWaypoints(roomName, destinationRoomName, waypoints)
+    return `${roomLink(roomName)} -> ${waypoints.map(name => roomLink(name))} -> ${roomLink(destinationRoomName)}`
+  }
+
+  private isValidRoomName(roomName: RoomName): boolean {
+    const roomStatus = Game.map.getRoomStatus(roomName)
+    if (roomStatus == null) { // フォーマットが間違っているとundefinedが返る
+      return false
+    }
+    if (roomStatus.status === "closed") {
+      return false
+    }
+    return true
   }
 }
