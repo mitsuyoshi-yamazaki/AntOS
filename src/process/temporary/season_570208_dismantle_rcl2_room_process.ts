@@ -112,7 +112,13 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   public processShortDescription(): string {
-    return roomLink(this.targetRoomName)
+    const descriptions: string[] = [
+      roomLink(this.targetRoomName)
+    ]
+    if (this.stopSpawning === true) {
+      descriptions.push("spawning stopped")
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -146,6 +152,17 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   public runOnTick(): void {
+    ((): void => {
+      const targetRoom = Game.rooms[this.targetRoomName]
+      if (targetRoom?.controller == null) {
+        return
+      }
+      if (targetRoom.controller.safeMode == null) {
+        return
+      }
+      this.stopSpawning = true
+    })()
+
     this.runScout()
 
 
