@@ -53,6 +53,12 @@ export function init(): void {
     }
   }
 
+  if (Memory.gameMap == null) {
+    Memory.gameMap = {
+      interRoomPath: {}
+    }
+  }
+
   if (Memory.rooms == null) {
     Memory.rooms = {}
   }

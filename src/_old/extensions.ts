@@ -8,6 +8,7 @@ import type { RoomInfoType } from "room_resource/room_info"
 import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
+import type { GameMapMemory } from "game/game_map"
 
 export interface SectorMemory {
   name: string
@@ -41,6 +42,7 @@ declare global {
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
     eventMemory: EventMemory
+    gameMap: GameMapMemory
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
