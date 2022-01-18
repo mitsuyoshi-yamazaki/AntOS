@@ -129,9 +129,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
 
     const needBuilder = ((): boolean => {
-      if (lackOfEnergy === true) {
-        return true
-      }
+      // energyが不足する状況でworkerがupgradeする悪循環を無くすため
+      // if (lackOfEnergy === true) {
+      //   return true
+      // }
       const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
       const needRepair = objects.damagedStructures.length > 0
       const needBuild = objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true))
