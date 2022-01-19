@@ -26,7 +26,6 @@ import { parseLabs } from "script/room_plan"
 import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
 import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
 import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
-import { Environment } from "utility/environment"
 import { findRoomRoute } from "utility/map"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
@@ -307,10 +306,12 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
         this.children.findPowerBank = null
       }
     }
+    const environment = true as boolean
     // if (Environment.world !== "season 3") {
-    //   removeFindPowerBankTask()
-    //   return
-    // }
+    if (environment) {
+      removeFindPowerBankTask()
+      return
+    }
     if (roomResource.controller.level <= 5) {
       removeFindPowerBankTask()
       return
