@@ -37,6 +37,7 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
+import { AttackRoomProcess } from "process/onetime/attack_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -140,6 +141,8 @@ export class LaunchCommand implements ConsoleCommand {
     case "ConstructionSaboteurProcess":
       result = this.launchConstructionSaboteurProcess()
       break
+    case "AttackRoomProcess":
+      result = this.launchAttackRoomProcess()
     default:
       break
     }
@@ -830,6 +833,38 @@ export class LaunchCommand implements ConsoleCommand {
 
     // const process = OperatingSystem.os.addProcess(null, processId => {
     //   return ConstructionSaboteurProcess.create(processId, roomName, targetRoomName, )
+    // })
+    // return Result.Succeeded(process)
+    return Result.Failed("not implemented yet")
+  }
+
+  private launchAttackRoomProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+    const rawNumberOfCreeps = args.get("creeps")
+    if (rawNumberOfCreeps == null) {
+      return this.missingArgumentError("creeps")
+    }
+    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
+    if (isNaN(numberOfCreeps) === true) {
+      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
+
+    // const process = OperatingSystem.os.addProcess(null, processId => {
+    //   return AttackRoomProcess.create(processId, roomName, targetRoomName, )
     // })
     // return Result.Succeeded(process)
     return Result.Failed("not implemented yet")
