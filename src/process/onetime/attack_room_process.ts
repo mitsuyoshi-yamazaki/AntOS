@@ -2,6 +2,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "../process_state"
+import { } from "./construction_saboteur_process"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
   return AttackRoomProcess.decode(state as AttackRoomProcessState)
