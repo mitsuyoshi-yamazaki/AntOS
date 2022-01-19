@@ -28,6 +28,7 @@ import { Season1143119LabChargerProcess } from "process/temporary/season_1143119
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { decodeRoomPosition } from "prototype/room_position"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -56,6 +57,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.describeLabs()
     case "moveToRoom":
       return this.moveToRoom()
+    case "move":
+      return this.moveCreep()
     case "transfer":
       return this.transfer()
     case "pickup":
@@ -352,6 +355,55 @@ export class ExecCommand implements ConsoleCommand {
       return `Creep ${creepName} is not v5`
     }
     creep.memory.t = MoveToRoomTask.create(roomName, waypoints).encode()
+
+    return "ok"
+  }
+
+  private moveCreep(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "waypoints")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, rawWaypoints] = args
+    if (creepName == null || rawWaypoints == null) {
+      return ""
+    }
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    const roomName = creep.room.name
+
+    const waypoints: RoomPosition[] = []
+    const errors: string[] = []
+    rawWaypoints.split(",").forEach(waypoint => {
+      const components = waypoint.split(";")
+      if (components.length !== 2 || components[0] == null || components[1] == null) {
+        errors.push(`Invalid waypoint ${waypoint}`)
+        return
+      }
+      const x = parseInt(components[0], 10)
+      const y = parseInt(components[1], 10)
+      if (isNaN(x) === true || isNaN(y) === true) {
+        errors.push(`Invalid waypoint ${waypoint}`)
+        return
+      }
+      try {
+        waypoints.push(new RoomPosition(x, y, roomName))
+      } catch (e) {
+        errors.push(`Cannot create RoomPosition for ${waypoint}`)
+      }
+    })
+
+    if (errors.length > 0) {
+      return errors.join(", ")
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const moveTasks = waypoints.map(waypoint => MoveToTask.create(waypoint, 0))
+    creep.memory.t = SequentialTask.create(moveTasks, {ignoreFailure: false, finishWhenSucceed: false}).encode()
 
     return "ok"
   }
