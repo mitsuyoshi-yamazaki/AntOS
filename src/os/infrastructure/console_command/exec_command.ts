@@ -29,6 +29,8 @@ import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
+import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -85,6 +87,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.checkAlliance()
     case "unclaim":
       return this.unclaim()
+    case "create_quad":
+      return this.createQuad()
     default:
       return "Invalid script type"
     }
@@ -1130,5 +1134,30 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return messages.join("\n")
+  }
+
+  private createQuad(): CommandExecutionResult {
+    const args = this.args.concat([])
+    args.splice(0, 1)
+    const rawRequirement = args.join(" ")
+
+    const requirementResult = QuadRequirement.parse(rawRequirement)
+    switch (requirementResult.resultType) {
+    case "failed":
+      return `${requirementResult.reason}\n(raw argument: ${rawRequirement}`
+    case "succeeded":
+      break
+    }
+
+    const specResult = QuadSpec.create(requirementResult.value)
+    switch (specResult.resultType) {
+    case "failed":
+      return `${specResult.reason}`
+    case "succeeded":
+      break
+    }
+    const quadSpec = specResult.value
+
+    return quadSpec.description()
   }
 }

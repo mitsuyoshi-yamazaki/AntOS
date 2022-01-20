@@ -1,8 +1,9 @@
 import { OperatingSystem } from "os/os"
 import { Result, ResultFailed } from "utility/result"
 import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
-import { isQuadType } from "../../../submodules/attack/quad/quad_spec"
+import { isQuadType } from "../../../submodules/attack/quad/predefined_quad_spec"
 // import { } from "../../../submodules/attack/platoon/platoon_process"
+import { } from "../../../submodules/attack/quad/quad_spec"
 
 export function launchQuadProcess(args: Map<string, string>): Result<SpecializedQuadProcess, string> {
   const roomName = args.get("room_name")

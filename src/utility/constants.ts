@@ -79,6 +79,7 @@ export const GameConstants = {
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
       harvest: HARVEST_POWER,
+      heal: HEAL_POWER,
     },
     actionCost: creepActionEnergyCost,
     boostCost: LAB_BOOST_MINERAL,

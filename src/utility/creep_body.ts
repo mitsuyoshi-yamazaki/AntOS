@@ -164,7 +164,7 @@ function coloredBodyShortDescription(body: BodyPartConstant): string {
   return anyColoredText(bodyShortDescription[body], bodyColors[body])
 }
 
-/** @deprecated */
+/** @deprecated use CreepBody.description() */
 export function bodyDescription(body: BodyPartConstant[]): string {
   const map = new Map<BodyPartConstant, number>()
   body.forEach(b => {
