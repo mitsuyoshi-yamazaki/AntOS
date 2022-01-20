@@ -239,6 +239,11 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   private getTarget(creep: Creep): AnyStructure | null {
+    const controller = creep.room.controller
+    if (controller != null && ((controller.my === true) || (controller.reservation != null && controller.reservation.username === Game.user.name))) {
+      return null
+    }
+
     const target = ((): AnyStructure | null => {
       const targetIds = [...this.targetIds]
       for (let i = 0; i < this.targetIds.length; i += 1) {
