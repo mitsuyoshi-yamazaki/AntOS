@@ -1,7 +1,7 @@
 import { OperatingSystem } from "os/os"
 import { Result, ResultFailed } from "utility/result"
 import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
-import { isQuadType } from "../../../submodules/attack/quad/predefined_quad_spec"
+import { isQuadType, PredefinedQuadSpec } from "../../../submodules/attack/quad/predefined_quad_spec"
 // import { } from "../../../submodules/attack/platoon/platoon_process"
 import { } from "../../../submodules/attack/quad/quad_spec"
 
@@ -32,8 +32,10 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
     return Result.Failed(`Unrecognized quad type ${quadType}`)
   }
 
+  const quadSpec = (new PredefinedQuadSpec(quadType)).getQuadSpec()
+
   const process = OperatingSystem.os.addProcess(null, processId => {
-    return SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadType)
+    return SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadSpec)
   })
   return Result.Succeeded(process)
 
