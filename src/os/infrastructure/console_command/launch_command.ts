@@ -37,7 +37,7 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-import { AttackRoomProcess } from "process/onetime/attack_room_process"
+// import { AttackRoomProcess } from "process/onetime/attack_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -143,6 +143,7 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "AttackRoomProcess":
       result = this.launchAttackRoomProcess()
+      break
     default:
       break
     }
