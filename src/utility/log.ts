@@ -23,7 +23,7 @@ export function coloredText(text: string, color: TextColor): string {
 }
 
 export function anyColoredText(text: string, color: string): string {
-  return `<span style='color:${color}'>${text}</span>`
+  return `<font style='color:${color}'>${text}</font>`
 }
 
 export type Tab = number
