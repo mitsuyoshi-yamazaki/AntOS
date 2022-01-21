@@ -20,6 +20,7 @@ import { isMineralCompoundConstant, MineralCompoundIngredients } from "utility/r
 import { coloredResourceType, roomLink } from "utility/log"
 import { ParallelResourceOperationTask } from "object_task/creep_task/task/parallel_resource_operation_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Environment } from "utility/environment"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -275,7 +276,22 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
         const outputLab = labs.outputLabs.reduce((lhs, rhs) => {
           return lhs.store.getUsedCapacity(compound) > rhs.store.getUsedCapacity(compound) ? lhs : rhs
         })
-        if (outputLab.store.getUsedCapacity(compound) > 0) {
+        const shouldWithdraw = ((): boolean => {
+          if (outputLab.store.getUsedCapacity(compound) <= 0) {
+            return false
+          }
+          if (Environment.world !== "season 4") {
+            return true
+          }
+          if (this.roomName !== "W19S19" && compound !== RESOURCE_LEMERGIUM_OXIDE) {  // TODO: Memoryに設定を書き込む
+            return true
+          }
+          if (outputLab.store.getUsedCapacity(compound) > (outputLab.store.getFreeCapacity(compound) / 2)) {
+            return true
+          }
+          return false
+        })()
+        if (shouldWithdraw === true) {
           return {
             creepName: creep.name,
             task: MoveToTargetTask.create(WithdrawApiWrapper.create(outputLab, compound)),
