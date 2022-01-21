@@ -113,7 +113,14 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
 
   public processShortDescription(): string {
     const mineral = this.mineralType ? coloredResourceType(this.mineralType) : ""
-    return `${roomLink(this.targetRoomName)} ${mineral}`
+    const descriptions: string[] = [
+      roomLink(this.targetRoomName),
+      mineral,
+    ]
+    if (this.stopSpawning === true) {
+      descriptions.push("spawn stopped")
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -384,7 +391,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
         creep.moveTo(harvester, defaultMoveToOptions())
       }
     } else {
-      creep.moveTo(mineral, { range: 3 })
+      creep.moveTo(mineral, { range: 3, reusePath: 3 })
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
         processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()
