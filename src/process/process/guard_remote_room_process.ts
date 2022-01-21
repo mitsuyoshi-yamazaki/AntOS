@@ -77,7 +77,6 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   numberOfCreeps: number
 }
 
-// Game.io("launch -l GuardRemoteRoomProcess room_name=W39S31 target_room_name=W37S35 waypoints=W40S32,W40S35 creep_type=small-ranged-attacker creeps=1")
 export class GuardRemoteRoomProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

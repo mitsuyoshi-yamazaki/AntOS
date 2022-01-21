@@ -279,6 +279,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_STORAGE,  // storage等を破壊する場合は明示的に指定する
       STRUCTURE_TERMINAL,
       STRUCTURE_KEEPER_LAIR,
+      STRUCTURE_INVADER_CORE, // dismantleで破壊できない(-7)
       STRUCTURE_EXTRACTOR,
     ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
