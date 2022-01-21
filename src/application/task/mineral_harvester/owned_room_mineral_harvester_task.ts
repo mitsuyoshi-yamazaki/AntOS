@@ -76,11 +76,11 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     const disableMineralHarvesting = ((): boolean => {
       switch (Environment.world) {
       case "season 4":
-        return true
+        return false
       case "persistent world":
       case "simulation":
       case "botarena":
-        return false
+        return true
       }
     })()
     if ((mineral.mineralType !== RESOURCE_CATALYST && disableMineralHarvesting === true) || roomResource.roomInfo.config?.disableMineralHarvesting === true) { // FixMe:
