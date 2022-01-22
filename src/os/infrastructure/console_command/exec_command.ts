@@ -31,6 +31,7 @@ import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
+import { launchDepositScript } from "../../../../submodules/attack/script/launch_deposit_harvester_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -41,8 +42,6 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
-    case "manual":  // 何か手動の一時的なスクリプトを動かす際に用いる
-      return this.runOnetimeScript()
     case "findPath":
       return this.findPath()
     case "findPathToSource":
@@ -89,6 +88,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.unclaim()
     case "create_quad":
       return this.createQuad()
+    case "script":
+      return this.runScript()
     default:
       return "Invalid script type"
     }
@@ -115,23 +116,6 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
-  private runOnetimeScript(): CommandExecutionResult {
-    const unownedOwnedRoomNames: RoomName[] = []
-
-    Object.entries(Memory.v6RoomInfo).forEach(([roomName, roomInfo]) => {
-      if (roomInfo.roomType !== "owned") {
-        return
-      }
-
-      const room = Game.rooms[roomName]
-      if (room == null || room.controller == null || room.controller.my !== true) {
-        unownedOwnedRoomNames.push(roomName)
-      }
-    })
-
-    return `Unowned room names: ${unownedOwnedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
-  }
-
   private findPath(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -1156,5 +1140,11 @@ export class ExecCommand implements ConsoleCommand {
     const quadSpec = specResult.value
 
     return quadSpec.description()
+  }
+
+  private runScript(): CommandExecutionResult {
+    // TODO: スクリプト名を指定できるようにする
+    launchDepositScript()
+    return "ok"
   }
 }
