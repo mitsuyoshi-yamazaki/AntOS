@@ -38,7 +38,7 @@ import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
 // import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
-// import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
+import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
 
 type LaunchCommandResult = Result<Process, string>
