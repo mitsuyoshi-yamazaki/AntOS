@@ -4,7 +4,7 @@ import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("MonitoringProcess", state => {
@@ -22,6 +22,7 @@ type HostileRoomMonitoringConditionUnclaim = {
 type HostileRoomMonitoringConditionCreepAppeared = {
   readonly case: "creep appeared"
   readonly ignoreIrrelevantPlayer: boolean
+  readonly ignoreScout: boolean
   readonly includedBodyParts: BodyPartConstant[] | "any"
 }
 type HostileRoomMonitoringCondition = HostileRoomMonitoringConditionSafemode | HostileRoomMonitoringConditionUnclaim | HostileRoomMonitoringConditionCreepAppeared
@@ -77,11 +78,13 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
   }
 
   public processShortDescription(): string {
-    const descriptions: string[] = []
+    const descriptions: string[] = [
+      this.monitorName,
+    ]
     if (this.lastNoticeMessage != null) {
       descriptions.push("triggered")
     } else {
-      descriptions.push("normal")
+      descriptions.push("not triggered")
     }
     descriptions.push(TargetMonitor.shortDescriptionFor(this.target))
     return descriptions.join(", ")
@@ -89,7 +92,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
 
   public didReceiveMessage(message: string): string {
     const args = message.split(" ")
-    const commands = ["add", "show", "clear_history"]
+    const commands = ["add", "history", "clear_history"]
     const command = args.shift()
     if (command == null) {
       return `Missing command. Available commands are: ${commands.join(", ")}`
@@ -98,8 +101,11 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     switch (command) {
     case "add":
       return this.addCondition(args)
-    case "show":
-      return "Show condition: not implemented yet"
+    case "history":
+      if (this.lastNoticeMessage != null) {
+        return this.lastNoticeMessage
+      }
+      return "Not triggered"
     case "clear_history":
       this.lastNoticeMessage = null
       return "Cleared"
@@ -119,6 +125,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     }
 
     const info: string[] = [
+      coloredText("[TRIGGERED]", "high"),
       this.monitorName,
       targetState,
     ]
@@ -226,9 +233,14 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
       if (ignoreIrrelevantPlayer == null) {
         return "Missing ignore_irrelevants argument"
       }
+      const ignoreScout = args.get("ignore_scout")
+      if (ignoreScout == null) {
+        return "Missing ignore_scout argument"
+      }
       const condition: HostileRoomMonitoringConditionCreepAppeared = {
         case: "creep appeared",
         ignoreIrrelevantPlayer: ignoreIrrelevantPlayer === "1",
+        ignoreScout: ignoreScout === "1",
         includedBodyParts: bodyParts,
       }
       target.conditions.push(condition)
@@ -310,27 +322,37 @@ function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
     switch (condition.case) {
     case "creep appeared": {
       const creeps = ((): AnyCreep[] => {
-        const hostileCreeps: AnyCreep[] = []
+        const hostileCreeps = ((): Creep[] => {
+          if (condition.ignoreScout === true) {
+            return controller.room.find(FIND_HOSTILE_CREEPS).filter(creep => {
+              const bodyCount = creep.body.length
+              return bodyCount > creep.getActiveBodyparts(MOVE)
+            })
+          } else {
+            return controller.room.find(FIND_HOSTILE_CREEPS)
+          }
+        })()
+        const anyHostileCreeps: AnyCreep[] = []
         if (condition.includedBodyParts === "any") {
-          hostileCreeps.push(...controller.room.find(FIND_HOSTILE_CREEPS))
-          hostileCreeps.push(...controller.room.find(FIND_HOSTILE_POWER_CREEPS))
+          anyHostileCreeps.push(...hostileCreeps)
+          anyHostileCreeps.push(...controller.room.find(FIND_HOSTILE_POWER_CREEPS))
         } else {
           const includedBodyParts = condition.includedBodyParts
-          hostileCreeps.push(
-            ...controller.room.find(FIND_HOSTILE_CREEPS)
+          anyHostileCreeps.push(
+            ...hostileCreeps
               .filter(creep => {
-                return includedBodyParts.some(body => creep.getActiveBodyparts(body))
+                return includedBodyParts.some(body => creep.getActiveBodyparts(body) > 0)
               })
           )
         }
         if (condition.ignoreIrrelevantPlayer !== true) {
-          return hostileCreeps
+          return anyHostileCreeps
         }
         const hostileName = controller.owner?.username
         if (hostileName == null) {
           return []
         }
-        return hostileCreeps.filter(creep => creep.owner.username === hostileName)
+        return anyHostileCreeps.filter(creep => creep.owner.username === hostileName)
       })()
       if (creeps[0] == null) {
         return []
