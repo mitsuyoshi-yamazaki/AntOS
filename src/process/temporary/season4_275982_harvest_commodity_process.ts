@@ -18,6 +18,10 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { GameMap } from "game/game_map"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { GameConstants } from "utility/constants"
 
 ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
@@ -104,12 +108,6 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return
     }
 
-    const energyNeeded = 2300
-    if (roomResources.room.energyCapacityAvailable < energyNeeded) {
-      processLog(this, `Cannot run in ${roomLink(this.parentRoomName)}, ${roomResources.room.energyCapacityAvailable} energy available`)
-      return
-    }
-
     const harvesters: Creep[] = []
     const haulers: Creep[] = []
 
@@ -125,7 +123,11 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     })
 
     if (harvesters.length < this.creepSpec.harvesterCount) {
-      this.spawnHarvester(roomResources)
+      const energyNeeded = 2300
+      if (roomResources.room.energyCapacityAvailable > energyNeeded) {
+        this.spawnHarvester(roomResources)
+        processLog(this, `Cannot spawn harvester in ${roomLink(this.parentRoomName)}, lack of energy ${roomResources.room.energyCapacityAvailable}`)
+      }
     } else if (haulers.length < this.creepSpec.haulerCount) {
       this.spawnHauler(roomResources)
     }
@@ -143,7 +145,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
         this.suspendReasons.push(message)
       }
     }
-    this.assignTasks(deposit, harvesters)
+    this.assignTasks(deposit, harvesters, roomResources)
   }
 
   private spawnHarvester(roomResources: OwnedRoomResource): void {
@@ -207,7 +209,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     return storedEnergy >= storedEnergyThreshold
   }
 
-  private assignTasks(deposit: Deposit | null, harvesters: Creep[]): void {
+  private assignTasks(deposit: Deposit | null, harvesters: Creep[], roomResources: OwnedRoomResource): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.taskIdentifier,
@@ -221,7 +223,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       this.parentRoomName,
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newHaulerTask(creep, carryingCommodityHarvesters, deposit),
+      creep => this.newHaulerTask(creep, carryingCommodityHarvesters, deposit, roomResources),
       creep => hasNecessaryRoles(creep, [...this.haulerRoles])
     )
   }
@@ -237,15 +239,23 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return null
     }
     if (creep.store.getFreeCapacity() <= 0) {
+      creep.say("full")
       return null
     }
-    if (creep.harvest(deposit) === ERR_NOT_IN_RANGE) {
+    const harvestResult = creep.harvest(deposit)
+    switch (harvestResult) {
+    case OK:
+    case ERR_TIRED:
+      return null
+    case ERR_NOT_IN_RANGE:
       return FleeFromAttackerTask.create(MoveToTask.create(deposit.pos, 1))
+    default:
+      creep.say(`${harvestResult}`)
+      return null
     }
-    return null
   }
 
-  private newHaulerTask(creep: Creep, carryingCommodityHarvesters: Creep[], deposit: Deposit | null): CreepTask | null {
+  private newHaulerTask(creep: Creep, carryingCommodityHarvesters: Creep[], deposit: Deposit | null, roomResources: OwnedRoomResource): CreepTask | null {
     const shouldReturnToParentRoom = ((): boolean => {
       if (creep.store.getUsedCapacity(this.depositInfo.commodityType) <= 0) {
         return false
@@ -259,12 +269,22 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       if (creep.ticksToLive != null && creep.ticksToLive < 200) {
         return true
       }
+      if (deposit != null && deposit.cooldown > (GameConstants.room.size * 2)) {
+        return true
+      }
       return false
     })()
 
     if (shouldReturnToParentRoom === true) {
       const waypoints = GameMap.getWaypoints(this.depositInfo.roomName, creep.room.name) ?? []
-      return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, waypoints))
+      const tasks: CreepTask[] = [
+        MoveToRoomTask.create(this.parentRoomName, waypoints),
+      ]
+      const transferTarget: StructureTerminal | StructureStorage | null = roomResources.activeStructures.storage ?? roomResources.activeStructures.terminal
+      if (transferTarget != null) {
+        tasks.push(MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, this.depositInfo.commodityType)))
+      }
+      return FleeFromAttackerTask.create(SequentialTask.create(tasks, {finishWhenSucceed: false, ignoreFailure: false}))
     }
 
     if (creep.room.name !== this.depositInfo.roomName) {

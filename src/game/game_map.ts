@@ -1,4 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { coloredText } from "utility/log"
 import { RoomName } from "../utility/room_name"
 
 export type GameMapMemory = {
@@ -29,7 +30,7 @@ export const GameMap = {
   afterTick(): void {
     if (missingWaypointPairs.length > 0) {
       const missingWaypoints = missingWaypointPairs.map(pair => `${pair.from}=>${pair.to}`).join(", ")
-      PrimitiveLogger.notice(`Requested missing waypoints: ${missingWaypoints}`)
+      PrimitiveLogger.notice(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${missingWaypoints}`)
 
       missingWaypointPairs.splice(0, missingWaypointPairs.length)
     }
