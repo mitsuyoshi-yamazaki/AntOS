@@ -98,7 +98,7 @@ export class V6RoomKeeperProcess implements Process, Procedural, MessageObserver
     taskRequests.problems.forEach(problem => {
       const message = `Unresolved problem ${problem.identifier}, ${this.task.identifier} at ${roomLink(this.roomName)}`
       if (problem.problem.shouldNotify !== true) {
-        PrimitiveLogger.notice(message)
+        PrimitiveLogger.log(message)
         return
       }
       PrimitiveLogger.fatal(message)
