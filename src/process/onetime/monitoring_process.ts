@@ -89,7 +89,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
 
   public didReceiveMessage(message: string): string {
     const args = message.split(" ")
-    const commands = ["add", "show"]
+    const commands = ["add", "show", "clear_history"]
     const command = args.shift()
     if (command == null) {
       return `Missing command. Available commands are: ${commands.join(", ")}`
@@ -100,6 +100,9 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
       return this.addCondition(args)
     case "show":
       return "Show condition: not implemented yet"
+    case "clear_history":
+      this.lastNoticeMessage = null
+      return "Cleared"
     default:
       return `Unknown command ${command}. Available commands are: ${commands.join(", ")}`
     }
