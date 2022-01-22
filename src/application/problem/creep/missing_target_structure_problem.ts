@@ -5,6 +5,7 @@ import { RoomName } from "utility/room_name"
 
 export class MissingTargetStructureProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = true
 
   public constructor(
     public readonly parentRoomName: RoomName,

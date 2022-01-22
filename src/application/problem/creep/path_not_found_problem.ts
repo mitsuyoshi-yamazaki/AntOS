@@ -3,6 +3,7 @@ import type { ProblemIdentifier } from "application/problem"
 
 export class PathNotFoundProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = false
 
   public constructor(
     public readonly position: RoomPosition,

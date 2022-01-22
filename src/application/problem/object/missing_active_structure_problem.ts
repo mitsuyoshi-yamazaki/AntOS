@@ -4,6 +4,7 @@ import { RoomName } from "utility/room_name"
 
 export class MissingActiveStructureProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = true
 
   public constructor(
     public readonly roomName: RoomName,
