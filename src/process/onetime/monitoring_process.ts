@@ -367,7 +367,7 @@ function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
       }
       const description = ((): string => {
         if (controller.safeMode != null) {
-          return `Safemode activated (${controller.safeMode} remaining)`
+          return `Safemode activated (${Math.floor(controller.safeMode / 1000)}k ticks remaining)`
         }
         return "Safemode deactivated"
       })()
