@@ -83,9 +83,11 @@ export function coloredResourceType(resourceType: ResourceConstant): string {
 export function resourceColorCode(resourceType: ResourceConstant): string {
   switch (resourceType) {
   case RESOURCE_ENERGY:
+  case RESOURCE_BATTERY:
     return "#FFE664"
 
   case RESOURCE_POWER:
+  case RESOURCE_PURIFIER:
     return "#FF1A30"
 
   case RESOURCE_OXYGEN:
@@ -107,6 +109,7 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
   case RESOURCE_GHODIUM_ALKALIDE:
   case RESOURCE_CATALYZED_GHODIUM_ACID:
   case RESOURCE_CATALYZED_GHODIUM_ALKALIDE:
+  case RESOURCE_GHODIUM_MELT:
     return "#FFFFFF"
 
   case RESOURCE_UTRIUM:
@@ -116,6 +119,7 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
   case RESOURCE_UTRIUM_ALKALIDE:
   case RESOURCE_CATALYZED_UTRIUM_ACID:
   case RESOURCE_CATALYZED_UTRIUM_ALKALIDE:
+  case RESOURCE_UTRIUM_BAR:
     return "#51D7F9"
 
   case RESOURCE_KEANIUM:
@@ -125,6 +129,7 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
   case RESOURCE_KEANIUM_ALKALIDE:
   case RESOURCE_CATALYZED_KEANIUM_ACID:
   case RESOURCE_CATALYZED_KEANIUM_ALKALIDE:
+  case RESOURCE_KEANIUM_BAR:
     return "#A071FF"
 
   case RESOURCE_LEMERGIUM:
@@ -134,6 +139,7 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
   case RESOURCE_LEMERGIUM_ALKALIDE:
   case RESOURCE_CATALYZED_LEMERGIUM_ACID:
   case RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE:
+  case RESOURCE_LEMERGIUM_BAR:
     return "#00F4A2"
 
   case RESOURCE_ZYNTHIUM:
@@ -143,7 +149,53 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
   case RESOURCE_ZYNTHIUM_ALKALIDE:
   case RESOURCE_CATALYZED_ZYNTHIUM_ACID:
   case RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE:
+  case RESOURCE_ZYNTHIUM_BAR:
     return "#FDD388"
+
+  case RESOURCE_OXIDANT:
+  case RESOURCE_REDUCTANT:
+    return "#A7A7A7"
+
+  case RESOURCE_SILICON:
+  case RESOURCE_WIRE:
+  case RESOURCE_SWITCH:
+  case RESOURCE_TRANSISTOR:
+  case RESOURCE_MICROCHIP:
+  case RESOURCE_CIRCUIT:
+  case RESOURCE_DEVICE:
+    return "#50A6E5"
+
+  case RESOURCE_BIOMASS:
+  case RESOURCE_CELL:
+  case RESOURCE_PHLEGM:
+  case RESOURCE_TISSUE:
+  case RESOURCE_MUSCLE:
+  case RESOURCE_ORGANOID:
+  case RESOURCE_ORGANISM:
+    return "#86B314"
+
+  case RESOURCE_METAL:
+  case RESOURCE_ALLOY:
+  case RESOURCE_TUBE:
+  case RESOURCE_FIXTURES:
+  case RESOURCE_FRAME:
+  case RESOURCE_HYDRAULICS:
+  case RESOURCE_MACHINE:
+    return "#946F5C"
+
+  case RESOURCE_MIST:
+  case RESOURCE_CONDENSATE:
+  case RESOURCE_CONCENTRATE:
+  case RESOURCE_EXTRACT:
+  case RESOURCE_SPIRIT:
+  case RESOURCE_EMANATION:
+  case RESOURCE_ESSENCE:
+    return "#D85DF5"
+
+  case RESOURCE_COMPOSITE:
+  case RESOURCE_CRYSTAL:
+  case RESOURCE_LIQUID:
+    return "#FFFFFF"
 
   default:
     return "#FFFFFF"
