@@ -77,7 +77,7 @@ export function managePowerCreepLink(): string {
 }
 
 export function coloredResourceType(resourceType: ResourceConstant): string {
-  return `<b><span style='color:${resourceColorCode(resourceType)}'>${resourceType}</span></b>`
+  return `<b>${anyColoredText(resourceType, resourceColorCode(resourceType))}</b>`
 }
 
 export function resourceColorCode(resourceType: ResourceConstant): string {

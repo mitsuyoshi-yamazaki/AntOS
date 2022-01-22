@@ -62,10 +62,6 @@ export function resource_color(resource_type: ResourceConstant): string {
   return resourceColorCode(resource_type)
 }
 
-export function colored_body_part(body_part: BodyPartConstant): string {
-  return `<b><span style='color:${body_part_color(body_part)}'>${body_part}</span></b>`
-}
-
 export function body_part_color(body_part: BodyPartConstant): string {
   switch (body_part) {
     case MOVE:
