@@ -296,7 +296,7 @@ function shortDescriptionForHostileRoomTarget(target: TargetHostileRoom): string
 function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
   const room = Game.rooms[target.roomName]
   if (room == null) {
-    return [`${roomLink(target.roomName)} does not exists`]
+    return []
   }
   if (room.controller == null) {
     return [`${roomLink(target.roomName)} does not have a controller`]
