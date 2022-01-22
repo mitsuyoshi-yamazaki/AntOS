@@ -283,6 +283,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_EXTRACTOR,
     ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
+      STRUCTURE_CONTAINER,
       STRUCTURE_ROAD,
       STRUCTURE_STORAGE,
       STRUCTURE_POWER_SPAWN,
