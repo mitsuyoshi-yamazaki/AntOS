@@ -11,6 +11,7 @@ ProcessDecoder.register("MonitoringProcess", state => {
   return MonitoringProcess.decode(state as MonitoringProcessState)
 })
 
+const hostileRoomConditions = ["safemode", "unclaim", "creep"]
 type HostileRoomMonitoringConditionSafemode = {
   readonly case: "safemode"
   readonly enabled: boolean
@@ -80,7 +81,21 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    return "not implemented yet"
+    const args = message.split(" ")
+    const commands = ["add", "show"]
+    const command = args.shift()
+    if (command == null) {
+      return `Missing command. Available commands are: ${commands.join(", ")}`
+    }
+
+    switch (command) {
+    case "add":
+      return this.addCondition(args)
+    case "show":
+      return "Show condition: not implemented yet"
+    default:
+      return `Unknown command ${command}. Available commands are: ${commands.join(", ")}`
+    }
   }
 
   public runOnTick(): void {
@@ -119,6 +134,63 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     this.lastNoticeMessage = notifyMessage
     PrimitiveLogger.notice(notifyMessage)
   }
+
+  private addCondition(args: string[]): string {
+    switch (this.target.case) {
+    case "hostile room": {
+      const condition = args.shift()
+      if (condition == null) {
+        return `Condition not specified. Available conditions are: ${hostileRoomConditions}`
+      }
+      const argmentMap = new Map<string, string>()
+      args.forEach(arg => {
+        const [key, value] = arg.split("=")
+        if (key == null || value == null) {
+          return
+        }
+        argmentMap.set(key, value)
+      })
+      return this.addHostileRoomCondition(this.target, condition, argmentMap)
+    }
+    }
+  }
+
+  private addHostileRoomCondition(target: TargetHostileRoom, condition: string, args: Map<string, string>): string {
+    switch (condition) {
+    case "safemode": {
+      if (target.conditions.find(condition => condition.case === "safemode") != null) {
+        return `${roomLink(target.roomName)} already has safemode condition`
+      }
+      const enabled = args.get("enabled")
+      if (enabled == null) {
+        return "Missing enabled argument"
+      }
+      const condition: HostileRoomMonitoringConditionSafemode = {
+        case: "safemode",
+        enabled: enabled === "1",
+      }
+      target.conditions.push(condition)
+      return "safemode condition added"
+    }
+
+    case "unclaim": {
+      if (target.conditions.find(condition => condition.case === "unclaim") != null) {
+        return `${roomLink(target.roomName)} already has unclaim condition`
+      }
+      const condition: HostileRoomMonitoringConditionUnclaim = {
+        case: "unclaim",
+      }
+      target.conditions.push(condition)
+      return "unclaim condition added"
+    }
+
+    case "creep":
+      return "not implemented yet"
+
+    default:
+      return `Invalid condition. Available conditions are: ${hostileRoomConditions}`
+    }
+  }
 }
 
 const TargetMonitor = {
@@ -155,7 +227,7 @@ const TargetMonitor = {
 }
 
 function shortDescriptionForHostileRoomTarget(target: TargetHostileRoom): string {
-  const descriptions: string[] = target.conditions.map((condition): string => {
+  const conditionDescriptions: string[] = target.conditions.map((condition): string => {
     switch (condition.case) {
     case "creep appeared":
       return "creep"
@@ -165,9 +237,13 @@ function shortDescriptionForHostileRoomTarget(target: TargetHostileRoom): string
       return "unclaim"
     }
   })
-  if (descriptions.length <= 0) {
+  const descriptions: string[] = []
+  if (conditionDescriptions.length <= 0) {
     descriptions.push("no conditions")
+  } else {
+    descriptions.push("conditions:")
   }
+  descriptions.push(conditionDescriptions.join(", "))
   descriptions.push(`in ${roomLink(target.roomName)}`)
   return descriptions.join(" ")
 }
@@ -188,11 +264,19 @@ function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
       // TODO:
       return []
 
-    case "safemode":
-      if (controller.safeMode == null) {
+    case "safemode": {
+      const conditionMet = (controller.safeMode != null) && condition.enabled
+      if (conditionMet !== true) {
         return []
       }
-      return [`activated safemode (${controller.safeMode} remaining)`]
+      const description = ((): string => {
+        if (controller.safeMode != null) {
+          return `Safemode activated (${controller.safeMode} remaining)`
+        }
+        return "Safemode deactivated"
+      })()
+      return [description]
+    }
 
     case "unclaim":
       if (controller.owner != null) {
