@@ -644,40 +644,51 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     const researchLab = resources.roomInfo.researchLab
-    if (researchLab == null) {
-      return `No research labs in ${roomLink(roomName)}`
-    }
-
-    const outputLabs = [...researchLab.outputLabs]
-      .flatMap(labId => {
-        const lab = Game.getObjectById(labId)
-        if (lab == null) {
-          PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
-          return []
-        }
-        return lab
-      })
-
-    if (resources.roomInfo.roomPlan?.centerPosition != null) {
-      const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
-      outputLabs.sort((lhs, rhs) => {
-        return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
-      })
-    }
-
+    const boostLabIds: Id<StructureLab>[] = []
     const numberOfBoostLabs = 6
-    if (outputLabs.length > numberOfBoostLabs) {
-      outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
-    }
-    const boostLabIds = outputLabs.map(lab => lab.id)
-    boostLabIds.forEach(labId => {
-      const index = researchLab.outputLabs.indexOf(labId)
-      if (index < 0) {
-        return
+
+    if (researchLab != null) {
+      const outputLabs = [...researchLab.outputLabs]
+        .flatMap(labId => {
+          const lab = Game.getObjectById(labId)
+          if (lab == null) {
+            PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
+            return []
+          }
+          return lab
+        })
+
+      if (resources.roomInfo.roomPlan?.centerPosition != null) {
+        const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
+        outputLabs.sort((lhs, rhs) => {
+          return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
+        })
       }
-      researchLab.outputLabs.splice(index, 1)
-    })
-    outputs.push(`Removed from research output lab: ${boostLabIds}`)
+
+      if (outputLabs.length > numberOfBoostLabs) {
+        outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
+      }
+      boostLabIds.push(...outputLabs.map(lab => lab.id))
+      boostLabIds.forEach(labId => {
+        const index = researchLab.outputLabs.indexOf(labId)
+        if (index < 0) {
+          return
+        }
+        researchLab.outputLabs.splice(index, 1)
+      })
+      outputs.push(`Removed from research output lab: ${boostLabIds}`)
+
+    } else {  // researchLab == null
+      const labs = resources.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+      if (labs.length > numberOfBoostLabs) {
+        labs.splice(numberOfBoostLabs, labs.length - numberOfBoostLabs)
+      }
+      boostLabIds.push(...labs.map(lab => lab.id))
+
+      if (boostLabIds.length > 0) {
+        outputs.push(`Found ${boostLabIds.length} unused labs`)
+      }
+    }
 
     if (resources.roomInfo.config == null) {
       resources.roomInfo.config = {}
