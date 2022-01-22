@@ -29,7 +29,7 @@ ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
-const maxCooldown = 150
+const maxCooldown = 50
 
 type DepositInfo = {
   readonly roomName: RoomName
@@ -310,7 +310,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.parentRoomName, waypoints),
       ]
-      const transferTarget: StructureTerminal | StructureStorage | null = roomResources.activeStructures.storage ?? roomResources.activeStructures.terminal
+      const transferTarget: StructureTerminal | StructureStorage | null = roomResources.activeStructures.terminal ?? roomResources.activeStructures.storage
       if (transferTarget != null) {
         tasks.push(MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, this.depositInfo.commodityType)))
       }
