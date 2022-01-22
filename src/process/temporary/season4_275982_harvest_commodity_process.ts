@@ -22,6 +22,8 @@ import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequenti
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { GameConstants } from "utility/constants"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
@@ -32,9 +34,8 @@ const maxCooldown = 150
 type DepositInfo = {
   readonly roomName: RoomName
   readonly commodityType: DepositConstant
-  readonly currentCooldown: number
-  readonly decayIn: number
   readonly neighbourCellCount: number
+  currentCooldown: number
 }
 
 type CreepSpec = {
@@ -49,7 +50,7 @@ export interface Season4275982HarvestCommodityProcessState extends ProcessState 
   readonly suspendReasons: string[]
 }
 
-export class Season4275982HarvestCommodityProcess implements Process, Procedural {
+export class Season4275982HarvestCommodityProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -68,7 +69,13 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     private readonly creepSpec: CreepSpec,
     private readonly suspendReasons: string[],
   ) {
-    this.identifier = `${this.constructor.name}_${this.parentRoomName}`
+    this.identifier = ((): string => {
+      if (this.processId === 287027000) {
+        return "Season4275982HarvestCommodityProcess_W19S19"  // TODO: 消す
+      }
+      return `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.depositInfo.roomName}`
+    })()
+
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -93,18 +100,38 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   }
 
   public processShortDescription(): string {
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.taskIdentifier, () => true)
     const descriptions: string[] = [
-      `${roomLink(this.parentRoomName)} -> ${coloredResourceType(this.depositInfo.commodityType)} in ${roomLink(this.depositInfo.roomName)}`
+      `${roomLink(this.parentRoomName)} -> ${coloredResourceType(this.depositInfo.commodityType)} in ${roomLink(this.depositInfo.roomName)}`,
+      `${creepCount} cr`,
     ]
+    const suspendReasons = [...this.suspendReasons]
+    const roomResources = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResources != null && this.hasEnoughEnergy(roomResources) !== true) {
+      suspendReasons.push("lack of energy")
+    }
+
     if (this.suspendReasons.length > 0) {
-      descriptions.push(`Not spawning due to: ${this.suspendReasons.join(", ")}`)
+      descriptions.push(`Not spawning due to: ${suspendReasons.join(", ")}`)
     }
     return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    switch (message) {
+    case "stop":
+      this.addSuspendReason("manual stop")
+      return "stopped"
+
+    default:
+      return `Unknown command ${message}`
+    }
   }
 
   public runOnTick(): void {
     const roomResources = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResources == null) {
+      PrimitiveLogger.programError(`${this.taskIdentifier} ${roomLink(this.parentRoomName)} is not owned`)
       return
     }
 
@@ -124,7 +151,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
 
     if (harvesters.length < this.creepSpec.harvesterCount) {
       const energyNeeded = 2300
-      if (roomResources.room.energyCapacityAvailable > energyNeeded) {
+      if (roomResources.room.energyCapacityAvailable >= energyNeeded) {
         this.spawnHarvester(roomResources)
         processLog(this, `Cannot spawn harvester in ${roomLink(this.parentRoomName)}, lack of energy ${roomResources.room.energyCapacityAvailable}`)
       }
@@ -140,10 +167,10 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return targetRoom.find(FIND_DEPOSITS)[0] ?? null
     })()
     if (deposit != null && deposit.cooldown > maxCooldown) {
-      const message = "too long cooldown"
-      if (this.suspendReasons.includes(message) !== true) {
-        this.suspendReasons.push(message)
-      }
+      this.addSuspendReason("too long cooldown")
+    }
+    if (targetRoom != null && deposit == null) {
+      this.addSuspendReason("missing deposit")
     }
     this.assignTasks(deposit, harvesters, roomResources)
   }
@@ -201,7 +228,10 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     if (this.suspendReasons.length > 0) {
       return false
     }
+    return this.hasEnoughEnergy(roomResources)
+  }
 
+  private hasEnoughEnergy(roomResources: OwnedRoomResource): boolean {
     const storedEnergyThreshold = 40000
     const storedEnergy = (roomResources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       + (roomResources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
@@ -308,5 +338,11 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return FleeFromAttackerTask.create(MoveToTask.create(harvester.pos, 1))
     }
     return null
+  }
+
+  private addSuspendReason(reason: string): void {
+    if (this.suspendReasons.includes(reason) !== true) {
+      this.suspendReasons.push(reason)
+    }
   }
 }
