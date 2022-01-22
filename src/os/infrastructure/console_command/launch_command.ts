@@ -37,7 +37,9 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-// import { AttackRoomProcess } from "process/onetime/attack_room_process"
+// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+// import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
+import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -143,6 +145,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "AttackRoomProcess":
       result = this.launchAttackRoomProcess()
+      break
+    case "MonitoringProcess":
+      result = this.launchMonitoringProcess()
       break
     default:
       break
@@ -869,5 +874,36 @@ export class LaunchCommand implements ConsoleCommand {
     // })
     // return Result.Succeeded(process)
     return Result.Failed("not implemented yet")
+  }
+
+  private launchMonitoringProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const name = args.get("name")
+    if (name == null) {
+      return this.missingArgumentError("name")
+    }
+
+    const target = ((): MonitoringTarget | string => {
+      const roomName = args.get("room_name")
+      if (roomName != null) {
+        const hostileRoomTarget: MonitoringTargetHostileRoom = {
+          case: "hostile room",
+          roomName,
+          conditions: [],
+        }
+        return hostileRoomTarget
+      }
+      return "Cannot determine monitoring target. Specify one of (room_name, )"
+    })()
+
+    if (typeof target === "string") {
+      return Result.Failed(target)
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return MonitoringProcess.create(processId, name, target)
+    })
+    return Result.Succeeded(process)
   }
 }
