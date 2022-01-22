@@ -158,7 +158,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
   private addHostileRoomCondition(target: TargetHostileRoom, condition: string, args: Map<string, string>): string {
     switch (condition) {
     case "safemode": {
-      if (target.conditions.find(condition => condition.case === "safemode") != null) {
+      if (target.conditions.some(condition => condition.case === "safemode")) {
         return `${roomLink(target.roomName)} already has safemode condition`
       }
       const enabled = args.get("enabled")
@@ -174,7 +174,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     }
 
     case "unclaim": {
-      if (target.conditions.find(condition => condition.case === "unclaim") != null) {
+      if (target.conditions.some(condition => condition.case === "unclaim")) {
         return `${roomLink(target.roomName)} already has unclaim condition`
       }
       const condition: HostileRoomMonitoringConditionUnclaim = {
@@ -184,8 +184,46 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
       return "unclaim condition added"
     }
 
-    case "creep":
-      return "not implemented yet"
+    case "creep": {
+      if (target.conditions.some(condition => condition.case === "creep appeared")) {
+        return `${roomLink(target.roomName)} already has creep condition`
+      }
+
+      const rawBodyParts = args.get("body")
+      if (rawBodyParts == null) {
+        return "Missing body argument"
+      }
+      const bodyParts = ((): BodyPartConstant[] | "any" | string => {
+        if (rawBodyParts === "any") {
+          return rawBodyParts
+        }
+        const components = rawBodyParts.toLowerCase().split(",")
+        const availableBodyParts: string[] = [...BODYPARTS_ALL]
+        for (const body of components) {
+          if (availableBodyParts.includes(body) !== true) {
+            return `Invalid bodypart ${body}`
+          }
+        }
+        return components as BodyPartConstant[]
+      })()
+      if (typeof bodyParts === "string") {
+        if (bodyParts !== "any") {
+          return bodyParts
+        }
+      }
+
+      const ignoreIrrelevantPlayer = args.get("ignore_irrelevants")
+      if (ignoreIrrelevantPlayer == null) {
+        return "Missing ignore_irrelevants argument"
+      }
+      const condition: HostileRoomMonitoringConditionCreepAppeared = {
+        case: "creep appeared",
+        ignoreIrrelevantPlayer: ignoreIrrelevantPlayer === "1",
+        includedBodyParts: bodyParts,
+      }
+      target.conditions.push(condition)
+      return "creep appearing condition added"
+    }
 
     default:
       return `Invalid condition. Available conditions are: ${hostileRoomConditions}`
@@ -260,9 +298,35 @@ function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
 
   return target.conditions.flatMap((condition): string[] => {
     switch (condition.case) {
-    case "creep appeared":
-      // TODO:
-      return []
+    case "creep appeared": {
+      const creeps = ((): AnyCreep[] => {
+        const hostileCreeps: AnyCreep[] = []
+        if (condition.includedBodyParts === "any") {
+          hostileCreeps.push(...controller.room.find(FIND_HOSTILE_CREEPS))
+          hostileCreeps.push(...controller.room.find(FIND_HOSTILE_POWER_CREEPS))
+        } else {
+          const includedBodyParts = condition.includedBodyParts
+          hostileCreeps.push(
+            ...controller.room.find(FIND_HOSTILE_CREEPS)
+              .filter(creep => {
+                return includedBodyParts.some(body => creep.getActiveBodyparts(body))
+              })
+          )
+        }
+        if (condition.ignoreIrrelevantPlayer !== true) {
+          return hostileCreeps
+        }
+        const hostileName = controller.owner?.username
+        if (hostileName == null) {
+          return []
+        }
+        return hostileCreeps.filter(creep => creep.owner.username === hostileName)
+      })()
+      if (creeps[0] == null) {
+        return []
+      }
+      return [`${creeps.length} creeps`]
+    }
 
     case "safemode": {
       const conditionMet = (controller.safeMode != null) && condition.enabled
