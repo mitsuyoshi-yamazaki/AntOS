@@ -19,6 +19,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ProcessDecoder } from "process/process_decoder"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 ProcessDecoder.register("Season1244215GenericDismantleProcess", state => {
   return Season1244215GenericDismantleProcess.decode(state as Season1244215GenericDismantleProcessState)
@@ -222,7 +223,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     if (target == null) {
       return
     }
-    creep.v5task = MoveToTargetTask.create(DismantleApiWrapper.create(target))
+    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(DismantleApiWrapper.create(target)))
   }
 
   private constructionSite(creep: Creep): ConstructionSite | null {
