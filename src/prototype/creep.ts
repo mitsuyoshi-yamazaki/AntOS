@@ -87,16 +87,27 @@ export interface V6CreepMemory {
 
   /** creep identifier */
   ci: string | null
+
+  /** notifyWhenAttacked() set */ // 設定（無効化）したという情報しか格納していない=再度有効化するならもうひとつフラグが必要
+  n: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+export function isCreepMemory(memory: globalThis.CreepMemory): memory is CreepMemory {
+  if (isV6CreepMemory(memory)) {
+    return true
+  }
+  if (isV5CreepMemory(memory)) {
+    return true
+  }
+  return false
+}
+
 export function isV6Creep(creep: Creep): creep is V6Creep {
   return isV6CreepMemory(creep.memory)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function isV6CreepMemory(arg: any): arg is V6CreepMemory {
-  return arg.v === ShortVersion.v6
+export function isV6CreepMemory(memory: globalThis.CreepMemory): memory is V6CreepMemory {
+  return (memory as { v: ShortVersion }).v === ShortVersion.v6
 }
 
 export interface V5CreepMemory {
@@ -114,11 +125,13 @@ export interface V5CreepMemory {
 
   /** task runner id */
   i: V5TaskIdentifier | null
+
+  /** notifyWhenAttacked() set */
+  n: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-export function isV5CreepMemory(arg: any): arg is V5CreepMemory {
-  return arg.v === ShortVersion.v5
+export function isV5CreepMemory(memory: globalThis.CreepMemory): memory is V5CreepMemory {
+  return (memory as {v: ShortVersion}).v === ShortVersion.v5
 }
 
 // 毎tick呼び出すこと

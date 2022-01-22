@@ -53,6 +53,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         r: request.roles,
         t: request.initialTask?.encode() ?? null,
         i: request.taskIdentifier,
+        n: false,
       }
       const result = spawn.spawnCreep(body, creepName, { memory: memory })
       switch (result) {
