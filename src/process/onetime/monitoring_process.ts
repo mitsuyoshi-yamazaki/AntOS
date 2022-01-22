@@ -77,7 +77,14 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
   }
 
   public processShortDescription(): string {
-    return TargetMonitor.shortDescriptionFor(this.target)
+    const descriptions: string[] = []
+    if (this.lastNoticeMessage != null) {
+      descriptions.push("triggered")
+    } else {
+      descriptions.push("normal")
+    }
+    descriptions.push(TargetMonitor.shortDescriptionFor(this.target))
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
