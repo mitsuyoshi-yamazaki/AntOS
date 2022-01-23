@@ -289,6 +289,9 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
       STRUCTURE_CONTAINER,
       STRUCTURE_ROAD,
+      STRUCTURE_RAMPART,
+      STRUCTURE_LINK,
+      STRUCTURE_EXTRACTOR,
       STRUCTURE_STORAGE,
       STRUCTURE_POWER_SPAWN,
       STRUCTURE_TERMINAL,
