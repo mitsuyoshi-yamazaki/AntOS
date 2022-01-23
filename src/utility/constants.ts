@@ -65,6 +65,9 @@ export const GameConstants = {
       lifeTime: CREEP_LIFE_TIME,
       claimLifeTime: CREEP_CLAIM_LIFE_TIME,
     },
+    body: {
+      bodyPartMaxCount: 50,
+    },
     actionRange: {
       build: 3,
       repair: REPAIR_RANGE,
