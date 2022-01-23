@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { coloredText } from "utility/log"
-import { RoomName } from "../utility/room_name"
+import { coloredText, roomLink } from "utility/log"
+import { isValidRoomName, RoomName } from "../utility/room_name"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }
@@ -29,7 +29,7 @@ export const GameMap = {
 
   afterTick(): void {
     if (missingWaypointPairs.length > 0) {
-      const missingWaypoints = missingWaypointPairs.map(pair => `${pair.from}=>${pair.to}`).join(", ")
+      const missingWaypoints = missingWaypointPairs.map(pair => `${roomLink(pair.from)}=>${roomLink(pair.to)}`).join(", ")
       PrimitiveLogger.notice(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${missingWaypoints}`)
 
       missingWaypointPairs.splice(0, missingWaypointPairs.length)
@@ -50,6 +50,18 @@ export const GameMap = {
   },
 
   setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): void {
+    const roomNames: RoomName[] = [
+      roomName,
+      destinationRoomName,
+      ...waypoints,
+    ]
+    for (const name of roomNames) {
+      if (isValidRoomName(name) !== true) {
+        PrimitiveLogger.programError(`GameMap.setWaypoints() ${name} is not valid roomname`)
+        return
+      }
+    }
+
     const infoList = ((): { [destinationRoomName: string]: RoomName[] } => {
       const stored = Memory.gameMap.interRoomPath[roomName]
       if (stored != null) {
