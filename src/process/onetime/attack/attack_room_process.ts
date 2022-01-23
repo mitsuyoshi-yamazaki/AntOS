@@ -1,7 +1,8 @@
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
-import { ProcessState } from "../process_state"
+import { ProcessState } from "process/process_state"
+import { RoomName } from "utility/room_name"
 import { } from "./construction_saboteur_process"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
@@ -15,7 +16,12 @@ const commands = [
 ]
 
 type TargetRoomInfo = {
+  roomName: RoomName
   safemodeEndsAt: number | null
+}
+
+type ChildProcessInfo = {
+
 }
 
 interface AttackRoomProcessState extends ProcessState {
@@ -46,11 +52,15 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   public static decode(state: AttackRoomProcessState): AttackRoomProcess {
-    return new AttackRoomProcess(state.l, state.i)
+    return new AttackRoomProcess(state.l, state.i, state.targetRoomInfo)
   }
 
-  public static create(processId: ProcessId): AttackRoomProcess {
-    return new AttackRoomProcess(Game.time, processId)
+  public static create(processId: ProcessId, targetRoomName: RoomName): AttackRoomProcess {
+    const targetRoomInfo: TargetRoomInfo = {
+      roomName: targetRoomName,
+      safemodeEndsAt: null,
+    }
+    return new AttackRoomProcess(Game.time, processId, targetRoomInfo)
   }
 
   public didReceiveMessage(message: string): string {
@@ -65,5 +75,10 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   public runOnTick(): void {
+    const targetRoom = Game.rooms[this.targetRoomInfo.roomName]
+    if (targetRoom != null) {
+
+      this.targetRoomInfo.safemodeEndsAt
+    }
   }
 }
