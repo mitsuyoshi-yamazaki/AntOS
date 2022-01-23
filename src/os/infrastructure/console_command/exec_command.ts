@@ -623,7 +623,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W53S36")
+  // Game.io("exec set_boost_labs room_name=W53S36 total_boost_lab_count=6")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
@@ -643,9 +643,24 @@ export class ExecCommand implements ConsoleCommand {
       return `${roomLink(roomName)} has boost labs`
     }
 
+    const rawTotalBoostLabCount = args.get("total_boost_lab_count")
+    if (rawTotalBoostLabCount == null) {
+      return this.missingArgumentError("total_boost_lab_count")
+    }
+    const totalBoostLabCount = parseInt(rawTotalBoostLabCount)
+    if (isNaN(totalBoostLabCount) === true) {
+      return `total_boost_lab_count is not a number ${rawTotalBoostLabCount}`
+    }
+    const numberOfBoostLabs = ((): number => {
+      const boostLabs = resources.roomInfo.config?.boostLabs
+      if (boostLabs != null) {
+        return Math.max(totalBoostLabCount - boostLabs.length, 0)
+      }
+      return totalBoostLabCount
+    })()
+
     const researchLab = resources.roomInfo.researchLab
     const boostLabIds: Id<StructureLab>[] = []
-    const numberOfBoostLabs = 6
 
     if (researchLab != null) {
       const outputLabs = [...researchLab.outputLabs]
