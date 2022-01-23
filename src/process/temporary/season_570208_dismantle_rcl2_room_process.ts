@@ -41,6 +41,9 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
 
   fleeRange: number
   stopSpawning: boolean
+
+  /** safemodeに入っていてもcreepを送り続ける */
+  keepSpawning: boolean
 }
 
 export class Season570208DismantleRcl2RoomProcess implements Process, Procedural, MessageObserver {
@@ -76,6 +79,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     private numberOfCreeps: number,
     private fleeRange: number,
     private stopSpawning: boolean,
+    private keepSpawning: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -93,6 +97,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       n: this.numberOfCreeps,
       fleeRange: this.fleeRange,
       stopSpawning: this.stopSpawning,
+      keepSpawning: this.keepSpawning,
     }
   }
 
@@ -103,11 +108,11 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning)
+    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false)
+    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false, false)
   }
 
   public processShortDescription(): string {
@@ -157,6 +162,9 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.numberOfCreeps = numberOfCreeps
       return `${numberOfCreeps} creeps set`
     }
+    case "keep_spawning":
+      this.keepSpawning = true
+      return "keep spawn"
     default:
       return `Invalid command ${command}`
     }
@@ -169,6 +177,9 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
         return
       }
       if (targetRoom.controller.safeMode == null) {
+        return
+      }
+      if (this.keepSpawning === true) {
         return
       }
       this.stopSpawning = true
