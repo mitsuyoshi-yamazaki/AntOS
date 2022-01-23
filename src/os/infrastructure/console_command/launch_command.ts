@@ -41,8 +41,8 @@ import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
-import { RoomName } from "utility/room_name"
 import { GameMap } from "game/game_map"
+import { RoomName } from "utility/room_name"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -469,19 +469,30 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
+
     const targetId = args.get("target_id")
     if (targetId == null) {
       return this.missingArgumentError("target_id")
     }
 
-    const result = GameMap.setWaypoints(roomName, targetRoomName, waypoints)
-    if (result.resultType === "failed") {
-      return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
+    const waypoints: RoomName[] = []
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
+      if (storedValue == null) {
+        return this.missingArgumentError("waypoints")
+      }
+      waypoints.push(...storedValue)
+
+    } else {
+      const parsedValue = rawWaypoints.split(",")
+
+      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
+      if (result.resultType === "failed") {
+        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
+      }
+
+      waypoints.push(...parsedValue)
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
