@@ -210,7 +210,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      const waypoints: RoomName[] = creep.room.name === this.parentRoomName ? this.waypoints : []
+      creep.v5task = MoveToRoomTask.create(this.targetRoomName, waypoints)
       return
     }
 
