@@ -870,9 +870,53 @@ export class ExecCommand implements ConsoleCommand {
       return this.configureWallPositions(roomName, roomInfo, args)
     case "researchCompounds":
       return this.configureResearchCompounds(roomName, roomInfo, args)
+    case "refresh_research_labs":
+      return this.refreshResearchLabs(roomName, roomInfo, args)
     default:
       return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
     }
+  }
+
+  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `${roomLink(roomName)} no found`
+    }
+    if (roomInfo.researchLab == null) {
+      return `roomInfo.researchLab is null ${roomLink(roomName)}`
+    }
+
+    const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
+      .map(lab => lab.id)
+
+    const researchLabIds: Id<StructureLab>[] = [
+      roomInfo.researchLab.inputLab1,
+      roomInfo.researchLab.inputLab2,
+      ...roomInfo.researchLab.outputLabs,
+    ]
+    researchLabIds.forEach(researchLabId => {
+      const index = labIdsInRoom.indexOf(researchLabId)
+      if (index >= 0) {
+        labIdsInRoom.splice(index, 1)
+      }
+    })
+
+    const boostLabIds = roomInfo.config?.boostLabs
+    if (boostLabIds != null) {
+      boostLabIds.forEach(boostLabId => {
+        const index = labIdsInRoom.indexOf(boostLabId)
+        if (index >= 0) {
+          labIdsInRoom.splice(index, 1)
+        }
+      })
+    }
+
+    if (labIdsInRoom.length <= 0) {
+      return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
+    }
+    roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
+
+    return `${labIdsInRoom.length} labs added to research output labs`
   }
 
   private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
