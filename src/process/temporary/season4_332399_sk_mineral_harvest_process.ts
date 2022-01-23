@@ -23,22 +23,18 @@ import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ProcessDecoder } from "process/process_decoder"
 
-ProcessDecoder.register("Season1655635SKMineralHarvestProcess", state => {
-  return Season1655635SKMineralHarvestProcess.decode(state as Season1655635SKMineralHarvestProcessState)
+ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
+  return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
 })
 
 const fleeRange = 6
 const keeperLairSpawnTime = 15
 
-export interface Season1655635SKMineralHarvestProcessState extends ProcessState {
-  /** parent room name */
-  p: RoomName
+export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
+  roomName: RoomName
+  targetRoomName: RoomName
+  waypoints: RoomName[]
 
-  /** target room name */
-  tr: RoomName
-
-  /** waypoints */
-  w: RoomName[]
 
   mineralType: MineralConstant | null
   stopSpawning: boolean
@@ -46,7 +42,7 @@ export interface Season1655635SKMineralHarvestProcessState extends ProcessState 
 }
 
 // 旧Quadを使用したProcess
-export class Season1655635SKMineralHarvestProcess implements Process, Procedural, MessageObserver {
+export class Season4332399SKMineralHarvestProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -90,9 +86,9 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season1655635SKMineralHarvestProcessState {
+  public encode(): Season4332399SKMineralHarvestProcessState {
     return {
-      t: "Season1655635SKMineralHarvestProcess",
+      t: "Season4332399SKMineralHarvestProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -104,12 +100,12 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     }
   }
 
-  public static decode(state: Season1655635SKMineralHarvestProcessState): Season1655635SKMineralHarvestProcess {
-    return new Season1655635SKMineralHarvestProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true, state.mineralType)
+  public static decode(state: Season4332399SKMineralHarvestProcessState): Season4332399SKMineralHarvestProcess {
+    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true, state.mineralType)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season1655635SKMineralHarvestProcess {
-    return new Season1655635SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false, null)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season4332399SKMineralHarvestProcess {
+    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false, null)
   }
 
   public processShortDescription(): string {
@@ -202,7 +198,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
           const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
           this.requestCreep(this.attackerRoles, this.attackerBody, priority)
         } else {
-          if (harvesters[0] == null || (harvesters.length <= 1 &&  (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
+          if (harvesters[0] == null || (harvesters.length <= 1 && (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
             this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
           } else {
             if (haulers.length < 1) {
@@ -244,7 +240,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     if (attackers.length <= 0) {
       return
     }
-    const quad = new HRAQuad(attackers.map(creep => creep.name), {allowPartial: true})
+    const quad = new HRAQuad(attackers.map(creep => creep.name), { allowPartial: true })
 
     quad.heal()
     if (quad.numberOfCreeps < 2) {
