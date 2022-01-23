@@ -37,9 +37,10 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
+import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -148,6 +149,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "MonitoringProcess":
       result = this.launchMonitoringProcess()
+      break
+    case "QuadMakerProcess":
+      result = this.launchQuadMakerProcess()
       break
     default:
       break
@@ -903,6 +907,28 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return MonitoringProcess.create(processId, name, target)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchQuadMakerProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const name = args.get("name")
+    if (name == null) {
+      return this.missingArgumentError("name")
+    }
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return QuadMakerProcess.create(processId, name, roomName, targetRoomName)
     })
     return Result.Succeeded(process)
   }

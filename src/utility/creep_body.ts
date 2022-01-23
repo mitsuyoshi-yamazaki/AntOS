@@ -30,6 +30,10 @@ export const CreepBodyActionPower: { [index in CreepBodyFixedAmountActionType]: 
   capacity: CARRY_CAPACITY,
 }
 
+export function isBodyPartConstant(arg: string): arg is BodyPartConstant {
+  return (BODYPARTS_ALL as string[]).includes(arg)
+}
+
 export const CreepBody = {
   create: function(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
     return createCreepBody(baseBody, bodyUnit, energyCapacity, maxUnitCount)
