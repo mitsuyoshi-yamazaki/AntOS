@@ -85,6 +85,9 @@ export class MapAccessorProcess implements Process, MessageObserver {
     if (waypoints == null) {
       return `waypoints not set ${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
     }
+    if (waypoints.length <= 0) {
+      return `${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
+    }
     return `${roomLink(roomName)} -> ${waypoints.map(name => roomLink(name))} -> ${roomLink(destinationRoomName)}`
   }
 
@@ -116,7 +119,9 @@ export class MapAccessorProcess implements Process, MessageObserver {
       return `waypoints ${invalidWaypoints.join(",")} are not valid`
     }
     GameMap.setWaypoints(roomName, destinationRoomName, waypoints)
-    return `${roomLink(roomName)} -> ${waypoints.map(name => roomLink(name))} -> ${roomLink(destinationRoomName)}`
+
+    const waypointDescription = waypoints.length <= 0 ? "no waypoints" : waypoints.map(name => roomLink(name)).join(",")
+    return `${roomLink(roomName)} -> ${waypointDescription} -> ${roomLink(destinationRoomName)}`
   }
 
   private isValidRoomName(roomName: RoomName): boolean {

@@ -1,13 +1,19 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { QuadCreepSpec } from "../../../submodules/attack/quad/quad_spec"
+import { QuadCreepSpec, QuadSpec } from "../../../submodules/attack/quad/quad_spec"
 import { isMineralBoostConstant } from "utility/resource"
 import { CreepBody, isBodyPartConstant } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
+import { GameConstants } from "utility/constants"
+import { Result, ResultFailed } from "utility/result"
+import { OperatingSystem } from "os/os"
+import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -123,11 +129,24 @@ commands: ${commands}
     case "show":
       return this.show()
 
-    case "verify":
-      return this.verify()
+    case "verify": {
+      const result = this.verify()
+      switch (result.resultType) {
+      case "failed":
+        return result.reason.join("\n")
+      case "succeeded":
+        if (result.value.warnings.length > 0) {
+          return result.value.warnings.join("\n")
+        }
+        return "ok"
+      }
+    }
 
-    case "launch":
-      return this.launchQuadProcess()
+    // eslint-disable-next-line no-fallthrough
+    case "launch": {
+      const dryRun = components[0] !== "dry_run=0"
+      return this.launchQuadProcess(dryRun)
+    }
 
     default:
       return `Invalid command ${command}. see "help"`
@@ -168,13 +187,13 @@ commands: ${commands}
     }
 
     case "boosts": {
-      if (args.length <= 0) {
-        this.boosts = []
-        return `set boosts ${this.boosts} boosts`
+      const rawBoosts = args[0]
+      if (rawBoosts == null) {
+        return "no boosts specified, use reset command to reset boosts"
       }
       const boosts = ((): MineralBoostConstant[] | string => {
         const result: MineralBoostConstant[] = []
-        for (const value of args) {
+        for (const value of rawBoosts.split(",")) {
           if (!isMineralBoostConstant(value)) {
             return `Invalid boost ${value}`
           }
@@ -219,7 +238,7 @@ commands: ${commands}
 
         for (const component of bodyComponents) {
           const createErrorMessage = (error: string): string => {
-            return `Invalid body format: ${error} in ${component}. body=<count><body part>,<count><body part>,... e.g. body=3TOUGH,3MOVE,10HEAL,10MOVE`
+            return `Invalid body format: ${error} in ${component}. body=&ltcount&gt&ltbody part&gt,&ltcount&gt&ltbody part&gt,... e.g. body=3TOUGH,3MOVE,10HEAL,10MOVE`
           }
           const parts = component.split(/(\d+)/)
           const rawBodyPartsCount = parts[1]
@@ -230,7 +249,7 @@ commands: ${commands}
           if (isNaN(bodyPartsCount) === true) {
             return createErrorMessage("body count is not a number")
           }
-          const bodyPart = parts[2]
+          const bodyPart = parts[2]?.toLowerCase()
           if (bodyPart == null) {
             return createErrorMessage("missing body part definition")
           }
@@ -284,15 +303,125 @@ commands: ${commands}
   }
 
   private show(): string {
-    return "not implemented yet"
+    const quadSpec = this.createQuadSpec()
+    if (typeof quadSpec === "string") {
+      return `${quadSpec}:
+${this.quadName}
+handle melee: ${ this.canHandleMelee }
+damage tolerance: ${ this.damageTolerance }
+boosts: ${this.boosts}
+creeps: ${this.creepSpecs.length} creeps
+      `
+    }
+
+    return quadSpec.description()
   }
 
-  private verify(): string {
-    return "not implemented yet"
+  private verify(): Result<{ quadSpec: QuadSpec, waypoints: RoomName[], warnings: string[] }, string[]> {
+    const warningPrefix = coloredText("[WARN]", "warn")
+    const errorPrefix = coloredText("[ERROR]", "error")
+    const warnings: string[] = []
+    const errors: string[] = []
+
+    const resultFailed = (): ResultFailed<string[]> => {
+      errors.push(...warnings)
+      return Result.Failed(errors)
+    }
+
+    const waypoints = GameMap.getWaypoints(this.roomName, this.targetRoomName)
+    if (waypoints == null) {
+      errors.push(`${errorPrefix} waypoints not set ${roomLink(this.roomName)}=>${roomLink(this.targetRoomName)}`)
+    }
+
+    const roomResources = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResources == null) {
+      errors.push(`${errorPrefix} ${roomLink(this.roomName)} is not mine`)
+      return resultFailed()
+    }
+    const quadSpec = this.createQuadSpec()
+    if (typeof quadSpec === "string") {
+      errors.push(`${errorPrefix} ${quadSpec}`)
+      return resultFailed()
+    }
+
+    const creepSpecErrors: string[] = this.creepSpecs.flatMap(spec => {
+      if (spec.body.length > GameConstants.creep.body.bodyPartMaxCount) {
+        return [`${errorPrefix} over body limit (${spec.body.length} parts) ${CreepBody.description(spec.body)}`]
+      }
+      return []
+    })
+    errors.push(...creepSpecErrors)
+
+    const cost = quadSpec.energyCost()
+    const energyCapacityAvailable = roomResources.room.energyCapacityAvailable
+    if (cost > energyCapacityAvailable) {
+      errors.push(`${errorPrefix} lack of energy capacity: required ${cost}e but capacity is ${energyCapacityAvailable} in ${roomLink(this.roomName)}`)
+      return resultFailed()
+    }
+    const storedEnergy = (roomResources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      + (roomResources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    if (cost > storedEnergy) {
+      errors.push(`${errorPrefix} lack of energy: required ${cost}e but ${storedEnergy}e in ${roomLink(this.roomName)}`)
+      return resultFailed()
+    }
+    const safeEnergyAmount = Math.min(cost * 2, cost + 10000)
+    if (safeEnergyAmount > storedEnergy) {
+      warnings.push(`${warningPrefix} quad may cause energy shortage: required ${cost}e but ${storedEnergy}e in ${roomLink(this.roomName)}`)
+    }
+
+    if (waypoints != null && errors.length <= 0) {
+      return Result.Succeeded({
+        quadSpec,
+        waypoints,
+        warnings,
+      })
+    }
+    return resultFailed()
   }
 
-  private launchQuadProcess(): string {
-    // TODO: 生存し続けるオプションをつける
-    return "not implemented yet"
+  private launchQuadProcess(dryRun: boolean): string {
+    const dryRunDescription = dryRun ? "(dry run: set dry_run=0 to launch)" : ""
+    const result = this.verify()
+    switch (result.resultType) {
+    case "failed": {
+      return `Launch failed ${dryRunDescription}\n${result.reason.join("\n")}`
+    }
+    case "succeeded": {
+      if (dryRun === true) {
+        const header = `Launchable ${dryRunDescription}`
+        if (result.value.warnings.length > 0) {
+          return `${header}\n${result.value.warnings.join("\n")}\n${this.show()}`
+        }
+        return `${header}\n${this.show()}`
+      }
+
+      // Launch Quad Process
+      const process = OperatingSystem.os.addProcess(null, processId => {
+        return SpecializedQuadProcess.create(processId, this.roomName, this.targetRoomName, result.value.waypoints, [], result.value.quadSpec)
+      })
+
+      const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
+      if (result.value.warnings.length > 0) {
+        return `${launchMessage}\n${result.value.warnings.join("\n")}\n${this.show()}`
+      }
+      return `${launchMessage}\n${this.show()}`
+    }
+    }
+  }
+
+  private createQuadSpec(): QuadSpec | string {
+    if (this.creepSpecs.length <= 0) {
+      return "missing creep specification"
+    }
+    if (this.creepSpecs.length > 4) {
+      return `${this.creepSpecs.length} creep specs`
+    }
+    return new QuadSpec(
+      this.quadName,
+      this.canHandleMelee,
+      this.damageTolerance,
+      [...this.boosts],
+      [...this.creepSpecs],
+    )
   }
 }
