@@ -877,19 +877,41 @@ export class ExecCommand implements ConsoleCommand {
       return `Room ${roomLink(roomName)} is not mine`
     }
 
+    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "toggle_auto_attack"]
     const setting = args.get("setting")
     switch (setting) {
-    case "excludedRemotes":
+    case "excluded_remotes":
       return this.addExcludedRemoteRoom(roomName, roomInfo, args)
-    case "wallPositions":
+    case "wall_positions":
       return this.configureWallPositions(roomName, roomInfo, args)
-    case "researchCompounds":
+    case "research_compounds":
       return this.configureResearchCompounds(roomName, roomInfo, args)
     case "refresh_research_labs":
       return this.refreshResearchLabs(roomName, roomInfo)
+    case "toggle_auto_attack":
+      return this.toggleAutoAttack(roomName, roomInfo, args)
     default:
-      return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
+      return `Invalid setting ${setting}, available settings are: ${settingList}`
     }
+  }
+
+  private toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const rawEnabled = args.get("enabled")
+    if (rawEnabled == null) {
+      return this.missingArgumentError("enabled")
+    }
+    if (rawEnabled !== "0" && rawEnabled !== "1") {
+      return `Invalid enable argument ${rawEnabled}: set 0 or 1`
+    }
+    const enabled = rawEnabled === "1"
+
+    if (roomInfo.config == null) {
+      roomInfo.config = {}
+    }
+    const oldValue = roomInfo.config.enableAutoAttack
+    roomInfo.config.enableAutoAttack = enabled
+
+    return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
   }
 
   private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
