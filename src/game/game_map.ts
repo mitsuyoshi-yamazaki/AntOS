@@ -1,5 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
+import { Result } from "utility/result"
 import { isValidRoomName, RoomName } from "../utility/room_name"
 
 export type GameMapMemory = {
@@ -49,17 +50,17 @@ export const GameMap = {
     return returnTrip
   },
 
-  setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): void {
+  setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): Result<void, {invalidRoomNames: RoomName[]}> {
     const roomNames: RoomName[] = [
       roomName,
       destinationRoomName,
       ...waypoints,
     ]
-    for (const name of roomNames) {
-      if (isValidRoomName(name) !== true) {
-        PrimitiveLogger.programError(`GameMap.setWaypoints() ${name} is not valid roomname`)
-        return
-      }
+    const invalidRoomNames = roomNames.filter(name => isValidRoomName(name) !== true)
+    if (invalidRoomNames.length > 0) {
+      return Result.Failed({
+        invalidRoomNames
+      })
     }
 
     const infoList = ((): { [destinationRoomName: string]: RoomName[] } => {
@@ -72,6 +73,7 @@ export const GameMap = {
       return list
     })()
     infoList[destinationRoomName] = waypoints
+    return Result.Succeeded(undefined)
   },
 }
 

@@ -5,6 +5,7 @@ import { isQuadType, PredefinedQuadSpec } from "../../../submodules/attack/quad/
 // import { } from "../../../submodules/attack/platoon/platoon_process"
 import { QuadSpec } from "../../../submodules/attack/quad/quad_spec"
 import { QuadRequirement } from "../../../submodules/attack/quad/quad_requirement"
+import { GameMap } from "game/game_map"
 
 export function launchQuadProcess(args: Map<string, string>): Result<SpecializedQuadProcess, string> {
   const roomName = args.get("room_name")
@@ -25,6 +26,11 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
     return missingArgumentError("targets")
   }
   const targets = rawTargets.split(",")
+
+  const result = GameMap.setWaypoints(roomName, targetRoomName, waypoints)
+  if (result.resultType === "failed") {
+    return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
+  }
 
   const quadSpec = ((): QuadSpec | string => {
     const quadType = args.get("quad_type")

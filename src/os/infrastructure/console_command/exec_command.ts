@@ -871,13 +871,13 @@ export class ExecCommand implements ConsoleCommand {
     case "researchCompounds":
       return this.configureResearchCompounds(roomName, roomInfo, args)
     case "refresh_research_labs":
-      return this.refreshResearchLabs(roomName, roomInfo, args)
+      return this.refreshResearchLabs(roomName, roomInfo)
     default:
       return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
     }
   }
 
-  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
     const room = Game.rooms[roomName]
     if (room == null) {
       return `${roomLink(roomName)} no found`

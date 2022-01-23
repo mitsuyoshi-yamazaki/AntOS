@@ -41,6 +41,8 @@ import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
+import { RoomName } from "utility/room_name"
+import { GameMap } from "game/game_map"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -475,6 +477,11 @@ export class LaunchCommand implements ConsoleCommand {
     const targetId = args.get("target_id")
     if (targetId == null) {
       return this.missingArgumentError("target_id")
+    }
+
+    const result = GameMap.setWaypoints(roomName, targetRoomName, waypoints)
+    if (result.resultType === "failed") {
+      return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
