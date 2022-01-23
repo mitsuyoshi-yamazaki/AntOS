@@ -352,12 +352,15 @@ creeps: ${this.creepSpecs.length} creeps
     })
     errors.push(...creepSpecErrors)
 
-    const cost = quadSpec.energyCost()
     const energyCapacityAvailable = roomResources.room.energyCapacityAvailable
-    if (cost > energyCapacityAvailable) {
-      errors.push(`${errorPrefix} lack of energy capacity: required ${cost}e but capacity is ${energyCapacityAvailable} in ${roomLink(this.roomName)}`)
-      return resultFailed()
-    }
+    this.creepSpecs.forEach(spec => {
+      const creepCost = CreepBody.cost(spec.body)
+      if (creepCost > energyCapacityAvailable) {
+        errors.push(`${errorPrefix} lack of energy capacity: required ${creepCost}e but capacity is ${energyCapacityAvailable} in ${roomLink(this.roomName)}`)
+      }
+    })
+
+    const cost = quadSpec.energyCost()
     const storedEnergy = (roomResources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       + (roomResources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
     if (cost > storedEnergy) {
