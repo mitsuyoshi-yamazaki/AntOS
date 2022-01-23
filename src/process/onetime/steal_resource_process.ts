@@ -17,7 +17,7 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { isResourceConstant, MineralBoostConstant } from "utility/resource"
+import { DepositConstant, isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
@@ -27,8 +27,11 @@ ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
 })
 
-const resourcePriority: ResourceConstant[] = [
-  ...MineralBoostConstant,  // 添字の大きいほうが優先
+const resourcePriority: ResourceConstant[] = [  // 添字の大きいほうが優先
+  ...MineralBoostConstant,
+  RESOURCE_ZYNTHIUM,
+  RESOURCE_CATALYST,
+  ...DepositConstant,
   RESOURCE_OPS,
   RESOURCE_POWER,
 ]
