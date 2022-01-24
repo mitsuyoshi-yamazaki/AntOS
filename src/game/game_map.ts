@@ -44,6 +44,7 @@ export const GameMap = {
     }
     const returnTrip = getWaypoints(destinationRoomName, roomName)
     if (returnTrip == null) {
+      MissingWaypoints.add(roomName, destinationRoomName)
       return null
     }
     returnTrip.reverse()
@@ -75,12 +76,16 @@ export const GameMap = {
     infoList[destinationRoomName] = waypoints
     return Result.Succeeded(undefined)
   },
+
+  /** waypointsを考慮したRoom間距離 */
+  pathDistance(fromRoomName: RoomName, toRoomName: RoomName): number | null {
+    return Game.map.getRoomLinearDistance(fromRoomName, toRoomName) // FixMe:
+  },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
   const infoList = Memory.gameMap.interRoomPath[roomName]
   if (infoList == null) {
-    MissingWaypoints.add(roomName, destinationRoomName)
     return null
   }
   const waypoints = infoList[destinationRoomName]

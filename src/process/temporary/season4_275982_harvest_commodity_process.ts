@@ -306,7 +306,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     })()
 
     if (shouldReturnToParentRoom === true) {
-      const waypoints = GameMap.getWaypoints(this.depositInfo.roomName, creep.room.name) ?? []
+      const waypoints = GameMap.getWaypoints(creep.room.name, this.parentRoomName) ?? []
       const tasks: CreepTask[] = [
         MoveToRoomTask.create(this.parentRoomName, waypoints),
       ]
