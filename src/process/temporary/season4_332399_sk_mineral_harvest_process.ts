@@ -21,6 +21,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { ProcessDecoder } from "process/process_decoder"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
+import { avoidSourceKeeper } from "script/move_to_room"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
@@ -241,6 +242,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   }
 
   private runAttacker(creep: Creep, mineral: Mineral | null, sourceKeeper: Creep | null, keeperLair: StructureKeeperLair | null): void {
+    creep.heal(creep)
     if (creep.v5task != null) {
       return
     }
@@ -260,7 +262,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       creep.rangedAttack(sourceKeeper)
 
       const range = creep.pos.getRangeTo(sourceKeeper.pos)
-      if (range < 2) {
+      if (range < 4) {
         this.fleeFrom(sourceKeeper.pos, creep, 3)
       } else {
         creep.moveTo(sourceKeeper.pos, defaultMoveToOptions())
@@ -305,7 +307,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
 
     if (creep.harvest(mineral) === ERR_NOT_IN_RANGE) {
-      creep.moveTo(mineral.pos, defaultMoveToOptions())
+      avoidSourceKeeper(creep, creep.room, mineral.pos)
     }
   }
 
@@ -378,13 +380,13 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
             returnToParentRoom()
             return
           }
-          creep.moveTo(harvester, defaultMoveToOptions())
+          avoidSourceKeeper(creep, creep.room, harvester.pos)
         }
       } else {
-        creep.moveTo(harvester, defaultMoveToOptions())
+        avoidSourceKeeper(creep, creep.room, harvester.pos)
       }
-    } else {
-      creep.moveTo(mineral, { range: 3, reusePath: 3 })
+    } else {  // harvester == null
+      avoidSourceKeeper(creep, creep.room, mineral.pos, { moveToOps: {range: 3, reusePath: 3}})
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
         processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()
