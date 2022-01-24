@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { isValidRoomName, RoomName } from "utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
@@ -21,6 +21,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 
 const canHandleMeleeDefaultValue = false
 const defaultDamageTolerance = 0.15
+const parameterNames = ["room_name", "target_room_name"]
 const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep"]
 
 interface QuadMakerProcessState extends ProcessState {
@@ -43,8 +44,8 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly quadName: string,
-    private readonly roomName: RoomName,
-    private readonly targetRoomName: RoomName,
+    private roomName: RoomName,
+    private targetRoomName: RoomName,
     private canHandleMelee: boolean,
     private damageTolerance: number,
     private boosts: MineralBoostConstant[],
@@ -106,6 +107,9 @@ commands: ${commands}
 
 - help
   - show help
+- change &ltparameter_name&gt &ltvalue&gt
+  - change process parameter values
+  - parameter names: ${parameterNames}
 - set &ltargument_name&gt &ltvalue&gt &ltkey&gt=&ltvalue&gt &ltkey&gt=&ltvalue&gt...
   - set quad arguments
   - arguments: ${argumentNames}
@@ -119,6 +123,9 @@ commands: ${commands}
 - launch
   - launch quad process
       `
+
+    case "change":
+      return this.change(components)
 
     case "set":
       return this.set(components)
@@ -155,6 +162,41 @@ commands: ${commands}
 
   public runOnTick(): void {
     // does nothing
+  }
+
+  private change(args: string[]): string {
+    const parameter = args.shift()
+
+    switch (parameter) {
+    case "room_name": {
+      const roomName = parameter[0]
+      if (roomName == null) {
+        return "Missing room name argument"
+      }
+      if (isValidRoomName(roomName) !== true) {
+        return `Invalid room name ${roomName}`
+      }
+      const oldValue = this.roomName
+      this.roomName = roomName
+      return `Changed room_name ${oldValue} => ${this.roomName}`
+    }
+
+    case "target_room_name": {
+      const targetRoomName = parameter[0]
+      if (targetRoomName == null) {
+        return "Missing target room name argument"
+      }
+      if (isValidRoomName(targetRoomName) !== true) {
+        return `Invalid target room name ${targetRoomName}`
+      }
+      const oldValue = this.targetRoomName
+      this.targetRoomName = targetRoomName
+      return `Changed target_room_name ${oldValue} => ${this.targetRoomName}`
+    }
+
+    default:
+      return `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
+    }
   }
 
   private set(args: string[]): string {
@@ -303,10 +345,12 @@ commands: ${commands}
   }
 
   private show(): string {
+    const parameterDescription = `${roomLink(this.roomName)} => ${roomLink(this.targetRoomName)}`
+
     const quadSpec = this.createQuadSpec()
     if (typeof quadSpec === "string") {
       return `${quadSpec}:
-${this.quadName}
+${this.quadName} ${parameterDescription}
 handle melee: ${ this.canHandleMelee }
 damage tolerance: ${ this.damageTolerance }
 boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
@@ -314,7 +358,7 @@ creeps: ${this.creepSpecs.length} creeps
       `
     }
 
-    return quadSpec.description()
+    return `${parameterDescription}\n${quadSpec.description()}`
   }
 
   private verify(): Result<{ quadSpec: QuadSpec, waypoints: RoomName[], warnings: string[] }, string[]> {
