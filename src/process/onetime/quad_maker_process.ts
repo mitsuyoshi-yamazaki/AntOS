@@ -344,6 +344,26 @@ creeps: ${this.creepSpecs.length} creeps
       return resultFailed()
     }
 
+    const moveTier = ((): 0 | 1 | 2 | 3 => {
+      if (this.boosts.includes(RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE) === true) {
+        return 3
+      }
+      if (this.boosts.includes(RESOURCE_ZYNTHIUM_ALKALIDE) === true) {
+        return 2
+      }
+      if (this.boosts.includes(RESOURCE_ZYNTHIUM_OXIDE) === true) {
+        return 1
+      }
+      return 0
+    })()
+    warnings.push(...this.creepSpecs.flatMap(spec => {
+      const warning = this.verifyMoveCount([...spec.body], moveTier)
+      if (warning != null) {
+        return [`${warningPrefix} ${warning}`]
+      }
+      return []
+    }))
+
     const creepSpecErrors: string[] = this.creepSpecs.flatMap(spec => {
       if (spec.body.length > GameConstants.creep.body.bodyPartMaxCount) {
         return [`${errorPrefix} over body limit (${spec.body.length} parts) ${CreepBody.description(spec.body)}`]
@@ -367,7 +387,7 @@ creeps: ${this.creepSpecs.length} creeps
       errors.push(`${errorPrefix} lack of energy: required ${cost}e but ${storedEnergy}e in ${roomLink(this.roomName)}`)
       return resultFailed()
     }
-    const safeEnergyAmount = Math.min(cost * 2, cost + 10000)
+    const safeEnergyAmount = Math.min(cost * 3, cost + 20000)
     if (safeEnergyAmount > storedEnergy) {
       warnings.push(`${warningPrefix} quad may cause energy shortage: required ${cost}e but ${storedEnergy}e in ${roomLink(this.roomName)}`)
     }
@@ -380,6 +400,22 @@ creeps: ${this.creepSpecs.length} creeps
       })
     }
     return resultFailed()
+  }
+
+  private verifyMoveCount(body: BodyPartConstant[], moveTier: 0 | 1 | 2 | 3): string | null {
+    const moveCount = body.reduce((result, current) => {
+      if (current !== MOVE) {
+        return result
+      }
+      return result + 1
+    }, 0)
+    const bodyCount = body.length - moveCount
+
+    const movePower = moveCount * (moveTier + 1)
+    if (bodyCount <= movePower) {
+      return null
+    }
+    return `lack of move power: tier${moveTier} ${moveCount}MOVE, ${bodyCount} body`
   }
 
   private launchQuadProcess(dryRun: boolean): string {
