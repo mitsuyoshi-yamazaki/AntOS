@@ -24,6 +24,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 
 ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
@@ -60,6 +61,8 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
 
   private readonly harvesterRoles: CreepRole[] = [CreepRole.Harvester]
   private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler]
+
+  private droppedResources: (Tombstone | Resource)[] | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -129,6 +132,8 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   }
 
   public runOnTick(): void {
+    this.droppedResources = null
+
     const roomResources = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResources == null) {
       PrimitiveLogger.programError(`${this.taskIdentifier} ${roomLink(this.parentRoomName)} is not owned`)
@@ -264,6 +269,14 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.depositInfo.roomName, waypoints))
     }
 
+    this.refreshDroppedResources(creep.room)
+    if (this.droppedResources != null) {
+      const resource = creep.pos.findClosestByPath(this.droppedResources)
+      if (resource != null) {
+        return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawApiWrapper.create(resource)))
+      }
+    }
+
     if (deposit == null) {
       creep.say("no deposit")
       return null
@@ -332,6 +345,13 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
 
     const harvester = creep.pos.findClosestByRange(carryingCommodityHarvesters)
     if (harvester == null) {
+      this.refreshDroppedResources(creep.room)
+      if (this.droppedResources != null) {
+        const resource = creep.pos.findClosestByPath(this.droppedResources)
+        if (resource != null) {
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawApiWrapper.create(resource)))
+        }
+      }
       return null
     }
     if (harvester.transfer(creep, this.depositInfo.commodityType) === ERR_NOT_IN_RANGE) {
@@ -344,5 +364,15 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     if (this.suspendReasons.includes(reason) !== true) {
       this.suspendReasons.push(reason)
     }
+  }
+
+  private refreshDroppedResources(targetRoom: Room): void {
+    if (this.droppedResources != null) {
+      return
+    }
+    this.droppedResources = [
+      ...targetRoom.find(FIND_TOMBSTONES).filter(tombstone => tombstone.store.getUsedCapacity(this.depositInfo.commodityType) > 0),
+      ...targetRoom.find(FIND_DROPPED_RESOURCES).filter(resource => resource.resourceType === this.depositInfo.commodityType),
+    ]
   }
 }
