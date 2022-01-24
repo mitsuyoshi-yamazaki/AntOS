@@ -39,7 +39,7 @@ import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
 import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
-import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom } from "process/onetime/monitoring_process"
+import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomName } from "utility/room_name"
@@ -926,6 +926,16 @@ export class LaunchCommand implements ConsoleCommand {
     const target = ((): MonitoringTarget | string => {
       const roomName = args.get("room_name")
       if (roomName != null) {
+        const room = Game.rooms[roomName]
+        if (room?.controller?.my === true) {
+          const ownedRoomTarget: MonitoringTargetOwnedRoom = {
+            case: "owned room",
+            roomName,
+            conditions: [],
+          }
+          return ownedRoomTarget
+        }
+
         const hostileRoomTarget: MonitoringTargetHostileRoom = {
           case: "hostile room",
           roomName,

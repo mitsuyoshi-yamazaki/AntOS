@@ -4,13 +4,16 @@ import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { isResourceConstant } from "utility/resource"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("MonitoringProcess", state => {
   return MonitoringProcess.decode(state as MonitoringProcessState)
 })
 
+// ---- Hostile Room Target ---- //
 const hostileRoomConditions = ["safemode", "unclaim", "creep"]
 type HostileRoomMonitoringConditionSafemode = {
   readonly case: "safemode"
@@ -31,7 +34,22 @@ export type TargetHostileRoom = {
   readonly roomName: RoomName
   readonly conditions: HostileRoomMonitoringCondition[]
 }
-export type Target = TargetHostileRoom
+
+// ---- Owned Room Target ---- //
+const ownedRoomConditions = ["resource"]
+type OwnedRoomMonitoringConditionStoredResource = {
+  readonly case: "stored resource"
+  readonly resourceType: ResourceConstant
+  readonly amount: number
+}
+type OwnedRoomMonitoringCondition = OwnedRoomMonitoringConditionStoredResource
+export type TargetOwnedRoom = {
+  readonly case: "owned room"
+  readonly roomName: RoomName
+  readonly conditions: OwnedRoomMonitoringCondition[]
+}
+
+export type Target = TargetHostileRoom | TargetOwnedRoom
 
 interface MonitoringProcessState extends ProcessState {
   readonly monitorName: string
@@ -153,22 +171,61 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
   }
 
   private addCondition(args: string[]): string {
-    switch (this.target.case) {
-    case "hostile room": {
-      const condition = args.shift()
-      if (condition == null) {
-        return `Condition not specified. Available conditions are: ${hostileRoomConditions}`
-      }
-      const argmentMap = new Map<string, string>()
-      args.forEach(arg => {
-        const [key, value] = arg.split("=")
-        if (key == null || value == null) {
-          return
-        }
-        argmentMap.set(key, value)
-      })
-      return this.addHostileRoomCondition(this.target, condition, argmentMap)
+    const condition = args.shift()
+    if (condition == null) {
+      return `Condition not specified. Available conditions are: ${hostileRoomConditions}`
     }
+    const argmentMap = new Map<string, string>()
+    args.forEach(arg => {
+      const [key, value] = arg.split("=")
+      if (key == null || value == null) {
+        return
+      }
+      argmentMap.set(key, value)
+    })
+
+    switch (this.target.case) {
+    case "hostile room":
+      return this.addHostileRoomCondition(this.target, condition, argmentMap)
+
+    case "owned room":
+      return this.addOwnedRoomCondition(this.target, condition, argmentMap)
+    }
+  }
+  private addOwnedRoomCondition(target: TargetOwnedRoom, condition: string, args: Map<string, string>): string {
+    switch (condition) {
+    case "resource": {
+      const resourceType = args.get("resource_type")
+      if (resourceType == null) {
+        return "Missing resource_type argument"
+      }
+      if (!isResourceConstant(resourceType)) {
+        return `${resourceType} is not resource type`
+      }
+
+      const rawAmount = args.get("amount")
+      if (rawAmount == null) {
+        return "Missing amount argument"
+      }
+      const amount = parseInt(rawAmount, 10)
+      if (isNaN(amount) === true) {
+        return `amount ${rawAmount} is not a number`
+      }
+
+      const storedCondition = target.conditions.find(condition => (condition.case === "stored resource") && (condition.resourceType === resourceType))
+      if (storedCondition != null) {
+        return `${roomLink(target.roomName)} already has ${ownedRoomResourceConditionDescription(storedCondition)}`
+      }
+      const condition: OwnedRoomMonitoringConditionStoredResource = {
+        case: "stored resource",
+        resourceType,
+        amount,
+      }
+      target.conditions.push(condition)
+      return `${ownedRoomResourceConditionDescription(condition)} condition added`
+    }
+    default:
+      return `Invalid condition ${condition}. Available conditions are: ${ownedRoomConditions}`
     }
   }
 
@@ -248,7 +305,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     }
 
     default:
-      return `Invalid condition. Available conditions are: ${hostileRoomConditions}`
+      return `Invalid condition ${condition}. Available conditions are: ${hostileRoomConditions}`
     }
   }
 }
@@ -258,6 +315,8 @@ const TargetMonitor = {
     switch (target.case) {
     case "hostile room":
       return shortDescriptionForHostileRoomTarget(target)
+    case "owned room":
+      return shortDescriptionForOwnedRoomTarget(target)
     }
   },
 
@@ -267,10 +326,15 @@ const TargetMonitor = {
     }
     const results: string[] = []
 
-    switch (target.case) {
-    case "hostile room":
-      results.push(...currentStateForHostileRoomTarget(target))
-    }
+    const targetState = ((): string[] => {  // caseをコンパイラに担保させるため
+      switch (target.case) {
+      case "hostile room":
+        return currentStateForHostileRoomTarget(target)
+      case "owned room":
+        return currentStateForOwnedRoomTarget(target)
+      }
+    })()
+    results.push(...targetState)
 
     if (results.length <= 0) {
       return "normal"
@@ -281,6 +345,7 @@ const TargetMonitor = {
   additionalInfoFor(target: Target): string | null {
     switch (target.case) {
     case "hostile room":
+    case "owned room":
       return `in ${roomLink(target.roomName)}`
     }
   }
@@ -380,5 +445,46 @@ function currentStateForHostileRoomTarget(target: TargetHostileRoom): string[] {
       }
       return ["unclaimed"]
     }
+  })
+}
+
+function shortDescriptionForOwnedRoomTarget(target: TargetOwnedRoom): string {
+  const conditionDescriptions: string[] = target.conditions.map((condition): string => {
+    switch (condition.case) {
+    case "stored resource":
+      return ownedRoomResourceConditionDescription(condition)
+    }
+  })
+  const descriptions: string[] = []
+  if (conditionDescriptions.length <= 0) {
+    descriptions.push("no conditions")
+  } else {
+    descriptions.push("conditions:")
+  }
+  descriptions.push(conditionDescriptions.join(", "))
+  descriptions.push(`in ${roomLink(target.roomName)}`)
+  return descriptions.join(" ")
+}
+
+function ownedRoomResourceConditionDescription(condition: OwnedRoomMonitoringConditionStoredResource): string {
+  return `${coloredResourceType(condition.resourceType)} &lt ${condition.amount}`
+}
+
+function currentStateForOwnedRoomTarget(target: TargetOwnedRoom): string[] {
+  const roomResources = RoomResources.getOwnedRoomResource(target.roomName)
+  if (roomResources == null) {
+    return [`${roomLink(target.roomName)} lost`]
+  }
+
+  return target.conditions.flatMap((condition): string[] => {
+    switch (condition.case) {
+    case "stored resource": {
+      const amount = roomResources.getResourceAmount(condition.resourceType)
+      if (amount < condition.amount) {
+        return [`${coloredResourceType(condition.resourceType)} &lt ${condition.amount}`]
+      }
+    }
+    }
+    return []
   })
 }
