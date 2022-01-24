@@ -43,12 +43,17 @@ export const GameMap = {
       return waypoints
     }
     const returnTrip = getWaypoints(destinationRoomName, roomName)
-    if (returnTrip == null) {
-      MissingWaypoints.add(roomName, destinationRoomName)
-      return null
+    if (returnTrip != null) {
+      returnTrip.reverse()
+      return returnTrip
     }
-    returnTrip.reverse()
-    return returnTrip
+    const adjacentRoomNames = Array.from(Object.values(Game.map.describeExits(roomName)))
+    if (adjacentRoomNames.includes(destinationRoomName) === true) {
+      this.setWaypoints(roomName, destinationRoomName, [])
+      return []
+    }
+    MissingWaypoints.add(roomName, destinationRoomName)
+    return null
   },
 
   setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): Result<void, {invalidRoomNames: RoomName[]}> {
