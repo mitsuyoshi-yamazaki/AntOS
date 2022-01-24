@@ -43,6 +43,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   creepName: CreepName | null
   action: "specified target only" | null
   noFlee: boolean
+  maxBodyCount: number
 }
 
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
@@ -63,6 +64,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     private targetIds: Id<AnyStructure>[],
     private action: "specified target only" | null,
     private noFlee: boolean,
+    private readonly maxBodyCount: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -80,19 +82,20 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       targetIds: this.targetIds,
       action: this.action,
       noFlee: this.noFlee,
+      maxBodyCount: this.maxBodyCount,
     }
   }
 
   public static decode(state: Season1244215GenericDismantleProcessState): Season1244215GenericDismantleProcess {
-    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds, state.action, state.noFlee ?? true)
+    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds, state.action, state.noFlee, state.maxBodyCount)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null): Season1244215GenericDismantleProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null, maxBodyCount: number): Season1244215GenericDismantleProcess {
     const targetIds: Id<AnyStructure>[] = []
     if (targetId != null) {
       targetIds.push(targetId)
     }
-    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds, null, false)
+    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds, null, false, maxBodyCount)
   }
 
   public processShortDescription(): string {
@@ -344,7 +347,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       WORK, WORK, WORK, WORK, WORK,
       MOVE, MOVE, MOVE, MOVE, MOVE,
     ]
-    const body = CreepBody.create([], bodyUnit, resources.room.energyCapacityAvailable, 5)
+    const maxUnitCount = Math.min(Math.floor(this.maxBodyCount / bodyUnit.length), 5)
+    const body = CreepBody.create([], bodyUnit, resources.room.energyCapacityAvailable, maxUnitCount)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,

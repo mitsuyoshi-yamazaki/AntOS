@@ -489,7 +489,14 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
-
+    const rawMaxBodyCount = args.get("max_body_count")
+    if (rawMaxBodyCount == null) {
+      return this.missingArgumentError("max_body_count")
+    }
+    const maxBodyCount = parseInt(rawMaxBodyCount, 10)
+    if (isNaN(maxBodyCount) === true) {
+      return Result.Failed(`max_body_count is not a number ${maxBodyCount}`)
+    }
     const targetId = args.get("target_id")
     if (targetId == null) {
       return this.missingArgumentError("target_id")
@@ -516,7 +523,7 @@ export class LaunchCommand implements ConsoleCommand {
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>)
+      return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>, maxBodyCount)
     })
     return Result.Succeeded(process)
   }
