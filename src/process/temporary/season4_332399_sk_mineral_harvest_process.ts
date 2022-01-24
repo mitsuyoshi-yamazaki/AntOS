@@ -1,5 +1,3 @@
-1105755
-
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName, roomTypeOf } from "utility/room_name"
@@ -19,9 +17,10 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { OperatingSystem } from "os/os"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "./season_701205_power_harvester_swamp_runner_process"
-import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ProcessDecoder } from "process/process_decoder"
+import { CreepBody } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
@@ -35,13 +34,11 @@ export interface Season4332399SKMineralHarvestProcessState extends ProcessState 
   targetRoomName: RoomName
   waypoints: RoomName[]
 
-
   mineralType: MineralConstant | null
-  stopSpawning: boolean
-  squadSpawned: boolean
+  stopSpawnReason: string[]
 }
 
-// 旧Quadを使用したProcess
+/** RCL7以上 */
 export class Season4332399SKMineralHarvestProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -50,39 +47,31 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly attackerRoles: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
+  private readonly attackerRoles: CreepRole[] = [CreepRole.Attacker]
   private readonly attackerBody: BodyPartConstant[] = [
     MOVE, MOVE, MOVE, MOVE, MOVE,
     MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE, MOVE, MOVE,
+    MOVE, MOVE, MOVE,
     RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+    HEAL, HEAL, HEAL,
     HEAL, HEAL, HEAL,
   ]
 
-  private readonly harvesterRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover]
-  private readonly harvesterBody: BodyPartConstant[] = [
-    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    WORK, MOVE, WORK, MOVE, WORK, MOVE,
-    CARRY, CARRY, CARRY, CARRY, CARRY,
-  ]
-
-  private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover]
-  private readonly haulerBody: BodyPartConstant[] = [
-    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
-    CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE, CARRY, MOVE,
-  ]
+  private readonly harvesterRoles: CreepRole[] = [CreepRole.Harvester]
+  private readonly haulerRoles: CreepRole[] = [CreepRole.Hauler]
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    public readonly parentRoomName: RoomName,
-    public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
-    private stopSpawning: boolean,
-    private squadSpawned: boolean,
+    private readonly roomName: RoomName,
+    private readonly targetRoomName: RoomName,
+    private readonly waypoints: RoomName[],
+    private stopSpawnReason: string[],
     private mineralType: MineralConstant | null,
   ) {
-    this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
+    this.identifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -91,21 +80,20 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       t: "Season4332399SKMineralHarvestProcess",
       l: this.launchTime,
       i: this.processId,
-      p: this.parentRoomName,
-      tr: this.targetRoomName,
-      w: this.waypoints,
-      stopSpawning: this.stopSpawning,
-      squadSpawned: this.squadSpawned,
+      roomName: this.roomName,
+      targetRoomName: this.targetRoomName,
+      waypoints: this.waypoints,
+      stopSpawnReason: this.stopSpawnReason,
       mineralType: this.mineralType,
     }
   }
 
   public static decode(state: Season4332399SKMineralHarvestProcessState): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.p, state.tr, state.w, state.stopSpawning, state.squadSpawned ?? true, state.mineralType)
+    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, false, false, null)
+    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null)
   }
 
   public processShortDescription(): string {
@@ -114,32 +102,48 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       roomLink(this.targetRoomName),
       mineral,
     ]
-    if (this.stopSpawning === true) {
-      descriptions.push("spawn stopped")
+    if (this.stopSpawnReason.length > 0) {
+      descriptions.push(`spawn stopped: ${this.stopSpawnReason.join(", ")}`)
     }
     return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
-    const stopSpawning = parseInt(message, 10)
-    if (isNaN(stopSpawning) === true) {
-      return `Stop spawning flag can be either 1 or 0 (${message})`
+    const commands = ["stop", "resume"]
+
+    const components = message.split(" ")
+    const command = components.shift()
+
+    switch (command) {
+    case "stop":
+      this.addStopSpawnReason("manually")
+      return "spawn stopped"
+
+    case "resume":
+      this.stopSpawnReason = []
+      return "spawn resumed"
+
+    default:
+      return `Invalid command ${command}. Available commands are: ${commands}`
     }
-    this.stopSpawning = stopSpawning === 1
-    return "OK"
   }
 
   public runOnTick(): void {
+    const roomResources = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResources == null) {
+      return
+    }
+
     const targetRoom = Game.rooms[this.targetRoomName]
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
     if (mineral != null && mineral.mineralAmount <= 0) {
-      this.stopSpawning = true
+      this.addStopSpawnReason("no mineral")
     }
     if (mineral != null) {
       this.mineralType = mineral.mineralType
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
     const attackers: Creep[] = []
     const harvesters: Creep[] = []
     const haulers: Creep[] = []
@@ -160,16 +164,12 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       PrimitiveLogger.programError(`${this.identifier} unknown creep type ${creep.name}`)
     })
 
-    if (creeps.length <= 0) {
-      this.squadSpawned = false
-    }
-
-    if (this.stopSpawning !== true && this.squadSpawned !== true) {
+    if (this.stopSpawnReason.length <= 0) {
       const harvestingPower = OperatingSystem.os.listAllProcesses().some(processInfo => {
         if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
           return false
         }
-        if (processInfo.process.parentRoomName === this.parentRoomName && processInfo.process.isPickupFinished !== true) {
+        if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
           return true
         }
         return false
@@ -180,51 +180,55 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
           if (roomTypeOf(this.targetRoomName) !== "source_keeper") {
             return false
           }
-          if (attackers.length >= 3) {
-            return false
-          }
-          if (attackers.length < 2) {
+          switch (attackers.length) {
+          case 0:
             return true
-          }
-          return attackers.some(creep => {
-            if (creep.ticksToLive == null) {
+          case 1:
+            if (attackers[0]?.ticksToLive == null) {
               return false
             }
-            return creep.ticksToLive < 150
-          })
+            if (attackers[0].ticksToLive < 100) {
+              return true
+            }
+            return false
+
+          default:  // >= 2
+            return false
+          }
         })()
 
         if (needsAttacker === true) {
-          const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
-          this.requestCreep(this.attackerRoles, this.attackerBody, priority)
+          this.requestCreep(this.attackerRoles, this.attackerBody, CreepSpawnRequestPriority.Low)
         } else {
           if (harvesters[0] == null || (harvesters.length <= 1 && (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
-            this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
+            const baseBody = [CARRY, CARRY, CARRY, CARRY, CARRY]
+            const bodyUnit = [
+              WORK, WORK, WORK, WORK, WORK,
+              MOVE, MOVE, MOVE, MOVE, MOVE,
+            ]
+            const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
+            body.reverse()
+            this.requestCreep(this.harvesterRoles, body, CreepSpawnRequestPriority.Low)
           } else {
             if (haulers.length < 1) {
-              this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
+              const body = CreepBody.create([], [CARRY, MOVE], roomResources.room.energyCapacityAvailable, 20)
+              this.requestCreep(this.haulerRoles, body, CreepSpawnRequestPriority.Medium)
             }
           }
         }
       }
     }
 
-    const squad = this.squadSpawned ? "full squad" : "spawning"
-    const stopSpawning = this.stopSpawning ? ", not-spawning" : ""
-    if (this.stopSpawning !== true) {
-      processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${squad}${stopSpawning}`)
-    }
-
     const sourceKeeper: Creep | null = mineral == null ? null : mineral.pos.findInRange(FIND_HOSTILE_CREEPS, 5)[0] ?? null
     const keeperLair: StructureKeeperLair | null = mineral == null ? null : mineral.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } }) as StructureKeeperLair | null
 
-    this.runAttackers(attackers, mineral, sourceKeeper, keeperLair)
+    attackers.forEach(creep => this.runAttacker(creep, mineral, sourceKeeper, keeperLair))
     harvesters.forEach(creep => this.runHarvester(creep, mineral, keeperLair))
     haulers.forEach(creep => this.runHauler(creep, attackers, harvesters, haulers, mineral, keeperLair))
   }
 
   private requestCreep(roles: CreepRole[], body: BodyPartConstant[], priority: CreepSpawnRequestPriority): void {
-    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
+    World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority,
       numberOfCreeps: 1,
       codename: this.codename,
@@ -236,54 +240,44 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     })
   }
 
-  private runAttackers(attackers: Creep[], mineral: Mineral | null, sourceKeeper: Creep | null, keeperLair: StructureKeeperLair | null): void {
-    if (attackers.length <= 0) {
-      return
-    }
-    const quad = new HRAQuad(attackers.map(creep => creep.name), { allowPartial: true })
-
-    quad.heal()
-    if (quad.numberOfCreeps < 2) {
-      const waypoints = [...this.waypoints].reverse()
-      quad.moveQuadToRoom(this.parentRoomName, waypoints)
+  private runAttacker(creep: Creep, mineral: Mineral | null, sourceKeeper: Creep | null, keeperLair: StructureKeeperLair | null): void {
+    if (creep.v5task != null) {
       return
     }
 
-    if (mineral == null || quad.inRoom(this.targetRoomName) !== true) {
-      quad.moveQuadToRoom(this.targetRoomName, this.waypoints)
+    if (mineral == null || creep.room.name !== this.targetRoomName) {
+      const waypoints = ((): RoomName[] => {
+        if (creep.room.name === this.roomName) {
+          return this.waypoints
+        }
+        return []
+      })()
+      creep.v5task = MoveToRoomTask.create(this.targetRoomName, waypoints)
       return
     }
 
     if (sourceKeeper != null) {
-      if (quad.numberOfCreeps < 2 || quad.minTicksToLive < 10) {
-        quad.fleeQuadFrom(sourceKeeper.pos, 5)
-        return
-      }
+      creep.rangedAttack(sourceKeeper)
 
-      const range = quad.getMinRangeTo(sourceKeeper.pos)
-      if (range != null && range < 2) {
-        quad.fleeQuadFrom(sourceKeeper.pos, 2)
+      const range = creep.pos.getRangeTo(sourceKeeper.pos)
+      if (range < 2) {
+        this.fleeFrom(sourceKeeper.pos, creep, 3)
       } else {
-        quad.moveQuadTo(sourceKeeper.pos, 3)
+        creep.moveTo(sourceKeeper.pos, defaultMoveToOptions())
       }
-      quad.attack(sourceKeeper)
       return
     }
 
     const target = keeperLair ?? mineral
-    const targetRange = quad.getMinRangeTo(target.pos)
+    const targetRange = creep.pos.getRangeTo(target.pos)
 
-    if (targetRange == null) {
-      quad.say("undef range")
-      return
-    }
     const safeRange = 4
     if (targetRange > safeRange) {
-      quad.moveQuadTo(target.pos, safeRange)
+      creep.moveTo(target, defaultMoveToOptions())
     } else if (targetRange < safeRange) {
-      quad.fleeQuadFrom(target.pos, safeRange)
+      this.fleeFrom(target.pos, creep, safeRange + 1)
     } else {
-      quad.keepQuadForm()
+      // do nothing
     }
   }
 
@@ -329,7 +323,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     if (creep.v5task != null) {
       return
     }
-    if (creep.room.name === this.parentRoomName && (creep.ticksToLive != null && creep.ticksToLive < 250)) {
+    if (creep.room.name === this.roomName && (creep.ticksToLive != null && creep.ticksToLive < 250)) {
       creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
       return
     }
@@ -339,9 +333,9 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
 
     const returnToParentRoom = () => {
-      const terminal = Game.rooms[this.parentRoomName]?.terminal
+      const terminal = Game.rooms[this.roomName]?.terminal
       if (terminal == null) {
-        PrimitiveLogger.fatal(`${this.identifier} terminal not found in ${roomLink(this.parentRoomName)}`)
+        PrimitiveLogger.fatal(`${this.identifier} terminal not found in ${roomLink(this.roomName)}`)
         return
       }
       creep.v5task = MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, mineral.mineralType))
@@ -409,5 +403,12 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       maxRooms: 1,
     })
     creep.moveByPath(path.path)
+  }
+
+  private addStopSpawnReason(reason: string): void {
+    if (this.stopSpawnReason.includes(reason) === true) {
+      return
+    }
+    this.stopSpawnReason.push(reason)
   }
 }

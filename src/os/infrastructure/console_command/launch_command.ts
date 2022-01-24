@@ -43,7 +43,7 @@ import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as Mon
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomName } from "utility/room_name"
-// import { } from "process/temporary/season4_332399_sk_mineral_harvest_process"
+import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 // import {} from "process/onetime/attack/drafting_room_process"
 
 type LaunchCommandResult = Result<Process, string>
@@ -114,6 +114,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "Season1655635SKMineralHarvestProcess":
       result = this.launchSeason1655635SKMineralHarvestProcess()
+      break
+    case "Season4332399SKMineralHarvestProcess":
+      result = this.launchSeason4332399SKMineralHarvestProcess()
       break
     case "Season1838855DistributorProcess":
       result = this.launchSeason1838855DistributorProcess()
@@ -675,6 +678,29 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1655635SKMineralHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason4332399SKMineralHarvestProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      return this.missingArgumentError("waypoints")
+    }
+    const waypoints = rawWaypoints.split(",")
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return Season4332399SKMineralHarvestProcess.create(processId, roomName, targetRoomName, waypoints)
     })
     return Result.Succeeded(process)
   }
