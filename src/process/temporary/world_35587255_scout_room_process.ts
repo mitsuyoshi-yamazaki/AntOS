@@ -252,7 +252,9 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
       }
       const route = Game.map.findRoute(roomName, closestRoom.roomName, {routeCallback})
       if (route === ERR_NO_PATH) {
-        PrimitiveLogger.fatal(`World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`)
+        const message = `World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`
+        PrimitiveLogger.log(message)
+        // PrimitiveLogger.fatal(message)
         return result
       }
       const index = rooms.findIndex(r => r.roomName === closestRoom.roomName)
