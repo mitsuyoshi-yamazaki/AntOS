@@ -27,7 +27,7 @@ ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
 })
 
-const fleeRange = 6
+const fleeRange = 4
 const keeperLairSpawnTime = 15
 
 export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
@@ -208,7 +208,6 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
               MOVE, MOVE, MOVE, MOVE, MOVE,
             ]
             const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
-            body.reverse()
             this.requestCreep(this.harvesterRoles, body, CreepSpawnRequestPriority.Low)
           } else {
             if (haulers.length < 1) {
@@ -242,8 +241,8 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   }
 
   private runAttacker(creep: Creep, mineral: Mineral | null, sourceKeeper: Creep | null, keeperLair: StructureKeeperLair | null): void {
-    creep.heal(creep)
     if (creep.v5task != null) {
+      creep.heal(creep)
       return
     }
 
@@ -255,10 +254,12 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
         return []
       })()
       creep.v5task = MoveToRoomTask.create(this.targetRoomName, waypoints)
+      creep.heal(creep)
       return
     }
 
     if (sourceKeeper != null) {
+      creep.heal(creep)
       creep.rangedAttack(sourceKeeper)
 
       const range = creep.pos.getRangeTo(sourceKeeper.pos)
@@ -268,6 +269,19 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
         creep.moveTo(sourceKeeper.pos, defaultMoveToOptions())
       }
       return
+    }
+
+    if (creep.hits < creep.hitsMax) {
+      creep.heal(creep)
+    } else {
+      const healTarget = creep.pos.findInRange(FIND_MY_CREEPS, 10).find(myCreep => myCreep.hits < myCreep.hitsMax)
+      if (healTarget != null) {
+        if (creep.heal(healTarget) === ERR_NOT_IN_RANGE) {
+          creep.rangedHeal(healTarget)
+          creep.moveTo(healTarget, defaultMoveToOptions())
+        }
+        return
+      }
     }
 
     const target = keeperLair ?? mineral
@@ -287,27 +301,38 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     const closestHostile = this.closestHostile(creep.pos)
     if (closestHostile != null && creep.pos.getRangeTo(closestHostile) <= fleeRange) {
       this.fleeFrom(closestHostile.pos, creep, fleeRange + 1)
+      creep.say("1")
       return
     }
     if (keeperLair != null && keeperLair.ticksToSpawn != null && keeperLair.ticksToSpawn <= keeperLairSpawnTime && creep.pos.getRangeTo(keeperLair) <= fleeRange) {
       this.fleeFrom(keeperLair.pos, creep, fleeRange + 1)
+      creep.say("2")
       return
     }
 
     if (creep.v5task != null) {
+      creep.say("3")
       return
     }
     if (creep.room.name !== this.targetRoomName || mineral == null) {
       creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      creep.say("33")
       return
     }
 
     if (creep.store.getFreeCapacity() <= 0) {
+      creep.say("34")
       return
     }
 
     if (creep.harvest(mineral) === ERR_NOT_IN_RANGE) {
-      avoidSourceKeeper(creep, creep.room, mineral.pos)
+      if (creep.pos.getRangeTo(mineral.pos) < 8) {
+        creep.say("4")
+        creep.moveTo(mineral, defaultMoveToOptions())
+      } else {
+        creep.say("5")
+        avoidSourceKeeper(creep, creep.room, mineral.pos)
+      }
     }
   }
 
@@ -354,6 +379,14 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       return
     }
 
+    const moveHauler = (position: RoomPosition) => {
+      if (creep.pos.getRangeTo(mineral.pos) < 8) {
+        creep.moveTo(position, defaultMoveToOptions())
+      } else {
+        avoidSourceKeeper(creep, creep.room, position)
+      }
+    }
+
     const harvester = harvesters.find(creep => creep.store.getUsedCapacity(mineral.mineralType) > 0)
     if (harvester != null) {
       const shouldWithdraw = ((): boolean => {
@@ -380,13 +413,14 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
             returnToParentRoom()
             return
           }
-          avoidSourceKeeper(creep, creep.room, harvester.pos)
+          moveHauler(harvester.pos)
         }
       } else {
-        avoidSourceKeeper(creep, creep.room, harvester.pos)
+        moveHauler(harvester.pos)
       }
     } else {  // harvester == null
-      avoidSourceKeeper(creep, creep.room, mineral.pos, { moveToOps: {range: 3, reusePath: 3}})
+      moveHauler(mineral.pos)
+      // avoidSourceKeeper(creep, creep.room, mineral.pos, { moveToOps: {range: 3, reusePath: 3}})
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
         processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()
