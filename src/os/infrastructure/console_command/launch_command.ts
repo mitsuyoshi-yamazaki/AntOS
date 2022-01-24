@@ -44,6 +44,7 @@ import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomName } from "utility/room_name"
 // import { } from "process/temporary/season4_332399_sk_mineral_harvest_process"
+// import {} from "process/onetime/attack/drafting_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -260,11 +261,6 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
     const rawNumberOfCreeps = args.get("creeps")
     if (rawNumberOfCreeps == null) {
       return this.missingArgumentError("creeps")
@@ -272,6 +268,26 @@ export class LaunchCommand implements ConsoleCommand {
     const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
     if (isNaN(numberOfCreeps) === true) {
       return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
+
+    const waypoints: RoomName[] = []
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
+      if (storedValue == null) {
+        return this.missingArgumentError("waypoints")
+      }
+      waypoints.push(...storedValue)
+
+    } else {
+      const parsedValue = rawWaypoints.split(",")
+
+      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
+      if (result.resultType === "failed") {
+        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
+      }
+
+      waypoints.push(...parsedValue)
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
