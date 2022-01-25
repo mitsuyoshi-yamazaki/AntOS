@@ -56,7 +56,6 @@ export interface StealResourceProcessState extends ProcessState {
   finishWorking: number
 }
 
-// Game.io("launch -l StealResourceProcess room_name=W41S7 target_room_name=W42S7 waypoints=W42S7 target_id=5f5a910f89e6efba989c1ca5 finish_working=100 creeps=1")
 export class StealResourceProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

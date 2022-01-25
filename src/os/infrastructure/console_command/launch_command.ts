@@ -740,11 +740,6 @@ export class LaunchCommand implements ConsoleCommand {
     if (targetRoomName == null) {
       return this.missingArgumentError("target_room_name")
     }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
     const targetId = args.get("target_id")
     if (targetId == null) {
       return this.missingArgumentError("target_id")
@@ -764,6 +759,26 @@ export class LaunchCommand implements ConsoleCommand {
     const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
     if (isNaN(numberOfCreeps) === true) {
       return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
+    }
+
+    const waypoints: RoomName[] = []
+    const rawWaypoints = args.get("waypoints")
+    if (rawWaypoints == null) {
+      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
+      if (storedValue == null) {
+        return this.missingArgumentError("waypoints")
+      }
+      waypoints.push(...storedValue)
+
+    } else {
+      const parsedValue = rawWaypoints.split(",")
+
+      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
+      if (result.resultType === "failed") {
+        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
+      }
+
+      waypoints.push(...parsedValue)
     }
 
     const process = OperatingSystem.os.addProcess(null, processId => {
