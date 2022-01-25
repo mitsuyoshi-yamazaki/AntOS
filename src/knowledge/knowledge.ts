@@ -25,6 +25,7 @@ export const epicScenes: { description: string, url: string }[] = [
  * - createFlag()/remove()実行tickで状態が変化しない
  * - BotArena等にデプロイするにはscreepsmod-authにパスワードを設定する必要がある
  *   - https://github.com/ScreepsMods/screepsmod-auth
+ * - SpawnしたCreepをSpawnの中に閉じ込めておけば寿命は減らない
  */
 
 /*
