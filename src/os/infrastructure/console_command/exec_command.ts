@@ -877,7 +877,7 @@ export class ExecCommand implements ConsoleCommand {
       return `Room ${roomLink(roomName)} is not mine`
     }
 
-    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "toggle_auto_attack"]
+    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
     const setting = args.get("setting")
     switch (setting) {
     case "excluded_remotes":
@@ -888,6 +888,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.configureResearchCompounds(roomName, roomInfo, args)
     case "refresh_research_labs":
       return this.refreshResearchLabs(roomName, roomInfo)
+    case "disable_boost_labs":
+      return this.disableBoostLabs(roomName, roomInfo)
     case "toggle_auto_attack":
       return this.toggleAutoAttack(roomName, roomInfo, args)
     default:
@@ -912,6 +914,26 @@ export class ExecCommand implements ConsoleCommand {
     roomInfo.config.enableAutoAttack = enabled
 
     return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
+  }
+
+  private disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `${roomLink(roomName)} no found`
+    }
+    if (roomInfo.researchLab == null) {
+      return `roomInfo.researchLab is null ${roomLink(roomName)}`
+    }
+
+    if (roomInfo.config?.boostLabs == null) {
+      return `no boost labs in ${roomLink(roomName)}`
+    }
+
+    const oldValue = [...roomInfo.config.boostLabs]
+    roomInfo.researchLab.outputLabs.push(...oldValue)
+    roomInfo.config.boostLabs = []
+
+    return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
   }
 
   private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
