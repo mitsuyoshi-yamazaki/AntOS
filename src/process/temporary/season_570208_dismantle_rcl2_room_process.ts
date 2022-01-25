@@ -11,8 +11,6 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
@@ -170,6 +168,10 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     }
   }
 
+  public setKeepSpawning(): void {
+    this.keepSpawning = true
+  }
+
   public runOnTick(): void {
     ((): void => {
       const targetRoom = Game.rooms[this.targetRoomName]
@@ -200,41 +202,6 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     //   creep => this.newDismantlerTask(creep),
     //   () => true,
     // )
-  }
-
-  private requestDismantler(priority: CreepSpawnRequestPriority, numberOfCreeps: number): void {
-    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority,
-      numberOfCreeps,
-      codename: this.codename,
-      roles: this.dismantlerRoles,
-      body: this.dismantlerBody,
-      initialTask: null,
-      taskIdentifier: this.identifier,
-      parentRoomName: null,
-    })
-  }
-
-  private newDismantlerTask(creep: Creep): CreepTask | null {
-    if (creep.room.name !== this.targetRoomName) {
-      return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
-    }
-
-    const attackerTarget = ((): AnyStructure | null => {
-      if (this.target != null) {
-        return this.target
-      }
-      return this.structureTarget(creep)
-    })()
-
-    if (attackerTarget == null) {
-      if (creep.room.controller != null) {
-        return MoveToTask.create(creep.room.controller.pos, 2)
-      }
-      return null
-    }
-
-    return MoveToTargetTask.create(DismantleApiWrapper.create(attackerTarget))
   }
 
   private structureTarget(creep: Creep): AnyStructure | null {
@@ -345,7 +312,13 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     if (targetSite == null) {
       const [position, range] = ((): [RoomPosition, number] => {
         if (creep.room.controller != null) {
-          return [creep.room.controller.pos, 5]
+          const controllerRange = 5
+          if (creep.pos.getRangeTo(creep.room.controller) <= controllerRange) {
+            if (creep.pos.x <= 1 || creep.pos.x >= 48 || creep.pos.y <= 1 || creep.pos.y >= 48) {
+              return [creep.room.controller.pos, 3]
+            }
+          }
+          return [creep.room.controller.pos, controllerRange]
         }
         return [creep.pos, 0]
       })()
