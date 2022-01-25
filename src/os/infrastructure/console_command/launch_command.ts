@@ -21,7 +21,7 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import { isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
@@ -44,6 +44,7 @@ import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
+import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
 // import {} from "process/onetime/attack/drafting_room_process"
 
 type LaunchCommandResult = Result<Process, string>
@@ -159,6 +160,9 @@ export class LaunchCommand implements ConsoleCommand {
       break
     case "QuadMakerProcess":
       result = this.launchQuadMakerProcess()
+      break
+    case "Season4275982HarvestCommodityProcess":
+      result = this.launchSeason4275982HarvestCommodityProcess()
       break
     default:
       break
@@ -1016,6 +1020,47 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return QuadMakerProcess.create(processId, name, roomName, targetRoomName)
+    })
+    return Result.Succeeded(process)
+  }
+
+  private launchSeason4275982HarvestCommodityProcess(): LaunchCommandResult {
+    const args = this.parseProcessArguments()
+
+    const roomName = args.get("room_name")
+    if (roomName == null) {
+      return this.missingArgumentError("room_name")
+    }
+    const targetRoomName = args.get("target_room_name")
+    if (targetRoomName == null) {
+      return this.missingArgumentError("target_room_name")
+    }
+    const commodityType = args.get("commodity_type")
+    if (commodityType == null) {
+      return this.missingArgumentError("commodity_type")
+    }
+    if (!isDepositConstant(commodityType)) {
+      return Result.Failed(`${commodityType} is not commodity type`)
+    }
+
+    const roomDistance = Game.map.getRoomLinearDistance(roomName, targetRoomName)
+    const haulerCount = roomDistance >= 3 ? 2 : 1
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return Season4275982HarvestCommodityProcess.create(
+        processId,
+        roomName,
+        {
+          roomName: targetRoomName,
+          commodityType,
+          neighbourCellCount: 1,  // FixMe:
+          currentCooldown: 0,
+        },
+        {
+          harvesterCount: 2,
+          haulerCount,
+        }
+      )
     })
     return Result.Succeeded(process)
   }
