@@ -14,6 +14,7 @@ import { Logger } from "./logger"
 import { ProcessRequestStore } from "os/process_request_store"
 import { EventManager } from "event_handler/event_manager"
 import { GameMap } from "game/game_map"
+import { GameRecord } from "game/game_record"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
@@ -66,6 +67,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       GameMap.beforeTick()
     }, "GameMap.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      GameRecord.beforeTick()
+    }, "GameRecord.beforeTick()")()
   }
 
   public runAfterTick(): void {
@@ -100,6 +105,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       GameMap.afterTick()
     }, "GameMap.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      GameRecord.afterTick()
+    }, "GameRecord.afterTick()")()
   }
 
   // ---- Private ---- //
