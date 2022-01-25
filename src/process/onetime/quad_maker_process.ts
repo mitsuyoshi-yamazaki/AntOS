@@ -21,13 +21,14 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 
 const canHandleMeleeDefaultValue = false
 const defaultDamageTolerance = 0.15
-const parameterNames = ["room_name", "target_room_name"]
+const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
 const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadName: string
   readonly roomName: RoomName
   readonly targetRoomName: RoomName
+  readonly frontBaseRoomName: RoomName | null
   readonly canHandleMelee: boolean
   readonly damageTolerance: number, // 0.0~1.0
   readonly boosts: MineralBoostConstant[],
@@ -46,6 +47,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     private readonly quadName: string,
     private roomName: RoomName,
     private targetRoomName: RoomName,
+    private frontBaseRoomName: RoomName | null,
     private canHandleMelee: boolean,
     private damageTolerance: number,
     private boosts: MineralBoostConstant[],
@@ -62,6 +64,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       quadName: this.quadName,
       roomName: this.roomName,
       targetRoomName: this.targetRoomName,
+      frontBaseRoomName: this.frontBaseRoomName,
       canHandleMelee: this.canHandleMelee,
       damageTolerance: this.damageTolerance,
       boosts: this.boosts,
@@ -76,6 +79,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       state.quadName,
       state.roomName,
       state.targetRoomName,
+      state.frontBaseRoomName,
       state.canHandleMelee,
       state.damageTolerance,
       state.boosts,
@@ -84,15 +88,16 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   }
 
   public static create(processId: ProcessId, quadName: string, roomName: RoomName, targetRoomName: RoomName): QuadMakerProcess {
+    const frontBaseRoomName: RoomName | null = null
     const canHandleMelee = canHandleMeleeDefaultValue
     const damageTolerance = defaultDamageTolerance
     const boosts: MineralBoostConstant[] = []
     const creepSpec: QuadCreepSpec[] = []
-    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, canHandleMelee, damageTolerance, boosts, creepSpec)
+    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec)
   }
 
   public processShortDescription(): string {
-    return `${this.quadName} ${roomLink(this.roomName)}=>${roomLink(this.targetRoomName)}`
+    return `${this.quadName} ${this.roomPathDescription()}`
   }
 
   public didReceiveMessage(message: string): string {
@@ -169,7 +174,7 @@ commands: ${commands}
 
     switch (parameter) {
     case "room_name": {
-      const roomName = parameter[0]
+      const roomName = args[0]
       if (roomName == null) {
         return "Missing room name argument"
       }
@@ -182,7 +187,7 @@ commands: ${commands}
     }
 
     case "target_room_name": {
-      const targetRoomName = parameter[0]
+      const targetRoomName = args[0]
       if (targetRoomName == null) {
         return "Missing target room name argument"
       }
@@ -192,6 +197,20 @@ commands: ${commands}
       const oldValue = this.targetRoomName
       this.targetRoomName = targetRoomName
       return `Changed target_room_name ${oldValue} => ${this.targetRoomName}`
+    }
+
+    case "front_base_room_name": {
+      const frontBaseRoomName = args[0]
+      if (frontBaseRoomName == null) {
+        return "Missing front base room name argument"
+      }
+      const frontRoom = Game.rooms[frontBaseRoomName]
+      if (frontRoom == null || frontRoom.controller?.my !== true) {
+        return `Front room ${roomLink(frontBaseRoomName)} is not mine`
+      }
+      const oldValue = this.frontBaseRoomName
+      this.frontBaseRoomName = frontBaseRoomName
+      return `Changed front_base_room_name ${oldValue} => ${this.frontBaseRoomName}`
     }
 
     default:
@@ -344,13 +363,22 @@ commands: ${commands}
     }
   }
 
-  private show(): string {
-    const parameterDescription = `${roomLink(this.roomName)} => ${roomLink(this.targetRoomName)}`
+  private roomPathDescription(): string {
+    const roomNames: RoomName[] = []
+    roomNames.push(this.roomName)
+    if (this.frontBaseRoomName != null) {
+      roomNames.push(this.frontBaseRoomName)
+    }
+    roomNames.push(this.targetRoomName)
 
+    return roomNames.map(roomName => roomLink(roomName)).join("=>")
+  }
+
+  private show(): string {
     const quadSpec = this.createQuadSpec()
     if (typeof quadSpec === "string") {
       return `${quadSpec}:
-${this.quadName} ${parameterDescription}
+${this.quadName} ${this.roomPathDescription()}
 handle melee: ${ this.canHandleMelee }
 damage tolerance: ${ this.damageTolerance }
 boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
@@ -358,10 +386,10 @@ creeps: ${this.creepSpecs.length} creeps
       `
     }
 
-    return `${parameterDescription}\n${quadSpec.description()}`
+    return `${this.roomPathDescription()}\n${quadSpec.description()}`
   }
 
-  private verify(): Result<{ quadSpec: QuadSpec, waypoints: RoomName[], warnings: string[] }, string[]> {
+  private verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]> {
     const warningPrefix = coloredText("[WARN]", "warn")
     const errorPrefix = coloredText("[ERROR]", "error")
     const warnings: string[] = []
@@ -372,9 +400,20 @@ creeps: ${this.creepSpecs.length} creeps
       return Result.Failed(errors)
     }
 
-    const waypoints = GameMap.getWaypoints(this.roomName, this.targetRoomName)
-    if (waypoints == null) {
-      errors.push(`${errorPrefix} waypoints not set ${roomLink(this.roomName)}=>${roomLink(this.targetRoomName)}`)
+    const noWaypointError = (fromRoomName: RoomName, toRoomName: RoomName): string => {
+      return `${errorPrefix} waypoints not set ${roomLink(fromRoomName)}=>${roomLink(toRoomName)}`
+    }
+    if (this.frontBaseRoomName != null) {
+      if (GameMap.getWaypoints(this.roomName, this.frontBaseRoomName) == null) {
+        errors.push(noWaypointError(this.roomName, this.frontBaseRoomName))
+      }
+      if (GameMap.getWaypoints(this.frontBaseRoomName, this.targetRoomName) == null) {
+        errors.push(noWaypointError(this.frontBaseRoomName, this.targetRoomName))
+      }
+    } else {
+      if (GameMap.getWaypoints(this.roomName, this.targetRoomName) == null) {
+        errors.push(noWaypointError(this.roomName, this.targetRoomName))
+      }
     }
 
     const roomResources = RoomResources.getOwnedRoomResource(this.roomName)
@@ -436,10 +475,9 @@ creeps: ${this.creepSpecs.length} creeps
       warnings.push(`${warningPrefix} quad may cause energy shortage: required ${cost}e but ${storedEnergy}e in ${roomLink(this.roomName)}`)
     }
 
-    if (waypoints != null && errors.length <= 0) {
+    if (errors.length <= 0) {
       return Result.Succeeded({
         quadSpec,
-        waypoints,
         warnings,
       })
     }
@@ -480,7 +518,7 @@ creeps: ${this.creepSpecs.length} creeps
 
       // Launch Quad Process
       const process = OperatingSystem.os.addProcess(null, processId => {
-        return SpecializedQuadProcess.create(processId, this.roomName, this.targetRoomName, result.value.waypoints, [], result.value.quadSpec)
+        return SpecializedQuadProcess.create(processId, this.roomName, this.targetRoomName, [], result.value.quadSpec, this.frontBaseRoomName)
       })
 
       const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`

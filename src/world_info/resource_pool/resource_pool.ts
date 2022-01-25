@@ -19,6 +19,7 @@ const creepResourcePools = new Map<ResourcePoolIdentifier, CreepPool>()
 const towerResourcePools = new Map<ResourcePoolIdentifier, TowerPool>()
 const spawnResourcePools = new Map<ResourcePoolIdentifier, SpawnPool>()
 const spawnCreepRequests = new Map<ResourcePoolIdentifier, CreepSpawnRequest[]>()
+const stopSpawningUntil = new Map<ResourcePoolIdentifier, number>()
 
 export interface ResourcePoolsInterface {
   // ---- Lifecycle ---- //
@@ -39,6 +40,8 @@ export interface ResourcePoolsInterface {
 
   /** 毎tick呼び出す */
   addSpawnCreepRequest(roomName: RoomName, request: CreepSpawnRequest): void
+
+  stopSpawningIn(roomName: RoomName, duration: number): void
 }
 
 /**
@@ -65,8 +68,15 @@ export const ResourcePools: ResourcePoolsInterface = {
       if (requests == null) {
         return
       }
-      pool.spawnCreeps(requests)
+      const stopUntil = stopSpawningUntil.get(identifier)
+      if (stopUntil == null || Game.time > stopUntil) {
+        stopSpawningUntil.delete(identifier)
+        pool.spawnCreeps(requests)
+      } else {
+        pool.show(`${stopUntil - Game.time}`, "#FF0000")
+      }
     })
+
 
     towerResourcePools.forEach(pool => {
       pool.executeTask()
@@ -117,6 +127,10 @@ export const ResourcePools: ResourcePoolsInterface = {
     }
     pool.addTask(task)
     return
+  },
+
+  stopSpawningIn(roomName: RoomName, duration: number): void {
+    stopSpawningUntil.set(resourcePoolIdentifier(roomName), Game.time + duration)
   },
 }
 

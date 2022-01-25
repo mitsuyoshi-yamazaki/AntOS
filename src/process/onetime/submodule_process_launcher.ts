@@ -5,7 +5,6 @@ import { isQuadType, PredefinedQuadSpec } from "../../../submodules/attack/quad/
 // import { } from "../../../submodules/attack/platoon/platoon_process"
 import { QuadSpec } from "../../../submodules/attack/quad/quad_spec"
 import { QuadRequirement } from "../../../submodules/attack/quad/quad_requirement"
-import { GameMap } from "game/game_map"
 
 export function launchQuadProcess(args: Map<string, string>): Result<SpecializedQuadProcess, string> {
   const roomName = args.get("room_name")
@@ -16,21 +15,11 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
   if (targetRoomName == null) {
     return missingArgumentError("target_room_name")
   }
-  const rawWaypoints = args.get("waypoints")
-  if (rawWaypoints == null) {
-    return missingArgumentError("waypoints")
-  }
-  const waypoints = rawWaypoints.split(",")
   const rawTargets = args.get("targets")
   if (rawTargets == null) {
     return missingArgumentError("targets")
   }
   const targets = rawTargets.split(",")
-
-  const result = GameMap.setWaypoints(roomName, targetRoomName, waypoints)
-  if (result.resultType === "failed") {
-    return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-  }
 
   const quadSpec = ((): QuadSpec | string => {
     const quadType = args.get("quad_type")
@@ -62,7 +51,7 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
   }
 
   const process = OperatingSystem.os.addProcess(null, processId => {
-    return SpecializedQuadProcess.create(processId, roomName, targetRoomName, waypoints, targets as Id<AnyStructure>[], quadSpec)
+    return SpecializedQuadProcess.create(processId, roomName, targetRoomName, targets as Id<AnyStructure>[], quadSpec, null)
   })
   return Result.Succeeded(process)
 

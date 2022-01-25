@@ -18,6 +18,14 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
     this.spawns.push(spawn)
   }
 
+  public show(text: string, color: string): void {
+    const spawn = this.spawns[0]
+    if (spawn == null) {
+      return
+    }
+    spawn.room.visual.text(text, spawn.pos, {color})
+  }
+
   public spawnCreeps(rawRequests: CreepSpawnRequest[]): void {
     const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null)
     const spawn = idleSpawns[0]
