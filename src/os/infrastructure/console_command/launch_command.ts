@@ -1058,6 +1058,15 @@ export class LaunchCommand implements ConsoleCommand {
       return Result.Failed(`${commodityType} is not commodity type`)
     }
 
+    const rawHarvesterCount = args.get("harvester_count")
+    if (rawHarvesterCount == null) {
+      return this.missingArgumentError("harvester_count")
+    }
+    const harvesterCount = parseInt(rawHarvesterCount, 10)
+    if (isNaN(harvesterCount) === true) {
+      return Result.Failed(`harvester_count ${rawHarvesterCount} is not a number`)
+    }
+
     const roomDistance = Game.map.getRoomLinearDistance(roomName, targetRoomName)
     const haulerCount = roomDistance >= 3 ? 2 : 1
 
@@ -1072,7 +1081,7 @@ export class LaunchCommand implements ConsoleCommand {
           currentCooldown: 0,
         },
         {
-          harvesterCount: 2,
+          harvesterCount: harvesterCount,
           haulerCount,
         }
       )
