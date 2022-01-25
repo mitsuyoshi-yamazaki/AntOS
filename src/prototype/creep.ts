@@ -17,7 +17,7 @@ export function defaultMoveToOptions(): MoveToOpts {
   return {
     maxRooms: 1,
     reusePath: 5,
-    maxOps: 500,
+    maxOps: 800,
   }
 }
 
