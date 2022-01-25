@@ -820,8 +820,17 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const targetRoomNames = rawTargetRoomNames.split(",")
 
+    const rawMaxClaimSize = args.get("max_claim_size")
+    if (rawMaxClaimSize == null) {
+      return this.missingArgumentError("max_claim_size")
+    }
+    const maxClaimSize = parseInt(rawMaxClaimSize, 10)
+    if (isNaN(maxClaimSize) === true) {
+      return Result.Failed(`max_claim_size is not a number ${rawMaxClaimSize}`)
+    }
+
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return World35440623DowngradeControllerProcess.create(processId, roomName, targetRoomNames)
+      return World35440623DowngradeControllerProcess.create(processId, roomName, targetRoomNames, maxClaimSize)
     })
     return Result.Succeeded(process)
   }
