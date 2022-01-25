@@ -30,7 +30,7 @@ ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
-const maxCooldown = 50
+const maxCooldown = 70
 
 type DepositInfo = {
   readonly roomName: RoomName
@@ -70,7 +70,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     private readonly parentRoomName: RoomName,
     private readonly depositInfo: DepositInfo,
     private readonly creepSpec: CreepSpec,
-    private readonly suspendReasons: string[],
+    private suspendReasons: string[],
   ) {
     this.identifier = ((): string => {
       if (this.processId === 287027000) {
@@ -121,13 +121,26 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   }
 
   public didReceiveMessage(message: string): string {
-    switch (message) {
+    const commandList = ["help", "stop", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    switch (command) {
+    case "help":
+      return `Available commands are: ${commandList.join(", ")}`
+
     case "stop":
       this.addSuspendReason("manual stop")
       return "stopped"
 
+    case "resume": {
+      const oldValue = [...this.suspendReasons]
+      this.suspendReasons = []
+      return `spawn resumed (stop reasons: ${oldValue.join(", ")})`
+    }
+
     default:
-      return `Unknown command ${message}`
+      return `Unknown command ${command}, see: "help"`
     }
   }
 
