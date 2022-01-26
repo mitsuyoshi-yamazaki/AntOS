@@ -51,10 +51,10 @@ export class DraftingRoomProcess implements Process, MessageObserver {
     const components = message.split(" ")
     const command = components[0]
     switch (command) {
-      case helpCommand:
-        return `Commands: ${commands}`
-      default:
-        return `Invalid command ${command}. "help" to show command list`
+    case helpCommand:
+      return `Commands: ${commands}`
+    default:
+      return `Invalid command ${command}. "help" to show command list`
     }
   }
 

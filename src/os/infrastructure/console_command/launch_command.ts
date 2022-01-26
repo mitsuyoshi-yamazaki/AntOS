@@ -45,8 +45,7 @@ import { GameMap } from "game/game_map"
 import { RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
-// import {} from "process/onetime/attack/drafting_room_process"
-import { } from "process/process/produce_commodity_process"
+import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywardArguments } from "./utility/keyward_argument_parser"
 
@@ -1065,18 +1064,21 @@ export class LaunchCommand implements ConsoleCommand {
   }
 }
 
-/**
- * const roomName = args.string()
- * args.parse((roomName, targetRoomName) => {
- * },
- * error => {
- * })
- */
+ProcessLauncher.register("ProduceCommodityProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse()
+    const room = Game.rooms[roomName]
+    if (room == null || room.controller?.my !== true) {
+      throw `${roomLink(roomName)} is not mine`
+    }
 
-// class Arg<T> {
-//   public parseString(key: string):
-// }
+    const factory = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_FACTORY } }) as StructureFactory[])[0]
+    if (factory == null) {
+      throw `${roomLink(roomName)} has no factory`
+    }
 
-// function parseRoomName(key: string): string {
-//   throw
-// }
+    return Result.Succeeded((processId) => ProduceCommodityProcess.create(processId, roomName, factory.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})

@@ -101,7 +101,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commands = ["help", "set", "reset", "show", "verify", "launch"]
+    const commands = ["help", "set", "reset", "show", "verify", "launch", "clone"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -127,6 +127,8 @@ commands: ${commands}
   - check energyCapacityAvailable to verify
 - launch
   - launch quad process
+- clone
+  - clone this process
       `
 
     case "change":
@@ -159,6 +161,9 @@ commands: ${commands}
       const dryRun = components[0] !== "dry_run=0"
       return this.launchQuadProcess(dryRun)
     }
+
+    case "clone":
+      return "not implemented yet"
 
     default:
       return `Invalid command ${command}. see "help"`
