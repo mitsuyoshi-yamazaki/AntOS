@@ -38,6 +38,9 @@ export const GameMap = {
   },
 
   getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+    if (roomName === destinationRoomName) {
+      return []
+    }
     const waypoints = getWaypoints(roomName, destinationRoomName)
     if (waypoints != null) {
       return waypoints
@@ -56,7 +59,10 @@ export const GameMap = {
     return null
   },
 
-  setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): Result<void, {invalidRoomNames: RoomName[]}> {
+  setWaypoints(roomName: RoomName, destinationRoomName: RoomName, waypoints: RoomName[]): Result<void, { invalidRoomNames: RoomName[] }> {
+    if (roomName === destinationRoomName) {
+      return Result.Failed({invalidRoomNames: []})
+    }
     const roomNames: RoomName[] = [
       roomName,
       destinationRoomName,
