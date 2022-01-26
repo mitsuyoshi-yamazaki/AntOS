@@ -46,8 +46,9 @@ import { RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
 // import {} from "process/onetime/attack/drafting_room_process"
-// import { } from "process/process/produce_commodity_process"
+import { } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
+import { KeywardArguments } from "./utility/keyward_argument_parser"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -139,15 +140,8 @@ export class LaunchCommand implements ConsoleCommand {
       case "Season4275982HarvestCommodityProcess":
         return this.launchSeason4275982HarvestCommodityProcess()
       default: {
-        const argMap = new Map<string, string>()
-        args.forEach(arg => {
-          const [key, value] = arg.split("=")
-          if (key == null || value == null) {
-            return
-          }
-          argMap.set(key, value)
-        })
-        return ProcessLauncher.launch(processType, argMap)
+        const stringArgument = new KeywardArguments(args)
+        return ProcessLauncher.launch(processType, stringArgument)
       }
       }
     })()

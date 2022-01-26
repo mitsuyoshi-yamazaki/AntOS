@@ -2,10 +2,11 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { Result } from "utility/result"
 import { Process, ProcessId } from "./process"
+import { KeywardArguments } from "os/infrastructure/console_command/utility/keyward_argument_parser"
 
 type ProcessType = string
 type ProcessMaker = (processId: ProcessId) => Process
-type Launcher = (args: Map<string, string>) => Result<ProcessMaker, string>
+type Launcher = (args: KeywardArguments) => Result<ProcessMaker, string>
 
 const launchers = new Map<ProcessType, Launcher>()
 
@@ -17,7 +18,7 @@ export const ProcessLauncher = {
     launchers.set(processType, launcher)
   },
 
-  launch(processType: ProcessType, args: Map<string, string>): Result<Process, string> {
+  launch(processType: ProcessType, args: KeywardArguments): Result<Process, string> {
     const launcher = launchers.get(processType)
     if (launcher == null) {
       const errorMessage = `ProcessLauncher unregistered process ${processType}`

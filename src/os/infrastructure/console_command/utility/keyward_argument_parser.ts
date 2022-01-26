@@ -10,11 +10,15 @@ interface SingleArgumentInterface<Options, Value> {
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
  */
-interface StringArgumentsInterface {
-  roomName(key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
+interface KeywardArgumentsInterface {
+  // ---- Primitive Type ---- //
   int(key: string): SingleArgument<{ min?: number, max?: number }, number>
   float(key: string): SingleArgument<{ min?: number, max?: number }, number>
   string(key: string): SingleArgument<void, string>
+
+  // ---- Game Object ---- //
+  roomName(key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
+  gameObjectId(key: string): SingleArgument<void, string>
 
   interRoomPath(
     fromRoomKey: string,
@@ -28,7 +32,7 @@ interface StringArgumentsInterface {
   }
 }
 
-export class StringArguments implements StringArgumentsInterface {
+export class KeywardArguments implements KeywardArgumentsInterface {
   private readonly argumentMap: Map<string, string>
 
   public constructor(
@@ -44,10 +48,6 @@ export class StringArguments implements StringArgumentsInterface {
     })
   }
 
-  public roomName(key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName> {
-    return new RoomNameArgument(key, this.argumentMap.get(key) ?? null)
-  }
-
   public int(key: string): SingleArgument<{ min?: number, max?: number }, number> {
     return new IntArgument(key, this.argumentMap.get(key) ?? null)
   }
@@ -58,6 +58,14 @@ export class StringArguments implements StringArgumentsInterface {
 
   public string(key: string): SingleArgument<void, string> {
     return new StringArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public roomName(key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName> {
+    return new RoomNameArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public gameObjectId(key: string): SingleArgument<void, string> {
+    return this.string(key)
   }
 
   public interRoomPath(
