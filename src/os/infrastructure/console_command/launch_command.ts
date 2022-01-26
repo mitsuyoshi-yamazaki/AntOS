@@ -47,7 +47,7 @@ import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_
 import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
-import { KeywardArguments } from "./utility/keyward_argument_parser"
+import { KeywordArguments } from "./utility/keyword_argument_parser"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -139,7 +139,7 @@ export class LaunchCommand implements ConsoleCommand {
       case "Season4275982HarvestCommodityProcess":
         return this.launchSeason4275982HarvestCommodityProcess()
       default: {
-        const stringArgument = new KeywardArguments(args)
+        const stringArgument = new KeywordArguments(args)
         return ProcessLauncher.launch(processType, stringArgument)
       }
       }

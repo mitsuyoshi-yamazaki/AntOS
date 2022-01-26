@@ -6,7 +6,7 @@ import { FloatArgument, IntArgument, missingArgumentErrorMessage, RoomNameArgume
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
  */
-interface KeywardArgumentsInterface {
+interface KeywordArgumentsInterface {
   // ---- Primitive Type ---- //
   int(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
   float(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
@@ -28,7 +28,7 @@ interface KeywardArgumentsInterface {
   }
 }
 
-export class KeywardArguments implements KeywardArgumentsInterface {
+export class KeywordArguments implements KeywordArgumentsInterface {
   private readonly argumentMap: Map<string, string>
 
   public constructor(

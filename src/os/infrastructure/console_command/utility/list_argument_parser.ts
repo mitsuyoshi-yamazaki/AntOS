@@ -4,7 +4,7 @@ import { FloatArgument, IntArgument, RoomNameArgument, SingleArgument, StringArg
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
  */
-interface KeywardArgumentsInterface {
+interface KeywordArgumentsInterface {
   // ---- Primitive Type ---- //
   int(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
@@ -15,7 +15,7 @@ interface KeywardArgumentsInterface {
   gameObjectId(index: number, key: string): SingleArgument<void, string>
 }
 
-export class ListArguments implements KeywardArgumentsInterface {
+export class ListArguments implements KeywordArgumentsInterface {
   public constructor(
     private readonly argumentList: string[]
   ) {
