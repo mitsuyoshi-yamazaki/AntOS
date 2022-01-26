@@ -259,7 +259,7 @@ export class OwnedRoomHaulerTask extends Task {
       if (energySource != null) {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
       }
-      creep.say("no source")
+      creep.say("ns")
       return null
     }
 
