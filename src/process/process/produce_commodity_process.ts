@@ -8,6 +8,7 @@ import { generateCodename } from "utility/unique_id"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { isCommodityConstant } from "utility/resource"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { processLog } from "os/infrastructure/logger"
 
 ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
@@ -22,6 +23,7 @@ interface ProduceCommodityProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly factoryId: Id<StructureFactory>
   readonly products: ProductInfo[]
+  readonly stopSpawningReasons: string[]
 }
 
 export class ProduceCommodityProcess implements Process, Procedural, MessageObserver {
@@ -38,6 +40,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     private readonly roomName: RoomName,
     private readonly factoryId: Id<StructureFactory>,
     private products: ProductInfo[],
+    private stopSpawningReasons: string[]
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -51,23 +54,24 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       roomName: this.roomName,
       factoryId: this.factoryId,
       products: this.products,
+      stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: ProduceCommodityProcessState): ProduceCommodityProcess {
-    return new ProduceCommodityProcess(state.l, state.i, state.roomName, state.factoryId, state.products)
+    return new ProduceCommodityProcess(state.l, state.i, state.roomName, state.factoryId, state.products, state.stopSpawningReasons)
   }
 
   public static create(processId: ProcessId, roomName: RoomName, factoryId: Id<StructureFactory>): ProduceCommodityProcess {
-    return new ProduceCommodityProcess(Game.time, processId, roomName, factoryId, [])
+    return new ProduceCommodityProcess(Game.time, processId, roomName, factoryId, [], [])
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)}, ${this.products.map(product => coloredResourceType(product.commodityType)).join(",")}`
+    return `${roomLink(this.roomName)} ${this.products.map(product => coloredResourceType(product.commodityType)).join(",")}`
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "clear"]
+    const commandList = ["help", "add", "clear", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -80,6 +84,10 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
   - adds product
 - clear
   - clears all products
+- stop
+  - manually stop spawning
+- resume
+  - resume spawning
         `
 
     case "add": {
@@ -104,12 +112,37 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return `Products cleared (old values: ${oldValue.map(product => coloredResourceType(product.commodityType)).join(",")})`
     }
 
+    case "stop":
+      this.addSpawnStopReason("manually stopped")
+      return "Stopped spawning"
+
+    case "resume": {
+      const oldValue = [...this.stopSpawningReasons]
+      this.stopSpawningReasons = []
+      return `Resume spawning (stopped reasons: ${oldValue.join(", ")})`
+    }
+
     default:
       return `Invalid command ${commandList}. see "help"`
     }
   }
 
   public runOnTick(): void {
-    // TODO:
+    if (this.products.length <= 0) {
+      this.addSpawnStopReason("no products")
+    }
+
+    const factory = Game.getObjectById(this.factoryId)
+    if (factory == null) {
+      this.addSpawnStopReason("no factory")
+      processLog(this, `No factory in ${roomLink(this.roomName)}`)
+    }
+  }
+
+  private addSpawnStopReason(reason: string): void {
+    if (this.stopSpawningReasons.includes(reason) === true) {
+      return
+    }
+    this.stopSpawningReasons.push(reason)
   }
 }
