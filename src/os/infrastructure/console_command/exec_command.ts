@@ -639,10 +639,6 @@ export class ExecCommand implements ConsoleCommand {
       return `Room ${roomLink(roomName)} is not owned`
     }
 
-    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) > 0) {
-      return `${roomLink(roomName)} has boost labs`
-    }
-
     const rawTotalBoostLabCount = args.get("total_boost_lab_count")
     if (rawTotalBoostLabCount == null) {
       return this.missingArgumentError("total_boost_lab_count")
@@ -651,6 +647,11 @@ export class ExecCommand implements ConsoleCommand {
     if (isNaN(totalBoostLabCount) === true) {
       return `total_boost_lab_count is not a number ${rawTotalBoostLabCount}`
     }
+
+    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) >= totalBoostLabCount) {
+      return `${roomLink(roomName)} has boost labs`
+    }
+
     const numberOfBoostLabs = ((): number => {
       const boostLabs = resources.roomInfo.config?.boostLabs
       if (boostLabs != null) {
@@ -694,7 +695,14 @@ export class ExecCommand implements ConsoleCommand {
       outputs.push(`Removed from research output lab: ${boostLabIds}`)
 
     } else {  // researchLab == null
-      const labs = resources.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+      const labs = ((): StructureLab[] => {
+        const foundLabs = resources.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+        if (resources.roomInfo.config?.boostLabs == null) {
+          return foundLabs
+        }
+        const storedBoostLabIds = [...resources.roomInfo.config.boostLabs]
+        return foundLabs.filter(lab => storedBoostLabIds.includes(lab.id) !== true)
+      })()
       if (labs.length > numberOfBoostLabs) {
         labs.splice(numberOfBoostLabs, labs.length - numberOfBoostLabs)
       }
@@ -714,7 +722,11 @@ export class ExecCommand implements ConsoleCommand {
     } else {
       outputs.push(`Set ${boostLabIds.length} labs`)
     }
-    resources.roomInfo.config.boostLabs = boostLabIds
+    if (resources.roomInfo.config.boostLabs == null) {
+      resources.roomInfo.config.boostLabs = boostLabIds
+    } else {
+      resources.roomInfo.config.boostLabs.push(...boostLabIds)
+    }
 
     return `\n${outputs.join("\n")}`
   }
