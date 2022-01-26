@@ -46,6 +46,8 @@ import { RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
 // import {} from "process/onetime/attack/drafting_room_process"
+// import { } from "process/process/produce_commodity_process"
+import { ProcessLauncher } from "process/process_launcher"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -57,119 +59,98 @@ export class LaunchCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    let result: LaunchCommandResult | null = null
-    switch (this.args[0]) {
-    case "TestProcess":
-      result = this.launchTestProcess()
-      break
-    case "TestChildProcess":
-      result = this.launchTestChildProcess()
-      break
-    case "SpecializedQuadProcess":
-      result = this.launchQuad()
-      break
-    case "Season487837AttackInvaderCoreProcess":
-      result = this.launchSeason487837AttackInvaderCoreProcess()
-      break
-    case "Season570208DismantleRcl2RoomProcess":
-      result = this.launchSeason570208DismantleRcl2RoomProcess()
-      break
-    case "Season631744PowerProcessProcess":
-      result = this.launchSeason631744PowerProcessProcess()
-      break
-    case "Season634603PowerCreepProcess":
-      result = this.launchSeason634603PowerCreepProcess()
-      break
-    case "Season701205PowerHarvesterSwampRunnerProcess":
-      result = this.launchSeason701205PowerHarvesterSwampRunnerProcess()
-      break
-    case "Season989041MovePowerCreepProcess":
-      result = this.launchSeason989041MovePowerCreepProcess()
-      break
-    case "BuyPixelProcess":
-      result = this.launchBuyPixelProcess()
-      break
-    case "Season1143119LabChargerProcess":
-      result = this.launchSeason1143119LabChargerProcess()
-      break
-    case "Season1200082SendMineralProcess":
-      result = this.launchSeason1200082SendMineralProcess()
-      break
-    case "GuardRemoteRoomProcess":
-      result = this.launchGuardRemoteRoomProcess()
-      break
-    case "Season1349943DisturbPowerHarvestingProcess":
-      result = this.launchSeason1349943DisturbPowerHarvestingProcess()
-      break
-    case "Season1521073SendResourceProcess":
-      result = this.launchSeason1521073SendResourceProcess()
-      break
-    case "Season1244215GenericDismantleProcess":
-      result = this.launchSeason1244215GenericDismantleProcess()
-      break
-    case "Season1606052SKHarvesterProcess":
-      result = this.launchSeason1606052SKHarvesterProcess()
-      break
-    case "UpgradePowerCreepProcess":
-      result = this.launchUpgradePowerCreepProcess()
-      break
-    case "Season1655635SKMineralHarvestProcess":
-      result = this.launchSeason1655635SKMineralHarvestProcess()
-      break
-    case "Season4332399SKMineralHarvestProcess":
-      result = this.launchSeason4332399SKMineralHarvestProcess()
-      break
-    case "Season1838855DistributorProcess":
-      result = this.launchSeason1838855DistributorProcess()
-      break
-    case "StealResourceProcess":
-      result = this.launchStealResourceProcess()
-      break
-    case "Season2055924SendResourcesProcess":
-      result = this.launchSeason2055924SendResourcesProcess()
-      break
-    case "InterRoomResourceManagementProcess":
-      result = this.launchInterRoomResourceManagementProcess()
-      break
-    case "World35440623DowngradeControllerProcess":
-      result = this.launchWorld35440623DowngradeControllerProcess()
-      break
-    case "ObserveRoomProcess":
-      result = this.launchObserveRoomProcess()
-      break
-    case "World35587255ScoutRoomProcess":
-      result = this.launchWorld35587255ScoutRoomProcess()
-      break
-    case "World35872159TestDeclarationProcess":
-      result = this.launchWorld35872159TestDeclarationProcess()
-      break
-    case "World35872159TestResourcePoolProcess":
-      result = this.launchWorld35872159TestResourcePoolProcess()
-      break
-    case "SubmoduleTestProcess":
-      result = this.launchSubmoduleTestProcess()
-      break
-    case "ConstructionSaboteurProcess":
-      result = this.launchConstructionSaboteurProcess()
-      break
-    case "AttackRoomProcess":
-      result = this.launchAttackRoomProcess()
-      break
-    case "MonitoringProcess":
-      result = this.launchMonitoringProcess()
-      break
-    case "QuadMakerProcess":
-      result = this.launchQuadMakerProcess()
-      break
-    case "Season4275982HarvestCommodityProcess":
-      result = this.launchSeason4275982HarvestCommodityProcess()
-      break
-    default:
-      break
+    const args = [...this.args]
+    const firstArgument = args.shift()
+    if (firstArgument == null) {
+      return `Unknown process type ${firstArgument}`
     }
-    if (result == null) {
-      return `Invalid process type name ${this.args[0]}`
-    }
+    const processType = firstArgument
+
+    const result = ((): LaunchCommandResult => {
+      switch (processType) {
+      case "TestProcess":
+        return this.launchTestProcess()
+      case "TestChildProcess":
+        return this.launchTestChildProcess()
+      case "SpecializedQuadProcess":
+        return this.launchQuad()
+      case "Season487837AttackInvaderCoreProcess":
+        return this.launchSeason487837AttackInvaderCoreProcess()
+      case "Season570208DismantleRcl2RoomProcess":
+        return this.launchSeason570208DismantleRcl2RoomProcess()
+      case "Season631744PowerProcessProcess":
+        return this.launchSeason631744PowerProcessProcess()
+      case "Season634603PowerCreepProcess":
+        return this.launchSeason634603PowerCreepProcess()
+      case "Season701205PowerHarvesterSwampRunnerProcess":
+        return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
+      case "Season989041MovePowerCreepProcess":
+        return this.launchSeason989041MovePowerCreepProcess()
+      case "BuyPixelProcess":
+        return this.launchBuyPixelProcess()
+      case "Season1143119LabChargerProcess":
+        return this.launchSeason1143119LabChargerProcess()
+      case "Season1200082SendMineralProcess":
+        return this.launchSeason1200082SendMineralProcess()
+      case "GuardRemoteRoomProcess":
+        return this.launchGuardRemoteRoomProcess()
+      case "Season1349943DisturbPowerHarvestingProcess":
+        return this.launchSeason1349943DisturbPowerHarvestingProcess()
+      case "Season1521073SendResourceProcess":
+        return this.launchSeason1521073SendResourceProcess()
+      case "Season1244215GenericDismantleProcess":
+        return this.launchSeason1244215GenericDismantleProcess()
+      case "Season1606052SKHarvesterProcess":
+        return this.launchSeason1606052SKHarvesterProcess()
+      case "UpgradePowerCreepProcess":
+        return this.launchUpgradePowerCreepProcess()
+      case "Season1655635SKMineralHarvestProcess":
+        return this.launchSeason1655635SKMineralHarvestProcess()
+      case "Season4332399SKMineralHarvestProcess":
+        return this.launchSeason4332399SKMineralHarvestProcess()
+      case "Season1838855DistributorProcess":
+        return this.launchSeason1838855DistributorProcess()
+      case "StealResourceProcess":
+        return this.launchStealResourceProcess()
+      case "Season2055924SendResourcesProcess":
+        return this.launchSeason2055924SendResourcesProcess()
+      case "InterRoomResourceManagementProcess":
+        return this.launchInterRoomResourceManagementProcess()
+      case "World35440623DowngradeControllerProcess":
+        return this.launchWorld35440623DowngradeControllerProcess()
+      case "ObserveRoomProcess":
+        return this.launchObserveRoomProcess()
+      case "World35587255ScoutRoomProcess":
+        return this.launchWorld35587255ScoutRoomProcess()
+      case "World35872159TestDeclarationProcess":
+        return this.launchWorld35872159TestDeclarationProcess()
+      case "World35872159TestResourcePoolProcess":
+        return this.launchWorld35872159TestResourcePoolProcess()
+      case "SubmoduleTestProcess":
+        return this.launchSubmoduleTestProcess()
+      case "ConstructionSaboteurProcess":
+        return this.launchConstructionSaboteurProcess()
+      case "AttackRoomProcess":
+        return this.launchAttackRoomProcess()
+      case "MonitoringProcess":
+        return this.launchMonitoringProcess()
+      case "QuadMakerProcess":
+        return this.launchQuadMakerProcess()
+      case "Season4275982HarvestCommodityProcess":
+        return this.launchSeason4275982HarvestCommodityProcess()
+      default: {
+        const argMap = new Map<string, string>()
+        args.forEach(arg => {
+          const [key, value] = arg.split("=")
+          if (key == null || value == null) {
+            return
+          }
+          argMap.set(key, value)
+        })
+        return ProcessLauncher.launch(processType, argMap)
+      }
+      }
+    })()
 
     switch (result.resultType) {
     case "succeeded": {
@@ -1089,3 +1070,19 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 }
+
+/**
+ * const roomName = args.string()
+ * args.parse((roomName, targetRoomName) => {
+ * },
+ * error => {
+ * })
+ */
+
+// class Arg<T> {
+//   public parseString(key: string):
+// }
+
+// function parseRoomName(key: string): string {
+//   throw
+// }
