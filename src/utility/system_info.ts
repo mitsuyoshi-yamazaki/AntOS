@@ -15,7 +15,7 @@ export const ShortVersion = {
 
 export const SystemInfo = {
   os: {
-    version: "1.5.3",
+    version: "1.5.4",
     name: "AntOS",
   },
   application: {

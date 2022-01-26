@@ -1,5 +1,5 @@
 import { OperatingSystem } from "os/os"
-import { parseProcessId } from "./command_utility"
+import { parseProcessId } from "./utility/command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class KillCommand implements ConsoleCommand {
