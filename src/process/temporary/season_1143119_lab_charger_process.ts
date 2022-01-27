@@ -36,6 +36,7 @@ type LabState = {
 export interface Season1143119LabChargerProcessState extends ProcessState {
   parentRoomName: RoomName
   labStates: LabState[]
+  stopSpawning: boolean
 }
 
 // Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
@@ -65,6 +66,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     private readonly labStates: LabState[],
+    private stopSpawning: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -77,16 +79,17 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       i: this.processId,
       parentRoomName: this.parentRoomName,
       labStates: this.labStates,
+      stopSpawning: this.stopSpawning,
     }
   }
 
   public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labStates)
+    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labStates, state.stopSpawning)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, labs: Season1143119LabChargerProcessLabInfo[]): Season1143119LabChargerProcess {
     const labStates: LabState[] = labs.map(labInfo => ({boost: labInfo.boost, labId: labInfo.lab.id}))
-    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labStates)
+    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labStates, false)
   }
 
   public processShortDescription(): string {
@@ -101,11 +104,19 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
+    if (resources.roomInfo.config?.boostLabs == null) {
+      this.stopSpawning = true
+    }
+    const boostLabs = resources.roomInfo.config?.boostLabs ?? []
 
     const labs: Season1143119LabChargerProcessLabInfo[] = this.labStates.flatMap(labState => {
       const lab = Game.getObjectById(labState.labId)
       if (lab == null) {
         PrimitiveLogger.fatal(`${this.identifier} target lab ${labState.labId} not found ${roomLink(this.parentRoomName)}`)
+        return []
+      }
+      if (boostLabs.includes(labState.labId) !== true) {
+        this.stopSpawning = true
         return []
       }
       return {
