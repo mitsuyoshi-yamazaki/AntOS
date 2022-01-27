@@ -94,7 +94,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "clear", "stop", "resume"]
+    const commandList = ["help", "status", "add", "clear", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -103,6 +103,8 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return `
 - help
   - shows help
+- status
+  - shows current status and products
 - add &ltcommodity type&gt &ltamount&gt
   - adds product
 - clear
@@ -112,6 +114,17 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
 - resume
   - resume spawning
         `
+
+    case "status": {
+      const products = this.products.map(product => `- ${product.amount} ${coloredResourceType(product.commodityType)}`).join("\n")
+      const descriptions: string[] = [
+        `products:\n${products}`,
+      ]
+      if (this.stopSpawningReasons.length > 0) {
+        descriptions.push(`stop spawning reasons:\n${this.stopSpawningReasons.map(reason => `- ${reason}`).join("\n")}`)
+      }
+      return descriptions.join("\n")
+    }
 
     case "add": {
       try {
