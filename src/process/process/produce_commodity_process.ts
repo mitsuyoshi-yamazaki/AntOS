@@ -25,6 +25,8 @@ ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
 })
 
+const noProduct = "no products"
+
 type ProductInfo = {
   readonly commodityType: CommodityConstant
   readonly amount: number
@@ -79,7 +81,14 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)} ${this.products.map(product => coloredResourceType(product.commodityType)).join(",")}`
+    const descriptions: string[] = [
+      roomLink(this.roomName),
+      this.products.map(product => coloredResourceType(product.commodityType)).join(","),
+    ]
+    if (this.stopSpawningReasons.length > 0) {
+      descriptions.push(`spawning stopped due to: ${this.stopSpawningReasons.join(", ")}`)
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -115,6 +124,10 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
           amount,
           ingredients: Array.from(Object.keys(COMMODITIES[commodityType].components)) as CommodityIngredient[],
         })
+        const noProductIndex = this.stopSpawningReasons.indexOf(noProduct)
+        if (noProductIndex >= 0) {
+          this.stopSpawningReasons.splice(noProductIndex, 1)
+        }
         return `Added ${amount} ${coloredResourceType(commodityType)}`
 
       } catch (error) {
@@ -151,7 +164,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
 
     const product = this.products[0]
     if (product == null) {
-      this.addSpawnStopReason("no products")
+      this.addSpawnStopReason(noProduct)
     }
 
     const factory = Game.getObjectById(this.factoryId)
@@ -168,11 +181,11 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     }
 
     const shouldSpawn = ((): boolean => {
-      if (this.stopSpawningReasons.length <= 0) {
+      if (this.stopSpawningReasons.length > 0) {
         return false
       }
       const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
-      if (creepCount >= 0) {
+      if (creepCount > 0) {
         return false
       }
       if (terminal == null || product == null) {
@@ -247,6 +260,8 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
         MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, chargeResourceType)),
       ]
       return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
+    } else {
+      this.addSpawnStopReason("no ingredients")
     }
 
     creep.say("zzZ")
