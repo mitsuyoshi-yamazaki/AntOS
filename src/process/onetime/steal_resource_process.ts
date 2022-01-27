@@ -17,7 +17,7 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { isResourceConstant, MineralBoostConstant } from "utility/resource"
+import { DepositConstant, isResourceConstant, MineralBoostConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
@@ -27,8 +27,11 @@ ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
 })
 
-const resourcePriority: ResourceConstant[] = [
-  ...MineralBoostConstant,  // 添字の大きいほうが優先
+const resourcePriority: ResourceConstant[] = [  // 添字の大きいほうが優先
+  ...MineralBoostConstant,
+  RESOURCE_ZYNTHIUM,
+  RESOURCE_CATALYST,
+  ...DepositConstant,
   RESOURCE_OPS,
   RESOURCE_POWER,
 ]
@@ -53,7 +56,6 @@ export interface StealResourceProcessState extends ProcessState {
   finishWorking: number
 }
 
-// Game.io("launch -l StealResourceProcess room_name=W41S7 target_room_name=W42S7 waypoints=W42S7 target_id=5f5a910f89e6efba989c1ca5 finish_working=100 creeps=1")
 export class StealResourceProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

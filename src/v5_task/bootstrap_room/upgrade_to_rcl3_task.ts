@@ -148,7 +148,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    if (shouldSpawnBootstrapCreeps(this.targetRoomName) !== true) {
+    if (shouldSpawnBootstrapCreeps(this.roomName, this.targetRoomName) !== true) {
       return null
     }
 

@@ -1,4 +1,4 @@
-import { CreepName, isV5CreepMemory } from "prototype/creep"
+import { CreepName, isV5CreepMemory, isCreepMemory } from "prototype/creep"
 import { RoomName } from "utility/room_name"
 import { GameObjectInfo } from "./game_object_info"
 // Worldをimportしない
@@ -57,8 +57,10 @@ export const Creeps: CreepsInterface = {
         delete Memory.creeps[creepName]
         continue
       }
-      if (creep.ticksToLive == null) {
-        creep.notifyWhenAttacked(false)
+      if (isCreepMemory(creep.memory)) {
+        if (creep.memory.n !== true && creep.ticksToLive != null) {
+          creep.notifyWhenAttacked(false)
+        }
       }
       if (!isV5CreepMemory(creep.memory)) {
         continue

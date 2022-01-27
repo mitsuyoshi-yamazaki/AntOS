@@ -19,6 +19,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ProcessDecoder } from "process/process_decoder"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
 
 ProcessDecoder.register("Season1244215GenericDismantleProcess", state => {
   return Season1244215GenericDismantleProcess.decode(state as Season1244215GenericDismantleProcessState)
@@ -39,9 +42,10 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
   targetIds: Id<AnyStructure>[]
   creepName: CreepName | null
   action: "specified target only" | null
+  noFlee: boolean
+  maxBodyCount: number
 }
 
-// Game.io("launch -l Season1244215GenericDismantleProcess room_name=W48S26 target_room_name=W46S23 waypoints=W48S25 target_id=60fb02d24efbff4af804093d")
 export class Season1244215GenericDismantleProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -59,6 +63,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     private creepName: CreepName | null,
     private targetIds: Id<AnyStructure>[],
     private action: "specified target only" | null,
+    private noFlee: boolean,
+    private readonly maxBodyCount: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -75,19 +81,21 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       creepName: this.creepName,
       targetIds: this.targetIds,
       action: this.action,
+      noFlee: this.noFlee,
+      maxBodyCount: this.maxBodyCount,
     }
   }
 
   public static decode(state: Season1244215GenericDismantleProcessState): Season1244215GenericDismantleProcess {
-    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds, state.action)
+    return new Season1244215GenericDismantleProcess(state.l, state.i, state.p, state.tr, state.w, state.creepName, state.targetIds, state.action, state.noFlee, state.maxBodyCount)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null): Season1244215GenericDismantleProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<AnyStructure> | null, maxBodyCount: number): Season1244215GenericDismantleProcess {
     const targetIds: Id<AnyStructure>[] = []
     if (targetId != null) {
       targetIds.push(targetId)
     }
-    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds, null)
+    return new Season1244215GenericDismantleProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, targetIds, null, false, maxBodyCount)
   }
 
   public processShortDescription(): string {
@@ -156,6 +164,10 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       this.action = null
       return "action cleared"
     }
+    if (message === "noflee") {
+      this.noFlee = true
+      return "no flee"
+    }
     if (message.length <= 0) {
       return "Empty message"
     }
@@ -209,7 +221,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      const waypoints: RoomName[] = creep.room.name === this.parentRoomName ? this.waypoints : []
+      creep.v5task = MoveToRoomTask.create(this.targetRoomName, waypoints)
       return
     }
 
@@ -221,9 +234,17 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
 
     const target = this.getTarget(creep)
     if (target == null) {
+      creep.v5task = this.wrappedTask(MoveToTask.create(creep.pos, 1)) // 何もしないが、FleeFromAttackerTaskを動かすため必要
       return
     }
-    creep.v5task = MoveToTargetTask.create(DismantleApiWrapper.create(target))
+    creep.v5task = this.wrappedTask(MoveToTargetTask.create(DismantleApiWrapper.create(target)))
+  }
+
+  private wrappedTask(task: CreepTask): CreepTask {
+    if (this.noFlee === true) {
+      return task
+    }
+    return FleeFromAttackerTask.create(task)
   }
 
   private constructionSite(creep: Creep): ConstructionSite | null {
@@ -240,6 +261,11 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   private getTarget(creep: Creep): AnyStructure | null {
+    const controller = creep.room.controller
+    if (controller != null && ((controller.my === true) || (controller.reservation != null && controller.reservation.username === Game.user.name))) {
+      return null
+    }
+
     const target = ((): AnyStructure | null => {
       const targetIds = [...this.targetIds]
       for (let i = 0; i < this.targetIds.length; i += 1) {
@@ -275,10 +301,15 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_STORAGE,  // storage等を破壊する場合は明示的に指定する
       STRUCTURE_TERMINAL,
       STRUCTURE_KEEPER_LAIR,
+      STRUCTURE_INVADER_CORE, // dismantleで破壊できない(-7)
       STRUCTURE_EXTRACTOR,
     ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
+      STRUCTURE_CONTAINER,
       STRUCTURE_ROAD,
+      STRUCTURE_RAMPART,
+      STRUCTURE_LINK,
+      STRUCTURE_EXTRACTOR,
       STRUCTURE_STORAGE,
       STRUCTURE_POWER_SPAWN,
       STRUCTURE_TERMINAL,
@@ -316,7 +347,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       WORK, WORK, WORK, WORK, WORK,
       MOVE, MOVE, MOVE, MOVE, MOVE,
     ]
-    const body = CreepBody.create([], bodyUnit, resources.room.energyCapacityAvailable, 5)
+    const maxUnitCount = Math.min(Math.floor(this.maxBodyCount / bodyUnit.length), 5)
+    const body = CreepBody.create([], bodyUnit, resources.room.energyCapacityAvailable, maxUnitCount)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,

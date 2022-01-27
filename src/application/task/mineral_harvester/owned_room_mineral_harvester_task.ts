@@ -20,8 +20,7 @@ import { HarvestMineralApiWrapper } from "object_task/creep_task/api_wrapper/har
 import { MissingTargetStructureProblem } from "application/problem/creep/missing_target_structure_problem"
 import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 import { WithdrawApiWrapper } from "object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-
-const disableMineralHarvesting = true as boolean
+import { Environment } from "utility/environment"
 
 type OwnedRoomMineralHarvesterTaskOutput = void
 type OwnedRoomMineralHarvesterTaskProblemTypes = UnexpectedProblem
@@ -74,6 +73,16 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       return taskOutputs
     }
 
+    const disableMineralHarvesting = ((): boolean => {
+      switch (Environment.world) {
+      case "season 4":
+        return false
+      case "persistent world":
+      case "simulation":
+      case "botarena":
+        return true
+      }
+    })()
     if ((mineral.mineralType !== RESOURCE_CATALYST && disableMineralHarvesting === true) || roomResource.roomInfo.config?.disableMineralHarvesting === true) { // FixMe:
       return taskOutputs
     }

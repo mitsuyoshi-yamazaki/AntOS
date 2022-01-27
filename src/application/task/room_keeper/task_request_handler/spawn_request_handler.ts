@@ -91,6 +91,7 @@ export class SpawnRequestHandler {
       t: request.initialTask?.encode() ?? null,
       i: request.taskIdentifier,
       ci: request.creepIdentifier,
+      n: false,
     }
 
     const result = spawn.spawnCreep(body, creepName, { memory })

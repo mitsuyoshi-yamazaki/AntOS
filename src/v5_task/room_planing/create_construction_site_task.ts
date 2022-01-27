@@ -91,12 +91,14 @@ export class CreateConstructionSiteTask extends Task {
       }
       return objects.activeStructures.storage?.pos ?? objects.activeStructures.spawns[0]?.pos ?? (new RoomPosition(25, 25, objects.controller.room.name))
     })()
-    this.placeConstructionSite(objects.controller.room, [...objects.flags], centerPosition)
+    const availableEnergy = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    this.placeConstructionSite(objects.controller.room, [...objects.flags], centerPosition, availableEnergy)
 
     return TaskStatus.InProgress
   }
 
-  private placeConstructionSite(room: Room, flags: Flag[], centerPosition: RoomPosition): void {
+  private placeConstructionSite(room: Room, flags: Flag[], centerPosition: RoomPosition, availableEnergy: number): void {
     if (room.controller == null) {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
@@ -118,6 +120,7 @@ export class CreateConstructionSiteTask extends Task {
       return [true, true]
     })()
     const shouldPlaceContainer = room.controller.level >= 4
+    const shouldPlaceLab = availableEnergy > 80000
 
     const sortedFlags = flags.sort((lhs, rhs) => {
       const lStructureType = constructionSiteFlagColorMap.get(lhs.color)
@@ -175,6 +178,9 @@ export class CreateConstructionSiteTask extends Task {
         }
       }
       if (structureType === STRUCTURE_CONTAINER && shouldPlaceContainer !== true) {
+        continue
+      }
+      if (structureType === STRUCTURE_LAB && shouldPlaceLab !== true) {
         continue
       }
       const result = room.createConstructionSite(flag.pos, structureType)

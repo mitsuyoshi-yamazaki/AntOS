@@ -2,7 +2,7 @@ import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
@@ -187,12 +187,18 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       return BuildWallTask.create(constructionSite)
     }
 
+    const excludedIds = ((): Id<StructureWall>[] => {
+      if (roomResource.roomInfo.config?.noRepairWallIds != null) {
+        return [...roomResource.roomInfo.config?.noRepairWallIds]
+      }
+      return []
+    })()
     const walls = [
       ...roomResource.walls,
       ...roomResource.ramparts,
     ]
     const wall = walls
-      .filter(w => w.hits < w.hitsMax)
+      .filter(w => (w.hits < w.hitsMax) && ((excludedIds as string[]).includes(w.id) !== true))
       .sort((lhs, rhs) => {
         return lhs.hits - rhs.hits
       })[0]

@@ -309,4 +309,9 @@ export class OwnedRoomResource extends NormalRoomResource {
   public getRepairStructure(): AnyStructure | null {
     return this.damagedStructures[0] ?? null  // TODO: 優先順位づけ
   }
+
+  public getResourceAmount(resourceType: ResourceConstant): number {
+    return (this.activeStructures.storage?.store.getUsedCapacity(resourceType) ?? 0)
+      + (this.activeStructures.terminal?.store.getUsedCapacity(resourceType) ?? 0)
+  }
 }

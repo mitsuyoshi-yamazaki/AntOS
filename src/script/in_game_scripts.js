@@ -10,7 +10,8 @@ const scripts = {
   },
 
   pathFinding: () => {
-    PathFinder.search(Game.spawns["Spawn2"].pos, {pos:Game.getObjectById("59f19fc582100e1594f358bd").pos, range:3}).path.forEach(pos => Game.rooms[pos.roomName].visual.text("*", pos))
+    PathFinder.search(Game.getObjectById("61e3d7ed8892505429ac001e").pos, { pos: Game.getObjectById("61a52e0bc661c05f84b3b43a").pos, range: 3 }).path.forEach(pos => Game.rooms[pos.roomName].visual.text("*", pos))
+    (new RoomPosition(0, 16, "W18S19")).findPathTo(Game.getObjectById("61a52e0bc661c05f84b3b43a").pos, { ignoreRoads: true, swampCost: 11, plainCost: 10 }).forEach(p => Game.rooms["W18S19"].visual.text("*", p.x, p.y))
   },
 
   removeFlags: () => {

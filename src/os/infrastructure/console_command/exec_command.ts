@@ -28,6 +28,10 @@ import { Season1143119LabChargerProcess } from "process/temporary/season_1143119
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { decodeRoomPosition } from "prototype/room_position"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
+import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
+import { launchDepositScript } from "../../../../submodules/attack/script/launch_deposit_harvester_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -38,8 +42,6 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     switch (this.args[0]) {
-    case "manual":  // 何か手動の一時的なスクリプトを動かす際に用いる
-      return this.runOnetimeScript()
     case "findPath":
       return this.findPath()
     case "findPathToSource":
@@ -56,6 +58,8 @@ export class ExecCommand implements ConsoleCommand {
       return this.describeLabs()
     case "moveToRoom":
       return this.moveToRoom()
+    case "move":
+      return this.moveCreep()
     case "transfer":
       return this.transfer()
     case "pickup":
@@ -82,6 +86,10 @@ export class ExecCommand implements ConsoleCommand {
       return this.checkAlliance()
     case "unclaim":
       return this.unclaim()
+    case "create_quad":
+      return this.createQuad()
+    case "script":
+      return this.runScript()
     default:
       return "Invalid script type"
     }
@@ -108,23 +116,6 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
-  private runOnetimeScript(): CommandExecutionResult {
-    const unownedOwnedRoomNames: RoomName[] = []
-
-    Object.entries(Memory.v6RoomInfo).forEach(([roomName, roomInfo]) => {
-      if (roomInfo.roomType !== "owned") {
-        return
-      }
-
-      const room = Game.rooms[roomName]
-      if (room == null || room.controller == null || room.controller.my !== true) {
-        unownedOwnedRoomNames.push(roomName)
-      }
-    })
-
-    return `Unowned room names: ${unownedOwnedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
-  }
-
   private findPath(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -356,6 +347,55 @@ export class ExecCommand implements ConsoleCommand {
     return "ok"
   }
 
+  private moveCreep(): CommandExecutionResult {
+    const args = this.parseProcessArguments("creep_name", "waypoints")
+    if (typeof args === "string") {
+      return args
+    }
+    const [creepName, rawWaypoints] = args
+    if (creepName == null || rawWaypoints == null) {
+      return ""
+    }
+    const creep = Game.creeps[creepName]
+    if (creep == null) {
+      return `Creep ${creepName} doesn't exists`
+    }
+    const roomName = creep.room.name
+
+    const waypoints: RoomPosition[] = []
+    const errors: string[] = []
+    rawWaypoints.split(",").forEach(waypoint => {
+      const components = waypoint.split(";")
+      if (components.length !== 2 || components[0] == null || components[1] == null) {
+        errors.push(`Invalid waypoint ${waypoint}`)
+        return
+      }
+      const x = parseInt(components[0], 10)
+      const y = parseInt(components[1], 10)
+      if (isNaN(x) === true || isNaN(y) === true) {
+        errors.push(`Invalid waypoint ${waypoint}`)
+        return
+      }
+      try {
+        waypoints.push(new RoomPosition(x, y, roomName))
+      } catch (e) {
+        errors.push(`Cannot create RoomPosition for ${waypoint}`)
+      }
+    })
+
+    if (errors.length > 0) {
+      return errors.join(", ")
+    }
+
+    if (!isV5CreepMemory(creep.memory)) {
+      return `Creep ${creepName} is not v5`
+    }
+    const moveTasks = waypoints.map(waypoint => MoveToTask.create(waypoint, 0))
+    creep.memory.t = SequentialTask.create(moveTasks, {ignoreFailure: false, finishWhenSucceed: false}).encode()
+
+    return "ok"
+  }
+
   private transfer(): CommandExecutionResult {
     const args = this.parseProcessArguments("creep_name", "target_id")
     if (typeof args === "string") {
@@ -583,7 +623,7 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W53S36")
+  // Game.io("exec set_boost_labs room_name=W53S36 total_boost_lab_count=6")
   private setBoostLabs(): CommandExecutionResult {
     const outputs: string[] = []
 
@@ -599,45 +639,79 @@ export class ExecCommand implements ConsoleCommand {
       return `Room ${roomLink(roomName)} is not owned`
     }
 
-    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) > 0) {
+    const rawTotalBoostLabCount = args.get("total_boost_lab_count")
+    if (rawTotalBoostLabCount == null) {
+      return this.missingArgumentError("total_boost_lab_count")
+    }
+    const totalBoostLabCount = parseInt(rawTotalBoostLabCount)
+    if (isNaN(totalBoostLabCount) === true) {
+      return `total_boost_lab_count is not a number ${rawTotalBoostLabCount}`
+    }
+
+    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) >= totalBoostLabCount) {
       return `${roomLink(roomName)} has boost labs`
     }
 
-    const researchLab = resources.roomInfo.researchLab
-    if (researchLab == null) {
-      return `No research labs in ${roomLink(roomName)}`
-    }
-
-    const outputLabs = [...researchLab.outputLabs]
-      .flatMap(labId => {
-        const lab = Game.getObjectById(labId)
-        if (lab == null) {
-          PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
-          return []
-        }
-        return lab
-      })
-
-    if (resources.roomInfo.roomPlan?.centerPosition != null) {
-      const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
-      outputLabs.sort((lhs, rhs) => {
-        return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
-      })
-    }
-
-    const numberOfBoostLabs = 6
-    if (outputLabs.length > numberOfBoostLabs) {
-      outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
-    }
-    const boostLabIds = outputLabs.map(lab => lab.id)
-    boostLabIds.forEach(labId => {
-      const index = researchLab.outputLabs.indexOf(labId)
-      if (index < 0) {
-        return
+    const numberOfBoostLabs = ((): number => {
+      const boostLabs = resources.roomInfo.config?.boostLabs
+      if (boostLabs != null) {
+        return Math.max(totalBoostLabCount - boostLabs.length, 0)
       }
-      researchLab.outputLabs.splice(index, 1)
-    })
-    outputs.push(`Removed from research output lab: ${boostLabIds}`)
+      return totalBoostLabCount
+    })()
+
+    const researchLab = resources.roomInfo.researchLab
+    const boostLabIds: Id<StructureLab>[] = []
+
+    if (researchLab != null) {
+      const outputLabs = [...researchLab.outputLabs]
+        .flatMap(labId => {
+          const lab = Game.getObjectById(labId)
+          if (lab == null) {
+            PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
+            return []
+          }
+          return lab
+        })
+
+      if (resources.roomInfo.roomPlan?.centerPosition != null) {
+        const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
+        outputLabs.sort((lhs, rhs) => {
+          return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
+        })
+      }
+
+      if (outputLabs.length > numberOfBoostLabs) {
+        outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
+      }
+      boostLabIds.push(...outputLabs.map(lab => lab.id))
+      boostLabIds.forEach(labId => {
+        const index = researchLab.outputLabs.indexOf(labId)
+        if (index < 0) {
+          return
+        }
+        researchLab.outputLabs.splice(index, 1)
+      })
+      outputs.push(`Removed from research output lab: ${boostLabIds}`)
+
+    } else {  // researchLab == null
+      const labs = ((): StructureLab[] => {
+        const foundLabs = resources.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
+        if (resources.roomInfo.config?.boostLabs == null) {
+          return foundLabs
+        }
+        const storedBoostLabIds = [...resources.roomInfo.config.boostLabs]
+        return foundLabs.filter(lab => storedBoostLabIds.includes(lab.id) !== true)
+      })()
+      if (labs.length > numberOfBoostLabs) {
+        labs.splice(numberOfBoostLabs, labs.length - numberOfBoostLabs)
+      }
+      boostLabIds.push(...labs.map(lab => lab.id))
+
+      if (boostLabIds.length > 0) {
+        outputs.push(`Found ${boostLabIds.length} unused labs`)
+      }
+    }
 
     if (resources.roomInfo.config == null) {
       resources.roomInfo.config = {}
@@ -648,7 +722,11 @@ export class ExecCommand implements ConsoleCommand {
     } else {
       outputs.push(`Set ${boostLabIds.length} labs`)
     }
-    resources.roomInfo.config.boostLabs = boostLabIds
+    if (resources.roomInfo.config.boostLabs == null) {
+      resources.roomInfo.config.boostLabs = boostLabIds
+    } else {
+      resources.roomInfo.config.boostLabs.push(...boostLabIds)
+    }
 
     return `\n${outputs.join("\n")}`
   }
@@ -796,9 +874,6 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
-  // Game.io("exec room_config room_name=W44S8 setting=excludedRemotes remote_room_name=W44S7")
-  // Game.io("exec room_config room_name=W47S6 setting=wallPositions action=remove")
-  // Game.io("exec room_config room_name=W52S25 setting=researchCompounds action=show")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -814,17 +889,105 @@ export class ExecCommand implements ConsoleCommand {
       return `Room ${roomLink(roomName)} is not mine`
     }
 
+    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
     const setting = args.get("setting")
     switch (setting) {
-    case "excludedRemotes":
+    case "excluded_remotes":
       return this.addExcludedRemoteRoom(roomName, roomInfo, args)
-    case "wallPositions":
+    case "wall_positions":
       return this.configureWallPositions(roomName, roomInfo, args)
-    case "researchCompounds":
+    case "research_compounds":
       return this.configureResearchCompounds(roomName, roomInfo, args)
+    case "refresh_research_labs":
+      return this.refreshResearchLabs(roomName, roomInfo)
+    case "disable_boost_labs":
+      return this.disableBoostLabs(roomName, roomInfo)
+    case "toggle_auto_attack":
+      return this.toggleAutoAttack(roomName, roomInfo, args)
     default:
-      return `Invalid setting ${setting}, available settings are: [excludedRemotes]`
+      return `Invalid setting ${setting}, available settings are: ${settingList}`
     }
+  }
+
+  private toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
+    const rawEnabled = args.get("enabled")
+    if (rawEnabled == null) {
+      return this.missingArgumentError("enabled")
+    }
+    if (rawEnabled !== "0" && rawEnabled !== "1") {
+      return `Invalid enable argument ${rawEnabled}: set 0 or 1`
+    }
+    const enabled = rawEnabled === "1"
+
+    if (roomInfo.config == null) {
+      roomInfo.config = {}
+    }
+    const oldValue = roomInfo.config.enableAutoAttack
+    roomInfo.config.enableAutoAttack = enabled
+
+    return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
+  }
+
+  private disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `${roomLink(roomName)} no found`
+    }
+    if (roomInfo.researchLab == null) {
+      return `roomInfo.researchLab is null ${roomLink(roomName)}`
+    }
+
+    if (roomInfo.config?.boostLabs == null) {
+      return `no boost labs in ${roomLink(roomName)}`
+    }
+
+    const oldValue = [...roomInfo.config.boostLabs]
+    roomInfo.researchLab.outputLabs.push(...oldValue)
+    roomInfo.config.boostLabs = []
+
+    return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
+  }
+
+  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return `${roomLink(roomName)} no found`
+    }
+    if (roomInfo.researchLab == null) {
+      return `roomInfo.researchLab is null ${roomLink(roomName)}`
+    }
+
+    const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
+      .map(lab => lab.id)
+
+    const researchLabIds: Id<StructureLab>[] = [
+      roomInfo.researchLab.inputLab1,
+      roomInfo.researchLab.inputLab2,
+      ...roomInfo.researchLab.outputLabs,
+    ]
+    researchLabIds.forEach(researchLabId => {
+      const index = labIdsInRoom.indexOf(researchLabId)
+      if (index >= 0) {
+        labIdsInRoom.splice(index, 1)
+      }
+    })
+
+    const boostLabIds = roomInfo.config?.boostLabs
+    if (boostLabIds != null) {
+      boostLabIds.forEach(boostLabId => {
+        const index = labIdsInRoom.indexOf(boostLabId)
+        if (index >= 0) {
+          labIdsInRoom.splice(index, 1)
+        }
+      })
+    }
+
+    if (labIdsInRoom.length <= 0) {
+      return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
+    }
+    roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
+
+    return `${labIdsInRoom.length} labs added to research output labs`
   }
 
   private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
@@ -1078,5 +1241,36 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return messages.join("\n")
+  }
+
+  private createQuad(): CommandExecutionResult {
+    const args = this.args.concat([])
+    args.splice(0, 1)
+    const rawRequirement = args.join(" ")
+
+    const requirementResult = QuadRequirement.parse(rawRequirement)
+    switch (requirementResult.resultType) {
+    case "failed":
+      return `${requirementResult.reason}\n(raw argument: ${rawRequirement}`
+    case "succeeded":
+      break
+    }
+
+    const specResult = QuadSpec.create(requirementResult.value)
+    switch (specResult.resultType) {
+    case "failed":
+      return `${specResult.reason}`
+    case "succeeded":
+      break
+    }
+    const quadSpec = specResult.value
+
+    return quadSpec.description()
+  }
+
+  private runScript(): CommandExecutionResult {
+    // TODO: スクリプト名を指定できるようにする
+    launchDepositScript()
+    return "ok"
   }
 }

@@ -5,6 +5,7 @@ import { CreepApiWrapperType } from "object_task/creep_task/creep_api_wrapper_de
 
 export class UnexpectedCreepProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = true
 
   public constructor(
     public readonly parentRoomName: RoomName,

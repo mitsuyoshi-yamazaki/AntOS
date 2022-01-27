@@ -15,7 +15,6 @@ import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { OwnedRoomResource, RunningCreepInfo } from "room_resource/room_resource/owned_room_resource"
 import { GameConstants } from "utility/constants"
 import { bodyCost } from "utility/creep_body"
-import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { RoomCoordinate, RoomName } from "utility/room_name"
 import { RoomSector } from "utility/room_sector"
@@ -110,10 +109,10 @@ export class Season3FindPowerBankTask
   }
 
   public static create(roomName: RoomName): Season3FindPowerBankTask | null {
-    if (Environment.world !== "season 3") {
-      PrimitiveLogger.programError(`${this.name} is not supported in ${Environment.world}`)
-      return null
-    }
+    // if (Environment.world !== "season 3") {
+    //   PrimitiveLogger.programError(`${this.name} is not supported in ${Environment.world}`)
+    //   return null
+    // }
     const scoutRoutes = calculateRoomRoutes(roomName)
     if (scoutRoutes == null) {
       return null

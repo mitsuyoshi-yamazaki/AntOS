@@ -30,6 +30,10 @@ export const CreepBodyActionPower: { [index in CreepBodyFixedAmountActionType]: 
   capacity: CARRY_CAPACITY,
 }
 
+export function isBodyPartConstant(arg: string): arg is BodyPartConstant {
+  return (BODYPARTS_ALL as string[]).includes(arg)
+}
+
 export const CreepBody = {
   create: function(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
     return createCreepBody(baseBody, bodyUnit, energyCapacity, maxUnitCount)
@@ -164,7 +168,7 @@ function coloredBodyShortDescription(body: BodyPartConstant): string {
   return anyColoredText(bodyShortDescription[body], bodyColors[body])
 }
 
-/** @deprecated */
+/** @deprecated use CreepBody.description() */
 export function bodyDescription(body: BodyPartConstant[]): string {
   const map = new Map<BodyPartConstant, number>()
   body.forEach(b => {

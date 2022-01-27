@@ -13,6 +13,7 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { World35588848GclManagerProcess } from "process/temporary/world_35588848_gcl_manager_process"
+import { MapAccessorProcess } from "process/accessor/map_accessor_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
 // import { } from "process/application/declarative_ai/declaration_application_process"
@@ -24,22 +25,32 @@ export class ApplicationProcessLauncher {
     let hasBootstrapManagerProcess = false as boolean
     let hasAttackInvaderCoreProcess = false as boolean
     let hasGclManagerProcess = false as boolean
+    let hasMapAccessorProcess = false as boolean
 
     processList.forEach(process => {
       if (process instanceof RoomKeeperProcess) {
         roomKeeperMap.getValueFor(ShortVersion.v5).push(process.roomName)
+        return
       }
       if (process instanceof V6RoomKeeperProcess) {
         roomKeeperMap.getValueFor(ShortVersion.v6).push(process.roomName)
+        return
       }
       if (process instanceof BootstrapRoomManagerProcess) {
         hasBootstrapManagerProcess = true
+        return
       }
       if (process instanceof Season487837AttackInvaderCoreProcess) {
         hasAttackInvaderCoreProcess = true
+        return
       }
       if (process instanceof World35588848GclManagerProcess) {
         hasGclManagerProcess = true
+        return
+      }
+      if (process instanceof MapAccessorProcess) {
+        hasMapAccessorProcess = true
+        return
       }
     })
 
@@ -52,6 +63,9 @@ export class ApplicationProcessLauncher {
     }
     if (Environment.isAutomatic() === true && hasGclManagerProcess !== true) {
       this.launchGCLManagerProcess(processLauncher)
+    }
+    if (hasMapAccessorProcess !== true) {
+      this.launchMapAccessorProcess(processLauncher)
     }
   }
 
@@ -100,5 +114,9 @@ export class ApplicationProcessLauncher {
 
   private launchGCLManagerProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => World35588848GclManagerProcess.create(processId))
+  }
+
+  private launchMapAccessorProcess(processLauncher: ProcessLauncher): void {
+    processLauncher(null, processId => MapAccessorProcess.create(processId))
   }
 }

@@ -4,6 +4,7 @@ import type { RoomName } from "utility/room_name"
 
 export class CreepDamagedProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = false
 
   public constructor(
     public readonly parentRoomName: RoomName,

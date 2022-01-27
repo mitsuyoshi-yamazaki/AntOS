@@ -69,7 +69,9 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     collectResources?: boolean
     boostLabs?: Id<StructureLab>[]
     excludedRemotes?: RoomName[]
-    waitingPosition?: {x: number, y: number}
+    waitingPosition?: { x: number, y: number }
+    enableAutoAttack?: boolean
+    noRepairWallIds?: Id<StructureWall>[]
   }
 }
 

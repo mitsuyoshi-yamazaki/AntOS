@@ -4,6 +4,7 @@ import type { RoomName } from "utility/room_name"
 
 export class ExitToRoomNotFoundProblem implements Problem {
   public readonly identifier: ProblemIdentifier
+  public readonly shouldNotify = true
 
   public constructor(
     public readonly position: RoomPosition,

@@ -10,6 +10,18 @@ export type RoomType = RoomTypeNormal | RoomTypeHighway | RoomTypeHighwayCrossin
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
+export const isValidRoomName = (roomName: RoomName): boolean => {
+  switch (Game.map.getRoomStatus(roomName).status ) {
+  case "normal":
+  case "novice":
+  case "respawn":
+    return true
+  case "closed":
+  default:  // フォーマットが悪いとundefinedが返る
+    return false
+  }
+}
+
 export const isRoomName = (obj: string): obj is RoomName => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return RoomCoordinate.parse(obj) != null

@@ -211,7 +211,7 @@ export class MoveToTargetTask implements CreepTask {
     const options = defaultMoveToOptions()
     options.range = range
     options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
-    options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
+    options.maxOps = creep.pos.roomName === targetPosition.roomName ? 800 : 1500
     options.reusePath = reusePath,
     options.ignoreCreeps = ignoreCreeps
     if (this.options.ignoreSwamp === true) {

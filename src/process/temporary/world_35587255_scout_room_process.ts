@@ -35,7 +35,8 @@ export interface World35587255ScoutRoomProcessState extends ProcessState {
   readonly lastSpawnTime: Timestamp
 }
 
-// Game.io("launch -l World35587255ScoutRoomProcess room_name=W19N6")
+/** 周囲の自動偵察process */
+// Game.io("launch -l World35587255ScoutRoomProcess room_name=W19S19")
 export class World35587255ScoutRoomProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -251,7 +252,9 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
       }
       const route = Game.map.findRoute(roomName, closestRoom.roomName, {routeCallback})
       if (route === ERR_NO_PATH) {
-        PrimitiveLogger.fatal(`World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`)
+        const message = `World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`
+        PrimitiveLogger.log(message)
+        // PrimitiveLogger.fatal(message)
         return result
       }
       const index = rooms.findIndex(r => r.roomName === closestRoom.roomName)

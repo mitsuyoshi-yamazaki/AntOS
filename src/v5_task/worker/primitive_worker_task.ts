@@ -147,8 +147,12 @@ export class PrimitiveWorkerTask extends Task {
     const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, creepSpec.creepCount)
 
     const noCreeps = World.resourcePools.countCreeps(this.roomName, filterTaskIdentifier, () => true) <= 2
-    const body: BodyPartConstant[] = creepSpec.body
-    const priority = noCreeps ? CreepSpawnRequestPriority.Urgent : CreepSpawnRequestPriority.Medium
+    const [body, priority] = ((): [BodyPartConstant[], CreepSpawnRequestPriority] => {
+      if (noCreeps === true) {
+        return [[WORK, CARRY, MOVE], CreepSpawnRequestPriority.Urgent]
+      }
+      return [creepSpec.body, CreepSpawnRequestPriority.Medium]
+    })()
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
@@ -191,7 +195,15 @@ export class PrimitiveWorkerTask extends Task {
     }
 
     const requiredCreepCount = getRequiredCreepCount(ownedRoomSourceEnergyCapacity, 3) + getRequiredCreepCount(estimatedNeighbourSourceEnergyCapacity, 4)
-    const maxCreepCount = objects.sources.length * 8 + neighbourRoomSourceCount * 10
+    const maxCreepCount = ((): number => {
+      if (objects.controller.level <= 1) {
+        return 12
+      }
+      if (objects.controller.room.energyCapacityAvailable <= 400) {
+        return 20
+      }
+      return objects.sources.length * 8 + neighbourRoomSourceCount * 10
+    })()
     const creepCount = Math.min(requiredCreepCount, maxCreepCount, 60)
 
     return {
@@ -259,6 +271,9 @@ export class PrimitiveWorkerTask extends Task {
     const constructionSite = objects.getConstructionSite(creep.pos)
     if (constructionSite != null) {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite), moveToOptions())
+    }
+    if (objects.constructionSites[0] != null) {
+      return MoveToTargetTask.create(BuildApiWrapper.create(objects.constructionSites[0]), moveToOptions())
     }
 
     return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller, 1), moveToOptions())

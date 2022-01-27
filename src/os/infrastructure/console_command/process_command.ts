@@ -125,6 +125,8 @@ export class ProcessCommand implements ConsoleCommand {
     const basicDescription = `${processInfo.processId} ${processInfo.type}, running: ${processInfo.running}`
     if (processInfo.process.processDescription != null) {
       return `${basicDescription}\n${processInfo.process.processDescription()}`
+    } else if (processInfo.process.processShortDescription != null) {
+      return `${basicDescription}\n${processInfo.process.processShortDescription()}`
     } else {
       return basicDescription
     }

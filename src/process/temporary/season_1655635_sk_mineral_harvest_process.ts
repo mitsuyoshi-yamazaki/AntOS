@@ -45,8 +45,7 @@ export interface Season1655635SKMineralHarvestProcessState extends ProcessState 
   squadSpawned: boolean
 }
 
-// X
-// Game.io("launch -l Season1655635SKMineralHarvestProcess room_name=W6S27 target_room_name=W6S26 waypoints=W6S26")
+// 旧Quadを使用したProcess
 export class Season1655635SKMineralHarvestProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
@@ -115,7 +114,14 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
 
   public processShortDescription(): string {
     const mineral = this.mineralType ? coloredResourceType(this.mineralType) : ""
-    return `${roomLink(this.targetRoomName)} ${mineral}`
+    const descriptions: string[] = [
+      roomLink(this.targetRoomName),
+      mineral,
+    ]
+    if (this.stopSpawning === true) {
+      descriptions.push("spawn stopped")
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -209,7 +215,9 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
 
     const squad = this.squadSpawned ? "full squad" : "spawning"
     const stopSpawning = this.stopSpawning ? ", not-spawning" : ""
-    processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${squad}${stopSpawning}`)
+    if (this.stopSpawning !== true) {
+      processLog(this, `${attackers.length} attackers, ${harvesters.length} harvesters, ${haulers.length} haulers, ${roomLink(this.targetRoomName)}, ${squad}${stopSpawning}`)
+    }
 
     const sourceKeeper: Creep | null = mineral == null ? null : mineral.pos.findInRange(FIND_HOSTILE_CREEPS, 5)[0] ?? null
     const keeperLair: StructureKeeperLair | null = mineral == null ? null : mineral.pos.findClosestByRange(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_KEEPER_LAIR } }) as StructureKeeperLair | null
@@ -386,7 +394,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
         creep.moveTo(harvester, defaultMoveToOptions())
       }
     } else {
-      creep.moveTo(mineral, { range: 3 })
+      creep.moveTo(mineral, { range: 3, reusePath: 3 })
       if (harvesters.length <= 0 && creep.store.getUsedCapacity(mineral.mineralType) > 0) {
         processLog(this, `No harvesters. Return to room. ${creep.store.getUsedCapacity(mineral.mineralType)}${mineral.mineralType} (${roomLink(this.targetRoomName)})`)
         returnToParentRoom()

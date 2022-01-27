@@ -66,66 +66,7 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     return nextWaypoint
   })()
 
-  const reusePath = 20
-  const noPathFindingOptions: MoveToOpts = {
-    noPathFinding: true,
-    reusePath,
-  }
-
   const portals = creepRoom.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_PORTAL } }) as StructurePortal[]
-
-  const moveToOptions = ((): MoveToOpts => {
-    const options: MoveToOpts = defaultMoveToOptions()
-    options.reusePath = reusePath
-
-    const positionsToAvoid: RoomPosition[] = []
-
-    switch (roomTypeOf(creepRoom.name)) {
-    case "normal":
-    case "highway":
-      return options
-
-    case "source_keeper": {
-      creep.say("SK room")
-      // 保存されたパスがあれば計算はスキップする
-
-      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
-        excludeItself: false,
-        excludeTerrainWalls: false,
-        excludeStructures: false,
-        excludeWalkableStructures: false,
-      }
-
-      options.maxOps = 2000
-      const sourceKeeperObstacleRange = sourceKeeperRange ?? 4
-      const sourceKeeperPositions = creepRoom.find(FIND_HOSTILE_CREEPS)
-        .filter(creep => creep.owner.username === SourceKeeper.username)
-        .flatMap(creep => creep.pos.positionsInRange(sourceKeeperObstacleRange, roomPositionFilteringOptions))
-      positionsToAvoid.push(...sourceKeeperPositions)
-      break
-    }
-
-    case "highway_crossing":
-    case "sector_center":
-      positionsToAvoid.push(...portals.map(portal => portal.pos))
-      break
-    }
-
-    if (positionsToAvoid.length <= 0) {
-      return options
-    }
-    options.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
-      if (roomName !== creepRoom.name) {
-        return
-      }
-      positionsToAvoid.forEach(position => {
-        // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
-        costMatrix.set(position.x, position.y, OBSTACLE_COST)
-      })
-      return costMatrix
-    }
-    return options
-  })
 
   const exitPortal = portals.find(portal => {
     if (!(portal.destination instanceof RoomPosition)) {
@@ -195,7 +136,92 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     return // TODO: よくはまるようなら代替コードを書く
   }
 
-  if (creep.moveTo(exitPosition, noPathFindingOptions) === ERR_NOT_FOUND) {
-    creep.moveTo(exitPosition, moveToOptions())
+  const positionsToAvoid: RoomPosition[] = portals.map(portal => portal.pos)
+  avoidSourceKeeper(creep, creepRoom, exitPosition, { sourceKeeperRange, positionsToAvoid})
+}
+
+export function avoidSourceKeeper(creep: AnyCreep, creepRoom: Room, destinationPosition: RoomPosition, options?: { sourceKeeperRange?: number, positionsToAvoid?: RoomPosition[], moveToOps?: MoveToOpts}): void {
+  const reusePath = 20
+  const noPathFindingOptions = ((): MoveToOpts => {
+    if (options?.moveToOps != null) {
+      const opts: MoveToOpts = { ...options.moveToOps }
+      if (opts.reusePath == null) {
+        opts.reusePath = reusePath
+      }
+      return opts
+    }
+    return {
+      noPathFinding: true,
+      reusePath,
+    }
+  })()
+
+  const moveToOptions = ((): MoveToOpts => {
+    const moveToOps: MoveToOpts = ((): MoveToOpts => {
+      if (options?.moveToOps != null) {
+        const opts: MoveToOpts = { ...options.moveToOps }
+        if (opts.reusePath == null) {
+          opts.reusePath = reusePath
+        }
+        return opts
+      }
+      const opts = defaultMoveToOptions()
+      opts.reusePath = reusePath
+      return opts
+    })()
+
+    const positionsToAvoid: RoomPosition[] = []
+    if (options?.positionsToAvoid != null) {
+      positionsToAvoid.push(...options?.positionsToAvoid)
+    }
+
+    switch (roomTypeOf(creepRoom.name)) {
+    case "normal":
+    case "highway":
+      return moveToOps
+
+    case "source_keeper": {
+      creep.say("SK room")
+      // 保存されたパスがあれば計算はスキップする
+
+      const roomPositionFilteringOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeTerrainWalls: false,
+        excludeStructures: false,
+        excludeWalkableStructures: false,
+      }
+
+      moveToOps.maxOps = 2000
+      const sourceKeeperObstacleRange = options?.sourceKeeperRange ?? 4
+      const sourceKeeperPositions = creepRoom.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => creep.owner.username === SourceKeeper.username)
+        .flatMap(creep => creep.pos.positionsInRange(sourceKeeperObstacleRange, roomPositionFilteringOptions))
+      positionsToAvoid.push(...sourceKeeperPositions)
+      break
+    }
+
+    case "highway_crossing":
+    case "sector_center":
+      break
+    }
+
+    if (positionsToAvoid.length <= 0) {
+      return moveToOps
+    }
+    moveToOps.costCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
+      if (roomName !== creepRoom.name) {
+        return
+      }
+      positionsToAvoid.forEach(position => {
+        // creep.room.visual.text("x", position.x, position.y, { align: "center", color: "#ff0000" })
+        costMatrix.set(position.x, position.y, OBSTACLE_COST)
+      })
+      return costMatrix
+    }
+    return moveToOps
+  })
+
+  if (creep.moveTo(destinationPosition, noPathFindingOptions) === ERR_NOT_FOUND) {
+    creep.moveTo(destinationPosition, moveToOptions())
   }
 }

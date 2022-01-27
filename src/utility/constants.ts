@@ -65,6 +65,9 @@ export const GameConstants = {
       lifeTime: CREEP_LIFE_TIME,
       claimLifeTime: CREEP_CLAIM_LIFE_TIME,
     },
+    body: {
+      bodyPartMaxCount: 50,
+    },
     actionRange: {
       build: 3,
       repair: REPAIR_RANGE,
@@ -79,6 +82,7 @@ export const GameConstants = {
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,
       harvest: HARVEST_POWER,
+      heal: HEAL_POWER,
     },
     actionCost: creepActionEnergyCost,
     boostCost: LAB_BOOST_MINERAL,
