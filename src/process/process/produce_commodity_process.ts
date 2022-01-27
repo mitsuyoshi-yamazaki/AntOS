@@ -21,6 +21,7 @@ import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { CreepBody } from "utility/creep_body"
 
 ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
@@ -199,7 +200,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     })()
 
     if (shouldSpawn === true) {
-      this.spawnHauler()
+      this.spawnHauler(roomResource.room.energyCapacityAvailable)
     }
 
     if (terminal != null && product != null) {
@@ -219,13 +220,13 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     return product.ingredients.some(ingredient => terminal.store.getUsedCapacity(ingredient) > 0)
   }
 
-  private spawnHauler(): void {
+  private spawnHauler(energyCapacity: number): void {
     World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [],
-      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
+      body: CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 4),
       initialTask: null,
       taskIdentifier: this.taskIdentifier,
       parentRoomName: null,
