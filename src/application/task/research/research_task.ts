@@ -280,7 +280,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
           if (outputLab.store.getUsedCapacity(compound) <= 0) {
             return false
           }
-          return false
+          return true
         })()
         if (shouldWithdraw === true) {
           return {
