@@ -20,6 +20,7 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
@@ -202,7 +203,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     }
 
     if (terminal != null && product != null) {
-      factory.produce(product.commodityType)
+      this.produce(factory, product)
 
       World.resourcePools.assignTasks(
         this.roomName,
@@ -299,6 +300,31 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     return resourceAmount.reduce((result, current) => {
       return current.amount < result.amount ? current : result
     }).resourceType
+  }
+
+  private produce(factory: StructureFactory, product: ProductInfo): void {
+    const result = factory.produce(product.commodityType)
+    switch (result) {
+    case OK:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_TIRED:
+      break
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_ARGS:
+    case ERR_RCL_NOT_ENOUGH:
+      PrimitiveLogger.programError(`${this.identifier} factory.produce(${coloredResourceType(product.commodityType)}) failed with ${result}`)
+      break
+
+    case ERR_FULL:
+      processLog(this, "factory is full")
+      break
+
+    case ERR_BUSY:
+    case ERR_INVALID_TARGET:
+      this.addSpawnStopReason(`invalid product (${result})`)
+      break
+    }
   }
 
   private addSpawnStopReason(reason: string): void {
