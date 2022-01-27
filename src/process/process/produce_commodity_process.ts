@@ -6,9 +6,20 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { generateCodename } from "utility/unique_id"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { isCommodityConstant } from "utility/resource"
+import { CommodityIngredient, isCommodityConstant } from "utility/resource"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
+import { World } from "world_info/world_info"
+import { RoomResources } from "room_resource/room_resources"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 
 ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
@@ -17,6 +28,7 @@ ProcessDecoder.register("ProduceCommodityProcess", state => {
 type ProductInfo = {
   readonly commodityType: CommodityConstant
   readonly amount: number
+  readonly ingredients: CommodityIngredient[]
 }
 
 interface ProduceCommodityProcessState extends ProcessState {
@@ -98,7 +110,11 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
           throw `${commodityType} is not commodity type`
         }
         const amount = listArguments.int(1, "amount").parse()
-        this.products.push({ commodityType, amount })
+        this.products.push({
+          commodityType,
+          amount,
+          ingredients: Array.from(Object.keys(COMMODITIES[commodityType].components)) as CommodityIngredient[],
+        })
         return `Added ${amount} ${coloredResourceType(commodityType)}`
 
       } catch (error) {
@@ -128,7 +144,13 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
   }
 
   public runOnTick(): void {
-    if (this.products.length <= 0) {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+
+    const product = this.products[0]
+    if (product == null) {
       this.addSpawnStopReason("no products")
     }
 
@@ -136,7 +158,132 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     if (factory == null) {
       this.addSpawnStopReason("no factory")
       processLog(this, `No factory in ${roomLink(this.roomName)}`)
+      return
     }
+
+    const terminal = roomResource.activeStructures.terminal
+    if (terminal != null && product != null && terminal.store.getUsedCapacity(product.commodityType) >= product.amount) {
+      this.products.shift()
+      return
+    }
+
+    const shouldSpawn = ((): boolean => {
+      if (this.stopSpawningReasons.length <= 0) {
+        return false
+      }
+      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+      if (creepCount >= 0) {
+        return false
+      }
+      if (terminal == null || product == null) {
+        return false
+      }
+      if (this.hasIngredientsIn(terminal, product) !== true) {
+        return false
+      }
+      return true
+    })()
+
+    if (shouldSpawn === true) {
+      this.spawnHauler()
+    }
+
+    if (terminal != null && product != null) {
+      factory.produce(product.commodityType)
+
+      World.resourcePools.assignTasks(
+        this.roomName,
+        this.taskIdentifier,
+        CreepPoolAssignPriority.Low,
+        creep => this.newHaulerTask(creep, factory, terminal, product),
+        () => true,
+      )
+    }
+  }
+
+  private hasIngredientsIn(terminal: StructureTerminal, product: ProductInfo): boolean {
+    return product.ingredients.some(ingredient => terminal.store.getUsedCapacity(ingredient) > 0)
+  }
+
+  private spawnHauler(): void {
+    World.resourcePools.addSpawnCreepRequest(this.roomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [],
+      body: [CARRY, CARRY, MOVE, CARRY, CARRY, MOVE],
+      initialTask: null,
+      taskIdentifier: this.taskIdentifier,
+      parentRoomName: null,
+    })
+  }
+
+  private newHaulerTask(creep: Creep, factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo): CreepTask | null {
+    const resourceType = Array.from(Object.keys(creep.store))[0] as ResourceConstant | null
+    if (resourceType != null) {
+      if ((product.ingredients as string[]).includes(resourceType) === true) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, resourceType))
+      }
+      return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+    }
+
+    if (creep.ticksToLive != null && creep.ticksToLive < 25) {
+      return RunApiTask.create(SuicideApiWrapper.create())
+    }
+
+    const withdrawResourceType = this.resourceTypeToWithdraw(factory, product)
+    if (withdrawResourceType != null) {
+      const tasks: CreepTask[] = [
+        MoveToTargetTask.create(WithdrawResourceApiWrapper.create(factory, withdrawResourceType)),
+        MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, withdrawResourceType)),
+      ]
+      return SequentialTask.create(tasks, {ignoreFailure: false, finishWhenSucceed: false})
+    }
+
+    const chargeResourceType = this.resourceTypeToCharge(factory, terminal, product)
+    if (chargeResourceType != null) {
+      const tasks: CreepTask[] = [
+        MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, chargeResourceType)),
+        MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, chargeResourceType)),
+      ]
+      return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
+    }
+
+    creep.say("zzZ")
+    return null
+  }
+
+  private resourceTypeToWithdraw(factory: StructureFactory, product: ProductInfo): ResourceConstant | null {
+    return (Array.from(Object.keys(factory.store)) as ResourceConstant[])
+      .filter(resourceType => {
+        if (resourceType === product.commodityType) {
+          return true
+        }
+        if ((product.ingredients as string[]).includes(resourceType) === true) {
+          return false
+        }
+        return true
+      })[0] ?? null
+  }
+
+  private resourceTypeToCharge(factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo): ResourceConstant | null {
+    const threshold = 10000
+    if (factory.store.getUsedCapacity() > threshold) {
+      return null
+    }
+    if (product.ingredients.length <= 0) {
+      return null
+    }
+
+    const resourceAmount: { resourceType: ResourceConstant, amount: number }[] = product.ingredients.map(resourceType => {
+      return {
+        resourceType,
+        amount: factory.store.getUsedCapacity(resourceType),
+      }
+    })
+    return resourceAmount.reduce((result, current) => {
+      return current.amount < result.amount ? current : result
+    }).resourceType
   }
 
   private addSpawnStopReason(reason: string): void {

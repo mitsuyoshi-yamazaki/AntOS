@@ -212,3 +212,5 @@ const boostableCreepBodyMap: { [boost in MineralBoostConstant]: BodyPartConstant
 export function boostableCreepBody(boost: MineralBoostConstant): BodyPartConstant {
   return boostableCreepBodyMap[boost]
 }
+
+export type CommodityIngredient = DepositConstant | CommodityConstant | MineralConstant | RESOURCE_ENERGY | RESOURCE_GHODIUM
