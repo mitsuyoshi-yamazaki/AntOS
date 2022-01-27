@@ -116,7 +116,11 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
         `
 
     case "status": {
-      const products = this.products.map(product => `- ${product.amount} ${coloredResourceType(product.commodityType)}`).join("\n")
+      const products = this.products.map(product => {
+        const commodityType = coloredResourceType(product.commodityType)
+        const ingredients = product.ingredients.map(ingredient => coloredResourceType(ingredient)).join(",")
+        return `- ${product.amount} ${commodityType} (${ingredients})`
+      }).join("\n")
       const descriptions: string[] = [
         `products:\n${products}`,
       ]
@@ -301,16 +305,21 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     if (factory.store.getUsedCapacity() > threshold) {
       return null
     }
-    if (product.ingredients.length <= 0) {
+
+    const resourceAmount: { resourceType: ResourceConstant, amount: number }[] = product.ingredients.flatMap(resourceType => {
+      if (terminal.store.getUsedCapacity(resourceType) <= 0) {
+        return []
+      }
+      return [{
+        resourceType,
+        amount: factory.store.getUsedCapacity(resourceType),
+      }]
+    })
+
+    if (resourceAmount.length <= 0) {
       return null
     }
 
-    const resourceAmount: { resourceType: ResourceConstant, amount: number }[] = product.ingredients.map(resourceType => {
-      return {
-        resourceType,
-        amount: factory.store.getUsedCapacity(resourceType),
-      }
-    })
     return resourceAmount.reduce((result, current) => {
       return current.amount < result.amount ? current : result
     }).resourceType
