@@ -174,7 +174,22 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
         processLog(this, `Cannot spawn harvester in ${roomLink(this.parentRoomName)}, lack of energy ${roomResources.room.energyCapacityAvailable}`)
       }
     } else if (haulers.length < this.creepSpec.haulerCount) {
-      this.spawnHauler(roomResources)
+      if (haulers.length <= 0) {
+        this.spawnHauler(roomResources)
+      } else {
+        const longestTicksToLive = haulers.reduce((result, current) => {
+          const ticksToLive = current.ticksToLive ?? GameConstants.creep.life.lifeTime
+          if (ticksToLive > result) {
+            return ticksToLive
+          }
+          return result
+        }, 0)
+
+        const threshold = GameConstants.creep.life.lifeTime - 100
+        if (longestTicksToLive <= threshold) {
+          this.spawnHauler(roomResources)
+        }
+      }
     }
 
     const targetRoom = Game.rooms[this.depositInfo.roomName]
