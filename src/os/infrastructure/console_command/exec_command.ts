@@ -1272,6 +1272,6 @@ export class ExecCommand implements ConsoleCommand {
   private runScript(): CommandExecutionResult {
     // TODO: スクリプト名を指定できるようにする
     launchDepositScript()
-    return "ok"
+    return "this is a test message => <hoge>"
   }
 }
