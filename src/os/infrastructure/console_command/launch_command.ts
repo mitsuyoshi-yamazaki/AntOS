@@ -48,6 +48,7 @@ import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
+import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1066,7 +1067,7 @@ export class LaunchCommand implements ConsoleCommand {
 
 ProcessLauncher.register("ProduceCommodityProcess", args => {
   try {
-    const roomName = args.roomName("room_name").parse()
+    const roomName = args.roomName("room_name").parse({my: true})
     const room = Game.rooms[roomName]
     if (room == null || room.controller?.my !== true) {
       throw `${roomLink(roomName)} is not mine`
@@ -1078,6 +1079,18 @@ ProcessLauncher.register("ProduceCommodityProcess", args => {
     }
 
     return Result.Succeeded((processId) => ProduceCommodityProcess.create(processId, roomName, factory.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4596376ConvoyInterrupterProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const highwayRoomName1 = args.roomName("highway_room_name_1").parse()
+    const highwayRoomName2 = args.roomName("highway_room_name_2").parse()
+
+    return Result.Succeeded((processId) => Season4596376ConvoyInterrupterProcess.create(processId, roomName, {roomName1: highwayRoomName1, roomName2: highwayRoomName2}))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

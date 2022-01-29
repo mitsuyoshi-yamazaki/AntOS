@@ -21,7 +21,7 @@ type TargetRoomInfo = {
   readonly roomName: RoomName
   observeRecord: ObserveRecord | null
   readonly actions: {
-    constructionSaboteur: boolean // 斥候がいなければ情報が取れないため実際はほとんど常に実行される
+    constructionSaboteur: boolean // 斥候がいなければ情報が取れないため常に実行される想定
     dismantle: boolean
     attack: boolean
   }
