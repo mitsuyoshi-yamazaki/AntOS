@@ -15,7 +15,6 @@ import { ResumeCommand } from "./console_command/resume_command"
 import { SuspendCommand } from "./console_command/suspend_command"
 import { LogCommand } from "./console_command/log_command"
 import { coloredText } from "utility/log"
-import { sanitizeLogMessage } from "./primitive_logger"
 
 export const standardInput = (rawCommand: string): string => {
   const result = ErrorMapper.wrapLoop((): string => {
@@ -31,7 +30,7 @@ export const standardInput = (rawCommand: string): string => {
   if (result == null) {
     return `${coloredText("[ERROR]", "error")} Program bug`
   }
-  return sanitizeLogMessage(result)
+  return result
 }
 
 /**
