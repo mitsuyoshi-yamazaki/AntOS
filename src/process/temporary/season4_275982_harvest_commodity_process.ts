@@ -240,7 +240,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       MOVE, MOVE, MOVE, MOVE, MOVE,
       WORK, WORK, WORK, WORK, WORK,
     ]
-    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
+    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 5)
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
@@ -263,7 +263,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       CARRY, CARRY, CARRY, CARRY, CARRY,
       MOVE, MOVE, MOVE, MOVE, MOVE,
     ]
-    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
+    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 5)
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Medium,
       numberOfCreeps: 1,
