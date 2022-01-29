@@ -13,7 +13,7 @@ interface KeywordArgumentsInterface {
   string(key: string): SingleOptionalArgument<void, string>
 
   // ---- Game Object ---- //
-  roomName(key: string): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomName>
+  roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName>
   gameObjectId(key: string): SingleOptionalArgument<void, string>
 
   interRoomPath(
@@ -56,7 +56,7 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new StringArgument(key, this.argumentMap.get(key) ?? null)
   }
 
-  public roomName(key: string): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomName> {
+  public roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {
     return new RoomNameArgument(key, this.argumentMap.get(key) ?? null)
   }
 

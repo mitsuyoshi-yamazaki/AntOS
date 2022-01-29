@@ -22,8 +22,8 @@ export abstract class SingleOptionalArgument<Options, Value> extends SingleArgum
   }
 }
 
-export class RoomNameArgument extends SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomName> {
-  public parse(options?: { allowClosedRoom?: boolean }): RoomName {
+export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName {
     if (this.value == null) {
       throw missingArgumentErrorMessage(this.key)
     }
@@ -78,7 +78,7 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   }
 }
 
-export function validateRoomNameArgument(roomName: RoomName, options?: { allowClosedRoom?: boolean }): void {
+export function validateRoomNameArgument(roomName: RoomName, options?: { my?: boolean, allowClosedRoom?: boolean }): void {
   const roomStatus = Game.map.getRoomStatus(roomName)
   if (roomStatus == null) {
     throw `${roomName} is not a valid room name`
@@ -95,6 +95,13 @@ export function validateRoomNameArgument(roomName: RoomName, options?: { allowCl
   case "novice":
   case "respawn":
     break
+  }
+
+  if (options?.my === true) {
+    const room = Game.rooms[roomName]
+    if (room == null || room.controller?.my !== true) {
+      throw `${roomLink(roomName)} is not mine`
+    }
   }
 }
 
