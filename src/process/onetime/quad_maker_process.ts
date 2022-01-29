@@ -101,9 +101,25 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commands = ["help", "set", "reset", "show", "verify", "launch", "clone"]
     const components = message.split(" ")
     const command = components.shift()
+
+    try {
+      if (command == null) {
+        throw "Missing command"
+      }
+      return this.executeCommand(command, components)
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  public runOnTick(): void {
+    // does nothing
+  }
+
+  private executeCommand(command: string, args: string[]): string {
+    const commands = ["help", "set", "reset", "show", "verify", "launch", "clone"]
 
     switch (command) {
     case "help":
@@ -132,13 +148,13 @@ commands: ${commands}
       `
 
     case "change":
-      return this.change(components)
+      return this.change(args)
 
     case "set":
-      return this.set(components)
+      return this.set(args)
 
     case "reset":
-      return this.reset(components)
+      return this.reset(args)
 
     case "show":
       return this.show()
@@ -158,20 +174,16 @@ commands: ${commands}
 
     // eslint-disable-next-line no-fallthrough
     case "launch": {
-      const dryRun = components[0] !== "dry_run=0"
+      const dryRun = args[0] !== "dry_run=0"
       return this.launchQuadProcess(dryRun)
     }
 
     case "clone":
-      return "not implemented yet"
+      throw "not implemented yet"
 
     default:
-      return `Invalid command ${command}. see "help"`
+      throw `Invalid command ${command}. see "help"`
     }
-  }
-
-  public runOnTick(): void {
-    // does nothing
   }
 
   private change(args: string[]): string {
@@ -181,45 +193,45 @@ commands: ${commands}
     case "room_name": {
       const roomName = args[0]
       if (roomName == null) {
-        return "Missing room name argument"
+        throw "Missing room name argument"
       }
       if (isValidRoomName(roomName) !== true) {
-        return `Invalid room name ${roomName}`
+        throw `Invalid room name ${roomName}`
       }
       const oldValue = this.roomName
       this.roomName = roomName
-      return `Changed room_name ${oldValue} => ${this.roomName}`
+      return `Changed room_name ${oldValue} =&gt ${this.roomName}`
     }
 
     case "target_room_name": {
       const targetRoomName = args[0]
       if (targetRoomName == null) {
-        return "Missing target room name argument"
+        throw "Missing target room name argument"
       }
       if (isValidRoomName(targetRoomName) !== true) {
-        return `Invalid target room name ${targetRoomName}`
+        throw `Invalid target room name ${targetRoomName}`
       }
       const oldValue = this.targetRoomName
       this.targetRoomName = targetRoomName
-      return `Changed target_room_name ${oldValue} => ${this.targetRoomName}`
+      return `Changed target_room_name ${oldValue} =&gt ${this.targetRoomName}`
     }
 
     case "front_base_room_name": {
       const frontBaseRoomName = args[0]
       if (frontBaseRoomName == null) {
-        return "Missing front base room name argument"
+        throw "Missing front base room name argument"
       }
       const frontRoom = Game.rooms[frontBaseRoomName]
       if (frontRoom == null || frontRoom.controller?.my !== true) {
-        return `Front room ${roomLink(frontBaseRoomName)} is not mine`
+        throw `Front room ${roomLink(frontBaseRoomName)} is not mine`
       }
       const oldValue = this.frontBaseRoomName
       this.frontBaseRoomName = frontBaseRoomName
-      return `Changed front_base_room_name ${oldValue} => ${this.frontBaseRoomName}`
+      return `Changed front_base_room_name ${oldValue} =&gt ${this.frontBaseRoomName}`
     }
 
     default:
-      return `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
+      throw `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
     }
   }
 
@@ -230,7 +242,7 @@ commands: ${commands}
     case "handle_melee": {
       const handleMelee = args[0]
       if (handleMelee !== "0" && handleMelee !== "1") {
-        return `handle_melee value should be "0" or "1" (${handleMelee})`
+        throw `handle_melee value should be "0" or "1" (${handleMelee})`
       }
       this.canHandleMelee = handleMelee === "1"
       return `set handle_melee=${this.canHandleMelee}`
@@ -239,14 +251,14 @@ commands: ${commands}
     case "damage_tolerance": {
       const rawValue = args[0]
       if (rawValue == null) {
-        return "damage_tolerance no value (set 0.0~1.0)"
+        throw "damage_tolerance no value (set 0.0~1.0)"
       }
       const value = parseFloat(rawValue)
       if (isNaN(value) === true) {
-        return "damage_tolerance value is not a number (set 0.0~1.0)"
+        throw "damage_tolerance value is not a number (set 0.0~1.0)"
       }
       if (value < 0 || value > 1) {
-        return `damage_tolerance invalid value ${value}. set 0.0~1.0`
+        throw `damage_tolerance invalid value ${value}. set 0.0~1.0`
       }
       this.damageTolerance = value
       return `set damage_tolerance=${this.damageTolerance}`
@@ -255,22 +267,19 @@ commands: ${commands}
     case "boosts": {
       const rawBoosts = args[0]
       if (rawBoosts == null) {
-        return "no boosts specified, use reset command to reset boosts"
+        throw "no boosts specified, use \"reset\" command to reset boosts"
       }
-      const boosts = ((): MineralBoostConstant[] | string => {
+      const boosts = ((): MineralBoostConstant[] => {
         const result: MineralBoostConstant[] = []
         for (const value of rawBoosts.split(",")) {
           if (!isMineralBoostConstant(value)) {
-            return `Invalid boost ${value}`
+            throw `Invalid boost ${value}`
           }
           result.push(value)
         }
         return result
       })()
 
-      if (typeof boosts === "string") {
-        return boosts
-      }
       this.boosts = boosts
       return `set boosts=${this.boosts}`
     }
@@ -287,18 +296,18 @@ commands: ${commands}
 
       const rawCount = keyValueArgs.get("count")
       if (rawCount == null) {
-        return "Missing count argument"
+        throw "Missing count argument"
       }
       const creepCount = parseInt(rawCount)
       if (isNaN(creepCount) === true) {
-        return "count is not a number"
+        throw `count ${rawCount} is not a number`
       }
 
       const bodyDescription = keyValueArgs.get("body")
       if (bodyDescription == null) {
-        return "Missing body argument"
+        throw "Missing body argument"
       }
-      const body = ((): BodyPartConstant[] | string => {
+      const body = ((): BodyPartConstant[] => {
         const bodyComponents = bodyDescription.split(",")
         const result: BodyPartConstant[] = []
 
@@ -309,27 +318,24 @@ commands: ${commands}
           const parts = component.split(/(\d+)/)
           const rawBodyPartsCount = parts[1]
           if (rawBodyPartsCount == null) {
-            return createErrorMessage("missing body count")
+            throw createErrorMessage("missing body count")
           }
           const bodyPartsCount = parseInt(rawBodyPartsCount)
           if (isNaN(bodyPartsCount) === true) {
-            return createErrorMessage("body count is not a number")
+            throw createErrorMessage("body count is not a number")
           }
           const bodyPart = parts[2]?.toLowerCase()
           if (bodyPart == null) {
-            return createErrorMessage("missing body part definition")
+            throw createErrorMessage("missing body part definition")
           }
           if (!isBodyPartConstant(bodyPart)) {
-            return createErrorMessage(`invalid body part ${bodyPart}`)
+            throw createErrorMessage(`invalid body part ${bodyPart}`)
           }
           result.push(...Array(bodyPartsCount).fill(bodyPart))
         }
         return result
       })()
 
-      if (typeof body === "string") {
-        return body
-      }
       const creepSpec: QuadCreepSpec = {
         body
       }
@@ -339,7 +345,7 @@ commands: ${commands}
     }
 
     default:
-      return `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
+      throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
   }
 
@@ -364,7 +370,7 @@ commands: ${commands}
       return `reset creep ${this.creepSpecs.length} creeps`
 
     default:
-      return `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
+      throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
   }
 

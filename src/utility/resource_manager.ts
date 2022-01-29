@@ -191,7 +191,7 @@ export const ResourceManager: ResourceManagerInterface = {
         break
 
       case ERR_TIRED:
-        errorMessages.push(`Terminal in ${roomLink(fromRoomName)} under cooldown`)
+        errorMessages.push(`Terminal in ${roomLink(fromRoomName)} under cooldown (${terminal.cooldown} ticks)`)
         break
 
       case ERR_NOT_ENOUGH_RESOURCES:

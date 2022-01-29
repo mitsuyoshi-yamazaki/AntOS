@@ -30,7 +30,7 @@ export const GameMap = {
 
   afterTick(): void {
     if (missingWaypointPairs.length > 0) {
-      const missingWaypoints = missingWaypointPairs.map(pair => `${roomLink(pair.from)}=>${roomLink(pair.to)}`).join(", ")
+      const missingWaypoints = missingWaypointPairs.map(pair => `${roomLink(pair.from)}=&gt${roomLink(pair.to)}`).join(", ")
       PrimitiveLogger.notice(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${missingWaypoints}`)
 
       missingWaypointPairs.splice(0, missingWaypointPairs.length)
