@@ -2,7 +2,7 @@ import { GameMap } from "game/game_map"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 
@@ -92,36 +92,40 @@ export class MapAccessorProcess implements Process, MessageObserver {
   }
 
   private setWaypoints(commandComponents: string[]): string {
-    const manual = "set &ltroom_name&gt &ltdestination_room_name&gt &ltwaypoint1,waypoint2,...&gt"
-    const roomName = commandComponents[1]
-    if (roomName == null) {
-      return `room_name not specified. ${manual}`
-    }
-    if (this.isValidRoomName(roomName) !== true) {
-      return `room_name ${roomName} is not valid`
-    }
-    const destinationRoomName = commandComponents[2]
-    if (destinationRoomName == null) {
-      return `destination_room_name not specified. ${manual}`
-    }
-    if (this.isValidRoomName(destinationRoomName) !== true) {
-      return `destination_room_name ${destinationRoomName} is not valid`
-    }
-    const waypoints = ((): RoomName[] => {
-      const rawWaypoints = commandComponents[3]
-      if (rawWaypoints == null) {
-        return []
+    try {
+      const manual = "set &ltroom_name&gt &ltdestination_room_name&gt &ltwaypoint1,waypoint2,...&gt"
+      const roomName = commandComponents[1]
+      if (roomName == null) {
+        throw `room_name not specified. ${manual}`
       }
-      return rawWaypoints.split(",")
-    })()
-    const invalidWaypoints = waypoints.filter(name => this.isValidRoomName(name) !== true)
-    if (invalidWaypoints.length > 0) {
-      return `waypoints ${invalidWaypoints.join(",")} are not valid`
-    }
-    GameMap.setWaypoints(roomName, destinationRoomName, waypoints)
+      if (this.isValidRoomName(roomName) !== true) {
+        throw `room_name ${roomName} is not valid`
+      }
+      const destinationRoomName = commandComponents[2]
+      if (destinationRoomName == null) {
+        throw `destination_room_name not specified. ${manual}`
+      }
+      if (this.isValidRoomName(destinationRoomName) !== true) {
+        throw `destination_room_name ${destinationRoomName} is not valid`
+      }
+      const waypoints = ((): RoomName[] => {
+        const rawWaypoints = commandComponents[3]
+        if (rawWaypoints == null) {
+          return []
+        }
+        return rawWaypoints.split(",")
+      })()
+      const invalidWaypoints = waypoints.filter(name => this.isValidRoomName(name) !== true)
+      if (invalidWaypoints.length > 0) {
+        throw `waypoints ${invalidWaypoints.join(",")} are not valid`
+      }
+      GameMap.setWaypoints(roomName, destinationRoomName, waypoints)
 
-    const waypointDescription = waypoints.length <= 0 ? "no waypoints" : waypoints.map(name => roomLink(name)).join(",")
-    return `${roomLink(roomName)} -> ${waypointDescription} -> ${roomLink(destinationRoomName)}`
+      const waypointDescription = waypoints.length <= 0 ? "no waypoints" : waypoints.map(name => roomLink(name)).join(",")
+      return `${roomLink(roomName)} -> ${waypointDescription} -> ${roomLink(destinationRoomName)}`
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   private isValidRoomName(roomName: RoomName): boolean {
