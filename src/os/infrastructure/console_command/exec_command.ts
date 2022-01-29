@@ -1272,6 +1272,7 @@ export class ExecCommand implements ConsoleCommand {
   private runScript(): CommandExecutionResult {
     // TODO: スクリプト名を指定できるようにする
     launchDepositScript()
-    return "this is a test message => <hoge>"
+    PrimitiveLogger.log("this is a test log message => <test> 3244")
+    return "this is a test standard output => <test> 3244"
   }
 }
