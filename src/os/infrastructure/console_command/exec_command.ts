@@ -874,6 +874,7 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
+  // Game.io("exec room_config room_name= setting=")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
