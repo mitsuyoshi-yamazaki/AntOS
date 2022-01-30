@@ -31,7 +31,7 @@ import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
-import { launchDepositScript } from "../../../../submodules/attack/script/launch_deposit_harvester_process"
+import { launchDepositScript } from "../../../../submodules/attack/script/temporary_script"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
