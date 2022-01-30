@@ -31,7 +31,7 @@ import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
-import { launchDepositScript } from "../../../../submodules/attack/script/temporary_script"
+import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -1270,9 +1270,17 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private runScript(): CommandExecutionResult {
-    // TODO: スクリプト名を指定できるようにする
-    launchDepositScript()
-    PrimitiveLogger.log("this is a test log message => <test> 3244")
-    return "this is a test standard output => <test> 3244"
+    const args = [...this.args]
+    args.splice(0, 1)
+
+    const scriptName = args.shift()
+    try {
+      if (scriptName == null) {
+        throw "Missing script_name"
+      }
+      return temporaryScript(scriptName, args)
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 }
