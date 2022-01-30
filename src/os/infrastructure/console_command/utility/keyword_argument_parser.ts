@@ -1,7 +1,7 @@
 import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
 import type { RoomName } from "utility/room_name"
-import { FloatArgument, IntArgument, missingArgumentErrorMessage, RoomNameArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./parsed_argument"
+import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -11,8 +11,11 @@ interface KeywordArgumentsInterface {
   int(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
   float(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
   string(key: string): SingleOptionalArgument<void, string>
+  localPosition(key: string): SingleOptionalArgument<void, { x: number, y: number }>
 
   // ---- Game Object ---- //
+  direction(key: string): SingleOptionalArgument<void, DirectionConstant>
+  roomPosition(key: string): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName>
   gameObjectId(key: string): SingleOptionalArgument<void, string>
 
@@ -54,6 +57,18 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public string(key: string): SingleOptionalArgument<void, string> {
     return new StringArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public localPosition(key: string): SingleOptionalArgument<void, { x: number, y: number }> {
+    return new LocalPositionArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public direction(key: string): SingleOptionalArgument<void, DirectionConstant> {
+    return new DirectionArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public roomPosition(key: string): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomPosition> {
+    return new RoomPositionArgument(key, this.argumentMap.get(key) ?? null)
   }
 
   public roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {

@@ -1,5 +1,5 @@
 import type { RoomName } from "utility/room_name"
-import { FloatArgument, IntArgument, RoomNameArgument, SingleArgument, StringArgument } from "./parsed_argument"
+import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -9,8 +9,11 @@ interface KeywordArgumentsInterface {
   int(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   string(index: number, key: string): SingleArgument<void, string>
+  localPosition(index: number, key: string): SingleArgument<void, {x: number, y: number}>
 
   // ---- Game Object ---- //
+  direction(index: number, key: string): SingleArgument<void, DirectionConstant>
+  roomPosition(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
   gameObjectId(index: number, key: string): SingleArgument<void, string>
 }
@@ -31,6 +34,18 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public string(index: number, key: string): SingleArgument<void, string> {
     return new StringArgument(key, this.getValueAt(index))
+  }
+
+  public localPosition(index: number, key: string): SingleArgument<void, { x: number, y: number }> {
+    return new LocalPositionArgument(key, this.getValueAt(index))
+  }
+
+  public direction(index: number, key: string): SingleArgument<void, DirectionConstant> {
+    return new DirectionArgument(key, this.getValueAt(index))
+  }
+
+  public roomPosition(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition> {
+    return new RoomPositionArgument(key, this.getValueAt(index))
   }
 
   public roomName(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName> {
