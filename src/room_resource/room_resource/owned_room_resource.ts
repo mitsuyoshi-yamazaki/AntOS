@@ -72,7 +72,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       const inputLab1 = Game.getObjectById(roomInfo.researchLab.inputLab1)
       const inputLab2 = Game.getObjectById(roomInfo.researchLab.inputLab2)
       const outputLabs = roomInfo.researchLab.outputLabs.flatMap(id => Game.getObjectById(id) ?? [])
-      if (inputLab1 == null || inputLab2 == null || outputLabs.length <= 0) {
+      if (inputLab1 == null || inputLab2 == null || outputLabs == null) {
         roomInfo.researchLab = undefined
         return null
       }
