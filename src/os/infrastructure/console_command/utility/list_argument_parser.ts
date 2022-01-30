@@ -5,6 +5,8 @@ import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, R
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
  */
 interface KeywordArgumentsInterface {
+  has(index: number): boolean
+
   // ---- Primitive Type ---- //
   int(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
@@ -22,6 +24,10 @@ export class ListArguments implements KeywordArgumentsInterface {
   public constructor(
     private readonly argumentList: string[]
   ) {
+  }
+
+  public has(index: number): boolean {
+    return this.argumentList.length > index
   }
 
   public int(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number> {
