@@ -19,18 +19,8 @@ import { calculateWallPositions } from "script/wall_builder"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { TaskLogRequest } from "application/task_logger"
-import { Environment } from "utility/environment"
 
-export const WallBuilderTaskMaxWallHits = ((): number => {
-  switch (Environment.world) {
-  case "botarena":
-  case "season 4":
-  case "simulation":
-    return 2000000
-  case "persistent world":
-    return 5000000
-  }
-})()
+export const WallBuilderTaskMaxWallHits = 2000000
 
 const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
