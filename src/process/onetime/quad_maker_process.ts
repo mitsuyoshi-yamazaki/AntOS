@@ -14,6 +14,7 @@ import { Result, ResultFailed } from "utility/result"
 import { OperatingSystem } from "os/os"
 import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
 import { GameMap } from "game/game_map"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -365,9 +366,16 @@ commands: ${commands}
       this.boosts = []
       return `reset boosts ${this.boosts.length} boosts`
 
-    case "creep":
-      this.creepSpecs = []
-      return `reset creep ${this.creepSpecs.length} creeps`
+    case "creep": {
+      const listArguments = new ListArguments(args)
+      if (listArguments.has(0) !== true) {
+        this.creepSpecs = []
+        return `reset creep ${this.creepSpecs.length} creeps`
+      }
+      const resetIndex = listArguments.int(0, "index").parse({ min: 0, max: this.creepSpecs.length - 1 })
+      this.creepSpecs.splice(resetIndex, 1)
+      return `reset index ${resetIndex}, ${this.creepSpecs.length} creeps`
+    }
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
