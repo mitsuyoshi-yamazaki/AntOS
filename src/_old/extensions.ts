@@ -63,6 +63,9 @@ export function tick(): void {
   Game.environment = `${Environment.world}: ${Environment.shard}`
 
   Game.isEnemy = function(player: Owner): boolean {
+    if (player.username === Game.user.name) {
+      return false
+    }
     return Game.whitelist.includes(player.username) !== true
   }
 
