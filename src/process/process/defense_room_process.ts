@@ -99,7 +99,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       return
     }
     const hostileCreeps = [...roomResources.hostiles.creeps]
-      .filter(hostileCreep => hostileCreep.body.some(body => body.boost != null))
+    const hostileBoostedCreeps = [...hostileCreeps].filter(hostileCreep => hostileCreep.body.some(body => body.boost != null))
 
     const intercepters: Creep[] = []
     const repairers: Creep[] = []
@@ -119,7 +119,11 @@ export class DefenseRoomProcess implements Process, Procedural {
     // const attackerCreepNames = [...this.attackerCreepNames]
     // const intercepters = this.parseCreeps(attackerCreepNames)
     // this.attackerCreepNames = intercepters.map(creep => creep.name)
-    this.runIntercepters(intercepters, hostileCreeps, roomResources)
+    if (hostileBoostedCreeps.length > 0) {
+      this.runIntercepters(intercepters, hostileBoostedCreeps, roomResources)
+    } else {
+      this.runIntercepters(intercepters, hostileCreeps, roomResources)
+    }
 
     // const repairers = this.parseCreeps(this.repairerCreepNames)
     // this.repairerCreepNames = repairers.map(creep => creep.name)
@@ -142,6 +146,9 @@ export class DefenseRoomProcess implements Process, Procedural {
     const intercepterMaxCount = ((): number => {
       if (largestTicksToLive < 200) {
         return 0
+      }
+      if (hostileBoostedCreeps.length <= 0) {
+        return 2
       }
       if (hostileCreeps.length <= 1) {
         return 2
