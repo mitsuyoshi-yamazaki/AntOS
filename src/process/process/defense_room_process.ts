@@ -191,7 +191,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       const range = targetHostileCreep.pos.getRangeTo(rampart.pos)
       if (range < closestRange) {
         closestRange = range
-        closestRamparts = []
+        closestRamparts = [rampart]
       } else if (range === closestRange) {
         closestRamparts.push(rampart)
       }
