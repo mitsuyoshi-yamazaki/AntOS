@@ -105,6 +105,9 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       switch (log.event) {
       case EVENT_ATTACK: {
         const target = Game.getObjectById(log.data.targetId)
+        if (target == null) { // 破壊されている場合はnullが帰る
+          return false
+        }
         if ((target as {structureType?: StructureConstant}).structureType == null) {
           return false
         }
