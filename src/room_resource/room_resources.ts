@@ -18,6 +18,7 @@ interface RoomResourcesInterface {
   // ---- Room Resource ---- //
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
+  getNormalRoomResource(roomName: RoomName): NormalRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
   getRoomInfo(roomName: RoomName): RoomInfoType | null
   getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[]
@@ -71,6 +72,14 @@ export const RoomResources: RoomResourcesInterface = {
 
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null {
     return ownedRoomResources.get(roomName) ?? null
+  },
+
+  getNormalRoomResource(roomName: RoomName): NormalRoomResource | null {
+    const roomResource = roomResources.get(roomName)
+    if (roomResource instanceof NormalRoomResource) {
+      return roomResource
+    }
+    return null
   },
 
   getRoomResource(roomName: RoomName): RoomResource | null {

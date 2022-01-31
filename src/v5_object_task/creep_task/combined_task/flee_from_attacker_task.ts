@@ -1,3 +1,4 @@
+import { RoomResources } from "room_resource/room_resources"
 import { randomDirection } from "utility/constants"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
@@ -40,18 +41,21 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
-    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
-    const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
-      .filter(creep => {
-        if (whitelist.includes(creep.owner.username) === true) {
-          return false
-        }
-        return (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)
-      }))
-    if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= this.range) {
-      this.didFlee = true
-      this.fleeFrom(hostileAttacker.pos, creep, this.range + 1)
-      return TaskProgressType.FinishedAndRan
+    const roomResource = RoomResources.getNormalRoomResource(creep.room.name)
+    if (roomResource == null || roomResource.hostiles.creeps.length > 0) {
+      const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+      const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
+        .filter(creep => {
+          if (whitelist.includes(creep.owner.username) === true) {
+            return false
+          }
+          return (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)
+        }))
+      if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= this.range) {
+        this.didFlee = true
+        this.fleeFrom(hostileAttacker.pos, creep, this.range + 1)
+        return TaskProgressType.FinishedAndRan
+      }
     }
     if (this.didFlee === true) {
       this.didFlee = false
