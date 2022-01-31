@@ -6,6 +6,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { RoomName } from "utility/room_name"
+import { Timestamp } from "utility/timestamp"
 import { } from "./construction_saboteur_process"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
@@ -13,6 +14,7 @@ ProcessDecoder.register("AttackRoomProcess", state => {
 })
 
 type ObserveRecord = {
+  readonly owner: Owner | null
   readonly safemodeEndsAt: number | null
   readonly observedAt: number
 }
@@ -27,8 +29,16 @@ type TargetRoomInfo = {
   }
 }
 
+type CreepKilledLog = {
+  case: "creep killed"
+  body: BodyPartConstant[]
+  timestamp: Timestamp
+}
+type Log = CreepKilledLog
+
 type ChildProcessInfo = {
   readonly constructionSaboteurProcessId: ProcessId
+  readonly downgradeProcesId: ProcessId // 不要な場合は起動して止めておく
   readonly dismantleProcessIds: ProcessId[]
   readonly attackProcessIds: ProcessId[]
 }
@@ -39,6 +49,23 @@ interface AttackRoomProcessState extends ProcessState {
   readonly childProcessInfo: ChildProcessInfo
 }
 
+/**
+ * - 常にScoutする
+ * - 入力
+ *   - RCL
+ *   - Towerの有無
+ *   - Controllerの露出
+ *   - Safemode
+ *   - 常駐のAttacker
+ * - 出力
+ *   - Scout
+ *   - Dismantle
+ *   - Attack
+ *     - Type
+ *     - Size
+ *   - Downgrade
+ *   - Stop
+ */
 export class AttackRoomProcess implements Process, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -163,5 +190,11 @@ export class AttackRoomProcess implements Process, MessageObserver {
     }
 
     this.targetRoomInfo.observeRecord = observeRecord
+  }
+
+  private shouldLaunchDowngrader(): boolean {
+
+
+    return true // TODO:
   }
 }
