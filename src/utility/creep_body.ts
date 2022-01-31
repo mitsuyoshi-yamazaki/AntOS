@@ -61,6 +61,7 @@ export const CreepBody = {
     return body.length * GameConstants.creep.life.spawnTime
   },
 
+  /** hitsは考慮されている */
   power: function(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType):number {
     return bodyPower(body, actionType)
   },

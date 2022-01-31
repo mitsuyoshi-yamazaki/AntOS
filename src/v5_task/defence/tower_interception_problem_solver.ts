@@ -7,6 +7,7 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
+import { calculateTowerDamage } from "utility/tower"
 
 type TargetInfo = {
   target: AnyCreep
@@ -197,7 +198,7 @@ export function calculateTargetInfo(target: AnyCreep, healPower: number, canMove
   const maxTicksToKill = ((): number | null => {
     if (canMove !== true) {
       const totalTowerDamage = towerRanges.reduce((result, current) => {
-        return result + towerDamage(current)
+        return result + calculateTowerDamage(current)
       }, 0)
       const totalDamage = totalTowerDamage - healPower
       if (totalDamage <= 0) {
@@ -210,7 +211,7 @@ export function calculateTargetInfo(target: AnyCreep, healPower: number, canMove
 
     for (let i = 0; i < maxTicksToKillLimit; i += 1) {
       const totalTowerDamage = towerRanges.reduce((result, current) => {
-        return result + towerDamage(current + i)
+        return result + calculateTowerDamage(current + i)
       }, 0)
       const totalDamage = totalTowerDamage - healPower
       if (totalDamage <= 0) {
@@ -230,14 +231,4 @@ export function calculateTargetInfo(target: AnyCreep, healPower: number, canMove
     minimumTicksToEscape,
     damageTaken,
   }
-}
-
-function towerDamage(range: number): number {
-  if (range >= 20) {
-    return 150
-  }
-  if (range <= 5) {
-    return 600
-  }
-  return 600 - ((range - 5) * 30)
 }

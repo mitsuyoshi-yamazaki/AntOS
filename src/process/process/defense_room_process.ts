@@ -17,6 +17,7 @@ import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { GameConstants } from "utility/constants"
 import { coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { calculateTowerDamage } from "utility/tower"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
@@ -183,6 +184,29 @@ export class DefenseRoomProcess implements Process, Procedural {
     if (targetHostileCreep == null) {
       return
     }
+    const targetPosition = targetHostileCreep.pos
+
+    const isCloseEnough = targetHostileCreep.pos.findInRange(intercepters, 2).length > 0
+    if (isCloseEnough === true) {
+      const totalHealPower = targetHostileCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
+        return result + CreepBody.power(current.body, "heal")
+      }, 0)
+      const totalIntercepterAttackPower = intercepters.reduce((result, current) => {
+        return result + CreepBody.power(current.body, "attack")
+      }, 0)
+      const totalTowerAttackPower = roomResource.activeStructures.towers.reduce((result, current) => {
+        if (current.store.getUsedCapacity(RESOURCE_ENERGY) < 10) {
+          return result
+        }
+        return result + calculateTowerDamage(current.pos.getRangeTo(targetPosition))
+      }, 0)
+      const totalAttackPower = totalIntercepterAttackPower + totalTowerAttackPower
+
+      if ((totalAttackPower * 1) > totalHealPower) {
+        intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition))
+        return
+      }
+    }
 
     const allRamparts = roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[]
     let closestRange = GameConstants.room.edgePosition.max + 1
@@ -216,7 +240,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       ...nearbyRamparts,
     ]
     if (hidableRamparts.length <= 0) {
-      intercepters.forEach(creep => this.moveIntercepter(creep, targetHostileCreep.pos))
+      intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition))
       return
     }
 
