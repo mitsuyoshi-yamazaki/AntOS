@@ -20,7 +20,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { TaskLogRequest } from "application/task_logger"
 
-export const WallBuilderTaskMaxWallHits = 2000000
+export const WallBuilderTaskMaxWallHits = 5000000
 
 const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
