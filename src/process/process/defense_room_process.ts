@@ -27,8 +27,6 @@ const repairerRoles: CreepRole[] = [CreepRole.Worker]
 
 interface DefenseRoomProcessState extends ProcessState {
   readonly roomName: RoomName
-  // readonly attackerCreepNames: CreepName[]
-  // readonly repairerCreepNames: CreepName[]
   readonly currentTargetId: Id<AnyCreep> | null
   readonly respondBoostedOnly: boolean
   readonly receivedEnergyTimestamp: Timestamp
@@ -46,8 +44,6 @@ export class DefenseRoomProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
-    // private attackerCreepNames: CreepName[],
-    // private repairerCreepNames: CreepName[],
     private readonly currentTargetId: Id<AnyCreep> | null,
     private respondBoostedOnly: boolean,
     private receivedEnergyTimestamp: Timestamp,
@@ -62,8 +58,6 @@ export class DefenseRoomProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       roomName: this.roomName,
-      // attackerCreepNames: this.attackerCreepNames,
-      // repairerCreepNames: this.repairerCreepNames,
       currentTargetId: this.currentTargetId,
       respondBoostedOnly: this.respondBoostedOnly,
       receivedEnergyTimestamp: this.receivedEnergyTimestamp,
@@ -257,7 +251,10 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   private waitIntercepters(intercepters: Creep[], roomResources: OwnedRoomResource): void {
-    const ramparts = roomResources.ramparts.filter(rampart => {
+    if (intercepters.length <= 0) {
+      return
+    }
+    const ramparts = roomResources.ramparts.filter(rampart => { // 1~2CPU/tick
       if (rampart.pos.findInRange(FIND_STRUCTURES, 0).length > 1) {  // 1はRampartの分, FIND_MY_STRUCTUREを使わないのはRoadを避けるため
         return false
       }
@@ -327,16 +324,6 @@ export class DefenseRoomProcess implements Process, Procedural {
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
-    })
-  }
-
-  private parseCreeps(creepNames: CreepName[]): Creep[] {
-    return creepNames.flatMap(creepName => {
-      const creep = Game.creeps[creepName]
-      if (creep == null) {
-        return []
-      }
-      return [creep]
     })
   }
 
