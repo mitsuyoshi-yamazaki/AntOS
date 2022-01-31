@@ -1276,7 +1276,7 @@ export class ExecCommand implements ConsoleCommand {
     const scriptName = args.shift()
     try {
       if (scriptName == null) {
-        throw "Missing script_name"
+        throw "Missing script name"
       }
       return temporaryScript(scriptName, args)
     } catch (error) {

@@ -45,7 +45,7 @@ export class DefenseRoomProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     // private attackerCreepNames: CreepName[],
     // private repairerCreepNames: CreepName[],
     private readonly currentTargetId: Id<AnyCreep> | null,
