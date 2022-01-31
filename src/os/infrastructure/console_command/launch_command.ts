@@ -37,7 +37,7 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
@@ -49,6 +49,8 @@ import { ProduceCommodityProcess } from "process/process/produce_commodity_proce
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
+import { } from "process/temporary/season4_628862_downgrade_room_process"
+import { DefenseRoomProcess } from "process/process/defense_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1091,6 +1093,16 @@ ProcessLauncher.register("Season4596376ConvoyInterrupterProcess", args => {
     const highwayRoomName2 = args.roomName("highway_room_name_2").parse()
 
     return Result.Succeeded((processId) => Season4596376ConvoyInterrupterProcess.create(processId, roomName, {roomName1: highwayRoomName1, roomName2: highwayRoomName2}))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DefenseRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+
+    return Result.Succeeded((processId) => DefenseRoomProcess.create(processId, roomName))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
