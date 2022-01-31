@@ -6,10 +6,9 @@ import type { RoomName } from "utility/room_name"
 import { GameConstants } from "utility/constants"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
 import { generateCodename } from "utility/unique_id"
-import { profileLink, roomHistoryLink, roomLink } from "utility/log"
+import { roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { DefenceTaskPerformance } from "application/task_profit/defence_task_performance"
-import { Invader } from "game/invader"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Timestamp } from "utility/timestamp"
 
@@ -20,8 +19,6 @@ type SafeModeManagerTaskOutputs = TaskOutputs<SafeModeManagerTaskOutput, SafeMod
 export interface SafeModeManagerTaskState extends TaskState {
   /** task type identifier */
   readonly t: "SafeModeManagerTask"
-
-  hitsFullTimestamp: Timestamp | null
 }
 
 export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeModeManagerTaskProblemTypes, DefenceTaskPerformance> {
@@ -34,7 +31,6 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
     startTime: number,
     sessionStartTime: number,
     roomName: RoomName,
-    private hitsFullTimestamp: Timestamp | null,
   ) {
     super(startTime, sessionStartTime, roomName)
 
@@ -48,130 +44,136 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       s: this.startTime,
       ss: this.sessionStartTime,
       r: this.roomName,
-      hitsFullTimestamp: this.hitsFullTimestamp,
     }
   }
 
   public static decode(state: SafeModeManagerTaskState): SafeModeManagerTask {
-    return new SafeModeManagerTask(state.s, state.ss, state.r, state.hitsFullTimestamp)
+    return new SafeModeManagerTask(state.s, state.ss, state.r)
   }
 
   public static create(roomName: RoomName): SafeModeManagerTask {
-    return new SafeModeManagerTask(Game.time, Game.time, roomName, null)
+    return new SafeModeManagerTask(Game.time, Game.time, roomName)
   }
 
   public run(roomResource: OwnedRoomResource): SafeModeManagerTaskOutputs {
     const taskOutputs: SafeModeManagerTaskOutputs = emptyTaskOutputs()
 
+    if (roomResource.controller.safeMode != null) {
+      return taskOutputs
+    }
+
     const invaders: AnyCreep[] = []
     invaders.push(...roomResource.hostiles.creeps)
     invaders.push(...roomResource.hostiles.powerCreeps)
     if (invaders.length <= 0) {
-      this.hitsFullTimestamp = null
       return taskOutputs
     }
 
     if (roomResource.activeStructures.towers.length > 0) {
       if (roomResource.activeStructures.towers.some(tower => (tower.store.getUsedCapacity(RESOURCE_ENERGY) < (tower.store.getCapacity(RESOURCE_ENERGY) * 0.14)))) {
-        this.hitsFullTimestamp = null
-        const result = roomResource.controller.activateSafeMode()
-        switch (result) {
-        case OK: {
-          const message = `${roomLink(this.roomName)} activate safe mode (${invaders})`
-          PrimitiveLogger.fatal(message)
-          taskOutputs.logs.push({
-            taskIdentifier: this.identifier,
-            logEventType: "event",
-            message,
-          })
-          return taskOutputs
-        }
-
-        case ERR_BUSY:
-        case ERR_NOT_ENOUGH_RESOURCES:
-        case ERR_TIRED:
-          taskOutputs.logs.push({
-            taskIdentifier: this.identifier,
-            logEventType: "event",
-            message: `${roomLink(this.roomName)} activate safe mode failed ${result}, (${invaders})`
-          })
-          return taskOutputs
-
-        case ERR_NOT_OWNER:
-          PrimitiveLogger.programError(`${this.identifier} controller.activateSafeMode() returns ${result}, ${roomLink(this.roomName)}`)
-          return taskOutputs
-        }
+        this.activateSafemode(roomResource.controller, `invaders: ${invaders}`, taskOutputs)
+        return taskOutputs
       }
     }
 
-    let foundFullHpInvader = false as boolean
-    const events = roomResource.room.getEventLog()
-    for (const event of events) {
-      if (event.event !== EVENT_ATTACK) {
-        continue
-      }
-      for (const invader of invaders) {
-        if (invader.id !== event.data.targetId) {
-          continue
+    const vitalStructureTypes: StructureConstant[] = [
+      STRUCTURE_SPAWN,
+      STRUCTURE_POWER_SPAWN,
+      STRUCTURE_STORAGE,
+      STRUCTURE_TERMINAL,
+      STRUCTURE_LAB,
+      STRUCTURE_FACTORY,
+      STRUCTURE_NUKER,
+      STRUCTURE_TOWER,
+    ]
+    const wallTypes: StructureConstant[] = [
+      STRUCTURE_WALL,
+      STRUCTURE_RAMPART,
+    ]
+    const wallMinimumHits = 100000
+
+    const eventLogs = roomResource.room.getEventLog()
+    const shouldActivateSafeMode = eventLogs.some(log => {
+      switch (log.event) {
+      case EVENT_ATTACK: {
+        const target = Game.getObjectById(log.data.targetId)
+        if ((target as {structureType?: StructureConstant}).structureType == null) {
+          return false
         }
-        if (invader.hits < invader.hitsMax) {
-          continue
+        const structureType = (target as { structureType: StructureConstant }).structureType
+        if (vitalStructureTypes.includes(structureType) === true) {
+          return true
         }
-        foundFullHpInvader = true
-        if (invader.owner.username === Invader.username) {
-          const closestTower = invader.pos.findClosestByRange(roomResource.activeStructures.towers)
-          if (closestTower != null && invader.pos.getRangeTo(closestTower.pos) > 15) {
-            continue
+        if (wallTypes.includes(structureType) === true) {
+          const hits = (target as { hits?: number }).hits
+          if (hits == null) {
+            PrimitiveLogger.programError(`${this.identifier} target ${target} with id ${log.data.targetId} doesn't have hits property`)
+            return false
+          }
+          if (hits < wallMinimumHits) {
+            return true
           }
         }
-
-        if (this.hitsFullTimestamp == null) {
-          continue
-        }
-        if ((Game.time - this.hitsFullTimestamp) <= 0) {
-          continue
-        }
-        this.hitsFullTimestamp = null
-
-        const result = roomResource.controller.activateSafeMode()
-        switch (result) {
-        case OK: {
-          const message = `${roomHistoryLink(this.roomName)} activate safe mode at ${Game.time} (${invader}), attacker: ${profileLink(invader.owner.username)}, hits: ${invader.hits}, hitsMax: ${invader.hitsMax}`
-          PrimitiveLogger.fatal(message)
-          taskOutputs.logs.push({
-            taskIdentifier: this.identifier,
-            logEventType: "event",
-            message,
-          })
-          return taskOutputs
-        }
-
-        case ERR_BUSY:
-        case ERR_NOT_ENOUGH_RESOURCES:
-        case ERR_TIRED:
-          taskOutputs.logs.push({
-            taskIdentifier: this.identifier,
-            logEventType: "event",
-            message: `${roomLink(this.roomName)} activate safe mode failed ${result}, (${invader}), attacker: ${profileLink(invader.owner.username)}`
-          })
-          return taskOutputs
-
-        case ERR_NOT_OWNER:
-          PrimitiveLogger.programError(`${this.identifier} controller.activateSafeMode() returns ${result}, ${roomLink(this.roomName)}, attacker: ${profileLink(invader.owner.username)}`)
-          return taskOutputs
-        }
+        return false
       }
-    }
 
-    if (foundFullHpInvader === true) {
-      if (this.hitsFullTimestamp == null) {
-        this.hitsFullTimestamp = Game.time
+      case EVENT_OBJECT_DESTROYED: {
+        if (log.data.type === "creep") {
+          return false
+        }
+        if (vitalStructureTypes.includes(log.data.type) === true) {
+          return true
+        }
+        if (wallTypes.includes(log.data.type) === true) {
+          return true
+        }
+        return false
       }
-    } else {
-      this.hitsFullTimestamp = null
+
+      default:
+        return false
+      }
+    })
+
+    if (shouldActivateSafeMode === true) {
+      this.activateSafemode(roomResource.controller, "vital structure attacked", taskOutputs)
+      return taskOutputs
     }
 
     return taskOutputs
+  }
+
+  private activateSafemode(controller: StructureController, reason: string, taskOutputs: SafeModeManagerTaskOutputs): void {
+    // console.log(`activate safemode ${roomLink(controller.room.name)}`)
+    // return
+
+    const result = controller.activateSafeMode()
+    switch (result) {
+    case OK: {
+      const message = `${roomLink(this.roomName)} activate safe mode (${reason})`
+      PrimitiveLogger.fatal(message)
+      taskOutputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message,
+      })
+      break
+    }
+
+    case ERR_BUSY:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_TIRED:
+      taskOutputs.logs.push({
+        taskIdentifier: this.identifier,
+        logEventType: "event",
+        message: `${roomLink(this.roomName)} activate safe mode failed ${result}, (${reason})`
+      })
+      break
+
+    case ERR_NOT_OWNER:
+      PrimitiveLogger.programError(`${this.identifier} controller.activateSafeMode() returns ${result}, ${roomLink(this.roomName)} (${reason})`)
+      break
+    }
   }
 
   // ---- Profit ---- //
