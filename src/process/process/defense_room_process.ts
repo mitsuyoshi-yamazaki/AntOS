@@ -114,7 +114,24 @@ export class DefenseRoomProcess implements Process, Procedural {
 
     // TODO: Power Creepの判定
     if (hostileCreeps.length > 0) {
-      const intercepterMaxCount = 4
+      const largestTicksToLive = hostileCreeps.reduce((result, current) => {
+        if (current.ticksToLive == null) {
+          return result
+        }
+        if (current.ticksToLive > result) {
+          return current.ticksToLive
+        }
+        return result
+      }, 0)
+      const intercepterMaxCount = ((): number => {
+        if (largestTicksToLive < 200) {
+          return 0
+        }
+        if (hostileCreeps.length <= 1) {
+          return 2
+        }
+        return 4
+      })()
       if (intercepters.length < intercepterMaxCount) {
         const small = intercepters.length <= 0
         this.spawnIntercepter(small, roomResources.room.energyCapacityAvailable)
@@ -192,8 +209,12 @@ export class DefenseRoomProcess implements Process, Procedural {
     const moveToOpt: MoveToOpts = {
       ignoreCreeps: false
     }
-    creep.moveTo(position, moveToOpt)
-    // creep.say(`${position.x},${position.y}`)
+    if (creep.pos.isEqualTo(position) === true) {
+      // do nothing
+    } else {
+      creep.say(`${position.x},${position.y}`)
+      creep.moveTo(position, moveToOpt)
+    }
     const targets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)
     if (targets[0] != null) {
       creep.attack(targets[0])
