@@ -3,7 +3,7 @@ import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
-import { CreepName, defaultMoveToOptions } from "prototype/creep"
+import { defaultMoveToOptions } from "prototype/creep"
 import { generateCodename } from "utility/unique_id"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
@@ -251,7 +251,15 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   private waitIntercepters(intercepters: Creep[], roomResources: OwnedRoomResource): void {
-    if (intercepters.length <= 0) {
+    const interceptersOutsideRamparts = intercepters.filter(creep => {
+      if (creep.pos.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+        creep.say("safe")
+        return false
+      }
+      return true
+    })
+
+    if (interceptersOutsideRamparts.length <= 0) {
       return
     }
     const ramparts = roomResources.ramparts.filter(rampart => { // 1~2CPU/tick
@@ -264,17 +272,13 @@ export class DefenseRoomProcess implements Process, Procedural {
       return true
     })
     if (ramparts.length <= 0) {
-      intercepters[0]?.say("no rampart")
+      interceptersOutsideRamparts[0]?.say("no rampart")
       return
     }
-    intercepters.forEach(creep => this.waitIntercepter(creep, ramparts))
+    interceptersOutsideRamparts.forEach(creep => this.waitIntercepter(creep, ramparts))
   }
 
   private waitIntercepter(creep: Creep, ramparts: StructureRampart[]): void {
-    if (creep.pos.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
-      creep.say("safe")
-      return
-    }
     const closestRampart = creep.pos.findClosestByPath(ramparts)
     if (closestRampart == null) {
       creep.say("no dest")
