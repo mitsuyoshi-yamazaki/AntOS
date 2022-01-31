@@ -76,6 +76,14 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       }
     }
 
+    const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
+    if (roomResource.controller.level >= 6 && energyAmount < 10000) {
+      if (roomResource.hostiles.powerCreeps.length > 0 || roomResource.hostiles.creeps.some(creep => creep.body.some(body => body.boost != null))) {
+        this.activateSafemode(roomResource.controller, `lack of energy (${energyAmount})`, taskOutputs)
+        return taskOutputs
+      }
+    }
+
     const vitalStructureTypes: StructureConstant[] = [
       STRUCTURE_SPAWN,
       STRUCTURE_POWER_SPAWN,
