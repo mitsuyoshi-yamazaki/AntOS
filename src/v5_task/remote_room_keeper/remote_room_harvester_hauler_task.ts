@@ -25,6 +25,7 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -117,7 +118,7 @@ export class RemoteRoomHaulerTask extends Task {
         if (roomTypeOf(this.roomName) === "source_keeper") {
           return FleeFromSKLairTask.create(task)
         }
-        return task
+        return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
       },
       creepPoolFilter,
     )

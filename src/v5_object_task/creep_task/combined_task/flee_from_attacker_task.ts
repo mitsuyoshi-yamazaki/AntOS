@@ -7,6 +7,7 @@ export interface FleeFromAttackerTaskState extends CreepTaskState {
   childTaskState: CreepTaskState
   didFlee: boolean
   range: number
+  failOnFlee: boolean
 }
 
 export class FleeFromAttackerTask implements CreepTask {
@@ -15,6 +16,7 @@ export class FleeFromAttackerTask implements CreepTask {
     public readonly childTask: CreepTask,
     private didFlee: boolean,
     private readonly range: number,
+    private readonly failOnFlee: boolean,
   ) {
   }
 
@@ -25,15 +27,16 @@ export class FleeFromAttackerTask implements CreepTask {
       childTaskState: this.childTask.encode(),
       didFlee: this.didFlee,
       range: this.range,
+      failOnFlee: this.failOnFlee,
     }
   }
 
   public static decode(state: FleeFromAttackerTaskState, childTask: CreepTask): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 6)
+    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 6, state.failOnFlee ?? true)
   }
 
-  public static create(childTask: CreepTask, range?: number): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 6)
+  public static create(childTask: CreepTask, range?: number, options?: {failOnFlee?: boolean}): FleeFromAttackerTask {
+    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 6, options?.failOnFlee ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -48,7 +51,7 @@ export class FleeFromAttackerTask implements CreepTask {
     if (hostileAttacker != null && hostileAttacker.pos.getRangeTo(creep.pos) <= this.range) {
       this.didFlee = true
       this.fleeFrom(hostileAttacker.pos, creep, this.range + 1)
-      return TaskProgressType.InProgress
+      return TaskProgressType.FinishedAndRan
     }
     if (this.didFlee === true) {
       this.didFlee = false

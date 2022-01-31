@@ -27,6 +27,7 @@ import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -170,7 +171,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
           if (roomTypeOf(this.roomName) === "source_keeper") {
             return FleeFromSKLairTask.create(task)
           }
-          return task
+          return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
         },
         creepPoolFilter,
       )
