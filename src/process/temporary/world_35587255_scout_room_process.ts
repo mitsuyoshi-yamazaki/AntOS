@@ -140,12 +140,12 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
     }
 
     if (this.targetRoomNames == null) {
-      PrimitiveLogger.programError(`${this.identifier} target room names is null`)
+      // PrimitiveLogger.programError(`${this.identifier} target room names is null`)
       return null
     }
     const lastDestination = this.targetRoomNames.pop()
     if (lastDestination == null) {
-      PrimitiveLogger.programError(`${this.identifier} target room names is empty`)
+      // PrimitiveLogger.programError(`${this.identifier} target room names is empty`)
       return null
     }
 
@@ -216,6 +216,12 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
           roomsToAvoid.push(roomName)
           break
         }
+
+        if (roomInfo != null && roomInfo.reachable !== true) {
+          if (roomsToAvoid.includes(roomName) !== true) {
+            roomsToAvoid.push(roomName)
+          }
+        }
       }
     }
 
@@ -252,7 +258,17 @@ export class World35587255ScoutRoomProcess implements Process, Procedural {
       }
       const route = Game.map.findRoute(roomName, closestRoom.roomName, {routeCallback})
       if (route === ERR_NO_PATH) {
-        const message = `World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`
+        const descriptions: string[] = [
+          `World35587255ScoutRoomProcess.getTargetRooms() parent: ${roomLink(parentRoomName)}, no path from ${roomLink(roomName)} to ${roomLink(closestRoom.roomName)}`
+        ]
+
+        const destinationRoomInfo = RoomResources.getRoomInfo(closestRoom.roomName)
+        if (destinationRoomInfo != null) {
+          destinationRoomInfo.reachable = false
+          descriptions.push("marked as non reachable")
+        }
+
+        const message = descriptions.join(", ")
         PrimitiveLogger.log(message)
         // PrimitiveLogger.fatal(message)
         return result
