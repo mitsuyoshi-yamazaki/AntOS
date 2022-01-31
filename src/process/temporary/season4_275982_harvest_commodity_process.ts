@@ -26,12 +26,14 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
 const maxCooldown = 70
+const tooLongCooldownReason = "too long cooldown"
 
 type DepositInfo = {
   readonly roomName: RoomName
@@ -186,6 +188,13 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       }
     })
 
+    if (harvesters.length <= 0 && haulers.length <= 0) {
+      if (this.suspendReasons.includes(tooLongCooldownReason) === true) {
+        OperatingSystem.os.killProcess(this.processId)
+        return
+      }
+    }
+
     if (harvesters.length < this.creepSpec.harvesterCount) {
       const energyNeeded = 2300
       if (roomResources.room.energyCapacityAvailable >= energyNeeded) {
@@ -219,7 +228,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return targetRoom.find(FIND_DEPOSITS)[0] ?? null
     })()
     if (deposit != null && deposit.cooldown > maxCooldown) {
-      this.addSuspendReason("too long cooldown")
+      this.addSuspendReason(tooLongCooldownReason)
     }
     if (targetRoom != null && deposit == null) {
       this.addSuspendReason("missing deposit")
