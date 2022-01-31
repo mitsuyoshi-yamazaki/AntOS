@@ -3,7 +3,7 @@ import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
-import { CreepName } from "prototype/creep"
+import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { generateCodename } from "utility/unique_id"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
@@ -116,23 +116,19 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
     })
 
-    // const attackerCreepNames = [...this.attackerCreepNames]
-    // const intercepters = this.parseCreeps(attackerCreepNames)
-    // this.attackerCreepNames = intercepters.map(creep => creep.name)
+    // TODO: Power Creepの判定
+    if (hostileCreeps.length <= 0) {
+      this.waitIntercepters(intercepters, roomResources)
+      return
+    }
+
     if (hostileBoostedCreeps.length > 0) {
       this.runIntercepters(intercepters, hostileBoostedCreeps, roomResources)
     } else {
       this.runIntercepters(intercepters, hostileCreeps, roomResources)
     }
 
-    // const repairers = this.parseCreeps(this.repairerCreepNames)
-    // this.repairerCreepNames = repairers.map(creep => creep.name)
     this.runRepairers(repairers, hostileCreeps)
-
-    // TODO: Power Creepの判定
-    if (hostileCreeps.length <= 0) {
-      return
-    }
 
     const largestTicksToLive = hostileCreeps.reduce((result, current) => {
       if (current.ticksToLive == null) {
@@ -248,6 +244,37 @@ export class DefenseRoomProcess implements Process, Procedural {
     if (targets[0] != null) {
       creep.attack(targets[0])
     }
+  }
+
+  private waitIntercepters(intercepters: Creep[], roomResources: OwnedRoomResource): void {
+    const ramparts = roomResources.ramparts.filter(rampart => {
+      if (rampart.pos.findInRange(FIND_STRUCTURES, 0).length > 1) {  // 1はRampartの分, FIND_MY_STRUCTUREを使わないのはRoadを避けるため
+        return false
+      }
+      if (rampart.pos.findInRange(FIND_MY_CREEPS, 0).length > 0) {
+        return false
+      }
+      return true
+    })
+    if (ramparts.length <= 0) {
+      intercepters[0]?.say("no rampart")
+      return
+    }
+    intercepters.forEach(creep => this.waitIntercepter(creep, ramparts))
+  }
+
+  private waitIntercepter(creep: Creep, ramparts: StructureRampart[]): void {
+    if (creep.pos.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+      creep.say("safe")
+      return
+    }
+    const closestRampart = creep.pos.findClosestByPath(ramparts)
+    if (closestRampart == null) {
+      creep.say("no dest")
+      return
+    }
+    creep.say(`${closestRampart.pos.x},${closestRampart.pos.y}`)
+    creep.moveTo(closestRampart.pos, defaultMoveToOptions())
   }
 
   private spawnIntercepter(small: boolean, energyCapacity: number): void {
