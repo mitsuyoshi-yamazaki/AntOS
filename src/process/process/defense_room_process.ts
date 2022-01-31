@@ -15,6 +15,8 @@ import { processLog } from "os/infrastructure/logger"
 import { Timestamp } from "utility/timestamp"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { GameConstants } from "utility/constants"
+import { coloredText, roomLink } from "utility/log"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
@@ -113,28 +115,37 @@ export class DefenseRoomProcess implements Process, Procedural {
     this.runRepairers(repairers, hostileCreeps)
 
     // TODO: Power Creepの判定
-    if (hostileCreeps.length > 0) {
-      const largestTicksToLive = hostileCreeps.reduce((result, current) => {
-        if (current.ticksToLive == null) {
-          return result
-        }
-        if (current.ticksToLive > result) {
-          return current.ticksToLive
-        }
+    if (hostileCreeps.length <= 0) {
+      return
+    }
+
+    const largestTicksToLive = hostileCreeps.reduce((result, current) => {
+      if (current.ticksToLive == null) {
         return result
-      }, 0)
-      const intercepterMaxCount = ((): number => {
-        if (largestTicksToLive < 200) {
-          return 0
-        }
-        if (hostileCreeps.length <= 1) {
-          return 2
-        }
-        return 4
-      })()
-      if (intercepters.length < intercepterMaxCount) {
-        const small = intercepters.length <= 0
-        this.spawnIntercepter(small, roomResources.room.energyCapacityAvailable)
+      }
+      if (current.ticksToLive > result) {
+        return current.ticksToLive
+      }
+      return result
+    }, 0)
+    const intercepterMaxCount = ((): number => {
+      if (largestTicksToLive < 200) {
+        return 0
+      }
+      if (hostileCreeps.length <= 1) {
+        return 2
+      }
+      return 4
+    })()
+    if (intercepters.length < intercepterMaxCount) {
+      const small = intercepters.length <= 0
+      this.spawnIntercepter(small, roomResources.room.energyCapacityAvailable)
+    }
+
+    const minimumEnergyTransferDuration = 1000
+    if ((this.receivedEnergyTimestamp + minimumEnergyTransferDuration) < Game.time) {
+      if (this.needsEnergy(roomResources) === true) {
+        this.collectEnergy(roomResources)
       }
     }
   }
@@ -272,5 +283,67 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
       return [creep]
     })
+  }
+
+  private needsEnergy(roomResources: OwnedRoomResource): boolean {
+    const minimumEnergyAmount = 50000
+    return roomResources.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount
+  }
+
+  private collectEnergy(roomResources: OwnedRoomResource): void {
+    const energyAmount = 15000
+    const energySendableTerminals = RoomResources.getOwnedRoomResources()
+      .flatMap((resources: OwnedRoomResource): { terminal: StructureTerminal, roomDistance: number }[] => {
+        if (resources.room.name === roomResources.room.name) {
+          return []
+        }
+        if (resources.hostiles.creeps.length > 0) {
+          return []
+        }
+        const terminal = resources.activeStructures.terminal
+        if (terminal == null) {
+          return []
+        }
+        if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < (energyAmount * 2)) {
+          return []
+        }
+        return [{
+          terminal,
+          roomDistance: Game.map.getRoomLinearDistance(roomResources.room.name, resources.room.name)
+        }]
+      })
+
+    energySendableTerminals.sort((lhs, rhs) => {
+      return lhs.roomDistance - rhs.roomDistance
+    })
+
+    const maxAmount = 45000
+    let sentAmount = 0
+
+    energySendableTerminals.forEach(obj => {
+      if (sentAmount >= maxAmount) {
+        return
+      }
+      const result = obj.terminal.send(RESOURCE_ENERGY, energyAmount, roomResources.room.name)
+      switch (result) {
+      case OK:
+        sentAmount += energyAmount
+        processLog(this, `${coloredText("[INFO]", "info")} ${energyAmount} energy sent to ${roomLink(roomResources.room.name)}`)
+        break
+
+      case ERR_TIRED:
+        break
+
+      case ERR_NOT_OWNER:
+      case ERR_NOT_ENOUGH_RESOURCES:
+      case ERR_INVALID_ARGS:
+        PrimitiveLogger.programError(`${this.taskIdentifier} terminal.send(${roomLink(obj.terminal.room.name)}, energy, ${roomLink(roomResources.room.name)}) failed with ${result}`)
+        break
+      }
+    })
+
+    if (sentAmount > 0) {
+      this.receivedEnergyTimestamp = Game.time
+    }
   }
 }
