@@ -1098,7 +1098,7 @@ export class ExecCommand implements ConsoleCommand {
     switch (action) {
     case "remove":
       roomPlan.wallPositions = undefined
-      return "ok"
+      return "wall positions removed"
     case "set_it_done":
       roomPlan.wallPositions = []
       return "ok"
