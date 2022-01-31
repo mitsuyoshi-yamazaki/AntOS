@@ -79,7 +79,18 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return ""
+    const descriptions: string[] = [
+      roomLink(this.roomName)
+    ]
+    if (this.receivedEnergyTimestamp > 0) {
+      const interval = Game.time - this.receivedEnergyTimestamp
+      if (interval > 9999) {
+        descriptions.push(`energy sent ${Math.floor(interval / 1000)}k ticks ago`)
+      } else {
+        descriptions.push(`energy sent ${interval} ticks ago`)
+      }
+    }
+    return descriptions.join(" ")
   }
 
   public runOnTick(): void {
@@ -291,6 +302,10 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   private collectEnergy(roomResources: OwnedRoomResource): void {
+    if (roomResources.activeStructures.terminal == null) {
+      return
+    }
+
     const energyAmount = 15000
     const energySendableTerminals = RoomResources.getOwnedRoomResources()
       .flatMap((resources: OwnedRoomResource): { terminal: StructureTerminal, roomDistance: number }[] => {
