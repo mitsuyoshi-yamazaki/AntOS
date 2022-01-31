@@ -12,6 +12,7 @@ type TargetInfo = {
   target: AnyCreep
   maxTicksToKill: number | null
   minimumTicksToEscape: number
+  damageTaken: number // 0~1
 }
 
 export interface TowerInterceptionProblemSolverState extends ProblemSolverState {
@@ -60,6 +61,19 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     }
 
     const target = targetInfo.target
+
+    if (objects.controller.room.name === "W13S21") {  // FixMe:
+      if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
+        if (target.body.some(body => body.boost != null) === true) {
+          const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
+          if (hasAttacker !== true) {
+            this.targetId = null
+            return TaskStatus.Finished
+          }
+        }
+      }
+    }
+
     this.targetId = target.id
     World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(target, TowerPoolTaskPriority.Urgent))
 
@@ -83,13 +97,6 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
       ...objects.hostiles.creeps,
       ...objects.hostiles.powerCreeps,
     ]
-    if (this.roomName === "W37S35" && hostileCreeps[0] != null) {
-      return {
-        target: hostileCreeps[0],
-        maxTicksToKill: 1,
-        minimumTicksToEscape: 1,
-      }
-    }
 
     // killできないとなったら諦めて別targetを選定
     const targetInfo = hostileCreeps.map(target => {
@@ -170,16 +177,19 @@ const roomMinExit = GameConstants.room.edgePosition.min
 const roomMaxExit = GameConstants.room.edgePosition.max
 const maxTicksToKillLimit = 100
 
-function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boolean, towerPositions: RoomPosition[]): TargetInfo {
+export function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boolean, towerPositions: RoomPosition[]): TargetInfo {
   const exitDistanceX = Math.min(target.pos.x - roomMinExit, roomMaxExit - target.pos.x)
   const exitDistanceY = Math.min(target.pos.y - roomMinExit, roomMaxExit - target.pos.y)
   const minimumTicksToEscape = Math.min(exitDistanceX, exitDistanceY)
+
+  const damageTaken = (target.hitsMax - target.hits) / Math.max(target.hitsMax, 0)
 
   if (target.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}}).length > 0) {
     return {
       target,
       maxTicksToKill: null,
       minimumTicksToEscape,
+      damageTaken,
     }
   }
 
@@ -218,6 +228,7 @@ function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boole
     target,
     maxTicksToKill,
     minimumTicksToEscape,
+    damageTaken,
   }
 }
 
