@@ -12,9 +12,6 @@ import { isRoomName, RoomName } from "utility/room_name"
 import { Result } from "utility/result"
 import { ProcessDecoder } from "../process_decoder"
 import { RoomResources } from "room_resource/room_resources"
-import { Environment } from "utility/environment"
-
-const numberOfRoomsInShard3 = 3
 
 type TargetRoom = {
   readonly parentRoomName: RoomName
@@ -277,21 +274,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       return ownedRoomNames.length
     })()
 
-    const availableRoomCount = ((): number => {
-      if (Environment.hasMultipleShards !== true) {
-        return Game.gcl.level
-      }
-      switch (Environment.shard) {  // TODO:
-      case "shard2":
-        return Game.gcl.level - numberOfRoomsInShard3
-      case "shard3":
-        PrimitiveLogger.programError("BootstrapRoomManagerProcess.canAddTarget() claiming in shard 3 not supported")
-        return numberOfRoomsInShard3
-      default:
-        PrimitiveLogger.programError(`BootstrapRoomManagerProcess.canAddTarget() claiming in ${Environment.shard} not supported`)
-        return 0
-      }
-    })()
+    const availableRoomCount = RoomResources.getClaimableRoomCount()
 
     if (availableRoomCount > targetingRoomCount) {
       return true

@@ -17,6 +17,7 @@ import { MapAccessorProcess } from "process/accessor/map_accessor_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
 import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { RoomResources } from "room_resource/room_resources"
 // import { } from "process/application/declarative_ai/declaration_application_process"
 
 // TODO: アプリケーションProcessとしてProcess化する
@@ -74,7 +75,12 @@ export class ApplicationProcessLauncher {
     const roomsWithV5KeeperProcess = roomKeeperMap.get(ShortVersion.v5) ?? []
     const roomsWithV6KeeperProcess = roomKeeperMap.get(ShortVersion.v6) ?? []
 
+    const gclFarmRoomNames = RoomResources.gclFarmRoomNames()
+
     World.rooms.getAllOwnedRooms().forEach(room => {
+      if (gclFarmRoomNames.includes(room.name) === true) {
+        return
+      }
       switch (Migration.roomVersion(room.name)) {
       case ShortVersion.v5:
         if (roomsWithV5KeeperProcess.includes(room.name) !== true) {

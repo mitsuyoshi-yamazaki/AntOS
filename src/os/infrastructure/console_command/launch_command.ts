@@ -51,6 +51,7 @@ import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
 import { } from "process/temporary/season4_628862_downgrade_room_process"
 import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { } from "process/process/gcl_farm_manager_process"
 
 type LaunchCommandResult = Result<Process, string>
 

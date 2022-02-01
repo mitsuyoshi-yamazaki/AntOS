@@ -9,6 +9,11 @@ import { RoomResource } from "./room_resource"
 import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiency, RoomInfoType, updateNormalRoomInfo } from "./room_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { Environment } from "utility/environment"
+
+export type GclFarmMemory = {
+  roomNames: RoomName[]
+}
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -26,6 +31,10 @@ interface RoomResourcesInterface {
 
   // ---- Inter Room Resource ---- //
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
+
+  // ---- Rooms ---- //
+  gclFarmRoomNames(): RoomName[]
+  getClaimableRoomCount(): number
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -123,6 +132,30 @@ export const RoomResources: RoomResourcesInterface = {
     })
     return result
   },
+
+  // ---- Rooms ---- //
+  gclFarmRoomNames(): RoomName[] {
+    return [...Memory.gclFarm.roomNames]
+  },
+
+  getClaimableRoomCount(): number {
+    const roomCountInShard = this.getOwnedRoomResources().length
+    const gclFarmReservationCount = this.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
+
+    if (Environment.hasMultipleShards !== true) {
+      return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
+    }
+
+    const numberOfRoomsInShard3 = 3
+    switch (Environment.shard) {  // TODO:
+    case "shard2":
+      return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
+    case "shard3":
+    default:
+      PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() counting claimable rooms in ${Environment.shard} not supported`)
+      return 0
+    }
+  }
 }
 
 function enumerateCreeps(): void {

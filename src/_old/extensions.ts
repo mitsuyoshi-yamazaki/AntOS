@@ -9,6 +9,7 @@ import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
+import { GclFarmMemory } from "room_resource/room_resources"
 
 export interface SectorMemory {
   name: string
@@ -43,6 +44,7 @@ declare global {
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
     eventMemory: EventMemory
     gameMap: GameMapMemory
+    gclFarm: GclFarmMemory
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
