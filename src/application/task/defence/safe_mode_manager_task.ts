@@ -93,6 +93,7 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       STRUCTURE_FACTORY,
       STRUCTURE_NUKER,
       STRUCTURE_TOWER,
+      STRUCTURE_EXTENSION,
     ]
     const wallTypes: StructureConstant[] = [
       STRUCTURE_WALL,
