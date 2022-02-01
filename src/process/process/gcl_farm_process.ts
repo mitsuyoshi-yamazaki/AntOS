@@ -62,8 +62,7 @@ export class GclFarmProcess implements Process, Procedural {
     return new GclFarmProcess(state.l, state.i, state.roomName, state.parentRoomNames)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, parentRoomNames: RoomName[]): GclFarmProcess | string {
-    // parentRoomNamesが0以上、RCL8
+  public static create(processId: ProcessId, roomName: RoomName, parentRoomNames: RoomName[]): GclFarmProcess {
     return new GclFarmProcess(Game.time, processId, roomName, parentRoomNames)
   }
 
