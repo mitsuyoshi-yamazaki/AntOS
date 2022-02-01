@@ -160,6 +160,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
     }
 
     this.targetRooms.push(target)
+    RoomResources.addFarmRoom(targetRoomName)
 
     return `Added ${roomLink(targetRoomName)}, parents: ${parentRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
@@ -190,6 +191,8 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
     if (this.targetRoomIndex > index) {
       this.targetRoomIndex -= 1
     }
+
+    RoomResources.removeFarmRoom(targetRoomName)
 
     return `removed ${roomLink(targetRoomName)}, ${this.targetRooms.length} targets, index: ${this.targetRoomIndex}`
   }

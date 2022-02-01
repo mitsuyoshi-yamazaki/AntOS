@@ -33,8 +33,12 @@ interface RoomResourcesInterface {
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
 
   // ---- Rooms ---- //
-  gclFarmRoomNames(): RoomName[]
   getClaimableRoomCount(): number
+
+  // ---- GCL Farm ---- //
+  gclFarmRoomNames(): RoomName[]
+  addFarmRoom(roomName: RoomName): void
+  removeFarmRoom(roomName: RoomName): void
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -134,10 +138,6 @@ export const RoomResources: RoomResourcesInterface = {
   },
 
   // ---- Rooms ---- //
-  gclFarmRoomNames(): RoomName[] {
-    return [...Memory.gclFarm.roomNames]
-  },
-
   getClaimableRoomCount(): number {
     const roomCountInShard = this.getOwnedRoomResources().length
     const gclFarmReservationCount = this.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
@@ -154,6 +154,22 @@ export const RoomResources: RoomResourcesInterface = {
     default:
       PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() counting claimable rooms in ${Environment.shard} not supported`)
       return 0
+    }
+  },
+
+  // ---- GCL Farm ---- //
+  gclFarmRoomNames(): RoomName[] {
+    return [...Memory.gclFarm.roomNames]
+  },
+
+  addFarmRoom(roomName: RoomName): void {
+    Memory.gclFarm.roomNames.push(roomName)
+  },
+
+  removeFarmRoom(roomName: RoomName): void {
+    const index = Memory.gclFarm.roomNames.indexOf(roomName)
+    if (index >= 0) {
+      Memory.gclFarm.roomNames.splice(index, 1)
     }
   }
 }
