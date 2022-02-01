@@ -40,7 +40,22 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
   }
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
-    const result = (this.target.reservation == null) ? creep.claimController(this.target) : creep.attackController(this.target)
+    const shouldAttack = ((): boolean => {
+      if (this.target.owner != null) {
+        if (this.target.owner.username !== Game.user.name) {
+          return true
+        }
+        return false
+      }
+      if (this.target.reservation != null) {
+        if (this.target.reservation.username !== Game.user.name) {
+          return true
+        }
+        return false
+      }
+      return false
+    })()
+    const result = shouldAttack ? creep.attackController(this.target) : creep.claimController(this.target)
     creep.signController(this.target, Sign.signForOwnedRoom())
 
     switch (result) {
