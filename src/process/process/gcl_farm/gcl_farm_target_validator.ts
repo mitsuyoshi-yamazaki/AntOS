@@ -32,7 +32,6 @@ export function validateGclFarmTarget(target: GclFarmRoom): { errors: string[] }
 
   switch (targetRoomInfo.roomType) {
   case "owned":
-    errors.push(`target ${roomLink(target.roomName)} is already mine`)
     break
   case "normal":
     if (targetRoomInfo.owner != null) {

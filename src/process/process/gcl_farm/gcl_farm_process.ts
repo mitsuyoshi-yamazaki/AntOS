@@ -18,6 +18,8 @@ import { GameMap } from "game/game_map"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
+import { GclFarmPositions } from "./gcl_farm_predefined_plans"
+import { GclFarmRoomPlan } from "./gcl_farm_planner"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -25,9 +27,15 @@ ProcessDecoder.register("GclFarmProcess", state => {
 
 const claimerRoles: CreepRole[] = [CreepRole.Claimer]
 
+type RoomState = {
+  noHostileStructures: boolean
+}
+
 interface GclFarmProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly parentRoomNames: RoomName[]
+  readonly positions: GclFarmPositions
+  readonly roomState: RoomState
 }
 
 export class GclFarmProcess implements Process, Procedural {
@@ -37,15 +45,19 @@ export class GclFarmProcess implements Process, Procedural {
   }
 
   private readonly codename: string
+  private readonly roomPlan: GclFarmRoomPlan
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
-    private readonly parentRoomNames: RoomName[], // 近い順
+    private readonly parentRoomNames: RoomName[],
+    private readonly positions: GclFarmPositions,
+    private readonly roomState: RoomState,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+    this.roomPlan = new GclFarmRoomPlan(roomName, positions)
   }
 
   public encode(): GclFarmProcessState {
@@ -55,15 +67,22 @@ export class GclFarmProcess implements Process, Procedural {
       i: this.processId,
       roomName: this.roomName,
       parentRoomNames: this.parentRoomNames,
+      positions: this.positions,
+      roomState: this.roomState,
     }
   }
 
   public static decode(state: GclFarmProcessState): GclFarmProcess {
-    return new GclFarmProcess(state.l, state.i, state.roomName, state.parentRoomNames)
+    return new GclFarmProcess(state.l, state.i, state.roomName, state.parentRoomNames, state.positions, state.roomState)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, parentRoomNames: RoomName[]): GclFarmProcess {
-    return new GclFarmProcess(Game.time, processId, roomName, parentRoomNames)
+  public static create(processId: ProcessId, targetRoom: Room, parentRoomNames: RoomName[], positions: GclFarmPositions): GclFarmProcess {
+    const noHostileStructures = targetRoom.find(FIND_HOSTILE_STRUCTURES).length <= 0
+
+    const roomState: RoomState = {
+      noHostileStructures,
+    }
+    return new GclFarmProcess(Game.time, processId, targetRoom.name, parentRoomNames, positions, roomState)
   }
 
   public processShortDescription(): string {
@@ -73,10 +92,13 @@ export class GclFarmProcess implements Process, Procedural {
   public runOnTick(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      this.claimRoom()
+      // this.claimRoom() // FixMe: 実装途中のため
       return
     }
 
+    if (this.roomState.noHostileStructures !== true) {
+      this.destroyHostileStructures(roomResource.room)
+    }
 
   }
 
@@ -142,5 +164,28 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     return FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(controller)))
+  }
+
+  private destroyHostileStructures(room: Room): void {
+    let failed = false as boolean
+    const hostileStructures = room.find(FIND_HOSTILE_STRUCTURES)
+    hostileStructures.forEach(structure => {
+      const result = structure.destroy()
+      switch (result) {
+      case OK:
+        return
+      case ERR_BUSY:  // Hostile creeps are in the room.
+        failed = true
+        return
+      case ERR_NOT_OWNER:
+        failed = true
+        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} failed to destroy structure ${structure} in ${structure.pos}`)
+        return
+      }
+    })
+
+    if (failed !== true) {
+      this.roomState.noHostileStructures = true
+    }
   }
 }

@@ -49,6 +49,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       if (farmProcess instanceof GclFarmProcess) {
         this.farmProcess = farmProcess
       } else {
+        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} invalid child process ${farmProcess?.processId}`)
         this.farmProcessId = null
       }
     }
@@ -240,6 +241,10 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       }
       return
     }
+    const targetRoom = Game.rooms[target.roomName]
+    if (targetRoom == null) {
+      return
+    }
 
     const validationErrors = validateGclFarmTarget(target)
     if (validationErrors.errors.length > 0) {
@@ -248,9 +253,10 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       return
     }
 
-    // const process = OperatingSystem.os.addProcess(this.processId, processId => {
-    //   return GclFarmProcess.create(processId, target.roomName, target.parentRoomNames)
-    // })
-
+    const process = OperatingSystem.os.addProcess(this.processId, processId => {
+      return GclFarmProcess.create(processId, targetRoom, target.parentRoomNames, target.plan)
+    })
+    this.farmProcessId = process.processId
+    this.farmProcess = process
   }
 }
