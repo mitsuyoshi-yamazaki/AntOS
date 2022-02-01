@@ -186,12 +186,12 @@ export class DefenseRoomProcess implements Process, Procedural {
     }
     const targetPosition = targetHostileCreep.pos
 
-    const isCloseEnough = targetHostileCreep.pos.findInRange(intercepters, 2).length > 0
-    if (isCloseEnough === true) {
+    const interceptersInRange = targetHostileCreep.pos.findInRange(intercepters, 3)
+    if (interceptersInRange.length > 0) {
       const totalHealPower = targetHostileCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
         return result + CreepBody.power(current.body, "heal")
       }, 0)
-      const totalIntercepterAttackPower = intercepters.reduce((result, current) => {
+      const totalIntercepterAttackPower = interceptersInRange.reduce((result, current) => {
         return result + CreepBody.power(current.body, "attack")
       }, 0)
       const totalTowerAttackPower = roomResource.activeStructures.towers.reduce((result, current) => {
@@ -203,7 +203,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       const totalAttackPower = totalIntercepterAttackPower + totalTowerAttackPower
 
       if ((totalAttackPower * 1) > totalHealPower) {
-        intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition))
+        intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition, false))
         return
       }
     }
@@ -240,7 +240,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       ...nearbyRamparts,
     ]
     if (hidableRamparts.length <= 0) {
-      intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition))
+      intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition, true))
       return
     }
 
@@ -251,11 +251,11 @@ export class DefenseRoomProcess implements Process, Procedural {
         processLog(this, "1")
         continue
       }
-      this.moveIntercepter(creep, rampart.pos)
+      this.moveIntercepter(creep, rampart.pos, true)
     }
   }
 
-  private moveIntercepter(creep: Creep, position: RoomPosition): void {
+  private moveIntercepter(creep: Creep, position: RoomPosition, say: boolean): void {
     if (creep.spawning === true) {
       return
     }
@@ -265,7 +265,9 @@ export class DefenseRoomProcess implements Process, Procedural {
     if (creep.pos.isEqualTo(position) === true) {
       // do nothing
     } else {
-      creep.say(`${position.x},${position.y}`)
+      if (say === true) {
+        creep.say(`${position.x},${position.y}`)
+      }
       creep.moveTo(position, moveToOpt)
     }
     const targets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)
@@ -277,7 +279,7 @@ export class DefenseRoomProcess implements Process, Procedural {
   private waitIntercepters(intercepters: Creep[], roomResources: OwnedRoomResource): void {
     const interceptersOutsideRamparts = intercepters.filter(creep => {
       if (creep.pos.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
-        creep.say("safe")
+        // creep.say("safe")
         return false
       }
       return true
