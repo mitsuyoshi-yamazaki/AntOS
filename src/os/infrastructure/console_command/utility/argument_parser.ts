@@ -38,6 +38,19 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   }
 }
 
+export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
+  /** throws */
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName[] {
+    if (this.value == null) {
+      throw missingArgumentErrorMessage(this.key)
+    }
+    const roomNames = this.value.split(",")
+    roomNames.forEach(roomName => validateRoomNameArgument(roomName, options))
+    return roomNames
+  }
+}
+
+
 /** throws */
 function validateNumberRange(key: string, value: number, options?: { min?: number, max?: number }): void {
   if (options?.min != null && value < options.min) {

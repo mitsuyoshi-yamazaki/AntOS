@@ -1,5 +1,5 @@
 import type { RoomName } from "utility/room_name"
-import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -17,6 +17,7 @@ interface KeywordArgumentsInterface {
   direction(index: number, key: string): SingleArgument<void, DirectionConstant>
   roomPosition(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
+  roomNameList(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]>
   gameObjectId(index: number, key: string): SingleArgument<void, string>
 }
 
@@ -56,6 +57,10 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public roomName(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName> {
     return new RoomNameArgument(key, this.getValueAt(index))
+  }
+
+  public roomNameList(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]> {
+    return new RoomNameListArgument(key, this.getValueAt(index))
   }
 
   public gameObjectId(index: number, key: string): SingleArgument<void, string> {

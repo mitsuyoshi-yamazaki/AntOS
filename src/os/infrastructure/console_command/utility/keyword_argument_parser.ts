@@ -1,7 +1,7 @@
 import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
 import type { RoomName } from "utility/room_name"
-import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -17,6 +17,7 @@ interface KeywordArgumentsInterface {
   direction(key: string): SingleOptionalArgument<void, DirectionConstant>
   roomPosition(key: string): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName>
+  roomNameList(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]>
   gameObjectId(key: string): SingleOptionalArgument<void, string>
 
   interRoomPath(
@@ -73,6 +74,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {
     return new RoomNameArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public roomNameList(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
+    return new RoomNameListArgument(key, this.argumentMap.get(key) ?? null)
   }
 
   public gameObjectId(key: string): SingleOptionalArgument<void, string> {
