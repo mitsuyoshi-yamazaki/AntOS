@@ -2,8 +2,8 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { coloredText, profileLink, roomLink } from "utility/log"
-import { ProcessState } from "../process_state"
-import { ProcessDecoder } from "../process_decoder"
+import { ProcessState } from "../../process_state"
+import { ProcessDecoder } from "../../process_decoder"
 import { GclFarmProcess } from "./gcl_farm_process"
 import { OperatingSystem } from "os/os"
 import { RoomResources } from "room_resource/room_resources"
@@ -13,6 +13,7 @@ import { ListArguments } from "os/infrastructure/console_command/utility/list_ar
 import { Invader } from "game/invader"
 import { GameConstants } from "utility/constants"
 import { Timestamp } from "utility/timestamp"
+import { Position } from "prototype/room_position"
 
 ProcessDecoder.register("GclFarmManagerProcess", state => {
   return GclFarmManagerProcess.decode(state as GclFarmManagerProcessState)
@@ -21,6 +22,17 @@ ProcessDecoder.register("GclFarmManagerProcess", state => {
 type GclFarmRoom = {
   readonly roomName: RoomName
   readonly parentRoomNames: RoomName[]
+}
+
+type GclFarmPlan = {
+  storagePosition: Position,
+  terminalPosition: Position,
+  spawnPosition: Position,
+  distributorPosition: Position,
+  tower1Position: Position,
+  tower2Position: Position,
+  tower3Position: Position,
+  upgraderPositions: Position[],
 }
 
 interface GclFarmManagerProcessState extends ProcessState {
