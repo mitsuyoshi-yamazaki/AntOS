@@ -12,6 +12,8 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GclFarmRoom } from "./gcl_farm_types"
 import { validateGclFarmTarget } from "./gcl_farm_target_validator"
+import { GclFarmRoomPlan } from "./gcl_farm_planner"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("GclFarmManagerProcess", state => {
   return GclFarmManagerProcess.decode(state as GclFarmManagerProcessState)
@@ -129,13 +131,27 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
 
   /** throws */
   private addTarget(args: string[]): string {
-    const listArguments = new ListArguments(args)
-    const targetRoomName = listArguments.roomName(0, "target room name").parse()
-    const parentRoomNames = listArguments.roomNameList(1, "parent room names").parse()
+    const keywardArguments = new KeywordArguments(args)
+    const targetRoomName = keywardArguments.roomName("room_name").parse()
+    const parentRoomNames = keywardArguments.roomNameList("parent_room_names").parse()
+    const planName = keywardArguments.string("plan_name").parse()
+    const storagePosition = keywardArguments.localPosition("storage_position").parse()
+
+    const targetRoom = Game.rooms[targetRoomName]
+    if (targetRoom == null) {
+      throw `target room ${roomLink(targetRoomName)} is not visible`
+    }
+    if (targetRoom.controller == null) {
+      throw `target room ${roomLink(targetRoomName)} doesn't have a controller`
+    }
+
+    const roomPlan = GclFarmRoomPlan.createRoomPlan(targetRoom.controller, planName, storagePosition)
+    roomPlan.showVisible()
 
     const target: GclFarmRoom = {
       roomName: targetRoomName,
       parentRoomNames,
+      plan: roomPlan.positions,
     }
 
     const validationErrors = validateGclFarmTarget(target)
