@@ -138,11 +138,15 @@ export class DefenseRoomProcess implements Process, Procedural {
       if (largestTicksToLive < 200) {
         return 0
       }
+      const numberOfHealParts = hostileCreeps.reduce((result, current) => {
+        return result + current.body.filter(body => body.type === HEAL).length
+      }, 0)
+      if (numberOfHealParts <= 0) {
+        return 0
+      }
+
       if (hostileBoostedCreeps.length <= 0) {
         const defeatableHealCounts = ((roomResources.activeStructures.towers.length * 150) / GameConstants.creep.actionPower.heal) * 0.9
-        const numberOfHealParts = hostileCreeps.reduce((result, current) => {
-          return result + current.body.filter(body => body.type === HEAL).length
-        }, 0)
         if (numberOfHealParts < defeatableHealCounts) {
           return 0
         }
