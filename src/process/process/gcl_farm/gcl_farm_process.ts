@@ -276,7 +276,7 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     parentRoomResources.forEach(parentRoomResource => {
-      const body = CreepBody.create([CARRY, CARRY, CARRY], [MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK], parentRoomResource.room.energyCapacityAvailable, 6)
+      const body = CreepBody.create([CARRY, CARRY, CARRY], [MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK], parentRoomResource.room.energyCapacityAvailable, 5)
 
       World.resourcePools.addSpawnCreepRequest(parentRoomResource.room.name, {
         priority: CreepSpawnRequestPriority.Low,
@@ -382,10 +382,11 @@ export class GclFarmProcess implements Process, Procedural {
     })
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      upgraders.sort((lhs, rhs) => {
+      const nearbyUpgraders = upgraders.filter(upgrader => upgrader.pos.isNearTo(creep.pos) === true)
+      nearbyUpgraders.sort((lhs, rhs) => {
         return lhs.store.getUsedCapacity(RESOURCE_ENERGY) - rhs.store.getUsedCapacity(RESOURCE_ENERGY)
       })
-      const transferTarget = upgraders[0]
+      const transferTarget = nearbyUpgraders[0]
       if (transferTarget != null) {
         creep.transfer(transferTarget, RESOURCE_ENERGY)
       }
