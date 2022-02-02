@@ -55,12 +55,16 @@ export const GclFarmResources = {
     gclFarmInfo.set(roomName, newInfo)
   },
 
-  setDeliverTarget(roomName: RoomName, targetId: Id<GclFarmDeliverTarget>): void {
+  setDeliverTarget(roomName: RoomName, targetId: Id<GclFarmDeliverTarget> | null): void {
     const stored = gclFarmInfo.get(roomName)
     if (stored == null) {
       PrimitiveLogger.programError(`GclFarmResources.setDeliverTarget() no GCL farm info for ${roomLink(roomName)}`)
       return
     }
-    stored.deliverTargetId = targetId
+    if (targetId != null) {
+      stored.deliverTargetId = targetId
+    } else {
+      stored.deliverTargetId = null
+    }
   },
 }

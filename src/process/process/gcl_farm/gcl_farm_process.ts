@@ -170,20 +170,28 @@ export class GclFarmProcess implements Process, Procedural {
       }
       return Game.getObjectById(this.roomState.alternativeContainerId) ?? null
     }
-    const energyStore = roomResource.room.storage ?? getAlternativeContainer()
+    const energySource = roomResource.room.storage ?? getAlternativeContainer()
+    const needsEnergyTransfer = energySource == null || energySource.isActive() === true
 
-    if (energyStore == null || energyStore.isActive() === true) {
-      this.spawnDistributor(distributors, firstParentRoomResource, energyStore != null)
+    if (needsEnergyTransfer === true) {
+      this.spawnDistributor(distributors, firstParentRoomResource, energySource != null)
     }
 
-    let deliverTarget: GclFarmDeliverTarget | null = null
+    let deliverTarget = ((): GclFarmDeliverTarget | null => {
+      if (needsEnergyTransfer === true) {
+        return energySource
+      }
+      return null
+    })()
+
     distributors.forEach(creep => {
-      const result = this.runDistributor(creep, [...upgraders], energyStore)
-      if (result.isDeliverTarget === true) {
-        GclFarmResources.setDeliverTarget(this.roomName, creep.id)
+      const result = this.runDistributor(creep, [...upgraders], energySource)
+      if (result.isDeliverTarget === true && deliverTarget == null) {
         deliverTarget = creep
       }
     })
+
+    GclFarmResources.setDeliverTarget(this.roomName, deliverTarget?.id ?? null)
 
     this.spawnUpgrader(upgraders.length, upgraderMaxCount, parentRoomResources)
     for (let i = 0; i < upgraders.length; i += 1) {
@@ -192,7 +200,7 @@ export class GclFarmProcess implements Process, Procedural {
       if (creep == null || position == null) {
         continue
       }
-      this.runUpgrader(creep, roomResource.controller, position, energyStore)
+      this.runUpgrader(creep, roomResource.controller, position, energySource)
     }
 
     const energyStores = parentRoomResources.flatMap((resource): StructureStorage[] => {
@@ -207,13 +215,15 @@ export class GclFarmProcess implements Process, Procedural {
 
     if (energyStores.length > 0) {
       const haulerMaxCount = 7
-      this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
+      if (needsEnergyTransfer === true) {
+        this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
+      }
 
       energyStores.sort((lhs, rhs) => {
         return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
       })
 
-      haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, this.roomPlan.positions.distributorPosition))
+      haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget))
     } else {
       haulers.forEach(creep => creep.say("no source"))
     }
@@ -341,7 +351,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null, deliverPosition: Position): void {
+  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null): void {
     if (creep.v5task != null) {
       return
     }
@@ -351,9 +361,8 @@ export class GclFarmProcess implements Process, Procedural {
       if (creep.room.name !== this.roomName) {
         tasks.push(MoveToRoomTask.create(this.roomName, []))
       }
-      tasks.push(MoveToTask.create(decodeRoomPosition(deliverPosition, this.roomName), 0))
       if (deliverTarget != null) {
-        tasks.push(RunApiTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
+        tasks.push(MoveToTargetTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
       }
       tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
       creep.v5task = SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
