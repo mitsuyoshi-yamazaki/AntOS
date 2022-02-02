@@ -248,8 +248,13 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     switch (roomResource.controller.level) {
-    case 0:
     case 1:
+      this.checkAlternativeContainer(roomResource.room)
+      if (roomResource.activeStructures.spawns.length <= 0) {
+        this.createSpawnConstructionSite(roomResource.room)
+      }
+      return
+
     case 2:
       this.checkAlternativeContainer(roomResource.room)
       return
@@ -293,6 +298,11 @@ export class GclFarmProcess implements Process, Procedural {
       }
       this.createContainerConstructionSite(room)
     }
+  }
+
+  private createSpawnConstructionSite(room: Room): void {
+    const position = this.positions.spawnPosition
+    room.createConstructionSite(position.x, position.y, STRUCTURE_SPAWN)
   }
 
   private createContainerConstructionSite(room: Room): void {
