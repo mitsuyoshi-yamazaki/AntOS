@@ -62,19 +62,6 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     }
 
     const target = targetInfo.target
-
-    if (objects.controller.room.name === "W13S21") {  // FixMe:
-      if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
-        if (target.body.some(body => body.boost != null) === true) {
-          const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
-          if (hasAttacker !== true) {
-            this.targetId = null
-            return TaskStatus.Finished
-          }
-        }
-      }
-    }
-
     this.targetId = target.id
     World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(target, TowerPoolTaskPriority.Urgent))
 
@@ -92,6 +79,19 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
 
     if (towerPositions.length <= 0) {
       return null
+    }
+
+    if (objects.hostiles.creeps.length <= 1 && objects.hostiles.creeps[0] != null) {
+      const hostileCreep = objects.hostiles.creeps[0]
+      const healPower = CreepBody.power(hostileCreep.body, "heal")
+      const canMove = hostileCreep.getActiveBodyparts(MOVE) > 0
+      const towerMinimumDamage = towerPositions.length * 150
+      if (healPower < (towerMinimumDamage / 2)) {
+        const {min, max} = GameConstants.room.edgePosition
+        if (hostileCreep.pos.x > min && hostileCreep.pos.x < max && hostileCreep.pos.y > min && hostileCreep.pos.y < max) {
+          return calculateTargetInfo(hostileCreep, healPower, canMove, towerPositions)
+        }
+      }
     }
 
     const hostileCreeps: AnyCreep[] = [
