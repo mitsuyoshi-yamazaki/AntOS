@@ -590,8 +590,9 @@ export class GclFarmProcess implements Process, Procedural {
       }
       pickupDroppedResource()
 
+
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        if (creep.ticksToLive != null && creep.ticksToLive <= 2) {
+        if (creep.ticksToLive != null && creep.ticksToLive <= 1) {
           creep.transfer(energySource, RESOURCE_ENERGY)
           return {
             isDeliverTarget: false
