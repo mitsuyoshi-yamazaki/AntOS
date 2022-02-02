@@ -183,22 +183,21 @@ export class GclFarmProcess implements Process, Procedural {
     const haulerMaxCount = 3
     this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
 
-    const energyStore = ((): StructureStorage | null => {
-      const storages = parentRoomResources.flatMap((resource): StructureStorage[] => {
-        if (resource.activeStructures.storage != null) {
-          return [resource.activeStructures.storage]
-        }
+    const energyStores = parentRoomResources.flatMap((resource): StructureStorage[] => {
+      if (resource.activeStructures.storage == null) {
         return []
-      })
-      storages.sort((lhs, rhs) => {
-        return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
-      })
-      return storages[0] ?? null
-    })()
+      }
+      if (resource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+        return []
+      }
+      return [resource.activeStructures.storage]
+    })
 
-    if (energyStore != null) {
-      haulers.forEach(creep => this.runHauler(creep, energyStore, deliverTarget, this.roomPlan.positions.distributorPosition))
-    }
+    energyStores.sort((lhs, rhs) => {
+      return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
+    })
+
+    haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, this.roomPlan.positions.distributorPosition))
   }
 
   // ---- Hauler ---- //
@@ -226,7 +225,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runHauler(creep: Creep, energyStore: StructureStorage, deliverTarget: GclFarmDeliverTarget | null, deliverPosition: Position): void {
+  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null, deliverPosition: Position): void {
     if (creep.v5task != null) {
       return
     }
@@ -242,6 +241,15 @@ export class GclFarmProcess implements Process, Procedural {
       }
       tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
       creep.v5task = SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
+      return
+    }
+
+    const energyStore = ((): StructureStorage | null => {
+      const storageInSameRoom = energyStores.find(storage => storage.room.name === creep.room.name)
+      return storageInSameRoom ?? energyStores[0] ?? null
+    })()
+
+    if (energyStore == null) {
       return
     }
 
