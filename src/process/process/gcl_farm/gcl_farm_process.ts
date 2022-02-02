@@ -590,11 +590,14 @@ export class GclFarmProcess implements Process, Procedural {
       }
       pickupDroppedResource()
 
-      if (energySource.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        creep.withdraw(energySource, RESOURCE_ENERGY)
-      }
-
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        if (creep.ticksToLive != null && creep.ticksToLive <= 2) {
+          creep.transfer(energySource, RESOURCE_ENERGY)
+          return {
+            isDeliverTarget: false
+          }
+        }
+
         const structureToCharge = getStructureToCharge()
         if (structureToCharge != null) {
           creep.transfer(structureToCharge, RESOURCE_ENERGY)
@@ -602,6 +605,10 @@ export class GclFarmProcess implements Process, Procedural {
             isDeliverTarget: false,
           }
         }
+      }
+
+      if (energySource.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        creep.withdraw(energySource, RESOURCE_ENERGY)
       }
 
       return {
