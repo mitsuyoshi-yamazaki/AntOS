@@ -180,24 +180,26 @@ export class GclFarmProcess implements Process, Procedural {
       this.runUpgrader(creep, roomResource.controller, position)
     }
 
-    const haulerMaxCount = 3
-    this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
-
     const energyStores = parentRoomResources.flatMap((resource): StructureStorage[] => {
       if (resource.activeStructures.storage == null) {
         return []
       }
-      if (resource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+      if (resource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000) {
         return []
       }
       return [resource.activeStructures.storage]
     })
 
-    energyStores.sort((lhs, rhs) => {
-      return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
-    })
+    if (energyStores.length <= 0) {
+      const haulerMaxCount = 3
+      this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
 
-    haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, this.roomPlan.positions.distributorPosition))
+      energyStores.sort((lhs, rhs) => {
+        return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
+      })
+
+      haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, this.roomPlan.positions.distributorPosition))
+    }
   }
 
   // ---- Hauler ---- //
