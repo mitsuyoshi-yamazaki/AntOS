@@ -26,6 +26,8 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { OperatingSystem } from "os/os"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
+import { decodeRoomPosition, Position } from "prototype/room_position"
+import { defaultMoveToOptions } from "prototype/creep"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -150,12 +152,75 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     const upgraderCapacity = 100
+    const upgraderMaxCount = 4
 
     this.spawnDistributor(distributors, firstParentRoomResource)
     distributors.forEach(creep => this.runDistributor(creep, upgraders, upgraderCapacity))
+
+    this.spawnUpgrader(upgraders.length, upgraderMaxCount, parentRoomResources)
+    for (let i = 0; i < upgraders.length; i += 1) {
+      const creep = upgraders[i]
+      const position = this.positions.upgraderPositions[i % this.positions.upgraderPositions.length]
+      if (creep == null || position == null) {
+        continue
+      }
+      this.runUpgrader(creep, roomResource.controller, position)
+    }
   }
 
-  // ---- ---- //
+  // ---- Upgrader ---- //
+  private spawnUpgrader(upgraderCount: number, upgraderMaxCount: number, parentRoomResources: OwnedRoomResource[]): void {
+    if (parentRoomResources.length <= 0) {
+      return
+    }
+    if (upgraderCount >= upgraderMaxCount) {
+      return
+    }
+
+    parentRoomResources.forEach(parentRoomResource => {
+      const body = CreepBody.create([CARRY, CARRY], [MOVE, MOVE, MOVE, MOVE, WORK, WORK, WORK, WORK], parentRoomResource.room.energyCapacityAvailable, 6)
+
+      World.resourcePools.addSpawnCreepRequest(parentRoomResource.room.name, {
+        priority: CreepSpawnRequestPriority.Low,
+        numberOfCreeps: 1,
+        codename: this.codename,
+        roles: [...upgraderRoles],
+        body,
+        initialTask: null,
+        taskIdentifier: this.taskIdentifier,
+        parentRoomName: this.roomName,
+      })
+    })
+  }
+
+  private runUpgrader(creep: Creep, controller: StructureController, position: Position): void {
+    if (creep.v5task != null) {
+      return
+    }
+
+    if (creep.room.name !== this.roomName) {
+      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.roomName, []))
+      return
+    }
+
+    const {x, y} = position
+    if (creep.pos.isEqualTo(x, y) !== true) {
+      if (creep.pos.getRangeTo(controller.pos) > GameConstants.creep.actionRange.upgradeController) {
+        creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(decodeRoomPosition(position, this.roomName), 0))
+        return
+      }
+
+      const moveToOps: MoveToOpts = defaultMoveToOptions()
+      moveToOps.ignoreCreeps = true
+      creep.moveTo(x, y, moveToOps)
+    }
+
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      creep.upgradeController(controller)
+    }
+  }
+
+  // ---- Distributor ---- //
   private spawnDistributor(distributors: Creep[], parentRoomResource: OwnedRoomResource): void {
     if (distributors.length >= 2) {
       return
@@ -222,10 +287,6 @@ export class GclFarmProcess implements Process, Procedural {
         creep.transfer(upgrader, RESOURCE_ENERGY, upgraderCapacity)
       })
     }
-  }
-
-  private runUpgraders(): void {
-
   }
 
   // ---- Claim Room ---- //
