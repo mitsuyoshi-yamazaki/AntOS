@@ -91,7 +91,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         }
       }
 
-      if ((processTime % 2099) === 17) {
+      if ((processTime % 4099) === 17) {
         const rebuildLog = this.rebuildDestroyedWalls(roomResource.roomInfo)
         if (rebuildLog != null) {
           taskOutputs.logs.push(rebuildLog)
