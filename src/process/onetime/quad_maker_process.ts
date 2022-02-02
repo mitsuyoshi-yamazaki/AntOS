@@ -25,7 +25,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 const canHandleMeleeDefaultValue = false
 const defaultDamageTolerance = 0.15
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadName: string
@@ -36,6 +36,7 @@ interface QuadMakerProcessState extends ProcessState {
   readonly damageTolerance: number, // 0.0~1.0
   readonly boosts: MineralBoostConstant[],
   readonly creepSpecs: QuadCreepSpec[],
+  readonly targetIds: Id<AnyCreep | AnyStructure>[],
 }
 
 export class QuadMakerProcess implements Process, Procedural, MessageObserver {
@@ -55,6 +56,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     private damageTolerance: number,
     private boosts: MineralBoostConstant[],
     private creepSpecs: QuadCreepSpec[],
+    private targetIds: Id<AnyCreep | AnyStructure>[],
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${quadName}_${this.targetRoomName}`
   }
@@ -72,6 +74,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       damageTolerance: this.damageTolerance,
       boosts: this.boosts,
       creepSpecs: this.creepSpecs,
+      targetIds: this.targetIds,
     }
   }
 
@@ -87,6 +90,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       state.damageTolerance,
       state.boosts,
       state.creepSpecs,
+      state.targetIds ?? [],
     )
   }
 
@@ -96,7 +100,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     const damageTolerance = defaultDamageTolerance
     const boosts: MineralBoostConstant[] = []
     const creepSpec: QuadCreepSpec[] = []
-    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec)
+    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec, [])
   }
 
   public processShortDescription(): string {
@@ -346,6 +350,13 @@ commands: ${commands}
       return `set ${newCreepSpecs.length} ${CreepBody.description(body)}, ${bodyDescription}`
     }
 
+    case "target_ids": {
+      const listArguments = new ListArguments(args)
+      const targetIds = listArguments.string(0, "target ids").parse().split(",")
+      this.targetIds = targetIds as Id<AnyCreep | AnyStructure>[]
+      return `set target IDs ${this.targetIds.join(", ")}`
+    }
+
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
@@ -357,11 +368,11 @@ commands: ${commands}
     switch (argument) {
     case "handle_melee":
       this.canHandleMelee = canHandleMeleeDefaultValue
-      return `reset handle_melee=${this.canHandleMelee}`
+      return `reset handle_melee to default value ${this.canHandleMelee}`
 
     case "damage_tolerance":
       this.damageTolerance = defaultDamageTolerance
-      return `reset damage_tolerance=${this.damageTolerance}`
+      return `reset damage_tolerance to default value ${this.damageTolerance}`
 
     case "boosts":
       this.boosts = []
@@ -377,6 +388,10 @@ commands: ${commands}
       this.creepSpecs.splice(resetIndex, 1)
       return `reset index ${resetIndex}, ${this.creepSpecs.length} creeps`
     }
+
+    case "target_ids":
+      this.targetIds = []
+      return `reset target_ids ${this.targetIds.length} IDs`
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
@@ -403,10 +418,18 @@ handle melee: ${ this.canHandleMelee }
 damage tolerance: ${ this.damageTolerance }
 boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
 creeps: ${this.creepSpecs.length} creeps
+targets: ${this.targetIds.length} target IDs
       `
     }
 
-    return `${this.roomPathDescription()}\n${quadSpec.description()}`
+    const descriptions: string[] = [
+      this.roomPathDescription()
+    ]
+    if (this.targetIds.length > 0) {
+      descriptions.push(`${this.targetIds.length} targets`)
+    }
+    descriptions.push(quadSpec.description())
+    return descriptions.join("\n")
   }
 
   private verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]> {
@@ -550,7 +573,7 @@ creeps: ${this.creepSpecs.length} creeps
       const launchArguments: SpecializedQuadLaunchArguments = {
         parentRoomName: this.roomName,
         targetRoomName: this.targetRoomName,
-        predefinedTargetIds: [],
+        predefinedTargetIds: this.targetIds,
         quadSpec: result.value.quadSpec,
         frontBaseRoomName: this.frontBaseRoomName,
       }
