@@ -190,8 +190,8 @@ export class GclFarmProcess implements Process, Procedural {
       return [resource.activeStructures.storage]
     })
 
-    if (energyStores.length <= 0) {
-      const haulerMaxCount = 3
+    if (energyStores.length > 0) {
+      const haulerMaxCount = 7
       this.spawnHauler(haulers.length, haulerMaxCount, parentRoomResources)
 
       energyStores.sort((lhs, rhs) => {
@@ -199,6 +199,8 @@ export class GclFarmProcess implements Process, Procedural {
       })
 
       haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, this.roomPlan.positions.distributorPosition))
+    } else {
+      haulers.forEach(creep => creep.say("no source"))
     }
   }
 
