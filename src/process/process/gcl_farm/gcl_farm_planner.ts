@@ -1,31 +1,31 @@
-import { Position } from "prototype/room_position"
+import { decodeRoomPosition, Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { calculateAbsoluteGclFarmPositions, GclFarmPositions, getGclFarmPredefinedPlan } from "./gcl_farm_predefined_plans"
 
 export class GclFarmRoomPlan {
-  // public readonly storagePosition: RoomPosition
-  // public readonly terminalPosition: RoomPosition
-  // public readonly spawnPosition: RoomPosition
-  // public readonly distributorPosition: RoomPosition
-  // public readonly tower1Position: RoomPosition
-  // public readonly tower2Position: RoomPosition
-  // // public readonly tower3Position: RoomPosition
-  // public readonly upgraderPositions: RoomPosition[]
+  public readonly storagePosition: RoomPosition
+  public readonly terminalPosition: RoomPosition
+  public readonly spawnPosition: RoomPosition
+  public readonly distributorPosition: RoomPosition
+  public readonly tower1Position: RoomPosition
+  public readonly tower2Position: RoomPosition
+  // public readonly tower3Position: RoomPosition
+  public readonly upgraderPositions: RoomPosition[]
 
   public constructor(
     private readonly roomName: RoomName,
     readonly positions: GclFarmPositions,
   ) {
-    // this.storagePosition = decodeRoomPosition(positions.storagePosition, roomName)
-    // this.terminalPosition = decodeRoomPosition(positions.terminalPosition, roomName)
-    // this.spawnPosition = decodeRoomPosition(positions.spawnPosition, roomName)
-    // this.distributorPosition = decodeRoomPosition(positions.distributorPosition, roomName)
-    // this.tower1Position = decodeRoomPosition(positions.tower1Position, roomName)
-    // this.tower2Position = decodeRoomPosition(positions.tower2Position, roomName)
-    // // this.tower3Position = decodeRoomPosition(positions.tower3Position, roomName)
-    // this.upgraderPositions = positions.upgraderPositions.map(position => decodeRoomPosition(position, roomName))
+    this.storagePosition = decodeRoomPosition(positions.storagePosition, roomName)
+    this.terminalPosition = decodeRoomPosition(positions.terminalPosition, roomName)
+    this.spawnPosition = decodeRoomPosition(positions.spawnPosition, roomName)
+    this.distributorPosition = decodeRoomPosition(positions.distributorPosition, roomName)
+    this.tower1Position = decodeRoomPosition(positions.tower1Position, roomName)
+    this.tower2Position = decodeRoomPosition(positions.tower2Position, roomName)
+    // this.tower3Position = decodeRoomPosition(positions.tower3Position, roomName)
+    this.upgraderPositions = positions.upgraderPositions.map(position => decodeRoomPosition(position, roomName))
   }
 
   // public encode(): GclFarmRoomPlanState {

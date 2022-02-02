@@ -20,12 +20,20 @@ import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
 import { GclFarmPositions } from "./gcl_farm_predefined_plans"
 import { GclFarmRoomPlan } from "./gcl_farm_planner"
+import { CreepBody } from "utility/creep_body"
+import { GameConstants } from "utility/constants"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
 })
 
 const claimerRoles: CreepRole[] = [CreepRole.Claimer]
+const distributorRoles: CreepRole[] = [CreepRole.EnergySource]
+const upgraderRoles: CreepRole[] = [CreepRole.Worker]
+const haulerRoles: CreepRole[] = [CreepRole.Hauler]
 
 type RoomState = {
   noHostileStructures: boolean
@@ -90,9 +98,47 @@ export class GclFarmProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    const parentRoomResources = this.parentRoomNames.flatMap((roomName): OwnedRoomResource[] => {
+      const roomResource = RoomResources.getOwnedRoomResource(roomName)
+      if (roomResource == null) {
+        return []
+      }
+      return [roomResource]
+    })
+    if (parentRoomResources[0] == null) {
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    const firstParentRoomResource = parentRoomResources[0]
+
+    const claimers: Creep[] = []
+    const distributors: Creep[] = []
+    const upgraders: Creep[] = []
+    const haulers: Creep[] = []
+
+    const creepList = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    creepList.forEach(creep => {
+      if (hasNecessaryRoles(creep, haulerRoles) === true) {
+        haulers.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, upgraderRoles) === true) {
+        upgraders.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, distributorRoles) === true) {
+        distributors.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, claimerRoles) === true) {
+        claimers.push(creep)
+        return
+      }
+    })
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      // this.claimRoom() // FixMe: 実装途中のため
+      this.claimRoom(claimers.length, firstParentRoomResource.room.name)
       return
     }
 
@@ -100,12 +146,85 @@ export class GclFarmProcess implements Process, Procedural {
       this.destroyHostileStructures(roomResource.room)
     }
 
+    const upgraderCapacity = 100
+
+    this.spawnDistributor(distributors, firstParentRoomResource)
+    distributors.forEach(creep => this.runDistributor(creep, upgraders, upgraderCapacity))
   }
 
-  private claimRoom(): void {
-    const claimerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, creep => hasNecessaryRoles(creep, claimerRoles))
+  // ---- ---- //
+  private spawnDistributor(distributors: Creep[], parentRoomResource: OwnedRoomResource): void {
+    if (distributors.length >= 2) {
+      return
+    }
+    const body = CreepBody.create([MOVE], [CARRY], parentRoomResource.room.energyCapacityAvailable, 40)
+    const shouldSpawn = ((): boolean => {
+      const creep = distributors[0]
+      if (creep == null) {
+        return true
+      }
+      if (creep.ticksToLive == null) {
+        return false
+      }
+      const threshold = CreepBody.spawnTime(body) + (GameConstants.room.size * 1.5)
+      if (creep.ticksToLive < threshold) {
+        return true
+      }
+      return false
+    })()
+
+    if (shouldSpawn !== true) {
+      return
+    }
+
+    World.resourcePools.addSpawnCreepRequest(parentRoomResource.room.name, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [...distributorRoles],
+      body,
+      initialTask: null,
+      taskIdentifier: this.taskIdentifier,
+      parentRoomName: this.roomName,
+    })
+  }
+
+  private runDistributor(creep: Creep, upgraders: Creep[], upgraderCapacity: number): void {
+    if (creep.v5task != null) {
+      return
+    }
+
+    if (creep.room.name !== this.roomName) {
+      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.roomName, []))
+      return
+    }
+
+    if (creep.pos.isEqualTo(this.roomPlan.storagePosition) !== true) {  // TODO: Storageを建てたらdistributorPositionに移動させる
+      creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.storagePosition, 0, { ignoreSwamp: true }))
+      return
+    }
+
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      // 待機
+      return
+    }
+
+    upgraders.forEach(upgrader => {
+      if (creep.pos.isNearTo(upgrader.pos) !== true) {
+        return
+      }
+      creep.transfer(upgrader, RESOURCE_ENERGY, upgraderCapacity)
+    })
+  }
+
+  private runUpgraders(): void {
+
+  }
+
+  // ---- Claim Room ---- //
+  private claimRoom(claimerCount: number, parentRoomName: RoomName): void {
     if (claimerCount <= 0) {
-      this.spawnClaimer()
+      this.spawnClaimer(parentRoomName)
     }
 
     World.resourcePools.assignTasks(
@@ -117,14 +236,7 @@ export class GclFarmProcess implements Process, Procedural {
     )
   }
 
-  private spawnClaimer(): void {
-    const parentRoomName = this.parentRoomNames[0]
-    if (parentRoomName == null) {
-      if ((Game.time % 29) === 11) {
-        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} no parent rooms`)
-      }
-      return
-    }
+  private spawnClaimer(parentRoomName: RoomName): void {
     World.resourcePools.addSpawnCreepRequest(parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,

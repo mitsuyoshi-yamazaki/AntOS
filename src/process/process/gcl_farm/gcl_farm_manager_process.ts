@@ -43,16 +43,6 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
     private farmProcessId: ProcessId | null
   ) {
     this.identifier = `${this.constructor.name}_${this.name}`
-
-    if (farmProcessId != null) {
-      const farmProcess = OperatingSystem.os.processOf(farmProcessId)
-      if (farmProcess instanceof GclFarmProcess) {
-        this.farmProcess = farmProcess
-      } else {
-        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} invalid child process ${farmProcess?.processId}`)
-        this.farmProcessId = null
-      }
-    }
   }
 
   public encode(): GclFarmManagerProcessState {
@@ -199,6 +189,16 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
   }
 
   public runOnTick(): void {
+    if (this.farmProcessId != null) {
+      const farmProcess = OperatingSystem.os.processOf(this.farmProcessId) // constructor内で（=OSの起動中）行うとchild processの方が起動が遅いため常に失敗する
+      if (farmProcess instanceof GclFarmProcess) {
+        this.farmProcess = farmProcess
+      } else {
+        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} invalid child process ${farmProcess}, ${farmProcess?.processId}, ${this.farmProcessId}`)
+        this.farmProcessId = null
+      }
+    }
+
     if (this.farmProcess == null) {
       this.launchFarm()
       return
@@ -236,9 +236,8 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
 
     const target = this.targetRooms[this.targetRoomIndex]
     if (target == null) {
-      if ((Game.time % 37) === 11) {
-        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} cannot retrieve target, ${this.targetRooms.length} targets, index: ${this.targetRoomIndex}`)
-      }
+      PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} cannot retrieve target, ${this.targetRooms.length} targets, index: ${this.targetRoomIndex}`)
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
     const targetRoom = Game.rooms[target.roomName]
