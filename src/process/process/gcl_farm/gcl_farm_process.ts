@@ -531,7 +531,11 @@ export class GclFarmProcess implements Process, Procedural {
       chargeableStructures.sort((lhs, rhs) => {
         return rhs.store.getFreeCapacity(RESOURCE_ENERGY) - lhs.store.getFreeCapacity(RESOURCE_ENERGY)
       })
-      return chargeableStructures[0] ?? null
+      const structure = chargeableStructures[0]
+      if (structure == null || structure.store.getFreeCapacity(RESOURCE_ENERGY) < 50) {
+        return null
+      }
+      return structure
     }
 
     if (energySource == null) {  // Farmの立ち上げ中
