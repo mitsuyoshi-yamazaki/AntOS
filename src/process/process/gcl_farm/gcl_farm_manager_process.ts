@@ -14,6 +14,8 @@ import { GclFarmRoom } from "./gcl_farm_types"
 import { validateGclFarmTarget } from "./gcl_farm_target_validator"
 import { GclFarmRoomPlan } from "./gcl_farm_planner"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { GclFarmResources } from "room_resource/gcl_farm_resources"
+import { describePosition } from "prototype/room_position"
 
 ProcessDecoder.register("GclFarmManagerProcess", state => {
   return GclFarmManagerProcess.decode(state as GclFarmManagerProcessState)
@@ -71,7 +73,15 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
     ]
 
     if (this.farmProcess != null) {
-      descriptions.push(`farming at ${roomLink(this.farmProcess.roomName)}`)
+      const farmRoomName = this.farmProcess.roomName
+      const farmDescriptions: string[] = [
+        `farming at ${roomLink(farmRoomName)}`
+      ]
+      const farmInfo = GclFarmResources.getFarmInfo(farmRoomName)
+      if (farmInfo != null) {
+        farmDescriptions.push(`deliver pos: ${describePosition(farmInfo.deliverDestinationPosition)}, deliver target ID: ${farmInfo.deliverTargetId}`)
+      }
+      descriptions.push(farmDescriptions.join(", "))
     } else {
       descriptions.push("no farm")
     }
@@ -151,7 +161,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
     }
 
     this.targetRooms.push(target)
-    RoomResources.addFarmRoom(targetRoomName)
+    GclFarmResources.addFarmRoom(targetRoomName)
 
     return `Added ${roomLink(targetRoomName)}, parents: ${parentRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
@@ -183,7 +193,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       this.targetRoomIndex -= 1
     }
 
-    RoomResources.removeFarmRoom(targetRoomName)
+    GclFarmResources.removeFarmRoom(targetRoomName)
 
     return `removed ${roomLink(targetRoomName)}, ${this.targetRooms.length} targets, index: ${this.targetRoomIndex}`
   }

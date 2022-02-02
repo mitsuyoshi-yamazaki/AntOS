@@ -25,6 +25,7 @@ import { GameConstants } from "utility/constants"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { OperatingSystem } from "os/os"
+import { GclFarmResources } from "room_resource/gcl_farm_resources"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -66,6 +67,8 @@ export class GclFarmProcess implements Process, Procedural {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
     this.roomPlan = new GclFarmRoomPlan(roomName, positions)
+
+    GclFarmResources.setDeliverDestination(this.roomName, this.roomPlan.positions.distributorPosition)
   }
 
   public encode(): GclFarmProcessState {
@@ -204,17 +207,21 @@ export class GclFarmProcess implements Process, Procedural {
       return
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      // 待機
-      return
-    }
+    GclFarmResources.setDeliverTarget(this.roomName, creep.id)
 
-    upgraders.forEach(upgrader => {
-      if (creep.pos.isNearTo(upgrader.pos) !== true) {
-        return
-      }
-      creep.transfer(upgrader, RESOURCE_ENERGY, upgraderCapacity)
+    const droppedResources = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: {resourceType: RESOURCE_ENERGY}})
+    droppedResources.forEach(droppedResource => {
+      creep.pickup(droppedResource)
     })
+
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      upgraders.forEach(upgrader => {
+        if (creep.pos.isNearTo(upgrader.pos) !== true) {
+          return
+        }
+        creep.transfer(upgrader, RESOURCE_ENERGY, upgraderCapacity)
+      })
+    }
   }
 
   private runUpgraders(): void {

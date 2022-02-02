@@ -13,6 +13,10 @@ export type Position = {
   readonly y: number
 }
 
+export function describePosition(position: Position): string {
+  return `${position.x},${position.y}`
+}
+
 export type RoomPositionState = {
   readonly x: number
   readonly y: number

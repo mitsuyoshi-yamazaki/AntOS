@@ -26,6 +26,9 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { decodeRoomPosition } from "prototype/room_position"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -221,6 +224,24 @@ export class RemoteRoomHaulerTask extends Task {
       if (container != null && container.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(WithdrawResourceApiWrapper.create(container, RESOURCE_ENERGY))
       }
+    }
+
+    const gclFarmInfo = GclFarmResources.getFarmInfo(this.targetRoomName)
+    if (gclFarmInfo != null && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {  // energy以外のresourceを拾っている場合を除外
+      const deliverTarget = ((): GclFarmDeliverTarget | null => {
+        if (gclFarmInfo.deliverTargetId == null) {
+          return null
+        }
+        return Game.getObjectById(gclFarmInfo.deliverTargetId) ?? null
+      } )()
+      const tasks: CreepTask[] = [
+        MoveToTask.create(decodeRoomPosition(gclFarmInfo.deliverDestinationPosition, this.targetRoomName), 0),
+      ]
+      if (deliverTarget != null) {
+        tasks.push(RunApiTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
+      }
+      tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
+      return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
     }
 
     if (objects.activeStructures.storage != null) {
