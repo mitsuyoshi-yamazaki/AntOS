@@ -34,6 +34,7 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { Sign } from "game/sign"
+import { EnergyChargeableStructure } from "prototype/room_object"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -49,6 +50,7 @@ const haulerRoles: CreepRole[] = [CreepRole.Hauler]
 type RoomState = {
   noHostileStructures: boolean
   alternativeContainerId: Id<StructureContainer> | null
+  constructingStorage: boolean
 }
 
 interface GclFarmProcessState extends ProcessState {
@@ -104,6 +106,7 @@ export class GclFarmProcess implements Process, Procedural {
     const roomState: RoomState = {
       noHostileStructures,
       alternativeContainerId: null,
+      constructingStorage: false,
     }
     return new GclFarmProcess(Game.time, processId, targetRoom.name, parentRoomNames, positions, roomState)
   }
@@ -231,8 +234,16 @@ export class GclFarmProcess implements Process, Procedural {
 
   // ---- Build ---- //
   private buildStructures(roomResource: OwnedRoomResource): void {
-    if (roomResource.constructionSites.length > 0) {
+    const constructionSite = roomResource.constructionSites[0]
+    if (constructionSite != null) {
+      if (this.roomState.constructingStorage !== true && constructionSite.structureType === STRUCTURE_STORAGE) {
+        this.roomState.constructingStorage = true
+      }
       return
+    }
+
+    if (this.roomState.constructingStorage === true && roomResource.activeStructures.storage != null) {
+      this.roomState.constructingStorage = false
     }
 
     switch (roomResource.controller.level) {
@@ -509,9 +520,18 @@ export class GclFarmProcess implements Process, Procedural {
       creep.pickup(droppedResource)
     }
 
+    const getStructureToCharge = (): EnergyChargeableStructure | null => {
+      const chargeableStructures = roomResource.activeStructures.chargeableStructures.filter(structure => structure.pos.getRangeTo(creep.pos) <= 1)
+      chargeableStructures.sort((lhs, rhs) => {
+        return rhs.store.getFreeCapacity(RESOURCE_ENERGY) - lhs.store.getFreeCapacity(RESOURCE_ENERGY)
+      })
+      return chargeableStructures[0] ?? null
+    }
+
     if (energySource == null) {  // Farmの立ち上げ中
-      if (creep.pos.isEqualTo(this.roomPlan.storagePosition) !== true) {
-        creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.storagePosition, 0, { ignoreSwamp: true }))
+      const position = this.roomState.constructingStorage === true ? this.roomPlan.distributorPosition : this.roomPlan.storagePosition
+      if (creep.pos.isEqualTo(position) !== true) {
+        creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(position, 0, { ignoreSwamp: true }))
         return {
           isDeliverTarget: false,
         }
@@ -519,6 +539,14 @@ export class GclFarmProcess implements Process, Procedural {
       pickupDroppedResource()
 
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        const structureToCharge = getStructureToCharge()
+        if (structureToCharge != null) {
+          creep.transfer(structureToCharge, RESOURCE_ENERGY)
+          return {
+            isDeliverTarget: true,
+          }
+        }
+
         const nearbyUpgraders = upgraders.filter(upgrader => upgrader.pos.isNearTo(creep.pos) === true)
         nearbyUpgraders.sort((lhs, rhs) => {
           return lhs.store.getUsedCapacity(RESOURCE_ENERGY) - rhs.store.getUsedCapacity(RESOURCE_ENERGY)
@@ -547,13 +575,12 @@ export class GclFarmProcess implements Process, Procedural {
       }
 
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-        const chargeableStructures = roomResource.activeStructures.chargeableStructures.filter(structure => structure.pos.getRangeTo(creep.pos) <= 1)
-        chargeableStructures.sort((lhs, rhs) => {
-          return rhs.store.getFreeCapacity(RESOURCE_ENERGY) - lhs.store.getFreeCapacity(RESOURCE_ENERGY)
-        })
-        const structureToCharge = chargeableStructures[0]
+        const structureToCharge = getStructureToCharge()
         if (structureToCharge != null) {
           creep.transfer(structureToCharge, RESOURCE_ENERGY)
+          return {
+            isDeliverTarget: false,
+          }
         }
       }
 
