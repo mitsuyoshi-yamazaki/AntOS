@@ -46,6 +46,7 @@ const haulerRoles: CreepRole[] = [CreepRole.Hauler]
 
 type RoomState = {
   noHostileStructures: boolean
+  alternativeContainerId: Id<StructureContainer> | null
 }
 
 interface GclFarmProcessState extends ProcessState {
@@ -100,6 +101,7 @@ export class GclFarmProcess implements Process, Procedural {
 
     const roomState: RoomState = {
       noHostileStructures,
+      alternativeContainerId: null,
     }
     return new GclFarmProcess(Game.time, processId, targetRoom.name, parentRoomNames, positions, roomState)
   }
@@ -153,6 +155,8 @@ export class GclFarmProcess implements Process, Procedural {
       return
     }
 
+    this.buildStructures(roomResource)
+
     if (this.roomState.noHostileStructures !== true) {
       this.destroyHostileStructures(roomResource.room)
     }
@@ -202,6 +206,66 @@ export class GclFarmProcess implements Process, Procedural {
     } else {
       haulers.forEach(creep => creep.say("no source"))
     }
+  }
+
+  // ---- Build ---- //
+  private buildStructures(roomResource: OwnedRoomResource): void {
+    if (roomResource.constructionSites.length > 0) {
+      return
+    }
+
+    switch (roomResource.controller.level) {
+    case 0:
+    case 1:
+    case 2:
+      return
+
+    case 3:
+      if (roomResource.activeStructures.towers.length <= 0) {
+        this.createTowerConstructionSite(roomResource.room)
+      }
+      return
+
+    case 4:
+      if (roomResource.activeStructures.storage == null) {
+        this.createStorageConstructionSite(roomResource.room)
+      }
+      return
+
+    case 5:
+      if (roomResource.activeStructures.towers.length <= 1) {
+        this.createTowerConstructionSite(roomResource.room)
+      }
+      return
+
+    case 6:
+    case 7:
+      // TODO: tower三つ目
+      return
+
+    case 8:
+    default:
+      return
+    }
+  }
+
+  private createTowerConstructionSite(room: Room): void {
+    const positions: Position[] = [
+      this.positions.tower1Position,
+      this.positions.tower2Position,
+    ]
+
+    for (const position of positions) {
+      const result = room.createConstructionSite(position.x, position.y, STRUCTURE_TOWER)
+      if (result === OK) {
+        return
+      }
+    }
+  }
+
+  private createStorageConstructionSite(room: Room): void {
+    const position = this.positions.storagePosition
+    room.createConstructionSite(position.x, position.y, STRUCTURE_STORAGE)
   }
 
   // ---- Hauler ---- //
@@ -314,7 +378,12 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      creep.upgradeController(controller)
+      const constructionSite = creep.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, GameConstants.creep.actionRange.build)[0]
+      if (constructionSite != null) {
+        creep.build(constructionSite)
+      } else {
+        creep.upgradeController(controller)
+      }
     }
   }
 
