@@ -135,7 +135,10 @@ export function createCreepBody(baseBody: BodyPartConstant[], bodyUnit: BodyPart
 
   const baseCost = bodyCost(baseBody)
   const unitCost = bodyCost(bodyUnit)
-  const maxCount = Math.min(Math.floor((energyCapacity - baseCost) / unitCost), maxUnitCount)
+
+  const maxCountBasedOnEnergy = Math.floor((energyCapacity - baseCost) / unitCost)
+  const maxCountBasedOnBody = Math.floor((GameConstants.creep.body.bodyPartMaxCount - baseBody.length) / bodyUnit.length)
+  const maxCount = Math.min(maxCountBasedOnEnergy, maxCountBasedOnBody, maxUnitCount)
 
   for (let i = 0; i < maxCount; i += 1) {
     result.unshift(...bodyUnit)
