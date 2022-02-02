@@ -218,12 +218,14 @@ export class GclFarmProcess implements Process, Procedural {
     case 0:
     case 1:
     case 2:
+      this.checkAlternativeContainer(roomResource.room)
       return
 
     case 3:
       if (roomResource.activeStructures.towers.length <= 0) {
         this.createTowerConstructionSite(roomResource.room)
       }
+      this.checkAlternativeContainer(roomResource.room)
       return
 
     case 4:
@@ -249,6 +251,22 @@ export class GclFarmProcess implements Process, Procedural {
     }
   }
 
+  private checkAlternativeContainer(room: Room): void {
+    if (room.storage == null && this.roomState.alternativeContainerId == null) {
+      const container = this.roomPlan.storagePosition.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_CONTAINER}})[0] as StructureContainer | null
+      if (container != null) {
+        this.roomState.alternativeContainerId = container.id
+        return
+      }
+      this.createContainerConstructionSite(room)
+    }
+  }
+
+  private createContainerConstructionSite(room: Room): void {
+    const position = this.positions.storagePosition
+    room.createConstructionSite(position.x, position.y, STRUCTURE_CONTAINER)
+  }
+
   private createTowerConstructionSite(room: Room): void {
     const positions: Position[] = [
       this.positions.tower1Position,
@@ -264,8 +282,27 @@ export class GclFarmProcess implements Process, Procedural {
   }
 
   private createStorageConstructionSite(room: Room): void {
-    const position = this.positions.storagePosition
-    room.createConstructionSite(position.x, position.y, STRUCTURE_STORAGE)
+    const position = this.roomPlan.storagePosition
+    const result = room.createConstructionSite(position, STRUCTURE_STORAGE)
+
+    if (result === ERR_INVALID_TARGET) {
+      const container = position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_CONTAINER } })[0]
+      if (container != null) {
+        container.destroy()
+        this.roomState.alternativeContainerId = null
+        return
+      }
+
+      const constructionSite = position.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)[0]
+      if (constructionSite != null) {
+        if (constructionSite.structureType === STRUCTURE_STORAGE) {
+          PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} trying to remove storage construction site`)
+          return
+        }
+        constructionSite.remove()
+        return
+      }
+    }
   }
 
   // ---- Hauler ---- //
@@ -373,7 +410,7 @@ export class GclFarmProcess implements Process, Procedural {
       }
 
       const moveToOps: MoveToOpts = defaultMoveToOptions()
-      moveToOps.ignoreCreeps = true
+      moveToOps.ignoreCreeps = creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 // おかしな場所で渋滞している場合はエネルギーを得られないだろうという想定
       creep.moveTo(x, y, moveToOps)
     }
 

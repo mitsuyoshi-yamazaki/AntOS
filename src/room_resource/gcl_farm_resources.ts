@@ -21,6 +21,10 @@ export const GclFarmResources = {
     return [...Memory.gclFarm.roomNames]
   },
 
+  isGclFarm(roomName: RoomName): boolean {
+    return Memory.gclFarm.roomNames.includes(roomName)
+  },
+
   addFarmRoom(roomName: RoomName): void {
     Memory.gclFarm.roomNames.push(roomName)
   },
