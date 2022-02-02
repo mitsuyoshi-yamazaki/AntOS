@@ -233,15 +233,18 @@ export class RemoteRoomHaulerTask extends Task {
           return null
         }
         return Game.getObjectById(gclFarmInfo.deliverTargetId) ?? null
-      } )()
-      const tasks: CreepTask[] = [
-        MoveToTask.create(decodeRoomPosition(gclFarmInfo.deliverDestinationPosition, this.targetRoomName), 0),
-      ]
-      if (deliverTarget != null) {
-        tasks.push(RunApiTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
+      })()
+
+      if (deliverTarget == null || ((deliverTarget instanceof StructureStorage) && deliverTarget.isActive() === true)) {
+        const tasks: CreepTask[] = [
+          MoveToTask.create(decodeRoomPosition(gclFarmInfo.deliverDestinationPosition, this.targetRoomName), 0),
+        ]
+        if (deliverTarget != null) {
+          tasks.push(RunApiTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
+        }
+        tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
+        return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
       }
-      tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
-      return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
     }
 
     if (objects.activeStructures.storage != null) {

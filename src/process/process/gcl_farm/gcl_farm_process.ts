@@ -39,6 +39,8 @@ ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
 })
 
+type EnergyStoreType = StructureStorage | StructureContainer
+
 const claimerRoles: CreepRole[] = [CreepRole.Claimer]
 const distributorRoles: CreepRole[] = [CreepRole.EnergySource]
 const upgraderRoles: CreepRole[] = [CreepRole.Worker]
@@ -162,12 +164,21 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     const upgraderMaxCount = 4
+    const getAlternativeContainer = (): StructureContainer | null => {
+      if (this.roomState.alternativeContainerId == null) {
+        return null
+      }
+      return Game.getObjectById(this.roomState.alternativeContainerId) ?? null
+    }
+    const energyStore = roomResource.room.storage ?? getAlternativeContainer()
 
-    this.spawnDistributor(distributors, firstParentRoomResource)
+    if (energyStore == null || energyStore.isActive() === true) {
+      this.spawnDistributor(distributors, firstParentRoomResource, energyStore != null)
+    }
 
     let deliverTarget: GclFarmDeliverTarget | null = null
     distributors.forEach(creep => {
-      const result = this.runDistributor(creep, [...upgraders])
+      const result = this.runDistributor(creep, [...upgraders], energyStore)
       if (result.isDeliverTarget === true) {
         GclFarmResources.setDeliverTarget(this.roomName, creep.id)
         deliverTarget = creep
@@ -181,7 +192,7 @@ export class GclFarmProcess implements Process, Procedural {
       if (creep == null || position == null) {
         continue
       }
-      this.runUpgrader(creep, roomResource.controller, position)
+      this.runUpgrader(creep, roomResource.controller, position, energyStore)
     }
 
     const energyStores = parentRoomResources.flatMap((resource): StructureStorage[] => {
@@ -392,7 +403,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runUpgrader(creep: Creep, controller: StructureController, position: Position): void {
+  private runUpgrader(creep: Creep, controller: StructureController, position: Position, energyStore: EnergyStoreType | null): void {
     if (creep.v5task != null) {
       return
     }
@@ -422,14 +433,20 @@ export class GclFarmProcess implements Process, Procedural {
         creep.upgradeController(controller)
       }
     }
+
+    if (energyStore != null && energyStore.store.getUsedCapacity(RESOURCE_ENERGY) > 0 && creep.store.getFreeCapacity() > 0) {
+      creep.withdraw(energyStore, RESOURCE_ENERGY)
+    }
   }
 
   // ---- Distributor ---- //
-  private spawnDistributor(distributors: Creep[], parentRoomResource: OwnedRoomResource): void {
+  private spawnDistributor(distributors: Creep[], parentRoomResource: OwnedRoomResource, hasEnergyStore: boolean): void {
     if (distributors.length >= 2) {
       return
     }
-    const body = CreepBody.create([MOVE], [CARRY], parentRoomResource.room.energyCapacityAvailable, 40)
+
+    const maxBodyUnit = hasEnergyStore ? 16 : 40
+    const body = CreepBody.create([MOVE], [CARRY], parentRoomResource.room.energyCapacityAvailable, maxBodyUnit)
     const shouldSpawn = ((): boolean => {
       const creep = distributors[0]
       if (creep == null) {
@@ -461,7 +478,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runDistributor(creep: Creep, upgraders: Creep[]): {isDeliverTarget: boolean} {
+  private runDistributor(creep: Creep, upgraders: Creep[], energyStore: EnergyStoreType | null): {isDeliverTarget: boolean} {
     if (creep.v5task != null) {
       return {
         isDeliverTarget: false,
@@ -475,31 +492,61 @@ export class GclFarmProcess implements Process, Procedural {
       }
     }
 
-    if (creep.pos.isEqualTo(this.roomPlan.storagePosition) !== true) {  // TODO: Storageを建てたらdistributorPositionに移動させる
-      creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.storagePosition, 0, { ignoreSwamp: true }))
+    const pickupDroppedResource = (): void => {
+      const droppedResources = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: { resourceType: RESOURCE_ENERGY } })
+      droppedResources.forEach(droppedResource => {
+        creep.pickup(droppedResource)
+      })
+    }
+
+    if (energyStore == null) {  // Farmの立ち上げ中
+      if (creep.pos.isEqualTo(this.roomPlan.storagePosition) !== true) {
+        creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.storagePosition, 0, { ignoreSwamp: true }))
+        return {
+          isDeliverTarget: false,
+        }
+      }
+      pickupDroppedResource()
+
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        const nearbyUpgraders = upgraders.filter(upgrader => upgrader.pos.isNearTo(creep.pos) === true)
+        nearbyUpgraders.sort((lhs, rhs) => {
+          return lhs.store.getUsedCapacity(RESOURCE_ENERGY) - rhs.store.getUsedCapacity(RESOURCE_ENERGY)
+        })
+        const transferTarget = nearbyUpgraders[0]
+        if (transferTarget != null) {
+          creep.transfer(transferTarget, RESOURCE_ENERGY)
+        }
+      }
+
+      return {
+        isDeliverTarget: true,
+      }
+
+    } else {  // Storage | Containerが存在する
+      if (creep.pos.isEqualTo(this.roomPlan.distributorPosition) !== true) {
+        creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.distributorPosition, 0, { ignoreSwamp: true }))
+        return {
+          isDeliverTarget: false,
+        }
+      }
+      pickupDroppedResource()
+
+      if (energyStore.isActive() === true) {
+        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          creep.transfer(energyStore, RESOURCE_ENERGY)
+        }
+
+      } else {  // Farmを再立ち上げ中（StorageのRCL不足）
+        creep.say("nth to do")
+        if ((Game.time % 41) === 7) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} distributor nothing to do`)
+        }
+      }
+
       return {
         isDeliverTarget: false,
       }
-    }
-
-    const droppedResources = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: {resourceType: RESOURCE_ENERGY}})
-    droppedResources.forEach(droppedResource => {
-      creep.pickup(droppedResource)
-    })
-
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      const nearbyUpgraders = upgraders.filter(upgrader => upgrader.pos.isNearTo(creep.pos) === true)
-      nearbyUpgraders.sort((lhs, rhs) => {
-        return lhs.store.getUsedCapacity(RESOURCE_ENERGY) - rhs.store.getUsedCapacity(RESOURCE_ENERGY)
-      })
-      const transferTarget = nearbyUpgraders[0]
-      if (transferTarget != null) {
-        creep.transfer(transferTarget, RESOURCE_ENERGY)
-      }
-    }
-
-    return {
-      isDeliverTarget: true,
     }
   }
 

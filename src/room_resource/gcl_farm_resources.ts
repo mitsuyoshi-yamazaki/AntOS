@@ -7,7 +7,7 @@ export type GclFarmMemory = {
   roomNames: RoomName[]
 }
 
-export type GclFarmDeliverTarget = Creep | StructureStorage
+export type GclFarmDeliverTarget = Creep | StructureContainer | StructureStorage
 type GclFarmInfo = {
   deliverDestinationPosition: Position
   deliverTargetId: Id<GclFarmDeliverTarget> | null
