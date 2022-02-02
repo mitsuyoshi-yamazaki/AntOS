@@ -30,11 +30,11 @@ import { decodeRoomPosition, Position } from "prototype/room_position"
 import { defaultMoveToOptions } from "prototype/creep"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
-import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { Sign } from "game/sign"
 import { EnergyChargeableStructure } from "prototype/room_object"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -226,7 +226,7 @@ export class GclFarmProcess implements Process, Procedural {
         return rhs.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.store.getUsedCapacity(RESOURCE_ENERGY)
       })
 
-      haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget))
+      haulers.forEach(creep => this.runHauler(creep, energyStores, deliverTarget, roomResource))
     } else {
       haulers.forEach(creep => creep.say("no source"))
     }
@@ -362,7 +362,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null): void {
+  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null, roomResource: OwnedRoomResource): void {
     if (creep.v5task != null) {
       return
     }
@@ -375,8 +375,13 @@ export class GclFarmProcess implements Process, Procedural {
       if (deliverTarget != null) {
         tasks.push(MoveToTargetTask.create(TransferEnergyApiWrapper.create(deliverTarget)))
       }
-      tasks.push(RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)))
       creep.v5task = SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
+      return
+    }
+
+    const droppedResource = creep.pos.findClosestByRange(roomResource.droppedResources)
+    if (droppedResource != null) {
+      creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(PickupApiWrapper.create(droppedResource)))
       return
     }
 

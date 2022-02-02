@@ -28,7 +28,6 @@ import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
-import { decodeRoomPosition } from "prototype/room_position"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -238,7 +237,6 @@ export class RemoteRoomHaulerTask extends Task {
       if (deliverTarget != null) {
         const tasks: CreepTask[] = [
           MoveToTargetTask.create(TransferEnergyApiWrapper.create(deliverTarget)),
-          RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY)),
         ]
         return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
       }
