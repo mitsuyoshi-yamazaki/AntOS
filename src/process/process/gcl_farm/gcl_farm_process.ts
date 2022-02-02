@@ -34,7 +34,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { Sign } from "game/sign"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
-import { TowerPoolTaskPriority } from "world_info/resource_pool/tower_resource_pool"
+import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -689,24 +689,26 @@ export class GclFarmProcess implements Process, Procedural {
   private runTowers(roomResources: OwnedRoomResource): void {
     const hostileCreep = roomResources.hostiles.creeps[0]
     if (hostileCreep != null) {
-      World.resourcePools.addTowerTask(this.roomName, {
-        towerTaskType: "attack",
-        target: hostileCreep,
-        priority: TowerPoolTaskPriority.Urgent,
-      })
+      World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(hostileCreep, TowerPoolTaskPriority.Urgent))
       return
     }
 
     const hostilePowerCreep = roomResources.hostiles.powerCreeps[0]
     if (hostilePowerCreep != null) {
-      World.resourcePools.addTowerTask(this.roomName, {
-        towerTaskType: "attack",
-        target: hostilePowerCreep,
-        priority: TowerPoolTaskPriority.Urgent,
-      })
+      World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(hostilePowerCreep, TowerPoolTaskPriority.Urgent))
       return
     }
 
+    const damagedCreep = roomResources.myCreeps.damagedCreeps[0]
+    if (damagedCreep != null) {
+      World.resourcePools.addTowerTask(this.roomName, TowerTask.Heal(damagedCreep, TowerPoolTaskPriority.Low))
+      return
+    }
 
+    const damagedStructure = roomResources.damagedStructures[0] ?? roomResources.decayedStructures[0]
+    if (damagedStructure != null) {
+      World.resourcePools.addTowerTask(this.roomName, TowerTask.Repair(damagedStructure, TowerPoolTaskPriority.Low))
+      return
+    }
   }
 }
