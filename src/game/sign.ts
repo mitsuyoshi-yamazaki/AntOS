@@ -19,4 +19,8 @@ export const Sign = {
   signForHostileRoom(): string {
     return "🍣"
   },
+
+  signForGclFarm(): string {
+    return `GCL Farm v${SystemInfo.application.version} at ${Game.time}`
+  }
 }

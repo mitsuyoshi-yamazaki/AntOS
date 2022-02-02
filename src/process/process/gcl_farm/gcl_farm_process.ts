@@ -33,6 +33,7 @@ import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/
 import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { Sign } from "game/sign"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -393,7 +394,7 @@ export class GclFarmProcess implements Process, Procedural {
       this.roomName,
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
-      creep => this.claimerRole(creep),
+      creep => this.claimerTask(creep),
       creep => hasNecessaryRoles(creep, claimerRoles),
     )
   }
@@ -411,7 +412,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private claimerRole(creep: Creep): CreepTask | null {
+  private claimerTask(creep: Creep): CreepTask | null {
     if (creep.room.name !== this.roomName) {
       const waypoints = GameMap.getWaypoints(creep.room.name, this.roomName) ?? []
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.roomName, waypoints))
@@ -437,7 +438,16 @@ export class GclFarmProcess implements Process, Procedural {
       return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(controller)))
     }
 
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(controller)))
+    const sign = ((): string | undefined => {
+      if (controller.sign == null || controller.sign.username !== Game.user.name) {
+        return Sign.signForGclFarm()
+      }
+      if (controller.sign.text.includes("Farm") !== true) {
+        return Sign.signForGclFarm()
+      }
+      return undefined
+    })()
+    return FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(controller, sign)))
   }
 
   private destroyHostileStructures(room: Room): void {
