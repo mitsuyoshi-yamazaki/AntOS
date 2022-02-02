@@ -185,7 +185,7 @@ export class GclFarmProcess implements Process, Procedural {
     })()
 
     distributors.forEach(creep => {
-      const result = this.runDistributor(creep, [...upgraders], energySource)
+      const result = this.runDistributor(creep, [...upgraders], energySource, roomResource)
       if (result.isDeliverTarget === true && deliverTarget == null) {
         deliverTarget = creep
       }
@@ -487,7 +487,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runDistributor(creep: Creep, upgraders: Creep[], energyStore: EnergyStoreType | null): {isDeliverTarget: boolean} {
+  private runDistributor(creep: Creep, upgraders: Creep[], energySource: EnergyStoreType | null, roomResource: OwnedRoomResource): {isDeliverTarget: boolean} {
     if (creep.v5task != null) {
       return {
         isDeliverTarget: false,
@@ -502,13 +502,14 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     const pickupDroppedResource = (): void => {
-      const droppedResources = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: { resourceType: RESOURCE_ENERGY } })
-      droppedResources.forEach(droppedResource => {
-        creep.pickup(droppedResource)
-      })
+      const droppedResource = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1, { filter: { resourceType: RESOURCE_ENERGY } })[0]
+      if (droppedResource == null) {
+        return
+      }
+      creep.pickup(droppedResource)
     }
 
-    if (energyStore == null) {  // Farmの立ち上げ中
+    if (energySource == null) {  // Farmの立ち上げ中
       if (creep.pos.isEqualTo(this.roomPlan.storagePosition) !== true) {
         creep.v5task = FleeFromAttackerTask.create(MoveToTask.create(this.roomPlan.storagePosition, 0, { ignoreSwamp: true }))
         return {
@@ -541,15 +542,18 @@ export class GclFarmProcess implements Process, Procedural {
       }
       pickupDroppedResource()
 
-      if (energyStore.isActive() === true) {
-        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          creep.transfer(energyStore, RESOURCE_ENERGY)
-        }
+      if (energySource.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        creep.withdraw(energySource, RESOURCE_ENERGY)
+      }
 
-      } else {  // Farmを再立ち上げ中（StorageのRCL不足）
-        creep.say("nth to do")
-        if ((Game.time % 41) === 7) {
-          PrimitiveLogger.programError(`${this.taskIdentifier} distributor nothing to do`)
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        const chargeableStructures = roomResource.activeStructures.chargeableStructures.filter(structure => structure.pos.getRangeTo(creep.pos) <= 1)
+        chargeableStructures.sort((lhs, rhs) => {
+          return rhs.store.getFreeCapacity(RESOURCE_ENERGY) - lhs.store.getFreeCapacity(RESOURCE_ENERGY)
+        })
+        const structureToCharge = chargeableStructures[0]
+        if (structureToCharge != null) {
+          creep.transfer(structureToCharge, RESOURCE_ENERGY)
         }
       }
 
