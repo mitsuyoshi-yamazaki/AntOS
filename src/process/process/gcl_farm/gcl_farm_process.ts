@@ -28,13 +28,13 @@ import { OperatingSystem } from "os/os"
 import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { defaultMoveToOptions } from "prototype/creep"
-import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { Sign } from "game/sign"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { TowerPoolTaskPriority } from "world_info/resource_pool/tower_resource_pool"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -160,6 +160,7 @@ export class GclFarmProcess implements Process, Procedural {
       return
     }
 
+    this.runTowers(roomResource)
     this.buildStructures(roomResource)
 
     if (this.roomState.noHostileStructures !== true) {
@@ -682,5 +683,30 @@ export class GclFarmProcess implements Process, Procedural {
     if (failed !== true) {
       this.roomState.noHostileStructures = true
     }
+  }
+
+  // ---- Tower ---- //
+  private runTowers(roomResources: OwnedRoomResource): void {
+    const hostileCreep = roomResources.hostiles.creeps[0]
+    if (hostileCreep != null) {
+      World.resourcePools.addTowerTask(this.roomName, {
+        towerTaskType: "attack",
+        target: hostileCreep,
+        priority: TowerPoolTaskPriority.Urgent,
+      })
+      return
+    }
+
+    const hostilePowerCreep = roomResources.hostiles.powerCreeps[0]
+    if (hostilePowerCreep != null) {
+      World.resourcePools.addTowerTask(this.roomName, {
+        towerTaskType: "attack",
+        target: hostilePowerCreep,
+        priority: TowerPoolTaskPriority.Urgent,
+      })
+      return
+    }
+
+
   }
 }
