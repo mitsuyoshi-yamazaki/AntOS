@@ -9,7 +9,7 @@ import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
-import { GclFarmMemory } from "room_resource/room_resources"
+import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 
 export interface SectorMemory {
   name: string

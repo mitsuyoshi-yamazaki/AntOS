@@ -10,10 +10,7 @@ import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsuffi
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Environment } from "utility/environment"
-
-export type GclFarmMemory = {
-  roomNames: RoomName[]
-}
+import { GclFarmResources } from "./gcl_farm_resources"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -34,11 +31,6 @@ interface RoomResourcesInterface {
 
   // ---- Rooms ---- //
   getClaimableRoomCount(): number
-
-  // ---- GCL Farm ---- //
-  gclFarmRoomNames(): RoomName[]
-  addFarmRoom(roomName: RoomName): void
-  removeFarmRoom(roomName: RoomName): void
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -140,7 +132,7 @@ export const RoomResources: RoomResourcesInterface = {
   // ---- Rooms ---- //
   getClaimableRoomCount(): number {
     const roomCountInShard = this.getOwnedRoomResources().length
-    const gclFarmReservationCount = this.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
+    const gclFarmReservationCount = GclFarmResources.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
 
     if (Environment.hasMultipleShards !== true) {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
@@ -156,22 +148,6 @@ export const RoomResources: RoomResourcesInterface = {
       return 0
     }
   },
-
-  // ---- GCL Farm ---- //
-  gclFarmRoomNames(): RoomName[] {
-    return [...Memory.gclFarm.roomNames]
-  },
-
-  addFarmRoom(roomName: RoomName): void {
-    Memory.gclFarm.roomNames.push(roomName)
-  },
-
-  removeFarmRoom(roomName: RoomName): void {
-    const index = Memory.gclFarm.roomNames.indexOf(roomName)
-    if (index >= 0) {
-      Memory.gclFarm.roomNames.splice(index, 1)
-    }
-  }
 }
 
 function enumerateCreeps(): void {
