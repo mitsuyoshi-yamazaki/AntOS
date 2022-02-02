@@ -1,5 +1,5 @@
 import type { RoomName } from "utility/room_name"
-import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -11,6 +11,7 @@ interface KeywordArgumentsInterface {
   int(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string): SingleArgument<{ min?: number, max?: number }, number>
   string(index: number, key: string): SingleArgument<void, string>
+  boolean(index: number, key: string): SingleArgument<void, boolean>
   localPosition(index: number, key: string): SingleArgument<void, {x: number, y: number}>
 
   // ---- Game Object ---- //
@@ -41,6 +42,10 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public string(index: number, key: string): SingleArgument<void, string> {
     return new StringArgument(key, this.getValueAt(index))
+  }
+
+  public boolean(index: number, key: string): SingleArgument<void, boolean> {
+    return new BooleanArgument(key, this.getValueAt(index))
   }
 
   public localPosition(index: number, key: string): SingleArgument<void, { x: number, y: number }> {

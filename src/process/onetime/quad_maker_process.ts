@@ -12,9 +12,11 @@ import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { Result, ResultFailed } from "utility/result"
 import { OperatingSystem } from "os/os"
-import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
+import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
 import { GameMap } from "game/game_map"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { LaunchQuadProcess } from "./attack/launch_quad_process"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -142,7 +144,7 @@ commands: ${commands}
   - show current quad arguments
 - verify
   - check energyCapacityAvailable to verify
-- launch
+- launch dry_run?= delay?=
   - launch quad process
 - clone
   - clone this process
@@ -175,8 +177,7 @@ commands: ${commands}
 
     // eslint-disable-next-line no-fallthrough
     case "launch": {
-      const dryRun = args[0] !== "dry_run=0"
-      return this.launchQuadProcess(dryRun)
+      return this.launchQuadProcess(args)
     }
 
     case "clone":
@@ -519,26 +520,51 @@ creeps: ${this.creepSpecs.length} creeps
     return `lack of move power: tier${moveTier} ${moveCount}MOVE, ${bodyCount} body`
   }
 
-  private launchQuadProcess(dryRun: boolean): string {
-    const dryRunDescription = dryRun ? "(dry run: set dry_run=0 to launch)" : ""
+  private launchQuadProcess(args: string[]): string {
+    const keywardArguments = new KeywordArguments(args)
+    const dryRun = keywardArguments.boolean("dry_run").parseOptional() ?? true
+    const delay = keywardArguments.int("delay").parseOptional()
+
+    const parameterDescriptions: string[] = []
+    if (dryRun === true) {
+      parameterDescriptions.push("(dry run: set dry_run=0 to launch)")
+    }
+    if (delay != null) {
+      parameterDescriptions.push(`delayed: ${delay} ticks`)
+    }
+
     const result = this.verify()
     switch (result.resultType) {
     case "failed": {
-      return `Launch failed ${dryRunDescription}\n${result.reason.join("\n")}`
+      return `Launch failed ${parameterDescriptions.join(", ")}\n${result.reason.join("\n")}`
     }
     case "succeeded": {
       if (dryRun === true) {
-        const header = `Launchable ${dryRunDescription}`
+        const header = `Launchable ${parameterDescriptions.join(", ")}`
         if (result.value.warnings.length > 0) {
           return `${header}\n${result.value.warnings.join("\n")}\n${this.show()}`
         }
         return `${header}\n${this.show()}`
       }
 
-      // Launch Quad Process
-      const process = OperatingSystem.os.addProcess(null, processId => {
-        return SpecializedQuadProcess.create(processId, this.roomName, this.targetRoomName, [], result.value.quadSpec, this.frontBaseRoomName)
-      })
+      const launchArguments: SpecializedQuadLaunchArguments = {
+        parentRoomName: this.roomName,
+        targetRoomName: this.targetRoomName,
+        predefinedTargetIds: [],
+        quadSpec: result.value.quadSpec,
+        frontBaseRoomName: this.frontBaseRoomName,
+      }
+
+      const process = ((): Process => {
+        if (delay != null) {
+          return OperatingSystem.os.addProcess(null, processId => {
+            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay}, launchArguments)
+          })
+        }
+        return OperatingSystem.os.addProcess(null, processId => {
+          return SpecializedQuadProcess.create(processId, launchArguments)
+        })
+      })()
 
       const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
       if (result.value.warnings.length > 0) {

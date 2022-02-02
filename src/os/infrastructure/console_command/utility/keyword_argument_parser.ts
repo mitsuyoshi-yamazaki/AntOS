@@ -1,7 +1,7 @@
 import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
 import type { RoomName } from "utility/room_name"
-import { DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -11,7 +11,8 @@ interface KeywordArgumentsInterface {
   int(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
   float(key: string): SingleOptionalArgument<{ min?: number, max?: number }, number>
   string(key: string): SingleOptionalArgument<void, string>
-  localPosition(key: string): SingleOptionalArgument<void, { x: number, y: number }>
+  boolean(key: string): SingleOptionalArgument<void, boolean>
+ localPosition(key: string): SingleOptionalArgument<void, { x: number, y: number }>
 
   // ---- Game Object ---- //
   direction(key: string): SingleOptionalArgument<void, DirectionConstant>
@@ -58,6 +59,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public string(key: string): SingleOptionalArgument<void, string> {
     return new StringArgument(key, this.argumentMap.get(key) ?? null)
+  }
+
+  public boolean(key: string): SingleOptionalArgument<void, boolean> {
+    return new BooleanArgument(key, this.argumentMap.get(key) ?? null)
   }
 
   public localPosition(key: string): SingleOptionalArgument<void, { x: number, y: number }> {

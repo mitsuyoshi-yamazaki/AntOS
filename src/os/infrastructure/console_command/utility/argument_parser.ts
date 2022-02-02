@@ -97,6 +97,23 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   }
 }
 
+export class BooleanArgument extends SingleOptionalArgument<void, boolean> {
+  /** throws */
+  public parse(): boolean {
+    if (this.value == null) {
+      throw missingArgumentErrorMessage(this.key)
+    }
+    switch (this.value) {
+    case "0":
+      return false
+    case "1":
+      return true
+    default:
+      throw `Invalid boolean value ${this.value}, set 0 or 1`
+    }
+  }
+}
+
 export function validateRoomNameArgument(roomName: RoomName, options?: { my?: boolean, allowClosedRoom?: boolean }): void {
   const roomStatus = Game.map.getRoomStatus(roomName)
   if (roomStatus == null) {
