@@ -161,6 +161,7 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     this.runTowers(roomResource)
+    this.runSpawn(roomResource)
     this.buildStructures(roomResource)
 
     if (this.roomState.noHostileStructures !== true) {
@@ -732,5 +733,33 @@ export class GclFarmProcess implements Process, Procedural {
       World.resourcePools.addTowerTask(this.roomName, TowerTask.Repair(damagedStructure, TowerPoolTaskPriority.Low))
       return
     }
+  }
+
+  // ---- Spawn ---- //
+  private runSpawn(roomResources: OwnedRoomResource): void {
+    const spawn = roomResources.activeStructures.spawns[0]
+    if (spawn == null) {
+      return
+    }
+
+    const creepInfo = spawn.pos.findInRange(FIND_MY_CREEPS, 1).flatMap((creep): { creep: Creep, ticksToLive: number }[] => {
+      if (creep.ticksToLive == null || creep.ticksToLive > 400) {
+        return []
+      }
+      return [{
+        creep,
+        ticksToLive: creep.ticksToLive,
+      }]
+    })
+    creepInfo.sort((lhs, rhs) => {
+      return lhs.ticksToLive - rhs.ticksToLive
+    })
+
+    const creep = creepInfo[0]
+    if (creep == null) {
+      return
+    }
+
+    spawn.renewCreep(creep.creep)
   }
 }
