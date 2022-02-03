@@ -140,8 +140,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchMonitoringProcess()
       case "QuadMakerProcess":
         return this.launchQuadMakerProcess()
-      case "Season4275982HarvestCommodityProcess":
-        return this.launchSeason4275982HarvestCommodityProcess()
       default: {
         const stringArgument = new KeywordArguments(args)
         return ProcessLauncher.launch(processType, stringArgument)
@@ -1016,56 +1014,6 @@ export class LaunchCommand implements ConsoleCommand {
     })
     return Result.Succeeded(process)
   }
-
-  private launchSeason4275982HarvestCommodityProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const commodityType = args.get("commodity_type")
-    if (commodityType == null) {
-      return this.missingArgumentError("commodity_type")
-    }
-    if (!isDepositConstant(commodityType)) {
-      return Result.Failed(`${commodityType} is not commodity type`)
-    }
-
-    const rawHarvesterCount = args.get("harvester_count")
-    if (rawHarvesterCount == null) {
-      return this.missingArgumentError("harvester_count")
-    }
-    const harvesterCount = parseInt(rawHarvesterCount, 10)
-    if (isNaN(harvesterCount) === true) {
-      return Result.Failed(`harvester_count ${rawHarvesterCount} is not a number`)
-    }
-
-    const roomDistance = Game.map.getRoomLinearDistance(roomName, targetRoomName)
-    const haulerCount = roomDistance >= 3 ? 2 : 1
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season4275982HarvestCommodityProcess.create(
-        processId,
-        roomName,
-        {
-          roomName: targetRoomName,
-          commodityType,
-          neighbourCellCount: 1,  // FixMe:
-          currentCooldown: 0,
-        },
-        {
-          harvesterCount: harvesterCount,
-          haulerCount,
-        }
-      )
-    })
-    return Result.Succeeded(process)
-  }
 }
 
 ProcessLauncher.register("ProduceCommodityProcess", args => {
@@ -1114,6 +1062,35 @@ ProcessLauncher.register("GclFarmManagerProcess", args => {
     const name = args.string("name").parse()
 
     return Result.Succeeded((processId) => GclFarmManagerProcess.create(processId, name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const depositType = args.depositType("deposit_type").parse()
+    const depositId = args.gameObjectId("deposit_id").parse() as Id<Deposit>
+    const harvesterCount = args.int("harvester_count").parse({max: 4})
+    const haulerCount = 1
+
+    return Result.Succeeded((processId) => Season4275982HarvestCommodityProcess.create(
+      processId,
+      roomName,
+      {
+        roomName: targetRoomName,
+        commodityType: depositType,
+        depositId,
+        neighbourCellCount: 1,  // FixMe:
+        currentCooldown: 0,
+      },
+      {
+        harvesterCount: harvesterCount,
+        haulerCount,
+      }
+    ))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

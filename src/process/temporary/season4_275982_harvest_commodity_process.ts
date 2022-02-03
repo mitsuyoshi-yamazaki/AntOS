@@ -37,6 +37,7 @@ const tooLongCooldownReason = "too long cooldown"
 
 type DepositInfo = {
   readonly roomName: RoomName
+  readonly depositId: Id<Deposit>
   readonly commodityType: DepositConstant
   readonly neighbourCellCount: number
   currentCooldown: number
@@ -221,12 +222,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     }
 
     const targetRoom = Game.rooms[this.depositInfo.roomName]
-    const deposit = ((): Deposit | null => {
-      if (targetRoom == null) {
-        return null
-      }
-      return targetRoom.find(FIND_DEPOSITS)[0] ?? null
-    })()
+    const deposit = Game.getObjectById(this.depositInfo.depositId)
     if (deposit != null && deposit.cooldown > maxCooldown) {
       this.addSuspendReason(tooLongCooldownReason)
     }
