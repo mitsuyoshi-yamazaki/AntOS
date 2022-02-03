@@ -206,6 +206,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       } else {
         PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} invalid child process ${farmProcess}, ${farmProcess?.processId}, ${this.farmProcessId}`)
         this.farmProcessId = null
+        this.farmProcess = null
       }
     }
 
@@ -214,7 +215,7 @@ export class GclFarmManagerProcess implements Process, Procedural, MessageObserv
       return
     }
     if (this.shouldFinishCurrentFarm(this.farmProcess) === true) {
-      this.teardownFarm(this.farmProcess)
+      // this.teardownFarm(this.farmProcess)
       return
     }
   }

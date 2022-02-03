@@ -57,6 +57,7 @@ interface GclFarmProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly parentRoomNames: RoomName[]
   readonly positions: GclFarmPositions
+  readonly upgraderIndex: number
   readonly roomState: RoomState
 }
 
@@ -75,6 +76,7 @@ export class GclFarmProcess implements Process, Procedural {
     public readonly roomName: RoomName,
     private readonly parentRoomNames: RoomName[],
     private readonly positions: GclFarmPositions,
+    private upgraderIndex: number,
     private readonly roomState: RoomState,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
@@ -92,12 +94,13 @@ export class GclFarmProcess implements Process, Procedural {
       roomName: this.roomName,
       parentRoomNames: this.parentRoomNames,
       positions: this.positions,
+      upgraderIndex: this.upgraderIndex,
       roomState: this.roomState,
     }
   }
 
   public static decode(state: GclFarmProcessState): GclFarmProcess {
-    return new GclFarmProcess(state.l, state.i, state.roomName, state.parentRoomNames, state.positions, state.roomState)
+    return new GclFarmProcess(state.l, state.i, state.roomName, state.parentRoomNames, state.positions, state.upgraderIndex, state.roomState)
   }
 
   public static create(processId: ProcessId, targetRoom: Room, parentRoomNames: RoomName[], positions: GclFarmPositions): GclFarmProcess {
@@ -108,7 +111,7 @@ export class GclFarmProcess implements Process, Procedural {
       alternativeContainerId: null,
       constructingStorage: false,
     }
-    return new GclFarmProcess(Game.time, processId, targetRoom.name, parentRoomNames, positions, roomState)
+    return new GclFarmProcess(Game.time, processId, targetRoom.name, parentRoomNames, positions, 0, roomState)
   }
 
   public processShortDescription(): string {
@@ -199,9 +202,15 @@ export class GclFarmProcess implements Process, Procedural {
     GclFarmResources.setDeliverTarget(this.roomName, deliverTarget?.id ?? null)
 
     this.spawnUpgrader(upgraders.length, upgraderMaxCount, parentRoomResources)
+
+    const upgraderPositionCount = this.positions.upgraderPositions.length
+    if ((Game.time % 10) === 0) {
+      this.upgraderIndex = (this.upgraderIndex + 1) % upgraderPositionCount
+    }
+
     for (let i = 0; i < upgraders.length; i += 1) {
       const creep = upgraders[i]
-      const position = this.positions.upgraderPositions[i % this.positions.upgraderPositions.length]
+      const position = this.positions.upgraderPositions[(i + this.upgraderIndex) % upgraderPositionCount]
       if (creep == null || position == null) {
         continue
       }

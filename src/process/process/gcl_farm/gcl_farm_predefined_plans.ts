@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Position } from "prototype/room_position"
+import { describePosition, Position } from "prototype/room_position"
 
 export type GclFarmPositions = {
   storagePosition: Position,
@@ -44,62 +44,59 @@ export function calculateAbsoluteGclFarmPositions(relativePositions: GclFarmRela
 }
 
 const plan1: string[][] = [
-  [".", "o", "o", "t"],
-  ["u", "u", "d", "."],
-  ["u", "s", "u", "p"],
-  ["u", "u", "u", "."],
+  ["..", "t0", "t1", "te"],
+  ["u5", "u6", "di", ".."],
+  ["u4", "st", "u0", "sp"],
+  ["u3", "u2", "u1", ".."],
 ]
 
 /** throws */
 function parseRawPlan(planMatrix: string[][]): GclFarmRelativePositions {
-  const map = new Map<string, Position[]>()
-  const getValueList = (value: string): Position[] => {
-    const stored = map.get(value)
-    if (stored != null) {
-      return stored
-    }
-    const newList: Position[] = []
-    map.set(value, newList)
-    return newList
-  }
+  const map = new Map<string, Position>()
+  const upgraderPositions: {index: number, position: Position}[] = []
 
   planMatrix.forEach((row, y) => {
-    row.forEach((value, x) => {
-      const valueList = getValueList(value)
-      valueList.push({
-        x,
-        y,
+    row.forEach((key, x) => {
+      if (key.startsWith("u") !== true) {
+        map.set(key, { x, y })
+        return
+      }
+      const rawIndex = key.slice(1)
+      const index = parseInt(rawIndex, 10)
+      if (isNaN(index) === true) {
+        throw `invalid upgrader position format ${key} at ${describePosition({x, y})}, format: u&ltindex&gt`
+      }
+      upgraderPositions.push({
+        index,
+        position: { x, y },
       })
     })
   })
 
   /** throws */
-  const getPositionFor = (value: string, index?: number): Position => {
-    const positionIndex = index ?? 0
-    const positions = map.get(value)
-    if (positions == null) {
-      throw `"${value}" position not set`
-    }
-    const position = positions[positionIndex]
+  const getPositionFor = (key: string): Position => {
+    const position = map.get(key)
     if (position == null) {
-      throw `"${value}" position not set`
+      throw `"${key}" position not set`
     }
     return position
   }
 
-  const upgraderPositions = map.get("u") ?? []
   if (upgraderPositions.length <= 0) {
     throw '"u" positions not set'
   }
+  upgraderPositions.sort((lhs, rhs) => {
+    return lhs.index - rhs.index
+  })
 
   return {
-    storagePosition: getPositionFor("s"),
-    terminalPosition: getPositionFor("t"),
-    spawnPosition: getPositionFor("p"),
-    distributorPosition: getPositionFor("d"),
-    tower1Position: getPositionFor("o", 0),
-    tower2Position: getPositionFor("o", 1),
-    upgraderPositions,
+    storagePosition: getPositionFor("st"),
+    terminalPosition: getPositionFor("te"),
+    spawnPosition: getPositionFor("sp"),
+    distributorPosition: getPositionFor("di"),
+    tower1Position: getPositionFor("t0"),
+    tower2Position: getPositionFor("t1"),
+    upgraderPositions: upgraderPositions.map(x => x.position),
   }
 }
 
