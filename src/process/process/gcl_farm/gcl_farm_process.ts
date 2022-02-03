@@ -471,9 +471,13 @@ export class GclFarmProcess implements Process, Procedural {
         return
       }
 
-      const moveToOps: MoveToOpts = defaultMoveToOptions()
-      moveToOps.ignoreCreeps = creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 // おかしな場所で渋滞している場合はエネルギーを得られないだろうという想定
-      creep.moveTo(x, y, moveToOps)
+      if (creep.pos.getRangeTo(x, y) <= 1) {
+        creep.move(creep.pos.getDirectionTo(x, y))
+      } else {
+        const moveToOps: MoveToOpts = defaultMoveToOptions()
+        moveToOps.ignoreCreeps = creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0 // おかしな場所で渋滞している場合はエネルギーを得られないだろうという想定
+        creep.moveTo(x, y, moveToOps)
+      }
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
@@ -496,7 +500,7 @@ export class GclFarmProcess implements Process, Procedural {
       return
     }
 
-    const maxBodyUnit = hasEnergyStore ? 16 : 40
+    const maxBodyUnit = hasEnergyStore ? 4 : 40
     const body = CreepBody.create([MOVE], [CARRY], parentRoomResource.room.energyCapacityAvailable, maxBodyUnit)
     const shouldSpawn = ((): boolean => {
       const creep = distributors[0]
