@@ -574,18 +574,17 @@ targets: ${this.targetIds.length} target IDs
         parentRoomName: this.roomName,
         targetRoomName: this.targetRoomName,
         predefinedTargetIds: this.targetIds,
-        quadSpec: result.value.quadSpec,
         frontBaseRoomName: this.frontBaseRoomName,
       }
 
       const process = ((): Process => {
         if (delay != null) {
           return OperatingSystem.os.addProcess(null, processId => {
-            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay}, launchArguments)
+            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay }, launchArguments, result.value.quadSpec)
           })
         }
         return OperatingSystem.os.addProcess(null, processId => {
-          return SpecializedQuadProcess.create(processId, launchArguments)
+          return SpecializedQuadProcess.create(processId, launchArguments, result.value.quadSpec)
         })
       })()
 

@@ -6,6 +6,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { Timestamp } from "utility/timestamp"
 import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/attack/quad/quad_process"
 import { processLog } from "os/infrastructure/logger"
+import { QuadSpec, QuadSpecState } from "../../../../submodules/attack/quad/quad_spec"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)
@@ -20,6 +21,7 @@ type LaunchCondition = LaunchConditionDelay
 interface LaunchQuadProcessState extends ProcessState {
   readonly launchCondition: LaunchCondition
   readonly quadLaunchArguments: SpecializedQuadLaunchArguments
+  readonly quadSpecState: QuadSpecState
 }
 
 export class LaunchQuadProcess implements Process, Procedural {
@@ -33,8 +35,9 @@ export class LaunchQuadProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     private readonly launchCondition: LaunchCondition,
     private readonly quadLaunchArguments: SpecializedQuadLaunchArguments,
+    private readonly quadSpec: QuadSpec,
   ) {
-    this.identifier = `${this.constructor.name}_${this.processId}_${this.quadLaunchArguments.parentRoomName}_${this.quadLaunchArguments.quadSpec.shortDescription}`
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.quadLaunchArguments.parentRoomName}_${this.quadSpec.shortDescription}`
   }
 
   public encode(): LaunchQuadProcessState {
@@ -44,15 +47,17 @@ export class LaunchQuadProcess implements Process, Procedural {
       i: this.processId,
       launchCondition: this.launchCondition,
       quadLaunchArguments: this.quadLaunchArguments,
+      quadSpecState: this.quadSpec.encode(),
     }
   }
 
   public static decode(state: LaunchQuadProcessState): LaunchQuadProcess {
-    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments)
+    const quadSpec = QuadSpec.decode(state.quadSpecState)
+    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments, quadSpec)
   }
 
-  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments): LaunchQuadProcess {
-    return new LaunchQuadProcess(Game.time, processId, launchCondition, quadLaunchArguments)
+  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments, quadSpec: QuadSpec): LaunchQuadProcess {
+    return new LaunchQuadProcess(Game.time, processId, launchCondition, quadLaunchArguments, quadSpec)
   }
 
   public processShortDescription(): string {
@@ -62,7 +67,7 @@ export class LaunchQuadProcess implements Process, Procedural {
         return `after ${this.launchCondition.launchTime - Game.time} ticks`
       }
     })()
-    return `launch ${this.quadLaunchArguments.quadSpec.shortDescription} ${conditionDescription}`
+    return `launch ${this.quadSpec.shortDescription} ${conditionDescription}`
   }
 
   public runOnTick(): void {
@@ -77,7 +82,7 @@ export class LaunchQuadProcess implements Process, Procedural {
 
   private launch(): void {
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return SpecializedQuadProcess.create(processId, this.quadLaunchArguments)
+      return SpecializedQuadProcess.create(processId, this.quadLaunchArguments, this.quadSpec)
     })
 
     const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`

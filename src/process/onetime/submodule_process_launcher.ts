@@ -55,9 +55,8 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
       parentRoomName: roomName,
       targetRoomName,
       predefinedTargetIds: targets as Id<AnyStructure>[],
-      quadSpec,
       frontBaseRoomName: null,
-    })
+    }, quadSpec)
   })
   return Result.Succeeded(process)
 
