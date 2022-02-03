@@ -26,7 +26,7 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { OperatingSystem } from "os/os"
 import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
-import { decodeRoomPosition, Position } from "prototype/room_position"
+import { decodeRoomPosition, describePosition, Position } from "prototype/room_position"
 import { defaultMoveToOptions } from "prototype/creep"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
@@ -156,6 +156,11 @@ export class GclFarmProcess implements Process, Procedural {
         return
       }
     })
+
+    // upgraders.sort((lhs, rhs) => {
+    //   return lhs.id < rhs.id ? -1 : 1
+    // })
+    // upgraders.forEach((u, index) => u.room.visual.text(`${index}`, u.pos, {color: "#FF0000"}))
 
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {

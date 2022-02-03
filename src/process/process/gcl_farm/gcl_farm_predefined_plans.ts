@@ -45,9 +45,9 @@ export function calculateAbsoluteGclFarmPositions(relativePositions: GclFarmRela
 
 const plan1: string[][] = [
   ["..", "t0", "t1", "te"],
-  ["u5", "u6", "di", ".."],
-  ["u4", "st", "u0", "sp"],
-  ["u3", "u2", "u1", ".."],
+  ["u4", "u5", "di", ".."],
+  ["u3", "st", "u0", "sp"],
+  ["u2", "u1", "..", ".."],
 ]
 
 /** throws */
@@ -88,6 +88,7 @@ function parseRawPlan(planMatrix: string[][]): GclFarmRelativePositions {
   upgraderPositions.sort((lhs, rhs) => {
     return lhs.index - rhs.index
   })
+  // upgraderPositions.forEach(x => console.log(`${x.index}: ${describePosition(x.position)}`))
 
   return {
     storagePosition: getPositionFor("st"),
