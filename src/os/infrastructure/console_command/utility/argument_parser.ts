@@ -50,6 +50,27 @@ export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean,
   }
 }
 
+export class ResourceTypeArgument<T extends string> extends SingleOptionalArgument<void, T> {
+  public constructor(
+    public readonly key: string,
+    public readonly value: string | null,
+    private readonly typeName: string,
+    private readonly typeGuard: ((arg: string) => arg is T),
+  ) {
+    super(key, value)
+  }
+
+  /** throws */
+  public parse(): T {
+    if (this.value == null) {
+      throw missingArgumentErrorMessage(this.key)
+    }
+    if (!(this.typeGuard(this.value))) {
+      throw `${this.value} is not ${this.typeName}`
+    }
+    return this.value
+  }
+}
 
 /** throws */
 function validateNumberRange(key: string, value: number, options?: { min?: number, max?: number }): void {

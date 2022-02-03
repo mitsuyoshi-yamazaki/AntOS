@@ -1,7 +1,8 @@
 import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
+import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, ResourceTypeArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -20,6 +21,10 @@ interface KeywordArgumentsInterface {
   roomName(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName>
   roomNameList(key: string): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]>
   gameObjectId(key: string): SingleOptionalArgument<void, string>
+  resourceType(key: string): SingleOptionalArgument<void, ResourceConstant>
+  boostCompoundType(key: string): SingleOptionalArgument<void, MineralBoostConstant>
+  depositType(key: string): SingleOptionalArgument<void, DepositConstant>
+  commodityType(key: string): SingleOptionalArgument<void, CommodityConstant>
 
   interRoomPath(
     fromRoomKey: string,
@@ -87,6 +92,22 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public gameObjectId(key: string): SingleOptionalArgument<void, string> {
     return this.string(key)
+  }
+
+  public resourceType(key: string): SingleOptionalArgument<void, ResourceConstant> {
+    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "ResourceConstant", isResourceConstant)
+  }
+
+  public boostCompoundType(key: string): SingleOptionalArgument<void, MineralBoostConstant> {
+    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "MineralBoostConstant", isMineralBoostConstant)
+  }
+
+  public depositType(key: string): SingleOptionalArgument<void, DepositConstant> {
+    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "DepositConstant", isDepositConstant)
+  }
+
+  public commodityType(key: string): SingleOptionalArgument<void, CommodityConstant> {
+    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "CommodityConstant", isCommodityConstant)
   }
 
   public interRoomPath(

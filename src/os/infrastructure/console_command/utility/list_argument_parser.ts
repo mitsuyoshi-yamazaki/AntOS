@@ -1,5 +1,6 @@
+import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, ResourceTypeArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -20,6 +21,10 @@ interface KeywordArgumentsInterface {
   roomName(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
   roomNameList(index: number, key: string): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]>
   gameObjectId(index: number, key: string): SingleArgument<void, string>
+  resourceType(index: number, key: string): SingleArgument<void, ResourceConstant>
+  boostCompoundType(index: number, key: string): SingleArgument<void, MineralBoostConstant>
+  depositType(index: number, key: string): SingleArgument<void, DepositConstant>
+  commodityType(index: number, key: string): SingleArgument<void, CommodityConstant>
 }
 
 export class ListArguments implements KeywordArgumentsInterface {
@@ -72,6 +77,23 @@ export class ListArguments implements KeywordArgumentsInterface {
     return this.string(index, key)
   }
 
+  public resourceType(index: number, key: string): SingleArgument<void, ResourceConstant> {
+    return new ResourceTypeArgument(key, this.getValueAt(index), "ResourceConstant", isResourceConstant)
+  }
+
+  public boostCompoundType(index: number, key: string): SingleArgument<void, MineralBoostConstant> {
+    return new ResourceTypeArgument(key, this.getValueAt(index), "MineralBoostConstant", isMineralBoostConstant)
+  }
+
+  public depositType(index: number, key: string): SingleArgument<void, DepositConstant> {
+    return new ResourceTypeArgument(key, this.getValueAt(index), "DepositConstant", isDepositConstant)
+  }
+
+  public commodityType(index: number, key: string): SingleArgument<void, CommodityConstant> {
+    return new ResourceTypeArgument(key, this.getValueAt(index), "CommodityConstant", isCommodityConstant)
+  }
+
+  // ---- ---- //
   private getValueAt(index: number): string {
     const value = this.argumentList[index]
     if (value == null) {
