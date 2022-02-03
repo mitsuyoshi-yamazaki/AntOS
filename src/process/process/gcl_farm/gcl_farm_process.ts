@@ -35,6 +35,7 @@ import { Sign } from "game/sign"
 import { EnergyChargeableStructure } from "prototype/room_object"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
+import { ResourceManager } from "utility/resource_manager"
 
 ProcessDecoder.register("GclFarmProcess", state => {
   return GclFarmProcess.decode(state as GclFarmProcessState)
@@ -46,6 +47,8 @@ const claimerRoles: CreepRole[] = [CreepRole.Claimer]
 const distributorRoles: CreepRole[] = [CreepRole.EnergySource]
 const upgraderRoles: CreepRole[] = [CreepRole.Worker]
 const haulerRoles: CreepRole[] = [CreepRole.Hauler]
+
+const minimumEnergyAmount = 100000
 
 type RoomState = {
   noHostileStructures: boolean
@@ -172,6 +175,10 @@ export class GclFarmProcess implements Process, Procedural {
     this.runSpawn(roomResource)
     this.buildStructures(roomResource)
 
+    if ((Game.time % 37) === 3) {
+      this.checkParentRoomEnergy(parentRoomResources)
+    }
+
     if (this.roomState.noHostileStructures !== true) {
       this.destroyHostileStructures(roomResource.room)
     }
@@ -222,14 +229,18 @@ export class GclFarmProcess implements Process, Procedural {
       this.runUpgrader(creep, roomResource.controller, position, energySource)
     }
 
-    const energyStores = parentRoomResources.flatMap((resource): StructureStorage[] => {
-      if (resource.activeStructures.storage == null) {
+    const energyStores = parentRoomResources.flatMap((resource): (StructureStorage | StructureTerminal)[] => {
+      if (resource.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount) {
         return []
       }
-      if (resource.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 100000) {
-        return []
+      const result: (StructureStorage | StructureTerminal)[] = []
+      if (resource.activeStructures.storage != null) {
+        result.push(resource.activeStructures.storage)
       }
-      return [resource.activeStructures.storage]
+      if (resource.activeStructures.terminal != null) {
+        result.push(resource.activeStructures.terminal)
+      }
+      return result
     })
 
     if (energyStores.length > 0) {
@@ -388,7 +399,7 @@ export class GclFarmProcess implements Process, Procedural {
     })
   }
 
-  private runHauler(creep: Creep, energyStores: StructureStorage[], deliverTarget: GclFarmDeliverTarget | null, roomResource: OwnedRoomResource): void {
+  private runHauler(creep: Creep, energyStores: (StructureStorage | StructureTerminal)[], deliverTarget: GclFarmDeliverTarget | null, roomResource: OwnedRoomResource): void {
     if (creep.v5task != null) {
       return
     }
@@ -411,7 +422,7 @@ export class GclFarmProcess implements Process, Procedural {
       return
     }
 
-    const energyStore = ((): StructureStorage | null => {
+    const energyStore = ((): StructureStorage | StructureTerminal | null => {
       const storageInSameRoom = energyStores.find(storage => storage.room.name === creep.room.name)
       return storageInSameRoom ?? energyStores[0] ?? null
     })()
@@ -779,5 +790,24 @@ export class GclFarmProcess implements Process, Procedural {
     }
 
     spawn.renewCreep(creep.creep)
+  }
+
+  // ---- Energy ---- //
+  private checkParentRoomEnergy(parentRoomResources: OwnedRoomResource[]): void {
+    const lackOfEnergyRoom = parentRoomResources.filter(resource => {
+      if (resource.getResourceAmount(RESOURCE_ENERGY) < (minimumEnergyAmount * 1.1)) {
+        return true
+      }
+      return false
+    })[0]
+
+    if (lackOfEnergyRoom == null) {
+      return
+    }
+    this.transferEnergy(lackOfEnergyRoom.room.name)
+  }
+
+  private transferEnergy(parentRoomName: RoomName): void {
+    ResourceManager.collect(RESOURCE_ENERGY, parentRoomName, minimumEnergyAmount * 0.5, {excludedRoomNames: [...this.parentRoomNames], threshold: minimumEnergyAmount})
   }
 }

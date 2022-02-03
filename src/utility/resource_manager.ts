@@ -20,10 +20,10 @@ interface ResourceManagerInterface {
   // ---- Check Resource Amount ---- //
   list(): Map<ResourceConstant, number>
   amount(resourceType: ResourceConstant): number
-  resourceInRoom(resourceType: ResourceConstant): Map<RoomName, number>
+  resourceInRoom(resourceType: ResourceConstant, options?: { excludedRoomNames?: RoomName[] }): Map<RoomName, number>
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all"): Result<number, string>
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: {excludedRoomNames?: RoomName[], threshold?: number}): Result<number, string>
 }
 
 export const ResourceManager: ResourceManagerInterface = {
@@ -103,12 +103,11 @@ export const ResourceManager: ResourceManagerInterface = {
     return list.get(resourceType) ?? 0
   },
 
-  resourceInRoom(resourceType: ResourceConstant): Map<RoomName, number> {
+  resourceInRoom(resourceType: ResourceConstant, options?: { excludedRoomNames?: RoomName[] }): Map<RoomName, number> {
     if (resourceInRoom == null) {
       const result = new Map<RoomName, number>()
       RoomResources.getOwnedRoomResources().forEach(resources => {
-        const amount = (resources.activeStructures.terminal?.store.getUsedCapacity(resourceType) ?? 0)
-          + (resources.activeStructures.storage?.store.getUsedCapacity(resourceType) ?? 0)
+        const amount = resources.getResourceAmount(resourceType)
 
         if (amount <= 0) {
           return
@@ -117,14 +116,21 @@ export const ResourceManager: ResourceManagerInterface = {
       })
       resourceInRoom = result
     }
-    return new Map(resourceInRoom)
+
+    const excludedRoomNames: RoomName[] = options?.excludedRoomNames ?? []
+    const map = new Map(resourceInRoom)
+    excludedRoomNames.forEach(roomName => map.delete(roomName))
+
+    return map
   },
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all"): Result<number, string> {
-    const resourceInRoom = Array.from(this.resourceInRoom(resourceType).entries()).sort(([lhs], [rhs]) => {
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: { excludedRoomNames?: RoomName[], threshold?: number}): Result<number, string> {
+    const resourceInRoom = Array.from(this.resourceInRoom(resourceType, options).entries()).sort(([lhs], [rhs]) => {
       return Game.map.getRoomLinearDistance(roomName, lhs) - Game.map.getRoomLinearDistance(roomName, rhs)
     })
+
+    const threshold = options?.threshold
 
     let sentAmount = 0
     const errorMessages: string[] = []
@@ -144,6 +150,13 @@ export const ResourceManager: ResourceManagerInterface = {
       if (terminal == null) {
         return
       }
+
+      if (threshold != null) {
+        if (resources.getResourceAmount(resourceType) < threshold) {
+          return
+        }
+      }
+
       const [amount, energyAmount] = ((): [number, number] => {
         if (resourceType === RESOURCE_ENERGY) {
           const terminalEnergyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
