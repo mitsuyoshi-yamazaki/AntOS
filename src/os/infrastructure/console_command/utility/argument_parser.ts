@@ -3,15 +3,24 @@ import { isDirectionConstant } from "utility/direction"
 import { roomLink } from "utility/log"
 import type { RoomName } from "utility/room_name"
 
+export type ArgumentParsingOptions = {
+  missingArgumentErrorMessage?: string
+}
+
 export abstract class SingleArgument<Options, Value> {
   public constructor(
     public readonly key: string,
     public readonly value: string | null,
+    protected readonly parseOptions?: ArgumentParsingOptions,
   ) {
   }
 
   /** throws */
   public abstract parse(options?: Options): Value
+
+  protected missingArgumentErrorMessage(): string {
+    return this.parseOptions?.missingArgumentErrorMessage ?? missingArgumentErrorMessage(this.key)
+  }
 }
 
 export abstract class SingleOptionalArgument<Options, Value> extends SingleArgument<Options, Value> {
@@ -31,7 +40,7 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     validateRoomNameArgument(this.value, options)
     return this.value
@@ -42,7 +51,7 @@ export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean,
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName[] {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const roomNames = this.value.split(",")
     roomNames.forEach(roomName => validateRoomNameArgument(roomName, options))
@@ -52,18 +61,19 @@ export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean,
 
 export class ResourceTypeArgument<T extends string> extends SingleOptionalArgument<void, T> {
   public constructor(
-    public readonly key: string,
-    public readonly value: string | null,
+    key: string,
+    value: string | null,
     private readonly typeName: string,
     private readonly typeGuard: ((arg: string) => arg is T),
+    parseOptions?: ArgumentParsingOptions,
   ) {
-    super(key, value)
+    super(key, value, parseOptions)
   }
 
   /** throws */
   public parse(): T {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     if (!(this.typeGuard(this.value))) {
       throw `${this.value} is not ${this.typeName}`
@@ -86,7 +96,7 @@ export class IntArgument extends SingleOptionalArgument<{ min?: number, max?: nu
   /** throws */
   public parse(options?: { min?: number, max?: number }): number {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const intValue = parseIntValue(this.key, this.value, options)
     return intValue
@@ -97,7 +107,7 @@ export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: 
   /** throws */
   public parse(options?: { min?: number, max?: number }): number {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const floatValue = parseFloat(this.value)
     if (isNaN(floatValue) === true) {
@@ -112,7 +122,7 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
   public parse(): string {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     return this.value
   }
@@ -122,7 +132,7 @@ export class BooleanArgument extends SingleOptionalArgument<void, boolean> {
   /** throws */
   public parse(): boolean {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     switch (this.value) {
     case "0":
@@ -173,7 +183,7 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, { x: num
   /** throws */
   public parse(): { x: number, y: number } {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const [x, y] = ((): [number, number] => {
       const components = this.value.split(",")
@@ -207,7 +217,7 @@ export class DirectionArgument extends SingleOptionalArgument<void, DirectionCon
   /** throws */
   public parse(): DirectionConstant {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const intValue = parseIntValue("direction", this.value)
     if (!isDirectionConstant(intValue)) {
@@ -224,7 +234,7 @@ export class RoomPositionArgument extends SingleOptionalArgument<{ allowClosedRo
   /** throws */
   public parse(options?: { allowClosedRoom?: boolean }): RoomPosition {
     if (this.value == null) {
-      throw missingArgumentErrorMessage(this.key)
+      throw this.missingArgumentErrorMessage()
     }
     const components = this.value.split(",")
     const roomName = components[2]
