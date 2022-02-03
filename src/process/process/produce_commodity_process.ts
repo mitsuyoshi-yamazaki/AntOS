@@ -350,7 +350,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
 
     case ERR_BUSY:
     case ERR_INVALID_TARGET:
-      this.addSpawnStopReason(`invalid product (${result})`)
+      this.addSpawnStopReason(`invalid product (${coloredResourceType(product.commodityType)} ${result})`)
       break
     }
   }
