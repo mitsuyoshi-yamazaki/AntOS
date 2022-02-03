@@ -273,17 +273,21 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     }
 
     const chargeResourceType = this.resourceTypeToCharge(factory, terminal, product)
-    if (chargeResourceType != null) {
+    if (chargeResourceType == null) {
+      this.addSpawnStopReason("no ingredients")
+      creep.say("no ingred")
+
+    } else if (chargeResourceType === "stopped") {
+      creep.say("zzZ")
+
+    } else {
       const tasks: CreepTask[] = [
         MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, chargeResourceType)),
         MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, chargeResourceType)),
       ]
       return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
-    } else {
-      this.addSpawnStopReason("no ingredients")
     }
 
-    creep.say("zzZ")
     return null
   }
 
@@ -300,12 +304,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       })[0] ?? null
   }
 
-  private resourceTypeToCharge(factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo): ResourceConstant | null {
-    const threshold = 10000
-    if (factory.store.getUsedCapacity() > threshold) {
-      return null
-    }
-
+  private resourceTypeToCharge(factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo): ResourceConstant | "stopped" | null {
     const resourceAmount: { resourceType: ResourceConstant, amount: number }[] = product.ingredients.flatMap(resourceType => {
       if (terminal.store.getUsedCapacity(resourceType) <= 0) {
         return []
@@ -320,9 +319,15 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return null
     }
 
-    return resourceAmount.reduce((result, current) => {
+    const resource = resourceAmount.reduce((result, current) => {
       return current.amount < result.amount ? current : result
-    }).resourceType
+    })
+
+    const threshold = 10000
+    if (resource.amount > threshold) {
+      return "stopped"
+    }
+    return resource.resourceType
   }
 
   private produce(factory: StructureFactory, product: ProductInfo): void {
