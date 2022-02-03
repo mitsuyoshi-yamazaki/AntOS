@@ -1111,7 +1111,8 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
     }
 
     const direction = ((): TOP | BOTTOM | LEFT | RIGHT => {
-      const value = args.direction("direction").parse()
+      const missingArgumentErrorMessage = "missing direction argument: set direction the scoring creep heads toward"
+      const value = args.direction("direction", {missingArgumentErrorMessage}).parse()
       if (value === TOP || value === BOTTOM || value === LEFT || value === RIGHT) {
         return value
       }

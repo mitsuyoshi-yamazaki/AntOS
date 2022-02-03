@@ -20,6 +20,7 @@ import { GameConstants } from "utility/constants"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
@@ -43,7 +44,7 @@ interface Season4784484ScoreProcessState extends ProcessState {
   readonly haulerName: CreepName | null
 }
 
-export class Season4784484ScoreProcess implements Process, Procedural {
+export class Season4784484ScoreProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -56,13 +57,13 @@ export class Season4784484ScoreProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly highwayEntranceRoomName: RoomName,
-  private readonly direction: HighwayDirection,
+    private readonly direction: HighwayDirection,
     private readonly commodityType: CommodityConstant,
     private readonly amount: number,
     private scoutName: CreepName | null,
   private haulerName: CreepName | null,
   ) {
-    this.identifier = this.constructor.name
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.roomName}_${this.commodityType}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
@@ -96,11 +97,27 @@ export class Season4784484ScoreProcess implements Process, Procedural {
   }
 
   public static create(processId: ProcessId, roomName: RoomName, highwayEntranceRoomName: RoomName, direction: HighwayDirection, commodityType: CommodityConstant, amount: number): Season4784484ScoreProcess {
-    return new Season4784484ScoreProcess(Game.time, processId, roomName, "W30S19", direction, commodityType, amount, null, null)
+    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)}`
+    const haulerDescription = ((): string => {
+      if (this.haulerName == null) {
+        return "no creep"
+      }
+      const hauler = Game.creeps[this.haulerName]
+      if (hauler == null) {
+        return "finished"
+      }
+      return `hauler in ${hauler.pos}`
+    })()
+    return `${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
+  }
+
+  public didReceiveMessage(message: string): string {
+    // fallback
+    // stop
+    return "not implemented yet"
   }
 
   public runOnTick(): void {
@@ -155,6 +172,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
   private runHauler(creep: Creep, terminal: StructureTerminal): void {
     if (creep.v5task != null) {
       // TODO: convoyがいたらタスクをキルする
+      // TODO: 攻撃Creepがいたらfallbackする
       return
     }
 
@@ -189,8 +207,6 @@ export class Season4784484ScoreProcess implements Process, Procedural {
         creep.v5task = FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false }))
         return
       }
-
-      creep.say("no convoy")
 
       // TODO: 入れ替わりになった場合
       const nextRoomName = this.nextRoomName(creep.room)
@@ -239,6 +255,19 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return
     }
 
+    const directionDescription = ((): string => {
+      switch (this.direction) {
+      case TOP:
+        return "north"
+      case BOTTOM:
+        return "south"
+      case RIGHT:
+        return "east"
+      case LEFT:
+        return "west"
+      }
+    })()
+    creep.say(`go ${directionDescription}`)
     creep.moveTo(exitPosition, defaultMoveToOptions())
   }
 }
