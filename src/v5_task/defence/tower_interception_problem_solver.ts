@@ -116,9 +116,16 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
       return Game.getObjectById(this.targetId)
     })()
 
-    const canKill = (ticksToKill: number, ticksToEscape: number): boolean => {
-      return (ticksToKill - (ticksToEscape * 3)) < 3
-    }
+    const canKill = ((): (ticksToKill: number, ticksToEscape: number) => boolean => {
+      if (objects.controller.safeMode != null) {
+        return (): boolean => true
+      }
+      return (ticksToKill: number, ticksToEscape: number): boolean => {
+        return (ticksToKill - (ticksToEscape * 3)) < 3
+      }
+    })()
+
+
 
     if (currentTarget != null) {
       const currentTargetId = currentTarget.id
