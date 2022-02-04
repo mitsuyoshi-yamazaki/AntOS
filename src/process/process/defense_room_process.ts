@@ -125,16 +125,20 @@ export class DefenseRoomProcess implements Process, Procedural {
 
     this.runRepairers(repairers, hostileCreeps)
 
-    const largestTicksToLive = hostileCreeps.reduce((result, current) => {
-      if (current.ticksToLive == null) {
-        return result
-      }
-      if (current.ticksToLive > result) {
-        return current.ticksToLive
-      }
-      return result
-    }, 0)
     const intercepterMaxCount = ((): number => {
+      if (roomResources.controller.safeMode != null && roomResources.controller.safeMode > 200) {
+        return 0
+      }
+
+      const largestTicksToLive = hostileCreeps.reduce((result, current) => {
+        if (current.ticksToLive == null) {
+          return result
+        }
+        if (current.ticksToLive > result) {
+          return current.ticksToLive
+        }
+        return result
+      }, 0)
       if (largestTicksToLive < 200) {
         return 0
       }
