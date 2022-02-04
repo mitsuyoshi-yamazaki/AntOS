@@ -79,7 +79,10 @@ export class RemoteRoomKeeperTask extends Task {
         break
       }
       if (targetRoomInfo.owner == null) {
-        return true
+        if ((Game.time % 97) < 29) {
+          return true
+        }
+        return false
       }
       if (targetRoomInfo.owner.ownerType === "reserve" && ownerNameWhitelist.includes(targetRoomInfo.owner.username) === true) {
         return true
