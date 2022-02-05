@@ -13,6 +13,10 @@ import { CreepRole } from "prototype/creep_role"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { OperatingSystem } from "os/os"
+import { RoomResources } from "room_resource/room_resources"
+import { NormalRoomResource } from "room_resource/room_resource/normal_room_resource"
+import { CreepBody } from "utility/creep_body"
+import { Invader } from "game/invader"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
@@ -20,14 +24,18 @@ ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
 
 type TargetInfo = {
   readonly roomName: RoomName
-  readonly playerNames: string[]
+  readonly attacker: {
+    playerNames: string[],
+    onlyNpc: boolean,
+  },
   readonly totalPower: {
     readonly attack: number
     readonly rangedAttack: number
     readonly heal: number
   }
   readonly boosted: boolean
-  readonly invaderCount: number
+  readonly hostileCreepCount: number
+  readonly priority: number // 大きい方が優先
 }
 
 type RoomInfo = {
@@ -40,6 +48,8 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly currentTarget: TargetInfo | null
 }
 
+// Game.io("launch ObserveRoomProcess room_name=W23S25 target_room_name=W23S27 duration=100")
+// Game.io("launch DefenseRemoteRoomProcess room_name=W23S28 target_room_names=W23S27")
 export class DefenseRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -90,7 +100,82 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    if (this.currentTarget == null) {
+      this.checkRemoteRooms()
+      return
+    }
 
+    // TODO:
+  }
+
+  private checkRemoteRooms(): void {
+    const targets = this.targetRooms.flatMap((roomInfo): TargetInfo[] => {
+      const roomResource = RoomResources.getNormalRoomResource(roomInfo.name)
+      if (roomResource == null) {
+        // console.log(`no room resource for ${roomInfo.name}`)
+        return []
+      }
+      if (roomResource.hostiles.creeps.length <= 0) {
+        // console.log(`no hostile in ${roomInfo.name}`)
+        return []
+      }
+      return [this.calculateTargetInfo(roomResource)]
+    })
+
+    // TODO:
+    // targets.sort((lhs, rhs) => {
+    //   if (lhs.attacker.onlyNpc !== rhs.attacker.onlyNpc) {
+    //     return lhs.attacker.onlyNpc ? -1 : 1
+    //   }
+    // })
+
+    const target = targets[0] ?? null
+    this.currentTarget = target
+  }
+
+  private calculateTargetInfo(roomResource: NormalRoomResource): TargetInfo {
+    const playerNames: string[] = []
+    let totalAttackPower = 0
+    let totalRangedAttackPower = 0
+    let totalHealPower = 0
+    let boosted = false as boolean
+
+    roomResource.hostiles.creeps.forEach(creep => {
+      if (playerNames.includes(creep.owner.username) !== true) {
+        playerNames.push(creep.owner.username)
+      }
+      totalAttackPower += CreepBody.power(creep.body, "attack")
+      totalRangedAttackPower += CreepBody.power(creep.body, "rangedAttack")
+      totalHealPower += CreepBody.power(creep.body, "heal")
+      if (boosted !== true && creep.body.some(body => body.boost != null)) {
+        boosted = true
+      }
+    })
+
+    const onlyNpc = playerNames.length === 1 && playerNames[0] === Invader.username
+    const priority = ((): number => {
+      let value = 0
+      value += totalAttackPower * 0.3
+      value += totalRangedAttackPower
+      value += totalHealPower * 3
+      return value
+    })()
+
+    return {
+      roomName: roomResource.room.name,
+      attacker: {
+        playerNames,
+        onlyNpc,
+      },
+      totalPower: {
+        attack: totalAttackPower,
+        rangedAttack: totalRangedAttackPower,
+        heal: totalHealPower,
+      },
+      boosted,
+      hostileCreepCount: roomResource.hostiles.creeps.length,
+      priority,
+    }
   }
 }
 
@@ -123,7 +208,7 @@ function targetDescription(targetInfo: TargetInfo): string {
   if (actionPowers.length > 0) {
     descriptions.push(actionPowers.join(""))
   }
-  const playerDescriptions = targetInfo.playerNames.map(name => profileLink(name)).join(",")
-  descriptions.push(`${targetInfo.invaderCount} ${playerDescriptions} creeps`)
+  const playerDescriptions = targetInfo.attacker.playerNames.map(name => profileLink(name)).join(",")
+  descriptions.push(`${targetInfo.hostileCreepCount} ${playerDescriptions} creeps`)
   return descriptions.join(" ")
 }
