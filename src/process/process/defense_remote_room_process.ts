@@ -54,6 +54,7 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
 
 // Game.io("launch ObserveRoomProcess room_name=W23S25 target_room_name=W23S27 duration=100")
 // Game.io("launch DefenseRemoteRoomProcess room_name=W23S28 target_room_names=W23S27")
+// 事故死の検証
 export class DefenseRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -101,6 +102,16 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     ]
     if (this.currentTarget != null) {
       descriptions.push(targetDescription(this.currentTarget))
+    }
+    const intercepter = ((): Creep | null => {
+      const intercepterName = Array.from(Object.values(this.intercepterCreepNames))[0]
+      if (intercepterName == null) {
+        return null
+      }
+      return Game.creeps[intercepterName] ?? null
+    })()
+    if (intercepter != null) {
+      descriptions.push(`${Array.from(Object.keys(this.intercepterCreepNames)).length} creep in ${roomLink(intercepter.room.name)}`)
     }
     return descriptions.join(", ")
   }
