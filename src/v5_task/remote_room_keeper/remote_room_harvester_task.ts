@@ -25,10 +25,17 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
-import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
+import { Timestamp } from "utility/timestamp"
+
+type Construction = {
+  routeCalculatedTimestamp: Timestamp
+  constructionFinished: boolean
+  readonly roadPositions: Position[]
+}
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -47,6 +54,8 @@ export interface RemoteRoomHarvesterTaskState extends TaskState {
 
     noContainerPosition: boolean
   }
+
+  readonly construction: Construction
 }
 
 export class RemoteRoomHarvesterTask extends EnergySourceTask {
@@ -70,6 +79,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     public readonly sourceId: Id<Source>,
     private containerId: Id<StructureContainer> | null,
     private noContainerPosition: boolean,
+    private readonly construction: Construction,
   ) {
     super(startTime, children)
 
@@ -88,18 +98,34 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         i: this.containerId ?? null,
         noContainerPosition: this.noContainerPosition,
       },
+      construction: this.construction,
     }
   }
 
   public static decode(state: RemoteRoomHarvesterTaskState, children: Task[]): RemoteRoomHarvesterTask | null {
-    return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i, state.co.noContainerPosition ?? false)
+    const construction = ((): Construction => { // FixMe: Migration
+      if (state.construction != null) {
+        return state.construction
+      }
+      return {
+        routeCalculatedTimestamp: state.s,
+        constructionFinished: true,
+        roadPositions: [],
+      }
+    })()
+    return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i, state.co.noContainerPosition ?? false, construction)
   }
 
   public static create(roomName: RoomName, source: Source): RemoteRoomHarvesterTask {
     const targetRoomName = source.room.name
     const children: Task[] = [
     ]
-    return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null, false)
+    const construction: Construction = {
+      routeCalculatedTimestamp: 0,
+      constructionFinished: false,
+      roadPositions: [],
+    }
+    return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null, false, construction)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -125,6 +151,12 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     if (container == null && this.noContainerPosition !== true) {
       this.checkContainer(objects, childTaskResults.finishedTasks, source)
+    }
+
+    if (container != null) {
+      if (Game.time > (this.construction.routeCalculatedTimestamp + 40000)) {
+        this.placeRoadConstructMarks(objects, container)
+      }
     }
 
     problemFinders.push(...this.runHarvester(objects, source, container))
@@ -396,6 +428,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     if (storage == null) {
       return
     }
+    this.construction.routeCalculatedTimestamp = Game.time
 
     const codename = generateCodename(this.constructor.name, this.startTime)
     placeRoadConstructionMarks(storage.pos, container.pos, codename)
