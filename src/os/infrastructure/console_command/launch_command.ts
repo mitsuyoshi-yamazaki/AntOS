@@ -1121,7 +1121,16 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
 
     const nextHighwayRoom = highwayEntranceRoomCoordinate.neighbourRoom(direction)
     const nextHighwayRoomCoordinate = RoomCoordinate.parse(nextHighwayRoom)
-    if (nextHighwayRoomCoordinate == null || nextHighwayRoomCoordinate.roomType !== "highway") {
+    if (nextHighwayRoomCoordinate == null) {
+      throw `cannot parse room next to the entrance room ${roomLink(nextHighwayRoom)}`
+    }
+    switch (nextHighwayRoomCoordinate.roomType) {
+    case "highway":
+    case "highway_crossing":
+      break
+    case "normal":
+    case "source_keeper":
+    case "sector_center":
       throw `room next to the entrance room ${roomLink(nextHighwayRoom)} is not on a highway ${nextHighwayRoomCoordinate?.roomType}`
     }
 
