@@ -32,9 +32,29 @@ export const isRoomCoordinateDirection = (obj: string): obj is RoomCoordinateDir
   return RoomCoordinateDirection.includes(obj as any)
 }
 
+export const isHighwayRoom = (roomType: RoomType): boolean => {
+  switch (roomType) {
+  case "highway":
+  case "highway_crossing":
+    return true
+  case "normal":
+  case "source_keeper":
+  case "sector_center":
+    return false
+  }
+}
+
 export class RoomCoordinate {
   public get roomType(): RoomType {
     return roomTypeFromCoordinate(this)
+  }
+
+  public get xCoordinate(): string {
+    return `${xDirection(this.direction)}${this.x}`
+  }
+
+  public get yCoordinate(): string {
+    return `${yDirection(this.direction)}${this.y}`
   }
 
   private constructor(
@@ -217,6 +237,18 @@ export class RoomCoordinate {
     const direction = `${yDirection}${xDirection}` as RoomCoordinateDirection
     return RoomCoordinate.create(direction, x, y)
   }
+
+  public isLinearTo(roomName: RoomName): boolean {
+    const otherCoordinate = RoomCoordinate.parse(roomName)
+    if (otherCoordinate == null) {
+      return false
+    }
+
+    if (this.xCoordinate === otherCoordinate.xCoordinate || this.yCoordinate === otherCoordinate.yCoordinate) {
+      return true
+    }
+    return false
+  }
 }
 
 export function roomTypeOf(roomName: RoomName): RoomType | null {
@@ -255,4 +287,26 @@ function roomTypeFromCoordinate(roomCoordinate: RoomCoordinate): RoomType {
     return "source_keeper"
   }
   return "normal"
+}
+
+function xDirection(direction: RoomCoordinateDirection): "E" | "W" {
+  switch (direction) {
+  case "NE":
+  case "SE":
+    return "E"
+  case "NW":
+  case "SW":
+    return "W"
+  }
+}
+
+function yDirection(direction: RoomCoordinateDirection): "N" | "S" {
+  switch (direction) {
+  case "NE":
+  case "NW":
+    return "N"
+  case "SE":
+  case "SW":
+    return "S"
+  }
 }

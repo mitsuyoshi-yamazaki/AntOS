@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { Result } from "utility/result"
-import { isValidRoomName, RoomName } from "../utility/room_name"
+import { isValidRoomName, RoomCoordinate, RoomName } from "../utility/room_name"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }
@@ -21,6 +21,14 @@ const MissingWaypoints = {
       from: fromRoomName,
       to: toRoomName,
     })
+  },
+
+  isMissing(fromRoomName: RoomName, toRoomName: RoomName): boolean {
+    const identifier = `${fromRoomName}=>${toRoomName}`
+    if (cachedPairs.includes(identifier) === true) {
+      return true
+    }
+    return false
   },
 }
 
@@ -50,11 +58,17 @@ export const GameMap = {
       returnTrip.reverse()
       return returnTrip
     }
-    const adjacentRoomNames = Array.from(Object.values(Game.map.describeExits(roomName)))
-    if (adjacentRoomNames.includes(destinationRoomName) === true) {
-      this.setWaypoints(roomName, destinationRoomName, [])
-      return []
+
+    if (MissingWaypoints.isMissing(roomName, destinationRoomName) === true) {
+      return null
     }
+
+    const calculatedWaypoints = calculateWaypoints(roomName, destinationRoomName)
+    if (calculatedWaypoints != null) {
+      this.setWaypoints(roomName, destinationRoomName, calculatedWaypoints)
+      return calculatedWaypoints
+    }
+
     MissingWaypoints.add(roomName, destinationRoomName)
     return null
   },
@@ -104,4 +118,48 @@ function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomNa
     return null
   }
   return [...waypoints]
+}
+
+function calculateWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const adjacentWaypoints = adjacentRoomWaypoints(roomName, destinationRoomName)
+  if (adjacentWaypoints != null) {
+    return adjacentWaypoints
+  }
+
+  const straightWaypoints = straightRoomWaypoints(roomName, destinationRoomName)
+  if (straightWaypoints != null) {
+    return straightWaypoints
+  }
+
+  return null
+}
+
+function adjacentRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const adjacentRoomNames = Array.from(Object.values(Game.map.describeExits(roomName)))
+  if (adjacentRoomNames.includes(destinationRoomName) === true) {
+    return []
+  }
+  return null
+}
+
+function straightRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const coordinate = RoomCoordinate.parse(roomName)
+  const destinationCoordinate = RoomCoordinate.parse(roomName)
+  if (coordinate == null || destinationCoordinate == null) {
+    return null
+  }
+
+  if (coordinate.isLinearTo(destinationRoomName) !== true) {
+    return null
+  }
+
+  const route = Game.map.findRoute(roomName, destinationRoomName)
+  if (route === ERR_NO_PATH) {
+    return null
+  }
+  const linearDistance = Game.map.getRoomLinearDistance(roomName, destinationRoomName)
+  if (route.length !== linearDistance) {
+    return null
+  }
+  return []
 }
