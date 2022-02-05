@@ -3,15 +3,21 @@ import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { coloredText } from "utility/log"
-import { Environment } from "utility/environment"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
   r: RoomName
 }
 
+/**
+ * - RemoteRoomManager
+ *   - RemoteRoomDefender
+ *   - RemoteRoomKeeper(s)
+ *     - RemoteRoomWorker
+ *       - RemoteRoomReserver
+ *       - RemoteRoomHarvester
+ *       - RemoteRoomHauler
+ */
 export class RemoteRoomManagerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
@@ -64,19 +70,19 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
-    const keeper = this.children.find(task => {
-      if (!(task instanceof RemoteRoomKeeperTask)) {
-        return false
-      }
-      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W47S2" && task.targetRoomName === "W47S3") {
-        return true
-      }
-      return false
-    })
-    if (keeper != null) {
-      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remove remote room keeper task`)
-      this.removeChildTask(keeper)
-    }
+    // const keeper = this.children.find(task => {
+    //   if (!(task instanceof RemoteRoomKeeperTask)) {
+    //     return false
+    //   }
+    //   if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W47S2" && task.targetRoomName === "W47S3") {
+    //     return true
+    //   }
+    //   return false
+    // })
+    // if (keeper != null) {
+    //   PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remove remote room keeper task`)
+    //   this.removeChildTask(keeper)
+    // }
 
     return TaskStatus.InProgress
   }
