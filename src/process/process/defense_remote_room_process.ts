@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { coloredCreepBody, coloredText, profileLink, roomLink } from "utility/log"
+import { coloredCreepBody, coloredText, profileLink, roomHistoryLink, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { World } from "world_info/world_info"
@@ -115,14 +115,29 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       this.checkRemoteRooms()
       return
     }
+    const updatedTarget = this.updatedTarget(this.currentTarget)
+    if (updatedTarget === "as is") {
+      // do nothing
+    } else if (updatedTarget == null) {
+      this.currentTarget = null
+      return
+    } else {
+      this.currentTarget = updatedTarget
+    }
     const target = this.currentTarget
-    this.checkCurrentTarget(target)
 
     const creepMaxCount = 1
     const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
     Array.from(Object.entries(this.intercepterCreepNames)).forEach(([roomName, intercepterName]) => {
-      if (Game.creeps[intercepterName] == null) {
+      const creep = Game.creeps[intercepterName]
+      if (creep == null) {
+        // 寿命死以外
         delete this.intercepterCreepNames[roomName]
+        PrimitiveLogger.fatal(`${this.constructor.name} ${this.processId} intercepter ${intercepterName} was killed ${roomHistoryLink(roomName)}`)
+      } else {
+        if (creep.ticksToLive != null && creep.ticksToLive <= 1) {
+          delete this.intercepterCreepNames[roomName]
+        }
       }
     })
     intercepters.forEach(creep => {
@@ -239,26 +254,29 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     })
   }
 
-  private checkCurrentTarget(target: TargetInfo): void {
+  private updatedTarget(target: TargetInfo): TargetInfo | "as is" | null {
     const targetRoomResource = RoomResources.getNormalRoomResource(target.roomName)
     if (targetRoomResource == null) {
-      return
+      return "as is"
     }
 
     if (targetRoomResource.hostiles.creeps.length <= 0) {
-      this.currentTarget = null
+      return null
     }
+
+    if (targetRoomResource.hostiles.creeps.length !== target.hostileCreepCount) {
+      return this.calculateTargetInfo(targetRoomResource)
+    }
+    return "as is"
   }
 
   private checkRemoteRooms(): void {
     const targets = this.targetRooms.flatMap((roomInfo): TargetInfo[] => {
       const roomResource = RoomResources.getNormalRoomResource(roomInfo.name)
       if (roomResource == null) {
-        // console.log(`no room resource for ${roomInfo.name}`)
         return []
       }
       if (roomResource.hostiles.creeps.length <= 0) {
-        // console.log(`no hostile in ${roomInfo.name}`)
         return []
       }
       return [this.calculateTargetInfo(roomResource)]
@@ -284,9 +302,19 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       if (playerNames.includes(creep.owner.username) !== true) {
         playerNames.push(creep.owner.username)
       }
-      totalAttackPower += CreepBody.power(creep.body, "attack")
-      totalRangedAttackPower += CreepBody.power(creep.body, "rangedAttack")
-      totalHealPower += CreepBody.power(creep.body, "heal")
+      const attackPower = CreepBody.power(creep.body, "attack")
+      const rangedAttackPower = CreepBody.power(creep.body, "rangedAttack")
+      const healPower = CreepBody.power(creep.body, "heal")
+
+      if (attackPower <= 0 && rangedAttackPower <= 0 && healPower <= 0) {
+        if (creep.getActiveBodyparts(WORK) <= 0 && creep.getActiveBodyparts(CLAIM) <= 0) {
+          return
+        }
+      }
+
+      totalAttackPower += attackPower
+      totalRangedAttackPower += rangedAttackPower
+      totalHealPower += healPower
       totalHits = creep.hitsMax
 
       if (boosted !== true && creep.body.some(body => body.boost != null)) {
@@ -353,5 +381,6 @@ function targetDescription(targetInfo: TargetInfo): string {
   }
   const playerDescriptions = targetInfo.attacker.playerNames.map(name => profileLink(name)).join(",")
   descriptions.push(`${targetInfo.hostileCreepCount} ${playerDescriptions} creeps`)
+  descriptions.push(`in ${roomLink(targetInfo.roomName)}`)
   return descriptions.join(" ")
 }
