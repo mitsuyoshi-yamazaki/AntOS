@@ -36,8 +36,11 @@ type TargetInfo = {
     readonly heal: number
     readonly hits: number
   }
-  readonly boosted: boolean
-  readonly hostileCreepCount: number
+  readonly hostileCreep: {
+    readonly boosted: boolean
+    readonly attackerCount: number
+    readonly totalCreepCount: number
+  }
   readonly priority: number // 大きい方が優先
 }
 
@@ -282,7 +285,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       return null
     }
 
-    if (targetRoomResource.hostiles.creeps.length !== target.hostileCreepCount) {
+    if (targetRoomResource.hostiles.creeps.length !== target.hostileCreep.totalCreepCount) {
       return this.calculateTargetInfo(targetRoomResource)
     }
     return "as is"
@@ -297,7 +300,11 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       if (roomResource.hostiles.creeps.length <= 0) {
         return []
       }
-      return [this.calculateTargetInfo(roomResource)]
+      const target = this.calculateTargetInfo(roomResource)
+      if (target == null) {
+        return []
+      }
+      return [target]
     })
 
     targets.sort((lhs, rhs) => {
@@ -308,13 +315,14 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     this.currentTarget = target
   }
 
-  private calculateTargetInfo(roomResource: NormalRoomResource): TargetInfo {
+  private calculateTargetInfo(roomResource: NormalRoomResource): TargetInfo | null {
     const playerNames: string[] = []
     let totalAttackPower = 0
     let totalRangedAttackPower = 0
     let totalHealPower = 0
     let totalHits = 0
     let boosted = false as boolean
+    let attackerCount = 0
 
     roomResource.hostiles.creeps.forEach(creep => {
       if (playerNames.includes(creep.owner.username) !== true) {
@@ -329,6 +337,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
           return
         }
       }
+      attackerCount += 1
 
       totalAttackPower += attackPower
       totalRangedAttackPower += rangedAttackPower
@@ -339,6 +348,10 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
         boosted = true
       }
     })
+
+    if (attackerCount <= 0) {
+      return null
+    }
 
     const onlyNpc = playerNames.length === 1 && playerNames[0] === Invader.username
     const priority = ((): number => {
@@ -361,8 +374,11 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
         heal: totalHealPower,
         hits: totalHits,
       },
-      boosted,
-      hostileCreepCount: roomResource.hostiles.creeps.length,
+      hostileCreep: {
+        boosted,
+        attackerCount,
+        totalCreepCount: roomResource.hostiles.creeps.length,
+      },
       priority,
     }
   }
@@ -381,7 +397,7 @@ function targetDescription(targetInfo: TargetInfo): string {
   }
 
   const descriptions: string[] = []
-  if (targetInfo.boosted === true) {
+  if (targetInfo.hostileCreep.boosted === true) {
     descriptions.push(coloredText("boosted", "error"))
   }
   const actionPowers: string[] = []
@@ -398,7 +414,7 @@ function targetDescription(targetInfo: TargetInfo): string {
     descriptions.push(actionPowers.join(""))
   }
   const playerDescriptions = targetInfo.attacker.playerNames.map(name => profileLink(name)).join(",")
-  descriptions.push(`${targetInfo.hostileCreepCount} ${playerDescriptions} creeps`)
+  descriptions.push(`${targetInfo.hostileCreep.attackerCount} ${playerDescriptions} creeps`)
   descriptions.push(`in ${roomLink(targetInfo.roomName)}`)
   return descriptions.join(" ")
 }
