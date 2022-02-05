@@ -9,7 +9,7 @@ import { CreepApiWrapper, CreepApiWrapperProgress, CreepApiWrapperState } from "
 
 const apiWrapperType = "TransferApiWrapper"
 
-type TransferApiWrapperTargetType = AnyCreep | StructureStorage | EnergyChargeableStructure
+type TransferApiWrapperTargetType = AnyCreep | StructureStorage | StructureFactory | EnergyChargeableStructure
 
 export interface TransferApiWrapperState extends CreepApiWrapperState {
   /** type identifier */

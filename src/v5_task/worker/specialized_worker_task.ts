@@ -19,6 +19,8 @@ import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_
 import { World } from "world_info/world_info"
 import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
 import { RoomResources } from "room_resource/room_resources"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 let randomSeed = 0
 
@@ -153,6 +155,14 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
+    const task = this.taskFor(creep, objects)
+    if (task == null) {
+      return null
+    }
+    return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
+  }
+
+  private taskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       // OwnedRoomHaulerTask が行う
       // const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
@@ -185,7 +195,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
       if (this.saying !== Game.time) {
         this.saying = Game.time
-        creep.say("no task")
+        creep.say("no task1")
       }
       if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
         randomSeed += 1
@@ -211,7 +221,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
 
       const constructionSite = objects.getConstructionSite(creep.pos)
-      if (constructionSite != null) {
+      if (constructionSite != null && objects.hostiles.creeps.length <= 0) {
         return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
       }
 
@@ -241,16 +251,25 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
       if (this.saying !== Game.time) {
         this.saying = Game.time
-        creep.say("no task")
+        creep.say("no task2")
       }
       if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
-        randomSeed += 1
-        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
-          return RandomMoveTask.create()
-        }
+        return this.randomMoveTask(creep, objects.activeStructures.spawns[0].pos)
       }
       return null
     }
+  }
+
+  private randomMoveTask(creep: Creep, fromPosition: RoomPosition): CreepTask | null {
+    const path = PathFinder.search(creep.pos, { pos: fromPosition, range: 5 }, {
+      flee: true,
+      maxRooms: 1,
+    })
+    const lastPosition = path.path[path.path.length - 1]
+    if (lastPosition == null) {
+      return null
+    }
+    return MoveToTask.create(lastPosition, 3)
   }
 
   // ---- Creep Request ---- //

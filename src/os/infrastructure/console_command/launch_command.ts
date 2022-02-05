@@ -37,17 +37,23 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
-import { RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
+import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
+import { } from "process/temporary/season4_628862_downgrade_room_process"
+import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
+import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
+import { directionName } from "utility/direction"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -136,8 +142,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchMonitoringProcess()
       case "QuadMakerProcess":
         return this.launchQuadMakerProcess()
-      case "Season4275982HarvestCommodityProcess":
-        return this.launchSeason4275982HarvestCommodityProcess()
       default: {
         const stringArgument = new KeywordArguments(args)
         return ProcessLauncher.launch(processType, stringArgument)
@@ -1012,61 +1016,11 @@ export class LaunchCommand implements ConsoleCommand {
     })
     return Result.Succeeded(process)
   }
-
-  private launchSeason4275982HarvestCommodityProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const commodityType = args.get("commodity_type")
-    if (commodityType == null) {
-      return this.missingArgumentError("commodity_type")
-    }
-    if (!isDepositConstant(commodityType)) {
-      return Result.Failed(`${commodityType} is not commodity type`)
-    }
-
-    const rawHarvesterCount = args.get("harvester_count")
-    if (rawHarvesterCount == null) {
-      return this.missingArgumentError("harvester_count")
-    }
-    const harvesterCount = parseInt(rawHarvesterCount, 10)
-    if (isNaN(harvesterCount) === true) {
-      return Result.Failed(`harvester_count ${rawHarvesterCount} is not a number`)
-    }
-
-    const roomDistance = Game.map.getRoomLinearDistance(roomName, targetRoomName)
-    const haulerCount = roomDistance >= 3 ? 2 : 1
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season4275982HarvestCommodityProcess.create(
-        processId,
-        roomName,
-        {
-          roomName: targetRoomName,
-          commodityType,
-          neighbourCellCount: 1,  // FixMe:
-          currentCooldown: 0,
-        },
-        {
-          harvesterCount: harvesterCount,
-          haulerCount,
-        }
-      )
-    })
-    return Result.Succeeded(process)
-  }
 }
 
 ProcessLauncher.register("ProduceCommodityProcess", args => {
   try {
-    const roomName = args.roomName("room_name").parse()
+    const roomName = args.roomName("room_name").parse({my: true})
     const room = Game.rooms[roomName]
     if (room == null || room.controller?.my !== true) {
       throw `${roomLink(roomName)} is not mine`
@@ -1078,6 +1032,112 @@ ProcessLauncher.register("ProduceCommodityProcess", args => {
     }
 
     return Result.Succeeded((processId) => ProduceCommodityProcess.create(processId, roomName, factory.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4596376ConvoyInterrupterProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const highwayRoomName1 = args.roomName("highway_room_name_1").parse()
+    const highwayRoomName2 = args.roomName("highway_room_name_2").parse()
+
+    return Result.Succeeded((processId) => Season4596376ConvoyInterrupterProcess.create(processId, roomName, {roomName1: highwayRoomName1, roomName2: highwayRoomName2}))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DefenseRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+
+    return Result.Succeeded((processId) => DefenseRoomProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("GclFarmManagerProcess", args => {
+  try {
+    const name = args.string("name").parse()
+
+    return Result.Succeeded((processId) => GclFarmManagerProcess.create(processId, name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const depositType = args.depositType("deposit_type").parse()
+    const depositId = args.gameObjectId("deposit_id").parse() as Id<Deposit>
+    const harvesterCount = args.int("harvester_count").parse({max: 4})
+    const haulerCount = 1
+
+    return Result.Succeeded((processId) => Season4275982HarvestCommodityProcess.create(
+      processId,
+      roomName,
+      {
+        roomName: targetRoomName,
+        commodityType: depositType,
+        depositId,
+        neighbourCellCount: 1,  // FixMe:
+        currentCooldown: 0,
+      },
+      {
+        harvesterCount: harvesterCount,
+        haulerCount,
+      }
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4784484ScoreProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const highwayEntranceRoomName = args.roomName("highway_entrance_room_name").parse()
+    const highwayEntranceRoomCoordinate = RoomCoordinate.parse(highwayEntranceRoomName)
+    if (highwayEntranceRoomCoordinate == null) {
+      throw `cannot parse highway entrance room name ${roomLink(highwayEntranceRoomName)}`
+    }
+    if (highwayEntranceRoomCoordinate.roomType !== "highway") {
+      throw `highway_entrance_room_name is not on a highway ${roomLink(highwayEntranceRoomName)} (${highwayEntranceRoomCoordinate.roomType})`
+    }
+
+    const direction = ((): TOP | BOTTOM | LEFT | RIGHT => {
+      const missingArgumentErrorMessage = "missing direction argument: set direction the scoring creep heads toward"
+      const value = args.direction("direction", {missingArgumentErrorMessage}).parse()
+      if (value === TOP || value === BOTTOM || value === LEFT || value === RIGHT) {
+        return value
+      }
+      throw `invalid diagonal direction ${directionName(value)} (${value})`
+    })()
+
+    const nextHighwayRoom = highwayEntranceRoomCoordinate.neighbourRoom(direction)
+    const nextHighwayRoomCoordinate = RoomCoordinate.parse(nextHighwayRoom)
+    if (nextHighwayRoomCoordinate == null) {
+      throw `cannot parse room next to the entrance room ${roomLink(nextHighwayRoom)}`
+    }
+    switch (nextHighwayRoomCoordinate.roomType) {
+    case "highway":
+    case "highway_crossing":
+      break
+    case "normal":
+    case "source_keeper":
+    case "sector_center":
+      throw `room next to the entrance room ${roomLink(nextHighwayRoom)} is not on a highway ${nextHighwayRoomCoordinate?.roomType}`
+    }
+
+    const commodityType = args.commodityType("commodity_type").parse()
+    const amount = args.int("amount").parse()
+
+    return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

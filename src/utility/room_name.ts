@@ -74,7 +74,6 @@ export class RoomCoordinate {
     return new RoomCoordinate(roomName, direction, x, y)
   }
 
-  /** @deprecated */
   public neighbourRoom(direction: TOP | BOTTOM | LEFT | RIGHT): RoomName {
     switch (direction) {
     case TOP:

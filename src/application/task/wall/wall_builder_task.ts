@@ -19,6 +19,7 @@ import { calculateWallPositions } from "script/wall_builder"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { TaskLogRequest } from "application/task_logger"
+import { OwnedRoomInfo } from "room_resource/room_info"
 
 export const WallBuilderTaskMaxWallHits = 5000000
 
@@ -81,10 +82,20 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   public run(roomResource: OwnedRoomResource): WallBuilderTaskOutputs {
     const taskOutputs: WallBuilderTaskOutputs = emptyTaskOutputs()
 
-    if (((Game.time + this.startTime) % 37) === 3) {
-      const wallLog = this.checkWallPositions(roomResource)
-      if (wallLog != null) {
-        taskOutputs.logs.push(wallLog)
+    if (roomResource.controller.level >= wallAvailableLevel) {
+      const processTime = Game.time + this.startTime
+      if ((processTime % 37) === 3) {
+        const wallLog = this.checkWallPositions(roomResource)
+        if (wallLog != null) {
+          taskOutputs.logs.push(wallLog)
+        }
+      }
+
+      if ((processTime % 4099) === 17) {
+        const rebuildLog = this.rebuildDestroyedWalls(roomResource.roomInfo)
+        if (rebuildLog != null) {
+          taskOutputs.logs.push(rebuildLog)
+        }
       }
     }
 
@@ -210,9 +221,6 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
   }
 
   private checkWallPositions(roomResource: OwnedRoomResource): TaskLogRequest | null {
-    if (roomResource.controller.level < wallAvailableLevel) {
-      return null
-    }
     if (roomResource.constructionSites.some(constructionSite => wallTypes.includes(constructionSite.structureType))) {
       return null
     }
@@ -288,6 +296,17 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       }
     }
     }
+  }
+
+  private rebuildDestroyedWalls(roomInfo: OwnedRoomInfo): TaskLogRequest | null {
+    if (roomInfo.roomPlan?.wallPositions == null) {
+      return null
+    }
+    if (roomInfo.roomPlan.wallPositions.length > 0) { // 建設中
+      return null
+    }
+    roomInfo.roomPlan.wallPositions = undefined
+    return null
   }
 
   // ---- Profit ---- //

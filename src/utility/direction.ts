@@ -1,3 +1,21 @@
+export const DirectionConstants = [
+  TOP,
+  BOTTOM,
+  LEFT,
+  RIGHT,
+  TOP_LEFT,
+  TOP_RIGHT,
+  BOTTOM_LEFT,
+  BOTTOM_RIGHT,
+]
+
+export function isDirectionConstant(arg: number): arg is DirectionConstant {
+  if ((DirectionConstants as number[]).includes(arg) === true) {
+    return true
+  }
+  return false
+}
+
 export function oppositeDirection(direction: DirectionConstant): DirectionConstant {
   switch (direction) {
   case TOP:

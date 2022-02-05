@@ -51,7 +51,12 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
   }
 
   const process = OperatingSystem.os.addProcess(null, processId => {
-    return SpecializedQuadProcess.create(processId, roomName, targetRoomName, targets as Id<AnyStructure>[], quadSpec, null)
+    return SpecializedQuadProcess.create(processId, {
+      parentRoomName: roomName,
+      targetRoomName,
+      predefinedTargetIds: targets as Id<AnyStructure>[],
+      frontBaseRoomName: null,
+    }, quadSpec)
   })
   return Result.Succeeded(process)
 

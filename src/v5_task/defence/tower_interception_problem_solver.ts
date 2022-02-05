@@ -7,11 +7,13 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
+import { calculateTowerDamage } from "utility/tower"
 
 type TargetInfo = {
   target: AnyCreep
   maxTicksToKill: number | null
   minimumTicksToEscape: number
+  damageTaken: number // 0~1
 }
 
 export interface TowerInterceptionProblemSolverState extends ProblemSolverState {
@@ -53,13 +55,43 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const targetInfo = this.attackTarget(objects)
+    const towerPositions = objects.activeStructures.towers
+      .filter(tower => tower.store.getUsedCapacity(RESOURCE_ENERGY) > 10)
+      .map(tower => tower.pos)
+
+    const targetInfo = this.attackTarget(objects, towerPositions)
     if (targetInfo == null) {
       this.targetId = null
       return TaskStatus.Finished
     }
 
     const target = targetInfo.target
+
+    if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
+      const shouldStopAttacking = ((): boolean => {
+        const damage = towerPositions.reduce((result, current) => {
+          return result + calculateTowerDamage(current.getRangeTo(target.pos))
+        }, 0)
+        const healPower = target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
+          return result + CreepBody.power(current.body, "heal")
+        }, 0)
+
+        if (healPower < damage) {
+          return false
+        }
+        const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
+        if (hasAttacker !== true) {
+          return true
+        }
+        return false
+      })()
+
+      if (shouldStopAttacking === true) {
+        this.targetId = null
+        return TaskStatus.Finished
+      }
+    }
+
     this.targetId = target.id
     World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(target, TowerPoolTaskPriority.Urgent))
 
@@ -70,26 +102,28 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     return TaskStatus.InProgress
   }
 
-  private attackTarget(objects: OwnedRoomObjects): TargetInfo | null {
-    const towerPositions = objects.activeStructures.towers
-      .filter(tower => tower.store.getUsedCapacity(RESOURCE_ENERGY) > 10)
-      .map(tower => tower.pos)
-
+  private attackTarget(objects: OwnedRoomObjects, towerPositions: RoomPosition[]): TargetInfo | null {
     if (towerPositions.length <= 0) {
       return null
+    }
+
+    if (objects.hostiles.creeps.length <= 1 && objects.hostiles.creeps[0] != null) {
+      const hostileCreep = objects.hostiles.creeps[0]
+      const healPower = CreepBody.power(hostileCreep.body, "heal")
+      const canMove = hostileCreep.getActiveBodyparts(MOVE) > 0
+      const towerMinimumDamage = towerPositions.length * 150
+      if (healPower < (towerMinimumDamage / 2)) {
+        const {min, max} = GameConstants.room.edgePosition
+        if (hostileCreep.pos.x > min && hostileCreep.pos.x < max && hostileCreep.pos.y > min && hostileCreep.pos.y < max) {
+          return calculateTargetInfo(hostileCreep, healPower, canMove, towerPositions)
+        }
+      }
     }
 
     const hostileCreeps: AnyCreep[] = [
       ...objects.hostiles.creeps,
       ...objects.hostiles.powerCreeps,
     ]
-    if (this.roomName === "W37S35" && hostileCreeps[0] != null) {
-      return {
-        target: hostileCreeps[0],
-        maxTicksToKill: 1,
-        minimumTicksToEscape: 1,
-      }
-    }
 
     // killできないとなったら諦めて別targetを選定
     const targetInfo = hostileCreeps.map(target => {
@@ -108,9 +142,16 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
       return Game.getObjectById(this.targetId)
     })()
 
-    const canKill = (ticksToKill: number, ticksToEscape: number): boolean => {
-      return (ticksToKill - (ticksToEscape * 3)) < 3
-    }
+    const canKill = ((): (ticksToKill: number, ticksToEscape: number) => boolean => {
+      if (objects.controller.safeMode != null) {
+        return (): boolean => true
+      }
+      return (ticksToKill: number, ticksToEscape: number): boolean => {
+        return (ticksToKill - (ticksToEscape * 3)) < 3
+      }
+    })()
+
+
 
     if (currentTarget != null) {
       const currentTargetId = currentTarget.id
@@ -170,16 +211,19 @@ const roomMinExit = GameConstants.room.edgePosition.min
 const roomMaxExit = GameConstants.room.edgePosition.max
 const maxTicksToKillLimit = 100
 
-function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boolean, towerPositions: RoomPosition[]): TargetInfo {
+export function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boolean, towerPositions: RoomPosition[]): TargetInfo {
   const exitDistanceX = Math.min(target.pos.x - roomMinExit, roomMaxExit - target.pos.x)
   const exitDistanceY = Math.min(target.pos.y - roomMinExit, roomMaxExit - target.pos.y)
   const minimumTicksToEscape = Math.min(exitDistanceX, exitDistanceY)
+
+  const damageTaken = (target.hitsMax - target.hits) / Math.max(target.hitsMax, 0)
 
   if (target.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: {structureType: STRUCTURE_RAMPART}}).length > 0) {
     return {
       target,
       maxTicksToKill: null,
       minimumTicksToEscape,
+      damageTaken,
     }
   }
 
@@ -187,7 +231,7 @@ function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boole
   const maxTicksToKill = ((): number | null => {
     if (canMove !== true) {
       const totalTowerDamage = towerRanges.reduce((result, current) => {
-        return result + towerDamage(current)
+        return result + calculateTowerDamage(current)
       }, 0)
       const totalDamage = totalTowerDamage - healPower
       if (totalDamage <= 0) {
@@ -200,7 +244,7 @@ function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boole
 
     for (let i = 0; i < maxTicksToKillLimit; i += 1) {
       const totalTowerDamage = towerRanges.reduce((result, current) => {
-        return result + towerDamage(current + i)
+        return result + calculateTowerDamage(current + i)
       }, 0)
       const totalDamage = totalTowerDamage - healPower
       if (totalDamage <= 0) {
@@ -218,15 +262,6 @@ function calculateTargetInfo(target: AnyCreep, healPower: number, canMove: boole
     target,
     maxTicksToKill,
     minimumTicksToEscape,
+    damageTaken,
   }
-}
-
-function towerDamage(range: number): number {
-  if (range >= 20) {
-    return 150
-  }
-  if (range <= 5) {
-    return 600
-  }
-  return 600 - ((range - 5) * 30)
 }

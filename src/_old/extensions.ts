@@ -9,6 +9,7 @@ import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
+import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 
 export interface SectorMemory {
   name: string
@@ -43,6 +44,7 @@ declare global {
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
     eventMemory: EventMemory
     gameMap: GameMapMemory
+    gclFarm: GclFarmMemory
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
@@ -63,6 +65,9 @@ export function tick(): void {
   Game.environment = `${Environment.world}: ${Environment.shard}`
 
   Game.isEnemy = function(player: Owner): boolean {
+    if (player.username === Game.user.name) {
+      return false
+    }
     return Game.whitelist.includes(player.username) !== true
   }
 

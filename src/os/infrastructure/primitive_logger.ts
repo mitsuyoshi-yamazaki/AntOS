@@ -27,3 +27,7 @@ export const PrimitiveLogger = {
     Game.notify(coloredMessage)
   },
 }
+
+export function sanitizeLogMessage(message: string): string {
+  return message.replace("<", "&lt").replace(">", "&gt")
+}

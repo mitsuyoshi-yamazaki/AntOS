@@ -12,8 +12,11 @@ import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { Result, ResultFailed } from "utility/result"
 import { OperatingSystem } from "os/os"
-import { SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
+import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../submodules/attack/quad/quad_process"
 import { GameMap } from "game/game_map"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { LaunchQuadProcess } from "./attack/launch_quad_process"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -22,7 +25,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 const canHandleMeleeDefaultValue = false
 const defaultDamageTolerance = 0.15
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadName: string
@@ -33,6 +36,7 @@ interface QuadMakerProcessState extends ProcessState {
   readonly damageTolerance: number, // 0.0~1.0
   readonly boosts: MineralBoostConstant[],
   readonly creepSpecs: QuadCreepSpec[],
+  readonly targetIds: Id<AnyCreep | AnyStructure>[],
 }
 
 export class QuadMakerProcess implements Process, Procedural, MessageObserver {
@@ -52,6 +56,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     private damageTolerance: number,
     private boosts: MineralBoostConstant[],
     private creepSpecs: QuadCreepSpec[],
+    private targetIds: Id<AnyCreep | AnyStructure>[],
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${quadName}_${this.targetRoomName}`
   }
@@ -69,6 +74,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       damageTolerance: this.damageTolerance,
       boosts: this.boosts,
       creepSpecs: this.creepSpecs,
+      targetIds: this.targetIds,
     }
   }
 
@@ -84,6 +90,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       state.damageTolerance,
       state.boosts,
       state.creepSpecs,
+      state.targetIds ?? [],
     )
   }
 
@@ -93,7 +100,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     const damageTolerance = defaultDamageTolerance
     const boosts: MineralBoostConstant[] = []
     const creepSpec: QuadCreepSpec[] = []
-    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec)
+    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec, [])
   }
 
   public processShortDescription(): string {
@@ -101,9 +108,25 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commands = ["help", "set", "reset", "show", "verify", "launch", "clone"]
     const components = message.split(" ")
     const command = components.shift()
+
+    try {
+      if (command == null) {
+        throw "Missing command"
+      }
+      return this.executeCommand(command, components)
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  public runOnTick(): void {
+    // does nothing
+  }
+
+  private executeCommand(command: string, args: string[]): string {
+    const commands = ["help", "set", "reset", "show", "verify", "launch", "clone"]
 
     switch (command) {
     case "help":
@@ -125,20 +148,20 @@ commands: ${commands}
   - show current quad arguments
 - verify
   - check energyCapacityAvailable to verify
-- launch
+- launch dry_run?= delay?=
   - launch quad process
 - clone
   - clone this process
       `
 
     case "change":
-      return this.change(components)
+      return this.change(args)
 
     case "set":
-      return this.set(components)
+      return this.set(args)
 
     case "reset":
-      return this.reset(components)
+      return this.reset(args)
 
     case "show":
       return this.show()
@@ -158,20 +181,15 @@ commands: ${commands}
 
     // eslint-disable-next-line no-fallthrough
     case "launch": {
-      const dryRun = components[0] !== "dry_run=0"
-      return this.launchQuadProcess(dryRun)
+      return this.launchQuadProcess(args)
     }
 
     case "clone":
-      return "not implemented yet"
+      throw "not implemented yet"
 
     default:
-      return `Invalid command ${command}. see "help"`
+      throw `Invalid command ${command}. see "help"`
     }
-  }
-
-  public runOnTick(): void {
-    // does nothing
   }
 
   private change(args: string[]): string {
@@ -181,45 +199,45 @@ commands: ${commands}
     case "room_name": {
       const roomName = args[0]
       if (roomName == null) {
-        return "Missing room name argument"
+        throw "Missing room name argument"
       }
       if (isValidRoomName(roomName) !== true) {
-        return `Invalid room name ${roomName}`
+        throw `Invalid room name ${roomName}`
       }
       const oldValue = this.roomName
       this.roomName = roomName
-      return `Changed room_name ${oldValue} => ${this.roomName}`
+      return `Changed room_name ${oldValue} =&gt ${this.roomName}`
     }
 
     case "target_room_name": {
       const targetRoomName = args[0]
       if (targetRoomName == null) {
-        return "Missing target room name argument"
+        throw "Missing target room name argument"
       }
       if (isValidRoomName(targetRoomName) !== true) {
-        return `Invalid target room name ${targetRoomName}`
+        throw `Invalid target room name ${targetRoomName}`
       }
       const oldValue = this.targetRoomName
       this.targetRoomName = targetRoomName
-      return `Changed target_room_name ${oldValue} => ${this.targetRoomName}`
+      return `Changed target_room_name ${oldValue} =&gt ${this.targetRoomName}`
     }
 
     case "front_base_room_name": {
       const frontBaseRoomName = args[0]
       if (frontBaseRoomName == null) {
-        return "Missing front base room name argument"
+        throw "Missing front base room name argument"
       }
       const frontRoom = Game.rooms[frontBaseRoomName]
       if (frontRoom == null || frontRoom.controller?.my !== true) {
-        return `Front room ${roomLink(frontBaseRoomName)} is not mine`
+        throw `Front room ${roomLink(frontBaseRoomName)} is not mine`
       }
       const oldValue = this.frontBaseRoomName
       this.frontBaseRoomName = frontBaseRoomName
-      return `Changed front_base_room_name ${oldValue} => ${this.frontBaseRoomName}`
+      return `Changed front_base_room_name ${oldValue} =&gt ${this.frontBaseRoomName}`
     }
 
     default:
-      return `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
+      throw `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
     }
   }
 
@@ -230,7 +248,7 @@ commands: ${commands}
     case "handle_melee": {
       const handleMelee = args[0]
       if (handleMelee !== "0" && handleMelee !== "1") {
-        return `handle_melee value should be "0" or "1" (${handleMelee})`
+        throw `handle_melee value should be "0" or "1" (${handleMelee})`
       }
       this.canHandleMelee = handleMelee === "1"
       return `set handle_melee=${this.canHandleMelee}`
@@ -239,14 +257,14 @@ commands: ${commands}
     case "damage_tolerance": {
       const rawValue = args[0]
       if (rawValue == null) {
-        return "damage_tolerance no value (set 0.0~1.0)"
+        throw "damage_tolerance no value (set 0.0~1.0)"
       }
       const value = parseFloat(rawValue)
       if (isNaN(value) === true) {
-        return "damage_tolerance value is not a number (set 0.0~1.0)"
+        throw "damage_tolerance value is not a number (set 0.0~1.0)"
       }
       if (value < 0 || value > 1) {
-        return `damage_tolerance invalid value ${value}. set 0.0~1.0`
+        throw `damage_tolerance invalid value ${value}. set 0.0~1.0`
       }
       this.damageTolerance = value
       return `set damage_tolerance=${this.damageTolerance}`
@@ -255,22 +273,19 @@ commands: ${commands}
     case "boosts": {
       const rawBoosts = args[0]
       if (rawBoosts == null) {
-        return "no boosts specified, use reset command to reset boosts"
+        throw "no boosts specified, use \"reset\" command to reset boosts"
       }
-      const boosts = ((): MineralBoostConstant[] | string => {
+      const boosts = ((): MineralBoostConstant[] => {
         const result: MineralBoostConstant[] = []
         for (const value of rawBoosts.split(",")) {
           if (!isMineralBoostConstant(value)) {
-            return `Invalid boost ${value}`
+            throw `Invalid boost ${value}`
           }
           result.push(value)
         }
         return result
       })()
 
-      if (typeof boosts === "string") {
-        return boosts
-      }
       this.boosts = boosts
       return `set boosts=${this.boosts}`
     }
@@ -287,18 +302,18 @@ commands: ${commands}
 
       const rawCount = keyValueArgs.get("count")
       if (rawCount == null) {
-        return "Missing count argument"
+        throw "Missing count argument"
       }
       const creepCount = parseInt(rawCount)
       if (isNaN(creepCount) === true) {
-        return "count is not a number"
+        throw `count ${rawCount} is not a number`
       }
 
       const bodyDescription = keyValueArgs.get("body")
       if (bodyDescription == null) {
-        return "Missing body argument"
+        throw "Missing body argument"
       }
-      const body = ((): BodyPartConstant[] | string => {
+      const body = ((): BodyPartConstant[] => {
         const bodyComponents = bodyDescription.split(",")
         const result: BodyPartConstant[] = []
 
@@ -309,27 +324,24 @@ commands: ${commands}
           const parts = component.split(/(\d+)/)
           const rawBodyPartsCount = parts[1]
           if (rawBodyPartsCount == null) {
-            return createErrorMessage("missing body count")
+            throw createErrorMessage("missing body count")
           }
           const bodyPartsCount = parseInt(rawBodyPartsCount)
           if (isNaN(bodyPartsCount) === true) {
-            return createErrorMessage("body count is not a number")
+            throw createErrorMessage("body count is not a number")
           }
           const bodyPart = parts[2]?.toLowerCase()
           if (bodyPart == null) {
-            return createErrorMessage("missing body part definition")
+            throw createErrorMessage("missing body part definition")
           }
           if (!isBodyPartConstant(bodyPart)) {
-            return createErrorMessage(`invalid body part ${bodyPart}`)
+            throw createErrorMessage(`invalid body part ${bodyPart}`)
           }
           result.push(...Array(bodyPartsCount).fill(bodyPart))
         }
         return result
       })()
 
-      if (typeof body === "string") {
-        return body
-      }
       const creepSpec: QuadCreepSpec = {
         body
       }
@@ -338,8 +350,15 @@ commands: ${commands}
       return `set ${newCreepSpecs.length} ${CreepBody.description(body)}, ${bodyDescription}`
     }
 
+    case "target_ids": {
+      const listArguments = new ListArguments(args)
+      const targetIds = listArguments.string(0, "target ids").parse().split(",")
+      this.targetIds = targetIds as Id<AnyCreep | AnyStructure>[]
+      return `set target IDs ${this.targetIds.join(", ")}`
+    }
+
     default:
-      return `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
+      throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
   }
 
@@ -349,22 +368,33 @@ commands: ${commands}
     switch (argument) {
     case "handle_melee":
       this.canHandleMelee = canHandleMeleeDefaultValue
-      return `reset handle_melee=${this.canHandleMelee}`
+      return `reset handle_melee to default value ${this.canHandleMelee}`
 
     case "damage_tolerance":
       this.damageTolerance = defaultDamageTolerance
-      return `reset damage_tolerance=${this.damageTolerance}`
+      return `reset damage_tolerance to default value ${this.damageTolerance}`
 
     case "boosts":
       this.boosts = []
       return `reset boosts ${this.boosts.length} boosts`
 
-    case "creep":
-      this.creepSpecs = []
-      return `reset creep ${this.creepSpecs.length} creeps`
+    case "creep": {
+      const listArguments = new ListArguments(args)
+      if (listArguments.has(0) !== true) {
+        this.creepSpecs = []
+        return `reset creep ${this.creepSpecs.length} creeps`
+      }
+      const resetIndex = listArguments.int(0, "index").parse({ min: 0, max: this.creepSpecs.length - 1 })
+      this.creepSpecs.splice(resetIndex, 1)
+      return `reset index ${resetIndex}, ${this.creepSpecs.length} creeps`
+    }
+
+    case "target_ids":
+      this.targetIds = []
+      return `reset target_ids ${this.targetIds.length} IDs`
 
     default:
-      return `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
+      throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
   }
 
@@ -388,10 +418,18 @@ handle melee: ${ this.canHandleMelee }
 damage tolerance: ${ this.damageTolerance }
 boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
 creeps: ${this.creepSpecs.length} creeps
+targets: ${this.targetIds.length} target IDs
       `
     }
 
-    return `${this.roomPathDescription()}\n${quadSpec.description()}`
+    const descriptions: string[] = [
+      this.roomPathDescription()
+    ]
+    if (this.targetIds.length > 0) {
+      descriptions.push(`${this.targetIds.length} targets`)
+    }
+    descriptions.push(quadSpec.description())
+    return descriptions.join("\n")
   }
 
   private verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]> {
@@ -505,26 +543,50 @@ creeps: ${this.creepSpecs.length} creeps
     return `lack of move power: tier${moveTier} ${moveCount}MOVE, ${bodyCount} body`
   }
 
-  private launchQuadProcess(dryRun: boolean): string {
-    const dryRunDescription = dryRun ? "(dry run: set dry_run=0 to launch)" : ""
+  private launchQuadProcess(args: string[]): string {
+    const keywardArguments = new KeywordArguments(args)
+    const dryRun = keywardArguments.boolean("dry_run").parseOptional() ?? true
+    const delay = keywardArguments.int("delay").parseOptional()
+
+    const parameterDescriptions: string[] = []
+    if (dryRun === true) {
+      parameterDescriptions.push("(dry run: set dry_run=0 to launch)")
+    }
+    if (delay != null) {
+      parameterDescriptions.push(`delayed: ${delay} ticks`)
+    }
+
     const result = this.verify()
     switch (result.resultType) {
     case "failed": {
-      return `Launch failed ${dryRunDescription}\n${result.reason.join("\n")}`
+      return `Launch failed ${parameterDescriptions.join(", ")}\n${result.reason.join("\n")}`
     }
     case "succeeded": {
       if (dryRun === true) {
-        const header = `Launchable ${dryRunDescription}`
+        const header = `Launchable ${parameterDescriptions.join(", ")}`
         if (result.value.warnings.length > 0) {
           return `${header}\n${result.value.warnings.join("\n")}\n${this.show()}`
         }
         return `${header}\n${this.show()}`
       }
 
-      // Launch Quad Process
-      const process = OperatingSystem.os.addProcess(null, processId => {
-        return SpecializedQuadProcess.create(processId, this.roomName, this.targetRoomName, [], result.value.quadSpec, this.frontBaseRoomName)
-      })
+      const launchArguments: SpecializedQuadLaunchArguments = {
+        parentRoomName: this.roomName,
+        targetRoomName: this.targetRoomName,
+        predefinedTargetIds: this.targetIds,
+        frontBaseRoomName: this.frontBaseRoomName,
+      }
+
+      const process = ((): Process => {
+        if (delay != null) {
+          return OperatingSystem.os.addProcess(null, processId => {
+            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay }, launchArguments, result.value.quadSpec)
+          })
+        }
+        return OperatingSystem.os.addProcess(null, processId => {
+          return SpecializedQuadProcess.create(processId, launchArguments, result.value.quadSpec)
+        })
+      })()
 
       const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
       if (result.value.warnings.length > 0) {

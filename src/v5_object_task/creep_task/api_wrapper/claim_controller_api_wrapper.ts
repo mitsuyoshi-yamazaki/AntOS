@@ -10,7 +10,8 @@ type ClaimControllerApiWrapperResult = FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_
 
 export interface ClaimControllerApiWrapperState extends CreepApiWrapperState {
   /** target id */
-  i: Id<StructureController>
+  readonly i: Id<StructureController>
+  readonly sign: string | null
 }
 
 export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControllerApiWrapperResult>, TargetingApiWrapper {
@@ -18,12 +19,14 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
   public readonly range = 1
   private constructor(
     public readonly target: StructureController,
+    private readonly sign: string | null
   ) { }
 
   public encode(): ClaimControllerApiWrapperState {
     return {
       t: "ClaimControllerApiWrapper",
       i: this.target.id,
+      sign: this.sign,
     }
   }
 
@@ -32,16 +35,33 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
     if (source == null) {
       return null
     }
-    return new ClaimControllerApiWrapper(source)
+    return new ClaimControllerApiWrapper(source, state.sign ?? null)
   }
 
-  public static create(target: StructureController): ClaimControllerApiWrapper {
-    return new ClaimControllerApiWrapper(target)
+  public static create(target: StructureController, sign?: string): ClaimControllerApiWrapper {
+    return new ClaimControllerApiWrapper(target, sign ?? null)
   }
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
-    const result = (this.target.reservation == null) ? creep.claimController(this.target) : creep.attackController(this.target)
-    creep.signController(this.target, Sign.signForOwnedRoom())
+    const shouldAttack = ((): boolean => {
+      if (this.target.owner != null) {
+        if (this.target.owner.username !== Game.user.name) {
+          return true
+        }
+        return false
+      }
+      if (this.target.reservation != null) {
+        if (this.target.reservation.username !== Game.user.name) {
+          return true
+        }
+        return false
+      }
+      return false
+    })()
+    const result = shouldAttack ? creep.attackController(this.target) : creep.claimController(this.target)
+
+    const roomSign = this.sign ?? Sign.signForOwnedRoom()
+    creep.signController(this.target, roomSign)
 
     switch (result) {
     case OK: {

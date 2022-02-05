@@ -24,6 +24,7 @@ import { placeRoadConstructionMarks } from "script/pathfinder"
 import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -139,7 +140,11 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskForHarvester(creep, source, container)
+        const task = this.newTaskForHarvester(creep, source, container)
+        if (task == null) {
+          return null
+        }
+        return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
       },
       creepPoolFilter,
     )
@@ -163,7 +168,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.initialTask = MoveToTask.create(source.pos, 1)
+          solver.initialTask = FleeFromAttackerTask.create(MoveToTask.create(source.pos, 1), 6, {failOnFlee: true})
           solver.priority = CreepSpawnRequestPriority.High
           solver.body = this.harvesterBody(source)
         }

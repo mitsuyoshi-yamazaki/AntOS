@@ -95,11 +95,25 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     const mineralType = mineral.mineralType
     const mineralAmount = (roomResource.activeStructures.terminal?.store.getUsedCapacity(mineralType) ?? 0)
       + (roomResource.activeStructures.storage?.store.getUsedCapacity(mineralType) ?? 0)
-    const canHarvestMineral = roomResource.roomInfo.config?.disableUnnecessaryTasks !== true
-      && mineral.mineralAmount > 0
-      && roomResource.activeStructures.terminal != null
-      && mineralAmount < 100000
-      && roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) > 20000
+    const canHarvestMineral = ((): boolean => {
+      if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
+        return false
+      }
+      if (mineral.mineralAmount <= 0) {
+        return false
+      }
+      if (roomResource.activeStructures.terminal == null) {
+        return false
+      }
+      const mineralMaxAmount = roomResource.roomInfo.config?.mineralMaxAmount ?? 100000
+      if (mineralAmount > mineralMaxAmount) {
+        return false
+      }
+      if (roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) <= 20000) {
+        return false
+      }
+      return true
+    })()
 
     if (canHarvestMineral) {
       const creepCount = roomResource.runningCreepInfo(this.identifier).length

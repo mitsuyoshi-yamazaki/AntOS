@@ -25,6 +25,9 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -117,7 +120,7 @@ export class RemoteRoomHaulerTask extends Task {
         if (roomTypeOf(this.roomName) === "source_keeper") {
           return FleeFromSKLairTask.create(task)
         }
-        return task
+        return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
       },
       creepPoolFilter,
     )
@@ -219,6 +222,23 @@ export class RemoteRoomHaulerTask extends Task {
       const container = creep.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
       if (container != null && container.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(WithdrawResourceApiWrapper.create(container, RESOURCE_ENERGY))
+      }
+    }
+
+    const gclFarmInfo = GclFarmResources.getFarmInfo(this.targetRoomName)
+    if (gclFarmInfo != null && creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {  // energy以外のresourceを拾っている場合を除外
+      const deliverTarget = ((): GclFarmDeliverTarget | null => {
+        if (gclFarmInfo.deliverTargetId == null) {
+          return null
+        }
+        return Game.getObjectById(gclFarmInfo.deliverTargetId) ?? null
+      })()
+
+      if (deliverTarget != null) {
+        const tasks: CreepTask[] = [
+          MoveToTargetTask.create(TransferEnergyApiWrapper.create(deliverTarget)),
+        ]
+        return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
       }
     }
 

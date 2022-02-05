@@ -25,15 +25,19 @@ import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
 const maxCooldown = 70
+const tooLongCooldownReason = "too long cooldown"
 
 type DepositInfo = {
   readonly roomName: RoomName
+  readonly depositId: Id<Deposit>
   readonly commodityType: DepositConstant
   readonly neighbourCellCount: number
   currentCooldown: number
@@ -49,6 +53,7 @@ export interface Season4275982HarvestCommodityProcessState extends ProcessState 
   readonly depositInfo: DepositInfo
   readonly creepSpec: CreepSpec
   readonly suspendReasons: string[]
+  readonly storageRoomName: RoomName | null
 }
 
 export class Season4275982HarvestCommodityProcess implements Process, Procedural, MessageObserver {
@@ -71,6 +76,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     private readonly depositInfo: DepositInfo,
     private readonly creepSpec: CreepSpec,
     private suspendReasons: string[],
+    private storageRoomName: RoomName | null,
   ) {
     this.identifier = ((): string => {
       if (this.processId === 287027000) {
@@ -91,21 +97,23 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       depositInfo: this.depositInfo,
       creepSpec: this.creepSpec,
       suspendReasons: this.suspendReasons,
+      storageRoomName: this.storageRoomName
     }
   }
 
   public static decode(state: Season4275982HarvestCommodityProcessState): Season4275982HarvestCommodityProcess {
-    return new Season4275982HarvestCommodityProcess(state.l, state.i, state.parentRoomName, state.depositInfo, state.creepSpec, state.suspendReasons)
+    return new Season4275982HarvestCommodityProcess(state.l, state.i, state.parentRoomName, state.depositInfo, state.creepSpec, state.suspendReasons, state.storageRoomName)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, depositInfo: DepositInfo, creepSpec: CreepSpec): Season4275982HarvestCommodityProcess {
-    return new Season4275982HarvestCommodityProcess(Game.time, processId, parentRoomName, depositInfo, creepSpec, [])
+    return new Season4275982HarvestCommodityProcess(Game.time, processId, parentRoomName, depositInfo, creepSpec, [], null)
   }
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.taskIdentifier, () => true)
+    const storageRoomDescription = this.storageRoomName == null ? "" : `-&gt ${roomLink(this.storageRoomName)}`
     const descriptions: string[] = [
-      `${roomLink(this.parentRoomName)} -> ${coloredResourceType(this.depositInfo.commodityType)} in ${roomLink(this.depositInfo.roomName)}`,
+      `${roomLink(this.parentRoomName)} -&gt ${coloredResourceType(this.depositInfo.commodityType)} in ${roomLink(this.depositInfo.roomName)}${storageRoomDescription}`,
       `${creepCount} cr`,
     ]
     const suspendReasons = [...this.suspendReasons]
@@ -121,9 +129,10 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop", "resume"]
+    const commandList = ["help", "stop", "resume", "set_storage_room"]
     const components = message.split(" ")
     const command = components.shift()
+    const listArguments = new ListArguments(components)
 
     switch (command) {
     case "help":
@@ -137,6 +146,19 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       const oldValue = [...this.suspendReasons]
       this.suspendReasons = []
       return `spawn resumed (stop reasons: ${oldValue.join(", ")})`
+    }
+
+    case "set_storage_room": {
+      try {
+        const roomName = listArguments.roomName(0, "storage room name").parse()
+        if (RoomResources.getOwnedRoomResource(roomName) == null) {
+          throw `${roomLink(roomName)} is not mine`
+        }
+        this.storageRoomName = roomName
+        return `storage room ${roomLink(roomName)} set`
+      } catch (error) {
+        return `${error}`
+      }
     }
 
     default:
@@ -167,6 +189,13 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       }
     })
 
+    if (harvesters.length <= 0 && haulers.length <= 0) {
+      if (this.suspendReasons.includes(tooLongCooldownReason) === true) {
+        OperatingSystem.os.killProcess(this.processId)
+        return
+      }
+    }
+
     if (harvesters.length < this.creepSpec.harvesterCount) {
       const energyNeeded = 2300
       if (roomResources.room.energyCapacityAvailable >= energyNeeded) {
@@ -193,19 +222,14 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     }
 
     const targetRoom = Game.rooms[this.depositInfo.roomName]
-    const deposit = ((): Deposit | null => {
-      if (targetRoom == null) {
-        return null
-      }
-      return targetRoom.find(FIND_DEPOSITS)[0] ?? null
-    })()
+    const deposit = Game.getObjectById(this.depositInfo.depositId)
     if (deposit != null && deposit.cooldown > maxCooldown) {
-      this.addSuspendReason("too long cooldown")
+      this.addSuspendReason(tooLongCooldownReason)
     }
     if (targetRoom != null && deposit == null) {
       this.addSuspendReason("missing deposit")
     }
-    this.assignTasks(deposit, harvesters, roomResources)
+    this.assignTasks(deposit, harvesters)
   }
 
   private spawnHarvester(roomResources: OwnedRoomResource): void {
@@ -244,7 +268,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       CARRY, CARRY, CARRY, CARRY, CARRY,
       MOVE, MOVE, MOVE, MOVE, MOVE,
     ]
-    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
+    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 5)
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Medium,
       numberOfCreeps: 1,
@@ -272,7 +296,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     return storedEnergy >= storedEnergyThreshold
   }
 
-  private assignTasks(deposit: Deposit | null, harvesters: Creep[], roomResources: OwnedRoomResource): void {
+  private assignTasks(deposit: Deposit | null, harvesters: Creep[]): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.taskIdentifier,
@@ -286,7 +310,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       this.parentRoomName,
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newHaulerTask(creep, carryingCommodityHarvesters, deposit, roomResources),
+      creep => this.newHaulerTask(creep, carryingCommodityHarvesters, deposit),
       creep => hasNecessaryRoles(creep, [...this.haulerRoles])
     )
   }
@@ -326,7 +350,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     }
   }
 
-  private newHaulerTask(creep: Creep, carryingCommodityHarvesters: Creep[], deposit: Deposit | null, roomResources: OwnedRoomResource): CreepTask | null {
+  private newHaulerTask(creep: Creep, carryingCommodityHarvesters: Creep[], deposit: Deposit | null): CreepTask | null {
     const shouldReturnToParentRoom = ((): boolean => {
       if (creep.store.getUsedCapacity(this.depositInfo.commodityType) <= 0) {
         return false
@@ -346,12 +370,19 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       return false
     })()
 
+    const storageRoomName = this.storageRoomName ?? this.parentRoomName
+    const storageRoomResource = RoomResources.getOwnedRoomResource(storageRoomName)
+    if (storageRoomResource == null) {
+      PrimitiveLogger.programError(`${this.constructor.name}.newHaulerTask() no room resource for ${roomLink(storageRoomName)}`)
+      return null
+    }
+
     if (shouldReturnToParentRoom === true) {
-      const waypoints = GameMap.getWaypoints(creep.room.name, this.parentRoomName) ?? []
+      const waypoints = GameMap.getWaypoints(creep.room.name, storageRoomName) ?? []
       const tasks: CreepTask[] = [
-        MoveToRoomTask.create(this.parentRoomName, waypoints),
+        MoveToRoomTask.create(storageRoomName, waypoints),
       ]
-      const transferTarget: StructureTerminal | StructureStorage | null = roomResources.activeStructures.terminal ?? roomResources.activeStructures.storage
+      const transferTarget: StructureTerminal | StructureStorage | null = storageRoomResource.activeStructures.terminal ?? storageRoomResource.activeStructures.storage
       if (transferTarget != null) {
         tasks.push(MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, this.depositInfo.commodityType)))
       }

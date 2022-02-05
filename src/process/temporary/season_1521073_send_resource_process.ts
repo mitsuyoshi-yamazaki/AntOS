@@ -26,6 +26,7 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("Season1521073SendResourceProcess", state => {
   return Season1521073SendResourceProcess.decode(state as Season1521073SendResourceProcessState)
@@ -41,11 +42,12 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
   targetRoomName: RoomName
   finishWorking: number
   maxNumberOfCreeps: number
+  stopSpawning: boolean
 }
 
 // Game.io("launch -l Season1521073SendResourceProcess room_name=W48S12 target_room_name=W47S15 waypoints=W47S15 finish_working=400 creeps=1")
 /** Haulerによる輸送 */
-export class Season1521073SendResourceProcess implements Process, Procedural {
+export class Season1521073SendResourceProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -61,6 +63,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
     public readonly waypoints: RoomName[],
     private readonly finishWorking: number,
     private readonly maxNumberOfCreeps: number,
+    private stopSpawning: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -76,20 +79,40 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       w: this.waypoints,
       finishWorking: this.finishWorking,
       maxNumberOfCreeps: this.maxNumberOfCreeps,
+      stopSpawning: this.stopSpawning,
     }
   }
 
   public static decode(state: Season1521073SendResourceProcessState): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w, state.finishWorking, state.maxNumberOfCreeps)
+    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w, state.finishWorking, state.maxNumberOfCreeps, state.stopSpawning ?? false)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], finishWorking: number, maxNumberOfCreeps: number): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, finishWorking, maxNumberOfCreeps)
+    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, finishWorking, maxNumberOfCreeps, false)
   }
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     return `${creepCount}cr, ${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "stop", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    switch (command) {
+    case "help":
+      return `Commands: ${commandList}`
+    case "stop":
+      this.stopSpawning = true
+      return "spawn stopped"
+    case "resume":
+      this.stopSpawning = false
+      return "spawn resumed"
+    default:
+      return `Invalid command ${commandList}. see "help"`
+    }
   }
 
   public runOnTick(): void {
@@ -131,7 +154,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural {
       }
       return this.maxNumberOfCreeps
     })()
-    if (creeps.length < numberOfCreeps) {
+    if (creeps.length < numberOfCreeps && this.stopSpawning !== true) {
       this.requestCreep(CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20))
     }
 

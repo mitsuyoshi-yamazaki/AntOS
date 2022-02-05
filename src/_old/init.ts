@@ -59,6 +59,12 @@ export function init(): void {
     }
   }
 
+  if (Memory.gclFarm == null) {
+    Memory.gclFarm = {
+      roomNames: [],
+    }
+  }
+
   if (Memory.rooms == null) {
     Memory.rooms = {}
   }

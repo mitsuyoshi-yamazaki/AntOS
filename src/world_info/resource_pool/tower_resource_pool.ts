@@ -101,7 +101,11 @@ export class TowerPool implements ResourcePoolType<StructureTower> {
         return false
       })()
       if (enemyAttackerExists === true) {
-        return
+        if ((task.target instanceof Creep) && task.target.getActiveBodyparts(ATTACK) > 0) {
+          // heal
+        } else {
+          return
+        }
       }
     }
     this.towers.forEach(tower => {

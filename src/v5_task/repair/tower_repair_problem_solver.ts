@@ -45,6 +45,11 @@ export class TowerRepairProblemSolver extends ProblemSolver {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
+    if (objects.hostiles.creeps.length > 0) {
+      this.targetId = null
+      return TaskStatus.Finished
+    }
+
     const target = ((): AnyStructure | null => {
       // if (this.targetId != null) { // TODO: 終了判定ができていないため
       //   const stored = Game.getObjectById(this.targetId)

@@ -18,6 +18,8 @@ export interface BasicRoomInfo {
   // ---- Structure ---- //
   readonly energySourceStructureIds: Id<EnergySource>[]
   readonly energyStoreStructureIds: Id<EnergyStore>[]
+
+  reachable: boolean
 }
 
 type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean } | { ownerType: "reserve", username: string }
@@ -72,6 +74,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     waitingPosition?: { x: number, y: number }
     enableAutoAttack?: boolean
     noRepairWallIds?: Id<StructureWall>[]
+    mineralMaxAmount?: number
   }
 }
 
@@ -127,6 +130,7 @@ export function buildNormalRoomInfo(room: Room): NormalRoomInfo {
     neighbourRoomNames: getNeighbourRoomNames(room),
     energySourceStructureIds: [],
     energyStoreStructureIds: [],
+    reachable: true,
   }
 }
 
@@ -150,6 +154,7 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    reachable: true,
   }
 }
 
@@ -166,5 +171,6 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    reachable: normalRoomInfo.reachable
   }
 }

@@ -41,7 +41,7 @@ export interface Season1244215GenericDismantleProcessState extends ProcessState 
 
   targetIds: Id<AnyStructure>[]
   creepName: CreepName | null
-  action: "specified target only" | null
+  action: "specified target only" | "attack in reserved room" | null
   noFlee: boolean
   maxBodyCount: number
 }
@@ -62,7 +62,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     public waypoints: RoomName[],
     private creepName: CreepName | null,
     private targetIds: Id<AnyStructure>[],
-    private action: "specified target only" | null,
+    private action: "specified target only" | "attack in reserved room" | null,
     private noFlee: boolean,
     private readonly maxBodyCount: number,
   ) {
@@ -159,6 +159,10 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     if (message === "specified target only") {
       this.action = "specified target only"
       return '"specified target only" set'
+    }
+    if (message === "attack in reserved room") {
+      this.action = "attack in reserved room"
+      return '"attack in reserved room" set'
     }
     if (message === "clear action") {
       this.action = null
@@ -262,8 +266,15 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
 
   private getTarget(creep: Creep): AnyStructure | null {
     const controller = creep.room.controller
-    if (controller != null && ((controller.my === true) || (controller.reservation != null && controller.reservation.username === Game.user.name))) {
-      return null
+    if (controller != null) {
+      if (controller.my === true) {
+        return null
+      }
+      if (controller.reservation != null && controller.reservation.username === Game.user.name) {
+        if (this.action !== "attack in reserved room") {
+          return null
+        }
+      }
     }
 
     const target = ((): AnyStructure | null => {

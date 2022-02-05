@@ -27,6 +27,8 @@ import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { GclFarmResources } from "room_resource/gcl_farm_resources"
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -170,7 +172,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
           if (roomTypeOf(this.roomName) === "source_keeper") {
             return FleeFromSKLairTask.create(task)
           }
-          return task
+          return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
         },
         creepPoolFilter,
       )
@@ -282,9 +284,16 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return RunApiTask.create(RepairApiWrapper.create(container))
     }
 
-    const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES)
-    if (constructionSite != null) {
-      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+    if (GclFarmResources.isGclFarm(this.targetRoomName) === true) {
+      const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES, { filter: { structureType: STRUCTURE_ROAD } })
+      if (constructionSite != null) {
+        return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+      }
+    } else {
+      const constructionSite = creep.pos.findClosestByPath(FIND_MY_CONSTRUCTION_SITES)
+      if (constructionSite != null) {
+        return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+      }
     }
 
     if (creep.pos.getRangeTo(source.pos) > GameConstants.creep.actionRange.harvest) {

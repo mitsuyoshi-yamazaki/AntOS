@@ -31,7 +31,8 @@ import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
-import { launchDepositScript } from "../../../../submodules/attack/script/launch_deposit_harvester_process"
+import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
+import { KeywordArguments } from "./utility/keyword_argument_parser"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -521,11 +522,14 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private resource(): CommandExecutionResult {
+    const commandList = ["help", "room", "collect", "list"]
     const args = [...this.args]
     args.splice(0, 1)
 
     const command = args[0]
     switch (command) {
+    case "help":
+      return `commands: ${commandList}`
     case "room":
       if (args[1] == null || !isResourceConstant(args[1])) {
         return `Invalid resource type ${args[1]}`
@@ -559,8 +563,10 @@ export class ExecCommand implements ConsoleCommand {
       return this.collectResource(args[1], args[2], amount)
     }
     case "list":
-    default:
       return this.listResource()
+
+    default:
+      return `invalid command: ${command}, "help" to show manual`
     }
   }
 
@@ -874,6 +880,7 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
+  // Game.io("exec room_config room_name= setting=")
   private configureRoomInfo(): CommandExecutionResult {
     const args = this._parseProcessArguments()
 
@@ -891,21 +898,26 @@ export class ExecCommand implements ConsoleCommand {
 
     const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
     const setting = args.get("setting")
-    switch (setting) {
-    case "excluded_remotes":
-      return this.addExcludedRemoteRoom(roomName, roomInfo, args)
-    case "wall_positions":
-      return this.configureWallPositions(roomName, roomInfo, args)
-    case "research_compounds":
-      return this.configureResearchCompounds(roomName, roomInfo, args)
-    case "refresh_research_labs":
-      return this.refreshResearchLabs(roomName, roomInfo)
-    case "disable_boost_labs":
-      return this.disableBoostLabs(roomName, roomInfo)
-    case "toggle_auto_attack":
-      return this.toggleAutoAttack(roomName, roomInfo, args)
-    default:
-      return `Invalid setting ${setting}, available settings are: ${settingList}`
+
+    try {
+      switch (setting) {
+      case "excluded_remotes":
+        return this.addExcludedRemoteRoom(roomName, roomInfo, args)
+      case "wall_positions":
+        return this.configureWallPositions(roomName, roomInfo, args)
+      case "research_compounds":
+        return this.configureResearchCompounds(roomName, roomInfo, args)
+      case "refresh_research_labs":
+        return this.refreshResearchLabs(roomName, roomInfo, args)
+      case "disable_boost_labs":
+        return this.disableBoostLabs(roomName, roomInfo)
+      case "toggle_auto_attack":
+        return this.toggleAutoAttack(roomName, roomInfo, args)
+      default:
+        throw `Invalid setting ${setting}, available settings are: ${settingList}`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
     }
   }
 
@@ -948,13 +960,14 @@ export class ExecCommand implements ConsoleCommand {
     return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
   }
 
-  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
+  /** throws */
+  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
     const room = Game.rooms[roomName]
     if (room == null) {
       return `${roomLink(roomName)} no found`
     }
     if (roomInfo.researchLab == null) {
-      return `roomInfo.researchLab is null ${roomLink(roomName)}`
+      roomInfo.researchLab = this.setResearchLabs(room, roomInfo, args)
     }
 
     const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
@@ -988,6 +1001,33 @@ export class ExecCommand implements ConsoleCommand {
     roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
 
     return `${labIdsInRoom.length} labs added to research output labs`
+  }
+
+  //** throws */
+  private setResearchLabs(room: Room, roomInfo: OwnedRoomInfo, args: Map<string, string>): {inputLab1: Id<StructureLab>, inputLab2: Id<StructureLab>, outputLabs: Id<StructureLab>[]} {
+    const keywardArguments = new KeywordArguments(args)
+    const missingArgumentErrorMessage = `no roomInfo.researchLab for ${roomLink(room.name)} set input_lab_id_1 and input_lab_id_2`
+    const inputLab1Id = keywardArguments.gameObjectId("input_lab_id_1", {missingArgumentErrorMessage}).parse() as Id<StructureLab>
+    const inputLab2Id = keywardArguments.gameObjectId("input_lab_id_2", { missingArgumentErrorMessage }).parse() as Id<StructureLab>
+    if (inputLab1Id === inputLab2Id) {
+      throw `input_lab_id_1 and input_lab_id_2 has the same value ${inputLab1Id}`
+    }
+
+    const validateLabId = (labId: Id<StructureLab>, key: string): void => {
+      const lab = Game.getObjectById(labId)
+      if (!(lab instanceof StructureLab)) {
+        throw `ID for ${key} is not a lab (${lab})`
+      }
+    }
+
+    validateLabId(inputLab1Id, "input_lab_id_1")
+    validateLabId(inputLab2Id, "input_lab_id_2")
+
+    return {
+      inputLab1: inputLab1Id,
+      inputLab2: inputLab2Id,
+      outputLabs: [],
+    }
   }
 
   private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
@@ -1097,7 +1137,7 @@ export class ExecCommand implements ConsoleCommand {
     switch (action) {
     case "remove":
       roomPlan.wallPositions = undefined
-      return "ok"
+      return "wall positions removed"
     case "set_it_done":
       roomPlan.wallPositions = []
       return "ok"
@@ -1269,8 +1309,17 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private runScript(): CommandExecutionResult {
-    // TODO: スクリプト名を指定できるようにする
-    launchDepositScript()
-    return "ok"
+    const args = [...this.args]
+    args.splice(0, 1)
+
+    const scriptName = args.shift()
+    try {
+      if (scriptName == null) {
+        throw "Missing script name"
+      }
+      return temporaryScript(scriptName, args)
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 }

@@ -226,7 +226,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
-      return Math.max(this.availablePositions.length - 1, 3)  // 全位置を埋めるとHaulerが入って来れなくなるため
+      return Math.min(Math.max(this.availablePositions.length - 1, 3), 5)  // 全位置を埋めるとHaulerが入って来れなくなるため
     })()
 
     return [body, numberOfCreeps]

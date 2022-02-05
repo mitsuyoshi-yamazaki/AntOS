@@ -16,6 +16,9 @@ import { World35588848GclManagerProcess } from "process/temporary/world_35588848
 import { MapAccessorProcess } from "process/accessor/map_accessor_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
+import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { GclFarmResources } from "room_resource/gcl_farm_resources"
+import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 // import { } from "process/application/declarative_ai/declaration_application_process"
 
 // TODO: アプリケーションProcessとしてProcess化する
@@ -26,6 +29,7 @@ export class ApplicationProcessLauncher {
     let hasAttackInvaderCoreProcess = false as boolean
     let hasGclManagerProcess = false as boolean
     let hasMapAccessorProcess = false as boolean
+    let hasInterRoomResourceManagementProcess = false as boolean
 
     processList.forEach(process => {
       if (process instanceof RoomKeeperProcess) {
@@ -52,6 +56,10 @@ export class ApplicationProcessLauncher {
         hasMapAccessorProcess = true
         return
       }
+      if (process instanceof InterRoomResourceManagementProcess) {
+        hasInterRoomResourceManagementProcess = true
+        return
+      }
     })
 
     this.checkRoomKeeperProcess(roomKeeperMap, processLauncher)
@@ -67,13 +75,21 @@ export class ApplicationProcessLauncher {
     if (hasMapAccessorProcess !== true) {
       this.launchMapAccessorProcess(processLauncher)
     }
+    if (hasInterRoomResourceManagementProcess !== true) {
+      this.launchInterRoomResourceManagementProcess(processLauncher)
+    }
   }
 
   private checkRoomKeeperProcess(roomKeeperMap: Map<ShortVersion, RoomName[]>, processLauncher: ProcessLauncher): void {
     const roomsWithV5KeeperProcess = roomKeeperMap.get(ShortVersion.v5) ?? []
     const roomsWithV6KeeperProcess = roomKeeperMap.get(ShortVersion.v6) ?? []
 
+    const gclFarmRoomNames = GclFarmResources.gclFarmRoomNames()
+
     World.rooms.getAllOwnedRooms().forEach(room => {
+      if (gclFarmRoomNames.includes(room.name) === true) {
+        return
+      }
       switch (Migration.roomVersion(room.name)) {
       case ShortVersion.v5:
         if (roomsWithV5KeeperProcess.includes(room.name) !== true) {
@@ -102,6 +118,8 @@ export class ApplicationProcessLauncher {
     PrimitiveLogger.log(`${coloredText("[Launched]", "info")} V6RoomKeeperProcess ${roomLink(roomName)}`)
     const roomKeeperTask = RoomKeeperTask.create(roomName)
     processLauncher(null, processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
+
+    processLauncher(null, processId => DefenseRoomProcess.create(processId, roomName))
   }
 
   private launchBoostrapRoomManagerProcess(processLauncher: ProcessLauncher): void {
@@ -118,5 +136,9 @@ export class ApplicationProcessLauncher {
 
   private launchMapAccessorProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => MapAccessorProcess.create(processId))
+  }
+
+  private launchInterRoomResourceManagementProcess(processLauncher: ProcessLauncher): void {
+    processLauncher(null, processId => InterRoomResourceManagementProcess.create(processId))
   }
 }

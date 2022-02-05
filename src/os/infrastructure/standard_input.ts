@@ -14,24 +14,21 @@ import { ProcessCommand } from "./console_command/process_command"
 import { ResumeCommand } from "./console_command/resume_command"
 import { SuspendCommand } from "./console_command/suspend_command"
 import { LogCommand } from "./console_command/log_command"
+import { coloredText } from "utility/log"
 
 export const standardInput = (rawCommand: string): string => {
-  let result: string | null = null
-
-  ErrorMapper.wrapLoop((): void => {
+  const result = ErrorMapper.wrapLoop((): string => {
     const parseResult = parseCommand(rawCommand)
     switch (parseResult.resultType) {
     case "succeeded":
-      result = parseResult.value.run()
-      return
+      return parseResult.value.run()
 
     case "failed":
-      result = `Type Game.io("help") to see available commands.\n${parseResult.reason}`
-      return
+      return `${coloredText("[ERROR]", "error")} Type Game.io("help") to see available commands.\n${parseResult.reason}`
     }
   })()
   if (result == null) {
-    return "Program bug"
+    return `${coloredText("[ERROR]", "error")} Program bug`
   }
   return result
 }

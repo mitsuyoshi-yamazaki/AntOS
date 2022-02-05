@@ -280,16 +280,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
           if (outputLab.store.getUsedCapacity(compound) <= 0) {
             return false
           }
-          if (Environment.world !== "season 4") {
-            return true
-          }
-          if (this.roomName !== "W19S19" || compound !== RESOURCE_LEMERGIUM_ALKALIDE) {  // TODO: Memoryに設定を書き込む
-            return true
-          }
-          if (outputLab.store.getUsedCapacity(compound) > (outputLab.store.getFreeCapacity(compound) / 2)) {
-            return true
-          }
-          return false
+          return true
         })()
         if (shouldWithdraw === true) {
           return {

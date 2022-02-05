@@ -9,6 +9,8 @@ import { RoomResource } from "./room_resource"
 import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsufficiency, RoomInfoType, updateNormalRoomInfo } from "./room_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { Environment } from "utility/environment"
+import { GclFarmResources } from "./gcl_farm_resources"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -18,6 +20,7 @@ interface RoomResourcesInterface {
   // ---- Room Resource ---- //
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
+  getNormalRoomResource(roomName: RoomName): NormalRoomResource | null
   getRoomResource(roomName: RoomName): RoomResource | null
   getRoomInfo(roomName: RoomName): RoomInfoType | null
   getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[]
@@ -25,6 +28,9 @@ interface RoomResourcesInterface {
 
   // ---- Inter Room Resource ---- //
   getResourceInsufficientRooms(resourceType: ResourceConstant): { roomName: RoomName, priority: ResourceInsufficiency}[]
+
+  // ---- Rooms ---- //
+  getClaimableRoomCount(): number
 }
 
 const ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
@@ -73,6 +79,14 @@ export const RoomResources: RoomResourcesInterface = {
     return ownedRoomResources.get(roomName) ?? null
   },
 
+  getNormalRoomResource(roomName: RoomName): NormalRoomResource | null {
+    const roomResource = roomResources.get(roomName)
+    if (roomResource instanceof NormalRoomResource) {
+      return roomResource
+    }
+    return null
+  },
+
   getRoomResource(roomName: RoomName): RoomResource | null {
     const stored = roomResources.get(roomName)
     if (stored != null) {
@@ -113,6 +127,26 @@ export const RoomResources: RoomResourcesInterface = {
       })
     })
     return result
+  },
+
+  // ---- Rooms ---- //
+  getClaimableRoomCount(): number {
+    const roomCountInShard = this.getOwnedRoomResources().length
+    const gclFarmReservationCount = GclFarmResources.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
+
+    if (Environment.hasMultipleShards !== true) {
+      return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
+    }
+
+    const numberOfRoomsInShard3 = 3
+    switch (Environment.shard) {  // TODO:
+    case "shard2":
+      return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
+    case "shard3":
+    default:
+      PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() counting claimable rooms in ${Environment.shard} not supported`)
+      return 0
+    }
   },
 }
 
