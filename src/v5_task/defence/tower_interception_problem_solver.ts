@@ -55,13 +55,43 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const targetInfo = this.attackTarget(objects)
+    const towerPositions = objects.activeStructures.towers
+      .filter(tower => tower.store.getUsedCapacity(RESOURCE_ENERGY) > 10)
+      .map(tower => tower.pos)
+
+    const targetInfo = this.attackTarget(objects, towerPositions)
     if (targetInfo == null) {
       this.targetId = null
       return TaskStatus.Finished
     }
 
     const target = targetInfo.target
+
+    if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
+      const shouldStopAttacking = ((): boolean => {
+        const damage = towerPositions.reduce((result, current) => {
+          return result + calculateTowerDamage(current.getRangeTo(target.pos))
+        }, 0)
+        const healPower = target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
+          return result + CreepBody.power(current.body, "heal")
+        }, 0)
+
+        if (healPower < damage) {
+          return false
+        }
+        const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
+        if (hasAttacker !== true) {
+          return true
+        }
+        return false
+      })()
+
+      if (shouldStopAttacking === true) {
+        this.targetId = null
+        return TaskStatus.Finished
+      }
+    }
+
     this.targetId = target.id
     World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(target, TowerPoolTaskPriority.Urgent))
 
@@ -72,11 +102,7 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     return TaskStatus.InProgress
   }
 
-  private attackTarget(objects: OwnedRoomObjects): TargetInfo | null {
-    const towerPositions = objects.activeStructures.towers
-      .filter(tower => tower.store.getUsedCapacity(RESOURCE_ENERGY) > 10)
-      .map(tower => tower.pos)
-
+  private attackTarget(objects: OwnedRoomObjects, towerPositions: RoomPosition[]): TargetInfo | null {
     if (towerPositions.length <= 0) {
       return null
     }
