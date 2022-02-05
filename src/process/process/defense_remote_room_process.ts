@@ -227,6 +227,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       flee: true,
       maxRooms: 1,
     })
+    if (path.incomplete === true || path.path.length <= 1) {
+      creep.say("no path")
+    }
     creep.moveByPath(path.path)
   }
 
