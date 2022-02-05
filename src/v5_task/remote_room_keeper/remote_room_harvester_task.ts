@@ -25,7 +25,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
-import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
@@ -34,7 +34,6 @@ import { Timestamp } from "utility/timestamp"
 type Construction = {
   routeCalculatedTimestamp: Timestamp
   constructionFinished: boolean
-  readonly roadPositions: Position[]
 }
 
 const routeRecalculationInterval = 40000
@@ -112,7 +111,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return {
         routeCalculatedTimestamp: state.s % routeRecalculationInterval,
         constructionFinished: true,
-        roadPositions: [],
       }
     })()
     return new RemoteRoomHarvesterTask(state.s, children, state.r, state.tr, state.i, state.co.i, state.co.noContainerPosition ?? false, construction)
@@ -125,7 +123,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const construction: Construction = {
       routeCalculatedTimestamp: 0,
       constructionFinished: false,
-      roadPositions: [],
     }
     return new RemoteRoomHarvesterTask(Game.time, children, roomName, targetRoomName, source.id, null, false, construction)
   }
@@ -135,6 +132,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     if (source == null) {
       // TODO: initialTaskにmoveToRoomを入れておく
       return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
+    }
+
+    if (this.construction.constructionFinished === false && (((Game.time + this.startTime) % 5) === 0)) {
+      this.createConstructionSites(source)
     }
 
     const container = ((): StructureContainer | null => {
@@ -425,12 +426,37 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     return
   }
 
+  private createConstructionSites(source: Source): void {
+    const flag = source.pos.findClosestByRange(FIND_FLAGS, { filter: { color: COLOR_BROWN } })
+    if (flag == null) {
+      this.construction.constructionFinished = true
+      return
+    }
+    const result = source.room.createConstructionSite(flag.pos.x, flag.pos.y, STRUCTURE_ROAD)
+    switch (result) {
+    case OK:
+    case ERR_INVALID_TARGET:  // 設置済み等
+      flag.remove()
+      return
+
+    case ERR_FULL:
+      return
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_ARGS:
+    case ERR_RCL_NOT_ENOUGH:
+      PrimitiveLogger.programError(`${this.taskIdentifier} createConstructionSite() in ${flag.pos} failed with error ${result}`)
+      return
+    }
+  }
+
   private placeRoadConstructMarks(objects: OwnedRoomObjects, container: StructureContainer): void {
     const storage = objects.activeStructures.storage
     if (storage == null) {
       return
     }
     this.construction.routeCalculatedTimestamp = Game.time
+    this.construction.constructionFinished = false
 
     const codename = generateCodename(this.constructor.name, this.startTime)
     placeRoadConstructionMarks(storage.pos, container.pos, codename)
