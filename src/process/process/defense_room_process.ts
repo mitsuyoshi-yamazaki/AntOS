@@ -169,10 +169,12 @@ export class DefenseRoomProcess implements Process, Procedural {
       this.spawnIntercepter(small, roomResources.room.energyCapacityAvailable)
     }
 
-    const minimumEnergyTransferDuration = 1000
-    if ((this.receivedEnergyTimestamp + minimumEnergyTransferDuration) < Game.time) {
-      if (this.needsEnergy(roomResources) === true) {
-        this.collectEnergy(roomResources)
+    if (intercepters.length > 0 && roomResources.hostiles.creeps.length > 0) {
+      const minimumEnergyTransferDuration = 1000
+      if ((this.receivedEnergyTimestamp + minimumEnergyTransferDuration) < Game.time) {
+        if (this.needsEnergy(roomResources) === true) {
+          this.collectEnergy(roomResources)
+        }
       }
     }
   }
