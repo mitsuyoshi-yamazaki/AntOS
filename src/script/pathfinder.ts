@@ -2,6 +2,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { generateUniqueId } from "utility/unique_id"
+import { GameConstants } from "utility/constants"
+import type { RoomName } from "utility/room_name"
 
 export function findPath(startObjectId: string, goalObjectId: string): string {
   const startObject = Game.getObjectById(startObjectId)
@@ -164,13 +166,14 @@ const roadRouteCost = {
   road: 5,
   plain: 10,
   swamp: 11,
+  container: GameConstants.pathFinder.costs.obstacle - 1,
 }
 
 /**
  * - Owned roomにはflagを、そうでなければConstructionSiteを配置する
  * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<void, string> {
+export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<string, string> {
   const startRoom = Game.rooms[startPosition.roomName]
   const goalRoom = Game.rooms[goalPosition.roomName]
 
@@ -192,6 +195,11 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
       costMatrix.set(position.x, position.y, roadRouteCost.road)
     })
 
+    const containerPositions: RoomPosition[] = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } }).map(road => road.pos)
+    containerPositions.forEach(position => {
+      costMatrix.set(position.x, position.y, roadRouteCost.container)
+    })
+
     return costMatrix
   }
 
@@ -202,12 +210,13 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     plainCost: roadRouteCost.plain,
     swampCost: roadRouteCost.swamp,
     maxRooms: 3,
+    range: 2,
     costCallback,
   }
 
   const placeMark = (room: Room, position: { x: number, y: number }): void => {
     if (options?.dryRun === true) {
-      room.visual.text("*", position.x, position.y, {color: "#FF0000"})
+      room.visual.text("#", position.x, position.y, {color: "#FF0000"})
       return
     }
     const result = room.createFlag(position.x, position.y, generateUniqueId(codename), roadFlagColor)
@@ -222,24 +231,82 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     }
   }
 
-  const startRoomPath = startPosition.findPathTo(goalPosition, findPathOpts)
-  const edgePosition = startRoomPath[startRoomPath.length - 1]
-  if (edgePosition == null) {
-    return Result.Failed(`No path from ${startPosition} to ${goalPosition}`)
+  const roomRoute = Game.map.findRoute(startPosition.roomName, goalPosition.roomName)
+  if (roomRoute === ERR_NO_PATH) {
+    return Result.Failed(`no route from ${roomLink(startPosition.roomName)} to ${roomLink(goalPosition.roomName)}`)
   }
+  const roomNames = roomRoute.map(route => route.room)
+  roomNames.push(goalPosition.roomName) // reduceでは次のRoom Nameを使用するため、最後にダミーの値を入れる
 
-  if (startPosition.roomName === goalPosition.roomName) {
-    return Result.Succeeded(undefined)
+  try {
+    const min = GameConstants.room.edgePosition.min + 1
+    const max = GameConstants.room.edgePosition.max - 1
+    const path = roomNames.reduce((result: { positions: RoomPosition[], start: RoomPosition }, current: RoomName) => {
+      const roomName = result.start.roomName
+      const pathPositions = result.start.findPathTo(goalPosition, findPathOpts)
+        .map(step => (new RoomPosition(step.x, step.y, roomName)))
+
+      const lastPosition = pathPositions[pathPositions.length - 1]
+      if (lastPosition == null) {
+        throw `placeRoadConstructionMarks() findPathTo() failed to find path from ${result.start} to ${goalPosition} (${roomLink(result.start.roomName)})`
+      }
+      const roomEdgePosition = ((): RoomPosition => {
+        if (lastPosition.x <= min) {
+          return new RoomPosition(max, lastPosition.y, current)
+        } else if (lastPosition.x >= max) {
+          return new RoomPosition(min, lastPosition.y, current)
+        } else if (lastPosition.y <= min) {
+          return new RoomPosition(lastPosition.x, max, current)
+        } else if (lastPosition.y >= max) {
+          return new RoomPosition(lastPosition.x, min, current)
+        } else {
+          if (current === goalPosition.roomName) {
+            return result.start // 使用されないためダミーの値
+          }
+          throw `placeRoadConstructionMarks() findPathTo() incomplete. last step: ${lastPosition} (from ${result.start} to ${goalPosition}) (${roomLink(result.start.roomName)})`
+        }
+      })()
+
+      // console.log(`${current}, ${lastPosition}`)
+
+      return {
+        positions: [
+          ...result.positions,
+          ...pathPositions,
+        ],
+        start: roomEdgePosition,
+      }
+    }, { positions: [], start: startPosition })
+
+    const results: {roomName: RoomName, roadCount: number}[] = []
+    const addResult = (roomName: RoomName): void => {
+      const result = ((): { roomName: RoomName, roadCount: number } => {
+        const stored = results[results.length - 1]
+        if (stored != null && stored.roomName === roomName) {
+          return stored
+        }
+        const newResult = {
+          roomName,
+          roadCount: 0,
+        }
+        results.push(newResult)
+        return newResult
+      })()
+
+      result.roadCount += 1
+    }
+
+    path.positions.forEach(position => {
+      const room = Game.rooms[position.roomName]
+      if (room == null) {
+        return
+      }
+      placeMark(room, position)
+      addResult(room.name)
+    })
+    return Result.Succeeded(results.map(result => `${result.roadCount} in ${roomLink(result.roomName)}`).join(", "))
+
+  } catch (error) {
+    return Result.Failed(`${error}`)
   }
-
-  startRoomPath.forEach(position => {
-    placeMark(startRoom, position)
-  })
-  const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoom.name)
-
-  goalPosition.findPathTo(edgeRoomPosition, findPathOpts).map(position => {
-    placeMark(goalRoom, position)
-  })
-
-  return Result.Succeeded(undefined)
 }
