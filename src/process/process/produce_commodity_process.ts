@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { generateCodename } from "utility/unique_id"
@@ -98,9 +98,10 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     const components = message.split(" ")
     const command = components.shift()
 
-    switch (command) {
-    case "help":
-      return `
+    try {
+      switch (command) {
+      case "help":
+        return `
 - help
   - shows help
 - status
@@ -115,23 +116,22 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
   - resume spawning
         `
 
-    case "status": {
-      const products = this.products.map(product => {
-        const commodityType = coloredResourceType(product.commodityType)
-        const ingredients = product.ingredients.map(ingredient => coloredResourceType(ingredient)).join(",")
-        return `- ${product.amount} ${commodityType} (${ingredients})`
-      }).join("\n")
-      const descriptions: string[] = [
-        `products:\n${products}`,
-      ]
-      if (this.stopSpawningReasons.length > 0) {
-        descriptions.push(`stop spawning reasons:\n${this.stopSpawningReasons.map(reason => `- ${reason}`).join("\n")}`)
+      case "status": {
+        const products = this.products.map(product => {
+          const commodityType = coloredResourceType(product.commodityType)
+          const ingredients = product.ingredients.map(ingredient => coloredResourceType(ingredient)).join(",")
+          return `- ${product.amount} ${commodityType} (${ingredients})`
+        }).join("\n")
+        const descriptions: string[] = [
+          `products:\n${products}`,
+        ]
+        if (this.stopSpawningReasons.length > 0) {
+          descriptions.push(`stop spawning reasons:\n${this.stopSpawningReasons.map(reason => `- ${reason}`).join("\n")}`)
+        }
+        return descriptions.join("\n")
       }
-      return descriptions.join("\n")
-    }
 
-    case "add": {
-      try {
+      case "add": {
         const listArguments = new ListArguments(components)
         const commodityType = listArguments.string(0, "commodity type").parse()
         if (!isCommodityConstant(commodityType)) {
@@ -148,30 +148,40 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
           this.stopSpawningReasons.splice(noProductIndex, 1)
         }
         return `Added ${amount} ${coloredResourceType(commodityType)}`
-
-      } catch (error) {
-        return `${error}`
       }
-    }
 
-    case "clear": {
-      const oldValue = [...this.products]
-      this.products = []
-      return `Products cleared (old values: ${oldValue.map(product => coloredResourceType(product.commodityType)).join(",")})`
-    }
+      case "clear": {
+        const listArguments = new ListArguments(components)
+        if (listArguments.has(0) === true) {
+          const commodityToRemove = listArguments.commodityType(0, "commodity type").parse()
+          const index = this.products.findIndex(product => product.commodityType === commodityToRemove)
+          if (index < 0) {
+            throw `${coloredResourceType(commodityToRemove)} is not in the list (${this.products.map(p => coloredResourceType(p.commodityType)).join(",")})`
+          }
+          this.products.splice(index, 1)
+          return `${coloredResourceType(commodityToRemove)} is removed`
+        }
 
-    case "stop":
-      this.addSpawnStopReason("manually stopped")
-      return "Stopped spawning"
+        const oldValue = [...this.products]
+        this.products = []
+        return `Products cleared (old values: ${oldValue.map(product => coloredResourceType(product.commodityType)).join(",")})`
+      }
 
-    case "resume": {
-      const oldValue = [...this.stopSpawningReasons]
-      this.stopSpawningReasons = []
-      return `Resume spawning (stopped reasons: ${oldValue.join(", ")})`
-    }
+      case "stop":
+        this.addSpawnStopReason("manually stopped")
+        return "Stopped spawning"
 
-    default:
-      return `Invalid command ${commandList}. see "help"`
+      case "resume": {
+        const oldValue = [...this.stopSpawningReasons]
+        this.stopSpawningReasons = []
+        return `Resume spawning (stopped reasons: ${oldValue.join(", ")})`
+      }
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
     }
   }
 
