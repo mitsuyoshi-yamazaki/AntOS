@@ -18,6 +18,7 @@ import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
 import { DefenseRoomProcess } from "process/process/defense_room_process"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
+import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 // import { } from "process/application/declarative_ai/declaration_application_process"
 
 // TODO: アプリケーションProcessとしてProcess化する
@@ -28,6 +29,7 @@ export class ApplicationProcessLauncher {
     let hasAttackInvaderCoreProcess = false as boolean
     let hasGclManagerProcess = false as boolean
     let hasMapAccessorProcess = false as boolean
+    let hasInterRoomResourceManagementProcess = false as boolean
 
     processList.forEach(process => {
       if (process instanceof RoomKeeperProcess) {
@@ -54,6 +56,10 @@ export class ApplicationProcessLauncher {
         hasMapAccessorProcess = true
         return
       }
+      if (process instanceof InterRoomResourceManagementProcess) {
+        hasInterRoomResourceManagementProcess = true
+        return
+      }
     })
 
     this.checkRoomKeeperProcess(roomKeeperMap, processLauncher)
@@ -68,6 +74,9 @@ export class ApplicationProcessLauncher {
     }
     if (hasMapAccessorProcess !== true) {
       this.launchMapAccessorProcess(processLauncher)
+    }
+    if (hasInterRoomResourceManagementProcess !== true) {
+      this.launchInterRoomResourceManagementProcess(processLauncher)
     }
   }
 
@@ -127,5 +136,9 @@ export class ApplicationProcessLauncher {
 
   private launchMapAccessorProcess(processLauncher: ProcessLauncher): void {
     processLauncher(null, processId => MapAccessorProcess.create(processId))
+  }
+
+  private launchInterRoomResourceManagementProcess(processLauncher: ProcessLauncher): void {
+    processLauncher(null, processId => InterRoomResourceManagementProcess.create(processId))
   }
 }
