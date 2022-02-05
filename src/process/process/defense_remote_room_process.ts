@@ -5,14 +5,8 @@ import { coloredCreepBody, coloredText, profileLink, roomLink } from "utility/lo
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { World } from "world_info/world_info"
-import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
-import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { generateCodename } from "utility/unique_id"
-import { CreepRole } from "prototype/creep_role"
-import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
-import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { OperatingSystem } from "os/os"
 import { RoomResources } from "room_resource/room_resources"
 import { NormalRoomResource } from "room_resource/room_resource/normal_room_resource"
 import { CreepBody } from "utility/creep_body"
@@ -22,7 +16,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { moveToRoom } from "script/move_to_room"
 import { GameMap } from "game/game_map"
-import { defaultMoveToOptions } from "prototype/creep"
+import { CreepName, defaultMoveToOptions } from "prototype/creep"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
@@ -55,6 +49,7 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly targetRooms: RoomInfo[]
   readonly currentTarget: TargetInfo | null
+  readonly intercepterCreepNames: {[roomName: string]: CreepName}
 }
 
 // Game.io("launch ObserveRoomProcess room_name=W23S25 target_room_name=W23S27 duration=100")
@@ -72,7 +67,8 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly targetRooms: RoomInfo[],
-    private currentTarget: TargetInfo | null
+    private currentTarget: TargetInfo | null,
+    private readonly intercepterCreepNames: { [roomName: string]: CreepName },
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -86,16 +82,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       roomName: this.roomName,
       targetRooms: this.targetRooms,
       currentTarget: this.currentTarget,
+      intercepterCreepNames: this.intercepterCreepNames,
     }
   }
 
   public static decode(state: DefenseRemoteRoomProcessState): DefenseRemoteRoomProcess {
-    return new DefenseRemoteRoomProcess(state.l, state.i, state.roomName, state.targetRooms, state.currentTarget)
+    return new DefenseRemoteRoomProcess(state.l, state.i, state.roomName, state.targetRooms, state.currentTarget, state.intercepterCreepNames)
   }
 
   public static create(processId: ProcessId, roomName: RoomName, targetRoomNames: RoomName[]): DefenseRemoteRoomProcess {
     const targetRooms = targetRoomNames.map((name: RoomName): RoomInfo => ({name}))
-    return new DefenseRemoteRoomProcess(Game.time, processId, roomName, targetRooms, null)
+    return new DefenseRemoteRoomProcess(Game.time, processId, roomName, targetRooms, null, {})
   }
 
   public processShortDescription(): string {
@@ -119,10 +116,23 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       return
     }
     const target = this.currentTarget
+    this.checkCurrentTarget(target)
 
     const creepMaxCount = 1
     const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
-    if (intercepters.length < creepMaxCount) {
+    Array.from(Object.entries(this.intercepterCreepNames)).forEach(([roomName, intercepterName]) => {
+      if (Game.creeps[intercepterName] == null) {
+        delete this.intercepterCreepNames[roomName]
+      }
+    })
+    intercepters.forEach(creep => {
+      if (this.intercepterCreepNames[target.roomName] == null) {
+        return
+      }
+      this.intercepterCreepNames[target.roomName] = creep.name
+    })
+
+    if (intercepters.length < creepMaxCount && this.intercepterCreepNames[target.roomName] == null) {
       this.spawnIntercepter(roomResource, target)
     }
 
@@ -227,6 +237,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
+  }
+
+  private checkCurrentTarget(target: TargetInfo): void {
+    const targetRoomResource = RoomResources.getNormalRoomResource(target.roomName)
+    if (targetRoomResource == null) {
+      return
+    }
+
+    if (targetRoomResource.hostiles.creeps.length <= 0) {
+      this.currentTarget = null
+    }
   }
 
   private checkRemoteRooms(): void {
