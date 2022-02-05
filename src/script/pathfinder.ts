@@ -159,11 +159,18 @@ export function calculateSourceRoute(sourceId: Id<Source>, destination: RoomPosi
 //   // TODO: 既存のパスに重ならないようなcost matrix
 // }
 
+const roadFlagColor = COLOR_BROWN
+const roadRouteCost = {
+  road: 5,
+  plain: 10,
+  swamp: 11,
+}
+
 /**
  * - Owned roomにはflagを、そうでなければConstructionSiteを配置する
  * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string): Result<void, string> {
+export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<void, string> {
   const startRoom = Game.rooms[startPosition.roomName]
   const goalRoom = Game.rooms[goalPosition.roomName]
 
@@ -171,24 +178,51 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     return Result.Failed(`No visual: ${startRoom}, ${goalRoom}`)
   }
 
-  const options: FindPathOpts = {
+  const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return costMatrix
+    }
+
+    const roadPositions: RoomPosition[] = [
+      ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map(road => road.pos),
+      ...room.find(FIND_FLAGS, { filter: { color: roadFlagColor}}).map(flag => flag.pos),
+    ]
+    roadPositions.forEach(position => {
+      costMatrix.set(position.x, position.y, roadRouteCost.road)
+    })
+
+    return costMatrix
+  }
+
+  const findPathOpts: FindPathOpts = {
     ignoreCreeps: true,
     ignoreDestructibleStructures: false,
     ignoreRoads: false,
-    plainCost: 10,
-    swampCost: 11, // FixMe: 最短経路のうちSwampを極力通らないようにする: CostMatrixのcostはintegerなので、plainのコストを上げることで相対差を小さくする
+    plainCost: roadRouteCost.plain,
+    swampCost: roadRouteCost.swamp,
     maxRooms: 3,
+    costCallback,
   }
 
-  const placeMark = (room: Room, position: {x: number, y: number}): void => {
-    if (room.controller != null && room.controller.my === true) {
-      room.createFlag(position.x, position.y, generateUniqueId(codename), COLOR_BROWN)
+  const placeMark = (room: Room, position: { x: number, y: number }): void => {
+    if (options?.dryRun === true) {
+      room.visual.text("*", position.x, position.y, {color: "#FF0000"})
       return
     }
-    room.createConstructionSite(position.x, position.y, STRUCTURE_ROAD)
+    const result = room.createFlag(position.x, position.y, generateUniqueId(codename), roadFlagColor)
+    switch (result) {
+    case OK:
+      return
+    case ERR_NAME_EXISTS:
+    case ERR_INVALID_ARGS:
+    case ERR_FULL:
+      PrimitiveLogger.programError(`placeRoadConstructionMarks() room.createFlag() returns ${result} in ${roomLink(room.name)}`)
+      return
+    }
   }
 
-  const startRoomPath = startPosition.findPathTo(goalPosition, options)
+  const startRoomPath = startPosition.findPathTo(goalPosition, findPathOpts)
   const edgePosition = startRoomPath[startRoomPath.length - 1]
   if (edgePosition == null) {
     return Result.Failed(`No path from ${startPosition} to ${goalPosition}`)
@@ -203,7 +237,7 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   })
   const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoom.name)
 
-  goalPosition.findPathTo(edgeRoomPosition, options).map(position => {
+  goalPosition.findPathTo(edgeRoomPosition, findPathOpts).map(position => {
     placeMark(goalRoom, position)
   })
 

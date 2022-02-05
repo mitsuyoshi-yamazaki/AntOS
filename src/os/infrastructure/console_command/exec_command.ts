@@ -42,57 +42,61 @@ export class ExecCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    switch (this.args[0]) {
-    case "findPath":
-      return this.findPath()
-    case "findPathToSource":
-      return this.findPathToSource()
-    case "showOldRoomPlan":
-      return this.showOldRoomPlan()
-    case "placeOldRoomPlan":
-      return this.placeOldRoomPlan()
-    case "placeRoadConstructionMarks":
-      return this.placeRoadConstructionMarks()
-    case "showPositionsInRange":
-      return this.showPositionsInRange()
-    case "describeLabs":
-      return this.describeLabs()
-    case "moveToRoom":
-      return this.moveToRoom()
-    case "move":
-      return this.moveCreep()
-    case "transfer":
-      return this.transfer()
-    case "pickup":
-      return this.pickup()
-    case "dismantle":
-      return this.dismantle()
-    case "resource":
-      return this.resource()
-    case "set_boost_labs":
-      return this.setBoostLabs()
-    case "set_waiting_position":
-      return this.setWaitingPosition()
-    case "show_room_plan":
-      return this.showRoomPlan()
-    case "show_wall_plan":
-      return this.showWallPlan()
-    // case "check_existing_walls":
-    //   return this.checkExistingWalls()
-    case "mineral":
-      return this.showHarvestableMinerals()
-    case "room_config":
-      return this.configureRoomInfo()
-    case "check_alliance":
-      return this.checkAlliance()
-    case "unclaim":
-      return this.unclaim()
-    case "create_quad":
-      return this.createQuad()
-    case "script":
-      return this.runScript()
-    default:
-      return "Invalid script type"
+    try {
+      switch (this.args[0]) {
+      case "findPath":
+        return this.findPath()
+      case "findPathToSource":
+        return this.findPathToSource()
+      case "showOldRoomPlan":
+        return this.showOldRoomPlan()
+      case "placeOldRoomPlan":
+        return this.placeOldRoomPlan()
+      case "placeRoadConstructionMarks":
+        return this.placeRoadConstructionMarks()
+      case "showPositionsInRange":
+        return this.showPositionsInRange()
+      case "describeLabs":
+        return this.describeLabs()
+      case "moveToRoom":
+        return this.moveToRoom()
+      case "move":
+        return this.moveCreep()
+      case "transfer":
+        return this.transfer()
+      case "pickup":
+        return this.pickup()
+      case "dismantle":
+        return this.dismantle()
+      case "resource":
+        return this.resource()
+      case "set_boost_labs":
+        return this.setBoostLabs()
+      case "set_waiting_position":
+        return this.setWaitingPosition()
+      case "show_room_plan":
+        return this.showRoomPlan()
+      case "show_wall_plan":
+        return this.showWallPlan()
+        // case "check_existing_walls":
+        //   return this.checkExistingWalls()
+      case "mineral":
+        return this.showHarvestableMinerals()
+      case "room_config":
+        return this.configureRoomInfo()
+      case "check_alliance":
+        return this.checkAlliance()
+      case "unclaim":
+        return this.unclaim()
+      case "create_quad":
+        return this.createQuad()
+      case "script":
+        return this.runScript()
+      default:
+        throw "Invalid script type"
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
     }
   }
 
@@ -217,28 +221,24 @@ export class ExecCommand implements ConsoleCommand {
     return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
   }
 
+  /** throws */
   private placeRoadConstructionMarks(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const startObjectId = args.get("start_object_id")
-    if (startObjectId == null) {
-      return this.missingArgumentError("start_object_id")
-    }
+    const keywardArguments = new KeywordArguments(this.args)
+    const startObjectId = keywardArguments.gameObjectId("start_object_id").parse()
     const startObject = Game.getObjectById(startObjectId)
     if (!(startObject instanceof RoomObject)) {
-      return `${startObject} is not RoomObject ${startObjectId}`
+      throw `${startObject} is not RoomObject ${startObjectId}`
     }
 
-    const goalObjectId = args.get("goal_object_id")
-    if (goalObjectId == null) {
-      return this.missingArgumentError("goal_object_id")
-    }
+    const goalObjectId = keywardArguments.gameObjectId("goal_object_id").parse()
     const goalObject = Game.getObjectById(goalObjectId)
     if (!(goalObject instanceof RoomObject)) {
-      return `${goalObject} is not RoomObject ${goalObjectId}`
+      throw `${goalObject} is not RoomObject ${goalObjectId}`
     }
 
-    placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual")
+    const dryRun = true
+
+    placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual", {dryRun})
     return "ok"
   }
 
