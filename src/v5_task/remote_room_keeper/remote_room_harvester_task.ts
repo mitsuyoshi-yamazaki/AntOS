@@ -37,6 +37,8 @@ type Construction = {
   readonly roadPositions: Position[]
 }
 
+const routeRecalculationInterval = 40000
+
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
   r: RoomName
@@ -108,7 +110,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         return state.construction
       }
       return {
-        routeCalculatedTimestamp: state.s,
+        routeCalculatedTimestamp: state.s % routeRecalculationInterval,
         constructionFinished: true,
         roadPositions: [],
       }
@@ -154,7 +156,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     }
 
     if (container != null) {
-      if (Game.time > (this.construction.routeCalculatedTimestamp + 40000)) {
+      if (Game.time > (this.construction.routeCalculatedTimestamp + routeRecalculationInterval)) {
         this.placeRoadConstructMarks(objects, container)
       }
     }
