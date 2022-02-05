@@ -133,22 +133,49 @@ export class ProcessCommand implements ConsoleCommand {
   }
 
   private listProcess(filterTypeName?: string): CommandExecutionResult {
-    const tab = (str: string, tabs: Tab): string => this.tab(str, tabs)
-    const lowercasedFilterTypeName = filterTypeName?.toLowerCase()
-
-    const startString = `${tab("index", smallTab)}${tab("PID", mediumTab)}${tab("Type", veryLargeTab)}${tab("Running", smallTab)}${tab("Description", mediumTab)}`
-    return OperatingSystem.os.listAllProcesses()
-      .reduce((result, current, index) => {
-        if (lowercasedFilterTypeName != null && current.type.toLowerCase().includes(lowercasedFilterTypeName) !== true) {
-          return result
-        }
-        const shortDescription = current.process.processShortDescription == null ? "" : current.process.processShortDescription()
-        return `${result}\n${tab(`${index}`, smallTab)}${tab(`${current.processId}`, mediumTab)}${tab(`${current.type}`, veryLargeTab)}${tab(`${current.running}`, smallTab)}${tab(shortDescription, mediumTab)}`
-      }, startString)
+    const commandRunner = new ProcessCommandRunner()
+    if (filterTypeName == null) {
+      return commandRunner.listProcess()
+    }
+    return commandRunner.listProcess(filterTypeName)
   }
 
   // ---- Text ---- //
   private tab(text: string, tabs: Tab): string {
     return tab(text, tabs)
+  }
+}
+
+export class ProcessCommandRunner {
+  public listProcess(): string
+  public listProcess(filterTypeName: string): string
+  public listProcess(processIds: ProcessId[]): string
+  public listProcess(arg?: string | ProcessId[]): string {
+    const filter = ((): (info: { processInfo: ProcessInfo, index: number }) => boolean => {
+      if (arg == null) {
+        return () => true
+      }
+      if (typeof arg === "string") {
+        const lowercasedFilterTypeName = arg.toLowerCase()
+        return info => (info.processInfo.type.toLowerCase().includes(lowercasedFilterTypeName) === true)
+      }
+      return info => arg.includes(info.processInfo.processId)
+    })()
+
+    const getAlignedText = (index: string, processId: string, typeIdentifier: string, runningState: string, description: string): string => {
+      return `${tab(index, smallTab)}${tab(processId, mediumTab)}${tab(typeIdentifier, veryLargeTab)}${tab(runningState, smallTab)}${tab(description, mediumTab)}`
+    }
+
+    const results: string[] = [
+      getAlignedText("Index", "PID", "Type", "Running", "Description"),
+    ]
+    const processDescriptions = OperatingSystem.os.listAllProcesses().map((processInfo, index) => ({ processInfo, index })).filter(filter).map(info => {
+      const { processInfo, index } = info
+      const shortDescription = processInfo.process.processShortDescription == null ? "" : processInfo.process.processShortDescription()
+      return getAlignedText(`${index}`, `${processInfo.processId}`, processInfo.type, `${processInfo.running}`, shortDescription)
+    })
+    results.push(...processDescriptions)
+
+    return results.join("\n")
   }
 }
