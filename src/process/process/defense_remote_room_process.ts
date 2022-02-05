@@ -70,7 +70,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     public readonly roomName: RoomName,
     private readonly targetRooms: RoomInfo[],
     private currentTarget: TargetInfo | null,
-    private readonly intercepterCreepNames: { [roomName: string]: CreepName },
+    private intercepterCreepNames: { [roomName: string]: CreepName },
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -124,6 +124,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     }
 
     if (this.currentTarget == null) {
+      this.intercepterCreepNames = {}
       this.checkRemoteRooms()
       return
     }
@@ -131,9 +132,11 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     if (updatedTarget === "as is") {
       // do nothing
     } else if (updatedTarget == null) {
+      this.intercepterCreepNames = {}
       this.currentTarget = null
       return
     } else {
+      this.intercepterCreepNames = {}
       this.currentTarget = updatedTarget
     }
     const target = this.currentTarget
