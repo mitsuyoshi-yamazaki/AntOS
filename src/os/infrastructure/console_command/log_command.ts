@@ -1,6 +1,8 @@
 import { ProcessId } from "process/process"
 import { parseProcessId } from "./utility/command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
+import { coloredText } from "utility/log"
+import { ProcessCommandRunner } from "./process_command"
 
 export class LogCommand implements ConsoleCommand {
   public constructor(
@@ -10,30 +12,50 @@ export class LogCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    switch (this.args[0]) {
-    case "add":
-    case "remove": {
-      const parseResult = parseProcessId(this.args[1])
-      switch (parseResult.resultType) {
-      case "succeeded":
-        return this.changeFilterSetting(this.args[0], parseResult.value)
-      case "failed":
-        return `${parseResult.reason}`
+    const commandList = ["help", "add", "remove", "clear", "show"]
+    const args = [...this.args]
+    const command = args.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "add":
+      case "remove": {
+        const parseResult = parseProcessId(args[0])
+        switch (parseResult.resultType) {
+        case "succeeded":
+          return this.changeFilterSetting(command, parseResult.value)
+        case "failed":
+          return `${parseResult.reason}`
+        }
       }
-    }
 
-    // eslint-disable-next-line no-fallthrough
-    case "clear":
-      this.clearFilter()
-      return "Log filter cleared"
+      // eslint-disable-next-line no-fallthrough
+      case "clear":
+        this.clearFilter()
+        return "Log filter cleared"
 
-    default:
-      return `Invalid command ${this.args[0]}. Available commands are: [add, remove, clear]`
+      case "show":
+        return this.showProcesses()
+
+      default:
+        throw `Invalid command ${command}. Available commands are: ${commandList}`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
     }
   }
 
   private clearFilter(): void {
     Memory.os.logger.filteringProcessIds.splice(0, Memory.os.logger.filteringProcessIds.length)
+  }
+
+  private showProcesses(): string {
+    const processIds = [...Memory.os.logger.filteringProcessIds]
+    const processCommandRunner = new ProcessCommandRunner()
+    return processCommandRunner.listProcess(processIds)
   }
 
   private changeFilterSetting(command: "add" | "remove", processId: ProcessId): CommandExecutionResult {
