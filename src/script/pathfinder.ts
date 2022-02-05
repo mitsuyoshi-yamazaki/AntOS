@@ -181,16 +181,27 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     return Result.Failed(`No visual: ${startRoom}, ${goalRoom}`)
   }
 
+  const roadPositionMap = new Map<RoomName, RoomPosition[]>()
+  const getRoadPositions = (room: Room): RoomPosition[] => {
+    const stored = roadPositionMap.get(room.name)
+    if (stored != null) {
+      return stored
+    }
+    const positions: RoomPosition[] = [
+      ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map(road => road.pos),
+      ...room.find(FIND_FLAGS, { filter: { color: roadFlagColor } }).map(flag => flag.pos),
+    ]
+    roadPositionMap.set(room.name, positions)
+    return positions
+  }
+
   const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
     const room = Game.rooms[roomName]
     if (room == null) {
       return costMatrix
     }
 
-    const roadPositions: RoomPosition[] = [
-      ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map(road => road.pos),
-      ...room.find(FIND_FLAGS, { filter: { color: roadFlagColor}}).map(flag => flag.pos),
-    ]
+    const roadPositions = getRoadPositions(room)
     roadPositions.forEach(position => {
       costMatrix.set(position.x, position.y, roadRouteCost.road)
     })
@@ -215,10 +226,18 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   }
 
   const placeMark = (room: Room, position: { x: number, y: number }): void => {
+    const roadPositions = getRoadPositions(room)
+    const placed = roadPositions.some(roadPosition => roadPosition.x === position.x && roadPosition.y === position.y)
     if (options?.dryRun === true) {
-      room.visual.text("#", position.x, position.y, {color: "#FF0000"})
+      const text = placed === true ? "*" : "#"
+      room.visual.text(text, position.x, position.y, { color: "#FF0000" })
       return
     }
+
+    if (placed === true) {
+      return
+    }
+
     const result = room.createFlag(position.x, position.y, generateUniqueId(codename), roadFlagColor)
     switch (result) {
     case OK:
