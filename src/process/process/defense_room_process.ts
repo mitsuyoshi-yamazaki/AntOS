@@ -194,7 +194,7 @@ export class DefenseRoomProcess implements Process, Procedural {
     }
     const targetPosition = targetHostileCreep.pos
 
-    const interceptersInRange = targetHostileCreep.pos.findInRange(intercepters, 3)
+    const interceptersInRange = targetHostileCreep.pos.findInRange(intercepters, 2)
     if (interceptersInRange.length > 0) {
       const totalHealPower = targetHostileCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
         return result + CreepBody.power(current.body, "heal")
