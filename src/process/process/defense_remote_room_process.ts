@@ -52,9 +52,7 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly intercepterCreepNames: {[roomName: string]: CreepName}
 }
 
-// Game.io("launch ObserveRoomProcess room_name=W23S25 target_room_name=W23S27 duration=100")
-// Game.io("launch DefenseRemoteRoomProcess room_name=W23S28 target_room_names=W23S27")
-// 事故死の検証
+// TODO: 事故死の検証
 export class DefenseRemoteRoomProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -66,7 +64,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     private readonly targetRooms: RoomInfo[],
     private currentTarget: TargetInfo | null,
     private readonly intercepterCreepNames: { [roomName: string]: CreepName },
