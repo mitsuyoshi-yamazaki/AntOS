@@ -75,9 +75,11 @@ export const GameConstants = {
       transferResource: TRANSFER_RESOURCE_RANGE,
       upgradeController: UPGRADE_CONTROLLER_RANGE,
       attack: 1,
+      rangedAttack: 3,
     },
     actionPower: {
       attack: ATTACK_POWER,
+      rangedAttack: RANGED_ATTACK_POWER,
       build: BUILD_POWER,
       upgradeController: UPGRADE_CONTROLLER_POWER,
       carryCapacity: CARRY_CAPACITY,

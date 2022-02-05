@@ -17,10 +17,18 @@ import { RoomResources } from "room_resource/room_resources"
 import { NormalRoomResource } from "room_resource/room_resource/normal_room_resource"
 import { CreepBody } from "utility/creep_body"
 import { Invader } from "game/invader"
+import { GameConstants } from "utility/constants"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { moveToRoom } from "script/move_to_room"
+import { GameMap } from "game/game_map"
+import { defaultMoveToOptions } from "prototype/creep"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
 })
+
+const rangedAttackRange = GameConstants.creep.actionRange.rangedAttack
 
 type TargetInfo = {
   readonly roomName: RoomName
@@ -32,6 +40,7 @@ type TargetInfo = {
     readonly attack: number
     readonly rangedAttack: number
     readonly heal: number
+    readonly hits: number
   }
   readonly boosted: boolean
   readonly hostileCreepCount: number
@@ -100,12 +109,124 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+
     if (this.currentTarget == null) {
       this.checkRemoteRooms()
       return
     }
+    const target = this.currentTarget
 
-    // TODO:
+    const creepMaxCount = 1
+    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    if (intercepters.length < creepMaxCount) {
+      this.spawnIntercepter(roomResource, target)
+    }
+
+    intercepters.forEach(creep => this.runIntercepter(creep, target))
+  }
+
+  private runIntercepter(creep: Creep, target: TargetInfo): void {
+    const nearbyHostiles = creep.pos.findInRange(FIND_HOSTILE_CREEPS, rangedAttackRange).map(hostileCreep => ({creep: hostileCreep, range: hostileCreep.pos.getRangeTo(creep)}))
+    nearbyHostiles.sort((lhs, rhs) => (lhs.range - rhs.range))
+    const attackTarget = nearbyHostiles[0]
+
+    if (attackTarget != null || creep.hits < creep.hitsMax) {
+      creep.heal(creep)
+    }
+    if (attackTarget != null) {
+      if (attackTarget.range <= 1) {
+        creep.rangedMassAttack()
+      } else {
+        creep.rangedAttack(attackTarget.creep)
+      }
+
+      if (attackTarget.range < rangedAttackRange) {
+        this.flee(creep, attackTarget.creep.pos, rangedAttackRange + 1)
+        return
+      }
+    }
+
+    if (creep.room.name !== target.roomName) {
+      const waypoints = GameMap.getWaypoints(creep.room.name, target.roomName) ?? []
+      moveToRoom(creep, target.roomName, waypoints)
+      return
+    }
+
+    const targetRoomResource = RoomResources.getNormalRoomResource(creep.room.name)
+    if (targetRoomResource == null) {
+      const hostileCreep = creep.pos.findClosestByPath(FIND_HOSTILE_CREEPS)
+      if (hostileCreep == null) {
+        this.currentTarget = null
+        return
+      }
+      creep.moveTo(hostileCreep.pos, defaultMoveToOptions())
+      return
+    }
+
+    const {min, max} = GameConstants.room.edgePosition
+    const hostileCreeps = targetRoomResource.hostiles.creeps.filter(hostileCreep => {
+      const position = hostileCreep.pos
+      if (position.x > min && position.x < max && position.y > min && position.y < max) {
+        return true
+      }
+      return false
+    })
+    const chaseTarget = creep.pos.findClosestByPath(hostileCreeps)
+    if (chaseTarget == null) {
+      if (targetRoomResource.hostiles.creeps.length <= 0) {
+        this.currentTarget = null
+      }
+      return
+    }
+
+    creep.moveTo(chaseTarget.pos, defaultMoveToOptions())
+  }
+
+  private flee(creep: Creep, position: RoomPosition, range: number): void {
+    const path = PathFinder.search(creep.pos, { pos: position, range }, {
+      flee: true,
+      maxRooms: 1,
+    })
+    creep.moveByPath(path.path)
+  }
+
+  private spawnIntercepter(roomResource: OwnedRoomResource, target: TargetInfo): void {
+    const rangedAttackCount = Math.max(Math.ceil(target.totalPower.heal / GameConstants.creep.actionPower.rangedAttack), 5)
+    const healCount = ((): number => {
+      const count = Math.max(Math.ceil(target.totalPower.rangedAttack / GameConstants.creep.actionPower.heal), 1)
+      if (count > 3) {
+        return Math.ceil(count / 2) + 1
+      }
+      return count
+    })()
+    const moveCount = rangedAttackCount + healCount
+
+    const body: BodyPartConstant[] = [
+      ...Array(moveCount).fill(MOVE),
+      ...Array(rangedAttackCount).fill(RANGED_ATTACK),
+      ...Array(healCount).fill(HEAL),
+      MOVE, MOVE,
+    ]
+
+    if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable) {
+      PrimitiveLogger.fatal(`${this.constructor.name} ${this.processId} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`)
+      return
+    }
+
+    World.resourcePools.addSpawnCreepRequest(this.roomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [],
+      body,
+      initialTask: null,
+      taskIdentifier: this.identifier,
+      parentRoomName: null,
+    })
   }
 
   private checkRemoteRooms(): void {
@@ -122,12 +243,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       return [this.calculateTargetInfo(roomResource)]
     })
 
-    // TODO:
-    // targets.sort((lhs, rhs) => {
-    //   if (lhs.attacker.onlyNpc !== rhs.attacker.onlyNpc) {
-    //     return lhs.attacker.onlyNpc ? -1 : 1
-    //   }
-    // })
+    targets.sort((lhs, rhs) => {
+      return rhs.priority - lhs.priority
+    })
 
     const target = targets[0] ?? null
     this.currentTarget = target
@@ -138,6 +256,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
     let totalAttackPower = 0
     let totalRangedAttackPower = 0
     let totalHealPower = 0
+    let totalHits = 0
     let boosted = false as boolean
 
     roomResource.hostiles.creeps.forEach(creep => {
@@ -147,6 +266,8 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       totalAttackPower += CreepBody.power(creep.body, "attack")
       totalRangedAttackPower += CreepBody.power(creep.body, "rangedAttack")
       totalHealPower += CreepBody.power(creep.body, "heal")
+      totalHits = creep.hitsMax
+
       if (boosted !== true && creep.body.some(body => body.boost != null)) {
         boosted = true
       }
@@ -171,6 +292,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
         attack: totalAttackPower,
         rangedAttack: totalRangedAttackPower,
         heal: totalHealPower,
+        hits: totalHits,
       },
       boosted,
       hostileCreepCount: roomResource.hostiles.creeps.length,
