@@ -83,6 +83,7 @@ export const GameConstants = {
       carryCapacity: CARRY_CAPACITY,
       harvest: HARVEST_POWER,
       heal: HEAL_POWER,
+      repair: REPAIR_POWER,
     },
     actionCost: creepActionEnergyCost,
     boostCost: LAB_BOOST_MINERAL,

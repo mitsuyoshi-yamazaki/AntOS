@@ -6,6 +6,7 @@ import { TransferEnergyApiWrapper, TransferEnergyApiWrapperState, TransferEnergy
 import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { GameConstants } from "utility/constants"
 
 export interface MoveToTransferHaulerTaskState extends CreepTaskState {
   /** api warpper state */
@@ -75,12 +76,18 @@ export class MoveToTransferHaulerTask implements CreepTask {
   }
 
   private runSubTask(creep: Creep): void {
-    if (creep.body.map(b => b.type).includes(WORK) === true) {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      return
+    }
+
+    const repairPower = creep.getActiveBodyparts(WORK) * GameConstants.creep.actionPower.repair
+
+    if (repairPower > 0) {
       const roadToRepair = creep.pos.lookFor(LOOK_STRUCTURES).find(structure => {
         if (structure.structureType !== STRUCTURE_ROAD) {
           return false
         }
-        if (structure.hits > structure.hitsMax * 0.85) {
+        if (structure.hits > (structure.hitsMax - repairPower)) {
           return false
         }
         return true
