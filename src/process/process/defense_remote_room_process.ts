@@ -150,7 +150,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       }
     })
     intercepters.forEach(creep => {
-      if (this.intercepterCreepNames[target.roomName] == null) {
+      if (this.intercepterCreepNames[target.roomName] != null) {
         return
       }
       this.intercepterCreepNames[target.roomName] = creep.name
@@ -203,13 +203,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       return
     }
 
-    const {min, max} = GameConstants.room.edgePosition
+    const { min, max } = GameConstants.room.edgePosition
+    const haulerBodyParts: BodyPartConstant[] = [CARRY, MOVE]
     const hostileCreeps = targetRoomResource.hostiles.creeps.filter(hostileCreep => {
       const position = hostileCreep.pos
-      if (position.x > min && position.x < max && position.y > min && position.y < max) {
-        return true
+      if (creep.body.every(body => haulerBodyParts.includes(body.type) === true)) {
+        return false
       }
-      return false
+      if (position.x <= min && position.x >= max && position.y <= min && position.y >= max) {
+        return false
+      }
+      return true
     })
     const chaseTarget = creep.pos.findClosestByPath(hostileCreeps)
     if (chaseTarget == null) {
