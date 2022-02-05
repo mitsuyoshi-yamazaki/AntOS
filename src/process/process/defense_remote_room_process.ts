@@ -181,6 +181,8 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       if (attackTarget.range < rangedAttackRange) {
         this.flee(creep, attackTarget.creep.pos, rangedAttackRange + 1)
         return
+      } else if (attackTarget.range === rangedAttackRange) {
+        return
       }
     }
 
