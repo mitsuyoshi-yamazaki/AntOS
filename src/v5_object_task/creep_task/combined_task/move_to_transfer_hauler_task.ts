@@ -61,9 +61,12 @@ export class MoveToTransferHaulerTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
 
     case ERR_NOT_IN_RANGE: {
-      const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions() : interRoomMoveToOptions()
-      creep.moveTo(this.apiWrapper.target, options)
-      this.runSubTask(creep)
+      const { isRepairing } = this.runSubTask(creep)
+      const isMyRoom = creep.room.controller?.owner?.username === Game.user.name
+      if (isRepairing !== true || isMyRoom === true) {
+        const options = creep.pos.roomName === this.apiWrapper.target.pos.roomName ? defaultMoveToOptions() : interRoomMoveToOptions()
+        creep.moveTo(this.apiWrapper.target, options)
+      }
       return TaskProgressType.InProgress
     }
 
@@ -75,29 +78,35 @@ export class MoveToTransferHaulerTask implements CreepTask {
     }
   }
 
-  private runSubTask(creep: Creep): void {
+  private runSubTask(creep: Creep): {isRepairing: boolean} {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      return
+      return { isRepairing: false}
     }
+
+    this.chargeNearbyChargeableStructure(creep)
 
     const repairPower = creep.getActiveBodyparts(WORK) * GameConstants.creep.actionPower.repair
-
-    if (repairPower > 0) {
-      const roadToRepair = creep.pos.lookFor(LOOK_STRUCTURES).find(structure => {
-        if (structure.structureType !== STRUCTURE_ROAD) {
-          return false
-        }
-        if (structure.hits > (structure.hitsMax - repairPower)) {
-          return false
-        }
-        return true
-      }) as StructureRoad | null
-      if (roadToRepair != null) {
-        creep.repair(roadToRepair)
-        return
-      }
+    if (repairPower <= 0) {
+      return { isRepairing: false }
     }
-    this.chargeNearbyChargeableStructure(creep)
+
+    const roadToRepair = creep.pos.lookFor(LOOK_STRUCTURES).find(structure => {
+      if (structure.structureType !== STRUCTURE_ROAD) {
+        return false
+      }
+      if (structure.hits > (structure.hitsMax - repairPower)) {
+        return false
+      }
+      return true
+    }) as StructureRoad | null
+
+    if (roadToRepair == null) {
+      return { isRepairing: false }
+    }
+
+    creep.repair(roadToRepair)
+    const isRepairing = ((roadToRepair.hits + repairPower) < roadToRepair.hitsMax) && (roadToRepair.hits < (roadToRepair.hitsMax * 0.6))
+    return { isRepairing }
   }
 
   private chargeNearbyChargeableStructure(creep: Creep): void {
