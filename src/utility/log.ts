@@ -80,6 +80,10 @@ export function coloredResourceType(resourceType: ResourceConstant): string {
   return `<b>${anyColoredText(resourceType, resourceColorCode(resourceType))}</b>`
 }
 
+export function coloredCreepBody(body: BodyPartConstant): string {
+  return `<b>${anyColoredText(body.toUpperCase(), creepBodyColorCode(body))}</b>`
+}
+
 export function resourceColorCode(resourceType: ResourceConstant): string {
   switch (resourceType) {
   case RESOURCE_ENERGY:
@@ -198,6 +202,27 @@ export function resourceColorCode(resourceType: ResourceConstant): string {
     return "#FFFFFF"
 
   default:
+    return "#FFFFFF"
+  }
+}
+
+export function creepBodyColorCode(body: BodyPartConstant): string {
+  switch (body) {
+  case WORK:
+    return "#FFE76E"
+  case CARRY:
+    return "#777777"
+  case MOVE:
+    return "#A9B7C6"
+  case CLAIM:
+    return "#B897FB"
+  case ATTACK:
+    return "#F62843"
+  case RANGED_ATTACK:
+    return "#5E7EB2"
+  case HEAL:
+    return "#6DFF63"
+  case TOUGH:
     return "#FFFFFF"
   }
 }

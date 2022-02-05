@@ -1,5 +1,5 @@
 import { CreepBodyBoostableActionType, CreepBodyEnergyConsumeActionType, CreepBodyFixedAmountActionType, GameConstants } from "./constants"
-import { anyColoredText } from "./log"
+import { anyColoredText, creepBodyColorCode } from "./log"
 import { boostableCreepBody } from "./resource"
 
 const CreepActionToBodyPart: { [index in CreepBodyBoostableActionType]: BodyPartConstant } = {
@@ -157,19 +157,8 @@ const bodyShortDescription: { [index in BodyPartConstant]: string } = {
   claim: "CL",
 }
 
-const bodyColors: { [index in BodyPartConstant]: string } = {
-  move: "#AAB7C6",
-  carry: "#777777",
-  work: "#FFE76E",
-  tough: "#FFFFFF",
-  attack: "#F72843",
-  ranged_attack: "#5E7FB2",
-  heal: "#6DFF63",
-  claim: "#B897F8",
-}
-
 function coloredBodyShortDescription(body: BodyPartConstant): string {
-  return anyColoredText(bodyShortDescription[body], bodyColors[body])
+  return anyColoredText(bodyShortDescription[body], creepBodyColorCode(body))
 }
 
 /** @deprecated use CreepBody.description() */

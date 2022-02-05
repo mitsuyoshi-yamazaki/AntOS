@@ -21,7 +21,7 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
@@ -54,6 +54,7 @@ import { DefenseRoomProcess } from "process/process/defense_room_process"
 import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
 import { directionName } from "utility/direction"
+import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1138,6 +1139,17 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
     const amount = args.int("amount").parse()
 
     return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomNames = args.roomNameList("target_room_names").parse()
+
+    return Result.Succeeded((processId) => DefenseRemoteRoomProcess.create(processId, roomName, targetRoomNames))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
