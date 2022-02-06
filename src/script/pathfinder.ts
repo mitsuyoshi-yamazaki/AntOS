@@ -170,8 +170,7 @@ const roadRouteCost = {
 }
 
 /**
- * - Owned roomにはflagを、そうでなければConstructionSiteを配置する
- * - startRoom, goalRoom以外の部屋をまたいだ経路には対応していない
+ * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
 export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<string, string> {
   const startRoom = Game.rooms[startPosition.roomName]
@@ -328,4 +327,57 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   } catch (error) {
     return Result.Failed(`${error}`)
   }
+}
+
+/**
+ * waypointが2部屋以上あるとひとつでも部屋がcheckedWaypointsに入ると別経路が無視されるため正確に算出されない
+ */
+export function calculateInterRoomShortestRoutes(fromRoomName: RoomName, toRoomName: RoomName): RoomName[][] {
+  const checkedWaypoints: RoomName[] = []
+  const addCheckedWaypoints = (route: RoomName[]): void => {
+    route.pop()
+    route.forEach(roomName => {
+      if (checkedWaypoints.includes(roomName) === true) {
+        return
+      }
+      checkedWaypoints.push(roomName)
+    })
+  }
+
+  let result: RoomName[][] = []
+  let minimumRouteLength = 1000
+  const maxTry = 8
+
+  const routeCallback = (roomName: string): number => {
+    if (checkedWaypoints.includes(roomName) === true) {
+      return Infinity
+    }
+    return 1
+  }
+  const routeOptions: RouteOptions = {
+    routeCallback
+  }
+
+  for (let i = 0; i < maxTry; i += 1) {
+    const route = Game.map.findRoute(fromRoomName, toRoomName, routeOptions)
+    if (route === ERR_NO_PATH) {
+      continue
+    }
+    const routeRoomNames = route.map(room => room.room)
+    if (routeRoomNames.length > minimumRouteLength) {
+      break
+    }
+    if (routeRoomNames.length < minimumRouteLength) {
+      result = [routeRoomNames]
+      minimumRouteLength = routeRoomNames.length
+      addCheckedWaypoints([...routeRoomNames])
+      continue
+    }
+    if (routeRoomNames.length === minimumRouteLength) {
+      result.push(routeRoomNames)
+      addCheckedWaypoints([...routeRoomNames])
+      continue
+    }
+  }
+  return result
 }

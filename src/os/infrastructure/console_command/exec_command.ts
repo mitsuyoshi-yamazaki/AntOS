@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, placeRoadConstructionMarks } from "script/pathfinder"
+import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
@@ -53,8 +53,10 @@ export class ExecCommand implements ConsoleCommand {
         return this.showOldRoomPlan()
       case "placeOldRoomPlan":
         return this.placeOldRoomPlan()
-      case "placeRoadConstructionMarks":
-        return this.placeRoadConstructionMarks()
+      case "show_remote_route":
+        return this.showRemoteRoute()
+      case "calculate_inter_room_shortest_routes":
+        return this.calculateInterRoomShortestRoutes()
       case "showPositionsInRange":
         return this.showPositionsInRange()
       case "describeLabs":
@@ -225,7 +227,7 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   /** throws */
-  private placeRoadConstructionMarks(): CommandExecutionResult {
+  private showRemoteRoute(): CommandExecutionResult {
     const keywardArguments = new KeywordArguments(this.args)
     const startObjectId = keywardArguments.gameObjectId("start_object_id").parse()
     const startObject = Game.getObjectById(startObjectId)
@@ -248,6 +250,24 @@ export class ExecCommand implements ConsoleCommand {
     case "failed":
       throw result.reason
     }
+  }
+
+  /** throws */
+  private calculateInterRoomShortestRoutes(): CommandExecutionResult {
+    const keywardArguments = new KeywordArguments(this.args)
+    const fromRoomName = keywardArguments.roomName("from_room_name").parse()
+    const toRoomName = keywardArguments.roomName("to_room_name").parse()
+
+    const routes = calculateInterRoomShortestRoutes(fromRoomName, toRoomName)
+    if (routes.length <= 0) {
+      throw `no route from ${roomLink(fromRoomName)} =&gt ${roomLink(toRoomName)}`
+    }
+
+    const descriptions: string[] = [
+      `${routes.length} routes found from ${roomLink(fromRoomName)} =&gt ${roomLink(toRoomName)}`,
+      ...routes.map(route => route.map(r => roomLink(r)).join(" =&gt ")),
+    ]
+    return descriptions.join("\n")
   }
 
   private showPositionsInRange(): CommandExecutionResult {
