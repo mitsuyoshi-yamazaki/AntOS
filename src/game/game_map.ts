@@ -45,7 +45,7 @@ export const GameMap = {
     }
   },
 
-  getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  getWaypoints(roomName: RoomName, destinationRoomName: RoomName, options?: {ignoreMissingWaypoints?: boolean}): RoomName[] | null {
     if (roomName === destinationRoomName) {
       return []
     }
@@ -69,7 +69,9 @@ export const GameMap = {
       return calculatedWaypoints
     }
 
-    MissingWaypoints.add(roomName, destinationRoomName)
+    if (options?.ignoreMissingWaypoints !== true) {
+      MissingWaypoints.add(roomName, destinationRoomName)
+    }
     return null
   },
 
