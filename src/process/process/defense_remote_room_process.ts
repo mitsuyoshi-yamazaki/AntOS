@@ -128,7 +128,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status"]
+    const commandList = ["help", "status", "add"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -136,6 +136,16 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       switch (command) {
       case "help":
         return `Available commands: ${commandList}`
+
+      case "add": {
+        const listArguments = new ListArguments(components)
+        const targetRoomName = listArguments.roomName(0, "room name").parse()
+        if (this.targetRooms.some(targetRoom => targetRoom.name === targetRoomName) === true) {
+          throw `${roomLink(targetRoomName)} is already in the target list`
+        }
+        this.targetRooms.push({name: targetRoomName})
+        return `${roomLink(targetRoomName)} is added to the target list`
+      }
 
       case "status": {
         const listArguments = new ListArguments(components)
