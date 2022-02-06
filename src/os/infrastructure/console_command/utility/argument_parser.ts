@@ -47,6 +47,19 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   }
 }
 
+export class RoomArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, Room> {
+  /** throws */
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): Room {
+    const roomNameArgument = new RoomNameArgument(this.key, this.value, this.parseOptions)
+    const roomName = roomNameArgument.parse(options)
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      throw `no visible for ${roomLink(roomName)}`
+    }
+    return room
+  }
+}
+
 export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName[] {

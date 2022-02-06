@@ -1,6 +1,6 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, ResourceTypeArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -20,6 +20,7 @@ interface KeywordArgumentsInterface {
   roomPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
   roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]>
+  room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, Room>
   gameObjectId(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string>
   resourceType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, ResourceConstant>
   boostCompoundType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, MineralBoostConstant>
@@ -71,6 +72,10 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]> {
     return new RoomNameListArgument(key, this.getValueAt(index), options)
+  }
+
+  public room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, Room> {
+    return new RoomArgument(key, this.getValueAt(index), options)
   }
 
   public gameObjectId(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string> {

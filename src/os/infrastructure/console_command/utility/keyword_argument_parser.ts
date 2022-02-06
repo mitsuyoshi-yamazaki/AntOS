@@ -2,7 +2,7 @@ import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, ResourceTypeArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -20,6 +20,7 @@ interface KeywordArgumentsInterface {
   roomPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ allowClosedRoom?: boolean }, RoomPosition>
   roomName(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName>
   roomNameList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]>
+  room(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, Room>
   gameObjectId(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
   resourceType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, ResourceConstant>
   boostCompoundType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, MineralBoostConstant>
@@ -95,6 +96,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public roomNameList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
     return new RoomNameListArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  public room(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, Room> {
+    return new RoomArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
   public gameObjectId(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string> {
