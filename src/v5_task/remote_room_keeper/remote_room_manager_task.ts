@@ -3,6 +3,10 @@ import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Environment } from "utility/environment"
+import { coloredText } from "utility/log"
+import { RemoteRoomManager } from "./remote_room_manager"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
@@ -70,20 +74,38 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
-    // const keeper = this.children.find(task => {
-    //   if (!(task instanceof RemoteRoomKeeperTask)) {
-    //     return false
-    //   }
-    //   if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W47S2" && task.targetRoomName === "W47S3") {
-    //     return true
-    //   }
-    //   return false
-    // })
-    // if (keeper != null) {
-    //   PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remove remote room keeper task`)
-    //   this.removeChildTask(keeper)
-    // }
+    // Migration
+    this.launchRemoteRoom()
 
     return TaskStatus.InProgress
+  }
+
+  private launchRemoteRoom(): void {
+    const remoteRoomsToAdd = RemoteRoomManager.remoteRoomsToAdd(this.roomName)
+    remoteRoomsToAdd.forEach(remoteRoomName => {
+      if (this.hasKeeperTask(remoteRoomName) === true) {
+        return
+      }
+      this.addRoomKeeperTask(remoteRoomName)
+    })
+
+    RemoteRoomManager.removeRemoteRooms(this.roomName)
+  }
+
+  private hasKeeperTask(remoteRoomName: RoomName): boolean {
+    return this.children.some(task => {
+      if (!(task instanceof RemoteRoomKeeperTask)) {
+        return false
+      }
+      if (task.roomName !== this.roomName || task.targetRoomName !== remoteRoomName) {
+        return false
+      }
+      return true
+    })
+  }
+
+  private addRoomKeeperTask(targetRoomName: RoomName): void {
+    this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task added ${this.roomName} &gt ${targetRoomName}`)
   }
 }
