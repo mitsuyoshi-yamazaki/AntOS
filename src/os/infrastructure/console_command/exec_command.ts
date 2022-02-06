@@ -33,7 +33,6 @@ import { QuadRequirement } from "../../../../submodules/attack/quad/quad_require
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
 import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
-import { remoteRoomNamesToDefend } from "process/temporary/season_487837_attack_invader_core_room_names"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -95,8 +94,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.unclaim()
       case "create_quad":
         return this.createQuad()
-      case "show_remote_rooms_to_defend":
-        return this.showRemoteRoomsToDefend()
       case "script":
         return this.runScript()
       default:
@@ -266,7 +263,7 @@ export class ExecCommand implements ConsoleCommand {
     const result = placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual", { dryRun })
     switch (result.resultType) {
     case "succeeded":
-      return result.value
+      return "ok"
     case "failed":
       throw result.reason
     }
@@ -1369,13 +1366,6 @@ export class ExecCommand implements ConsoleCommand {
     const quadSpec = specResult.value
 
     return quadSpec.description()
-  }
-
-  private showRemoteRoomsToDefend(): CommandExecutionResult {
-    const lines = Array.from(remoteRoomNamesToDefend.entries()).map(([parentRoomName, remoteRoomNames]) => {
-      return `${roomLink(parentRoomName)}: ${remoteRoomNames.map(roomName => roomLink(roomName)).join(", ")}`
-    })
-    return lines.join("\n")
   }
 
   private runScript(): CommandExecutionResult {

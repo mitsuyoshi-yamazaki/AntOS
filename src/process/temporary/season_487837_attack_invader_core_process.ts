@@ -14,8 +14,9 @@ import { RoomName } from "utility/room_name"
 import { processLog } from "os/infrastructure/logger"
 import { roomLink } from "utility/log"
 import { bodyCost } from "utility/creep_body"
-import { remoteRoomNamesToDefend } from "./season_487837_attack_invader_core_room_names"
 import { ProcessDecoder } from "process/process_decoder"
+import { RoomResources } from "room_resource/room_resources"
+import { GclFarmResources } from "room_resource/gcl_farm_resources"
 
 ProcessDecoder.register("Season487837AttackInvaderCoreProcess", state => {
   return Season487837AttackInvaderCoreProcess.decode(state as Season487837AttackInvaderCoreProcessState)
@@ -66,8 +67,16 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
 
   public runOnTick(): void {
     const invadedRoomNames: RoomName[] = []
-    remoteRoomNamesToDefend.forEach((targetRoomNames, parentRoomName) => {
-      invadedRoomNames.push(...this.runOnRoom(parentRoomName, targetRoomNames))
+    const parentRoomResources = RoomResources.getOwnedRoomResources().filter(resource => {
+      if (GclFarmResources.isGclFarm(resource.room.name) === true) {
+        return false
+      }
+      return true
+    })
+
+    parentRoomResources.forEach(roomResource => {
+      const targetRoomNames = Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo))
+      invadedRoomNames.push(...this.runOnRoom(roomResource.room.name, targetRoomNames))
     })
 
     if (invadedRoomNames.length > 0) {

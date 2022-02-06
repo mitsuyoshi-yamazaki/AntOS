@@ -4,9 +4,8 @@ import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Environment } from "utility/environment"
 import { coloredText } from "utility/log"
-import { RemoteRoomManager } from "./remote_room_manager"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
@@ -81,15 +80,17 @@ export class RemoteRoomManagerTask extends Task {
   }
 
   private launchRemoteRoom(): void {
-    const remoteRoomsToAdd = RemoteRoomManager.remoteRoomsToAdd(this.roomName)
-    remoteRoomsToAdd.forEach(remoteRoomName => {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+    const remoteRoomNames = Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo))
+    remoteRoomNames.forEach(remoteRoomName => {
       if (this.hasKeeperTask(remoteRoomName) === true) {
         return
       }
       this.addRoomKeeperTask(remoteRoomName)
     })
-
-    RemoteRoomManager.removeRemoteRooms(this.roomName)
   }
 
   private hasKeeperTask(remoteRoomName: RoomName): boolean {
@@ -105,7 +106,7 @@ export class RemoteRoomManagerTask extends Task {
   }
 
   private addRoomKeeperTask(targetRoomName: RoomName): void {
-    this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
+    // this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
     PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task added ${this.roomName} &gt ${targetRoomName}`)
   }
 }

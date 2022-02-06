@@ -172,7 +172,7 @@ const roadRouteCost = {
 /**
  * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<string, string> {
+export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<RoomPosition[], string> {
   const calculator = new RemoteHarvesterRouteCalculator()
   return calculator.placeRoadConstructionMarks(startPosition, sourcePosition, codename, options)
 }
@@ -198,7 +198,7 @@ class RemoteHarvesterRouteCalculator {
     return positions
   }
 
-  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<string, string> {
+  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<RoomPosition[], string> {
     const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
 
     const positionsByRoutes = shortestRoomRoutes.flatMap((route): { route: RoomPosition[], description: string }[] => {
@@ -276,34 +276,15 @@ class RemoteHarvesterRouteCalculator {
       }
     }
 
-    const results: { roomName: RoomName, roadCount: number }[] = []
-    const addResult = (roomName: RoomName): void => {
-      const result = ((): { roomName: RoomName, roadCount: number } => {
-        const stored = results[results.length - 1]
-        if (stored != null && stored.roomName === roomName) {
-          return stored
-        }
-        const newResult = {
-          roomName,
-          roadCount: 0,
-        }
-        results.push(newResult)
-        return newResult
-      })()
-
-      result.roadCount += 1
-    }
-
     shortestRoute.forEach(position => {
       const room = Game.rooms[position.roomName]
       if (room == null) {
         return
       }
       placeMark(room, position)
-      addResult(room.name)
     })
 
-    return Result.Succeeded(results.map(result => `${result.roadCount} in ${roomLink(result.roomName)}`).join(", "))
+    return Result.Succeeded(shortestRoute)
   }
 
   public calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition): Result<RoomPosition[], string> {

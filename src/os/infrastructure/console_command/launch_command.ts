@@ -1147,9 +1147,8 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
 ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({my: true})
-    const targetRoomNames = args.roomNameList("target_room_names").parse()
 
-    return Result.Succeeded((processId) => DefenseRemoteRoomProcess.create(processId, roomName, targetRoomNames))
+    return Result.Succeeded((processId) => DefenseRemoteRoomProcess.create(processId, roomName))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

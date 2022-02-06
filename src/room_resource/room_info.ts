@@ -7,6 +7,13 @@ import type { Timestamp } from "utility/timestamp"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
+export type RemoteRoomInfo = {
+  readonly roomName: RoomName
+  enabled: boolean
+  routeCalculatedTimestamp: Timestamp
+  constructionFinished: boolean
+}
+
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6
   readonly roomType: "normal" | "owned"
@@ -57,6 +64,9 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     /** @deprecated */
     wallPositions?: WallPosition[]
   } | null
+
+  // ---- Remote Room ---- //
+  remoteRoomInfo: { [roomName: string]: RemoteRoomInfo}
 
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
@@ -155,6 +165,7 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     highestRcl: 1,
     roomPlan: null,
     reachable: true,
+    remoteRoomInfo: {},
   }
 }
 
@@ -171,6 +182,7 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
-    reachable: normalRoomInfo.reachable
+    reachable: normalRoomInfo.reachable,
+    remoteRoomInfo: {},
   }
 }

@@ -24,6 +24,15 @@ ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
 })
 
+const errorMessages: string[] = []
+const raiseError = (errorMessage: string): void => {
+  if (errorMessages.includes(errorMessage) === true) {
+    return
+  }
+  errorMessages.push(errorMessage)
+  PrimitiveLogger.fatal(errorMessage)
+}
+
 const rangedAttackRange = GameConstants.creep.actionRange.rangedAttack
 
 type TargetInfo = {
@@ -52,16 +61,22 @@ type RoomInfo = {
 
 interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly roomName: RoomName
-  readonly targetRooms: RoomInfo[]
   readonly currentTarget: TargetInfo | null
   readonly intercepterCreepNames: {[roomName: string]: CreepName}
 }
 
-// TODO: 事故死の検証
 export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+
+  private get targetRooms(): RoomInfo[] {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return []
+    }
+    return Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo)).map((roomName): RoomInfo => ({name: roomName}))
   }
 
   private readonly codename: string
@@ -70,7 +85,6 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
-    private readonly targetRooms: RoomInfo[],
     private currentTarget: TargetInfo | null,
     private intercepterCreepNames: { [roomName: string]: CreepName },
   ) {
@@ -84,19 +98,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       l: this.launchTime,
       i: this.processId,
       roomName: this.roomName,
-      targetRooms: this.targetRooms,
       currentTarget: this.currentTarget,
       intercepterCreepNames: this.intercepterCreepNames,
     }
   }
 
   public static decode(state: DefenseRemoteRoomProcessState): DefenseRemoteRoomProcess {
-    return new DefenseRemoteRoomProcess(state.l, state.i, state.roomName, state.targetRooms, state.currentTarget, state.intercepterCreepNames)
+    return new DefenseRemoteRoomProcess(state.l, state.i, state.roomName, state.currentTarget, state.intercepterCreepNames)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomNames: RoomName[]): DefenseRemoteRoomProcess {
-    const targetRooms = targetRoomNames.map((name: RoomName): RoomInfo => ({name}))
-    return new DefenseRemoteRoomProcess(Game.time, processId, roomName, targetRooms, null, {})
+  public static create(processId: ProcessId, roomName: RoomName): DefenseRemoteRoomProcess {
+    return new DefenseRemoteRoomProcess(Game.time, processId, roomName, null, {})
   }
 
   public processShortDescription(): string {
@@ -128,7 +140,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add"]
+    const commandList = ["help", "status"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -136,16 +148,6 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       switch (command) {
       case "help":
         return `Available commands: ${commandList}`
-
-      case "add": {
-        const listArguments = new ListArguments(components)
-        const targetRoomName = listArguments.roomName(0, "room name").parse()
-        if (this.targetRooms.some(targetRoom => targetRoom.name === targetRoomName) === true) {
-          throw `${roomLink(targetRoomName)} is already in the target list`
-        }
-        this.targetRooms.push({name: targetRoomName})
-        return `${roomLink(targetRoomName)} is added to the target list`
-      }
 
       case "status": {
         const listArguments = new ListArguments(components)
@@ -184,7 +186,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
 
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}
-      this.checkRemoteRooms()
+      this.checkRemoteRooms([...this.targetRooms])
       return
     }
     const updatedTarget = this.updatedTarget(this.currentTarget)
@@ -321,7 +323,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     ]
 
     if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable) {
-      PrimitiveLogger.fatal(`${this.constructor.name} ${this.processId} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`)
+      raiseError(`${this.constructor.name} ${this.processId} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`)
       return
     }
 
@@ -353,8 +355,8 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     return "as is"
   }
 
-  private checkRemoteRooms(): void {
-    const targets = this.targetRooms.flatMap((roomInfo): TargetInfo[] => {
+  private checkRemoteRooms(targetRooms: RoomInfo[]): void {
+    const targets = targetRooms.flatMap((roomInfo): TargetInfo[] => {
       const roomResource = RoomResources.getNormalRoomResource(roomInfo.name)
       if (roomResource == null) {
         return []
