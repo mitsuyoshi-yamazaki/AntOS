@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks } from "script/pathfinder"
+import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks, getRoadPositionsToParentRoom } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
@@ -57,6 +57,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.showRemoteRoute()
       case "calculate_inter_room_shortest_routes":
         return this.calculateInterRoomShortestRoutes()
+      case "roads_to_parent_room":
+        return this.getRoadPositionsToParentRoom()
       case "showPositionsInRange":
         return this.showPositionsInRange()
       case "describeLabs":
@@ -268,6 +270,21 @@ export class ExecCommand implements ConsoleCommand {
       ...routes.map(route => route.map(r => roomLink(r)).join(" =&gt ")),
     ]
     return descriptions.join("\n")
+  }
+
+  /** throws */
+  private getRoadPositionsToParentRoom(): CommandExecutionResult {
+    const keywardArguments = new KeywordArguments(this.args)
+    const parentRoomName = keywardArguments.roomName("parent_room_name").parse()
+    const targetRoom = keywardArguments.room("target_room_name").parse()
+
+    const positions = getRoadPositionsToParentRoom(parentRoomName, targetRoom)
+    if (positions.length <= 0) {
+      return `no roads on the edge of the parent room in ${roomLink(targetRoom.name)} to parent ${roomLink(parentRoomName)}`
+    }
+
+    positions.forEach(position => targetRoom.visual.text("#", position.x, position.y, {color: "#FF0000"}))
+    return `${positions.length} road found: ${positions.map(position => `${position}`).join(", ")}`
   }
 
   private showPositionsInRange(): CommandExecutionResult {

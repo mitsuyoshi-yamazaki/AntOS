@@ -172,13 +172,12 @@ const roadRouteCost = {
 /**
  * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<string, string> {
-  const startRoom = Game.rooms[startPosition.roomName]
-  const goalRoom = Game.rooms[goalPosition.roomName]
+export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<string, string> {
+  // const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
+  // const ro = getRoadPositionsToParentRoom(startPosition.roomName, )
 
-  if (startRoom == null || goalRoom == null) {
-    return Result.Failed(`No visual: ${startRoom}, ${goalRoom}`)
-  }
+  // const positionsByRoutes: RoomPosition[][] = []
+
 
   const roadPositionMap = new Map<RoomName, RoomPosition[]>()
   const getRoadPositions = (room: Room): RoomPosition[] => {
@@ -249,24 +248,24 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
     }
   }
 
-  const roomRoute = Game.map.findRoute(startPosition.roomName, goalPosition.roomName)
+  const roomRoute = Game.map.findRoute(startPosition.roomName, sourcePosition.roomName)
   if (roomRoute === ERR_NO_PATH) {
-    return Result.Failed(`no route from ${roomLink(startPosition.roomName)} to ${roomLink(goalPosition.roomName)}`)
+    return Result.Failed(`no route from ${roomLink(startPosition.roomName)} to ${roomLink(sourcePosition.roomName)}`)
   }
   const roomNames = roomRoute.map(route => route.room)
-  roomNames.push(goalPosition.roomName) // reduceでは次のRoom Nameを使用するため、最後にダミーの値を入れる
+  roomNames.push(sourcePosition.roomName) // reduceでは次のRoom Nameを使用するため、最後にダミーの値を入れる
 
   try {
     const min = GameConstants.room.edgePosition.min + 1
     const max = GameConstants.room.edgePosition.max - 1
     const path = roomNames.reduce((result: { positions: RoomPosition[], start: RoomPosition }, current: RoomName) => {
       const roomName = result.start.roomName
-      const pathPositions = result.start.findPathTo(goalPosition, findPathOpts)
+      const pathPositions = result.start.findPathTo(sourcePosition, findPathOpts)
         .map(step => (new RoomPosition(step.x, step.y, roomName)))
 
       const lastPosition = pathPositions[pathPositions.length - 1]
       if (lastPosition == null) {
-        throw `placeRoadConstructionMarks() findPathTo() failed to find path from ${result.start} to ${goalPosition} (${roomLink(result.start.roomName)})`
+        throw `placeRoadConstructionMarks() findPathTo() failed to find path from ${result.start} to ${sourcePosition} (${roomLink(result.start.roomName)})`
       }
       const roomEdgePosition = ((): RoomPosition => {
         if (lastPosition.x <= min) {
@@ -278,10 +277,10 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
         } else if (lastPosition.y >= max) {
           return new RoomPosition(lastPosition.x, min, current)
         } else {
-          if (current === goalPosition.roomName) {
+          if (current === sourcePosition.roomName) {
             return result.start // 使用されないためダミーの値
           }
-          throw `placeRoadConstructionMarks() findPathTo() incomplete. last step: ${lastPosition} (from ${result.start} to ${goalPosition}) (${roomLink(result.start.roomName)})`
+          throw `placeRoadConstructionMarks() findPathTo() incomplete. last step: ${lastPosition} (from ${result.start} to ${sourcePosition}) (${roomLink(result.start.roomName)})`
         }
       })()
 
@@ -327,6 +326,42 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, goalPosi
   } catch (error) {
     return Result.Failed(`${error}`)
   }
+}
+
+export function getRoadPositionsToParentRoom(parentRoomName: RoomName, room: Room): RoomPosition[] {
+  const min = GameConstants.room.edgePosition.min + 1
+  const max = GameConstants.room.edgePosition.max - 1
+
+  const exit = Game.map.findExit(room.name, parentRoomName)
+  switch (exit) {
+  case ERR_NO_PATH:
+  case ERR_INVALID_ARGS:
+    PrimitiveLogger.programError(`getRoadPositionsToParentRoom() Game.map.findExit() returns ${exit} from ${room.name} to ${parentRoomName}`)
+    return []
+  }
+
+  const directionToParentRoom = exit
+  console.log(`direction: ${directionToParentRoom}`)
+
+  const filter = ((): (position: RoomPosition) => boolean => {
+    switch (directionToParentRoom) {
+    case FIND_EXIT_TOP:
+      return position => position.y === min
+    case FIND_EXIT_BOTTOM:
+      return position => position.y === max
+    case FIND_EXIT_LEFT:
+      return position => position.x === min
+    case FIND_EXIT_RIGHT:
+      return position => position.x === max
+    }
+  })()
+
+  return room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).flatMap((road): RoomPosition[] => {
+    if (filter(road.pos) !== true) {
+      return []
+    }
+    return [road.pos]
+  })
 }
 
 /**
