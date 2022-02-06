@@ -392,12 +392,22 @@ export class OperatingSystem {
       }, `Procedural process ${processInfo.process.processId} runBeforeTick()`)()
     })
 
-    runningProcessInfo.forEach(processInfo => {
-      const process = processInfo.process
-      ErrorMapper.wrapLoop((): void => {
-        process.runOnTick()
-      }, `Procedural process ${process.processId} run()`)()
-    })
+    try {
+      // 強制終了処理
+      // let lastProcess: InternalProcessInfo | null = null
+      runningProcessInfo.forEach(processInfo => {
+        // if (Game.cpu.getUsed() > 90) {
+        //   throw `cpu: ${Game.cpu.getUsed()}, last process: ${lastProcess?.process.constructor.name} ${lastProcess?.process.processId}`
+        // }
+        // lastProcess = processInfo
+        const process = processInfo.process
+        ErrorMapper.wrapLoop((): void => {
+          process.runOnTick()
+        }, `Procedural process ${process.processId} run()`)()
+      })
+    } catch (error) {
+      PrimitiveLogger.log(`${error}`)
+    }
   }
 
   // ---- Utility ---- //
