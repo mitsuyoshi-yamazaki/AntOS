@@ -17,6 +17,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { moveToRoom } from "script/move_to_room"
 import { GameMap } from "game/game_map"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
@@ -56,7 +58,7 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
 }
 
 // TODO: 事故死の検証
-export class DefenseRemoteRoomProcess implements Process, Procedural {
+export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -115,6 +117,53 @@ export class DefenseRemoteRoomProcess implements Process, Procedural {
       descriptions.push(`${Array.from(Object.keys(this.intercepterCreepNames)).length} creep in ${roomLink(intercepter.room.name)}`)
     }
     return descriptions.join(", ")
+  }
+
+  public processDescription(): string {
+    const descriptions: string[] = [
+      `targets: ${this.targetRooms.map(room => roomLink(room.name)).join(", ")}`,
+      this.processShortDescription(),
+    ]
+    return descriptions.join("\n")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "status"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Available commands: ${commandList}`
+
+      case "status": {
+        const listArguments = new ListArguments(components)
+        if (listArguments.has(0) === true) {
+          const targetRoomName = listArguments.roomName(0, "room name").parse()
+          if (this.targetRooms.some(targetRoom => targetRoom.name === targetRoomName) !== true) {
+            throw `${roomLink(targetRoomName)} is not in the target list`
+          }
+
+          const targetRoomResource = RoomResources.getNormalRoomResource(targetRoomName)
+          if (targetRoomResource == null) {
+            return `no visual for ${roomLink(targetRoomName)}`
+          }
+          const targetInfo = this.calculateTargetInfo(targetRoomResource)
+          if (targetInfo == null) {
+            return `no targets in ${roomLink(targetRoomName)}`
+          }
+          return targetDescription(targetInfo)
+        }
+        return this.processDescription()
+      }
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
