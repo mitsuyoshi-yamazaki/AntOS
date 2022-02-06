@@ -10,7 +10,7 @@ export type ResourceInsufficiency = number | "optional" | "urgent"
 export type RemoteRoomInfo = {
   readonly roomName: RoomName
   enabled: boolean
-  routeCalculatedTimestamp: Timestamp
+  routeCalculatedTimestamp: { [sourceId: string]: Timestamp}
   constructionFinished: boolean
 }
 

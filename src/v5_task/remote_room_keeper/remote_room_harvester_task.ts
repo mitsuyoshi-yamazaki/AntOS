@@ -106,18 +106,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
     }
 
-    const targetRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName] ?? null
-    if (targetRoomInfo != null) {
-      if (targetRoomInfo.constructionFinished === false && (((Game.time + this.startTime) % 10) === 0)) {
-        this.createConstructionSites(source, targetRoomInfo)
-      }
-
-      const targetRoom = Game.rooms[this.targetRoomName]
-      if (targetRoom != null &&(Game.time > (targetRoomInfo.routeCalculatedTimestamp + routeRecalculationInterval))) {
-        this.calculateRoute(objects, source.pos, targetRoomInfo, targetRoom)
-      }
-    }
-
     const container = ((): StructureContainer | null => {
       if (this.containerId == null) {
         return null
@@ -129,6 +117,30 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
       return stored
     })()
+
+    if (container == null) {
+      const constructed = source.pos.findInRange(FIND_STRUCTURES, 1, { filter: { structureType: STRUCTURE_CONTAINER } })[0] as StructureContainer | null
+      if (constructed != null) {
+        this.containerId = constructed.id
+      }
+    }
+
+    const targetRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName] ?? null
+    if (targetRoomInfo != null) {
+      if (targetRoomInfo.constructionFinished === false && (((Game.time + this.startTime) % 10) === 0)) {
+        this.createConstructionSites(source, targetRoomInfo)
+      }
+
+      const targetRoom = Game.rooms[this.targetRoomName]
+      const routeCalculatedTimestamp = targetRoomInfo.routeCalculatedTimestamp[source.id]
+      if (routeCalculatedTimestamp == null) {
+        targetRoomInfo.routeCalculatedTimestamp[source.id] = 0 //Game.time - Math.floor(Math.random() * 4000) // FixMe: Migration
+      } else {
+        if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
+          this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container != null)
+        }
+      }
+    }
 
     const problemFinders: ProblemFinder[] = []
 
@@ -333,25 +345,33 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     }
   }
 
-  private calculateRoute(objects: OwnedRoomObjects, sourcePosition: RoomPosition, targetRoomInfo: RemoteRoomInfo, targetRoom: Room): void {
+  private calculateRoute(objects: OwnedRoomObjects, source: Source, targetRoomInfo: RemoteRoomInfo, targetRoom: Room, hasContainer: boolean): void {
+    const sourcePosition = source.pos
     const storage = objects.activeStructures.storage
     if (storage == null) {
       return
     }
-    targetRoomInfo.routeCalculatedTimestamp = Game.time
+    targetRoomInfo.routeCalculatedTimestamp[source.id] = Game.time
     targetRoomInfo.constructionFinished = false
 
     const codename = generateCodename(this.constructor.name, this.startTime)
-    const result = placeRoadConstructionMarks(storage.pos, sourcePosition, codename)
+    const range = hasContainer ? 2 : 1
+    const result = placeRoadConstructionMarks(storage.pos, sourcePosition, codename, {range})
 
     try {
       switch (result.resultType) {
       case "succeeded": {
-        const lastPosition = result.value[result.value.length - 1]
-        if (lastPosition == null) {
-          throw `no path from ${sourcePosition} to ${storage.pos}`
+        this.constructInWaypointRooms(result.value)
+        if (hasContainer !== true) {
+          const lastPosition = result.value[result.value.length - 1]
+          if (lastPosition == null) {
+            throw `no path from ${sourcePosition} to ${storage.pos}`
+          }
+          const hasContainerConstructionSite = source.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 1, { filter: {structureType: STRUCTURE_CONTAINER}}).length > 0
+          if (hasContainerConstructionSite !== true) {
+            this.createContainer(lastPosition, codename, targetRoom)
+          }
         }
-        this.createContainer(lastPosition, codename, targetRoom)
         break
       }
 
@@ -377,5 +397,30 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     throw `createConstructionSite() returns ${result}, createFlag() returns ${flagResult} at ${position}`
   }
 
-  // TODO: 途中の部屋のconstructionFinishedフラグを外す
+  private constructInWaypointRooms(route: RoomPosition[]): void {
+    const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo
+    if (remoteRoomInfo == null) {
+      return
+    }
+
+    const roomNames: RoomName[] = []
+    const excludedRoomNames: RoomName[] = [this.roomName, this.targetRoomName]
+    route.forEach(position => {
+      if (excludedRoomNames.includes(position.roomName) === true) {
+        return
+      }
+      if (roomNames.includes(position.roomName) === true) {
+        return
+      }
+      roomNames.push(position.roomName)
+    })
+
+    roomNames.forEach(roomName => {
+      const info = remoteRoomInfo[roomName]
+      if (info == null) {
+        return
+      }
+      info.constructionFinished = false
+    })
+  }
 }

@@ -172,17 +172,15 @@ const roadRouteCost = {
 /**
  * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<RoomPosition[], string> {
+export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number }): Result<RoomPosition[], string> {
   const calculator = new RemoteHarvesterRouteCalculator()
   return calculator.placeRoadConstructionMarks(startPosition, sourcePosition, codename, options)
 }
 
 export function calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition): Result < RoomPosition[], string > {
   const calculator = new RemoteHarvesterRouteCalculator()
-  return calculator.calculateRoadPositionsFor(startPosition, sourcePosition)
+  return calculator.calculateRoadPositionsFor(startPosition, sourcePosition, 1)
 }
-
-const sourceRange = 1
 
 class RemoteHarvesterRouteCalculator {
   private roadPositionMap = new Map<RoomName, RoomPosition[]>()
@@ -200,7 +198,9 @@ class RemoteHarvesterRouteCalculator {
     return positions
   }
 
-  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<RoomPosition[], string> {
+  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number }): Result<RoomPosition[], string> {
+    const sourceRange = options?.range ?? 1
+
     const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
 
     const positionsByRoutes = shortestRoomRoutes.flatMap((route): { route: RoomPosition[], description: string }[] => {
@@ -292,7 +292,7 @@ class RemoteHarvesterRouteCalculator {
     return Result.Succeeded(shortestRoute)
   }
 
-  public calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition): Result<RoomPosition[], string> {
+  public calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition, sourceRange: number): Result<RoomPosition[], string> {
     const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
       const room = Game.rooms[roomName]
       if (room == null) {
