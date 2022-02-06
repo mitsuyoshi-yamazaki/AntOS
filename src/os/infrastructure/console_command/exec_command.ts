@@ -1,5 +1,5 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks, getRoadPositionsToParentRoom } from "script/pathfinder"
+import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
 import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
 import { showPositionsInRange } from "script/room_position_script"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
@@ -241,6 +241,24 @@ export class ExecCommand implements ConsoleCommand {
     const goalObject = Game.getObjectById(goalObjectId)
     if (!(goalObject instanceof RoomObject)) {
       throw `${goalObject} is not RoomObject ${goalObjectId}`
+    }
+
+    const usePrimitiveFunction = keywardArguments.boolean("primitive").parseOptional()
+    if (usePrimitiveFunction === true) {
+      const result = calculateRoadPositionsFor(startObject.pos, goalObject.pos)
+      switch (result.resultType) {
+      case "succeeded":
+        result.value.forEach(position => {
+          const room = Game.rooms[position.roomName]
+          if (room == null) {
+            return
+          }
+          room.visual.text("@", position.x, position.y, {color: "#FF0000"})
+        })
+        return `${result.value.length} roads`
+      case "failed":
+        throw result.reason
+      }
     }
 
     const dryRun = true

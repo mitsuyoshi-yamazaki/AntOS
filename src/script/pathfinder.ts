@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { generateUniqueId } from "utility/unique_id"
 import { GameConstants } from "utility/constants"
@@ -172,16 +172,21 @@ const roadRouteCost = {
 /**
  * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: {dryRun?: boolean}): Result<string, string> {
-  // const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
-  // const ro = getRoadPositionsToParentRoom(startPosition.roomName, )
+export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<string, string> {
+  const calculator = new RemoteHarvesterRouteCalculator()
+  return calculator.placeRoadConstructionMarks(startPosition, sourcePosition, codename, options)
+}
 
-  // const positionsByRoutes: RoomPosition[][] = []
+export function calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition): Result < RoomPosition[], string > {
+  const calculator = new RemoteHarvesterRouteCalculator()
+  return calculator.calculateRoadPositionsFor(startPosition, sourcePosition)
+}
 
+class RemoteHarvesterRouteCalculator {
+  private roadPositionMap = new Map<RoomName, RoomPosition[]>()
 
-  const roadPositionMap = new Map<RoomName, RoomPosition[]>()
-  const getRoadPositions = (room: Room): RoomPosition[] => {
-    const stored = roadPositionMap.get(room.name)
+  private getRoadPositions(room: Room): RoomPosition[] {
+    const stored = this.roadPositionMap.get(room.name)
     if (stored != null) {
       return stored
     }
@@ -189,113 +194,89 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePo
       ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map(road => road.pos),
       ...room.find(FIND_FLAGS, { filter: { color: roadFlagColor } }).map(flag => flag.pos),
     ]
-    roadPositionMap.set(room.name, positions)
+    this.roadPositionMap.set(room.name, positions)
     return positions
   }
 
-  const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return costMatrix
-    }
+  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean }): Result<string, string> {
+    const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
 
-    const roadPositions = getRoadPositions(room)
-    roadPositions.forEach(position => {
-      costMatrix.set(position.x, position.y, roadRouteCost.road)
-    })
-
-    const containerPositions: RoomPosition[] = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } }).map(road => road.pos)
-    containerPositions.forEach(position => {
-      costMatrix.set(position.x, position.y, roadRouteCost.container)
-    })
-
-    return costMatrix
-  }
-
-  const findPathOpts: FindPathOpts = {
-    ignoreCreeps: true,
-    ignoreDestructibleStructures: false,
-    ignoreRoads: false,
-    plainCost: roadRouteCost.plain,
-    swampCost: roadRouteCost.swamp,
-    maxRooms: 3,
-    range: 2,
-    costCallback,
-  }
-
-  const placeMark = (room: Room, position: { x: number, y: number }): void => {
-    const roadPositions = getRoadPositions(room)
-    const placed = roadPositions.some(roadPosition => roadPosition.x === position.x && roadPosition.y === position.y)
-    if (options?.dryRun === true) {
-      const text = placed === true ? "*" : "#"
-      room.visual.text(text, position.x, position.y, { color: "#FF0000" })
-      return
-    }
-
-    if (placed === true) {
-      return
-    }
-
-    const result = room.createFlag(position.x, position.y, generateUniqueId(codename), roadFlagColor)
-    switch (result) {
-    case OK:
-      return
-    case ERR_NAME_EXISTS:
-    case ERR_INVALID_ARGS:
-    case ERR_FULL:
-      PrimitiveLogger.programError(`placeRoadConstructionMarks() room.createFlag() returns ${result} in ${roomLink(room.name)}`)
-      return
-    }
-  }
-
-  const roomRoute = Game.map.findRoute(startPosition.roomName, sourcePosition.roomName)
-  if (roomRoute === ERR_NO_PATH) {
-    return Result.Failed(`no route from ${roomLink(startPosition.roomName)} to ${roomLink(sourcePosition.roomName)}`)
-  }
-  const roomNames = roomRoute.map(route => route.room)
-  roomNames.push(sourcePosition.roomName) // reduceでは次のRoom Nameを使用するため、最後にダミーの値を入れる
-
-  try {
-    const min = GameConstants.room.edgePosition.min + 1
-    const max = GameConstants.room.edgePosition.max - 1
-    const path = roomNames.reduce((result: { positions: RoomPosition[], start: RoomPosition }, current: RoomName) => {
-      const roomName = result.start.roomName
-      const pathPositions = result.start.findPathTo(sourcePosition, findPathOpts)
-        .map(step => (new RoomPosition(step.x, step.y, roomName)))
-
-      const lastPosition = pathPositions[pathPositions.length - 1]
-      if (lastPosition == null) {
-        throw `placeRoadConstructionMarks() findPathTo() failed to find path from ${result.start} to ${sourcePosition} (${roomLink(result.start.roomName)})`
+    const positionsByRoutes = shortestRoomRoutes.flatMap((route): { route: RoomPosition[], description: string }[] => {
+      const waypointRoomName = route[0]
+      if (waypointRoomName == null) {
+        return []
       }
-      const roomEdgePosition = ((): RoomPosition => {
-        if (lastPosition.x <= min) {
-          return new RoomPosition(max, lastPosition.y, current)
-        } else if (lastPosition.x >= max) {
-          return new RoomPosition(min, lastPosition.y, current)
-        } else if (lastPosition.y <= min) {
-          return new RoomPosition(lastPosition.x, max, current)
-        } else if (lastPosition.y >= max) {
-          return new RoomPosition(lastPosition.x, min, current)
-        } else {
-          if (current === sourcePosition.roomName) {
-            return result.start // 使用されないためダミーの値
-          }
-          throw `placeRoadConstructionMarks() findPathTo() incomplete. last step: ${lastPosition} (from ${result.start} to ${sourcePosition}) (${roomLink(result.start.roomName)})`
+      const waypointRoom = Game.rooms[waypointRoomName]
+      if (waypointRoom == null) {
+        return []
+      }
+      const roadPositions = getRoadPositionsToParentRoom(startPosition.roomName, waypointRoom)
+      if (roadPositions.length <= 0) {
+        return []
+      }
+
+      return roadPositions.flatMap((roadPosition): { route: RoomPosition[], description: string }[] => {
+        const result = calculateRoadPositionsFor(roadPosition, sourcePosition)
+        switch (result.resultType) {
+        case "succeeded":
+          return [{
+            route: result.value,
+            description: `calculated from road position ${roadPosition}`,
+          }]
+        case "failed":
+          PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} ${result.reason}`)
+          return []
         }
-      })()
+      })
+    })
 
-      // console.log(`${current}, ${lastPosition}`)
-
-      return {
-        positions: [
-          ...result.positions,
-          ...pathPositions,
-        ],
-        start: roomEdgePosition,
+    const shortestRoute = ((): RoomPosition[] | string => {
+      positionsByRoutes.sort((lhs, rhs) => {
+        return lhs.route.length - rhs.route.length
+      })
+      if (positionsByRoutes[0] != null) {
+        return positionsByRoutes[0].route
       }
-    }, { positions: [], start: startPosition })
 
-    const results: {roomName: RoomName, roadCount: number}[] = []
+      const alternativeRouteResult = calculateRoadPositionsFor(startPosition, sourcePosition)
+      switch (alternativeRouteResult.resultType) {
+      case "succeeded":
+        return alternativeRouteResult.value
+      case "failed":
+        return alternativeRouteResult.reason
+      }
+    })()
+
+    if (typeof shortestRoute === "string") {
+      return Result.Failed(shortestRoute)
+    }
+
+    const placeMark = (room: Room, position: { x: number, y: number }): void => {
+      const roadPositions = this.getRoadPositions(room)
+      const placed = roadPositions.some(roadPosition => roadPosition.x === position.x && roadPosition.y === position.y)
+      if (options?.dryRun === true) {
+        const text = placed === true ? "*" : "#"
+        room.visual.text(text, position.x, position.y, { color: "#FF0000" })
+        return
+      }
+
+      if (placed === true) {
+        return
+      }
+
+      const result = room.createFlag(position.x, position.y, generateUniqueId(codename), roadFlagColor)
+      switch (result) {
+      case OK:
+        return
+      case ERR_NAME_EXISTS:
+      case ERR_INVALID_ARGS:
+      case ERR_FULL:
+        PrimitiveLogger.programError(`placeRoadConstructionMarks() room.createFlag() returns ${result} in ${roomLink(room.name)}`)
+        return
+      }
+    }
+
+    const results: { roomName: RoomName, roadCount: number }[] = []
     const addResult = (roomName: RoomName): void => {
       const result = ((): { roomName: RoomName, roadCount: number } => {
         const stored = results[results.length - 1]
@@ -313,7 +294,7 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePo
       result.roadCount += 1
     }
 
-    path.positions.forEach(position => {
+    shortestRoute.forEach(position => {
       const room = Game.rooms[position.roomName]
       if (room == null) {
         return
@@ -321,10 +302,91 @@ export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePo
       placeMark(room, position)
       addResult(room.name)
     })
-    return Result.Succeeded(results.map(result => `${result.roadCount} in ${roomLink(result.roomName)}`).join(", "))
 
-  } catch (error) {
-    return Result.Failed(`${error}`)
+    return Result.Succeeded(results.map(result => `${result.roadCount} in ${roomLink(result.roomName)}`).join(", "))
+  }
+
+  public calculateRoadPositionsFor(startPosition: RoomPosition, sourcePosition: RoomPosition): Result<RoomPosition[], string> {
+    const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
+      const room = Game.rooms[roomName]
+      if (room == null) {
+        return costMatrix
+      }
+
+      const roadPositions = this.getRoadPositions(room)
+      roadPositions.forEach(position => {
+        costMatrix.set(position.x, position.y, roadRouteCost.road)
+      })
+
+      const containerPositions: RoomPosition[] = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } }).map(road => road.pos)
+      containerPositions.forEach(position => {
+        costMatrix.set(position.x, position.y, roadRouteCost.container)
+      })
+
+      return costMatrix
+    }
+
+    const findPathOpts: FindPathOpts = {
+      ignoreCreeps: true,
+      ignoreDestructibleStructures: false,
+      ignoreRoads: false,
+      plainCost: roadRouteCost.plain,
+      swampCost: roadRouteCost.swamp,
+      // maxRooms: 3, // 設定すると経路を発見しない場合がある
+      range: 2,
+      costCallback,
+    }
+
+    const roomRoute = Game.map.findRoute(startPosition.roomName, sourcePosition.roomName)
+    if (roomRoute === ERR_NO_PATH) {
+      return Result.Failed(`no route from ${roomLink(startPosition.roomName)} to ${roomLink(sourcePosition.roomName)}`)
+    }
+    const roomNames = roomRoute.map(route => route.room)
+    roomNames.push(sourcePosition.roomName) // reduceでは次のRoom Nameを使用するため、最後にダミーの値を入れる
+
+    try {
+      const min = GameConstants.room.edgePosition.min
+      const max = GameConstants.room.edgePosition.max
+      const path = roomNames.reduce((result: { positions: RoomPosition[], start: RoomPosition }, nextRoomName: RoomName) => {
+        const roomName = result.start.roomName
+        const pathPositions = result.start.findPathTo(sourcePosition, findPathOpts)
+          .map(step => (new RoomPosition(step.x, step.y, roomName)))
+
+        const lastPosition = pathPositions[pathPositions.length - 1]
+        if (lastPosition == null) {
+          throw `placeRoadConstructionMarks() findPathTo() failed to find path from ${result.start} to ${sourcePosition} (${roomLink(result.start.roomName)})`
+        }
+        const roomEdgePosition = ((): RoomPosition => {
+          if (lastPosition.x <= min) {
+            return new RoomPosition(max, lastPosition.y, nextRoomName)
+          } else if (lastPosition.x >= max) {
+            return new RoomPosition(min, lastPosition.y, nextRoomName)
+          } else if (lastPosition.y <= min) {
+            return new RoomPosition(lastPosition.x, max, nextRoomName)
+          } else if (lastPosition.y >= max) {
+            return new RoomPosition(lastPosition.x, min, nextRoomName)
+          } else {
+            if (nextRoomName === sourcePosition.roomName) {
+              return lastPosition // 使用されないためダミーの値
+            }
+            throw `placeRoadConstructionMarks() findPathTo() incomplete. last step: ${lastPosition} (from ${result.start} to ${sourcePosition}) (${roomLink(result.start.roomName)})`
+          }
+        })()
+
+        return {
+          positions: [
+            ...result.positions,
+            ...pathPositions,
+          ],
+          start: roomEdgePosition,
+        }
+      }, { positions: [], start: startPosition })
+
+      return Result.Succeeded(path.positions)
+
+    } catch (error) {
+      return Result.Failed(`${error}`)
+    }
   }
 }
 
@@ -341,7 +403,6 @@ export function getRoadPositionsToParentRoom(parentRoomName: RoomName, room: Roo
   }
 
   const directionToParentRoom = exit
-  console.log(`direction: ${directionToParentRoom}`)
 
   const filter = ((): (position: RoomPosition) => boolean => {
     switch (directionToParentRoom) {
