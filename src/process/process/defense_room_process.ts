@@ -218,7 +218,12 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
     }
 
-    const allRamparts = roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[]
+    const excludedRampartIds = [
+      "61ef963dcaae907cac3cb83a",
+      "61ef959958c1f75910f6688d",
+    ]
+    const allRamparts = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[])
+      .filter(rampart => excludedRampartIds.includes(rampart.id) !== true)
     let closestRange = GameConstants.room.edgePosition.max + 1
     let closestRamparts: StructureRampart[] = []
     allRamparts.forEach(rampart => {
