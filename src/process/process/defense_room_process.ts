@@ -218,7 +218,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
     }
 
-    const excludedRampartIds = [
+    const excludedRampartIds = [  // FixMe:
       "61ef963dcaae907cac3cb83a",
       "61ef959958c1f75910f6688d",
     ]

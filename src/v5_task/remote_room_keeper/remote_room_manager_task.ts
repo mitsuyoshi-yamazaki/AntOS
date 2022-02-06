@@ -106,7 +106,7 @@ export class RemoteRoomManagerTask extends Task {
   }
 
   private addRoomKeeperTask(targetRoomName: RoomName): void {
-    // this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
+    this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
     PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task added ${this.roomName} &gt ${targetRoomName}`)
   }
 }
