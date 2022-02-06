@@ -18,9 +18,9 @@ interface KeywordArgumentsInterface {
   // ---- Game Object ---- //
   direction(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DirectionConstant>
   roomPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition>
-  roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName>
-  roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]>
-  room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, Room>
+  roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, RoomName>
+  roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, RoomName[]>
+  room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, Room>
   gameObjectId(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string>
   resourceType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, ResourceConstant>
   boostCompoundType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, MineralBoostConstant>
@@ -66,15 +66,15 @@ export class ListArguments implements KeywordArgumentsInterface {
     return new RoomPositionArgument(key, this.getValueAt(index), options)
   }
 
-  public roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName> {
+  public roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, RoomName> {
     return new RoomNameArgument(key, this.getValueAt(index), options)
   }
 
-  public roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomName[]> {
+  public roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
     return new RoomNameListArgument(key, this.getValueAt(index), options)
   }
 
-  public room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, Room> {
+  public room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, Room> {
     return new RoomArgument(key, this.getValueAt(index), options)
   }
 
