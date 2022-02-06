@@ -16,6 +16,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { ReserveControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/reserve_controller_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { Invader } from "game/invader"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface RemoteRoomReserveTaskState extends TaskState {
   /** room name */
@@ -94,7 +95,11 @@ export class RemoteRoomReserveTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (): CreepTask | null => {
-        return this.newClaimerTaskFor(targetController)
+        const task = this.newClaimerTaskFor(targetController)
+        if (task == null) {
+          return null
+        }
+        return FleeFromAttackerTask.create(task)
       },
       creepPoolFilter,
     )
