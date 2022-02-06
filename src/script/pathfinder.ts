@@ -182,6 +182,8 @@ export function calculateRoadPositionsFor(startPosition: RoomPosition, sourcePos
   return calculator.calculateRoadPositionsFor(startPosition, sourcePosition)
 }
 
+const sourceRange = 1
+
 class RemoteHarvesterRouteCalculator {
   private roadPositionMap = new Map<RoomName, RoomPosition[]>()
 
@@ -219,6 +221,9 @@ class RemoteHarvesterRouteCalculator {
         const result = calculateRoadPositionsFor(roadPosition, sourcePosition)
         switch (result.resultType) {
         case "succeeded":
+          if (this.isValidRoute(roadPosition, sourcePosition, sourceRange, result.value) !== true) {
+            return []
+          }
           return [{
             route: result.value,
             description: `calculated from road position ${roadPosition}`,
@@ -314,7 +319,7 @@ class RemoteHarvesterRouteCalculator {
       plainCost: roadRouteCost.plain,
       swampCost: roadRouteCost.swamp,
       // maxRooms: 3, // 設定すると経路を発見しない場合がある
-      range: 2,
+      range: sourceRange,
       costCallback,
     }
 
@@ -367,6 +372,63 @@ class RemoteHarvesterRouteCalculator {
 
     } catch (error) {
       return Result.Failed(`${error}`)
+    }
+  }
+
+  private isValidRoute(startPosition: RoomPosition, goalPosition: RoomPosition, range: number, route: RoomPosition[]): boolean {
+    try {
+      const firstPosition = route[0]
+      if (firstPosition == null) {
+        throw "no route"
+      }
+      if (firstPosition.getRangeTo(startPosition) > 1) {
+        throw `route does not reach to start position. first position: ${firstPosition}`
+      }
+
+      const min = GameConstants.room.edgePosition.min + 1
+      const max = GameConstants.room.edgePosition.max - 1
+
+      let previousPosition = firstPosition
+      route.forEach(position => {
+        if (position.roomName === previousPosition.roomName) {
+          previousPosition = position
+          return
+        }
+
+        if (previousPosition.x <= min) {
+          if (previousPosition.nextRoomPositionTo(LEFT).roomName !== position.roomName) {
+            throw `interrupted ${previousPosition} to ${position}`
+          }
+        } else if (previousPosition.x >= max) {
+          if (previousPosition.nextRoomPositionTo(RIGHT).roomName !== position.roomName) {
+            throw `interrupted ${previousPosition} to ${position}`
+          }
+        } else if (previousPosition.y <= min) {
+          if (previousPosition.nextRoomPositionTo(TOP).roomName !== position.roomName) {
+            throw `interrupted ${previousPosition} to ${position}`
+          }
+        } else if (previousPosition.y >= max) {
+          if (previousPosition.nextRoomPositionTo(BOTTOM).roomName !== position.roomName) {
+            throw `interrupted ${previousPosition} to ${position}`
+          }
+        }
+
+        previousPosition = position
+      })
+
+      const lastPosition = route[route.length - 1]
+      if (lastPosition == null) {
+        throw "no route"
+      }
+      if (lastPosition.getRangeTo(goalPosition) > (range + 1)) {
+        throw `route does not reach to last position. goal position: ${goalPosition}`
+      }
+
+      return true
+
+    } catch (error) {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} route ${startPosition} to ${goalPosition} is not valid: ${error}`)
+      return false
     }
   }
 }
