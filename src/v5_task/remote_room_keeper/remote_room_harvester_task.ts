@@ -30,6 +30,7 @@ import { GameConstants } from "utility/constants"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
 import { Timestamp } from "utility/timestamp"
+import { RoomResources } from "room_resource/room_resources"
 
 type Construction = {
   routeCalculatedTimestamp: Timestamp
@@ -134,7 +135,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
     }
 
-    if (this.construction.constructionFinished === false && (((Game.time + this.startTime) % 5) === 0)) {
+    if (this.construction.constructionFinished === false && (((Game.time + this.startTime) % 10) === 0)) {
       this.createConstructionSites(source)
     }
 
@@ -387,7 +388,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       return
     }
     const resultPath = PathFinder.search(pathStartPosition, { pos: source.pos, range: 1 }, {
-      maxRooms: 2,
+      maxRooms: 3,
       maxOps: 6000,
       swampCost: 2,
     })
@@ -427,6 +428,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
   }
 
   private createConstructionSites(source: Source): void {
+    const roomResource = RoomResources.getNormalRoomResource(this.targetRoomName)
+    if (roomResource == null || roomResource.constructionSites.length >= 3) {
+      return
+    }
     const flag = source.pos.findClosestByRange(FIND_FLAGS, { filter: { color: COLOR_BROWN } })
     if (flag == null) {
       this.construction.constructionFinished = true
