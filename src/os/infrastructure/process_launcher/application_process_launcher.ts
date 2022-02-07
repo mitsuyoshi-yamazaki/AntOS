@@ -19,6 +19,7 @@ import { ValuedArrayMap } from "utility/valued_collection"
 import { DefenseRoomProcess } from "process/process/defense_room_process"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
+import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 // import { } from "process/application/declarative_ai/declaration_application_process"
 
 // TODO: アプリケーションProcessとしてProcess化する
@@ -120,6 +121,7 @@ export class ApplicationProcessLauncher {
     processLauncher(null, processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
 
     processLauncher(null, processId => DefenseRoomProcess.create(processId, roomName))
+    processLauncher(null, processId => DefenseRemoteRoomProcess.create(processId, roomName))
   }
 
   private launchBoostrapRoomManagerProcess(processLauncher: ProcessLauncher): void {
