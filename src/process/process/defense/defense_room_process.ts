@@ -3,7 +3,7 @@ import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
-import { defaultMoveToOptions } from "prototype/creep"
+import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { generateCodename } from "utility/unique_id"
 import { RoomResources } from "room_resource/room_resources"
 import { World } from "world_info/world_info"
@@ -27,11 +27,46 @@ ProcessDecoder.register("DefenseRoomProcess", state => {
 const attackerRoles: CreepRole[] = [CreepRole.Attacker]
 const repairerRoles: CreepRole[] = [CreepRole.Worker]
 
+type HostileInfo = {
+  readonly clusters: HostileCluster[]
+  readonly totalAttackerCreepCount: number
+  readonly largestTicksToLive: number
+  readonly boosted: boolean
+}
+
+type HostileCluster = {
+  readonly hostileCreeps: {
+    readonly creep: Creep,
+    readonly info: HostileCreepInfo,
+  }[]
+  readonly totalHealPower: number
+  readonly boosted: boolean
+  readonly intercepterNames: CreepName[]
+}
+
+type HostileCreepInfo = {
+  readonly isAttacker: boolean
+  readonly boosted: boolean
+  readonly totalHealPower: number
+}
+
+type IntercepterState = {
+  readonly name: CreepName
+  readonly targetingHostileId: Id<Creep>
+}
+
+const attackerBodyParts: BodyPartConstant[] = [
+  ATTACK,
+  RANGED_ATTACK,
+  HEAL,
+  CLAIM,
+  WORK,
+]
+
 interface DefenseRoomProcessState extends ProcessState {
   readonly roomName: RoomName
-  readonly currentTargetId: Id<AnyCreep> | null
-  readonly respondBoostedOnly: boolean
   readonly receivedEnergyTimestamp: Timestamp
+  readonly intercepterStates: IntercepterState[]
 }
 
 export class DefenseRoomProcess implements Process, Procedural {
@@ -42,13 +77,14 @@ export class DefenseRoomProcess implements Process, Procedural {
 
   private readonly codename: string
 
+  private readonly hostileCreepInfo = new Map<Id<Creep>, HostileCreepInfo>()
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
-    private readonly currentTargetId: Id<AnyCreep> | null,
-    private respondBoostedOnly: boolean,
     private receivedEnergyTimestamp: Timestamp,
+    private readonly intercepterStates: IntercepterState[],
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -60,18 +96,17 @@ export class DefenseRoomProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       roomName: this.roomName,
-      currentTargetId: this.currentTargetId,
-      respondBoostedOnly: this.respondBoostedOnly,
       receivedEnergyTimestamp: this.receivedEnergyTimestamp,
+      intercepterStates: this.intercepterStates,
     }
   }
 
   public static decode(state: DefenseRoomProcessState): DefenseRoomProcess {
-    return new DefenseRoomProcess(state.l, state.i, state.roomName, state.currentTargetId, state.respondBoostedOnly ?? false, state.receivedEnergyTimestamp ?? 0)
+    return new DefenseRoomProcess(state.l, state.i, state.roomName, state.receivedEnergyTimestamp, state.intercepterStates ?? [])
   }
 
   public static create(processId: ProcessId, roomName: RoomName): DefenseRoomProcess {
-    return new DefenseRoomProcess(Game.time, processId, roomName, null, true, 0)
+    return new DefenseRoomProcess(Game.time, processId, roomName, 0, [])
   }
 
   public processShortDescription(): string {
@@ -94,8 +129,8 @@ export class DefenseRoomProcess implements Process, Procedural {
     if (roomResources == null) {
       return
     }
-    const hostileCreeps = [...roomResources.hostiles.creeps]
-    const hostileBoostedCreeps = [...hostileCreeps].filter(hostileCreep => hostileCreep.body.some(body => body.boost != null))
+    // const hostileCreeps = [...roomResources.hostiles.creeps]
+    // const hostileBoostedCreeps = [...hostileCreeps].filter(hostileCreep => hostileCreep.body.some(body => body.boost != null))
 
     const intercepters: Creep[] = []
     const repairers: Creep[] = []
@@ -112,8 +147,11 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
     })
 
+    const hostileInfo = this.getHostileInfo(roomResources, intercepters)
+
     // TODO: Power Creepの判定
-    if (hostileCreeps.length <= 0) {
+    if (hostileInfo == null || hostileInfo.clusters.length <= 0) {
+      this.hostileCreepInfo.clear()
       this.waitIntercepters(intercepters, roomResources)
       return
     }
@@ -122,7 +160,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       return result + CreepBody.power(current.body, "heal")
     }, 0)
 
-    if (hostileBoostedCreeps.length > 0) {
+    if (hostileInfo.boosted === true) {
       const unboostedIntercepters: Creep[] = []
       const boostedIntercepters: Creep[] = []
       intercepters.forEach(creep => {
@@ -154,30 +192,23 @@ export class DefenseRoomProcess implements Process, Procedural {
 
       if (totalHealPower > 1500 && boostLab != null) {
         this.boostIntercepters(unboostedIntercepters, boostLab)
-        this.runIntercepters(boostedIntercepters, hostileBoostedCreeps, roomResources)
+        this.runIntercepters(boostedIntercepters, hostileInfo.clusters, roomResources)
       } else {
-        this.runIntercepters(intercepters, hostileBoostedCreeps, roomResources)
+        this.runIntercepters(intercepters, hostileInfo.clusters, roomResources)
       }
     } else {
-      this.runIntercepters(intercepters, hostileCreeps, roomResources)
+      this.runIntercepters(intercepters, hostileInfo.clusters, roomResources)
     }
 
-    this.runRepairers(repairers, hostileCreeps)
+    // TODO:
+    // this.runRepairers(repairers, hostileCreeps)
 
     const intercepterMaxCount = ((): number => {
       if (roomResources.controller.safeMode != null && roomResources.controller.safeMode > 200) {
         return 0
       }
 
-      const largestTicksToLive = hostileCreeps.reduce((result, current) => {
-        if (current.ticksToLive == null) {
-          return result
-        }
-        if (current.ticksToLive > result) {
-          return current.ticksToLive
-        }
-        return result
-      }, 0)
+      const largestTicksToLive = hostileInfo.largestTicksToLive
       if (largestTicksToLive < 200) {
         return 0
       }
@@ -185,7 +216,7 @@ export class DefenseRoomProcess implements Process, Procedural {
         return 0
       }
 
-      if (hostileBoostedCreeps.length <= 0) {
+      if (hostileInfo.boosted !== true) {
         const defeatableHeal = (roomResources.activeStructures.towers.length * 150) * 0.9
         if (totalHealPower < defeatableHeal) {
           return 0
@@ -195,7 +226,7 @@ export class DefenseRoomProcess implements Process, Procedural {
         }
         return 2
       }
-      if (hostileCreeps.length <= 1) {
+      if (hostileInfo.totalAttackerCreepCount <= 1) {
         return 2
       }
       return 4
@@ -229,7 +260,7 @@ export class DefenseRoomProcess implements Process, Procedural {
     creep.moveTo(lab.pos, defaultMoveToOptions())
   }
 
-  private runIntercepters(intercepters: Creep[], hostileCreeps: Creep[], roomResource: OwnedRoomResource): void {
+  private runIntercepters(intercepters: Creep[], hostileClusters: HostileCluster[], roomResource: OwnedRoomResource): void {
     if (intercepters.some(creep => creep.spawning !== true) !== true) {
       return
     }
@@ -250,6 +281,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       })
 
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
+    const hostileCreeps = hostileClusters.flatMap(cluster => cluster.hostileCreeps.map(info => info.creep))
     const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
       if (roomName !== this.roomName) {
         return costMatrix
@@ -515,6 +547,7 @@ export class DefenseRoomProcess implements Process, Procedural {
     })
   }
 
+  // ---- Repairer ---- //
   private runRepairers(repairers: Creep[], hostileCreeps: Creep[]): void {
 
   }
@@ -536,6 +569,81 @@ export class DefenseRoomProcess implements Process, Procedural {
     })
   }
 
+  // ---- Cluster ---- //
+  private getHostileInfo(roomResource: OwnedRoomResource, intercepters: Creep[]): HostileInfo | null {
+    let largestTicksToLive = 0
+    let boosted = false as boolean
+    const attackerCreepInfo = roomResource.hostiles.creeps.flatMap((creep): { creep: Creep, info: HostileCreepInfo}[] => {
+      const info = this.getHostileCreepInfo(creep)
+      if (info.isAttacker !== true) {
+        return []
+      }
+      if (creep.ticksToLive != null && creep.ticksToLive > largestTicksToLive) {
+        largestTicksToLive = creep.ticksToLive
+      }
+      if (boosted !== true && info.boosted === true) {
+        boosted = true
+      }
+      return [{
+        creep,
+        info,
+      }]
+    })
+
+    if (attackerCreepInfo.length <= 0) {
+      return null
+    }
+
+    // TODO: クラスタ分けを実装する
+    return {
+      clusters: [{
+        hostileCreeps: attackerCreepInfo,
+        totalHealPower: attackerCreepInfo.reduce((result, current) => (result + current.info.totalHealPower), 0),
+        boosted: attackerCreepInfo.some(info => info.info.boosted),
+        intercepterNames: intercepters.map(creep => creep.name),
+      }],
+      totalAttackerCreepCount: attackerCreepInfo.length,
+      largestTicksToLive,
+      boosted,
+    }
+  }
+
+  // ---- Hostile Creep ---- //
+  private getHostileCreepInfo(creep: Creep): HostileCreepInfo {
+    const stored = this.hostileCreepInfo.get(creep.id)
+    if (stored != null) {
+      return stored
+    }
+
+    let isAttacker = false as boolean
+    let boosted = false as boolean
+
+    for (const body of creep.body) {
+      if (isAttacker === true && boosted === true) {
+        break
+      }
+      if (isAttacker !== true) {
+        if (attackerBodyParts.includes(body.type) === true) {
+          isAttacker = true
+        }
+      }
+      if (boosted !== true) {
+        if (body.boost != null) {
+          boosted = true
+        }
+      }
+    }
+
+    const totalHealPower = CreepBody.power(creep.body, "heal")
+
+    return {
+      isAttacker,
+      boosted,
+      totalHealPower,
+    }
+  }
+
+  // ---- Energy ---- //
   private needsEnergy(roomResources: OwnedRoomResource): boolean {
     const minimumEnergyAmount = 50000
     return roomResources.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount
