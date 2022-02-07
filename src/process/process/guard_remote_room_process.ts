@@ -243,18 +243,6 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
       return
     }
 
-    const damagedCreeps = creep.room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
-    const damagedCreep = creep.pos.findClosestByPath(damagedCreeps)
-    if (damagedCreep != null) {
-      const range = creep.pos.getRangeTo(damagedCreep.pos)
-      if (range <= GameConstants.creep.actionRange.heal) {
-        creep.heal(damagedCreep)
-      } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
-        creep.rangedHeal(damagedCreep)
-      }
-      creep.moveTo(damagedCreep)
-    }
-
     const isEnemyRoom = ((): boolean => {
       const controller = creep.room.controller
       if (controller == null) {
@@ -293,6 +281,19 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
         creep.moveTo(road)
         return
       }
+    }
+
+    const damagedCreeps = creep.room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
+    const damagedCreep = creep.pos.findClosestByPath(damagedCreeps)
+    if (damagedCreep != null) {
+      const range = creep.pos.getRangeTo(damagedCreep.pos)
+      if (range <= GameConstants.creep.actionRange.heal) {
+        creep.heal(damagedCreep)
+      } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
+        creep.rangedHeal(damagedCreep)
+      }
+      creep.moveTo(damagedCreep)
+      return
     }
 
     const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
