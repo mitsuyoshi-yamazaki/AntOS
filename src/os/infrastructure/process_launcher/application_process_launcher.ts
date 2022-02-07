@@ -120,6 +120,7 @@ export class ApplicationProcessLauncher {
     const roomKeeperTask = RoomKeeperTask.create(roomName)
     processLauncher(null, processId => V6RoomKeeperProcess.create(processId, roomKeeperTask))
 
+    // Processを追加する場合、exec unclaimで削除すること
     processLauncher(null, processId => DefenseRoomProcess.create(processId, roomName))
     processLauncher(null, processId => DefenseRemoteRoomProcess.create(processId, roomName))
   }
