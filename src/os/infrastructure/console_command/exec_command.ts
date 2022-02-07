@@ -33,7 +33,7 @@ import { QuadRequirement } from "../../../../submodules/attack/quad/quad_require
 import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
 import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
-import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 

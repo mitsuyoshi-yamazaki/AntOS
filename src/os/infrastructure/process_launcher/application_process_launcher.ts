@@ -16,7 +16,7 @@ import { World35588848GclManagerProcess } from "process/temporary/world_35588848
 import { MapAccessorProcess } from "process/accessor/map_accessor_process"
 import { Environment } from "utility/environment"
 import { ValuedArrayMap } from "utility/valued_collection"
-import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
