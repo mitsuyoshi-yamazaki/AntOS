@@ -81,7 +81,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
     if (destinationRoomName == null) {
       return `destination_room_name not specified. ${manual}`
     }
-    const waypoints = GameMap.getWaypoints(roomName, destinationRoomName)
+    const waypoints = GameMap.getWaypoints(roomName, destinationRoomName, {ignoreMissingWaypoints: true})
     if (waypoints == null) {
       return `waypoints not set ${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
     }
