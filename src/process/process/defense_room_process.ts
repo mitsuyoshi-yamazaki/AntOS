@@ -414,7 +414,38 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   private waitIntercepters(intercepters: Creep[], roomResources: OwnedRoomResource): void {
-    const interceptersOutsideRamparts = intercepters.filter(creep => {
+    const waitingIntercepters: Creep[] = []
+    const interceptersToUnboost: Creep[] = []
+
+    intercepters.forEach(creep => {
+      if (creep.ticksToLive != null && creep.ticksToLive < 25) {
+        if (creep.body.some(body => body.boost != null)) {
+          interceptersToUnboost.push(creep)
+          return
+        }
+      }
+      waitingIntercepters.push(creep)
+    })
+
+    if (interceptersToUnboost.length > 0) {
+      const researchOutputLabIds = roomResources.roomInfo.researchLab?.outputLabs ?? []
+      const unboostLab = researchOutputLabIds.flatMap((labId): StructureLab[] => {
+        const lab = Game.getObjectById(labId)
+        if (!(lab instanceof StructureLab)) {
+          return []
+        }
+        if (lab.cooldown > 0) {
+          return []
+        }
+        return [lab]
+      })[0]
+
+      if (unboostLab != null) {
+        interceptersToUnboost.forEach(creep => this.unboostIntercepter(creep, unboostLab))
+      }
+    }
+
+    const interceptersOutsideRamparts = waitingIntercepters.filter(creep => {
       if (creep.pos.findInRange(FIND_MY_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
         // creep.say("safe")
         return false
@@ -449,6 +480,16 @@ export class DefenseRoomProcess implements Process, Procedural {
     }
     creep.say(`${closestRampart.pos.x},${closestRampart.pos.y}`)
     creep.moveTo(closestRampart.pos, defaultMoveToOptions())
+  }
+
+  private unboostIntercepter(creep: Creep, lab: StructureLab): void {
+    if (lab.pos.getRangeTo(creep) <= 1) {
+      lab.unboostCreep(creep)
+      return
+    }
+
+    creep.say("unboost")
+    creep.moveTo(lab.pos, defaultMoveToOptions())
   }
 
   private spawnIntercepter(small: boolean, energyCapacity: number): void {
