@@ -19,6 +19,7 @@ import { coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { calculateTowerDamage } from "utility/tower"
 import { } from "./tower_interception"
+import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
@@ -80,7 +81,7 @@ const attackerBodyParts: BodyPartConstant[] = [
 interface DefenseRoomProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly receivedEnergyTimestamp: Timestamp
-  readonly intercepterTargets: {[targetCreepId: string]: CreepName} // {[hostile creep ID]: intercepter name}
+  readonly intercepterTargets: { [intercepterName: string]: Id<Creep> }
 }
 
 export class DefenseRoomProcess implements Process, Procedural {
@@ -98,7 +99,7 @@ export class DefenseRoomProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
     private receivedEnergyTimestamp: Timestamp,
-    private intercepterTargets: { [targetCreepId: string]: CreepName }, // {[hostile creep ID]: intercepter name}
+    private intercepterTargets: { [intercepterName: string]: Id<Creep> },
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -303,23 +304,32 @@ export class DefenseRoomProcess implements Process, Procedural {
       result.set(current.name, current)
       return result
     }, new Map<CreepName, Creep>())
-    const minimumRampartRange = 15
+    // const minimumRampartRange = 15
+
+    const targetByIntercepter = new ValuedArrayMap<Id<Creep>, CreepName>()
+    Array.from(Object.entries(this.intercepterTargets)).forEach(([intercepterName, targetCreepId]) => {
+      const intercepterNameList = targetByIntercepter.getValueFor(targetCreepId)
+      intercepterNameList.push(intercepterName)
+      targetByIntercepter.set(targetCreepId, intercepterNameList)
+    })
 
     const getTargetingIntercepters = (cluster: HostileCluster): Creep[] => {
       const intercepterCreeps: Creep[] = []
       cluster.hostileCreeps.forEach(hostileCreep => {
-        const intercepterName = this.intercepterTargets[hostileCreep.creep.id]
-        if (intercepterName == null) {
+        const intercepterNames = targetByIntercepter.get(hostileCreep.creep.id)
+        if (intercepterNames == null) {
           return
         }
 
-        const intercepter = waitingIntercepters.get(intercepterName)
-        if (intercepter == null) {
-          delete this.intercepterTargets[hostileCreep.creep.id]
-          return
-        }
-        waitingIntercepters.delete(intercepterName)
-        intercepterCreeps.push(intercepter)
+        intercepterNames.forEach(intercepterName => {
+          const intercepter = waitingIntercepters.get(intercepterName)
+          if (intercepter == null) {
+            delete this.intercepterTargets[intercepterName]
+            return
+          }
+          waitingIntercepters.delete(intercepterName)
+          intercepterCreeps.push(intercepter)
+        })
       })
       return intercepterCreeps
     }
@@ -352,19 +362,21 @@ export class DefenseRoomProcess implements Process, Procedural {
         }
       }
 
-      if (closestRamparts.range  > minimumRampartRange) {
-        cluster.hostileCreeps.forEach(hostileCreep => {
-          if (this.intercepterTargets[hostileCreep.creep.id] != null) {
-            delete this.intercepterTargets[hostileCreep.creep.id]
-          }
-        })
+      // Intercepterのreassignが煩雑になるため一旦考えない
+      // if (closestRamparts.range  > minimumRampartRange) {
+      //   cluster.hostileCreeps.forEach(hostileCreep => {
+      //     const targetingIntercepterNames = targetByIntercepter.get(hostileCreep.creep.id)
+      //     targetingIntercepterNames?.forEach(intercepterName => {
+      //       delete this.intercepterTargets[intercepterName]
+      //     })
+      //   })
 
-        return {
-          cluster,
-          intercepterCreeps: [],
-          closestRamparts,
-        }
-      }
+      //   return {
+      //     cluster,
+      //     intercepterCreeps: [],
+      //     closestRamparts,
+      //   }
+      // }
 
       return {
         cluster,
@@ -373,16 +385,37 @@ export class DefenseRoomProcess implements Process, Procedural {
       }
     })
 
+    const assignIntercepters = (intercepterCreeps: Creep[]): void => {
+      intercepterCreeps.forEach(intercepter => {
+        clusterTargetInfo.sort((lhs, rhs) => lhs.intercepterCreeps.length - rhs.intercepterCreeps.length)
+        if (clusterTargetInfo[0] == null || clusterTargetInfo[0].cluster.hostileCreeps[0] == null) {
+          return
+        }
+        clusterTargetInfo[0].intercepterCreeps.push(intercepter)
+        const targetId = clusterTargetInfo[0].cluster.hostileCreeps[0].creep.id
+        this.intercepterTargets[intercepter.name] = targetId
+      })
+    }
+
     const availableIntercepters = Array.from(waitingIntercepters.values())
-    availableIntercepters.forEach(intercepter => {
-      clusterTargetInfo.sort((lhs, rhs) => lhs.intercepterCreeps.length - rhs.intercepterCreeps.length)
-      if (clusterTargetInfo[0] == null || clusterTargetInfo[0].cluster.hostileCreeps[0] == null) {
-        return
-      }
-      clusterTargetInfo[0].intercepterCreeps.push(intercepter)
-      const targetId = clusterTargetInfo[0].cluster.hostileCreeps[0].creep.id
-      this.intercepterTargets[targetId] = intercepter.name
-    })
+    assignIntercepters(availableIntercepters)
+
+    if (clusterTargetInfo.some(cluster => cluster.intercepterCreeps.length <= 0)) {
+      const reassigningIntercepters: Creep[] = []
+      clusterTargetInfo.forEach(cluster => {
+        if (cluster.intercepterCreeps.length <= 1) {
+          return
+        }
+        const creep = cluster.intercepterCreeps.pop()
+        if (creep == null) {
+          return
+        }
+        delete this.intercepterTargets[creep.name]
+        reassigningIntercepters.push(creep)
+      })
+
+      assignIntercepters(reassigningIntercepters)
+    }
 
     // ---- ---- //
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
