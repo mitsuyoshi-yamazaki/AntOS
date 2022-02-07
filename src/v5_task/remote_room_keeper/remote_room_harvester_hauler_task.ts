@@ -236,12 +236,18 @@ export class RemoteRoomHaulerTask extends Task {
     }
 
     if (objects.activeStructures.storage != null) {
-      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage)) // TODO: repair
+      if (creep.getActiveBodyparts(WORK) > 0) {
+        return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
+      }
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)
     if (structureToCharge != null) {
-      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      if (creep.getActiveBodyparts(WORK) > 0) {
+        return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      }
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
 
     const spawn = objects.activeStructures.spawns[0]
