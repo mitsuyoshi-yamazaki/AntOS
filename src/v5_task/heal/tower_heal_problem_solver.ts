@@ -45,15 +45,30 @@ export class TowerHealProblemSolver extends ProblemSolver {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
+    const countPart = (body: BodyPartConstant[], bodyType: BodyPartConstant): number => {
+      return body.filter(b => b === bodyType).length
+    }
+
     const target = ((): AnyCreep | null => {
-      // if (this.targetId != null) { // TODO: 終了判定ができていないため
-      //   const stored = Game.getObjectById(this.targetId)
-      //   if (stored != null) {
-      //     return stored
-      //   }
-      //   this.targetId = null
-      // }
-      return objects.damagedCreeps[0] ?? null  // TODO: ターゲット選定
+      const creepInfo = objects.damagedCreeps.map((creep): {creep: AnyCreep, priority: number} => {
+        if (creep instanceof PowerCreep) {
+          return {
+            creep,
+            priority: 100000,
+          }
+        }
+        const body = creep.body.map(body => body.type)
+        const priority = countPart(body, HEAL) * 100 + countPart(body, ATTACK) * 10 + countPart(body, RANGED_ATTACK) * 3
+
+        return {
+          creep,
+          priority,
+        }
+      })
+      creepInfo.sort((lhs, rhs) => {
+        return rhs.priority - lhs.priority
+      })
+      return creepInfo[0]?.creep ?? null
     })()
 
     if (target == null) {
