@@ -84,17 +84,24 @@ export class RemoteRoomManagerTask extends Task {
     if (roomResource == null) {
       return
     }
-    const remoteRoomNames = Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo))
-    remoteRoomNames.forEach(remoteRoomName => {
-      if (this.hasKeeperTask(remoteRoomName) === true) {
+    const remoteRooms = Array.from(Object.entries(roomResource.roomInfo.remoteRoomInfo))
+    remoteRooms.forEach(([remoteRoomName, remoteRoomInfo]) => {
+      const keeperTask = this.keeperTask(remoteRoomName)
+      if (keeperTask == null) {
+        if (remoteRoomInfo.enabled === true) {
+          this.addRoomKeeperTask(remoteRoomName)
+        }
         return
       }
-      this.addRoomKeeperTask(remoteRoomName)
+
+      if (remoteRoomInfo.enabled === false) {
+        this.removeRoomKeeperTask(keeperTask)
+      }
     })
   }
 
-  private hasKeeperTask(remoteRoomName: RoomName): boolean {
-    return this.children.some(task => {
+  private keeperTask(remoteRoomName: RoomName): RemoteRoomKeeperTask | null {
+    return this.children.find(task => {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
@@ -102,11 +109,16 @@ export class RemoteRoomManagerTask extends Task {
         return false
       }
       return true
-    })
+    }) as RemoteRoomKeeperTask | null
   }
 
   private addRoomKeeperTask(targetRoomName: RoomName): void {
     this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
     PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task added ${this.roomName} &gt ${targetRoomName}`)
+  }
+
+  private removeRoomKeeperTask(keeperTask: RemoteRoomKeeperTask): void {
+    this.removeChildTask(keeperTask)
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task removed ${this.roomName} &gt ${keeperTask.targetRoomName}`)
   }
 }
