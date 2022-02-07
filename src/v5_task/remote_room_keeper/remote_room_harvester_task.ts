@@ -28,6 +28,7 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { GclFarmResources } from "room_resource/gcl_farm_resources"
 import { RoomResources } from "room_resource/room_resources"
 import { RemoteRoomInfo } from "room_resource/room_info"
+import { GameMap } from "game/game_map"
 
 const routeRecalculationInterval = 40000
 
@@ -422,5 +423,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
       info.constructionFinished = false
     })
+
+    if (GameMap.getWaypoints(this.roomName, this.targetRoomName, {ignoreMissingWaypoints: true}) == null) {
+      GameMap.setWaypoints(this.roomName, this.targetRoomName, roomNames)
+    }
   }
 }
