@@ -18,6 +18,7 @@ import { GameConstants } from "utility/constants"
 import { coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { calculateTowerDamage } from "utility/tower"
+import { } from "./tower_interception"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
