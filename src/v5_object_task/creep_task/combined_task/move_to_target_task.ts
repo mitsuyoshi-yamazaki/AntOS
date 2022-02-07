@@ -132,7 +132,7 @@ export class MoveToTargetTask implements CreepTask {
     if (this.lastPosition != null) {
       if (this.lastPosition.position.isEqualTo(creep.pos) === true) {
         if ((Game.time - this.lastPosition.timestamp) > 2) {
-          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
           const maxOps = creep.pos.roomName === targetPosition.roomName ? 1500 : 2000
           return {
             maxRooms,
@@ -185,7 +185,7 @@ export class MoveToTargetTask implements CreepTask {
     })()
 
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
-      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
       const reusePath = ((): number => {
         if (this.options.reusePath != null) {
           return this.options.reusePath
@@ -210,7 +210,7 @@ export class MoveToTargetTask implements CreepTask {
 
     const options = defaultMoveToOptions()
     options.range = range
-    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
     options.maxOps = creep.pos.roomName === targetPosition.roomName ? 800 : 1500
     options.reusePath = reusePath,
     options.ignoreCreeps = ignoreCreeps
