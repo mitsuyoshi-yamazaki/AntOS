@@ -76,7 +76,9 @@ export class CreateConstructionSiteTask extends Task {
     if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length > 0) {
       return TaskStatus.InProgress
     }
-    if (Game.time % 17 !== 3) {
+
+    const interval = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.config?.constructionInterval ?? 17
+    if ((Game.time % interval) !== 0) {
       return TaskStatus.InProgress
     }
     const centerPosition = ((): RoomPosition => {

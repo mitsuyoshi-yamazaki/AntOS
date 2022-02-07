@@ -85,6 +85,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     enableAutoAttack?: boolean
     noRepairWallIds?: Id<StructureWall>[]
     mineralMaxAmount?: number
+    constructionInterval?: number
   }
 }
 
