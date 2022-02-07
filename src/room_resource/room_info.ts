@@ -86,6 +86,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     noRepairWallIds?: Id<StructureWall>[]
     mineralMaxAmount?: number
     constructionInterval?: number
+    concurrentConstructionSites?: number
   }
 }
 
