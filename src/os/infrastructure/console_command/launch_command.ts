@@ -419,7 +419,7 @@ export class LaunchCommand implements ConsoleCommand {
     for (const rawLabInfo of rawLabIds.split(",")) {
       const [labId, boost] = rawLabInfo.split(":")
       if (labId == null || boost == null) {
-        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds})`)
+        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds}), labs=&ltlab ID&gt:&ltboost&gt,...`)
       }
       const lab = Game.getObjectById(labId)
       if (!(lab instanceof StructureLab)) {

@@ -10,7 +10,7 @@ import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepBody } from "utility/creep_body"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { decodeRoomPosition } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { processLog } from "os/infrastructure/logger"
 import { Timestamp } from "utility/timestamp"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -180,6 +180,62 @@ export class DefenseRoomProcess implements Process, Procedural {
   }
 
   private runIntercepters(intercepters: Creep[], hostileCreeps: Creep[], roomResource: OwnedRoomResource): void {
+    if (intercepters.some(creep => creep.spawning !== true) !== true) {
+      return
+    }
+
+    const excludedRampartIds = [  // FixMe:
+      "61ef963dcaae907cac3cb83a",
+      "61ef959958c1f75910f6688d",
+    ]
+    const allRamparts = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[])
+      .filter(rampart => {
+        if (excludedRampartIds.includes(rampart.id) === true) {
+          return false
+        }
+        if (rampart.hits < 10000) {
+          return false
+        }
+        return true
+      })
+
+    const obstacleCost = GameConstants.pathFinder.costs.obstacle
+    const costCallback = (roomName: string, costMatrix: CostMatrix): void | CostMatrix => {
+      if (roomName !== this.roomName) {
+        return costMatrix
+      }
+
+      const positionOptions: RoomPositionFilteringOptions = {
+        excludeItself: false,
+        excludeStructures: false,
+        excludeTerrainWalls: false,
+        excludeWalkableStructures: false,
+      }
+
+      hostileCreeps.forEach(creep => {
+        const attackRange = ((): number => {
+          if (creep.getActiveBodyparts(RANGED_ATTACK) > 0) {
+            return GameConstants.creep.actionRange.rangedAttack
+          }
+          if (creep.getActiveBodyparts(ATTACK) > 0) {
+            return GameConstants.creep.actionRange.attack
+          }
+          return 0
+        })()
+
+
+        creep.pos.positionsInRange(attackRange, positionOptions).forEach(position => {
+          const range = position.getRangeTo(creep.pos)
+          const cost = obstacleCost - range
+          costMatrix.set(position.x, position.y, cost)
+        })
+      })
+
+      allRamparts.forEach(rampart => {
+        costMatrix.set(rampart.pos.x, rampart.pos.y, 1)
+      })
+    }
+
     const centerPosition = ((): RoomPosition => {
       try {
         if (roomResource.roomInfo.roomPlan?.centerPosition != null) {
@@ -213,17 +269,11 @@ export class DefenseRoomProcess implements Process, Procedural {
       const totalAttackPower = totalIntercepterAttackPower + totalTowerAttackPower
 
       if ((totalAttackPower * 1) > totalHealPower) {
-        intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition, false))
+        intercepters.forEach(creep => this.moveIntercepterToTarget(creep, targetPosition, false))
         return
       }
     }
 
-    const excludedRampartIds = [  // FixMe:
-      "61ef963dcaae907cac3cb83a",
-      "61ef959958c1f75910f6688d",
-    ]
-    const allRamparts = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[])
-      .filter(rampart => excludedRampartIds.includes(rampart.id) !== true)
     let closestRange = GameConstants.room.edgePosition.max + 1
     let closestRamparts: StructureRampart[] = []
     allRamparts.forEach(rampart => {
@@ -255,7 +305,7 @@ export class DefenseRoomProcess implements Process, Procedural {
       ...nearbyRamparts,
     ]
     if (hidableRamparts.length <= 0) {
-      intercepters.forEach(creep => this.moveIntercepter(creep, targetPosition, true))
+      intercepters.forEach(creep => this.moveIntercepterToTarget(creep, targetPosition, true))
       return
     }
 
@@ -266,24 +316,46 @@ export class DefenseRoomProcess implements Process, Procedural {
         processLog(this, "1")
         continue
       }
-      this.moveIntercepter(creep, rampart.pos, true)
+      this.moveIntercepterToRampart(creep, rampart.pos, true, costCallback)
     }
   }
 
-  private moveIntercepter(creep: Creep, position: RoomPosition, say: boolean): void {
+  private moveIntercepterToTarget(creep: Creep, targetPosition: RoomPosition, say: boolean): void {
     if (creep.spawning === true) {
       return
     }
     const moveToOpt: MoveToOpts = {
-      ignoreCreeps: false
+      ignoreCreeps: false,
     }
-    if (creep.pos.isEqualTo(position) === true) {
+    if (creep.pos.isEqualTo(targetPosition) === true) {
       // do nothing
     } else {
       if (say === true) {
-        creep.say(`${position.x},${position.y}`)
+        creep.say(`${targetPosition.x},${targetPosition.y}`)
       }
-      creep.moveTo(position, moveToOpt)
+      creep.moveTo(targetPosition, moveToOpt)
+    }
+    const targets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)
+    if (targets[0] != null) {
+      creep.attack(targets[0])
+    }
+  }
+
+  private moveIntercepterToRampart(creep: Creep, rampartPosition: RoomPosition, say: boolean, costCallback: (roomName: string, costMatrix: CostMatrix) => void | CostMatrix): void {
+    if (creep.spawning === true) {
+      return
+    }
+    const moveToOpt: MoveToOpts = {
+      ignoreCreeps: false,
+      costCallback,
+    }
+    if (creep.pos.isEqualTo(rampartPosition) === true) {
+      // do nothing
+    } else {
+      if (say === true) {
+        creep.say(`${rampartPosition.x},${rampartPosition.y}`)
+      }
+      creep.moveTo(rampartPosition, moveToOpt)
     }
     const targets = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 1)
     if (targets[0] != null) {
