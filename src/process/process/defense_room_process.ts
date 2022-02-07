@@ -153,8 +153,9 @@ export class DefenseRoomProcess implements Process, Procedural {
 
       if (totalHealPower > 1500 && boostLab != null) {
         this.boostIntercepters(unboostedIntercepters, boostLab)
-      } else {
         this.runIntercepters(boostedIntercepters, hostileBoostedCreeps, roomResources)
+      } else {
+        this.runIntercepters(intercepters, hostileBoostedCreeps, roomResources)
       }
     } else {
       this.runIntercepters(intercepters, hostileCreeps, roomResources)
