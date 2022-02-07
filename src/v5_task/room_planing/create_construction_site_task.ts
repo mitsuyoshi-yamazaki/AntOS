@@ -165,7 +165,7 @@ export class CreateConstructionSiteTask extends Task {
         }
         const hasStructure = ((): boolean => {
           const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
-          if (placedStructure.length > 0) {
+          if (placedStructure.some(structure => structure.structureType !== STRUCTURE_RAMPART)) {
             return true
           }
           const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)
