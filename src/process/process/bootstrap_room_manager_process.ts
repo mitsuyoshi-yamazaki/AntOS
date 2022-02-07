@@ -264,15 +264,13 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
 
   // ---- Private ---- //
   private canAddTarget(): boolean {
-    const targetingRoomCount = ((): number => {
-      const ownedRoomNames = RoomResources.getOwnedRoomResources().map(resource => resource.room.name)
-      this.tasks.forEach(task => {
-        if (ownedRoomNames.includes(task.targetRoomName) !== true) {
-          ownedRoomNames.push(task.targetRoomName)
-        }
-      })
-      return ownedRoomNames.length
-    })()
+    const ownedRoomNames = RoomResources.getOwnedRoomResources().map(resource => resource.room.name)
+    const targetingRoomCount = this.tasks.filter(task => {
+      if (ownedRoomNames.includes(task.targetRoomName) !== true) {
+        return true
+      }
+      return false
+    }).length
 
     const availableRoomCount = RoomResources.getClaimableRoomCount()
 
