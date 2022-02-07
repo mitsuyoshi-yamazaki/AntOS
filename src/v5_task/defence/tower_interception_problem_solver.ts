@@ -67,28 +67,30 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
 
     const target = targetInfo.target
 
-    if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
-      const shouldStopAttacking = ((): boolean => {
-        const damage = towerPositions.reduce((result, current) => {
-          return result + calculateTowerDamage(current.getRangeTo(target.pos))
-        }, 0)
-        const healPower = target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
-          return result + CreepBody.power(current.body, "heal")
-        }, 0)
+    if (objects.controller.safeMode == null) {
+      if ((target instanceof Creep) && objects.hostiles.creeps.length > 1) {
+        const shouldStopAttacking = ((): boolean => {
+          const damage = towerPositions.reduce((result, current) => {
+            return result + calculateTowerDamage(current.getRangeTo(target.pos))
+          }, 0)
+          const healPower = target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
+            return result + CreepBody.power(current.body, "heal")
+          }, 0)
 
-        if (healPower < damage) {
+          if (healPower < damage) {
+            return false
+          }
+          const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
+          if (hasAttacker !== true) {
+            return true
+          }
           return false
-        }
-        const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
-        if (hasAttacker !== true) {
-          return true
-        }
-        return false
-      })()
+        })()
 
-      if (shouldStopAttacking === true) {
-        this.targetId = null
-        return TaskStatus.Finished
+        if (shouldStopAttacking === true) {
+          this.targetId = null
+          return TaskStatus.Finished
+        }
       }
     }
 
