@@ -117,8 +117,45 @@ export class DefenseRoomProcess implements Process, Procedural {
       return
     }
 
+    const totalHealPower = roomResources.hostiles.creeps.reduce((result, current) => {
+      return result + CreepBody.power(current.body, "heal")
+    }, 0)
+
     if (hostileBoostedCreeps.length > 0) {
-      this.runIntercepters(intercepters, hostileBoostedCreeps, roomResources)
+      const unboostedIntercepters: Creep[] = []
+      const boostedIntercepters: Creep[] = []
+      intercepters.forEach(creep => {
+        if (creep.ticksToLive == null || creep.ticksToLive < 100) {
+          boostedIntercepters.push(creep)
+          return
+        }
+        if (creep.body.some(body => body.boost != null)) {
+          boostedIntercepters.push(creep)
+        } else {
+          unboostedIntercepters.push(creep)
+        }
+      })
+      const boostLabIds = roomResources.roomInfo.config?.boostLabs ?? []
+      const boostLab = boostLabIds
+        .flatMap((labId): StructureLab[] => {
+          const lab = Game.getObjectById(labId)
+          if (lab instanceof StructureLab) {
+            return [lab]
+          }
+          return []
+        })
+        .find(lab => {
+          if (lab.store.getUsedCapacity(RESOURCE_UTRIUM_HYDRIDE) > 0) {
+            return true
+          }
+          return false
+        })
+
+      if (totalHealPower > 1500 && boostLab != null) {
+        this.boostIntercepters(unboostedIntercepters, boostLab)
+      } else {
+        this.runIntercepters(boostedIntercepters, hostileBoostedCreeps, roomResources)
+      }
     } else {
       this.runIntercepters(intercepters, hostileCreeps, roomResources)
     }
@@ -142,19 +179,16 @@ export class DefenseRoomProcess implements Process, Procedural {
       if (largestTicksToLive < 200) {
         return 0
       }
-      const numberOfHealParts = hostileCreeps.reduce((result, current) => {
-        return result + current.body.filter(body => body.type === HEAL).length
-      }, 0)
-      if (numberOfHealParts <= 0) {
+      if (totalHealPower <= 0) {
         return 0
       }
 
       if (hostileBoostedCreeps.length <= 0) {
-        const defeatableHealCounts = ((roomResources.activeStructures.towers.length * 150) / GameConstants.creep.actionPower.heal) * 0.9
-        if (numberOfHealParts < defeatableHealCounts) {
+        const defeatableHeal = (roomResources.activeStructures.towers.length * 150) * 0.9
+        if (totalHealPower < defeatableHeal) {
           return 0
         }
-        if (numberOfHealParts < (defeatableHealCounts * 2)) {
+        if (totalHealPower < (defeatableHeal * 2)) {
           return 1
         }
         return 2
@@ -177,6 +211,20 @@ export class DefenseRoomProcess implements Process, Procedural {
         }
       }
     }
+  }
+
+  private boostIntercepters(intercepters: Creep[], lab: StructureLab): void {
+    intercepters.forEach(creep => this.boostIntercepter(creep, lab))
+  }
+
+  private boostIntercepter(creep: Creep, lab: StructureLab): void {
+    if (lab.pos.getRangeTo(creep) <= 1) {
+      lab.boostCreep(creep)
+      return
+    }
+
+    creep.say("boost!")
+    creep.moveTo(lab.pos, defaultMoveToOptions())
   }
 
   private runIntercepters(intercepters: Creep[], hostileCreeps: Creep[], roomResource: OwnedRoomResource): void {
@@ -223,8 +271,9 @@ export class DefenseRoomProcess implements Process, Procedural {
           return 0
         })()
 
+        const avoidRange = attackRange + 2
 
-        creep.pos.positionsInRange(attackRange, positionOptions).forEach(position => {
+        creep.pos.positionsInRange(avoidRange, positionOptions).forEach(position => {
           const range = position.getRangeTo(creep.pos)
           const cost = obstacleCost - range
           costMatrix.set(position.x, position.y, cost)
