@@ -13,6 +13,7 @@ import { randomDirection } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { GameConstants } from "utility/constants"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -210,7 +211,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
 
   private runRangedAttacker(creep: Creep): void {
     const movement = this.attackNearbyHostile(creep)
-    creep.heal(creep)
+    if (creep.hits < creep.hitsMax) {
+      creep.heal(creep)
+    }
 
     if (movement.moved === true) {
       return
@@ -243,10 +246,13 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
     const damagedCreeps = creep.room.find(FIND_MY_CREEPS).filter(creep => creep.hits < creep.hitsMax)
     const damagedCreep = creep.pos.findClosestByPath(damagedCreeps)
     if (damagedCreep != null) {
-      if (creep.heal(damagedCreep) === ERR_NOT_IN_RANGE) {
+      const range = creep.pos.getRangeTo(damagedCreep.pos)
+      if (range <= GameConstants.creep.actionRange.heal) {
+        creep.heal(damagedCreep)
+      } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
         creep.rangedHeal(damagedCreep)
-        creep.moveTo(damagedCreep)
       }
+      creep.moveTo(damagedCreep)
     }
 
     const isEnemyRoom = ((): boolean => {
@@ -295,7 +301,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
     }
     const waitingRange = 5
     if (creep.pos.getRangeTo(waitingTarget.pos) <= waitingRange) {
-      creep.move(randomDirection(this.launchTime))
+      if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
+        creep.move(randomDirection(this.launchTime))
+      }
       return
     }
     const moveToOptions = defaultMoveToOptions()
@@ -314,7 +322,6 @@ export class GuardRemoteRoomProcess implements Process, Procedural {
     }
 
     this.rangedAttack(creep, target)
-    creep.heal(creep)
     if (target.getActiveBodyparts(ATTACK) > 0 && target.pos.getRangeTo(creep.pos) <= 2) {
       this.fleeFrom(target.pos, creep, 4)
     } else {

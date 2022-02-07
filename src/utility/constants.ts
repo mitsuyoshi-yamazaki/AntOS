@@ -76,6 +76,8 @@ export const GameConstants = {
       upgradeController: UPGRADE_CONTROLLER_RANGE,
       attack: 1,
       rangedAttack: 3,
+      heal: 1,
+      rangedHeal: 3,
     },
     actionPower: {
       attack: ATTACK_POWER,
