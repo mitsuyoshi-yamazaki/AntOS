@@ -76,7 +76,16 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     if (roomResource == null) {
       return []
     }
-    return Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo)).map((roomName): RoomInfo => ({name: roomName}))
+    return Array.from(Object.entries(roomResource.roomInfo.remoteRoomInfo)).flatMap(([roomName, roomInfo]): RoomInfo[] => {
+      if (roomInfo.enabled !== true) {
+        return []
+      }
+      return [
+        {
+          name: roomName,
+        }
+      ]
+    })
   }
 
   private readonly codename: string
@@ -184,11 +193,20 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       return
     }
 
+    const targetRooms = [...this.targetRooms]
+
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}
-      this.checkRemoteRooms([...this.targetRooms])
+      this.checkRemoteRooms(targetRooms)
       return
     }
+
+    const currentTarget = this.currentTarget
+    if (targetRooms.every(roomInfo => roomInfo.name !== currentTarget.roomName) === true) { // 手動でRemoteRoomが無効化された場合
+      this.currentTarget = null
+      return
+    }
+
     const updatedTarget = this.updatedTarget(this.currentTarget)
     if (updatedTarget === "as is") {
       // do nothing
