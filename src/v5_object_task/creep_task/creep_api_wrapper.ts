@@ -24,6 +24,7 @@ import { HealApiWrapper, HealApiWrapperState } from "./api_wrapper/heal_api_wrap
 import { PickupApiWrapper, PickupApiWrapperState } from "./api_wrapper/pickup_api_wrapper"
 import { AttackControllerApiWrapper, AttackControllerApiWrapperState } from "./api_wrapper/attack_controller_api_wrapper"
 import { WithdrawApiWrapper, WithdrawApiWrapperState } from "./api_wrapper/withdraw_api_wrapper"
+import { RangedHealApiWrapper, RangedHealApiWrapperState } from "./api_wrapper/ranged_heal_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -60,6 +61,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | PickupApiWrapper
   | AttackControllerApiWrapper
   | WithdrawApiWrapper
+  | RangedHealApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -86,6 +88,7 @@ class CreepApiWrapperDecoderMap {
   "PickupApiWrapper" = (state: CreepApiWrapperState) => PickupApiWrapper.decode(state as PickupApiWrapperState)
   "AttackControllerApiWrapper" = (state: CreepApiWrapperState) => AttackControllerApiWrapper.decode(state as AttackControllerApiWrapperState)
   "WithdrawApiWrapper" = (state: CreepApiWrapperState) => WithdrawApiWrapper.decode(state as WithdrawApiWrapperState)
+  "RangedHealApiWrapper" = (state: CreepApiWrapperState) => RangedHealApiWrapper.decode(state as RangedHealApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

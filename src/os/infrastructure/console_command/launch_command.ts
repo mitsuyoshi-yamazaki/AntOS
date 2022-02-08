@@ -55,6 +55,7 @@ import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
 import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
+import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1149,6 +1150,19 @@ ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
     const roomName = args.roomName("room_name").parse({my: true})
 
     return Result.Succeeded((processId) => DefenseRemoteRoomProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const neighbourCount = args.int("neighbour_count").parse({ min: 1, max: 8 })
+    const waypoints = GameMap.getWaypoints(roomName, targetRoomName) ?? []
+
+    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
