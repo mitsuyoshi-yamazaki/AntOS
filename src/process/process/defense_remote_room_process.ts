@@ -346,7 +346,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       MOVE, MOVE,
     ]
 
-    if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable) {
+    if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable || body.length > GameConstants.creep.body.bodyPartMaxCount) {
       raiseError(`${this.constructor.name} ${this.processId} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`)
       return
     }
