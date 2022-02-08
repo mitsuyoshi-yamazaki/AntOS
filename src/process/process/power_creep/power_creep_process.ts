@@ -3,15 +3,15 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
 import { roomLink } from "utility/log"
-import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
-import { OwnedRoomObjects } from "world_info/room_info"
 import { randomDirection } from "utility/constants"
 import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
 import { ProcessDecoder } from "process/process_decoder"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("PowerCreepProcess", state => {
   return PowerCreepProcess.decode(state as PowerCreepProcessState)
@@ -76,16 +76,15 @@ export class PowerCreepProcess implements Process, Procedural {
       PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
       return
     }
-    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
-    if (objects == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
       return
     }
 
-    this.runPowerCreep(powerCreep, objects)
+    this.runPowerCreep(powerCreep, roomResource)
   }
 
-  private runPowerCreep(powerCreep: PowerCreep, objects: OwnedRoomObjects): void {
+  private runPowerCreep(powerCreep: PowerCreep, roomResource: OwnedRoomResource): void {
     if (powerCreep.room == null) {
       PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
       OperatingSystem.os.suspendProcess(this.processId)
@@ -93,27 +92,15 @@ export class PowerCreepProcess implements Process, Procedural {
     }
     if (powerCreep.room.name !== this.parentRoomName) {
       moveToRoom(powerCreep, this.parentRoomName, [])
-      this.runGenerateOps(powerCreep, true, null)
+      this.runGenerateOps(powerCreep)
       return
     }
 
-    if (objects.controller.isPowerEnabled !== true) {
+    if (roomResource.controller.isPowerEnabled !== true) {
       powerCreep.say("enable pwr")
-      this.enablePower(powerCreep, objects.controller)
+      this.enablePower(powerCreep, roomResource.controller)
       return
     }
-
-    const opsStore = ((): StructureTerminal | StructureStorage | null => {
-      const storage = objects.activeStructures.storage
-      if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-        return storage
-      }
-      const terminal = objects.activeStructures.terminal
-      if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-        return terminal
-      }
-      return null
-    })()
 
     // if (this.hasPower(powerCreep, PWR_OPERATE_TOWER) === true) {
     //   let hostileHealerMaxPower = 0
@@ -130,7 +117,7 @@ export class PowerCreepProcess implements Process, Procedural {
     //   }
     // }
 
-    const powerSpawn = objects.activeStructures.powerSpawn
+    const powerSpawn = roomResource.activeStructures.powerSpawn
     let isMoving = false
     if (powerSpawn == null) {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} does not have power spawn`)
@@ -142,20 +129,32 @@ export class PowerCreepProcess implements Process, Procedural {
     }
 
     if (isMoving !== true) {
-      isMoving = this.runRegenSource(powerCreep, objects.sources)
+      isMoving = this.runRegenSource(powerCreep, roomResource.sources)
     }
 
-    const spawn = objects.activeStructures.spawns[0]
+    const opsStore = ((): StructureTerminal | StructureStorage | null => {
+      const storage = roomResource.activeStructures.storage
+      if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return storage
+      }
+      const terminal = roomResource.activeStructures.terminal
+      if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+        return terminal
+      }
+      return null
+    })()
+
+    const spawn = roomResource.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
-      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)
+      isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)  // isMovingがtrueであれば右辺が実行されないのでは？
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
-      const terminal = objects.activeStructures.terminal
+      const terminal = roomResource.activeStructures.terminal
       if (terminal != null && terminal.store.getFreeCapacity() > 10000) {
         return terminal
       }
-      const storage = objects.activeStructures.storage
+      const storage = roomResource.activeStructures.storage
       if (storage != null && storage.store.getFreeCapacity() > 10000) {
         return storage
       }
@@ -165,7 +164,19 @@ export class PowerCreepProcess implements Process, Procedural {
     if (store == null) {
       powerCreep.say("no storage")
     }
-    this.runGenerateOps(powerCreep, isMoving, store)
+    this.runGenerateOps(powerCreep)
+
+    if (isMoving !== true) {
+      if (opsStore != null) {
+        if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+          this.transferOps(powerCreep, opsStore)
+          return
+        }
+      }
+
+      this.moveToWaitingPosition(powerCreep, roomResource)
+      return
+    }
   }
 
   private enablePower(powerCreep: PowerCreep, controller: StructureController): void {
@@ -279,7 +290,7 @@ export class PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private runGenerateOps(powerCreep: PowerCreep, isMoving: boolean, store: StructureTerminal | StructureStorage | null): void {
+  private runGenerateOps(powerCreep: PowerCreep): void {
     if (this.hasPower(powerCreep, PWR_GENERATE_OPS) !== true) {
       return
     }
@@ -288,22 +299,7 @@ export class PowerCreepProcess implements Process, Procedural {
 
     switch (result) {
     case OK:
-      break
-
     case ERR_TIRED:
-      if (store == null) {
-        break
-      }
-      if (isMoving !== true) {
-        if (powerCreep.pos.isNearTo(store) !== true) {
-          powerCreep.moveTo(store, defaultMoveToOptions())
-        } else {
-          powerCreep.move(randomDirection(0))
-        }
-      }
-      if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
-        powerCreep.transfer(store, RESOURCE_OPS, 100)
-      }
       break
 
     case ERR_NOT_IN_RANGE:
@@ -336,5 +332,22 @@ export class PowerCreepProcess implements Process, Procedural {
       PrimitiveLogger.programError(`powerCreep.renew() returns ${result} in ${roomLink(this.parentRoomName)}`)
       break
     }
+  }
+
+  private transferOps(powerCreep: PowerCreep, opsStore: StructureTerminal | StructureStorage): void {
+    if (powerCreep.pos.isNearTo(opsStore) !== true) {
+      powerCreep.moveTo(opsStore, defaultMoveToOptions())
+      return
+    }
+    powerCreep.transfer(opsStore, RESOURCE_OPS, 100)
+  }
+
+  private moveToWaitingPosition(powerCreep: PowerCreep, roomResource: OwnedRoomResource): void {
+    const waitingPosition = roomResource.roomInfoAccessor.config.getGenericWaitingPosition()
+    if (waitingPosition == null) {
+      powerCreep.move(randomDirection(0))
+      return
+    }
+    powerCreep.moveTo(waitingPosition, defaultMoveToOptions())
   }
 }

@@ -5,7 +5,7 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
-import { Season631744PowerProcessProcess } from "process/temporary/season_631744_power_process_process"
+import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { World } from "world_info/world_info"
 import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
@@ -86,8 +86,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "Season570208DismantleRcl2RoomProcess":
         return this.launchSeason570208DismantleRcl2RoomProcess()
-      case "Season631744PowerProcessProcess":
-        return this.launchSeason631744PowerProcessProcess()
       case "Season701205PowerHarvesterSwampRunnerProcess":
         return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       case "BuyPixelProcess":
@@ -275,24 +273,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints, numberOfCreeps)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason631744PowerProcessProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const powerSpawn = World.rooms.getOwnedRoomObjects(roomName)?.activeStructures.powerSpawn
-    if (powerSpawn == null) {
-      return Result.Failed(`No power spawn in ${roomLink(roomName)}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn.id)
     })
     return Result.Succeeded(process)
   }
@@ -1137,6 +1117,20 @@ ProcessLauncher.register("PowerCreepProcess", args => {
     const powerCreep = args.powerCreep("power_creep_name").parse()
 
     return Result.Succeeded((processId) => PowerCreepProcess.create(processId, roomName, powerCreep.name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerProcessProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const powerSpawn = roomResource.activeStructures.powerSpawn
+    if (powerSpawn == null) {
+      throw `no power spawn in ${roomLink(roomResource.room.name)}`
+    }
+
+    return Result.Succeeded((processId) => PowerProcessProcess.create(processId, roomResource.room.name, powerSpawn.id))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
