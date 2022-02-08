@@ -62,8 +62,8 @@ export const CreepBody = {
   },
 
   /** hitsは考慮されている */
-  power: function(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType):number {
-    return bodyPower(body, actionType)
+  power: function (body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType, options?: { ignoreHits?: boolean }):number {
+    return bodyPower(body, actionType, options)
   },
 
   actionEnergyCost: function (body: BodyPartConstant[], actionType: CreepBodyEnergyConsumeActionType): number {
@@ -113,7 +113,7 @@ function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBodyFixedAm
 }
 
 /** @deprecated */
-export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType): number {
+export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType, options?: {ignoreHits?: boolean}): number {
   const bodyPart = CreepActionToBodyPart[actionType]
   const actionPower = CreepBodyActionPower[actionType]  // FixMe: Mineral harvestでは値が異なる
 
@@ -121,7 +121,7 @@ export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixed
     if (current.type !== bodyPart) {
       return result
     }
-    if (current.hits <= 0) {
+    if (options?.ignoreHits !== true && current.hits <= 0) {
       return result
     }
     const boost = boostForBody(current, actionType)
