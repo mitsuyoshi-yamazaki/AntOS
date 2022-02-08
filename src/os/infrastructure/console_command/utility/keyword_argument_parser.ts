@@ -2,7 +2,7 @@ import { GameMap } from "game/game_map"
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -26,6 +26,8 @@ interface KeywordArgumentsInterface {
   boostCompoundType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, MineralBoostConstant>
   depositType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, DepositConstant>
   commodityType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, CommodityConstant>
+  creep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Creep>
+  powerCreep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, PowerCreep>
 
   interRoomPath(
     fromRoomKey: string,
@@ -120,6 +122,14 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public commodityType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, CommodityConstant> {
     return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "CommodityConstant", isCommodityConstant, options)
+  }
+
+  public creep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Creep> {
+    return new CreepArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  public powerCreep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, PowerCreep> {
+    return new PowerCreepArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
   public interRoomPath(

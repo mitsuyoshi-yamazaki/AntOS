@@ -95,6 +95,34 @@ export class ResourceTypeArgument<T extends string> extends SingleOptionalArgume
   }
 }
 
+export class CreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const creep = Game.creeps[this.value]
+    if (!(creep instanceof Creep)) {
+      throw `no creep with name ${this.value}`
+    }
+    return creep
+  }
+}
+
+export class PowerCreepArgument extends SingleOptionalArgument<void, PowerCreep> {
+  /** throws */
+  public parse(): PowerCreep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const creep = Game.powerCreeps[this.value]
+    if (!(creep instanceof PowerCreep)) {
+      throw `no power creep with name ${this.value}`
+    }
+    return creep
+  }
+}
+
 /** throws */
 function validateNumberRange(key: string, value: number, options?: { min?: number, max?: number }): void {
   if (options?.min != null && value < options.min) {

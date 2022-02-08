@@ -1,6 +1,6 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -26,6 +26,8 @@ interface KeywordArgumentsInterface {
   boostCompoundType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, MineralBoostConstant>
   depositType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DepositConstant>
   commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant>
+  creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep>
+  powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep>
 }
 
 export class ListArguments implements KeywordArgumentsInterface {
@@ -96,6 +98,14 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant> {
     return new ResourceTypeArgument(key, this.getValueAt(index), "CommodityConstant", isCommodityConstant, options)
+  }
+
+  public creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep> {
+    return new CreepArgument(key, this.getValueAt(index), options)
+  }
+
+  public powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep> {
+    return new PowerCreepArgument(key, this.getValueAt(index), options)
   }
 
   // ---- ---- //
