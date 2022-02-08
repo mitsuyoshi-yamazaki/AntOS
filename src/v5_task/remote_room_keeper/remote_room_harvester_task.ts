@@ -29,6 +29,7 @@ import { GclFarmResources } from "room_resource/gcl_farm_resources"
 import { RoomResources } from "room_resource/room_resources"
 import { RemoteRoomInfo } from "room_resource/room_info"
 import { GameMap } from "game/game_map"
+import { coloredText, roomLink } from "utility/log"
 
 const routeRecalculationInterval = 40000
 
@@ -126,19 +127,36 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
     }
 
-    const targetRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName] ?? null
-    if (targetRoomInfo != null) {
-      if (targetRoomInfo.constructionFinished === false && (((Game.time + this.startTime) % 10) === 0)) {
-        this.createConstructionSites(source, targetRoomInfo)
-      }
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource != null) {
+      if (roomResource.roomInfo.remoteRoomInfo[this.targetRoomName] == null) {
+        // Migration: 稼働中にここに入ることはない
+        const routeCalculatedTimestamp: { [sourceId: string]: number } = {}
+        routeCalculatedTimestamp[source.id] = Game.time - Math.floor(Math.random() * routeRecalculationInterval)
 
-      const targetRoom = Game.rooms[this.targetRoomName]
-      const routeCalculatedTimestamp = targetRoomInfo.routeCalculatedTimestamp[source.id]
-      if (routeCalculatedTimestamp == null) {
-        targetRoomInfo.routeCalculatedTimestamp[source.id] = 0 //Game.time - Math.floor(Math.random() * 4000) // FixMe: Migration
-      } else {
-        if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
-          this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container != null)
+        roomResource.roomInfo.remoteRoomInfo[this.targetRoomName] = {
+          roomName: this.targetRoomName,
+          enabled: true,
+          routeCalculatedTimestamp,
+          constructionFinished: false,
+        }
+
+        PrimitiveLogger.log(`${coloredText("[Migrated]", "warn")} remote room info ${roomLink(this.targetRoomName)} set to ${roomLink(this.roomName)}`)
+      }
+      const targetRoomInfo = roomResource.roomInfo.remoteRoomInfo[this.targetRoomName]
+      if (targetRoomInfo != null) {
+        if (targetRoomInfo.constructionFinished === false && (((Game.time + this.startTime) % 10) === 0)) {
+          this.createConstructionSites(source, targetRoomInfo)
+        }
+
+        const targetRoom = Game.rooms[this.targetRoomName]
+        const routeCalculatedTimestamp = targetRoomInfo.routeCalculatedTimestamp[source.id]
+        if (routeCalculatedTimestamp == null) {
+          targetRoomInfo.routeCalculatedTimestamp[source.id] = Game.time - Math.floor(Math.random() * routeRecalculationInterval) // 0  // 乱数を設定するのはMigration時のみ
+        } else {
+          if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
+            this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container != null)
+          }
         }
       }
     }

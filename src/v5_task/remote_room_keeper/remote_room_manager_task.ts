@@ -50,6 +50,7 @@ export class RemoteRoomManagerTask extends Task {
   public static create(roomName: RoomName): RemoteRoomManagerTask {
     const children: Task[] = []
     const parentRoomStatus = Game.map.getRoomStatus(roomName)?.status // sim環境ではundefinedが返る
+    const remoteRoomInfo = RoomResources.getOwnedRoomResource(roomName)?.roomInfo.remoteRoomInfo
 
     const exits = Game.map.describeExits(roomName)
     if (exits != null) { // sim環境ではundefinedが返る
@@ -62,6 +63,15 @@ export class RemoteRoomManagerTask extends Task {
           return
         }
         children.push(RemoteRoomKeeperTask.create(roomName, neighbour))
+
+        if (remoteRoomInfo != null) {
+          remoteRoomInfo[neighbour] = {
+            roomName: neighbour,
+            enabled: true,
+            routeCalculatedTimestamp: {},
+            constructionFinished: false,
+          }
+        }
       })
     }
 

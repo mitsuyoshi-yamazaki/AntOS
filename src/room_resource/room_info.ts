@@ -83,7 +83,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     excludedRemotes?: RoomName[]
     waitingPosition?: { x: number, y: number }
     enableAutoAttack?: boolean
-    noRepairWallIds?: Id<StructureWall>[]
+    noRepairWallIds?: Id<StructureWall | StructureRampart>[]
     mineralMaxAmount?: number
     constructionInterval?: number
     concurrentConstructionSites?: number
