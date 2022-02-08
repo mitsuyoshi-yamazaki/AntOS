@@ -245,10 +245,15 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
         creep.rangedAttack(attackTarget.creep)
       }
 
-      if (attackTarget.range < rangedAttackRange) {
-        this.flee(creep, attackTarget.creep.pos, rangedAttackRange + 1)
-        return
-      } else if (attackTarget.range === rangedAttackRange) {
+      if (attackTarget.creep.getActiveBodyparts(ATTACK) > 0) {
+        if (attackTarget.range < rangedAttackRange) {
+          this.flee(creep, attackTarget.creep.pos, rangedAttackRange + 1)
+          return
+        } else if (attackTarget.range === rangedAttackRange) {
+          return
+        }
+      } else {  // no ATTACK
+        creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
         return
       }
     }
@@ -305,7 +310,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
   }
 
   private spawnIntercepter(roomResource: OwnedRoomResource, target: TargetInfo): void {
-    const rangedAttackCount = Math.max(Math.ceil(target.totalPower.heal / GameConstants.creep.actionPower.rangedAttack), 5)
+    const rangedAttackCount = Math.max(Math.ceil((target.totalPower.heal + 1) / GameConstants.creep.actionPower.rangedAttack), 5)
     const healCount = ((): number => {
       const count = Math.max(Math.ceil(target.totalPower.rangedAttack / GameConstants.creep.actionPower.heal), 1)
       if (count > 3) {
@@ -317,6 +322,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
 
     const body: BodyPartConstant[] = [
       ...Array(moveCount).fill(MOVE),
+      ATTACK,
       ...Array(rangedAttackCount).fill(RANGED_ATTACK),
       ...Array(healCount).fill(HEAL),
       MOVE, MOVE,
@@ -392,9 +398,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       if (playerNames.includes(creep.owner.username) !== true) {
         playerNames.push(creep.owner.username)
       }
-      const attackPower = CreepBody.power(creep.body, "attack")
-      const rangedAttackPower = CreepBody.power(creep.body, "rangedAttack")
-      const healPower = CreepBody.power(creep.body, "heal")
+      const attackPower = CreepBody.power(creep.body, "attack", {ignoreHits: true})
+      const rangedAttackPower = CreepBody.power(creep.body, "rangedAttack", { ignoreHits: true })
+      const healPower = CreepBody.power(creep.body, "heal", { ignoreHits: true })
 
       if (attackPower <= 0 && rangedAttackPower <= 0 && healPower <= 0) {
         if (creep.getActiveBodyparts(WORK) <= 0 && creep.getActiveBodyparts(CLAIM) <= 0) {
