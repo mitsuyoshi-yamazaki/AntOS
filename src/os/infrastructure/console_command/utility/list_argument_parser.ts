@@ -1,7 +1,8 @@
+import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -14,7 +15,8 @@ interface KeywordArgumentsInterface {
   float(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number>
   string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string>
   boolean(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, boolean>
-  localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, {x: number, y: number}>
+  localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position>
+  localPositions(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position[]>
 
   // ---- Game Object ---- //
   direction(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DirectionConstant>
@@ -61,8 +63,12 @@ export class ListArguments implements KeywordArgumentsInterface {
     return new BooleanArgument(key, this.getValueAt(index), options)
   }
 
-  public localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, { x: number, y: number }> {
+  public localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position> {
     return new LocalPositionArgument(key, this.getValueAt(index), options)
+  }
+
+  public localPositions(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position[]> {
+    return new LocalPositionsArgument(key, this.getValueAt(index), options)
   }
 
   // ---- Game Object ---- //

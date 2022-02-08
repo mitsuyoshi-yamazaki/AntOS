@@ -1,3 +1,4 @@
+import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
@@ -222,9 +223,9 @@ export function missingArgumentErrorMessage(key: string): string {
 /**
  * <x>,<y>
  */
-export class LocalPositionArgument extends SingleOptionalArgument<void, { x: number, y: number }> {
+export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
   /** throws */
-  public parse(): { x: number, y: number } {
+  public parse(): Position {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -243,6 +244,31 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, { x: num
       x,
       y,
     }
+  }
+}
+
+/**
+ * <x>,<y>;<x>,<y>;...
+ */
+export class LocalPositionsArgument extends SingleOptionalArgument<void, Position[]> {
+  /** throws */
+  public parse(): Position[] {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
+    const parsePosition = (rawValue: string): Position => {
+      const components = rawValue.split(",")
+      if (components[0] == null || components[1] == null) {
+        throw `Invalid format ${this.value}. expected: &ltx&gt,&lty&gt;&ltx&gt,&lty&gt;...`
+      }
+      return {
+        x: parseIntValue("x", components[0], parseOptions),
+        y: parseIntValue("y", components[1], parseOptions),
+      }
+    }
+    return this.value.split(";").map(rawValue => parsePosition(rawValue))
   }
 }
 

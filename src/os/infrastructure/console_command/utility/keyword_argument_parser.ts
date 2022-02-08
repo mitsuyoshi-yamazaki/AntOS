@@ -1,9 +1,10 @@
 import { GameMap } from "game/game_map"
+import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -14,7 +15,8 @@ interface KeywordArgumentsInterface {
   float(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number>
   string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
   boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean>
-  localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, { x: number, y: number }>
+  localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position>
+  localPositions(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position[]>
 
   // ---- Game Object ---- //
   direction(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, DirectionConstant>
@@ -85,8 +87,12 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new BooleanArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
-  public localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, { x: number, y: number }> {
+  public localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position> {
     return new LocalPositionArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  public localPositions(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position[]> {
+    return new LocalPositionsArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
   // ---- Game Object ---- //
