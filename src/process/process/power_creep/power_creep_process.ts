@@ -13,11 +13,15 @@ import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
 import { ProcessDecoder } from "process/process_decoder"
 
-ProcessDecoder.register("Season634603PowerCreepProcess", state => {
-  return Season634603PowerCreepProcess.decode(state as Season634603PowerCreepProcessState)
+ProcessDecoder.register("PowerCreepProcess", state => {
+  return PowerCreepProcess.decode(state as PowerCreepProcessState)
 })
 
-export interface Season634603PowerCreepProcessState extends ProcessState {
+ProcessDecoder.register("Season634603PowerCreepProcess", state => { // FixMe: Migration
+  return PowerCreepProcess.decode(state as PowerCreepProcessState)
+})
+
+export interface PowerCreepProcessState extends ProcessState {
   /** parent room name */
   r: RoomName
 
@@ -30,9 +34,9 @@ PowerCreep.create("power_creep_0000", POWER_CLASS.OPERATOR)
 Game.powerCreeps["power_creep_0000"].spawn(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f1559d71ae7"))
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
-Game.io("launch -l Season634603PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
+Game.io("launch -l PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
-export class Season634603PowerCreepProcess implements Process, Procedural {
+export class PowerCreepProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -48,9 +52,9 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.powerCreepName}`
   }
 
-  public encode(): Season634603PowerCreepProcessState {
+  public encode(): PowerCreepProcessState {
     return {
-      t: "Season634603PowerCreepProcess",
+      t: "PowerCreepProcess",
       l: this.launchTime,
       i: this.processId,
       r: this.parentRoomName,
@@ -58,12 +62,12 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  public static decode(state: Season634603PowerCreepProcessState): Season634603PowerCreepProcess | null {
-    return new Season634603PowerCreepProcess(state.l, state.i, state.r, state.p)
+  public static decode(state: PowerCreepProcessState): PowerCreepProcess | null {
+    return new PowerCreepProcess(state.l, state.i, state.r, state.p)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, powerCreepName: PowerCreepName): Season634603PowerCreepProcess {
-    return new Season634603PowerCreepProcess(Game.time, processId, roomName, powerCreepName)
+  public static create(processId: ProcessId, roomName: RoomName, powerCreepName: PowerCreepName): PowerCreepProcess {
+    return new PowerCreepProcess(Game.time, processId, roomName, powerCreepName)
   }
 
   public processShortDescription(): string {
@@ -98,6 +102,7 @@ export class Season634603PowerCreepProcess implements Process, Procedural {
     }
 
     if (objects.controller.isPowerEnabled !== true) {
+      powerCreep.say("enable pwr")
       this.enablePower(powerCreep, objects.controller)
       return
     }

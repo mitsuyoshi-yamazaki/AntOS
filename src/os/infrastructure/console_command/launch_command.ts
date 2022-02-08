@@ -8,9 +8,9 @@ import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_5
 import { Season631744PowerProcessProcess } from "process/temporary/season_631744_power_process_process"
 import { World } from "world_info/world_info"
 import { coloredText, roomLink } from "utility/log"
-import { Season634603PowerCreepProcess } from "process/temporary/season_634603_power_creep_process"
+import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
-import { Season989041MovePowerCreepProcess } from "process/temporary/season_989041_move_power_creep_process"
+import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
@@ -88,12 +88,8 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason570208DismantleRcl2RoomProcess()
       case "Season631744PowerProcessProcess":
         return this.launchSeason631744PowerProcessProcess()
-      case "Season634603PowerCreepProcess":
-        return this.launchSeason634603PowerCreepProcess()
       case "Season701205PowerHarvesterSwampRunnerProcess":
         return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
-      case "Season989041MovePowerCreepProcess":
-        return this.launchSeason989041MovePowerCreepProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
       case "Season1143119LabChargerProcess":
@@ -301,24 +297,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason634603PowerCreepProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const powerCreepName = args.get("power_creep_name")
-    if (powerCreepName == null) {
-      return this.missingArgumentError("power_creep_name")
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season634603PowerCreepProcess.create(processId, roomName, powerCreepName)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchSeason701205PowerHarvesterSwampRunnerProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -362,34 +340,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason989041MovePowerCreepProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const fromRoomName = args.get("from_room_name")
-    if (fromRoomName == null) {
-      return this.missingArgumentError("from_room_name")
-    }
-    const toRoomName = args.get("to_room_name")
-    if (toRoomName == null) {
-      return this.missingArgumentError("to_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const powerCreepName = args.get("power_creep_name")
-    if (powerCreepName == null) {
-      return this.missingArgumentError("power_creep_name")
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season989041MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreepName)
     })
     return Result.Succeeded(process)
   }
@@ -1163,6 +1113,30 @@ ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
     const waypoints = GameMap.getWaypoints(roomName, targetRoomName) ?? []
 
     return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("MovePowerCreepProcess", args => {
+  try {
+    const fromRoomName = args.roomName("from_room_name").parse({ my: true })
+    const toRoomName = args.roomName("to_room_name").parse({my: true})
+    const waypoints = args.roomNameList("waypoints").parse()
+    const powerCreep = args.powerCreep("power_creep_name").parse()
+
+    return Result.Succeeded((processId) => MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreep.name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerCreepProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const powerCreep = args.powerCreep("power_creep_name").parse()
+
+    return Result.Succeeded((processId) => PowerCreepProcess.create(processId, roomName, powerCreep.name))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

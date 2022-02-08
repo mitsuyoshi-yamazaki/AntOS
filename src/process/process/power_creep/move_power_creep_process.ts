@@ -8,16 +8,16 @@ import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { processLog } from "os/infrastructure/logger"
-import { Season634603PowerCreepProcess } from "./season_634603_power_creep_process"
+import { PowerCreepProcess } from "./power_creep_process"
 import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
 import { ProcessDecoder } from "process/process_decoder"
 
-ProcessDecoder.register("Season989041MovePowerCreepProcess", state => {
-  return Season989041MovePowerCreepProcess.decode(state as Season989041MovePowerCreepProcessState)
+ProcessDecoder.register("MovePowerCreepProcess", state => {
+  return MovePowerCreepProcess.decode(state as MovePowerCreepProcessState)
 })
 
-export interface Season989041MovePowerCreepProcessState extends ProcessState {
+export interface MovePowerCreepProcessState extends ProcessState {
   fromRoomName: RoomName
   toRoomName: RoomName
   waypoints: RoomName[]
@@ -25,8 +25,8 @@ export interface Season989041MovePowerCreepProcessState extends ProcessState {
   renewed: boolean
 }
 
-// Game.io("launch -l Season989041MovePowerCreepProcess from_room_name=W6S29 to_room_name=W17S11 waypoints=W6S30,W10S30,W10S10,W17S10 power_creep_name=power_creep_0002")
-export class Season989041MovePowerCreepProcess implements Process, Procedural {
+// Game.io("launch -l MovePowerCreepProcess from_room_name=W6S29 to_room_name=W17S11 waypoints=W6S30,W10S30,W10S10,W17S10 power_creep_name=power_creep_0002")
+export class MovePowerCreepProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -45,9 +45,9 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
     this.identifier = `${this.constructor.name}_${this.fromRoomName}_${this.toRoomName}_${this.powerCreepName}`
   }
 
-  public encode(): Season989041MovePowerCreepProcessState {
+  public encode(): MovePowerCreepProcessState {
     return {
-      t: "Season989041MovePowerCreepProcess",
+      t: "MovePowerCreepProcess",
       l: this.launchTime,
       i: this.processId,
       fromRoomName: this.fromRoomName,
@@ -58,12 +58,12 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
     }
   }
 
-  public static decode(state: Season989041MovePowerCreepProcessState): Season989041MovePowerCreepProcess | null {
-    return new Season989041MovePowerCreepProcess(state.l, state.i, state.fromRoomName, state.toRoomName, state.waypoints, state.powerCreepName, state.renewed)
+  public static decode(state: MovePowerCreepProcessState): MovePowerCreepProcess | null {
+    return new MovePowerCreepProcess(state.l, state.i, state.fromRoomName, state.toRoomName, state.waypoints, state.powerCreepName, state.renewed)
   }
 
-  public static create(processId: ProcessId, fromRoomName: RoomName, toRoomName: RoomName, waypoints: RoomName[], powerCreepName: PowerCreepName): Season989041MovePowerCreepProcess {
-    return new Season989041MovePowerCreepProcess(Game.time, processId, fromRoomName, toRoomName, waypoints, powerCreepName, false)
+  public static create(processId: ProcessId, fromRoomName: RoomName, toRoomName: RoomName, waypoints: RoomName[], powerCreepName: PowerCreepName): MovePowerCreepProcess {
+    return new MovePowerCreepProcess(Game.time, processId, fromRoomName, toRoomName, waypoints, powerCreepName, false)
   }
 
   public processShortDescription(): string {
@@ -148,7 +148,7 @@ export class Season989041MovePowerCreepProcess implements Process, Procedural {
   private launchPowerCreepProcess(): void {
     processLog(this, `${coloredText("[Arrived]", "info")} Power creep ${this.powerCreepName} arrived in ${roomLink(this.toRoomName)}`)
 
-    OperatingSystem.os.addProcess(null, (processId => Season634603PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName)))
+    OperatingSystem.os.addProcess(null, (processId => PowerCreepProcess.create(processId, this.toRoomName, this.powerCreepName)))
   }
 
   private fleeFrom(position: RoomPosition, creep: AnyCreep, range: number): void {
