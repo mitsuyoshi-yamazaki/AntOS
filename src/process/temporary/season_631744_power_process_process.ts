@@ -14,11 +14,13 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
-import { OwnedRoomObjects } from "world_info/room_info"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { Run1TickTask } from "v5_object_task/creep_task/combined_task/run_1_tick_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
+import { RoomResources } from "room_resource/room_resources"
+import { OperatingSystem } from "os/os"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 ProcessDecoder.register("Season631744PowerProcessProcess", state => {
   return Season631744PowerProcessProcess.decode(state as Season631744PowerProcessProcessState)
@@ -73,24 +75,23 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
-    if (objects == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
       return
     }
     const powerSpawn = Game.getObjectById(this.powerSpawnId)
     if (powerSpawn == null) {
-      if (objects.controller.level > 5) {
-        PrimitiveLogger.fatal(`Power spawn in ${roomLink(this.parentRoomName)} not found`)
-      }
+      PrimitiveLogger.fatal(`${this.taskIdentifier} no power spawn found in ${roomLink(this.parentRoomName)}, ${this.powerSpawnId}`)
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
 
-    const powerAmount = (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_POWER) ?? 0)
-      + (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_POWER) ?? 0)
+    const powerAmount = roomResource.getResourceAmount(RESOURCE_POWER)
+    const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
+    const hasEnoughEnergy = energyAmount > 50000
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount <= 0 && powerAmount > 0) {
+    if (creepCount <= 0 && powerAmount > 0 && hasEnoughEnergy === true) {
       World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
         priority: CreepSpawnRequestPriority.Low,
         numberOfCreeps: 1,
@@ -103,21 +104,24 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
       })
     }
 
-    this.runHauler(powerSpawn, objects)
-    powerSpawn.processPower()
+    this.runHauler(powerSpawn, roomResource)
+
+    if (hasEnoughEnergy === true) {
+      powerSpawn.processPower()
+    }
   }
 
-  private runHauler(powerSpawn: StructurePowerSpawn, objects: OwnedRoomObjects): void {
+  private runHauler(powerSpawn: StructurePowerSpawn, roomResource: OwnedRoomResource): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.haulerTask(creep, powerSpawn, objects),
+      creep => this.haulerTask(creep, powerSpawn, roomResource),
       () => true,
     )
   }
 
-  private haulerTask(creep: Creep, powerSpawn: StructurePowerSpawn, objects: OwnedRoomObjects): CreepTask | null {
+  private haulerTask(creep: Creep, powerSpawn: StructurePowerSpawn, roomResource: OwnedRoomResource): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0) {
       if (creep.ticksToLive != null && creep.ticksToLive < 100) {
         return EndlessTask.create()
@@ -125,15 +129,15 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
 
       if (powerSpawn.store.getUsedCapacity(RESOURCE_POWER) < 50) {
         const powerStore = ((): StructureContainer | StructureStorage | StructureTerminal | null => {
-          const container = objects.controller.room.find(FIND_STRUCTURES)
+          const container = roomResource.room.find(FIND_STRUCTURES)
             .find(structure => structure.structureType === STRUCTURE_CONTAINER && structure.store.getUsedCapacity(RESOURCE_POWER) > 0) as StructureContainer | null
           if (container != null) {
             return container
           }
-          if (objects.activeStructures.storage != null && objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_POWER) > 0) {
-            return objects.activeStructures.storage
+          if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.store.getUsedCapacity(RESOURCE_POWER) > 0) {
+            return roomResource.activeStructures.storage
           }
-          return objects.activeStructures.terminal
+          return roomResource.activeStructures.terminal
         })()
         if (powerStore != null) {
           return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(powerStore, RESOURCE_POWER))
