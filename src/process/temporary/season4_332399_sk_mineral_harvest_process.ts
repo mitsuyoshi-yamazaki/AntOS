@@ -136,6 +136,9 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
 
     const targetRoom = Game.rooms[this.targetRoomName]
+    if ((Game.time % 43) === 3 && targetRoom != null && targetRoom.find(FIND_HOSTILE_STRUCTURES, {filter:{structureType: STRUCTURE_INVADER_CORE}}).length > 0) {
+      this.addStopSpawnReason("invader core")
+    }
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
     if (mineral != null && mineral.mineralAmount <= 0) {
       this.addStopSpawnReason("no mineral")
