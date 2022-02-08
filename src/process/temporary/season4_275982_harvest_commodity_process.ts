@@ -32,7 +32,7 @@ ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
-const maxCooldown = 70
+const maxCooldown = 60
 const tooLongCooldownReason = "too long cooldown"
 
 type DepositInfo = {
@@ -238,14 +238,13 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     }
     // RCL6 2300e 6C20W20M
     const baseBody: BodyPartConstant[] = [
-      CARRY, CARRY, CARRY, CARRY, CARRY,
-      CARRY,
     ]
     const bodyUnit: BodyPartConstant[] = [
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      WORK, WORK, WORK, WORK, WORK,
+      CARRY, CARRY,
+      MOVE, MOVE, MOVE, MOVE,
+      WORK, WORK, WORK, WORK,
     ]
-    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 4)
+    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 5)
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
@@ -268,7 +267,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       CARRY, CARRY, CARRY, CARRY, CARRY,
       MOVE, MOVE, MOVE, MOVE, MOVE,
     ]
-    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 5)
+    const body = CreepBody.create(baseBody, bodyUnit, roomResources.room.energyCapacityAvailable, 2)
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Medium,
       numberOfCreeps: 1,
@@ -352,7 +351,8 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
 
   private newHaulerTask(creep: Creep, carryingCommodityHarvesters: Creep[], deposit: Deposit | null): CreepTask | null {
     const shouldReturnToParentRoom = ((): boolean => {
-      if (creep.store.getUsedCapacity(this.depositInfo.commodityType) <= 0) {
+      const storeAmount = creep.store.getUsedCapacity(this.depositInfo.commodityType)
+      if (storeAmount <= 0) {
         return false
       }
       if (creep.store.getFreeCapacity() <= 0) {
@@ -364,8 +364,10 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       if (creep.ticksToLive != null && creep.ticksToLive < 200) {
         return true
       }
-      if (deposit != null && deposit.cooldown > (GameConstants.room.size * 2)) {
-        return true
+      if (deposit != null) {
+        if (storeAmount > 100 && deposit.cooldown > 25) {
+          return true
+        }
       }
       return false
     })()
