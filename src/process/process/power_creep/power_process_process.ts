@@ -22,11 +22,11 @@ import { RoomResources } from "room_resource/room_resources"
 import { OperatingSystem } from "os/os"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
-ProcessDecoder.register("Season631744PowerProcessProcess", state => {
-  return Season631744PowerProcessProcess.decode(state as Season631744PowerProcessProcessState)
+ProcessDecoder.register("PowerProcessProcess", state => {
+  return PowerProcessProcess.decode(state as PowerProcessProcessState)
 })
 
-export interface Season631744PowerProcessProcessState extends ProcessState {
+export interface PowerProcessProcessState extends ProcessState {
   /** parent room name */
   r: RoomName
 
@@ -34,7 +34,7 @@ export interface Season631744PowerProcessProcessState extends ProcessState {
   p: Id<StructurePowerSpawn>
 }
 
-export class Season631744PowerProcessProcess implements Process, Procedural {
+export class PowerProcessProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -52,9 +52,9 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season631744PowerProcessProcessState {
+  public encode(): PowerProcessProcessState {
     return {
-      t: "Season631744PowerProcessProcess",
+      t: "PowerProcessProcess",
       l: this.launchTime,
       i: this.processId,
       r: this.parentRoomName,
@@ -62,12 +62,12 @@ export class Season631744PowerProcessProcess implements Process, Procedural {
     }
   }
 
-  public static decode(state: Season631744PowerProcessProcessState): Season631744PowerProcessProcess | null {
-    return new Season631744PowerProcessProcess(state.l, state.i, state.r, state.p)
+  public static decode(state: PowerProcessProcessState): PowerProcessProcess | null {
+    return new PowerProcessProcess(state.l, state.i, state.r, state.p)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, powerSpawnId: Id<StructurePowerSpawn>): Season631744PowerProcessProcess {
-    return new Season631744PowerProcessProcess(Game.time, processId, roomName, powerSpawnId)
+  public static create(processId: ProcessId, roomName: RoomName, powerSpawnId: Id<StructurePowerSpawn>): PowerProcessProcess {
+    return new PowerProcessProcess(Game.time, processId, roomName, powerSpawnId)
   }
 
   public processShortDescription(): string {

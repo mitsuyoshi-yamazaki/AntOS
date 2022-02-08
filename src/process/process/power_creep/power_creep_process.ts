@@ -17,10 +17,6 @@ ProcessDecoder.register("PowerCreepProcess", state => {
   return PowerCreepProcess.decode(state as PowerCreepProcessState)
 })
 
-ProcessDecoder.register("Season634603PowerCreepProcess", state => { // FixMe: Migration
-  return PowerCreepProcess.decode(state as PowerCreepProcessState)
-})
-
 export interface PowerCreepProcessState extends ProcessState {
   /** parent room name */
   r: RoomName
