@@ -33,6 +33,8 @@ import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
+import { ListArguments } from "./utility/list_argument_parser"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -43,7 +45,9 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     try {
-      switch (this.args[0]) {
+      const args = [...this.args]
+      const scriptType = args.shift()
+      switch (scriptType) {
       case "show_remote_route":
         return this.showRemoteRoute()
       case "calculate_inter_room_shortest_routes":
@@ -80,10 +84,12 @@ export class ExecCommand implements ConsoleCommand {
         return this.checkAlliance()
       case "unclaim":
         return this.unclaim()
+      case "power_creep":
+        return this.powerCreep(args)
       case "script":
         return this.runScript()
       default:
-        throw "Invalid script type"
+        throw `Invalid script type ${scriptType}`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
@@ -1186,6 +1192,13 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return messages.join("\n")
+  }
+
+  /** @throws */
+  private powerCreep(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const powerCreep = listArguments.powerCreep(0, "power creep name").parse()
+    return execPowerCreepCommand(powerCreep, args)
   }
 
   private runScript(): CommandExecutionResult {

@@ -34,6 +34,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     terminal: StructureTerminal | null
     extractor: StructureExtractor | null
     observer: StructureObserver | null
+    powerSpawn: StructurePowerSpawn | null
 
     chargeableStructures: EnergyChargeableStructure[]
     researchLabs: ResearchLabs | null
@@ -71,6 +72,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     let terminal: StructureTerminal | null = null
     let extractor: StructureExtractor | null = null
     let observer: StructureObserver | null = null
+    let powerSpawn: StructurePowerSpawn | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
     const researchLabs = ((): ResearchLabs | null => {
       if (roomInfo.researchLab == null) {
@@ -189,6 +191,15 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         observer = structure
         break
+      case STRUCTURE_POWER_SPAWN:
+        if (structure.my !== true) {
+          break
+        }
+        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+          break
+        }
+        powerSpawn = structure
+        break
       case STRUCTURE_WALL:
         this.walls.push(structure)
         break
@@ -211,6 +222,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       terminal,
       extractor,
       observer,
+      powerSpawn,
       chargeableStructures,
       researchLabs,
     }
