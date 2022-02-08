@@ -75,7 +75,12 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
     })
 
     parentRoomResources.forEach(roomResource => {
-      const targetRoomNames = Array.from(Object.keys(roomResource.roomInfo.remoteRoomInfo))
+      const targetRoomNames = Array.from(Object.entries(roomResource.roomInfo.remoteRoomInfo)).flatMap(([roomName, roomInfo]): RoomName[] => {
+        if (roomInfo.enabled !== true) {
+          return []
+        }
+        return [roomName]
+      })
       invadedRoomNames.push(...this.runOnRoom(roomResource.room.name, targetRoomNames))
     })
 
