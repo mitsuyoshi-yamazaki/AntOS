@@ -1,8 +1,9 @@
 import { GameMap } from "game/game_map"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -28,6 +29,9 @@ interface KeywordArgumentsInterface {
   commodityType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, CommodityConstant>
   creep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Creep>
   powerCreep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, PowerCreep>
+
+  // ---- Custom Type ---- //
+  ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource>
 
   interRoomPath(
     fromRoomKey: string,
@@ -64,6 +68,7 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     })
   }
 
+  // ---- Primitive Type ---- //
   public int(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number> {
     return new IntArgument(key, this.argumentMap.get(key) ?? null, options)
   }
@@ -84,6 +89,7 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new LocalPositionArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
+  // ---- Game Object ---- //
   public direction(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, DirectionConstant> {
     return new DirectionArgument(key, this.argumentMap.get(key) ?? null, options)
   }
@@ -132,6 +138,12 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new PowerCreepArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
+  // ---- Custom Type ---- //
+  public ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource> {
+    return new OwnedRoomResourceArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  // ---- ---- //
   public interRoomPath(
     fromRoomKey: string,
     waypointsKey: string,

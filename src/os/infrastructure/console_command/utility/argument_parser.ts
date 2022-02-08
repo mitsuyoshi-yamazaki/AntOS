@@ -1,3 +1,5 @@
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "utility/direction"
 import { roomLink } from "utility/log"
@@ -289,5 +291,21 @@ export class RoomPositionArgument extends SingleOptionalArgument<{ allowClosedRo
     validateRoomNameArgument(roomName, options)
 
     return new RoomPosition(x, y, roomName)
+  }
+}
+
+export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, OwnedRoomResource> {
+  /** throws */
+  public parse(): OwnedRoomResource {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomNameArgument(this.value)
+
+    const roomResource = RoomResources.getOwnedRoomResource(this.value)
+    if (roomResource == null) {
+      throw `${roomLink(this.value)} is not mine`
+    }
+    return roomResource
   }
 }

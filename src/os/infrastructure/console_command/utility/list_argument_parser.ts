@@ -1,6 +1,7 @@
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -28,6 +29,9 @@ interface KeywordArgumentsInterface {
   commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant>
   creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep>
   powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep>
+
+  // ---- Custom Type ---- //
+  ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource>
 }
 
 export class ListArguments implements KeywordArgumentsInterface {
@@ -40,6 +44,7 @@ export class ListArguments implements KeywordArgumentsInterface {
     return this.argumentList.length > index
   }
 
+  // ---- Primitive Type ---- //
   public int(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number> {
     return new IntArgument(key, this.getValueAt(index), options)
   }
@@ -60,6 +65,7 @@ export class ListArguments implements KeywordArgumentsInterface {
     return new LocalPositionArgument(key, this.getValueAt(index), options)
   }
 
+  // ---- Game Object ---- //
   public direction(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DirectionConstant> {
     return new DirectionArgument(key, this.getValueAt(index), options)
   }
@@ -106,6 +112,11 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep> {
     return new PowerCreepArgument(key, this.getValueAt(index), options)
+  }
+
+  // ---- Custom Type ---- //
+  public ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource> {
+    return new OwnedRoomResourceArgument(key, this.getValueAt(index), options)
   }
 
   // ---- ---- //
