@@ -1,3 +1,4 @@
+import { describePosition } from "prototype/room_position"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
@@ -11,12 +12,13 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
   const commandList: string[] = [
     "help",
-    // "waiting_position",
+    "waiting_position",
     ...oldCommandList,
   ]
 
   const listArguments = new ListArguments(args)
-  const command = listArguments.string(1, "command").parse()
+  const command = listArguments.string(0, "command").parse()
+  args.shift()
 
   const roomName = roomResource.room.name
   const roomInfo = roomResource.roomInfo
@@ -24,6 +26,9 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   switch (command) {
   case "help":
     return `Commands: ${commandList}`
+
+  case "waiting_position":
+    return waitingPosition(roomResource, args)
 
     // ---- Old Commands ---- //
   case "excluded_remotes":
@@ -40,6 +45,25 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleAutoAttack(roomName, roomInfo, parseProcessArguments(args))
   default:
     throw `Invalid command ${command}, see "help"`
+  }
+}
+
+function waitingPosition(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const action = listArguments.string(0, "action").parse()
+
+  switch (action) {
+  case "set": {
+    const positions = listArguments.localPositions(1, "waiting positions").parse()
+    roomResource.roomInfoAccessor.config.addGenericWaitingPositions(positions)
+    return `positions ${positions.map(position => `(${describePosition(position)})`).join(", ")} set`
+  }
+
+  case "show":
+    throw "not implemented yet"
+
+  default:
+    throw `Invalid action ${action}, actions: set, show`
   }
 }
 

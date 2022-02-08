@@ -8,7 +8,7 @@ export function execPowerCreepCommand(powerCreep: PowerCreep, args: string[]): s
   const listArguments = new ListArguments(args)
   const keywordArguments = new KeywordArguments(args)
 
-  const command = listArguments.string(1, "command").parse()
+  const command = listArguments.string(0, "command").parse()
   switch (command) {
   case "help":
     return `Commands: ${commandList}`

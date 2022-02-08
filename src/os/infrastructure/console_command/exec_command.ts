@@ -776,6 +776,7 @@ export class ExecCommand implements ConsoleCommand {
   private configureRoomInfo(args: string[]): CommandExecutionResult {
     const listArguments = new ListArguments(args)
     const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    args.shift()
     return execRoomConfigCommand(roomResource, args)
   }
 
@@ -938,6 +939,7 @@ export class ExecCommand implements ConsoleCommand {
   private powerCreep(args: string[]): CommandExecutionResult {
     const listArguments = new ListArguments(args)
     const powerCreep = listArguments.powerCreep(0, "power creep name").parse()
+    args.shift()
     return execPowerCreepCommand(powerCreep, args)
   }
 
