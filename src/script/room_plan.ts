@@ -5,30 +5,6 @@ import { ValuedArrayMap } from "utility/valued_collection"
 import { Result } from "utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomPlanner } from "room_plan/room_planner"
-import { RoomLayout } from "_old/room_layout"
-
-export function showOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {
-  const room = Game.rooms[roomName]
-  if (room == null) {
-    return `Room ${roomLink(roomName)} is not visible`
-  }
-
-  const layout = new RoomLayout(room, layoutName, { allow_partial: true, origin_pos: { x: originX, y: originY } })
-  layout.show()
-  return "ok"
-}
-
-// Game.rooms["W53S36"].find(FIND_FLAGS).forEach(flag => flag.remove())
-export function placeOldRoomPlan(roomName: RoomName, layoutName: string, originX: number, originY: number): string {
-  const room = Game.rooms[roomName]
-  if (room == null) {
-    return `Room ${roomLink(roomName)} is not visible`
-  }
-
-  const layout = new RoomLayout(room, layoutName, { allow_partial: true, origin_pos: { x: originX, y: originY } })
-  layout.place_flags()
-  return "ok"
-}
 
 export function describeLabs(roomName: RoomName): string {
   const room = Game.rooms[roomName]

@@ -1,7 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { calculateInterRoomShortestRoutes, findPath, findPathToSource, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
-import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
-import { showPositionsInRange } from "script/room_position_script"
+import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
+import { describeLabs, showRoomPlan } from "script/room_plan"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
@@ -29,8 +28,6 @@ import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
-import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
 import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
@@ -47,22 +44,12 @@ export class ExecCommand implements ConsoleCommand {
   public run(): CommandExecutionResult {
     try {
       switch (this.args[0]) {
-      case "findPath":
-        return this.findPath()
-      case "findPathToSource":
-        return this.findPathToSource()
-      case "showOldRoomPlan":
-        return this.showOldRoomPlan()
-      case "placeOldRoomPlan":
-        return this.placeOldRoomPlan()
       case "show_remote_route":
         return this.showRemoteRoute()
       case "calculate_inter_room_shortest_routes":
         return this.calculateInterRoomShortestRoutes()
       case "roads_to_parent_room":
         return this.getRoadPositionsToParentRoom()
-      case "showPositionsInRange":
-        return this.showPositionsInRange()
       case "describeLabs":
         return this.describeLabs()
       case "moveToRoom":
@@ -85,8 +72,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.showRoomPlan()
       case "show_wall_plan":
         return this.showWallPlan()
-        // case "check_existing_walls":
-        //   return this.checkExistingWalls()
       case "mineral":
         return this.showHarvestableMinerals()
       case "room_config":
@@ -95,8 +80,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.checkAlliance()
       case "unclaim":
         return this.unclaim()
-      case "create_quad":
-        return this.createQuad()
       case "script":
         return this.runScript()
       default:
@@ -128,106 +111,6 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
-  private findPath(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const startObjectId = args.get("start_object_id")
-    if (startObjectId == null) {
-      return this.missingArgumentError("start_object_id")
-    }
-
-    const goalObjectId = args.get("goal_object_id")
-    if (goalObjectId == null) {
-      return this.missingArgumentError("goal_object_id")
-    }
-
-    return findPath(startObjectId, goalObjectId)
-  }
-
-  private findPathToSource(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const spawnName = args.get("spawn_name")
-    if (spawnName == null) {
-      return this.missingArgumentError("spawn_name")
-    }
-
-    const sourceId = args.get("source_id")
-    if (sourceId == null) {
-      return this.missingArgumentError("source_id")
-    }
-
-    return findPathToSource(spawnName, sourceId as Id<Source>)
-  }
-
-  private showOldRoomPlan(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const layoutName = args.get("layout_name")
-    if (layoutName == null) {
-      return this.missingArgumentError("layout_name")
-    }
-
-    const x = args.get("x")
-    if (x == null) {
-      return this.missingArgumentError("x")
-    }
-    const parsedX = parseInt(x, 10)
-    if (isNaN(parsedX)) {
-      return `x is not a number (${x})`
-    }
-
-    const y = args.get("y")
-    if (y == null) {
-      return this.missingArgumentError("y")
-    }
-    const parsedY = parseInt(y, 10)
-    if (isNaN(parsedY)) {
-      return `y is not a number (${y})`
-    }
-
-    return showOldRoomPlan(roomName, layoutName, parsedX, parsedY)
-  }
-
-  private placeOldRoomPlan(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const layoutName = args.get("layout_name")
-    if (layoutName == null) {
-      return this.missingArgumentError("layout_name")
-    }
-
-    const x = args.get("x")
-    if (x == null) {
-      return this.missingArgumentError("x")
-    }
-    const parsedX = parseInt(x, 10)
-    if (isNaN(parsedX)) {
-      return `x is not a number (${x})`
-    }
-
-    const y = args.get("y")
-    if (y == null) {
-      return this.missingArgumentError("y")
-    }
-    const parsedY = parseInt(y, 10)
-    if (isNaN(parsedY)) {
-      return `y is not a number (${y})`
-    }
-
-    return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
-  }
-
   /** throws */
   private showRemoteRoute(): CommandExecutionResult {
     const keywardArguments = new KeywordArguments(this.args)
@@ -303,43 +186,6 @@ export class ExecCommand implements ConsoleCommand {
 
     positions.forEach(position => targetRoom.visual.text("#", position.x, position.y, {color: "#FF0000"}))
     return `${positions.length} road found: ${positions.map(position => `${position}`).join(", ")}`
-  }
-
-  private showPositionsInRange(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const xString = args.get("x")
-    if (xString == null) {
-      return this.missingArgumentError("x")
-    }
-    const x = parseInt(xString)
-    if (isNaN(x) === true) {
-      return `x is not a number (${xString})`
-    }
-    const yString = args.get("y")
-    if (yString == null) {
-      return this.missingArgumentError("y")
-    }
-    const y = parseInt(yString)
-    if (isNaN(y) === true) {
-      return `x is not a number (${yString})`
-    }
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const rangeString = args.get("range")
-    if (rangeString == null) {
-      return this.missingArgumentError("range")
-    }
-    const range = parseInt(rangeString)
-    if (isNaN(range) === true) {
-      return `x is not a number (${rangeString})`
-    }
-
-    const position = new RoomPosition(x, y, roomName)
-    showPositionsInRange(position, range)
-    return "ok"
   }
 
   // ---- ---- //
@@ -909,28 +755,6 @@ export class ExecCommand implements ConsoleCommand {
     return `${wallPositions.length} walls`
   }
 
-  // private checkExistingWalls(): CommandExecutionResult {
-  //   const roomHasWalls: RoomName[] = []
-  //   const roomWithoutWalls: RoomName[] = []
-
-  //   RoomResources.getOwnedRoomResources().forEach(roomResource => {
-  //     const roomPlan = roomResource.roomInfo.roomPlan
-  //     if (roomPlan == null) {
-  //       return
-  //     }
-  //     const room = roomResource.room
-  //     const wallCount = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).length + room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }).length
-  //     if (wallCount > 20) {
-  //       roomPlan.wallPositions = []
-  //       roomHasWalls.push(roomResource.room.name)
-  //     } else {
-  //       roomWithoutWalls.push(roomResource.room.name)
-  //     }
-  //   })
-
-  //   return `rooms have walls:\n${roomHasWalls.map(roomName => roomLink(roomName)).join(",")}\nrooms don't have walls:\n${roomWithoutWalls.map(roomName => roomLink(roomName)).join(",")}`
-  // }
-
   private showHarvestableMinerals(): CommandExecutionResult {
     const harvestableMinerals = ResourceManager.harvestableMinerals()
     const result: string[] = []
@@ -1362,31 +1186,6 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return messages.join("\n")
-  }
-
-  private createQuad(): CommandExecutionResult {
-    const args = this.args.concat([])
-    args.splice(0, 1)
-    const rawRequirement = args.join(" ")
-
-    const requirementResult = QuadRequirement.parse(rawRequirement)
-    switch (requirementResult.resultType) {
-    case "failed":
-      return `${requirementResult.reason}\n(raw argument: ${rawRequirement}`
-    case "succeeded":
-      break
-    }
-
-    const specResult = QuadSpec.create(requirementResult.value)
-    switch (specResult.resultType) {
-    case "failed":
-      return `${specResult.reason}`
-    case "succeeded":
-      break
-    }
-    const quadSpec = specResult.value
-
-    return quadSpec.description()
   }
 
   private runScript(): CommandExecutionResult {

@@ -5,43 +5,6 @@ import { generateUniqueId } from "utility/unique_id"
 import { GameConstants } from "utility/constants"
 import type { RoomName } from "utility/room_name"
 
-export function findPath(startObjectId: string, goalObjectId: string): string {
-  const startObject = Game.getObjectById(startObjectId)
-  if (!(startObject instanceof RoomObject) || startObject.room == null) {
-    return `Game object of ${startObject} not found`
-  }
-  const goalObject = Game.getObjectById(goalObjectId)
-  if (!(goalObject instanceof RoomObject) || goalObject.room == null) {
-    return `Game object of ${goalObject} not found`
-  }
-
-  const options: FindPathOpts = {
-    ignoreCreeps: true,
-    ignoreDestructibleStructures: true,
-    ignoreRoads: false,
-    maxRooms: 3,
-  }
-  const startRoomName = startObject.room.name
-  const startRoomPath = startObject.pos.findPathTo(goalObject.pos, options).map(p => {
-    return new RoomPosition(p.x, p.y, startRoomName)
-  })
-  visualize(startRoomPath, { color: "#ffffff" })
-
-
-  const goalRoomName = goalObject.room.name
-  const edgePosition = startRoomPath[startRoomPath.length - 1]
-  if (edgePosition == null) {
-    return "No path"
-  }
-  const edgeRoomPosition = new RoomPosition(edgePosition.x, edgePosition.y, startRoomName)
-  const goalRoomPath = goalObject.pos.findPathTo(edgeRoomPosition, options).map(p => {
-    return new RoomPosition(p.x, p.y, goalRoomName)
-  })
-  visualize(goalRoomPath, { color: "#ffffff" })
-
-  return "ok"
-}
-
 function visualize(positions: RoomPosition[], options?: { color?: string, text?: string }): void {
   const text = options?.text ?? "*"
   positions.forEach(position => {
@@ -51,22 +14,6 @@ function visualize(positions: RoomPosition[], options?: { color?: string, text?:
     }
     room.visual.text(text, position, { color: options?.color, align: "center"})
   })
-}
-
-export function findPathToSource(spawnName: string, sourceId: Id<Source>): string {
-  const spawn = Game.spawns[spawnName]
-  if (spawn == null) {
-    return `Spawn ${spawnName} not found`
-  }
-  const result = calculateSourceRoute(sourceId, spawn.pos)
-  switch (result.resultType) {
-  case "succeeded": {
-    const harvestPositionDescription = result.value.harvestPositions.map(p => `(${p.x}, ${p.y})`).join(", ")
-    return `Found ${result.value.harvestPositions.length} harvest positions: ${harvestPositionDescription}`
-  }
-  case "failed":
-    return result.reason
-  }
 }
 
 interface SourceRoute {
