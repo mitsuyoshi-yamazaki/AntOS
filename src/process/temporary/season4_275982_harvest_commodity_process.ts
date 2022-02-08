@@ -32,7 +32,7 @@ ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
   return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
 })
 
-const maxCooldown = 60
+const maxCooldown = 50
 const tooLongCooldownReason = "too long cooldown"
 
 type DepositInfo = {
