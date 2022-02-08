@@ -27,6 +27,7 @@ export const epicScenes: { description: string, url: string }[] = [
  *   - https://github.com/ScreepsMods/screepsmod-auth
  * - SpawnしたCreepをSpawnの中に閉じ込めておけば寿命は減らない
  * - PowerBankは与ダメージの半分を返す
+ *   - RANGED_ATTACKで遠隔攻撃しても同じ
  */
 
 /*

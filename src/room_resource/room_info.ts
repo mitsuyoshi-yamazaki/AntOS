@@ -39,10 +39,23 @@ export interface NormalRoomInfo extends BasicRoomInfo {
   owner: RoomOwner | null
 }
 
-/**
- * - エネルギーの充填優先度として平準化する
- *   - 低い順にterminal, storage,
- */
+export type OwnedRoomConfig = {
+  disablePowerHarvesting?: boolean
+  disableMineralHarvesting?: boolean
+  disableUnnecessaryTasks?: boolean
+  enableOperateSpawn?: boolean
+  researchCompounds?: { [index in MineralCompoundConstant]?: number }
+  collectResources?: boolean
+  boostLabs?: Id<StructureLab>[]
+  excludedRemotes?: RoomName[]
+  waitingPosition?: { x: number, y: number }
+  enableAutoAttack?: boolean
+  noRepairWallIds?: Id<StructureWall | StructureRampart>[]
+  mineralMaxAmount?: number
+  constructionInterval?: number
+  concurrentConstructionSites?: number
+}
+
 export interface OwnedRoomInfo extends BasicRoomInfo {
   readonly roomType: "owned"
 
@@ -72,22 +85,8 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiency }
 
-  config?: {
-    disablePowerHarvesting?: boolean
-    disableMineralHarvesting?: boolean
-    disableUnnecessaryTasks?: boolean
-    enableOperateSpawn?: boolean
-    researchCompounds?: { [index in MineralCompoundConstant]?: number }
-    collectResources?: boolean
-    boostLabs?: Id<StructureLab>[]
-    excludedRemotes?: RoomName[]
-    waitingPosition?: { x: number, y: number }
-    enableAutoAttack?: boolean
-    noRepairWallIds?: Id<StructureWall | StructureRampart>[]
-    mineralMaxAmount?: number
-    constructionInterval?: number
-    concurrentConstructionSites?: number
-  }
+  /** @deprecated use OwnedRoomInfoAccessor.config instead */
+  config?: OwnedRoomConfig
 }
 
 export type RoomInfoType = NormalRoomInfo | OwnedRoomInfo

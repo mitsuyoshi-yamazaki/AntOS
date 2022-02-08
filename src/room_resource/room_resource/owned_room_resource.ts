@@ -5,6 +5,7 @@ import { OwnedRoomInfo } from "room_resource/room_info"
 import { Timestamp } from "utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
 import { NormalRoomResource } from "./normal_room_resource"
+import { OwnedRoomInfoAccessor } from "../room_info_accessor"
 
 export type ResearchLabs = {
   inputLab1: StructureLab
@@ -41,19 +42,25 @@ export class OwnedRoomResource extends NormalRoomResource {
   public readonly walls: StructureWall[]
   public readonly ramparts: StructureRampart[]
 
+  public roomInfoAccessor: OwnedRoomInfoAccessor
+
   public constructor(
     public readonly controller: StructureController,
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
     private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
+
+    /** @deprecated use roomInfoAccessor.roomInfo instead */
     public readonly roomInfo: OwnedRoomInfo,
   ) {
     super(controller, roomInfo)
 
-    if (this.roomInfo.highestRcl < this.controller.level) {
-      this.roomInfo.highestRcl = this.controller.level
+    this.roomInfoAccessor = new OwnedRoomInfoAccessor(roomInfo)
+
+    if (roomInfo.highestRcl < this.controller.level) {
+      roomInfo.highestRcl = this.controller.level
     }
-    const shouldCheckActiveness = this.controller.level < this.roomInfo.highestRcl
+    const shouldCheckActiveness = this.controller.level < roomInfo.highestRcl
 
     this.damagedStructures = []
 
