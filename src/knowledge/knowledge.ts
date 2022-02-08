@@ -26,6 +26,7 @@ export const epicScenes: { description: string, url: string }[] = [
  * - BotArena等にデプロイするにはscreepsmod-authにパスワードを設定する必要がある
  *   - https://github.com/ScreepsMods/screepsmod-auth
  * - SpawnしたCreepをSpawnの中に閉じ込めておけば寿命は減らない
+ * - PowerBankは与ダメージの半分を返す
  */
 
 /*
