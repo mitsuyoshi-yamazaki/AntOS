@@ -1,3 +1,5 @@
+import { Position } from "prototype/room_position"
+import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig } from "./room_info"
 
 class Config {
@@ -67,6 +69,7 @@ class Config {
   private config: OwnedRoomConfig
 
   public constructor(
+    private readonly roomName: RoomName,
     roomInfo: OwnedRoomInfo,
   ) {
     if (roomInfo.config == null) {
@@ -80,14 +83,36 @@ class Config {
   // excludedRemotes?: RoomName[]
   // waitingPosition?: { x: number, y: number }
   // noRepairWallIds?: Id<StructureWall | StructureRampart>[]
+
+  public addGenericWaitingPositions(positions: Position[]): void {
+    if (this.config.genericWaitingPositions == null) {
+      this.config.genericWaitingPositions = []
+    }
+    this.config.genericWaitingPositions.push(...positions)
+  }
+  public getGenericWaitingPosition(): RoomPosition | null {
+    if (this.config.genericWaitingPositions == null) {
+      return null
+    }
+    const position = this.config.genericWaitingPositions[Game.time % this.config.genericWaitingPositions.length]
+    if (position == null) {
+      return null
+    }
+    try {
+      return new RoomPosition(position.x, position.y, this.roomName)
+    } catch {
+      return null
+    }
+  }
 }
 
 export class OwnedRoomInfoAccessor {
   public readonly config: Config
 
   public constructor(
+    public readonly roomName: RoomName,
     public readonly roomInfo: OwnedRoomInfo,
   ) {
-    this.config = new Config(roomInfo)
+    this.config = new Config(roomName, roomInfo)
   }
 }

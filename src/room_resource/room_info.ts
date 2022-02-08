@@ -48,7 +48,8 @@ export type OwnedRoomConfig = {
   collectResources?: boolean
   boostLabs?: Id<StructureLab>[]
   excludedRemotes?: RoomName[]
-  waitingPosition?: { x: number, y: number }
+  waitingPosition?: Position
+  genericWaitingPositions?: Position[]
   enableAutoAttack?: boolean
   noRepairWallIds?: Id<StructureWall | StructureRampart>[]
   mineralMaxAmount?: number

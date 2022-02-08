@@ -56,7 +56,7 @@ export class OwnedRoomResource extends NormalRoomResource {
   ) {
     super(controller, roomInfo)
 
-    this.roomInfoAccessor = new OwnedRoomInfoAccessor(roomInfo)
+    this.roomInfoAccessor = new OwnedRoomInfoAccessor(controller.room.name, roomInfo)
 
     if (roomInfo.highestRcl < this.controller.level) {
       roomInfo.highestRcl = this.controller.level
