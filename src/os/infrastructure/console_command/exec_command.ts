@@ -10,13 +10,12 @@ import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequenti
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
-import { isMineralCompoundConstant, isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-import { OwnedRoomInfo } from "room_resource/room_info"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
@@ -35,6 +34,7 @@ import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_pr
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
 import { ListArguments } from "./utility/list_argument_parser"
+import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -79,7 +79,7 @@ export class ExecCommand implements ConsoleCommand {
       case "mineral":
         return this.showHarvestableMinerals()
       case "room_config":
-        return this.configureRoomInfo()
+        return this.configureRoomInfo(args)
       case "check_alliance":
         return this.checkAlliance()
       case "unclaim":
@@ -773,270 +773,10 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
-  // Game.io("exec room_config room_name= setting=")
-  private configureRoomInfo(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const roomInfo = Memory.v6RoomInfo[roomName]
-    if (roomInfo == null) {
-      return `No roomInfo object in memory ${roomLink(roomName)}`
-    }
-    if (roomInfo.roomType !== "owned") {
-      return `Room ${roomLink(roomName)} is not mine`
-    }
-
-    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
-    const setting = args.get("setting")
-
-    try {
-      switch (setting) {
-      case "excluded_remotes":
-        return this.addExcludedRemoteRoom(roomName, roomInfo, args)
-      case "wall_positions":
-        return this.configureWallPositions(roomName, roomInfo, args)
-      case "research_compounds":
-        return this.configureResearchCompounds(roomName, roomInfo, args)
-      case "refresh_research_labs":
-        return this.refreshResearchLabs(roomName, roomInfo, args)
-      case "disable_boost_labs":
-        return this.disableBoostLabs(roomName, roomInfo)
-      case "toggle_auto_attack":
-        return this.toggleAutoAttack(roomName, roomInfo, args)
-      default:
-        throw `Invalid setting ${setting}, available settings are: ${settingList}`
-      }
-    } catch (error) {
-      return `${coloredText("[ERROR]", "error")} ${error}`
-    }
-  }
-
-  private toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const rawEnabled = args.get("enabled")
-    if (rawEnabled == null) {
-      return this.missingArgumentError("enabled")
-    }
-    if (rawEnabled !== "0" && rawEnabled !== "1") {
-      return `Invalid enable argument ${rawEnabled}: set 0 or 1`
-    }
-    const enabled = rawEnabled === "1"
-
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    const oldValue = roomInfo.config.enableAutoAttack
-    roomInfo.config.enableAutoAttack = enabled
-
-    return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
-  }
-
-  private disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return `${roomLink(roomName)} no found`
-    }
-    if (roomInfo.researchLab == null) {
-      return `roomInfo.researchLab is null ${roomLink(roomName)}`
-    }
-
-    if (roomInfo.config?.boostLabs == null) {
-      return `no boost labs in ${roomLink(roomName)}`
-    }
-
-    const oldValue = [...roomInfo.config.boostLabs]
-    roomInfo.researchLab.outputLabs.push(...oldValue)
-    roomInfo.config.boostLabs = []
-
-    return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
-  }
-
-  /** throws */
-  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return `${roomLink(roomName)} no found`
-    }
-    if (roomInfo.researchLab == null) {
-      roomInfo.researchLab = this.setResearchLabs(room, roomInfo, args)
-    }
-
-    const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
-      .map(lab => lab.id)
-
-    const researchLabIds: Id<StructureLab>[] = [
-      roomInfo.researchLab.inputLab1,
-      roomInfo.researchLab.inputLab2,
-      ...roomInfo.researchLab.outputLabs,
-    ]
-    researchLabIds.forEach(researchLabId => {
-      const index = labIdsInRoom.indexOf(researchLabId)
-      if (index >= 0) {
-        labIdsInRoom.splice(index, 1)
-      }
-    })
-
-    const boostLabIds = roomInfo.config?.boostLabs
-    if (boostLabIds != null) {
-      boostLabIds.forEach(boostLabId => {
-        const index = labIdsInRoom.indexOf(boostLabId)
-        if (index >= 0) {
-          labIdsInRoom.splice(index, 1)
-        }
-      })
-    }
-
-    if (labIdsInRoom.length <= 0) {
-      return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
-    }
-    roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
-
-    return `${labIdsInRoom.length} labs added to research output labs`
-  }
-
-  //** throws */
-  private setResearchLabs(room: Room, roomInfo: OwnedRoomInfo, args: Map<string, string>): {inputLab1: Id<StructureLab>, inputLab2: Id<StructureLab>, outputLabs: Id<StructureLab>[]} {
-    const keywardArguments = new KeywordArguments(args)
-    const missingArgumentErrorMessage = `no roomInfo.researchLab for ${roomLink(room.name)} set input_lab_id_1 and input_lab_id_2`
-    const inputLab1Id = keywardArguments.gameObjectId("input_lab_id_1", {missingArgumentErrorMessage}).parse() as Id<StructureLab>
-    const inputLab2Id = keywardArguments.gameObjectId("input_lab_id_2", { missingArgumentErrorMessage }).parse() as Id<StructureLab>
-    if (inputLab1Id === inputLab2Id) {
-      throw `input_lab_id_1 and input_lab_id_2 has the same value ${inputLab1Id}`
-    }
-
-    const validateLabId = (labId: Id<StructureLab>, key: string): void => {
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        throw `ID for ${key} is not a lab (${lab})`
-      }
-    }
-
-    validateLabId(inputLab1Id, "input_lab_id_1")
-    validateLabId(inputLab2Id, "input_lab_id_2")
-
-    return {
-      inputLab1: inputLab1Id,
-      inputLab2: inputLab2Id,
-      outputLabs: [],
-    }
-  }
-
-  private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
-      const compoundType = args.get("compound")
-      if (compoundType == null) {
-        return this.missingArgumentError("compound")
-      }
-      if (!isMineralCompoundConstant(compoundType)) {
-        return `${compoundType} is not valid mineral compound type`
-      }
-      const rawAmount = args.get("amount")
-      if (rawAmount == null) {
-        return this.missingArgumentError("amount")
-      }
-      const amount = parseInt(rawAmount, 10)
-      if (isNaN(amount) === true) {
-        return `amount is not a number ${rawAmount}`
-      }
-      return [
-        compoundType,
-        amount
-      ]
-    }
-
-    const action = args.get("action")
-    if (action == null) {
-      return this.missingArgumentError("action")
-    }
-
-    const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
-      if (roomInfo.config == null) {
-        roomInfo.config = {}
-      }
-      if (roomInfo.config.researchCompounds == null) {
-        roomInfo.config.researchCompounds = {}
-      }
-      return roomInfo.config.researchCompounds
-    }
-
-    const getCurentsettings = (): string => {
-      const entries = Object.entries(getResearchCompounds())
-      if (entries.length <= 0) {
-        return "no research compounds"
-      }
-      return entries
-        .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
-        .join("")
-    }
-
-    switch (action) {
-    case "show":
-      return getCurentsettings()
-    case "clear": {
-      const currentSettings = getCurentsettings()
-      if (roomInfo.config == null) {
-        roomInfo.config = {}
-      }
-      roomInfo.config.researchCompounds = {}
-      return `${coloredText("cleared", "info")}: ${currentSettings}`
-    }
-    case "add": {
-      const settings = getCompoundSetting()
-      if (typeof settings === "string") {
-        return settings
-      }
-      const researchCompounds = getResearchCompounds()
-      researchCompounds[settings[0]] = settings[1]
-      return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
-    }
-    default:
-      return `Invalid action ${action}`
-    }
-  }
-
-  private addExcludedRemoteRoom(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const remoteRoomName = args.get("remote_room_name")
-    if (remoteRoomName == null) {
-      return this.missingArgumentError("remote_room_name")
-    }
-    if (!isRoomName(remoteRoomName)) {
-      return `Invalid remote_room_name ${remoteRoomName}`
-    }
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    if (roomInfo.config.excludedRemotes == null) {
-      roomInfo.config.excludedRemotes = []
-    }
-    if (roomInfo.config.excludedRemotes.includes(remoteRoomName) === true) {
-      return `${roomLink(remoteRoomName)} is already excluded`
-    }
-    roomInfo.config.excludedRemotes.push(remoteRoomName)
-    return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
-  }
-
-  private configureWallPositions(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const roomPlan = roomInfo.roomPlan
-    if (roomPlan == null) {
-      return `${roomLink(roomName)} doesn't have room plan`
-    }
-
-    const action = args.get("action")
-    if (action == null) {
-      return this.missingArgumentError("action")
-    }
-    switch (action) {
-    case "remove":
-      roomPlan.wallPositions = undefined
-      return "wall positions removed"
-    case "set_it_done":
-      roomPlan.wallPositions = []
-      return "ok"
-    default:
-      return `Invalid action ${action}`
-    }
+  private configureRoomInfo(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    return execRoomConfigCommand(roomResource, args)
   }
 
   private checkAlliance(): CommandExecutionResult {
