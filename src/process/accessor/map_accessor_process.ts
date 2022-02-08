@@ -13,14 +13,17 @@ ProcessDecoder.register("MapAccessorProcess", state => {
 const helpCommand = "help"
 const showCommand = "show"
 const setCommand = "set"
+const showMissingWaypoints = "show_missing_waypoints"
 
 const commands = [
   helpCommand,
   showCommand,
   setCommand,
+  showMissingWaypoints,
 ]
 
 interface MapAccessorProcessState extends ProcessState {
+  readonly missingWaypoints: { from: RoomName, to: RoomName }[]
 }
 
 export class MapAccessorProcess implements Process, MessageObserver {
@@ -29,11 +32,16 @@ export class MapAccessorProcess implements Process, MessageObserver {
     return this.identifier
   }
 
+  private missingWaypointIdentifiers: string[]
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
+    private missingWaypoints: { from: RoomName, to: RoomName }[],
   ) {
     this.identifier = `${this.constructor.name}`
+
+    this.missingWaypointIdentifiers = missingWaypoints.map(waypoint => this.waypointIdentifier(waypoint.from, waypoint.to))
   }
 
   public encode(): MapAccessorProcessState {
@@ -41,15 +49,17 @@ export class MapAccessorProcess implements Process, MessageObserver {
       t: "MapAccessorProcess",
       l: this.launchTime,
       i: this.processId,
+      missingWaypoints: this.missingWaypoints,
     }
   }
 
   public static decode(state: MapAccessorProcessState): MapAccessorProcess {
-    return new MapAccessorProcess(state.l, state.i)
+    const missingWaypoints = state.missingWaypoints ?? [] // Migration
+    return new MapAccessorProcess(state.l, state.i, missingWaypoints)
   }
 
   public static create(processId: ProcessId): MapAccessorProcess {
-    return new MapAccessorProcess(Game.time, processId)
+    return new MapAccessorProcess(Game.time, processId, [])
   }
 
   public didReceiveMessage(message: string): string {
@@ -62,13 +72,28 @@ export class MapAccessorProcess implements Process, MessageObserver {
       return this.showWaypoints(components)
     case setCommand:
       return this.setWaypoints(components)
+    case showMissingWaypoints:
+      return this.showMissingWaypoints()
     default:
       return `Invalid command ${command}. "help" to show command list`
     }
   }
 
   public runOnTick(): void {
-    // do nothing
+    const missingWaypoints = GameMap.clearMissingWaypoints()
+    missingWaypoints.forEach(waypoint => {
+      const waypointIdentifier = this.waypointIdentifier(waypoint.from, waypoint.to)
+      if (this.missingWaypointIdentifiers.includes(waypointIdentifier) === true) {
+        return
+      }
+      const returnTripIdentifier = this.waypointIdentifier(waypoint.to, waypoint.from)
+      if (this.missingWaypointIdentifiers.includes(returnTripIdentifier) === true) {
+        return
+      }
+
+      this.missingWaypointIdentifiers.push(waypointIdentifier)
+      this.missingWaypoints.push(waypoint)
+    })
   }
 
   private showWaypoints(commandComponents: string[]): string {
@@ -128,6 +153,26 @@ export class MapAccessorProcess implements Process, MessageObserver {
     }
   }
 
+  private showMissingWaypoints(): string {
+    this.refreshMissingWaypoints()
+
+    const descriptions: string[] = [
+      "Missing waypoints:",
+      ...this.missingWaypoints.map(pair => `${roomLink(pair.from)}=&gt${roomLink(pair.to)}`),
+    ]
+
+    return descriptions.join("\n")
+  }
+
+  private refreshMissingWaypoints(): void {
+    this.missingWaypoints = this.missingWaypoints.filter(waypoint => {
+      if (GameMap.getWaypoints(waypoint.from, waypoint.to, {ignoreMissingWaypoints: true}) != null) {
+        return false
+      }
+      return true
+    })
+  }
+
   private isValidRoomName(roomName: RoomName): boolean {
     const roomStatus = Game.map.getRoomStatus(roomName)
     if (roomStatus == null) { // フォーマットが間違っているとundefinedが返る
@@ -137,5 +182,9 @@ export class MapAccessorProcess implements Process, MessageObserver {
       return false
     }
     return true
+  }
+
+  private waypointIdentifier(from: RoomName, to: RoomName): string {
+    return `${from}=>${to}`
   }
 }

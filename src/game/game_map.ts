@@ -16,6 +16,9 @@ const MissingWaypoints = {
     if (cachedPairs.includes(identifier) === true) {
       return
     }
+
+    PrimitiveLogger.log(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${roomLink(fromRoomName)}=&gt${roomLink(toRoomName)}`)
+
     cachedPairs.push(identifier)
     missingWaypointPairs.push({
       from: fromRoomName,
@@ -30,6 +33,16 @@ const MissingWaypoints = {
     }
     return false
   },
+
+  missingWaypoints(): { from: RoomName, to: RoomName }[] {
+    return [...missingWaypointPairs]
+  },
+
+  clear(): void {
+    if (missingWaypointPairs.length > 0) {
+      missingWaypointPairs.splice(0, missingWaypointPairs.length)
+    }
+  },
 }
 
 export const GameMap = {
@@ -37,12 +50,6 @@ export const GameMap = {
   },
 
   afterTick(): void {
-    if (missingWaypointPairs.length > 0) {
-      const missingWaypoints = missingWaypointPairs.map(pair => `${roomLink(pair.from)}=&gt${roomLink(pair.to)}`).join(", ")
-      PrimitiveLogger.notice(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${missingWaypoints}`)
-
-      missingWaypointPairs.splice(0, missingWaypointPairs.length)
-    }
   },
 
   getWaypoints(roomName: RoomName, destinationRoomName: RoomName, options?: {ignoreMissingWaypoints?: boolean}): RoomName[] | null {
@@ -107,6 +114,12 @@ export const GameMap = {
   /** waypointsを考慮したRoom間距離 */
   pathDistance(fromRoomName: RoomName, toRoomName: RoomName): number | null {
     return Game.map.getRoomLinearDistance(fromRoomName, toRoomName) // FixMe:
+  },
+
+  clearMissingWaypoints(): { from: RoomName, to: RoomName }[] {
+    const missingWaypoints = MissingWaypoints.missingWaypoints()
+    MissingWaypoints.clear()
+    return missingWaypoints
   },
 }
 
