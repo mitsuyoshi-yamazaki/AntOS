@@ -2,6 +2,8 @@ import { Position } from "prototype/room_position"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig } from "./room_info"
 
+export const defaultMaxWallHits = 5000000
+
 class Config {
   public set disablePowerHarvesting(value: boolean) {
     this.config.disablePowerHarvesting = value
@@ -57,6 +59,13 @@ class Config {
   }
   public get concurrentConstructionSites(): number {
     return this.config.concurrentConstructionSites ?? 1
+  }
+
+  public set wallMaxHits(value: number) {
+    this.config.wallMaxHits = value
+  }
+  public get wallMaxHits(): number {
+    return this.config.wallMaxHits ?? defaultMaxWallHits
   }
 
   private config: OwnedRoomConfig

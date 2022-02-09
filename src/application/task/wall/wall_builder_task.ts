@@ -21,8 +21,6 @@ import { coloredText, roomLink } from "utility/log"
 import { TaskLogRequest } from "application/task_logger"
 import { OwnedRoomInfo } from "room_resource/room_info"
 
-export const WallBuilderTaskMaxWallHits = 5000000
-
 const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
   STRUCTURE_RAMPART,
@@ -107,7 +105,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         return []
       })()
 
-      const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : WallBuilderTaskMaxWallHits
+      const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : roomResource.roomInfoAccessor.config.wallMaxHits
 
       return wall => {
         if (wall.hits >= wall.hitsMax) {

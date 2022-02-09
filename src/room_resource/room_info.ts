@@ -55,6 +55,7 @@ export type OwnedRoomConfig = {
   constructionInterval?: number
   concurrentConstructionSites?: number
   powers?: PowerConstant[]
+  wallMaxHits?: number
 }
 
 export interface OwnedRoomInfo extends BasicRoomInfo {

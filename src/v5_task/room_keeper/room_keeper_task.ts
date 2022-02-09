@@ -16,11 +16,11 @@ import { coloredText, roomLink } from "utility/log"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
-import { WallBuilderTaskMaxWallHits } from "application/task/wall/wall_builder_task"
 import { Environment } from "utility/environment"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { GameConstants } from "utility/constants"
 import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
+import { defaultMaxWallHits } from "room_resource/room_info_accessor"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -142,7 +142,7 @@ export class RoomKeeperTask extends Task {
       }
 
       if (wallTypes.includes(structure.structureType) === true) {
-        if (structure.hits >= WallBuilderTaskMaxWallHits) {
+        if (structure.hits >= defaultMaxWallHits) {
           return
         }
 
