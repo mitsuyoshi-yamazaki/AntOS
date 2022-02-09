@@ -169,7 +169,7 @@ export class PowerCreepProcess implements Process, Procedural {
     if (isMoving !== true) {
       const storage = roomResource.activeStructures.terminal || roomResource.activeStructures.storage
       if (storage != null) {
-        if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 100) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+        if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
           this.transferOps(powerCreep, storage)
           return
         }
