@@ -210,6 +210,16 @@ export class PowerCreepProcess implements Process, Procedural {
 
   // ---- Operations ---- //
   private operateGenerateOps(powerCreep: PowerCreep): OperationResult {
+    switch (this.powerStatus(powerCreep, PWR_GENERATE_OPS)) { // operate()以外からも呼び出されるため
+    case "unavailable":
+    case "cooling down":
+      return {
+        blocksFurtherOperations: false,
+      }
+    case "available":
+      break
+    }
+
     this.usePower(powerCreep, PWR_GENERATE_OPS)
     return {
       blocksFurtherOperations: false,
