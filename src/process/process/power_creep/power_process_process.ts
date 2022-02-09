@@ -145,7 +145,13 @@ export class PowerProcessProcess implements Process, Procedural {
         creep.say("no terminal")
         return null
       }
-      creep.say("waiting..")
+      // creep.say("waiting..")
+
+      const moveToWaitingPositionTask = this.moveToWaitingPositionTask(roomResource)
+      if (moveToWaitingPositionTask != null) {
+        return Run1TickTask.create(moveToWaitingPositionTask, {duration: 5})
+      }
+
       if (creep.pos.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_ROAD}}).length <= 0) {
         return null
       }
@@ -163,5 +169,13 @@ export class PowerProcessProcess implements Process, Procedural {
     }
 
     return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerSpawn, RESOURCE_POWER))
+  }
+
+  private moveToWaitingPositionTask(roomResource: OwnedRoomResource): CreepTask | null {
+    const waitingPosition = roomResource.roomInfoAccessor.config.getGenericWaitingPosition()
+    if (waitingPosition == null) {
+      return null
+    }
+    return MoveToTask.create(waitingPosition, 0)
   }
 }
