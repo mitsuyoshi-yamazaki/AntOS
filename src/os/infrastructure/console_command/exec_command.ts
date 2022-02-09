@@ -35,6 +35,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
 import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
+import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -86,6 +87,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.unclaim()
       case "power_creep":
         return this.powerCreep(args)
+      case "room_path_finding":
+        return this.roomPathFinding(args)
       case "script":
         return this.runScript()
       default:
@@ -941,6 +944,11 @@ export class ExecCommand implements ConsoleCommand {
     const powerCreep = listArguments.powerCreep(0, "power creep name").parse()
     args.shift()
     return execPowerCreepCommand(powerCreep, args)
+  }
+
+  /** @throws */
+  private roomPathFinding(args: string[]): CommandExecutionResult {
+    return execRoomPathfindingCommand(args)
   }
 
   private runScript(): CommandExecutionResult {
