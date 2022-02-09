@@ -10,6 +10,30 @@ export type RoomType = RoomTypeNormal | RoomTypeHighway | RoomTypeHighwayCrossin
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
+type Highway = {
+  readonly direction: "vertical" | "horizontal"
+  readonly startRoomName: RoomName  // top/left
+  readonly endRoomName: RoomName  // bottom/right
+}
+type DetailedCoordinateHighway = {
+  readonly case: RoomTypeHighway
+  readonly highway: Highway
+}
+type DetailedCoordinateHighwayCrossing = {
+  readonly case: RoomTypeHighwayCrossing
+  readonly connectedHighways: Highway[]
+}
+type DetailedCoordinateNormal = {
+  readonly case: RoomTypeNormal
+}
+type DetailedCoordinateSourceKeeper = {
+  readonly case: RoomTypeSourceKeeper
+}
+type DetailedCoordinateSectorCenter = {
+  readonly case: RoomTypeSectorCenter
+}
+type DetailedCoordinate = DetailedCoordinateHighway | DetailedCoordinateHighwayCrossing | DetailedCoordinateNormal | DetailedCoordinateSourceKeeper | DetailedCoordinateSectorCenter
+
 export const isValidRoomName = (roomName: RoomName): boolean => {
   switch (Game.map.getRoomStatus(roomName).status ) {
   case "normal":
@@ -248,6 +272,80 @@ export class RoomCoordinate {
       return true
     }
     return false
+  }
+
+  /**
+   * @returns highwayの算出は象限をまたぐときに1部屋分ずれる
+   */
+  public detailedCoordinate(): DetailedCoordinate {
+    const localX = this.x % 10
+    const localY = this.y % 10
+    const verticalHighway = localX === 0
+    const horizontalHighway = localY === 0
+    if (verticalHighway && horizontalHighway) {
+      const connectedHighways: Highway[] = [
+        {
+          direction: "horizontal",
+          startRoomName: this.getRoomCoordinateTo(1, 0).roomName,
+          endRoomName: this.getRoomCoordinateTo(9, 0).roomName,
+        },
+        {
+          direction: "horizontal",
+          startRoomName: this.getRoomCoordinateTo(-1, 0).roomName,
+          endRoomName: this.getRoomCoordinateTo(-9, 0).roomName,
+        },
+        {
+          direction: "vertical",
+          startRoomName: this.getRoomCoordinateTo(0, 1).roomName,
+          endRoomName: this.getRoomCoordinateTo(0, 9).roomName,
+        },
+        {
+          direction: "vertical",
+          startRoomName: this.getRoomCoordinateTo(0, -1).roomName,
+          endRoomName: this.getRoomCoordinateTo(0, -9).roomName,
+        },
+      ]
+      return {
+        case: "highway_crossing",
+        connectedHighways,
+      }
+    }
+
+    if (verticalHighway) {
+      return {
+        case: "highway",
+        highway: {
+          direction: "vertical",
+          startRoomName: this.getRoomCoordinateTo(0, -localY + 1).roomName,
+          endRoomName: this.getRoomCoordinateTo(0, -localY + 9).roomName,
+        },
+      }
+    }
+    if (horizontalHighway) {
+      return {
+        case: "highway",
+        highway: {
+          direction: "horizontal",
+          startRoomName: this.getRoomCoordinateTo(-localX + 1, 0).roomName,
+          endRoomName: this.getRoomCoordinateTo(-localX + 9, 0).roomName,
+        },
+      }
+    }
+
+    if (this.x % 5 === 0 && this.y % 5 === 0) {
+      return {
+        case: "sector_center",
+      }
+    }
+
+    if (localX >= 4 && localX <= 6 && localY >= 4 && localY <= 6) {
+      return {
+        case: "source_keeper",
+      }
+    }
+    return {
+      case: "normal",
+    }
   }
 }
 

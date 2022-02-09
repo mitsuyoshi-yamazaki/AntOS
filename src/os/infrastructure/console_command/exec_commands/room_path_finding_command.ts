@@ -35,9 +35,24 @@ function showClosestHighway(args: string[]): string {
     const pathSteps: string[] = [
       roomLink(originRoomName),
       ...route.map(roomName => roomLink(roomName)),
-      "highway",
     ]
-    return pathSteps.join(" =&gt ")
+    const highwayDescription = ((): string => {
+      const highwayRoomName = route[route.length - 1]
+      if (highwayRoomName == null) {
+        return "no path?"
+      }
+      const highwayRoomCoordinate = RoomCoordinate.parse(highwayRoomName)
+      if (highwayRoomCoordinate == null) {
+        return "no coordinate?"
+      }
+      const detailedCoordinate = highwayRoomCoordinate.detailedCoordinate()
+      if (detailedCoordinate.case !== "highway") {
+        return "not highway?"
+      }
+      const highway = detailedCoordinate.highway
+      return `${highway.direction} highway from ${roomLink(highway.startRoomName)} to ${roomLink(highway.endRoomName)}`
+    })()
+    return `${pathSteps.join(" =&gt ")} ${highwayDescription}`
   })
   return `${routes.length} route found\n${routeDescriptions.join("\n")}`
 }
