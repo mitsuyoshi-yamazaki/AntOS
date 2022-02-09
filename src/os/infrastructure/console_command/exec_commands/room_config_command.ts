@@ -2,17 +2,20 @@ import { describePosition } from "prototype/room_position"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
+import { powerName } from "utility/power"
 import { isMineralCompoundConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { KeywordArguments } from "../utility/keyword_argument_parser"
 import { ListArguments } from "../utility/list_argument_parser"
 
+// Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
   const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
   const commandList: string[] = [
     "help",
     "waiting_position",
+    "powers",
     ...oldCommandList,
   ]
 
@@ -29,6 +32,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
 
   case "waiting_position":
     return waitingPosition(roomResource, args)
+  case "powers":
+    return powers(roomResource, args)
 
     // ---- Old Commands ---- //
   case "excluded_remotes":
@@ -48,6 +53,38 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   }
 }
 
+/** @throws */
+function powers(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const action = listArguments.string(0, "action").parse()
+
+  switch (action) {
+  case "show": {
+    const powers = roomResource.roomInfoAccessor.config.enabledPowers()
+    if (powers.length <= 0) {
+      return `no powers enabled in ${roomLink(roomResource.room.name)}`
+    }
+    return `${roomLink(roomResource.room.name)} has ${powers.map(power => powerName(power)).join(", ")}`
+  }
+
+  case "add": {
+    const power = listArguments.powerType(1, "power").parse()
+    roomResource.roomInfoAccessor.config.enablePower(power)
+    return `${powerName(power)} is enabled in ${roomLink(roomResource.room.name)}`
+  }
+
+  case "remove": {
+    const power = listArguments.powerType(1, "power").parse()
+    roomResource.roomInfoAccessor.config.disablePower(power)
+    return `${powerName(power)} is disabled in ${roomLink(roomResource.room.name)}`
+  }
+
+  default:
+    throw `Invalid action ${action}, actions: show, add, remove`
+  }
+}
+
+/** @throws */
 function waitingPosition(roomResource: OwnedRoomResource, args: string[]): string {
   const listArguments = new ListArguments(args)
   const action = listArguments.string(0, "action").parse()
