@@ -253,9 +253,6 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     nearbyHostiles.sort((lhs, rhs) => (lhs.range - rhs.range))
     const attackTarget = nearbyHostiles[0]
 
-    if (attackTarget != null || creep.hits < creep.hitsMax) {
-      creep.heal(creep)
-    }
     if (attackTarget != null) {
       if (attackTarget.range <= 1) {
         creep.rangedMassAttack()
@@ -264,6 +261,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       }
 
       if (attackTarget.creep.getActiveBodyparts(ATTACK) > 0) {
+        creep.heal(creep)
         if (attackTarget.range < rangedAttackRange) {
           this.flee(creep, attackTarget.creep.pos, rangedAttackRange + 1)
           return
@@ -272,8 +270,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
         }
       } else {  // no ATTACK
         creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
+        if (attackTarget.range > 1) {
+          creep.heal(creep)
+        } else {
+          creep.attack(attackTarget.creep)
+        }
         return
       }
+    }
+
+    if (creep.hits < creep.hitsMax) {
+      creep.heal(creep)
     }
 
     if (creep.room.name !== target.roomName) {
