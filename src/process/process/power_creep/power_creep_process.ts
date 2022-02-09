@@ -132,20 +132,20 @@ export class PowerCreepProcess implements Process, Procedural {
       isMoving = this.runRegenSource(powerCreep, roomResource.sources)
     }
 
-    const opsStore = ((): StructureTerminal | StructureStorage | null => {
-      const storage = roomResource.activeStructures.storage
-      if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-        return storage
-      }
-      const terminal = roomResource.activeStructures.terminal
-      if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
-        return terminal
-      }
-      return null
-    })()
-
     const spawn = roomResource.activeStructures.spawns[0]
     if (spawn != null && (spawn.effects == null || spawn.effects.length <= 0)) {
+      const opsStore = ((): StructureTerminal | StructureStorage | null => {
+        const storage = roomResource.activeStructures.storage
+        if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return storage
+        }
+        const terminal = roomResource.activeStructures.terminal
+        if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_OPS) > 0) {
+          return terminal
+        }
+        return null
+      })()
+
       isMoving = isMoving || this.runOperateSpawn(powerCreep, spawn, opsStore, isMoving)  // isMovingがtrueであれば右辺が実行されないのでは？
     }
 
@@ -167,9 +167,10 @@ export class PowerCreepProcess implements Process, Procedural {
     this.runGenerateOps(powerCreep)
 
     if (isMoving !== true) {
-      if (opsStore != null) {
-        if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
-          this.transferOps(powerCreep, opsStore)
+      const storage = roomResource.activeStructures.terminal || roomResource.activeStructures.storage
+      if (storage != null) {
+        if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 100) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
+          this.transferOps(powerCreep, storage)
           return
         }
       }
