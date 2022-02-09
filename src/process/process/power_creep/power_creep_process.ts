@@ -58,7 +58,7 @@ export class PowerCreepProcess implements Process, Procedural {
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    private readonly powerCreepName: PowerCreepName,
+    public readonly powerCreepName: PowerCreepName,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.powerCreepName}`
   }
