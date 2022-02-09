@@ -24,13 +24,6 @@ class Config {
     return this.config.disableUnnecessaryTasks ?? false
   }
 
-  public set enableOperateSpawn(value: boolean) {
-    this.config.enableOperateSpawn = value
-  }
-  public get enableOperateSpawn(): boolean {
-    return this.config.enableOperateSpawn ?? false
-  }
-
   public set collectResources(value: boolean) {
     this.config.collectResources = value
   }
@@ -103,6 +96,44 @@ class Config {
     } catch {
       return null
     }
+  }
+
+  public enablePower(power: PowerConstant): void {
+    if (this.config.powers == null) {
+      this.config.powers = []
+    }
+    if (this.config.powers.includes(power) === true) {
+      return
+    }
+    this.config.powers.push(power)
+  }
+  public disablePower(power: PowerConstant): void {
+    if (this.config.powers == null) {
+      return
+    }
+    const index = this.config.powers.indexOf(power)
+    if (index < 0) {
+      return
+    }
+    this.config.powers.splice(index, 1)
+  }
+  public powerEnabled(power: PowerConstant): boolean {
+    if (this.config.powers == null) {
+      return false
+    }
+    if (this.config.powers.includes(power) !== true) {
+      return false
+    }
+    return true
+  }
+  public enabledPowers(): PowerConstant[] {
+    if (this.config.powers == null) {
+      return []
+    }
+    return [...this.config.powers]
+  }
+  public clearPower(): void {
+    this.config.powers = []
   }
 }
 

@@ -43,7 +43,6 @@ export type OwnedRoomConfig = {
   disablePowerHarvesting?: boolean
   disableMineralHarvesting?: boolean
   disableUnnecessaryTasks?: boolean
-  enableOperateSpawn?: boolean
   researchCompounds?: { [index in MineralCompoundConstant]?: number }
   collectResources?: boolean
   boostLabs?: Id<StructureLab>[]
@@ -55,6 +54,7 @@ export type OwnedRoomConfig = {
   mineralMaxAmount?: number
   constructionInterval?: number
   concurrentConstructionSites?: number
+  powers?: PowerConstant[]
 }
 
 export interface OwnedRoomInfo extends BasicRoomInfo {
