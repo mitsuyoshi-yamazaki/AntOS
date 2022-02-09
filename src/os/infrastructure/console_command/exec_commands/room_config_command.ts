@@ -8,6 +8,14 @@ import { isRoomName, RoomName } from "utility/room_name"
 import { KeywordArguments } from "../utility/keyword_argument_parser"
 import { ListArguments } from "../utility/list_argument_parser"
 
+const numberAccessorCommands = [
+  "mineral_max_amount",
+  "construction_interval",
+  "concurrent_construction_site_count",
+  "wall_max_hits",
+] as const
+type NumberAccessorCommands = typeof numberAccessorCommands[number]
+
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
@@ -16,6 +24,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "help",
     "waiting_position",
     "powers",
+    ...numberAccessorCommands,
     ...oldCommandList,
   ]
 
@@ -28,12 +37,18 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
 
   switch (command) {
   case "help":
-    return `Commands: ${commandList}`
+    return `Commands:\n${commandList.join("\n")}`
 
   case "waiting_position":
     return waitingPosition(roomResource, args)
   case "powers":
     return powers(roomResource, args)
+
+  case "mineral_max_amount":
+  case "construction_interval":
+  case "concurrent_construction_site_count":
+  case "wall_max_hits":
+    return accessNumberProperty(command, roomResource, args)
 
     // ---- Old Commands ---- //
   case "excluded_remotes":
@@ -50,6 +65,50 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleAutoAttack(roomName, roomInfo, parseProcessArguments(args))
   default:
     throw `Invalid command ${command}, see "help"`
+  }
+}
+
+/** @throws */
+function accessNumberProperty(command: NumberAccessorCommands, roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const action = listArguments.string(0, "action").parse()
+
+  switch (action) {
+  case "set": {
+    const value = listArguments.int(1, "value").parse()
+    switch (command) {
+    case "mineral_max_amount":
+      roomResource.roomInfoAccessor.config.mineralMaxAmount = value
+      break
+    case "construction_interval":
+      roomResource.roomInfoAccessor.config.constructionInterval = value
+      break
+    case "concurrent_construction_site_count":
+      roomResource.roomInfoAccessor.config.concurrentConstructionSites = value
+      break
+    case "wall_max_hits":
+      roomResource.roomInfoAccessor.config.wallMaxHits = value
+      break
+    }
+    return `set ${command} ${value} for ${roomLink(roomResource.room.name)}`
+  }
+  case "get": {
+    const value = ((): number => {
+      switch (command) {
+      case "mineral_max_amount":
+        return roomResource.roomInfoAccessor.config.mineralMaxAmount
+      case "construction_interval":
+        return roomResource.roomInfoAccessor.config.constructionInterval
+      case "concurrent_construction_site_count":
+        return roomResource.roomInfoAccessor.config.concurrentConstructionSites
+      case "wall_max_hits":
+        return roomResource.roomInfoAccessor.config.wallMaxHits
+      }
+    })()
+    return `${command} ${value} for ${roomLink(roomResource.room.name)}`
+  }
+  default:
+    throw `Invalid action ${action}, set "set" or "get"`
   }
 }
 
