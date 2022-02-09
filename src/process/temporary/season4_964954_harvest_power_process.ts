@@ -34,6 +34,9 @@ import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_w
 import { CreepName, isV5CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
@@ -100,9 +103,10 @@ export interface Season4964954HarvestPowerProcessState extends ProcessState {
   neighbourCount: number
   powerDropPoints: RoomPositionState[]
   attackerHealerPair: {attackerName: CreepName, healerName: CreepName}[]
+  storageRoomName: RoomName | null
 }
 
-export class Season4964954HarvestPowerProcess implements Process, Procedural {
+export class Season4964954HarvestPowerProcess implements Process, Procedural, MessageObserver {
   public get isPickupFinished(): boolean {
     return this.pickupFinished
   }
@@ -204,7 +208,8 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
     private ticksToPowerBank: number | null,
     private readonly neighbourCount: number,
     private readonly powerDropPoints: RoomPosition[],
-    private readonly attackerHealerPair: { attackerName: CreepName, healerName: CreepName }[]
+    private readonly attackerHealerPair: { attackerName: CreepName, healerName: CreepName }[],
+    private storageRoomName: RoomName | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -236,6 +241,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
       neighbourCount: this.neighbourCount,
       powerDropPoints: this.powerDropPoints.map(position => position.encode()),
       attackerHealerPair: this.attackerHealerPair,
+      storageRoomName: this.storageRoomName,
     }
   }
 
@@ -262,6 +268,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
       state.neighbourCount ?? 3,
       state.powerDropPoints?.map(positionState => decodeRoomPosition(positionState)) ?? [],
       state.attackerHealerPair,
+      state.storageRoomName,
     )
   }
 
@@ -278,12 +285,38 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
       neighbourCount,
       [],
       [],
+      null,
     )
   }
 
   public processShortDescription(): string {
     const finishStatus = this.pickupFinished ? "finished" : "working"
     return `${roomLink(this.targetRoomName)} ${finishStatus}`
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "set_storage_room"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "set_storage_room": {
+        const listArguments = new ListArguments(components)
+        const storageRoomName = listArguments.roomName(0, "storage room name").parse({ my: true })
+        this.storageRoomName = storageRoomName
+        return `storage room ${roomLink(storageRoomName)} set`
+      }
+
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
@@ -656,6 +689,15 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
+      if (this.storageRoomName != null) {
+        const storageRoom = Game.rooms[this.storageRoomName]
+        if (storageRoom != null) {
+          const storageRoomStore = storageRoom.terminal ?? storageRoom.storage
+          if (storageRoomStore != null) {
+            return storageRoomStore
+          }
+        }
+      }
       const parentRoom = Game.rooms[this.parentRoomName]
       if (parentRoom == null) {
         return null
@@ -671,9 +713,15 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
     if (creep.store.getFreeCapacity(RESOURCE_POWER) <= 0 || powerResources.length <= 0) {
       if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
         if (creep.room.name !== store.room.name) {
-          const reversedWaypoints = store.room.name === "W29S25" ? [] : [...this.waypoints]
-          reversedWaypoints.reverse()
-          return FleeFromAttackerTask.create(MoveToRoomTask.create(store.room.name, reversedWaypoints))
+          const waypoints = ((): RoomName[] => {
+            if (store.room.name === this.parentRoomName) {
+              const reversedWaypoints = [...this.waypoints]
+              reversedWaypoints.reverse()
+              return reversedWaypoints
+            }
+            return GameMap.getWaypoints(creep.room.name, store.room.name) ?? []
+          })()
+          return FleeFromAttackerTask.create(MoveToRoomTask.create(store.room.name, waypoints))
         }
         return FleeFromAttackerTask.create(MoveToTargetTask.create(TransferResourceApiWrapper.create(store, RESOURCE_POWER), { ignoreSwamp: false, reusePath: 0 }))
       }
