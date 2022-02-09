@@ -1,11 +1,30 @@
 import { coloredText } from "utility/log"
 
+export type PrimitiveLogLevel = "log" | "notice" | "fatal" | "program error"
+
 /**
  * Processより低レベルでエラーが発生した際に使用する
  */
 export const PrimitiveLogger = {
-  log(message: string): void {
-    console.log(message)
+  log(message: string, level?: PrimitiveLogLevel): void {
+    switch (level) {
+    case undefined:
+    case "log":
+      console.log(message)
+      return
+
+    case "notice":
+      this.notice(message)
+      return
+
+    case "fatal":
+      this.fatal(message)
+      return
+
+    case "program error":
+      this.programError(message)
+      return
+    }
   },
 
   notice(message: string): void {
