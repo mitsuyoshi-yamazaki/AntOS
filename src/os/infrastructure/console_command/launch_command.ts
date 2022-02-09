@@ -52,6 +52,7 @@ import { Season4784484ScoreProcess } from "process/temporary/season4_784484_scor
 import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
+import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1018,9 +1019,19 @@ ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
     const neighbourCount = args.int("neighbour_count").parse({ min: 1, max: 8 })
+    const position = args.localPosition("position").parse()
+    const powerAmount = args.int("power_amount").parse()
+    const powerBankId = args.gameObjectId("power_bank_id").parse() as Id<StructurePowerBank>
     const waypoints = GameMap.getWaypoints(roomName, targetRoomName) ?? []
 
-    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount))
+    const powerBankInfo = {
+      id: powerBankId,
+      powerAmount,
+      position,
+      neighbourCount,
+    }
+
+    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -1059,6 +1070,14 @@ ProcessLauncher.register("PowerProcessProcess", args => {
     }
 
     return Result.Succeeded((processId) => PowerProcessProcess.create(processId, roomResource.room.name, powerSpawn.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season41011412HighwayProcessLauncherProcess", () => {
+  try {
+    return Result.Succeeded((processId) => Season41011412HighwayProcessLauncherProcess.create(processId))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

@@ -72,8 +72,8 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly parentRoomName: RoomName,
-    private readonly depositInfo: DepositInfo,
+    public readonly parentRoomName: RoomName,
+    public readonly depositInfo: DepositInfo,
     private readonly creepSpec: CreepSpec,
     private suspendReasons: string[],
     private storageRoomName: RoomName | null,

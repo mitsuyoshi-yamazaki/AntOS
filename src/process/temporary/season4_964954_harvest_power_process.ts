@@ -19,7 +19,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, Position, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { bodyCost } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
@@ -41,6 +41,13 @@ import { GameMap } from "game/game_map"
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
 })
+
+type PowerBankInfo = {
+  readonly id: Id<StructurePowerBank>
+  readonly powerAmount: number
+  readonly position: Position
+  readonly neighbourCount: number
+}
 
 // deals 600 hits/tick = 2M/3333ticks
 // 2600E = RCL7
@@ -88,19 +95,12 @@ export interface Season4964954HarvestPowerProcessState extends ProcessState {
   w: RoomName[]
 
   /** power bank info */
-  pb: {
-    /** power amount */
-    pa: number
-
-    /** position */
-    p: RoomPositionState
-  } | null
+  pb: PowerBankInfo
 
   /** pickup finished */
   f: boolean
 
   ticksToPowerBank: number | null
-  neighbourCount: number
   powerDropPoints: RoomPositionState[]
   attackerHealerPair: {attackerName: CreepName, healerName: CreepName}[]
   storageRoomName: RoomName | null
@@ -200,13 +200,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private powerBankInfo: {
-      powerAmount: number,
-      position: RoomPosition,
-    } | null,
+    public readonly powerBankInfo: PowerBankInfo,
     private pickupFinished: boolean,
     private ticksToPowerBank: number | null,
-    private readonly neighbourCount: number,
     private readonly powerDropPoints: RoomPosition[],
     private readonly attackerHealerPair: { attackerName: CreepName, healerName: CreepName }[],
     private storageRoomName: RoomName | null,
@@ -214,7 +210,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
     this.estimatedTicksToRoom = findRoomRoute(this.parentRoomName, this.targetRoomName, this.waypoints).length * GameConstants.room.size
-    this.whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist || []
+    this.whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist ?? []
 
     this.fullAttackPower = this.attackerSpec.body.filter(b => (b === ATTACK)).length * GameConstants.creep.actionPower.attack
   }
@@ -227,18 +223,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       p: this.parentRoomName,
       tr: this.targetRoomName,
       w: this.waypoints,
-      pb: (() => {
-        if (this.powerBankInfo == null) {
-          return null
-        }
-        return {
-          pa: this.powerBankInfo.powerAmount,
-          p: this.powerBankInfo.position.encode(),
-        }
-      })(),
+      pb: this.powerBankInfo,
       f: this.pickupFinished,
       ticksToPowerBank: this.ticksToPowerBank,
-      neighbourCount: this.neighbourCount,
       powerDropPoints: this.powerDropPoints.map(position => position.encode()),
       attackerHealerPair: this.attackerHealerPair,
       storageRoomName: this.storageRoomName,
@@ -246,43 +233,31 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
   }
 
   public static decode(state: Season4964954HarvestPowerProcessState): Season4964954HarvestPowerProcess | null {
-    const powerBankInfo = (() => {
-      if (state.pb == null) {
-        return null
-      }
-      const position = decodeRoomPosition(state.pb.p)
-      return {
-        powerAmount: state.pb.pa,
-        position,
-      }
-    })()
     return new Season4964954HarvestPowerProcess(
       state.l,
       state.i,
       state.p,
       state.tr,
       state.w,
-      powerBankInfo,
+      state.pb,
       state.f,
       state.ticksToPowerBank,
-      state.neighbourCount ?? 3,
       state.powerDropPoints?.map(positionState => decodeRoomPosition(positionState)) ?? [],
       state.attackerHealerPair,
       state.storageRoomName,
     )
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], neighbourCount: number): Season4964954HarvestPowerProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], powerBankInfo: PowerBankInfo): Season4964954HarvestPowerProcess {
     return new Season4964954HarvestPowerProcess(
       Game.time,
       processId,
       parentRoomName,
       targetRoomName,
       waypoints,
-      null,
+      powerBankInfo,
       false,
       null,
-      neighbourCount,
       [],
       [],
       null,
@@ -424,16 +399,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
         }
       }
 
-      powerBank = targetRoom.find(FIND_STRUCTURES).find(structure => structure.structureType === STRUCTURE_POWER_BANK) as StructurePowerBank | null
+      powerBank = Game.getObjectById(this.powerBankInfo.id)
 
       if (powerBank != null) {
-        if (this.powerBankInfo == null) {
-          this.powerBankInfo = {
-            powerAmount: powerBank.power,
-            position: powerBank.pos,
-          }
-        }
-
         if (healerCount < attackerCount) {
           this.addHealer()
         } else {
@@ -483,7 +451,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
                 return true
               }
               return false
-            }).length + Math.max(this.neighbourCount - workingAttackers.length, 0)
+            }).length + Math.max(this.powerBankInfo.neighbourCount - workingAttackers.length, 0)
             return openPositionCount > onTheWayAttackers.length
           })()
           if (needsAttacker === true) {
@@ -497,7 +465,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
           if (this.powerBankInfo == null) {
             return resources
           }
-          const powerBankPosition = this.powerBankInfo.position
+          const powerBankPosition = decodeRoomPosition(this.powerBankInfo.position, this.targetRoomName)
           return resources.filter(r => (r.pos.isEqualTo(powerBankPosition) === true))
         })()
         powerResources.push(...droppedResources)
@@ -514,7 +482,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
           if (powerBank == null) {
             return true
           }
-          const attackPowerPerTick = this.fullAttackPower * Math.min(this.neighbourCount, this.attackerSpec.maxCount)
+          const attackPowerPerTick = this.fullAttackPower * Math.min(this.powerBankInfo.neighbourCount, this.attackerSpec.maxCount)
           const ticksToDestroy = Math.ceil(powerBank.hits / attackPowerPerTick)
           const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
           const haulerCount = this.haulerSpec.maxCount
@@ -987,13 +955,14 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       return null
     }
     const emptyHauler = creep.pos.findInRange(emptyHaulers, 1)[0]
+    const powerBankPosition = decodeRoomPosition(this.powerBankInfo.position, this.targetRoomName)
     if (emptyHauler == null) {
-      return MoveToTask.create(this.powerBankInfo.position, 1)
+      return MoveToTask.create(powerBankPosition, 1)
     }
-    if (creep.pos.isNearTo(this.powerBankInfo.position) === true) {
+    if (creep.pos.isNearTo(powerBankPosition) === true) {
       return MoveToTask.create(emptyHauler.pos, 0)
     } else {
-      return MoveToTask.create(this.powerBankInfo.position, 1)
+      return MoveToTask.create(powerBankPosition, 1)
     }
   }
 
