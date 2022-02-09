@@ -34,7 +34,6 @@ import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_w
 import { CreepName, isV5CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
-import { RangedHealApiWrapper } from "v5_object_task/creep_task/api_wrapper/ranged_heal_api_wrapper"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
@@ -163,8 +162,8 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
     const energyCapacity = parentRoom.energyCapacityAvailable
 
     const creepMaxBody = 25
-    const carryAmountPerCreep = Math.floor(creepMaxBody / bodyUnit.length) * unitCarryCapacity
-    const haulableAmount = creepMaxCount * carryAmountPerCreep
+    // const carryAmountPerCreep = Math.floor(creepMaxBody / bodyUnit.length) * unitCarryCapacity
+    // const haulableAmount = creepMaxCount * carryAmountPerCreep
 
     const requiredCarryUnitCount = Math.ceil(this.powerBankInfo.powerAmount / unitCarryCapacity)
     const creepMaxUnitCount = Math.min(Math.floor((energyCapacity - bodyCost(body)) / bodyCost(bodyUnit)), Math.floor(creepMaxBody / bodyUnit.length))

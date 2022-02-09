@@ -6,7 +6,6 @@ import { Result, ResultFailed } from "utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { World } from "world_info/world_info"
 import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
@@ -22,11 +21,10 @@ import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/se
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
-import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
+import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
-// import { ConstructionSaboteurProcess } from "process/onetime/construction_saboteur_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
@@ -37,8 +35,6 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
-import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
@@ -130,10 +126,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchWorld35872159TestResourcePoolProcess()
       case "SubmoduleTestProcess":
         return this.launchSubmoduleTestProcess()
-      case "ConstructionSaboteurProcess":
-        return this.launchConstructionSaboteurProcess()
-      case "AttackRoomProcess":
-        return this.launchAttackRoomProcess()
       case "MonitoringProcess":
         return this.launchMonitoringProcess()
       case "QuadMakerProcess":
@@ -820,70 +812,6 @@ export class LaunchCommand implements ConsoleCommand {
       return SubmoduleTestProcess.create(processId)
     })
     return Result.Succeeded(process)
-  }
-
-  private launchConstructionSaboteurProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    // const process = OperatingSystem.os.addProcess(null, processId => {
-    //   return ConstructionSaboteurProcess.create(processId, roomName, targetRoomName, )
-    // })
-    // return Result.Succeeded(process)
-    return Result.Failed("not implemented yet")
-  }
-
-  private launchAttackRoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    // const process = OperatingSystem.os.addProcess(null, processId => {
-    //   return AttackRoomProcess.create(processId, roomName, targetRoomName, )
-    // })
-    // return Result.Succeeded(process)
-    return Result.Failed("not implemented yet")
   }
 
   private launchMonitoringProcess(): LaunchCommandResult {
