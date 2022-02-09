@@ -49,48 +49,48 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   // ---- Primitive Type ---- //
   public int(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number> {
-    return new IntArgument(key, this.getValueAt(index), options)
+    return new IntArgument(key, this.getValueAt(index, key), options)
   }
 
   public float(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number> {
-    return new FloatArgument(key, this.getValueAt(index), options)
+    return new FloatArgument(key, this.getValueAt(index, key), options)
   }
 
   public string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string> {
-    return new StringArgument(key, this.getValueAt(index), options)
+    return new StringArgument(key, this.getValueAt(index, key), options)
   }
 
   public boolean(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, boolean> {
-    return new BooleanArgument(key, this.getValueAt(index), options)
+    return new BooleanArgument(key, this.getValueAt(index, key), options)
   }
 
   public localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position> {
-    return new LocalPositionArgument(key, this.getValueAt(index), options)
+    return new LocalPositionArgument(key, this.getValueAt(index, key), options)
   }
 
   public localPositions(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position[]> {
-    return new LocalPositionsArgument(key, this.getValueAt(index), options)
+    return new LocalPositionsArgument(key, this.getValueAt(index, key), options)
   }
 
   // ---- Game Object ---- //
   public direction(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DirectionConstant> {
-    return new DirectionArgument(key, this.getValueAt(index), options)
+    return new DirectionArgument(key, this.getValueAt(index, key), options)
   }
 
   public roomPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowClosedRoom?: boolean }, RoomPosition> {
-    return new RoomPositionArgument(key, this.getValueAt(index), options)
+    return new RoomPositionArgument(key, this.getValueAt(index, key), options)
   }
 
   public roomName(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, RoomName> {
-    return new RoomNameArgument(key, this.getValueAt(index), options)
+    return new RoomNameArgument(key, this.getValueAt(index, key), options)
   }
 
   public roomNameList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
-    return new RoomNameListArgument(key, this.getValueAt(index), options)
+    return new RoomNameListArgument(key, this.getValueAt(index, key), options)
   }
 
   public room(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean,  allowClosedRoom?: boolean }, Room> {
-    return new RoomArgument(key, this.getValueAt(index), options)
+    return new RoomArgument(key, this.getValueAt(index, key), options)
   }
 
   public gameObjectId(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string> {
@@ -98,43 +98,44 @@ export class ListArguments implements KeywordArgumentsInterface {
   }
 
   public resourceType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, ResourceConstant> {
-    return new ResourceTypeArgument(key, this.getValueAt(index), "ResourceConstant", isResourceConstant, options)
+    return new ResourceTypeArgument(key, this.getValueAt(index, key), "ResourceConstant", isResourceConstant, options)
   }
 
   public boostCompoundType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, MineralBoostConstant> {
-    return new ResourceTypeArgument(key, this.getValueAt(index), "MineralBoostConstant", isMineralBoostConstant, options)
+    return new ResourceTypeArgument(key, this.getValueAt(index, key), "MineralBoostConstant", isMineralBoostConstant, options)
   }
 
   public depositType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DepositConstant> {
-    return new ResourceTypeArgument(key, this.getValueAt(index), "DepositConstant", isDepositConstant, options)
+    return new ResourceTypeArgument(key, this.getValueAt(index, key), "DepositConstant", isDepositConstant, options)
   }
 
   public commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant> {
-    return new ResourceTypeArgument(key, this.getValueAt(index), "CommodityConstant", isCommodityConstant, options)
+    return new ResourceTypeArgument(key, this.getValueAt(index, key), "CommodityConstant", isCommodityConstant, options)
   }
 
   public powerType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerConstant> {
-    return new PowerTypeArgument(key, this.getValueAt(index), options)
+    return new PowerTypeArgument(key, this.getValueAt(index, key), options)
   }
 
   public creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep> {
-    return new CreepArgument(key, this.getValueAt(index), options)
+    return new CreepArgument(key, this.getValueAt(index, key), options)
   }
 
   public powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep> {
-    return new PowerCreepArgument(key, this.getValueAt(index), options)
+    return new PowerCreepArgument(key, this.getValueAt(index, key), options)
   }
 
   // ---- Custom Type ---- //
   public ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource> {
-    return new OwnedRoomResourceArgument(key, this.getValueAt(index), options)
+    return new OwnedRoomResourceArgument(key, this.getValueAt(index, key), options)
   }
 
   // ---- ---- //
-  private getValueAt(index: number): string {
+  private getValueAt(index: number, key: string): string {
     const value = this.argumentList[index]
     if (value == null) {
-      throw `Missing ${index}th argument (arguments: ${this.argumentList.join(" ")})`
+      const argumentDetail = this.argumentList.length <= 0 ? "no arguments given" : `(given arguments: ${this.argumentList.join(" ")})`
+      throw `Missing ${index}th argument ${key}, ${argumentDetail}`
     }
     return value
   }
