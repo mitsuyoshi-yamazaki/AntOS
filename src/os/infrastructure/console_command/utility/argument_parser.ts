@@ -4,6 +4,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "utility/direction"
 import { roomLink } from "utility/log"
+import { isPowerConstant } from "utility/power"
 import type { RoomName } from "utility/room_name"
 
 export type ArgumentParsingOptions = {
@@ -95,6 +96,20 @@ export class ResourceTypeArgument<T extends string> extends SingleOptionalArgume
       throw `${this.value} is not ${this.typeName}`
     }
     return this.value
+  }
+}
+
+export class PowerTypeArgument extends SingleOptionalArgument<void, PowerConstant> {
+  /** throws */
+  public parse(): PowerConstant {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const intValue = parseIntValue(this.key, this.value)
+    if (!(isPowerConstant(intValue))) {
+      throw `${intValue} is not power type`
+    }
+    return intValue
   }
 }
 

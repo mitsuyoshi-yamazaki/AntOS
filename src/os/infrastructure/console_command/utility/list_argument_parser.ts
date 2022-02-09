@@ -2,7 +2,7 @@ import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import type { RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, ResourceTypeArgument, RoomArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -29,6 +29,7 @@ interface KeywordArgumentsInterface {
   boostCompoundType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, MineralBoostConstant>
   depositType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, DepositConstant>
   commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant>
+  powerType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerConstant>
   creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep>
   powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep>
 
@@ -110,6 +111,10 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public commodityType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, CommodityConstant> {
     return new ResourceTypeArgument(key, this.getValueAt(index), "CommodityConstant", isCommodityConstant, options)
+  }
+
+  public powerType(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerConstant> {
+    return new PowerTypeArgument(key, this.getValueAt(index), options)
   }
 
   public creep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Creep> {
