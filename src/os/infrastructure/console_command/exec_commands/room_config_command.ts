@@ -123,19 +123,19 @@ function powers(roomResource: OwnedRoomResource, args: string[]): string {
     if (powers.length <= 0) {
       return `no powers enabled in ${roomLink(roomResource.room.name)}`
     }
-    return `${roomLink(roomResource.room.name)} has ${powers.map(power => powerName(power)).join(", ")}`
+    return `${roomLink(roomResource.room.name)} has ${powers.map(power => `${powerName(power)}(${power})`).join(", ")}`
   }
 
   case "add": {
     const power = listArguments.powerType(1, "power").parse()
     roomResource.roomInfoAccessor.config.enablePower(power)
-    return `${powerName(power)} is enabled in ${roomLink(roomResource.room.name)}`
+    return `${powerName(power)}(${power}) is enabled in ${roomLink(roomResource.room.name)}`
   }
 
   case "remove": {
     const power = listArguments.powerType(1, "power").parse()
     roomResource.roomInfoAccessor.config.disablePower(power)
-    return `${powerName(power)} is disabled in ${roomLink(roomResource.room.name)}`
+    return `${powerName(power)}(${power}) is disabled in ${roomLink(roomResource.room.name)}`
   }
 
   default:
