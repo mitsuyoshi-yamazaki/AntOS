@@ -1,26 +1,17 @@
 import { GameMap } from "game/game_map"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { coloredText, roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "utility/room_name"
+import { RoomSector } from "utility/room_sector"
 import { ProcessState } from "../process_state"
 
 ProcessDecoder.register("MapAccessorProcess", state => {
   return MapAccessorProcess.decode(state as MapAccessorProcessState)
 })
-
-const helpCommand = "help"
-const showCommand = "show"
-const setCommand = "set"
-const showMissingWaypoints = "show_missing_waypoints"
-
-const commands = [
-  helpCommand,
-  showCommand,
-  setCommand,
-  showMissingWaypoints,
-]
 
 interface MapAccessorProcessState extends ProcessState {
   readonly missingWaypoints: { from: RoomName, to: RoomName }[]
@@ -63,19 +54,27 @@ export class MapAccessorProcess implements Process, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
+    const commandList = ["help", "show", "set", "show_missing_waypoints", "set_highway_waypoints"]
     const components = message.split(" ")
-    const command = components[0]
-    switch (command) {
-    case helpCommand:
-      return `Commands: ${commands}`
-    case showCommand:
-      return this.showWaypoints(components)
-    case setCommand:
-      return this.setWaypoints(components)
-    case showMissingWaypoints:
-      return this.showMissingWaypoints()
-    default:
-      return `Invalid command ${command}. "help" to show command list`
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+      case "show":
+        return this.showWaypoints(components)
+      case "set":
+        return this.setWaypoints(components)
+      case "show_missing_waypoints":
+        return this.showMissingWaypoints()
+      case "set_highway_waypoints":
+        return this.setHighwayWaypoints(components)
+      default:
+        throw `Invalid command ${command}. "help" to show command list`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
     }
   }
 
@@ -171,6 +170,87 @@ export class MapAccessorProcess implements Process, MessageObserver {
       }
       return true
     })
+  }
+
+  /** @throws */
+  private setHighwayWaypoints(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const keywordArguments = new KeywordArguments(args)
+    const roomCoordinate = listArguments.roomCoordinate(0, "room name").parse()
+    const roomName = roomCoordinate.roomName
+    const sector = new RoomSector(roomCoordinate)
+    const dryRun = keywordArguments.boolean("dry_run").parseOptional() ?? true
+
+    const routes = sector.getNearestHighwayRoutes(roomName)
+    if (routes.length <= 0) {
+      throw `failed to find routes to highway for ${roomLink(roomName)}`
+    }
+
+    const results: string[] = []
+    if (dryRun === true) {
+      results.push("dry_run")
+    }
+
+    const addRoute = (destinationRoomName: RoomName, highwayEntranceRoomName: RoomName): void => {
+      const hasWaypoints = GameMap.getWaypoints(roomName, destinationRoomName, { ignoreMissingWaypoints: true }) != null
+      if (hasWaypoints === true) {
+        results.push(`${roomLink(roomName)} to ${roomLink(destinationRoomName)} has waypoints`)
+        return
+      }
+      const hasWaypointsToEntrance = GameMap.getWaypoints(roomName, highwayEntranceRoomName, { ignoreMissingWaypoints: true }) != null
+      if (hasWaypointsToEntrance !== true) {
+        results.push(`no waypoints from ${roomLink(roomName)} to highway entrance ${highwayEntranceRoomName}`)
+        return
+      }
+      if (dryRun !== true) {
+        GameMap.setWaypoints(roomName, destinationRoomName, [highwayEntranceRoomName])
+      }
+      results.push(`${coloredText("[Set]", "info")} ${roomLink(roomName)} =&gt ${roomLink(highwayEntranceRoomName)} =&gt ${roomLink(destinationRoomName)}`)
+    }
+
+    routes.forEach(route => {
+      const highwayEntranceRoomName = route[route.length - 1]
+      if (highwayEntranceRoomName == null) {
+        results.push("route length is 0")
+        return
+      }
+      const hasWaypoint = GameMap.getWaypoints(roomName, highwayEntranceRoomName, { ignoreMissingWaypoints: true }) != null
+      if (hasWaypoint !== true) {
+        results.push(`no direct route to ${roomLink(highwayEntranceRoomName)}`)
+        return
+      }
+      const highwayEntranceRoomCoordinate = RoomCoordinate.parse(highwayEntranceRoomName)
+      if (highwayEntranceRoomCoordinate == null) {
+        throw `failed to parse RoomCoordinate ${roomLink(highwayEntranceRoomName)}`
+      }
+      const detailedCoordinate = highwayEntranceRoomCoordinate.detailedCoordinate()
+      if (detailedCoordinate.case !== "highway") {
+        throw `${roomLink(highwayEntranceRoomName)} is not highway entrance`
+      }
+
+      const highway = detailedCoordinate.highway
+      const highwayOriginRoomCoordinate = highwayEntranceRoomCoordinate
+
+      const highwayRooms = ((): RoomName[] => {
+        const roomCount = 5
+        const indexArray: number[] = [
+          ...Array(roomCount).fill(0).map((x, index) => -(index + 1)),
+          ...Array(roomCount).fill(0).map((x, index) => index + 1),
+        ]
+        switch (highway.direction) {
+        case "horizontal":
+          return indexArray.map(index => highwayOriginRoomCoordinate.getRoomCoordinateTo(index, 0).roomName)
+        case "vertical":
+          return indexArray.map(index => highwayOriginRoomCoordinate.getRoomCoordinateTo(0, index).roomName)
+        }
+      })()
+
+      highwayRooms.forEach(highwayRoom => {
+        addRoute(highwayRoom, highwayEntranceRoomName)
+      })
+    })
+
+    return results.join("\n")
   }
 
   private isValidRoomName(roomName: RoomName): boolean {
