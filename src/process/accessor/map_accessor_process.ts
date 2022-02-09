@@ -178,13 +178,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
     const keywordArguments = new KeywordArguments(args)
     const roomCoordinate = listArguments.roomCoordinate(0, "room name").parse()
     const roomName = roomCoordinate.roomName
-    const sector = new RoomSector(roomCoordinate)
     const dryRun = keywordArguments.boolean("dry_run").parseOptional() ?? true
-
-    const routes = sector.getNearestHighwayRoutes(roomName)
-    if (routes.length <= 0) {
-      throw `failed to find routes to highway for ${roomLink(roomName)}`
-    }
 
     const results: string[] = []
     if (dryRun === true) {
@@ -208,12 +202,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
       results.push(`${coloredText("[Set]", "info")} ${roomLink(roomName)} =&gt ${roomLink(highwayEntranceRoomName)} =&gt ${roomLink(destinationRoomName)}`)
     }
 
-    routes.forEach(route => {
-      const highwayEntranceRoomName = route[route.length - 1]
-      if (highwayEntranceRoomName == null) {
-        results.push("route length is 0")
-        return
-      }
+    const calculateFromHighwayEntrance = (highwayEntranceRoomName: RoomName): void => {
       const hasWaypoint = GameMap.getWaypoints(roomName, highwayEntranceRoomName, { ignoreMissingWaypoints: true }) != null
       if (hasWaypoint !== true) {
         results.push(`no direct route to ${roomLink(highwayEntranceRoomName)}`)
@@ -248,6 +237,27 @@ export class MapAccessorProcess implements Process, MessageObserver {
       highwayRooms.forEach(highwayRoom => {
         addRoute(highwayRoom, highwayEntranceRoomName)
       })
+    }
+
+    const givenHighwayEntranceRoomName = keywordArguments.roomName("highway_entrance_room_name").parseOptional()
+    if (givenHighwayEntranceRoomName != null) {
+      calculateFromHighwayEntrance(givenHighwayEntranceRoomName)
+      return results.join("\n")
+    }
+
+    const sector = new RoomSector(roomCoordinate)
+    const routes = sector.getNearestHighwayRoutes(roomName)
+    if (routes.length <= 0) {
+      throw `failed to find routes to highway for ${roomLink(roomName)}`
+    }
+
+    routes.forEach(route => {
+      const highwayEntranceRoomName = route[route.length - 1]
+      if (highwayEntranceRoomName == null) {
+        results.push("route length is 0")
+        return
+      }
+      calculateFromHighwayEntrance(highwayEntranceRoomName)
     })
 
     return results.join("\n")
