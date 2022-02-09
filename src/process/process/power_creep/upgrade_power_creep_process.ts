@@ -1,13 +1,14 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { managePowerCreepLink } from "utility/log"
+import { coloredText, managePowerCreepLink } from "utility/log"
 import { ProcessState } from "../../process_state"
 import { processLog } from "os/infrastructure/logger"
 import { PowerCreepName } from "prototype/power_creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { isPowerConstant, PowerConstant, powerName } from "utility/power"
+import { powerName } from "utility/power"
 import { ProcessDecoder } from "process/process_decoder"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("UpgradePowerCreepProcess", state => {
   return UpgradePowerCreepProcess.decode(state as UpgradePowerCreepProcessState)
@@ -22,17 +23,6 @@ export interface UpgradePowerCreepProcessState extends ProcessState {
   readonly reservedUpdates: UpdateInfo[]
 }
 
-// Game.powerCreeps["power_creep_0002"].upgrade(PWR_GENERATE_OPS)
-// Game.io("launch -l UpgradePowerCreepProcess")
-// Game.io("message 1631744000 clear")
-
-/**
- * - message format:
- *   - clear
- *     - clear all reserved updates
- *   - power=<PowerConstant> power_creep_name=<string>
- *     - add update reservation to the end of the stack
- */
 export class UpgradePowerCreepProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
@@ -70,41 +60,50 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
     return `${powerName(next.powerType)}, ${next.powerCreepName}${reservations}`
   }
 
+  public processDescription(): string {
+    if (this.reservedUpdates.length <= 0) {
+      return "no reserved updates"
+    }
+
+    return this.reservedUpdates.map((update, index) => `- ${index}: ${update.powerCreepName} ${powerName(update.powerType)}`).join("\n")
+  }
+
   public didReceiveMessage(message: string): string {
-    if (message === "clear") {
-      this.reservedUpdates.splice(0, this.reservedUpdates.length)
-      return "Cleared all reserved updates"
-    }
+    const commandList = ["help", "add", "clear", "show"]
+    const components = message.split(" ")
+    const command = components.shift()
 
-    const args = ((): Map<string, string> => {
-      const result = new Map<string, string>()
-      message.split(" ").forEach(arg => {
-        const [key, value] = arg.split("=")
-        if (key == null || value == null) {
-          return
-        }
-        result.set(key, value)
-      })
-      return result
-    })()
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
 
-    const rawPowerType = args.get("power")
-    if (rawPowerType == null) {
-      return "Missin power argument"
+      case "add": {
+        const keywordArguments = new KeywordArguments(components)
+        const powerType = keywordArguments.powerType("power").parse()
+        const powerCreep = keywordArguments.powerCreep("power_creep_name").parse()
+
+        this.reservedUpdates.push({
+          powerCreepName: powerCreep.name,
+          powerType,
+        })
+        return `Reserved ${powerName(powerType)} for ${powerCreep.name}, index: ${this.reservedUpdates.length - 1}`
+      }
+
+      case "clear": {
+        this.reservedUpdates.splice(0, this.reservedUpdates.length)
+        return "cleared all reserved updates"
+      }
+
+      case "show":
+        return this.processDescription()
+
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
     }
-    const powerType = parseInt(rawPowerType, 10)
-    if (isNaN(powerType) === true || !isPowerConstant(powerType)) {
-      return `Invalid power type ${rawPowerType}`
-    }
-    const powerCreepName = args.get("power_creep_name")
-    if (powerCreepName == null) {
-      return "Missin power_creep_name argument"
-    }
-    this.reservedUpdates.push({
-      powerCreepName,
-      powerType,
-    })
-    return `Reserved ${powerName(powerType)} for ${powerCreepName}, index: ${this.reservedUpdates.length - 1}`
   }
 
   public runOnTick(): void {
