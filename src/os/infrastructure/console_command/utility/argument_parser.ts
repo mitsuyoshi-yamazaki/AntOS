@@ -5,7 +5,7 @@ import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "utility/direction"
 import { roomLink } from "utility/log"
 import { isPowerConstant } from "utility/power"
-import type { RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "utility/room_name"
 
 export type ArgumentParsingOptions = {
   missingArgumentErrorMessage?: string
@@ -48,6 +48,22 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
     }
     validateRoomNameArgument(this.value, options)
     return this.value
+  }
+}
+
+export class RoomCoordinateArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
+  /** throws */
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomCoordinate {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomNameArgument(this.value, options)
+
+    const coordinate = RoomCoordinate.parse(this.value)
+    if (coordinate == null) {
+      throw `failed to parse ${roomLink(this.value)} to RoomCoordinate`
+    }
+    return coordinate
   }
 }
 
