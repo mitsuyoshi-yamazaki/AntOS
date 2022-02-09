@@ -657,12 +657,6 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural {
     }
 
     const store = ((): StructureTerminal | StructureStorage | null => {
-      if (this.parentRoomName === "W27S26") {
-        const childRoomStorage = Game.rooms["W29S25"]?.storage
-        if (childRoomStorage != null) {
-          return childRoomStorage
-        }
-      }
       const parentRoom = Game.rooms[this.parentRoomName]
       if (parentRoom == null) {
         return null
