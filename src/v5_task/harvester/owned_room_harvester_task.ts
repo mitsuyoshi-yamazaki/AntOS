@@ -186,7 +186,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
   private harvesterBody(source: Source): BodyPartConstant[] {
     const sourceCapacity = ((): number => {
       const effects = source.effects
-      if (effects == null) {
+      if (effects == null) {  // undefinedの場合がある
         return source.energyCapacity
       }
       const regenEffect = effects.find(effect => effect.effect === PWR_REGEN_SOURCE) as PowerEffect | null

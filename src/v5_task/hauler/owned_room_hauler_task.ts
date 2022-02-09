@@ -167,7 +167,7 @@ export class OwnedRoomHaulerTask extends Task {
       objects.sources.forEach((source: Source): void => {
         result += source.energyCapacity
         const effects = source.effects
-        if (effects == null) {
+        if (effects == null) {  // undefinedの場合がある
           return
         }
         const regenEffect = effects.find(effect => effect.effect === PWR_REGEN_SOURCE) as PowerEffect | null

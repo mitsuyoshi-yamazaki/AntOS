@@ -35,6 +35,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     extractor: StructureExtractor | null
     observer: StructureObserver | null
     powerSpawn: StructurePowerSpawn | null
+    factory: StructureFactory | null
 
     chargeableStructures: EnergyChargeableStructure[]
     researchLabs: ResearchLabs | null
@@ -61,7 +62,14 @@ export class OwnedRoomResource extends NormalRoomResource {
     if (roomInfo.highestRcl < this.controller.level) {
       roomInfo.highestRcl = this.controller.level
     }
+
     const shouldCheckActiveness = this.controller.level < roomInfo.highestRcl
+    const isActive = ((): (structure: AnyOwnedStructure) => boolean => {
+      if (shouldCheckActiveness) {
+        return structure => structure.isActive()
+      }
+      return () => true
+    })()
 
     this.damagedStructures = []
 
@@ -73,6 +81,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     let extractor: StructureExtractor | null = null
     let observer: StructureObserver | null = null
     let powerSpawn: StructurePowerSpawn | null = null
+    let factory: StructureFactory | null = null
     const chargeableStructures: EnergyChargeableStructure[] = []
     const researchLabs = ((): ResearchLabs | null => {
       if (roomInfo.researchLab == null) {
@@ -86,7 +95,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         return null
       }
       if (shouldCheckActiveness === true) {
-        if (inputLab1.isActive() !== true || inputLab2.isActive() !== true || outputLabs.some(lab => lab.isActive() !== true)) {
+        if (isActive(inputLab1) !== true || isActive(inputLab2) !== true || outputLabs.some(lab => isActive(lab) !== true)) {
           roomInfo.researchLab = undefined
           return null
         }
@@ -117,7 +126,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         spawns.push(structure)
@@ -129,7 +138,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         extensions.push(structure)
@@ -141,7 +150,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         towers.push(structure)
@@ -153,7 +162,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         storage = structure
@@ -165,7 +174,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         terminal = structure
@@ -177,7 +186,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         extractor = structure
@@ -186,7 +195,7 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         observer = structure
@@ -195,10 +204,19 @@ export class OwnedRoomResource extends NormalRoomResource {
         if (structure.my !== true) {
           break
         }
-        if (shouldCheckActiveness === true && structure.isActive() !== true) {
+        if (isActive(structure) !== true) {
           break
         }
         powerSpawn = structure
+        break
+      case STRUCTURE_FACTORY:
+        if (structure.my !== true) {
+          break
+        }
+        if (isActive(structure) !== true) {
+          break
+        }
+        factory = structure
         break
       case STRUCTURE_WALL:
         this.walls.push(structure)
@@ -223,6 +241,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       extractor,
       observer,
       powerSpawn,
+      factory,
       chargeableStructures,
       researchLabs,
     }
