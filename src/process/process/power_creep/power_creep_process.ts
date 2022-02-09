@@ -426,6 +426,9 @@ export class PowerCreepProcess implements Process, Procedural {
 
   // ---- Utility ---- //
   private powerEnabled(roomResource: OwnedRoomResource, power: PowerConstant): boolean {
+    if (power === PWR_GENERATE_OPS || power === PWR_REGEN_SOURCE) { // TODO: コストのかからないPower全般を検出して有効化する処理を入れる
+      return true
+    }
     return roomResource.roomInfoAccessor.config.powerEnabled(power)
   }
 
