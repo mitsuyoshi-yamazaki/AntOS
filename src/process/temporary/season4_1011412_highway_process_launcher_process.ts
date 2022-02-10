@@ -109,19 +109,16 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public processDescription(): string {
-    const baseDescription = (base: BaseInfo): string[] => {
-      return [
-        `  - ${roomLink(base.roomName)}:`,
-        `    - targets: ${base.targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`
+    try {
+      const descriptions: string[] = [
+        `- ${this.bases.length} bases`,
+        ...this.bases.flatMap(base => this.baseInfo(base.roomName)),
       ]
+
+      return descriptions.join("\n")
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
     }
-
-    const descriptions: string[] = [
-      `- ${this.bases.length} bases`,
-      ...this.bases.flatMap(base => baseDescription(base)),
-    ]
-
-    return descriptions.join("\n")
   }
 
   public didReceiveMessage(message: string): string {
@@ -139,7 +136,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         const listArguments = new ListArguments(components)
         if (listArguments.has(0) === true) {
           const baseRoomName = listArguments.roomName(0, "room name").parse({ my: true })
-          return this.showBaseInfo(baseRoomName)
+          return this.baseInfo(baseRoomName)
         }
         return this.processDescription()
       }
@@ -152,7 +149,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   /** @throws */
-  private showBaseInfo(baseRoomName: RoomName): string {
+  private baseInfo(baseRoomName: RoomName): string {
     const base = this.bases.find(b => b.roomName === baseRoomName)
     if (base == null) {
       throw `${roomLink(baseRoomName)} is not in the list`
@@ -386,7 +383,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
     const harvestPowerBankCost = 10
     const harvestCommodityCost = 6
-    const maxCost = 15
+    const maxCost = 17
     const baseSpawnTimeCost = new Map<RoomName, number>()
     const runningHarvestProcessTargetIds: Id<TargetType>[] = []
 
@@ -410,37 +407,45 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     })
 
     this.bases.forEach(base => {
-      const observeResult = this.observeResults[base.roomName]
-      if (observeResult == null) {
-        return
-      }
+      let launched = false as boolean
 
       const spawnCost = baseSpawnTimeCost.get(base.roomName) ?? 0
       if (spawnCost > maxCost) {
         return
       }
 
-      const roomResource = RoomResources.getOwnedRoomResource(base.roomName)
-      if (roomResource == null || roomResource.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount) {
-        return
-      }
-
-      for (const target of observeResult.targets) {
-        if (target.ignoreReasons.length > 0) {
-          continue
+      base.targetRoomNames.forEach(targetRoomName => {
+        if (launched === true) {
+          return
         }
-        if (runningHarvestProcessTargetIds.includes(target.targetId) === true) {
-          target.ignoreReasons.push("harvesting")
-          continue
-        }
-        if ((target.decayBy - Game.time) < 3000) {
-          target.ignoreReasons.push("decaying")
-          continue
+        const observeResult = this.observeResults[targetRoomName]
+        if (observeResult == null) {
+          return
         }
 
-        this.launchHarvestProcess(target, base.roomName)
-        break
-      }
+        const roomResource = RoomResources.getOwnedRoomResource(base.roomName)
+        if (roomResource == null || roomResource.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount) {
+          return
+        }
+
+        for (const target of observeResult.targets) {
+          if (target.ignoreReasons.length > 0) {
+            continue
+          }
+          if (runningHarvestProcessTargetIds.includes(target.targetId) === true) {
+            target.ignoreReasons.push("harvesting")
+            continue
+          }
+          if ((target.decayBy - Game.time) < 3000) {
+            target.ignoreReasons.push("decaying")
+            continue
+          }
+
+          this.launchHarvestProcess(target, base.roomName)
+          launched = true
+          break
+        }
+      })
     })
   }
 
@@ -456,7 +461,8 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         position: target.position,
         neighbourCount: target.neighbourCount,
       }
-      OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
+      const process = OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
+      Memory.os.logger.filteringProcessIds.push(process.processId)
       return
     }
     case "deposit": {
