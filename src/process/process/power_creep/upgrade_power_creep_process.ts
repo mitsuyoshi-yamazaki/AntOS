@@ -181,7 +181,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
         this.createPowerCreep(upgrade.powerCreepName)
         break
       }
-      const { executed } = this.update(powerCreep, upgrade.firstPowerType)
+      const { executed } = this.upgrade(powerCreep, upgrade.firstPowerType)
       if (executed !== true) {
         break
       }
@@ -202,7 +202,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
         this.reservedUpgrades.shift()
         break
       }
-      const { executed } = this.update(powerCreep, upgrade.powerType)
+      const { executed } = this.upgrade(powerCreep, upgrade.powerType)
       if (executed) {
         this.reservedUpgrades.shift()
       }
@@ -269,11 +269,11 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
     })
   }
 
-  private update(powerCreep: PowerCreep, power: PowerConstant): {executed: boolean} {
+  private upgrade(powerCreep: PowerCreep, power: PowerConstant): {executed: boolean} {
     const result = powerCreep.upgrade(power)
     switch (result) {
     case OK:
-      processLog(this, `PowerCreep ${powerCreep.name} updated ${powerName(power)}, ${managePowerCreepLink()}`)
+      processLog(this, `PowerCreep ${powerCreep.name} upgraded ${powerName(power)}, ${managePowerCreepLink()}`)
       return {executed: true}
 
     case ERR_NOT_ENOUGH_RESOURCES:
