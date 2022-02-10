@@ -97,11 +97,11 @@ export class MapAccessorProcess implements Process, MessageObserver {
 
   private showWaypoints(commandComponents: string[]): string {
     const manual = "show &ltroom_name&gt &ltdestination_room_name&gt"
-    const roomName = commandComponents[1]
+    const roomName = commandComponents[0]
     if (roomName == null) {
       return `room_name not specified. ${manual}`
     }
-    const destinationRoomName = commandComponents[2]
+    const destinationRoomName = commandComponents[1]
     if (destinationRoomName == null) {
       return `destination_room_name not specified. ${manual}`
     }
@@ -118,14 +118,14 @@ export class MapAccessorProcess implements Process, MessageObserver {
   private setWaypoints(commandComponents: string[]): string {
     try {
       const manual = "set &ltroom_name&gt &ltdestination_room_name&gt &ltwaypoint1,waypoint2,...&gt"
-      const roomName = commandComponents[1]
+      const roomName = commandComponents[0]
       if (roomName == null) {
         throw `room_name not specified. ${manual}`
       }
       if (this.isValidRoomName(roomName) !== true) {
         throw `room_name ${roomName} is not valid`
       }
-      const destinationRoomName = commandComponents[2]
+      const destinationRoomName = commandComponents[1]
       if (destinationRoomName == null) {
         throw `destination_room_name not specified. ${manual}`
       }
@@ -133,7 +133,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
         throw `destination_room_name ${destinationRoomName} is not valid`
       }
       const waypoints = ((): RoomName[] => {
-        const rawWaypoints = commandComponents[3]
+        const rawWaypoints = commandComponents[2]
         if (rawWaypoints == null) {
           return []
         }
