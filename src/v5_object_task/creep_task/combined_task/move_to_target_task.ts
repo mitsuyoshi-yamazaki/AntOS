@@ -133,6 +133,7 @@ export class MoveToTargetTask implements CreepTask {
       if (moveToResult === ERR_NO_PATH && creep.room.name !== this.apiWrapper.target.pos.roomName) {
         moveToOps.maxOps = 3000
         moveToOps.maxRooms = 16
+        moveToOps.ignoreCreeps = false
         const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
         if (retryResult === ERR_NO_PATH) {
           const error = `creep.moveTo() ${creep.name} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
