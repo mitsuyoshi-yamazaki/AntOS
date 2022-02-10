@@ -22,6 +22,8 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepBody } from "utility/creep_body"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 
 ProcessDecoder.register("ProduceCommodityProcess", state => {
   return ProduceCommodityProcess.decode(state as ProduceCommodityProcessState)
@@ -123,7 +125,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
           return `- ${product.amount} ${commodityType} (${ingredients})`
         }).join("\n")
         const descriptions: string[] = [
-          `products:\n${products}`,
+          `${roomLink(this.roomName)} products:\n${products}`,
         ]
         if (this.stopSpawningReasons.length > 0) {
           descriptions.push(`stop spawning reasons:\n${this.stopSpawningReasons.map(reason => `- ${reason}`).join("\n")}`)
@@ -209,7 +211,11 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return
     }
 
+    const hasEnoughEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) > 70000
     const shouldSpawn = ((): boolean => {
+      if (hasEnoughEnergy !== true) {
+        return false
+      }
       if (this.stopSpawningReasons.length > 0) {
         return false
       }
@@ -231,13 +237,15 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     }
 
     if (terminal != null && product != null) {
-      this.produce(factory, product)
+      if (hasEnoughEnergy === true) {
+        this.produce(factory, product)
+      }
 
       World.resourcePools.assignTasks(
         this.roomName,
         this.taskIdentifier,
         CreepPoolAssignPriority.Low,
-        creep => this.newHaulerTask(creep, factory, terminal, product),
+        creep => this.newHaulerTask(creep, factory, terminal, product, roomResource),
         () => true,
       )
     }
@@ -260,7 +268,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     })
   }
 
-  private newHaulerTask(creep: Creep, factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo): CreepTask | null {
+  private newHaulerTask(creep: Creep, factory: StructureFactory, terminal: StructureTerminal, product: ProductInfo, roomResource: OwnedRoomResource): CreepTask | null {
     const resourceType = Array.from(Object.keys(creep.store))[0] as ResourceConstant | null
     if (resourceType != null) {
       if ((product.ingredients as string[]).includes(resourceType) === true) {
@@ -288,8 +296,12 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       creep.say("no ingred")
 
     } else if (chargeResourceType === "stopped") {
-      creep.say("zzZ")
+      const moveToWaitingPositionTask = this.moveToWaitingPositionTask(roomResource)
+      if (moveToWaitingPositionTask != null) {
+        return moveToWaitingPositionTask
+      }
 
+      creep.say("zzZ")
     } else {
       const tasks: CreepTask[] = [
         MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, chargeResourceType)),
@@ -299,6 +311,14 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     }
 
     return null
+  }
+
+  private moveToWaitingPositionTask(roomResource: OwnedRoomResource): CreepTask | null {
+    const waitingPosition = roomResource.roomInfoAccessor.config.getGenericWaitingPosition()
+    if (waitingPosition == null) {
+      return null
+    }
+    return MoveToTask.create(waitingPosition, 0)
   }
 
   private resourceTypeToWithdraw(factory: StructureFactory, product: ProductInfo): ResourceConstant | null {
@@ -333,8 +353,8 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return current.amount < result.amount ? current : result
     })
 
-    const threshold = 10000
-    if (resource.amount > threshold) {
+    const threshold = 2000
+    if (resource.amount >= threshold) {
       return "stopped"
     }
     return resource.resourceType
