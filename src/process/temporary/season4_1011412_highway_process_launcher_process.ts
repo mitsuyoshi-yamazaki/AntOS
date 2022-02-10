@@ -4,7 +4,7 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import type { RoomName } from "utility/room_name"
-import { coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import type { Timestamp } from "utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
@@ -13,6 +13,8 @@ import { OperatingSystem } from "os/os"
 import { Season4964954HarvestPowerProcess } from "./season4_964954_harvest_power_process"
 import { Season4275982HarvestCommodityProcess } from "./season4_275982_harvest_commodity_process"
 import { GameMap } from "game/game_map"
+import { RoomResources } from "room_resource/room_resources"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("Season41011412HighwayProcessLauncherProcess", state => {
   return Season41011412HighwayProcessLauncherProcess.decode(state as Season41011412HighwayProcessLauncherProcessState)
@@ -33,6 +35,7 @@ type PowerBankTargetInfo = {
   readonly targetId: Id<StructurePowerBank>
   readonly ignoreReasons: string[]
   readonly neighbourCount: number
+  readonly decayBy: Timestamp
   readonly powerAmount: number
   readonly position: Position
 }
@@ -42,6 +45,7 @@ type DepositTargetInfo = {
   readonly targetId: Id<Deposit>
   readonly ignoreReasons: string[]
   readonly neighbourCount: number
+  readonly decayBy: Timestamp
   readonly commodityType: DepositConstant
   readonly currentCooldown: number
 }
@@ -101,11 +105,27 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public processShortDescription(): string {
-    return "not implemented yet"  // TODO:
+    return `watching ${this.bases.map(base => roomLink(base.roomName)).join(",")}`
+  }
+
+  public processDescription(): string {
+    const baseDescription = (base: BaseInfo): string[] => {
+      return [
+        `  - ${roomLink(base.roomName)}:`,
+        `    - targets: ${base.targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`
+      ]
+    }
+
+    const descriptions: string[] = [
+      `- ${this.bases.length} bases`,
+      ...this.bases.flatMap(base => baseDescription(base)),
+    ]
+
+    return descriptions.join("\n")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add"]
+    const commandList = ["help", "add", "show"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -115,12 +135,63 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         return `Commands: ${commandList}`
       case "add":
         return this.addBase(components)
+      case "show": {
+        const listArguments = new ListArguments(components)
+        if (listArguments.has(0) === true) {
+          const baseRoomName = listArguments.roomName(0, "room name").parse({ my: true })
+          return this.showBaseInfo(baseRoomName)
+        }
+        return this.processDescription()
+      }
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private showBaseInfo(baseRoomName: RoomName): string {
+    const base = this.bases.find(b => b.roomName === baseRoomName)
+    if (base == null) {
+      throw `${roomLink(baseRoomName)} is not in the list`
+    }
+
+    const targetDescription = (target: TargetInfo): string[] => {
+      switch (target.case) {
+      case "power bank":
+        return [
+          `  - ${coloredResourceType(RESOURCE_POWER)} in ${roomLink(target.roomName)}, amount: ${target.powerAmount}, decay: ${target.decayBy - Game.time}`,
+          ...target.ignoreReasons.map(reason => `    - ${reason}`)
+        ]
+      case "deposit":
+        return [
+          `  - ${coloredResourceType(target.commodityType)} in ${roomLink(target.roomName)}, cooldown: ${target.currentCooldown}, decay: ${target.decayBy - Game.time}`,
+          ...target.ignoreReasons.map(reason => `    - ${reason}`)
+        ]
+      }
+    }
+
+    const observeResultsDesctiptions = (observeTargetRoomName: RoomName): string[] => {
+      const observeResults = this.observeResults[observeTargetRoomName]
+      if (observeResults == null) {
+        return [`- nothing in ${roomLink(observeTargetRoomName)}`]
+      }
+
+      return [
+        `- ${roomLink(observeTargetRoomName)}: observed at ${Game.time - observeResults.observedAt} ticks ago`,
+        ...observeResults.targets.flatMap(target => targetDescription(target)),
+      ]
+    }
+
+    const descriptions: string[] = [
+      `- ${roomLink(base.roomName)}:`,
+      `  - targets: ${base.targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`,
+      ...base.targetRoomNames.flatMap(targetRoomName => observeResultsDesctiptions(targetRoomName)),
+    ]
+
+    return descriptions.join("\n")
   }
 
   /** @throws */
@@ -137,7 +208,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     if (targetRoomNames.length <= 0) {
       throw "target_room_names has 0 length"
     }
-    const targetingBases = this.bases.flatMap(base => base.targetRoomNames.some(targetRoomName => targetRoomNames.includes(targetRoomName) === true) === true)
+    const targetingBases = this.bases.filter(base => base.targetRoomNames.some(targetRoomName => targetRoomNames.includes(targetRoomName) === true) === true)
     if (targetingBases.length > 0) {
       throw "targets duplicated"
     }
@@ -278,6 +349,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       targetId: powerBank.id,
       ignoreReasons,
       neighbourCount,
+      decayBy: powerBank.ticksToDecay + Game.time,
       powerAmount: powerBank.power,
       position: {x: powerBank.pos.x, y: powerBank.pos.y}
     }
@@ -303,12 +375,15 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       targetId: deposit.id,
       ignoreReasons,
       neighbourCount,
+      decayBy: deposit.ticksToDecay + Game.time,
       commodityType: deposit.depositType,
       currentCooldown: deposit.lastCooldown,
     }
   }
 
   private launchProcess(): void {
+    const minimumEnergyAmount = 50000
+
     const harvestPowerBankCost = 10
     const harvestCommodityCost = 6
     const maxCost = 15
@@ -345,12 +420,21 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         return
       }
 
+      const roomResource = RoomResources.getOwnedRoomResource(base.roomName)
+      if (roomResource == null || roomResource.getResourceAmount(RESOURCE_ENERGY) < minimumEnergyAmount) {
+        return
+      }
+
       for (const target of observeResult.targets) {
         if (target.ignoreReasons.length > 0) {
           continue
         }
         if (runningHarvestProcessTargetIds.includes(target.targetId) === true) {
           target.ignoreReasons.push("harvesting")
+          continue
+        }
+        if ((target.decayBy - Game.time) < 3000) {
+          target.ignoreReasons.push("decaying")
           continue
         }
 
