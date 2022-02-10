@@ -23,6 +23,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("Season1838855DistributorProcess", state => {
   return Season1838855DistributorProcess.decode(state as Season1838855DistributorProcessState)
@@ -40,8 +41,7 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-// Game.io("launch -l Season1838855DistributorProcess room_name=W51S29 pos=24,21")
-export class Season1838855DistributorProcess implements Process, Procedural {
+export class Season1838855DistributorProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -88,6 +88,28 @@ export class Season1838855DistributorProcess implements Process, Procedural {
   public setDrainStorage(): void {
     processLog(this, `${coloredText("[Warning]", "warn")} ${roomLink(this.parentRoomName)} drain storage`)
     this.drainStorage = true
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "stop_storage_drain"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "stop_storage_drain":
+        this.drainStorage = false
+        return "stopped"
+
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
