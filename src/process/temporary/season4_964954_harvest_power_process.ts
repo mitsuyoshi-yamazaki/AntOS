@@ -488,7 +488,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
           const haulerCount = this.haulerSpec.maxCount
           const haulerSpawnTime = this.haulerSpec.body.length * GameConstants.creep.life.spawnTime
           const ticksToHaulerReady = (haulerCount * haulerSpawnTime) + ticksToRoom
-          estimation = `, ETD: ${Math.ceil(ticksToDestroy / 100) * 100}, hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 50000) * 50}k)`
+          estimation = `, ETD: ${Math.ceil(ticksToDestroy / 100) * 100}, hauler ready: ${ticksToHaulerReady} (hits: ${Math.floor(powerBank.hits / 100000) * 100}k)`
           return (ticksToDestroy + 50) < ticksToHaulerReady
         })()
         if (almost === true) {
