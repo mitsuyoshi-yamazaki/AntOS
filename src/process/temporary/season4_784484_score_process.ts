@@ -20,7 +20,6 @@ import { GameConstants } from "utility/constants"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
-import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
@@ -47,7 +46,7 @@ interface Season4784484ScoreProcessState extends ProcessState {
   readonly haulerName: CreepName | null
 }
 
-export class Season4784484ScoreProcess implements Process, Procedural, MessageObserver {
+export class Season4784484ScoreProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -115,12 +114,6 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
       return `hauler in ${hauler.pos}`
     })()
     return `${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
-  }
-
-  public didReceiveMessage(message: string): string {
-    // fallback
-    // stop
-    return "not implemented yet"
   }
 
   public runOnTick(): void {
