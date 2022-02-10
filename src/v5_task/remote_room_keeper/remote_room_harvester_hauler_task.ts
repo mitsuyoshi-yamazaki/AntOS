@@ -12,7 +12,7 @@ import { CreepInsufficiencyProblemSolver } from "v5_task/creep_spawn/creep_insuf
 import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
-import { bodyCost } from "utility/creep_body"
+import { CreepBody } from "utility/creep_body"
 import { EnergySource, EnergyStore, getEnergyAmountOf, getResourceAmountOf } from "prototype/room_object"
 import { MoveToTransferHaulerTask } from "v5_object_task/creep_task/combined_task/move_to_transfer_hauler_task"
 import { TaskState } from "v5_task/task_state"
@@ -158,26 +158,19 @@ export class RemoteRoomHaulerTask extends Task {
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    const maximumCarryUnitCount = 10 // TODO: 算出する
-    const unit: BodyPartConstant[] = [CARRY, CARRY, MOVE]
-
-    const constructBody = ((unitCount: number): BodyPartConstant[] => {
-      const result: BodyPartConstant[] = [WORK, CARRY, MOVE]
-      for (let i = 0; i < unitCount; i += 1) {
-        result.push(...unit)
-      }
-      return result
-    })
-
     const energyCapacity = objects.controller.room.energyCapacityAvailable
-    for (let i = maximumCarryUnitCount; i >= 1; i -= 1) {
-      const body = constructBody(i)
-      const cost = bodyCost(body)
-      if (cost <= energyCapacity) {
-        return body
-      }
+
+    if (((Game.time + this.startTime) % 16) <= 2) {
+      const bodyUnit: BodyPartConstant[] = [
+        WORK, CARRY, MOVE, CARRY, CARRY, MOVE,
+      ]
+      return CreepBody.create([], bodyUnit, energyCapacity, 5)
+    } else {
+      const bodyUnit: BodyPartConstant[] = [
+        CARRY, CARRY, MOVE,
+      ]
+      return CreepBody.create([], bodyUnit, energyCapacity, 10)
     }
-    return unit
   }
 
   // ---- Creep Task ---- //
@@ -243,12 +236,18 @@ export class RemoteRoomHaulerTask extends Task {
     }
 
     if (objects.activeStructures.storage != null) {
-      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage)) // TODO: repair
+      if (creep.getActiveBodyparts(WORK) > 0) {
+        return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
+      }
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)
     if (structureToCharge != null) {
-      return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      if (creep.getActiveBodyparts(WORK) > 0) {
+        return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      }
+      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
     }
 
     const spawn = objects.activeStructures.spawns[0]

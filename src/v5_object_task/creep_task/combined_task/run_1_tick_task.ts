@@ -1,9 +1,11 @@
+import { Timestamp } from "utility/timestamp"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
 export interface Run1TickTaskState extends CreepTaskState {
-  childTaskState: CreepTaskState
+  readonly childTaskState: CreepTaskState
+  readonly until: Timestamp
 }
 
 export class Run1TickTask implements CreepTask {
@@ -12,6 +14,7 @@ export class Run1TickTask implements CreepTask {
   private constructor(
     public readonly startTime: number,
     private readonly childTask: CreepTask,
+    private readonly until: Timestamp,
   ) {
     this.shortDescription = this.childTask.shortDescription
   }
@@ -21,15 +24,17 @@ export class Run1TickTask implements CreepTask {
       s: this.startTime,
       t: "Run1TickTask",
       childTaskState: this.childTask.encode(),
+      until: this.until,
     }
   }
 
   public static decode(state: Run1TickTaskState, childTask: CreepTask): Run1TickTask {
-    return new Run1TickTask(state.s, childTask)
+    return new Run1TickTask(state.s, childTask, state.until ?? (Game.time + 1))
   }
 
-  public static create(childTask: CreepTask): Run1TickTask {
-    return new Run1TickTask(Game.time, childTask)
+  public static create(childTask: CreepTask, options?: { duration?: number }): Run1TickTask {
+    const until = Game.time + (options?.duration ?? 1)
+    return new Run1TickTask(Game.time, childTask, until)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -40,7 +45,10 @@ export class Run1TickTask implements CreepTask {
     case TaskProgressType.FinishedAndRan:
       return result
     case TaskProgressType.InProgress:
-      return TaskProgressType.FinishedAndRan
+      if (Game.time >= this.until) {
+        return TaskProgressType.FinishedAndRan
+      }
+      return TaskProgressType.InProgress
     }
   }
 }

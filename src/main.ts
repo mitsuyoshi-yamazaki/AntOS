@@ -1,7 +1,7 @@
 import "ts-polyfill/lib/es2019-array"
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import * as ScreepsProfiler from "screeps-profiler"
+import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
 import * as Initializer from "_old/init"
 import { leveled_colored_text } from "./utility"

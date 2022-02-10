@@ -4,9 +4,7 @@ import { RoomName } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "v5_task/task_state"
-import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomWorkerTask } from "./remote_room_worker_task"
-import { remoteRoomNamesToDefend } from "process/temporary/season_487837_attack_invader_core_room_names"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Environment } from "utility/environment"
 import { RoomResources } from "room_resource/room_resources"
@@ -20,7 +18,14 @@ export interface RemoteRoomKeeperTaskState extends TaskState {
   tr: RoomName
 }
 
-// TODO: reserve
+/**
+ * - RemoteRoomManager
+ *   - RemoteRoomKeeper(s)
+ *     - RemoteRoomWorker
+ *       - RemoteRoomReserver
+ *       - RemoteRoomHarvester
+ *       - RemoteRoomHauler
+ */
 export class RemoteRoomKeeperTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
@@ -98,21 +103,6 @@ export class RemoteRoomKeeperTask extends Task {
 
     this.checkProblemFinders(problemFinders)
 
-    // if (this.targetRoomName === "W25S29" && this.children.some(task => task instanceof RemoteRoomHarvesterTask) !== true) {
-    //   const room = World.rooms.get(this.targetRoomName)
-    //   if (room != null) {
-    //     const sources = room.find(FIND_SOURCES)
-    //     sources.forEach(source => {
-    //       console.log(`RemoteRoomHarvesterTask added ${source}`)
-    //       this.addChildTask(RemoteRoomHarvesterTask.create(this.roomName, source))
-    //     })
-    //   }
-    // }
-    const harvesterTask = this.children.find(task => task instanceof RemoteRoomHarvesterTask)
-    if (harvesterTask != null) {
-      this.removeChildTask(harvesterTask)
-    }
-
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null && targetRoomInfo != null && targetRoomInfo.roomType === "normal") {
       const shouldLaunchRemoteRoomWorker = ((): boolean => {
@@ -122,24 +112,11 @@ export class RemoteRoomKeeperTask extends Task {
           return false
         }
         if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
-          const remoteRoomNames = remoteRoomNamesToDefend.getValueFor(this.roomName)
-          if (remoteRoomNames.includes(this.targetRoomName) !== true) {
-            remoteRoomNames.push(this.targetRoomName)
-          }
           return false
         }
         if (objects.activeStructures.storage == null) {
           return false
         }
-        const remoteRooms = remoteRoomNamesToDefend.get(this.roomName)
-        if (remoteRooms != null) {
-          if (remoteRooms.includes(this.targetRoomName) === true) {
-            return true
-          }
-        }
-        // if (Environment.world === "season 3") {
-        //   return false
-        // }
         if (targetRoomInfo.owner != null) {
           if (targetRoomInfo.owner.ownerType === "claim") {
             return false
@@ -172,20 +149,6 @@ export class RemoteRoomKeeperTask extends Task {
       this.removeChildTask(workerToRemove)
     }
 
-    // this.checkInvasion()
-
     return TaskStatus.InProgress
   }
-
-  // private checkInvasion(): void {
-  //   if (this.children.some(task => task instanceof RemoteRoomWorkerTask) !== true) {
-  //     return
-  //   }
-  //   const targetRoom = Game.rooms[this.targetRoomName]
-  //   if (targetRoom == null) {
-  //     return
-  //   }
-  //   const invaderCreeps = targetRoom.find(FIND_HOSTILE_CREEPS)
-
-  // }
 }

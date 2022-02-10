@@ -20,7 +20,6 @@ export const PowerConstant: PowerConstant[] = [
   PWR_OPERATE_FACTORY,
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isPowerConstant(arg: number): arg is PowerConstant {
   return (PowerConstant as number[]).includes(arg)
 }

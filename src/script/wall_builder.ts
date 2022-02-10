@@ -134,15 +134,15 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
         const position = new RoomPosition(x, y, room.name)
         const wallType = ((): STRUCTURE_WALL | STRUCTURE_RAMPART | null => {
           if (positionStatus === "edge wall") {
-            if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
-              return STRUCTURE_WALL
-            }
+            // if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
+            //   return STRUCTURE_WALL
+            // }
             return STRUCTURE_RAMPART
           }
           if (x === roomMin + 1 || x === roomMax - 1 || y === roomMin + 1 || y === roomMax - 1) {
-            if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
-              return STRUCTURE_WALL
-            }
+            // if (position.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }).length > 0) {
+            //   return STRUCTURE_WALL
+            // }
             return STRUCTURE_RAMPART
           }
           const outsidePositionCount = position.neighbours()
@@ -163,25 +163,26 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
             return null
           case 1:
             return ((): STRUCTURE_WALL | STRUCTURE_RAMPART => {
-              if (room.controller != null && position.getRangeTo(room.controller.pos) <= GameConstants.creep.actionRange.upgradeController) {
-                return STRUCTURE_RAMPART
-              }
-              const structures = position.lookFor(LOOK_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_WALL)
-              if (structures.length > 0) {
-                return STRUCTURE_RAMPART
-              }
-              if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
-                return STRUCTURE_RAMPART
-              }
-              if (position.lookFor(LOOK_FLAGS).length > 0) {
-                return STRUCTURE_RAMPART
-              }
-              return STRUCTURE_WALL
+              return STRUCTURE_RAMPART
+              // if (room.controller != null && position.getRangeTo(room.controller.pos) <= GameConstants.creep.actionRange.upgradeController) {
+              //   return STRUCTURE_RAMPART
+              // }
+              // const structures = position.lookFor(LOOK_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_WALL)
+              // if (structures.length > 0) {
+              //   return STRUCTURE_RAMPART
+              // }
+              // if (position.lookFor(LOOK_CONSTRUCTION_SITES).length > 0) {
+              //   return STRUCTURE_RAMPART
+              // }
+              // if (position.lookFor(LOOK_FLAGS).length > 0) {
+              //   return STRUCTURE_RAMPART
+              // }
+              // return STRUCTURE_WALL
             })()
           default: {
-            if (position.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_WALL}}).length > 0) {
-              return STRUCTURE_WALL
-            }
+            // if (position.findInRange(FIND_STRUCTURES, 0, { filter: {structureType: STRUCTURE_WALL}}).length > 0) {
+            //   return STRUCTURE_WALL
+            // }
             return STRUCTURE_RAMPART
           }
           }

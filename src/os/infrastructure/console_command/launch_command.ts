@@ -5,12 +5,11 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
-import { Season631744PowerProcessProcess } from "process/temporary/season_631744_power_process_process"
-import { World } from "world_info/world_info"
+import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { coloredText, roomLink } from "utility/log"
-import { Season634603PowerCreepProcess } from "process/temporary/season_634603_power_creep_process"
+import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
-import { Season989041MovePowerCreepProcess } from "process/temporary/season_989041_move_power_creep_process"
+import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
@@ -21,12 +20,11 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
-import { UpgradePowerCreepProcess } from "process/process/upgrade_power_creep_process"
+import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
-// import { ConstructionSaboteurProcess } from "process/onetime/construction_saboteur_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
 import { World35440623DowngradeControllerProcess } from "process/temporary/world_35440623_downgrade_controller_process"
@@ -37,8 +35,6 @@ import { World35872159TestResourcePoolProcess } from "process/temporary/world_35
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
-// import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
-import { } from "process/temporary/season4_275982_harvest_commodity_manager_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
@@ -50,10 +46,15 @@ import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
 import { } from "process/temporary/season4_628862_downgrade_room_process"
-import { DefenseRoomProcess } from "process/process/defense_room_process"
+import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
 import { directionName } from "utility/direction"
+import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
+import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
+import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
+// import { Season41035999ScoreFleetProcess } from "process/temporary/season4_1035999_score_fleet_process"
+import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -84,14 +85,8 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "Season570208DismantleRcl2RoomProcess":
         return this.launchSeason570208DismantleRcl2RoomProcess()
-      case "Season631744PowerProcessProcess":
-        return this.launchSeason631744PowerProcessProcess()
-      case "Season634603PowerCreepProcess":
-        return this.launchSeason634603PowerCreepProcess()
       case "Season701205PowerHarvesterSwampRunnerProcess":
         return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
-      case "Season989041MovePowerCreepProcess":
-        return this.launchSeason989041MovePowerCreepProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
       case "Season1143119LabChargerProcess":
@@ -134,10 +129,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchWorld35872159TestResourcePoolProcess()
       case "SubmoduleTestProcess":
         return this.launchSubmoduleTestProcess()
-      case "ConstructionSaboteurProcess":
-        return this.launchConstructionSaboteurProcess()
-      case "AttackRoomProcess":
-        return this.launchAttackRoomProcess()
       case "MonitoringProcess":
         return this.launchMonitoringProcess()
       case "QuadMakerProcess":
@@ -281,42 +272,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason631744PowerProcessProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const powerSpawn = World.rooms.getOwnedRoomObjects(roomName)?.activeStructures.powerSpawn
-    if (powerSpawn == null) {
-      return Result.Failed(`No power spawn in ${roomLink(roomName)}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season631744PowerProcessProcess.create(processId, roomName, powerSpawn.id)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason634603PowerCreepProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const powerCreepName = args.get("power_creep_name")
-    if (powerCreepName == null) {
-      return this.missingArgumentError("power_creep_name")
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season634603PowerCreepProcess.create(processId, roomName, powerCreepName)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchSeason701205PowerHarvesterSwampRunnerProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -364,34 +319,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason989041MovePowerCreepProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const fromRoomName = args.get("from_room_name")
-    if (fromRoomName == null) {
-      return this.missingArgumentError("from_room_name")
-    }
-    const toRoomName = args.get("to_room_name")
-    if (toRoomName == null) {
-      return this.missingArgumentError("to_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const powerCreepName = args.get("power_creep_name")
-    if (powerCreepName == null) {
-      return this.missingArgumentError("power_creep_name")
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season989041MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreepName)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchBuyPixelProcess(): LaunchCommandResult {
     if (Environment.world !== "persistent world") {
       return Result.Failed(`Environment ${Environment.world} does not support pixel`)
@@ -418,7 +345,7 @@ export class LaunchCommand implements ConsoleCommand {
     for (const rawLabInfo of rawLabIds.split(",")) {
       const [labId, boost] = rawLabInfo.split(":")
       if (labId == null || boost == null) {
-        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds})`)
+        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds}), labs=&ltlab ID&gt:&ltboost&gt,...`)
       }
       const lab = Game.getObjectById(labId)
       if (!(lab instanceof StructureLab)) {
@@ -890,70 +817,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchConstructionSaboteurProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    // const process = OperatingSystem.os.addProcess(null, processId => {
-    //   return ConstructionSaboteurProcess.create(processId, roomName, targetRoomName, )
-    // })
-    // return Result.Succeeded(process)
-    return Result.Failed("not implemented yet")
-  }
-
-  private launchAttackRoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    // const process = OperatingSystem.os.addProcess(null, processId => {
-    //   return AttackRoomProcess.create(processId, roomName, targetRoomName, )
-    // })
-    // return Result.Succeeded(process)
-    return Result.Failed("not implemented yet")
-  }
-
   private launchMonitoringProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -1135,9 +998,152 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
     }
 
     const commodityType = args.commodityType("commodity_type").parse()
-    const amount = args.int("amount").parse()
+    const amount = args.int("amount").parse({min: 10, max: 1000})
 
     return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => DefenseRemoteRoomProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const neighbourCount = args.int("neighbour_count").parse({ min: 1, max: 8 })
+    const position = args.localPosition("position").parse()
+    const powerAmount = args.int("power_amount").parse()
+    const powerBankId = args.gameObjectId("power_bank_id").parse() as Id<StructurePowerBank>
+    const waypoints = GameMap.getWaypoints(roomName, targetRoomName) ?? []
+
+    const powerBankInfo = {
+      id: powerBankId,
+      powerAmount,
+      position,
+      neighbourCount,
+    }
+
+    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("MovePowerCreepProcess", args => {
+  try {
+    const fromRoomName = args.roomName("from_room_name").parse({ my: true })
+    const toRoomName = args.roomName("to_room_name").parse({my: true})
+    const waypoints = args.roomNameList("waypoints").parse()
+    const powerCreep = args.powerCreep("power_creep_name").parse()
+
+    return Result.Succeeded((processId) => MovePowerCreepProcess.create(processId, fromRoomName, toRoomName, waypoints, powerCreep.name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerCreepProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const powerCreep = args.powerCreep("power_creep_name").parse()
+
+    return Result.Succeeded((processId) => PowerCreepProcess.create(processId, roomName, powerCreep.name))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerProcessProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const powerSpawn = roomResource.activeStructures.powerSpawn
+    if (powerSpawn == null) {
+      throw `no power spawn in ${roomLink(roomResource.room.name)}`
+    }
+
+    return Result.Succeeded((processId) => PowerProcessProcess.create(processId, roomResource.room.name, powerSpawn.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season41011412HighwayProcessLauncherProcess", () => {
+  try {
+    return Result.Succeeded((processId) => Season41011412HighwayProcessLauncherProcess.create(processId))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+// ProcessLauncher.register("Season41035999ScoreFleetProcess", args => {
+//   try {
+//     const roomResource = args.ownedRoomResource("room_name").parse()
+//     const roomName = roomResource.room.name
+//     const spawn = roomResource.activeStructures.spawns[0]
+//     if (spawn == null) {
+//       throw `no spawn in ${roomLink(roomName)}`
+//     }
+//     const highwayEntranceRoomName = args.roomName("highway_entrance_room_name").parse()
+//     const direction = args.direction("direction").parse()
+//     if (direction === TOP_LEFT || direction === TOP_RIGHT || direction === BOTTOM_LEFT || direction === BOTTOM_RIGHT) {
+//       throw `Invalid direction ${directionName(direction)}(${direction})`
+//     }
+//     const commodityType = args.commodityType("commodity_type").parse()
+
+//     const waypoints = GameMap.getWaypoints(roomName, highwayEntranceRoomName) ?? []
+//     const nextWaypointRoomName = waypoints[0] ?? highwayEntranceRoomName
+//     const nextRoomName = ((): RoomName => {
+//       const route = Game.map.findRoute(roomName, nextWaypointRoomName)
+//       if (route === ERR_NO_PATH) {
+//         return nextWaypointRoomName
+//       }
+//       const firstStep = route[0]
+//       if (firstStep == null) {
+//         return nextWaypointRoomName
+//       }
+//       return firstStep.room
+//     })()
+//     const exit = roomResource.room.findExitTo(nextRoomName)
+//     if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
+//       throw `cannot find exit to ${roomLink(nextRoomName)} from ${roomLink(roomName)}`
+//     }
+
+//     const exitPosition = spawn.pos.findClosestByPath(exit)
+//     if (exitPosition == null) {
+//       throw `no exit position found in ${roomLink(roomName)}`
+//     }
+
+//     return Result.Succeeded((processId) => Season41035999ScoreFleetProcess.create(
+//       processId,
+//       roomName,
+//       highwayEntranceRoomName,
+//       direction,
+//       commodityType,
+
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })
+
+ProcessLauncher.register("World39013108CollectResourceProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const resourceType = args.resourceType("resource_type").parse()
+    const amount = args.int("amount").parse({ min: 100, max: 100000 })
+    const interval = args.int("interval").parse({min: 0})
+
+    return Result.Succeeded((processId) => World39013108CollectResourceProcess.create(processId, roomName, resourceType, amount, interval))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

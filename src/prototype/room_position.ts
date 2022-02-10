@@ -120,52 +120,63 @@ export function init(): void {
     }
 
     RoomPosition.prototype.positionsInRange = function (range: number, options: RoomPositionFilteringOptions): RoomPosition[] {
-      const walkableTerrains: Terrain[] = ["swamp", "plain"]
-      const walkableStructures: StructureConstant[] = [STRUCTURE_CONTAINER, STRUCTURE_ROAD]
       const positions: RoomPosition[] = []
+      try {
+        const walkableTerrains: Terrain[] = ["swamp", "plain"]
+        const walkableStructures: StructureConstant[] = [STRUCTURE_CONTAINER, STRUCTURE_ROAD]
 
-      for (let j = -range; j <= range; j += 1) {
-        for (let i = -range; i <= range; i += 1) {
-          if (options.excludeItself && i === 0 && j === 0) {
-            continue
-          }
-          const x = this.x + i
-          if (x < 0 || x > 49) {
-            continue
-          }
-          const y = this.y + j
-          if (y < 0 || y > 49) {
-            continue
-          }
+        const needLook = options.excludeStructures === true || options.excludeTerrainWalls === true || options.excludeWalkableStructures === true
 
-          const position = new RoomPosition(x, y, this.roomName)
-          const objects = position.look()
-          let shouldExclude = false
+        for (let j = -range; j <= range; j += 1) {
+          for (let i = -range; i <= range; i += 1) {
+            if (options.excludeItself && i === 0 && j === 0) {
+              continue
+            }
+            const x = this.x + i
+            if (x < 0 || x > 49) {
+              continue
+            }
+            const y = this.y + j
+            if (y < 0 || y > 49) {
+              continue
+            }
 
-          for (const obj of objects) {
-            if (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain) !== true) {
-              if (options.excludeTerrainWalls === true) {
-                shouldExclude = true
-                break
+            const position = new RoomPosition(x, y, this.roomName)
+            if (needLook !== true) {
+              positions.push(position)
+              continue
+            }
+
+            const objects = position.look()
+            let shouldExclude = false
+
+            for (const obj of objects) {
+              if (obj.type === LOOK_TERRAIN && obj.terrain != null && walkableTerrains.includes(obj.terrain) !== true) {
+                if (options.excludeTerrainWalls === true) {
+                  shouldExclude = true
+                  break
+                }
+              }
+              if (obj.type === LOOK_STRUCTURES && obj.structure != null) {
+                if (options.excludeWalkableStructures === true) {
+                  shouldExclude = true
+                  break
+                }
+                if (options.excludeStructures === true && walkableStructures.includes(obj.structure.structureType) === false) {
+                  shouldExclude = true
+                  break
+                }
               }
             }
-            if (obj.type === LOOK_STRUCTURES && obj.structure != null) {
-              if (options.excludeWalkableStructures === true) {
-                shouldExclude = true
-                break
-              }
-              if (options.excludeStructures === true && walkableStructures.includes(obj.structure.structureType) === false) {
-                shouldExclude = true
-                break
-              }
-            }
-          }
 
-          if (shouldExclude === true) {
-            continue
+            if (shouldExclude === true) {
+              continue
+            }
+            positions.push(position)
           }
-          positions.push(position)
         }
+      } catch (error) {
+        PrimitiveLogger.programError(`${this}.positionsInRange() failed: ${error}`)
       }
       return positions
     }

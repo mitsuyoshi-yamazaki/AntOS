@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { Result } from "utility/result"
-import { isValidRoomName, RoomName } from "../utility/room_name"
+import { isValidRoomName, RoomCoordinate, RoomName } from "../utility/room_name"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }
@@ -16,11 +16,32 @@ const MissingWaypoints = {
     if (cachedPairs.includes(identifier) === true) {
       return
     }
+
+    PrimitiveLogger.log(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${roomLink(fromRoomName)}=&gt${roomLink(toRoomName)}`)
+
     cachedPairs.push(identifier)
     missingWaypointPairs.push({
       from: fromRoomName,
       to: toRoomName,
     })
+  },
+
+  isMissing(fromRoomName: RoomName, toRoomName: RoomName): boolean {
+    const identifier = `${fromRoomName}=>${toRoomName}`
+    if (cachedPairs.includes(identifier) === true) {
+      return true
+    }
+    return false
+  },
+
+  missingWaypoints(): { from: RoomName, to: RoomName }[] {
+    return [...missingWaypointPairs]
+  },
+
+  clear(): void {
+    if (missingWaypointPairs.length > 0) {
+      missingWaypointPairs.splice(0, missingWaypointPairs.length)
+    }
   },
 }
 
@@ -29,15 +50,9 @@ export const GameMap = {
   },
 
   afterTick(): void {
-    if (missingWaypointPairs.length > 0) {
-      const missingWaypoints = missingWaypointPairs.map(pair => `${roomLink(pair.from)}=&gt${roomLink(pair.to)}`).join(", ")
-      PrimitiveLogger.notice(`${coloredText("[REQUEST]", "warn")} Requested missing waypoints: ${missingWaypoints}`)
-
-      missingWaypointPairs.splice(0, missingWaypointPairs.length)
-    }
   },
 
-  getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  getWaypoints(roomName: RoomName, destinationRoomName: RoomName, options?: {ignoreMissingWaypoints?: boolean}): RoomName[] | null {
     if (roomName === destinationRoomName) {
       return []
     }
@@ -50,12 +65,20 @@ export const GameMap = {
       returnTrip.reverse()
       return returnTrip
     }
-    const adjacentRoomNames = Array.from(Object.values(Game.map.describeExits(roomName)))
-    if (adjacentRoomNames.includes(destinationRoomName) === true) {
-      this.setWaypoints(roomName, destinationRoomName, [])
-      return []
+
+    if (MissingWaypoints.isMissing(roomName, destinationRoomName) === true) {
+      return null
     }
-    MissingWaypoints.add(roomName, destinationRoomName)
+
+    const calculatedWaypoints = calculateWaypoints(roomName, destinationRoomName)
+    if (calculatedWaypoints != null) {
+      this.setWaypoints(roomName, destinationRoomName, calculatedWaypoints)
+      return calculatedWaypoints
+    }
+
+    if (options?.ignoreMissingWaypoints !== true) {
+      MissingWaypoints.add(roomName, destinationRoomName)
+    }
     return null
   },
 
@@ -92,6 +115,12 @@ export const GameMap = {
   pathDistance(fromRoomName: RoomName, toRoomName: RoomName): number | null {
     return Game.map.getRoomLinearDistance(fromRoomName, toRoomName) // FixMe:
   },
+
+  clearMissingWaypoints(): { from: RoomName, to: RoomName }[] {
+    const missingWaypoints = MissingWaypoints.missingWaypoints()
+    MissingWaypoints.clear()
+    return missingWaypoints
+  },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
@@ -104,4 +133,48 @@ function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomNa
     return null
   }
   return [...waypoints]
+}
+
+function calculateWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const adjacentWaypoints = adjacentRoomWaypoints(roomName, destinationRoomName)
+  if (adjacentWaypoints != null) {
+    return adjacentWaypoints
+  }
+
+  const straightWaypoints = straightRoomWaypoints(roomName, destinationRoomName)
+  if (straightWaypoints != null) {
+    return straightWaypoints
+  }
+
+  return null
+}
+
+function adjacentRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const adjacentRoomNames = Array.from(Object.values(Game.map.describeExits(roomName)))
+  if (adjacentRoomNames.includes(destinationRoomName) === true) {
+    return []
+  }
+  return null
+}
+
+function straightRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
+  const coordinate = RoomCoordinate.parse(roomName)
+  const destinationCoordinate = RoomCoordinate.parse(roomName)
+  if (coordinate == null || destinationCoordinate == null) {
+    return null
+  }
+
+  if (coordinate.isLinearTo(destinationRoomName) !== true) {
+    return null
+  }
+
+  const route = Game.map.findRoute(roomName, destinationRoomName)
+  if (route === ERR_NO_PATH) {
+    return null
+  }
+  const linearDistance = Game.map.getRoomLinearDistance(roomName, destinationRoomName)
+  if (route.length !== linearDistance) {
+    return null
+  }
+  return []
 }

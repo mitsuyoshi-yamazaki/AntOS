@@ -21,7 +21,6 @@ interface RoomResourcesInterface {
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
   getNormalRoomResource(roomName: RoomName): NormalRoomResource | null
-  getRoomResource(roomName: RoomName): RoomResource | null
   getRoomInfo(roomName: RoomName): RoomInfoType | null
   getAllRoomInfo(): { roomName: RoomName, roomInfo: RoomInfoType }[]
   removeRoomInfo(roomName: RoomName): void
@@ -59,6 +58,9 @@ export const RoomResources: RoomResourcesInterface = {
         const ownedRoomResource = buildOwnedRoomResource(room.controller, creepInfo)
         ownedRoomResources.set(roomName, ownedRoomResource)
         roomResources.set(roomName, ownedRoomResource)
+
+      } else {
+        // NormalRoomResourceは
       }
 
       updateRoomInfo(room)
@@ -84,21 +86,13 @@ export const RoomResources: RoomResourcesInterface = {
     if (roomResource instanceof NormalRoomResource) {
       return roomResource
     }
-    return null
-  },
-
-  getRoomResource(roomName: RoomName): RoomResource | null {
-    const stored = roomResources.get(roomName)
-    if (stored != null) {
-      return stored
-    }
     const room = Game.rooms[roomName]
     if (room == null || room.controller == null) {
       return null
     }
-    const roomResource = buildNormalRoomResource(room.controller)
-    roomResources.set(roomName, roomResource)
-    return roomResource
+    const normalRoomResource = buildNormalRoomResource(room.controller)
+    roomResources.set(roomName, normalRoomResource)
+    return normalRoomResource
   },
 
   getRoomInfo(roomName: RoomName): RoomInfoType | null {
@@ -204,18 +198,8 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
       if (stored.roomType === "owned") {
 
         // FixMe: Migration: 消す
-        if (stored.neighbourRoomNames == null) {
-          const getNeighbourRoomNames = (room: Room): RoomName[] => {
-            const exits = Game.map.describeExits(room.name)
-            if (exits == null) { // sim環境ではundefinedが返る
-              return []
-            }
-            return Array.from(Object.values(exits))
-          }
-          stored.neighbourRoomNames = getNeighbourRoomNames(controller.room)
-        }
-        if (stored.numberOfSources == null) {
-          stored.numberOfSources = controller.room.find(FIND_SOURCES).length
+        if (stored.remoteRoomInfo == null) {
+          stored.remoteRoomInfo = {}
         }
 
         return stored
@@ -224,6 +208,19 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
     }
     return buildOwnedRoomInfo(controller.room)
   })()
+
+  // FixMe: Migration
+  const remoteRoomNames = Array.from(Object.keys(roomInfo.remoteRoomInfo))
+  remoteRoomNames.forEach(remoteRoomName => {
+    const remoteInfo = roomInfo.remoteRoomInfo[remoteRoomName]
+    if (remoteInfo == null) {
+      return
+    }
+    if (typeof remoteInfo.routeCalculatedTimestamp === "number") {
+      remoteInfo.routeCalculatedTimestamp = {}
+    }
+  })
+
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
 

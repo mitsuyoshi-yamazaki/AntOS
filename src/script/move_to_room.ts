@@ -172,7 +172,7 @@ export function avoidSourceKeeper(creep: AnyCreep, creepRoom: Room, destinationP
 
     const positionsToAvoid: RoomPosition[] = []
     if (options?.positionsToAvoid != null) {
-      positionsToAvoid.push(...options?.positionsToAvoid)
+      positionsToAvoid.push(...(options?.positionsToAvoid ?? []))
     }
 
     switch (roomTypeOf(creepRoom.name)) {

@@ -6,6 +6,21 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
+
+const errors = new Map<string, number>()
+function raiseError(errorMessage: string): void {
+  if (errors.size > 100) {
+    errors.clear()
+  }
+  const errorCount = (errors.get(errorMessage) ?? 0) + 1
+  errors.set(errorMessage, errorCount)
+
+  if (errorCount % 50 === 0) {
+    PrimitiveLogger.log(`${errorMessage} (${errorCount} times)`)
+  }
+}
 
 type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
 type Position = {
@@ -112,9 +127,21 @@ export class MoveToTargetTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
 
     case IN_PROGRESS:
-    case ERR_NOT_IN_RANGE:
-      creep.moveTo(this.apiWrapper.target, this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos))
+    case ERR_NOT_IN_RANGE: {
+      const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
+      const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+      if (moveToResult === ERR_NO_PATH && creep.room.name !== this.apiWrapper.target.pos.roomName) {
+        moveToOps.maxOps = 3000
+        moveToOps.maxRooms = 16
+        moveToOps.ignoreCreeps = false
+        const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+        if (retryResult === ERR_NO_PATH) {
+          const error = `creep.moveTo() ${creep.name} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
+          raiseError(error)
+        }
+      }
       return TaskProgressType.InProgress
+    }
 
     case ERR_NOT_ENOUGH_RESOURCES:
     case ERR_DAMAGED:
@@ -132,7 +159,7 @@ export class MoveToTargetTask implements CreepTask {
     if (this.lastPosition != null) {
       if (this.lastPosition.position.isEqualTo(creep.pos) === true) {
         if ((Game.time - this.lastPosition.timestamp) > 2) {
-          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
           const maxOps = creep.pos.roomName === targetPosition.roomName ? 1500 : 2000
           return {
             maxRooms,
@@ -185,7 +212,7 @@ export class MoveToTargetTask implements CreepTask {
     })()
 
     if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
-      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
+      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
       const reusePath = ((): number => {
         if (this.options.reusePath != null) {
           return this.options.reusePath
@@ -210,8 +237,8 @@ export class MoveToTargetTask implements CreepTask {
 
     const options = defaultMoveToOptions()
     options.range = range
-    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 2
-    options.maxOps = creep.pos.roomName === targetPosition.roomName ? 800 : 1500
+    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
+    options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
     options.reusePath = reusePath,
     options.ignoreCreeps = ignoreCreeps
     if (this.options.ignoreSwamp === true) {

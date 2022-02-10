@@ -1,7 +1,6 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
-import { findPath, findPathToSource, placeRoadConstructionMarks } from "script/pathfinder"
-import { describeLabs, placeOldRoomPlan, showOldRoomPlan, showRoomPlan } from "script/room_plan"
-import { showPositionsInRange } from "script/room_position_script"
+import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
+import { describeLabs, showRoomPlan } from "script/room_plan"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
@@ -11,13 +10,12 @@ import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequenti
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
-import { isMineralCompoundConstant, isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
 import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-import { OwnedRoomInfo } from "room_resource/room_info"
 import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
@@ -29,10 +27,15 @@ import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { QuadRequirement } from "../../../../submodules/attack/quad/quad_requirement"
-import { QuadSpec } from "../../../../submodules/attack/quad/quad_spec"
 import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
+import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
+import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
+import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
+import { ListArguments } from "./utility/list_argument_parser"
+import { execRoomConfigCommand } from "./exec_commands/room_config_command"
+import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -42,57 +45,57 @@ export class ExecCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    switch (this.args[0]) {
-    case "findPath":
-      return this.findPath()
-    case "findPathToSource":
-      return this.findPathToSource()
-    case "showOldRoomPlan":
-      return this.showOldRoomPlan()
-    case "placeOldRoomPlan":
-      return this.placeOldRoomPlan()
-    case "placeRoadConstructionMarks":
-      return this.placeRoadConstructionMarks()
-    case "showPositionsInRange":
-      return this.showPositionsInRange()
-    case "describeLabs":
-      return this.describeLabs()
-    case "moveToRoom":
-      return this.moveToRoom()
-    case "move":
-      return this.moveCreep()
-    case "transfer":
-      return this.transfer()
-    case "pickup":
-      return this.pickup()
-    case "dismantle":
-      return this.dismantle()
-    case "resource":
-      return this.resource()
-    case "set_boost_labs":
-      return this.setBoostLabs()
-    case "set_waiting_position":
-      return this.setWaitingPosition()
-    case "show_room_plan":
-      return this.showRoomPlan()
-    case "show_wall_plan":
-      return this.showWallPlan()
-    // case "check_existing_walls":
-    //   return this.checkExistingWalls()
-    case "mineral":
-      return this.showHarvestableMinerals()
-    case "room_config":
-      return this.configureRoomInfo()
-    case "check_alliance":
-      return this.checkAlliance()
-    case "unclaim":
-      return this.unclaim()
-    case "create_quad":
-      return this.createQuad()
-    case "script":
-      return this.runScript()
-    default:
-      return "Invalid script type"
+    try {
+      const args = [...this.args]
+      const scriptType = args.shift()
+      switch (scriptType) {
+      case "show_remote_route":
+        return this.showRemoteRoute()
+      case "calculate_inter_room_shortest_routes":
+        return this.calculateInterRoomShortestRoutes()
+      case "roads_to_parent_room":
+        return this.getRoadPositionsToParentRoom()
+      case "describeLabs":
+        return this.describeLabs()
+      case "moveToRoom":
+        return this.moveToRoom()
+      case "move":
+        return this.moveCreep()
+      case "transfer":
+        return this.transfer()
+      case "pickup":
+        return this.pickup()
+      case "dismantle":
+        return this.dismantle()
+      case "resource":
+        return this.resource()
+      case "set_boost_labs":
+        return this.setBoostLabs()
+      case "set_waiting_position":
+        return this.setWaitingPosition()
+      case "show_room_plan":
+        return this.showRoomPlan()
+      case "show_wall_plan":
+        return this.showWallPlan()
+      case "mineral":
+        return this.showHarvestableMinerals()
+      case "room_config":
+        return this.configureRoomInfo(args)
+      case "check_alliance":
+        return this.checkAlliance()
+      case "unclaim":
+        return this.unclaim()
+      case "power_creep":
+        return this.powerCreep(args)
+      case "room_path_finding":
+        return this.roomPathFinding(args)
+      case "script":
+        return this.runScript()
+      default:
+        throw `Invalid script type ${scriptType}`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
     }
   }
 
@@ -117,166 +120,81 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   // ---- Execute ---- //
-  private findPath(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const startObjectId = args.get("start_object_id")
-    if (startObjectId == null) {
-      return this.missingArgumentError("start_object_id")
-    }
-
-    const goalObjectId = args.get("goal_object_id")
-    if (goalObjectId == null) {
-      return this.missingArgumentError("goal_object_id")
-    }
-
-    return findPath(startObjectId, goalObjectId)
-  }
-
-  private findPathToSource(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const spawnName = args.get("spawn_name")
-    if (spawnName == null) {
-      return this.missingArgumentError("spawn_name")
-    }
-
-    const sourceId = args.get("source_id")
-    if (sourceId == null) {
-      return this.missingArgumentError("source_id")
-    }
-
-    return findPathToSource(spawnName, sourceId as Id<Source>)
-  }
-
-  private showOldRoomPlan(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const layoutName = args.get("layout_name")
-    if (layoutName == null) {
-      return this.missingArgumentError("layout_name")
-    }
-
-    const x = args.get("x")
-    if (x == null) {
-      return this.missingArgumentError("x")
-    }
-    const parsedX = parseInt(x, 10)
-    if (isNaN(parsedX)) {
-      return `x is not a number (${x})`
-    }
-
-    const y = args.get("y")
-    if (y == null) {
-      return this.missingArgumentError("y")
-    }
-    const parsedY = parseInt(y, 10)
-    if (isNaN(parsedY)) {
-      return `y is not a number (${y})`
-    }
-
-    return showOldRoomPlan(roomName, layoutName, parsedX, parsedY)
-  }
-
-  private placeOldRoomPlan(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const layoutName = args.get("layout_name")
-    if (layoutName == null) {
-      return this.missingArgumentError("layout_name")
-    }
-
-    const x = args.get("x")
-    if (x == null) {
-      return this.missingArgumentError("x")
-    }
-    const parsedX = parseInt(x, 10)
-    if (isNaN(parsedX)) {
-      return `x is not a number (${x})`
-    }
-
-    const y = args.get("y")
-    if (y == null) {
-      return this.missingArgumentError("y")
-    }
-    const parsedY = parseInt(y, 10)
-    if (isNaN(parsedY)) {
-      return `y is not a number (${y})`
-    }
-
-    return placeOldRoomPlan(roomName, layoutName, parsedX, parsedY)
-  }
-
-  private placeRoadConstructionMarks(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const startObjectId = args.get("start_object_id")
-    if (startObjectId == null) {
-      return this.missingArgumentError("start_object_id")
-    }
+  /** throws */
+  private showRemoteRoute(): CommandExecutionResult {
+    const keywardArguments = new KeywordArguments(this.args)
+    const startObjectId = keywardArguments.gameObjectId("start_object_id").parse()
     const startObject = Game.getObjectById(startObjectId)
     if (!(startObject instanceof RoomObject)) {
-      return `${startObject} is not RoomObject ${startObjectId}`
+      throw `${startObject} is not RoomObject ${startObjectId}`
     }
 
-    const goalObjectId = args.get("goal_object_id")
-    if (goalObjectId == null) {
-      return this.missingArgumentError("goal_object_id")
-    }
+    const goalObjectId = keywardArguments.gameObjectId("goal_object_id").parse()
     const goalObject = Game.getObjectById(goalObjectId)
     if (!(goalObject instanceof RoomObject)) {
-      return `${goalObject} is not RoomObject ${goalObjectId}`
+      throw `${goalObject} is not RoomObject ${goalObjectId}`
     }
 
-    placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual")
-    return "ok"
+    const usePrimitiveFunction = keywardArguments.boolean("primitive").parseOptional()
+    if (usePrimitiveFunction === true) {
+      const result = calculateRoadPositionsFor(startObject.pos, goalObject.pos)
+      switch (result.resultType) {
+      case "succeeded":
+        result.value.forEach(position => {
+          const room = Game.rooms[position.roomName]
+          if (room == null) {
+            return
+          }
+          room.visual.text("@", position.x, position.y, {color: "#FF0000"})
+        })
+        return `${result.value.length} roads`
+      case "failed":
+        throw result.reason
+      }
+    }
+
+    const dryRun = true
+
+    const result = placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual", { dryRun })
+    switch (result.resultType) {
+    case "succeeded":
+      return "ok"
+    case "failed":
+      throw result.reason
+    }
   }
 
-  private showPositionsInRange(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
+  /** throws */
+  private calculateInterRoomShortestRoutes(): CommandExecutionResult {
+    const keywardArguments = new KeywordArguments(this.args)
+    const fromRoomName = keywardArguments.roomName("from_room_name").parse()
+    const toRoomName = keywardArguments.roomName("to_room_name").parse()
 
-    const xString = args.get("x")
-    if (xString == null) {
-      return this.missingArgumentError("x")
-    }
-    const x = parseInt(xString)
-    if (isNaN(x) === true) {
-      return `x is not a number (${xString})`
-    }
-    const yString = args.get("y")
-    if (yString == null) {
-      return this.missingArgumentError("y")
-    }
-    const y = parseInt(yString)
-    if (isNaN(y) === true) {
-      return `x is not a number (${yString})`
-    }
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const rangeString = args.get("range")
-    if (rangeString == null) {
-      return this.missingArgumentError("range")
-    }
-    const range = parseInt(rangeString)
-    if (isNaN(range) === true) {
-      return `x is not a number (${rangeString})`
+    const routes = calculateInterRoomShortestRoutes(fromRoomName, toRoomName)
+    if (routes.length <= 0) {
+      throw `no route from ${roomLink(fromRoomName)} =&gt ${roomLink(toRoomName)}`
     }
 
-    const position = new RoomPosition(x, y, roomName)
-    showPositionsInRange(position, range)
-    return "ok"
+    const descriptions: string[] = [
+      `${routes.length} routes found from ${roomLink(fromRoomName)} =&gt ${roomLink(toRoomName)}`,
+      ...routes.map(route => route.map(r => roomLink(r)).join(" =&gt ")),
+    ]
+    return descriptions.join("\n")
+  }
+
+  /** throws */
+  private getRoadPositionsToParentRoom(): CommandExecutionResult {
+    const keywardArguments = new KeywordArguments(this.args)
+    const parentRoomName = keywardArguments.roomName("parent_room_name").parse()
+    const targetRoom = keywardArguments.room("target_room_name").parse()
+
+    const positions = getRoadPositionsToParentRoom(parentRoomName, targetRoom)
+    if (positions.length <= 0) {
+      return `no roads on the edge of the parent room in ${roomLink(targetRoom.name)} to parent ${roomLink(parentRoomName)}`
+    }
+
+    positions.forEach(position => targetRoom.visual.text("#", position.x, position.y, {color: "#FF0000"}))
+    return `${positions.length} road found: ${positions.map(position => `${position}`).join(", ")}`
   }
 
   // ---- ---- //
@@ -846,28 +764,6 @@ export class ExecCommand implements ConsoleCommand {
     return `${wallPositions.length} walls`
   }
 
-  // private checkExistingWalls(): CommandExecutionResult {
-  //   const roomHasWalls: RoomName[] = []
-  //   const roomWithoutWalls: RoomName[] = []
-
-  //   RoomResources.getOwnedRoomResources().forEach(roomResource => {
-  //     const roomPlan = roomResource.roomInfo.roomPlan
-  //     if (roomPlan == null) {
-  //       return
-  //     }
-  //     const room = roomResource.room
-  //     const wallCount = room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }).length + room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }).length
-  //     if (wallCount > 20) {
-  //       roomPlan.wallPositions = []
-  //       roomHasWalls.push(roomResource.room.name)
-  //     } else {
-  //       roomWithoutWalls.push(roomResource.room.name)
-  //     }
-  //   })
-
-  //   return `rooms have walls:\n${roomHasWalls.map(roomName => roomLink(roomName)).join(",")}\nrooms don't have walls:\n${roomWithoutWalls.map(roomName => roomLink(roomName)).join(",")}`
-  // }
-
   private showHarvestableMinerals(): CommandExecutionResult {
     const harvestableMinerals = ResourceManager.harvestableMinerals()
     const result: string[] = []
@@ -880,270 +776,11 @@ export class ExecCommand implements ConsoleCommand {
     return `\n${result.join("\n")}`
   }
 
-  // Game.io("exec room_config room_name= setting=")
-  private configureRoomInfo(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const roomInfo = Memory.v6RoomInfo[roomName]
-    if (roomInfo == null) {
-      return `No roomInfo object in memory ${roomLink(roomName)}`
-    }
-    if (roomInfo.roomType !== "owned") {
-      return `Room ${roomLink(roomName)} is not mine`
-    }
-
-    const settingList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
-    const setting = args.get("setting")
-
-    try {
-      switch (setting) {
-      case "excluded_remotes":
-        return this.addExcludedRemoteRoom(roomName, roomInfo, args)
-      case "wall_positions":
-        return this.configureWallPositions(roomName, roomInfo, args)
-      case "research_compounds":
-        return this.configureResearchCompounds(roomName, roomInfo, args)
-      case "refresh_research_labs":
-        return this.refreshResearchLabs(roomName, roomInfo, args)
-      case "disable_boost_labs":
-        return this.disableBoostLabs(roomName, roomInfo)
-      case "toggle_auto_attack":
-        return this.toggleAutoAttack(roomName, roomInfo, args)
-      default:
-        throw `Invalid setting ${setting}, available settings are: ${settingList}`
-      }
-    } catch (error) {
-      return `${coloredText("[ERROR]", "error")} ${error}`
-    }
-  }
-
-  private toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const rawEnabled = args.get("enabled")
-    if (rawEnabled == null) {
-      return this.missingArgumentError("enabled")
-    }
-    if (rawEnabled !== "0" && rawEnabled !== "1") {
-      return `Invalid enable argument ${rawEnabled}: set 0 or 1`
-    }
-    const enabled = rawEnabled === "1"
-
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    const oldValue = roomInfo.config.enableAutoAttack
-    roomInfo.config.enableAutoAttack = enabled
-
-    return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
-  }
-
-  private disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): CommandExecutionResult {
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return `${roomLink(roomName)} no found`
-    }
-    if (roomInfo.researchLab == null) {
-      return `roomInfo.researchLab is null ${roomLink(roomName)}`
-    }
-
-    if (roomInfo.config?.boostLabs == null) {
-      return `no boost labs in ${roomLink(roomName)}`
-    }
-
-    const oldValue = [...roomInfo.config.boostLabs]
-    roomInfo.researchLab.outputLabs.push(...oldValue)
-    roomInfo.config.boostLabs = []
-
-    return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
-  }
-
-  /** throws */
-  private refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return `${roomLink(roomName)} no found`
-    }
-    if (roomInfo.researchLab == null) {
-      roomInfo.researchLab = this.setResearchLabs(room, roomInfo, args)
-    }
-
-    const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
-      .map(lab => lab.id)
-
-    const researchLabIds: Id<StructureLab>[] = [
-      roomInfo.researchLab.inputLab1,
-      roomInfo.researchLab.inputLab2,
-      ...roomInfo.researchLab.outputLabs,
-    ]
-    researchLabIds.forEach(researchLabId => {
-      const index = labIdsInRoom.indexOf(researchLabId)
-      if (index >= 0) {
-        labIdsInRoom.splice(index, 1)
-      }
-    })
-
-    const boostLabIds = roomInfo.config?.boostLabs
-    if (boostLabIds != null) {
-      boostLabIds.forEach(boostLabId => {
-        const index = labIdsInRoom.indexOf(boostLabId)
-        if (index >= 0) {
-          labIdsInRoom.splice(index, 1)
-        }
-      })
-    }
-
-    if (labIdsInRoom.length <= 0) {
-      return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
-    }
-    roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
-
-    return `${labIdsInRoom.length} labs added to research output labs`
-  }
-
-  //** throws */
-  private setResearchLabs(room: Room, roomInfo: OwnedRoomInfo, args: Map<string, string>): {inputLab1: Id<StructureLab>, inputLab2: Id<StructureLab>, outputLabs: Id<StructureLab>[]} {
-    const keywardArguments = new KeywordArguments(args)
-    const missingArgumentErrorMessage = `no roomInfo.researchLab for ${roomLink(room.name)} set input_lab_id_1 and input_lab_id_2`
-    const inputLab1Id = keywardArguments.gameObjectId("input_lab_id_1", {missingArgumentErrorMessage}).parse() as Id<StructureLab>
-    const inputLab2Id = keywardArguments.gameObjectId("input_lab_id_2", { missingArgumentErrorMessage }).parse() as Id<StructureLab>
-    if (inputLab1Id === inputLab2Id) {
-      throw `input_lab_id_1 and input_lab_id_2 has the same value ${inputLab1Id}`
-    }
-
-    const validateLabId = (labId: Id<StructureLab>, key: string): void => {
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        throw `ID for ${key} is not a lab (${lab})`
-      }
-    }
-
-    validateLabId(inputLab1Id, "input_lab_id_1")
-    validateLabId(inputLab2Id, "input_lab_id_2")
-
-    return {
-      inputLab1: inputLab1Id,
-      inputLab2: inputLab2Id,
-      outputLabs: [],
-    }
-  }
-
-  private configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
-      const compoundType = args.get("compound")
-      if (compoundType == null) {
-        return this.missingArgumentError("compound")
-      }
-      if (!isMineralCompoundConstant(compoundType)) {
-        return `${compoundType} is not valid mineral compound type`
-      }
-      const rawAmount = args.get("amount")
-      if (rawAmount == null) {
-        return this.missingArgumentError("amount")
-      }
-      const amount = parseInt(rawAmount, 10)
-      if (isNaN(amount) === true) {
-        return `amount is not a number ${rawAmount}`
-      }
-      return [
-        compoundType,
-        amount
-      ]
-    }
-
-    const action = args.get("action")
-    if (action == null) {
-      return this.missingArgumentError("action")
-    }
-
-    const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
-      if (roomInfo.config == null) {
-        roomInfo.config = {}
-      }
-      if (roomInfo.config.researchCompounds == null) {
-        roomInfo.config.researchCompounds = {}
-      }
-      return roomInfo.config.researchCompounds
-    }
-
-    const getCurentsettings = (): string => {
-      const entries = Object.entries(getResearchCompounds())
-      if (entries.length <= 0) {
-        return "no research compounds"
-      }
-      return entries
-        .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
-        .join("")
-    }
-
-    switch (action) {
-    case "show":
-      return getCurentsettings()
-    case "clear": {
-      const currentSettings = getCurentsettings()
-      if (roomInfo.config == null) {
-        roomInfo.config = {}
-      }
-      roomInfo.config.researchCompounds = {}
-      return `${coloredText("cleared", "info")}: ${currentSettings}`
-    }
-    case "add": {
-      const settings = getCompoundSetting()
-      if (typeof settings === "string") {
-        return settings
-      }
-      const researchCompounds = getResearchCompounds()
-      researchCompounds[settings[0]] = settings[1]
-      return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
-    }
-    default:
-      return `Invalid action ${action}`
-    }
-  }
-
-  private addExcludedRemoteRoom(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const remoteRoomName = args.get("remote_room_name")
-    if (remoteRoomName == null) {
-      return this.missingArgumentError("remote_room_name")
-    }
-    if (!isRoomName(remoteRoomName)) {
-      return `Invalid remote_room_name ${remoteRoomName}`
-    }
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    if (roomInfo.config.excludedRemotes == null) {
-      roomInfo.config.excludedRemotes = []
-    }
-    if (roomInfo.config.excludedRemotes.includes(remoteRoomName) === true) {
-      return `${roomLink(remoteRoomName)} is already excluded`
-    }
-    roomInfo.config.excludedRemotes.push(remoteRoomName)
-    return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
-  }
-
-  private configureWallPositions(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): CommandExecutionResult {
-    const roomPlan = roomInfo.roomPlan
-    if (roomPlan == null) {
-      return `${roomLink(roomName)} doesn't have room plan`
-    }
-
-    const action = args.get("action")
-    if (action == null) {
-      return this.missingArgumentError("action")
-    }
-    switch (action) {
-    case "remove":
-      roomPlan.wallPositions = undefined
-      return "wall positions removed"
-    case "set_it_done":
-      roomPlan.wallPositions = []
-      return "ok"
-    default:
-      return `Invalid action ${action}`
-    }
+  private configureRoomInfo(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    args.shift()
+    return execRoomConfigCommand(roomResource, args)
   }
 
   private checkAlliance(): CommandExecutionResult {
@@ -1220,6 +857,24 @@ export class ExecCommand implements ConsoleCommand {
         }
         return []
       }
+      if (process instanceof DefenseRoomProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof DefenseRemoteRoomProcess) {
+        if (process.roomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof World35587255ScoutRoomProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
       return []
     })
 
@@ -1239,7 +894,7 @@ export class ExecCommand implements ConsoleCommand {
       const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
       return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
     })
-    messages.push(coloredText("Processes to remove:", "info"))
+    messages.push(coloredText(`${processes.length} processes to remove:`, "info"))
     messages.push(...processDescriptions)
 
     if (constructionSiteCounts.size > 0) {
@@ -1283,29 +938,17 @@ export class ExecCommand implements ConsoleCommand {
     return messages.join("\n")
   }
 
-  private createQuad(): CommandExecutionResult {
-    const args = this.args.concat([])
-    args.splice(0, 1)
-    const rawRequirement = args.join(" ")
+  /** @throws */
+  private powerCreep(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const powerCreep = listArguments.powerCreep(0, "power creep name").parse()
+    args.shift()
+    return execPowerCreepCommand(powerCreep, args)
+  }
 
-    const requirementResult = QuadRequirement.parse(rawRequirement)
-    switch (requirementResult.resultType) {
-    case "failed":
-      return `${requirementResult.reason}\n(raw argument: ${rawRequirement}`
-    case "succeeded":
-      break
-    }
-
-    const specResult = QuadSpec.create(requirementResult.value)
-    switch (specResult.resultType) {
-    case "failed":
-      return `${specResult.reason}`
-    case "succeeded":
-      break
-    }
-    const quadSpec = specResult.value
-
-    return quadSpec.description()
+  /** @throws */
+  private roomPathFinding(args: string[]): CommandExecutionResult {
+    return execRoomPathfindingCommand(args)
   }
 
   private runScript(): CommandExecutionResult {

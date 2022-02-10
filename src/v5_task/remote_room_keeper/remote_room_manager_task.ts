@@ -5,13 +5,22 @@ import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText } from "utility/log"
-import { Environment } from "utility/environment"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */
   r: RoomName
 }
 
+/**
+ * - RemoteRoomManager
+ *   - RemoteRoomDefender
+ *   - RemoteRoomKeeper(s)
+ *     - RemoteRoomWorker
+ *       - RemoteRoomReserver
+ *       - RemoteRoomHarvester
+ *       - RemoteRoomHauler
+ */
 export class RemoteRoomManagerTask extends Task {
   public readonly taskIdentifier: TaskIdentifier
 
@@ -41,6 +50,7 @@ export class RemoteRoomManagerTask extends Task {
   public static create(roomName: RoomName): RemoteRoomManagerTask {
     const children: Task[] = []
     const parentRoomStatus = Game.map.getRoomStatus(roomName)?.status // sim環境ではundefinedが返る
+    const remoteRoomInfo = RoomResources.getOwnedRoomResource(roomName)?.roomInfo.remoteRoomInfo
 
     const exits = Game.map.describeExits(roomName)
     if (exits != null) { // sim環境ではundefinedが返る
@@ -53,6 +63,15 @@ export class RemoteRoomManagerTask extends Task {
           return
         }
         children.push(RemoteRoomKeeperTask.create(roomName, neighbour))
+
+        if (remoteRoomInfo != null) {
+          remoteRoomInfo[neighbour] = {
+            roomName: neighbour,
+            enabled: true,
+            routeCalculatedTimestamp: {},
+            constructionFinished: false,
+          }
+        }
       })
     }
 
@@ -64,20 +83,52 @@ export class RemoteRoomManagerTask extends Task {
     ]
     this.checkProblemFinders(problemFinders)
 
-    const keeper = this.children.find(task => {
+    // Migration
+    this.launchRemoteRoom()
+
+    return TaskStatus.InProgress
+  }
+
+  private launchRemoteRoom(): void {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+    const remoteRooms = Array.from(Object.entries(roomResource.roomInfo.remoteRoomInfo))
+    remoteRooms.forEach(([remoteRoomName, remoteRoomInfo]) => {
+      const keeperTask = this.keeperTask(remoteRoomName)
+      if (keeperTask == null) {
+        if (remoteRoomInfo.enabled === true) {
+          this.addRoomKeeperTask(remoteRoomName)
+        }
+        return
+      }
+
+      if (remoteRoomInfo.enabled === false) {
+        this.removeRoomKeeperTask(keeperTask)
+      }
+    })
+  }
+
+  private keeperTask(remoteRoomName: RoomName): RemoteRoomKeeperTask | null {
+    return this.children.find(task => {
       if (!(task instanceof RemoteRoomKeeperTask)) {
         return false
       }
-      if (Environment.world === "persistent world" && Environment.shard === "shard2" && task.roomName === "W47S2" && task.targetRoomName === "W47S3") {
-        return true
+      if (task.roomName !== this.roomName || task.targetRoomName !== remoteRoomName) {
+        return false
       }
-      return false
-    })
-    if (keeper != null) {
-      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remove remote room keeper task`)
-      this.removeChildTask(keeper)
-    }
+      return true
+    }) as RemoteRoomKeeperTask | null
+  }
 
-    return TaskStatus.InProgress
+  private addRoomKeeperTask(targetRoomName: RoomName): void {
+    this.addChildTask(RemoteRoomKeeperTask.create(this.roomName, targetRoomName))
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task added ${this.roomName} &gt ${targetRoomName}`)
+  }
+
+  private removeRoomKeeperTask(keeperTask: RemoteRoomKeeperTask): void {
+    this.removeChildTask(keeperTask)
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} remote room keeper task removed ${this.roomName} &gt ${keeperTask.targetRoomName}`)
   }
 }

@@ -54,9 +54,9 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
     ]
     logs.push(...(new CompoundManager()).run())
     logs.push(...(new ResourceTransferer()).run())
-    if (logs.length <= 0) {
-      logs.push("No resource transfer")
-    }
+    // if (logs.length <= 0) {
+    //   logs.push("No resource transfer")
+    // }
     logs.forEach(log => processLog(this, log))
   }
 }

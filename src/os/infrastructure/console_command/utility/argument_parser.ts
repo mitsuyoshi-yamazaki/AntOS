@@ -1,7 +1,11 @@
+import { Position } from "prototype/room_position"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "utility/direction"
 import { roomLink } from "utility/log"
-import type { RoomName } from "utility/room_name"
+import { isPowerConstant } from "utility/power"
+import { RoomCoordinate, RoomName } from "utility/room_name"
 
 export type ArgumentParsingOptions = {
   missingArgumentErrorMessage?: string
@@ -47,6 +51,35 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   }
 }
 
+export class RoomCoordinateArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
+  /** throws */
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomCoordinate {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomNameArgument(this.value, options)
+
+    const coordinate = RoomCoordinate.parse(this.value)
+    if (coordinate == null) {
+      throw `failed to parse ${roomLink(this.value)} to RoomCoordinate`
+    }
+    return coordinate
+  }
+}
+
+export class RoomArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, Room> {
+  /** throws */
+  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): Room {
+    const roomNameArgument = new RoomNameArgument(this.key, this.value, this.parseOptions)
+    const roomName = roomNameArgument.parse(options)
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      throw `no visible for ${roomLink(roomName)}`
+    }
+    return room
+  }
+}
+
 export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]> {
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName[] {
@@ -79,6 +112,48 @@ export class ResourceTypeArgument<T extends string> extends SingleOptionalArgume
       throw `${this.value} is not ${this.typeName}`
     }
     return this.value
+  }
+}
+
+export class PowerTypeArgument extends SingleOptionalArgument<void, PowerConstant> {
+  /** throws */
+  public parse(): PowerConstant {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const intValue = parseIntValue(this.key, this.value)
+    if (!(isPowerConstant(intValue))) {
+      throw `${intValue} is not power type`
+    }
+    return intValue
+  }
+}
+
+export class CreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const creep = Game.creeps[this.value]
+    if (!(creep instanceof Creep)) {
+      throw `no creep with name ${this.value}`
+    }
+    return creep
+  }
+}
+
+export class PowerCreepArgument extends SingleOptionalArgument<void, PowerCreep> {
+  /** throws */
+  public parse(): PowerCreep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const creep = Game.powerCreeps[this.value]
+    if (!(creep instanceof PowerCreep)) {
+      throw `no power creep with name ${this.value}`
+    }
+    return creep
   }
 }
 
@@ -179,9 +254,9 @@ export function missingArgumentErrorMessage(key: string): string {
 /**
  * <x>,<y>
  */
-export class LocalPositionArgument extends SingleOptionalArgument<void, { x: number, y: number }> {
+export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
   /** throws */
-  public parse(): { x: number, y: number } {
+  public parse(): Position {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -200,6 +275,31 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, { x: num
       x,
       y,
     }
+  }
+}
+
+/**
+ * <x>,<y>;<x>,<y>;...
+ */
+export class LocalPositionsArgument extends SingleOptionalArgument<void, Position[]> {
+  /** throws */
+  public parse(): Position[] {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
+    const parsePosition = (rawValue: string): Position => {
+      const components = rawValue.split(",")
+      if (components[0] == null || components[1] == null) {
+        throw `Invalid format ${this.value}. expected: &ltx&gt,&lty&gt;&ltx&gt,&lty&gt;...`
+      }
+      return {
+        x: parseIntValue("x", components[0], parseOptions),
+        y: parseIntValue("y", components[1], parseOptions),
+      }
+    }
+    return this.value.split(";").map(rawValue => parsePosition(rawValue))
   }
 }
 
@@ -248,5 +348,21 @@ export class RoomPositionArgument extends SingleOptionalArgument<{ allowClosedRo
     validateRoomNameArgument(roomName, options)
 
     return new RoomPosition(x, y, roomName)
+  }
+}
+
+export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, OwnedRoomResource> {
+  /** throws */
+  public parse(): OwnedRoomResource {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomNameArgument(this.value)
+
+    const roomResource = RoomResources.getOwnedRoomResource(this.value)
+    if (roomResource == null) {
+      throw `${roomLink(this.value)} is not mine`
+    }
+    return roomResource
   }
 }

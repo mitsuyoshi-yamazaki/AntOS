@@ -190,7 +190,7 @@ export class PrimitiveWorkerTask extends Task {
     const estimatedNeighbourSourceEnergyCapacity = neighbourRoomSourceCount * estimatedUnownedSourceCapacity
 
     const getRequiredCreepCount = (energyCapacity: number, multiplier: number): number => {
-      const rawCreepCount = ((energyCapacity / 300) / GameConstants.creep.actionPower.harvest) / workCount
+      const rawCreepCount = ((energyCapacity / 300) / GameConstants.creep.actionPower.harvestEnergy) / workCount
       return Math.ceil(rawCreepCount * multiplier) + objects.controller.level
     }
 
@@ -296,7 +296,7 @@ export class PrimitiveWorkerTask extends Task {
         return false
       }
       const neighbourCount = this.sourceNeighbourCount(source)
-      const maxWorkCount = Math.ceil(((source.energyCapacity / 300) / GameConstants.creep.actionPower.harvest))
+      const maxWorkCount = Math.ceil(((source.energyCapacity / 300) / GameConstants.creep.actionPower.harvestEnergy))
       const creepEnergyCapacity = Math.ceil(maxWorkCount / workPartCount)
       const creepCapacity = Math.min(creepEnergyCapacity, neighbourCount) + 1
       return source.v5TargetedBy.length < creepCapacity

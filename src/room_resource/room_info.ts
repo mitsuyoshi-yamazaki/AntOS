@@ -7,6 +7,13 @@ import type { Timestamp } from "utility/timestamp"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
+export type RemoteRoomInfo = {
+  readonly roomName: RoomName
+  enabled: boolean
+  routeCalculatedTimestamp: { [sourceId: string]: Timestamp}
+  constructionFinished: boolean
+}
+
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6
   readonly roomType: "normal" | "owned"
@@ -32,10 +39,25 @@ export interface NormalRoomInfo extends BasicRoomInfo {
   owner: RoomOwner | null
 }
 
-/**
- * - エネルギーの充填優先度として平準化する
- *   - 低い順にterminal, storage,
- */
+export type OwnedRoomConfig = {
+  disablePowerHarvesting?: boolean
+  disableMineralHarvesting?: boolean
+  disableUnnecessaryTasks?: boolean
+  researchCompounds?: { [index in MineralCompoundConstant]?: number }
+  collectResources?: boolean
+  boostLabs?: Id<StructureLab>[]
+  excludedRemotes?: RoomName[]
+  waitingPosition?: Position
+  genericWaitingPositions?: Position[]
+  enableAutoAttack?: boolean
+  noRepairWallIds?: Id<StructureWall | StructureRampart>[]
+  mineralMaxAmount?: number
+  constructionInterval?: number
+  concurrentConstructionSites?: number
+  powers?: PowerConstant[]
+  wallMaxHits?: number
+}
+
 export interface OwnedRoomInfo extends BasicRoomInfo {
   readonly roomType: "owned"
 
@@ -58,24 +80,15 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     wallPositions?: WallPosition[]
   } | null
 
+  // ---- Remote Room ---- //
+  remoteRoomInfo: { [roomName: string]: RemoteRoomInfo}
+
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiency }
 
-  config?: {
-    disablePowerHarvesting?: boolean
-    disableMineralHarvesting?: boolean
-    disableUnnecessaryTasks?: boolean
-    enableOperateSpawn?: boolean
-    researchCompounds?: { [index in MineralCompoundConstant]?: number }
-    collectResources?: boolean
-    boostLabs?: Id<StructureLab>[]
-    excludedRemotes?: RoomName[]
-    waitingPosition?: { x: number, y: number }
-    enableAutoAttack?: boolean
-    noRepairWallIds?: Id<StructureWall>[]
-    mineralMaxAmount?: number
-  }
+  /** @deprecated use OwnedRoomInfoAccessor.config instead */
+  config?: OwnedRoomConfig
 }
 
 export type RoomInfoType = NormalRoomInfo | OwnedRoomInfo
@@ -155,6 +168,7 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     highestRcl: 1,
     roomPlan: null,
     reachable: true,
+    remoteRoomInfo: {},
   }
 }
 
@@ -171,6 +185,7 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
-    reachable: normalRoomInfo.reachable
+    reachable: normalRoomInfo.reachable,
+    remoteRoomInfo: {},
   }
 }

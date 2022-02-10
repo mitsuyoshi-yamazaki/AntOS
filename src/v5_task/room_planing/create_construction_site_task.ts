@@ -73,10 +73,19 @@ export class CreateConstructionSiteTask extends Task {
       STRUCTURE_RAMPART,
       STRUCTURE_WALL,
     ]
-    if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length > 0) {
+
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
       return TaskStatus.InProgress
     }
-    if (Game.time % 17 !== 3) {
+    const concurrentConstructionSites = roomResource.roomInfoAccessor.config.concurrentConstructionSites
+
+    if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length >= concurrentConstructionSites) {
+      return TaskStatus.InProgress
+    }
+
+    const interval = roomResource?.roomInfoAccessor.config.constructionInterval
+    if (interval == null || (Game.time % interval) !== 0) {
       return TaskStatus.InProgress
     }
     const centerPosition = ((): RoomPosition => {
@@ -159,7 +168,7 @@ export class CreateConstructionSiteTask extends Task {
         }
         const hasStructure = ((): boolean => {
           const placedStructure = flag.pos.findInRange(FIND_STRUCTURES, 0)
-          if (placedStructure.length > 0) {
+          if (placedStructure.some(structure => structure.structureType !== STRUCTURE_RAMPART)) {
             return true
           }
           const constructionSites = flag.pos.findInRange(FIND_MY_CONSTRUCTION_SITES, 0)

@@ -21,8 +21,6 @@ import { coloredText, roomLink } from "utility/log"
 import { TaskLogRequest } from "application/task_logger"
 import { OwnedRoomInfo } from "room_resource/room_info"
 
-export const WallBuilderTaskMaxWallHits = 5000000
-
 const wallTypes: StructureConstant[] = [
   STRUCTURE_WALL,
   STRUCTURE_RAMPART,
@@ -99,26 +97,51 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       }
     }
 
+    const repairWallFilter = (): (wall: StructureWall | StructureRampart) => boolean => {
+      const excludedIds = ((): Id<StructureWall | StructureRampart>[] => {
+        if (roomResource.roomInfo.config?.noRepairWallIds != null) {
+          return [...roomResource.roomInfo.config?.noRepairWallIds]
+        }
+        return []
+      })()
+
+      const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : roomResource.roomInfoAccessor.config.wallMaxHits
+
+      return wall => {
+        if (wall.hits >= wall.hitsMax) {
+          return false
+        }
+        if (wall.hits > maxHits) {
+          return false
+        }
+        if (excludedIds.includes(wall.id) === true) {
+          return false
+        }
+        return true
+      }
+    }
+
+    const hasWallToRepair = (): boolean => {
+      return [
+        ...roomResource.walls,
+        ...roomResource.ramparts,
+      ].some(repairWallFilter())
+    }
+
+    const getWallsToRepair = (): (StructureWall | StructureRampart)[] => {
+      return [
+        ...roomResource.walls,
+        ...roomResource.ramparts,
+      ].filter(repairWallFilter())
+    }
+
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
     if (creepInfo.length < 1) {
       const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
         + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
 
       if (energyAmount > 80000) {
-        const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : WallBuilderTaskMaxWallHits
-        const walls: (StructureWall | StructureRampart)[] = [
-          ...roomResource.walls,
-          ...roomResource.ramparts,
-        ].filter(wall => {
-          if (wall.hits >= wall.hitsMax) {
-            return false
-          }
-          if (wall.hits > maxHits) {
-            return false
-          }
-          return true
-        })
-        const hasWalls = walls.length > 0 || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
+        const hasWalls = hasWallToRepair() === true || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
 
         if (hasWalls === true) {
           if ((Game.time % 3) === 1) {
@@ -141,22 +164,29 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       }
     }
 
-    roomResource.idleCreeps(this.identifier).flatMap(creepInfo => {
-      creepInfo.problems.forEach(problem => { // TODO: 処理できるものは処理する
-        if (taskOutputs.problems.some(stored => stored.identifier === problem.identifier) !== true) {
-          taskOutputs.problems.push(new UnexpectedProblem(problem))
+    const idleCreeps = roomResource.idleCreeps(this.identifier)
+    if (idleCreeps.length > 0) {
+      const walls = getWallsToRepair()
+      walls.sort((lhs, rhs) => lhs.hits - rhs.hits)
+      const repairWall = walls[0] ?? null
+
+      idleCreeps.forEach(creepInfo => {
+        creepInfo.problems.forEach(problem => { // TODO: 処理できるものは処理する
+          if (taskOutputs.problems.some(stored => stored.identifier === problem.identifier) !== true) {
+            taskOutputs.problems.push(new UnexpectedProblem(problem))
+          }
+        })
+
+        const creep = creepInfo.creep
+        const task = this.creepTask(creep, roomResource, repairWall)
+        if (task != null) {
+          taskOutputs.creepTaskAssignRequests.set(creep.name, {
+            taskType: "normal",
+            task,
+          })
         }
       })
-
-      const creep = creepInfo.creep
-      const task = this.creepTask(creep, roomResource)
-      if (task != null) {
-        taskOutputs.creepTaskAssignRequests.set(creep.name, {
-          taskType: "normal",
-          task,
-        })
-      }
-    })
+    }
 
     return taskOutputs
   }
@@ -173,7 +203,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     )
   }
 
-  private creepTask(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
+  private creepTask(creep: Creep, roomResource: OwnedRoomResource, wallToRepair: (StructureWall | StructureRampart) | null): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       const energyStore = ((): StructureTerminal | StructureStorage | null => {
         const terminal = roomResource.activeStructures.terminal
@@ -198,23 +228,8 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       return BuildWallTask.create(constructionSite)
     }
 
-    const excludedIds = ((): Id<StructureWall>[] => {
-      if (roomResource.roomInfo.config?.noRepairWallIds != null) {
-        return [...roomResource.roomInfo.config?.noRepairWallIds]
-      }
-      return []
-    })()
-    const walls = [
-      ...roomResource.walls,
-      ...roomResource.ramparts,
-    ]
-    const wall = walls
-      .filter(w => (w.hits < w.hitsMax) && ((excludedIds as string[]).includes(w.id) !== true))
-      .sort((lhs, rhs) => {
-        return lhs.hits - rhs.hits
-      })[0]
-    if (wall != null) {
-      return MoveToTargetTask.create(RepairApiWrapper.create(wall))
+    if (wallToRepair != null) {
+      return MoveToTargetTask.create(RepairApiWrapper.create(wallToRepair))
     }
 
     return null

@@ -1,5 +1,5 @@
 import { CreepBodyBoostableActionType, CreepBodyEnergyConsumeActionType, CreepBodyFixedAmountActionType, GameConstants } from "./constants"
-import { anyColoredText } from "./log"
+import { anyColoredText, creepBodyColorCode } from "./log"
 import { boostableCreepBody } from "./resource"
 
 const CreepActionToBodyPart: { [index in CreepBodyBoostableActionType]: BodyPartConstant } = {
@@ -62,8 +62,8 @@ export const CreepBody = {
   },
 
   /** hitsは考慮されている */
-  power: function(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType):number {
-    return bodyPower(body, actionType)
+  power: function (body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType, options?: { ignoreHits?: boolean }):number {
+    return bodyPower(body, actionType, options)
   },
 
   actionEnergyCost: function (body: BodyPartConstant[], actionType: CreepBodyEnergyConsumeActionType): number {
@@ -113,7 +113,7 @@ function boostForBody(bodyPart: BodyPartDefinition, actionType: CreepBodyFixedAm
 }
 
 /** @deprecated */
-export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType): number {
+export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixedAmountActionType, options?: {ignoreHits?: boolean}): number {
   const bodyPart = CreepActionToBodyPart[actionType]
   const actionPower = CreepBodyActionPower[actionType]  // FixMe: Mineral harvestでは値が異なる
 
@@ -121,7 +121,7 @@ export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixed
     if (current.type !== bodyPart) {
       return result
     }
-    if (current.hits <= 0) {
+    if (options?.ignoreHits !== true && current.hits <= 0) {
       return result
     }
     const boost = boostForBody(current, actionType)
@@ -157,19 +157,8 @@ const bodyShortDescription: { [index in BodyPartConstant]: string } = {
   claim: "CL",
 }
 
-const bodyColors: { [index in BodyPartConstant]: string } = {
-  move: "#AAB7C6",
-  carry: "#777777",
-  work: "#FFE76E",
-  tough: "#FFFFFF",
-  attack: "#F72843",
-  ranged_attack: "#5E7FB2",
-  heal: "#6DFF63",
-  claim: "#B897F8",
-}
-
 function coloredBodyShortDescription(body: BodyPartConstant): string {
-  return anyColoredText(bodyShortDescription[body], bodyColors[body])
+  return anyColoredText(bodyShortDescription[body], creepBodyColorCode(body))
 }
 
 /** @deprecated use CreepBody.description() */
