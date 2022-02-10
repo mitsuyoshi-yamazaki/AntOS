@@ -21,6 +21,9 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { CreepBody } from "utility/creep_body"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
@@ -146,7 +149,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
         }
       }
 
-      this.spawnHauler()
+      this.spawnHauler(roomResource)
       return
     }
 
@@ -156,7 +159,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
     }
   }
 
-  private spawnHauler(): void {
+  private spawnHauler(roomResource: OwnedRoomResource): void {
     const requiredCarryCount = Math.ceil(this.amount / GameConstants.creep.actionPower.carryCapacity)
     const armorCount = Math.ceil(requiredCarryCount / 3)
     const body: BodyPartConstant[] = [
@@ -164,6 +167,17 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
       ...Array(requiredCarryCount).fill(CARRY),
       ...Array(requiredCarryCount).fill(MOVE),
     ]
+
+    if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable) {
+      PrimitiveLogger.programError(`${this.taskIdentifier} energy capacity insufficient (required: ${CreepBody.cost(body)} &gt ${roomResource.room.energyCapacityAvailable})`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    if (body.length > GameConstants.creep.body.bodyPartMaxCount) {
+      PrimitiveLogger.programError(`${this.taskIdentifier} body too large (${body.length})`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
 
     World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority: CreepSpawnRequestPriority.Low,
