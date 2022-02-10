@@ -53,6 +53,7 @@ import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
 import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
+// import { Season41035999ScoreFleetProcess } from "process/temporary/season4_1035999_score_fleet_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -996,7 +997,7 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
     }
 
     const commodityType = args.commodityType("commodity_type").parse()
-    const amount = args.int("amount").parse()
+    const amount = args.int("amount").parse({min: 10, max: 1000})
 
     return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
   } catch (error) {
