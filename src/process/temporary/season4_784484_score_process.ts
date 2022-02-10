@@ -157,12 +157,20 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
   }
 
   private spawnHauler(): void {
+    const requiredCarryCount = Math.ceil(this.amount / GameConstants.creep.actionPower.carryCapacity)
+    const armorCount = Math.ceil(requiredCarryCount / 3)
+    const body: BodyPartConstant[] = [
+      ...Array(armorCount).fill(MOVE),
+      ...Array(requiredCarryCount).fill(CARRY),
+      ...Array(requiredCarryCount).fill(MOVE),
+    ]
+
     World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: haulerRoles,
-      body: [MOVE, CARRY, MOVE],
+      body,
       initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
