@@ -212,8 +212,10 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       throw "targets duplicated"
     }
 
-    if (this.bases.some(base => base.roomName === roomName) === true) {
-      throw `${roomLink(roomName)} is already in the list`
+    const targetBase = this.bases.find(base => base.roomName === roomName)
+    if (targetBase != null) {
+      targetBase.targetRoomNames.push(...targetRoomNames)
+      return `${targetRoomNames.length} target rooms added to ${roomLink(targetBase.roomName)} (${targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`
     }
 
     this.bases.push({
