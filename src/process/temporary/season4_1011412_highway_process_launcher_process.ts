@@ -132,6 +132,8 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         return `Commands: ${commandList}`
       case "add":
         return this.addBase(components)
+      case "remove":
+        return this.remove(components)
       case "show": {
         const listArguments = new ListArguments(components)
         if (listArguments.has(0) === true) {
@@ -222,6 +224,37 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     })
 
     return `${roomLink(roomName)}: ${targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`
+  }
+
+  /** @throws */
+  private remove(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const roomNames = listArguments.roomNameList(0, "room names").parse()
+    if (roomNames.length <= 0) {
+      throw "no room names given"
+    }
+    if (roomNames.length === 1 && roomNames[0] != null) {
+      const roomName = roomNames[0]
+      const index = this.bases.findIndex(base => base.roomName === roomName)
+      if (index >= 0) {
+        this.bases.splice(index, 1)
+        return `base ${roomLink(roomName)} removed`
+      }
+    }
+
+    const removedRoomNames: RoomName[] = []
+    roomNames.forEach(roomName => {
+      for (const base of this.bases) {
+        const index = base.targetRoomNames.indexOf(roomName)
+        if (index >= 0) {
+          base.targetRoomNames.splice(index, 1)
+          removedRoomNames.push(roomName)
+          break
+        }
+      }
+    })
+
+    return `${removedRoomNames.length} target rooms removed: ${removedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
 
   public runOnTick(): void {
