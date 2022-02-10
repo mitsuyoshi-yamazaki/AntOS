@@ -17,6 +17,8 @@ ProcessDecoder.register("UpgradePowerCreepProcess", state => {
   return UpgradePowerCreepProcess.decode(state as UpgradePowerCreepProcessState)
 })
 
+type CreatePowerCreepState = "queued" | "created" | "upgraded" | "spawned"
+
 /**
  * - GPLを2消費する
  *   - (1 GPL) PowerCreepの生成
@@ -30,6 +32,7 @@ type CreatePowerCreep = {
   firstPowerType: PowerConstant
   powerSpawnId: Id<StructurePowerSpawn>
   roomName: RoomName
+  state: CreatePowerCreepState
 }
 type UpgradePowerCreep = {
   case: "upgrade"
@@ -40,6 +43,7 @@ type Upgrade = CreatePowerCreep | UpgradePowerCreep
 
 export interface UpgradePowerCreepProcessState extends ProcessState {
   readonly reservedUpgrades: Upgrade[]
+  readonly runNextTick: boolean
 }
 
 export class UpgradePowerCreepProcess implements Process, Procedural, MessageObserver {
@@ -49,6 +53,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly reservedUpgrades: Upgrade[],
+    private runNextTick: boolean,
   ) {
     this.taskIdentifier = this.constructor.name
   }
@@ -59,15 +64,17 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
       l: this.launchTime,
       i: this.processId,
       reservedUpgrades: this.reservedUpgrades,
+      runNextTick: this.runNextTick,
     }
   }
 
   public static decode(state: UpgradePowerCreepProcessState): UpgradePowerCreepProcess {
-    return new UpgradePowerCreepProcess(state.l, state.i, state.reservedUpgrades)
+    const runNextTick = state.runNextTick ?? false  // FixMe: Migration
+    return new UpgradePowerCreepProcess(state.l, state.i, state.reservedUpgrades, runNextTick)
   }
 
   public static create(processId: ProcessId): UpgradePowerCreepProcess {
-    return new UpgradePowerCreepProcess(Game.time, processId, [])
+    return new UpgradePowerCreepProcess(Game.time, processId, [], false)
   }
 
   public processShortDescription(): string {
@@ -145,6 +152,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
           firstPowerType,
           powerSpawnId: powerSpawn.id,
           roomName: powerSpawn.room.name,
+          state: "queued",
         })
         return `Reserved create ${powerCreepName} in ${roomLink(spawnRoomResource.room.name)}, index: ${this.reservedUpgrades.length - 1}`
       }
@@ -166,9 +174,11 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
   }
 
   public runOnTick(): void {
-    if ((Game.time % 97) !== 11) {
+    if (this.runNextTick !== true && (Game.time % 97) !== 11) {
       return
     }
+    this.runNextTick = false
+
     const upgrade = this.reservedUpgrades[0]
     if (upgrade == null) {
       return
@@ -176,23 +186,10 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
 
     switch (upgrade.case) {
     case "create": {
-      const powerCreep = Game.powerCreeps[upgrade.powerCreepName]
-      if (powerCreep == null) {
-        this.createPowerCreep(upgrade.powerCreepName)
-        break
-      }
-      const { executed } = this.upgrade(powerCreep, upgrade.firstPowerType)
-      if (executed !== true) {
-        break
-      }
-      const powerSpawn = Game.getObjectById(upgrade.powerSpawnId)
-      if (powerSpawn == null) {
+      const { executed } = this.runCreatePowerCreep(upgrade)
+      if (executed === true) {
         this.reservedUpgrades.shift()
-        break
       }
-      this.spawnPowerCreep(powerCreep, powerSpawn)
-      this.launchPowerCreepProces(powerCreep.name, powerSpawn.room.name)
-      this.reservedUpgrades.shift()
       break
     }
 
@@ -202,30 +199,102 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
         this.reservedUpgrades.shift()
         break
       }
-      const { executed } = this.upgrade(powerCreep, upgrade.powerType)
-      if (executed) {
+      switch (this.upgrade(powerCreep, upgrade.powerType)) {
+      case "succeeded":
         this.reservedUpgrades.shift()
+        break
+
+      case "gpl not enough":
+        break
+
+      case "failed":
+        this.reservedUpgrades.shift()
+        break
       }
-      break
     }
     }
   }
 
-  private createPowerCreep(name: PowerCreepName): void {
+  private runCreatePowerCreep(create: CreatePowerCreep): { executed: boolean } {
+    switch (create.state) {
+    case "queued": {
+      return (() => {
+        switch (this.createPowerCreep(create.powerCreepName)) {
+        case "succeeded":
+          create.state = "created"
+          return { executed: false }
+
+        case "failed":
+          return { executed: true }
+
+        case "gpl not enough":
+          return { executed: false }
+        }
+      })()
+    }
+    case "created": {
+      return (() => {
+        const powerCreep = Game.powerCreeps[create.powerCreepName]
+        if (powerCreep == null) {
+          return { executed: true }
+        }
+        switch (this.upgrade(powerCreep, create.firstPowerType)) {
+        case "succeeded":
+          create.state = "upgraded"
+          this.runNextTick = true
+          return { executed: false }
+
+        case "gpl not enough":
+          return { executed: false }
+
+        case "failed":
+          return { executed: true }
+        }
+      })()
+    }
+
+    case "upgraded": {
+      const powerCreep = Game.powerCreeps[create.powerCreepName]
+      if (powerCreep == null) {
+        return { executed: true }
+      }
+
+      const powerSpawn = Game.getObjectById(create.powerSpawnId)
+      if (powerSpawn == null) {
+        return { executed: true }
+      }
+      this.spawnPowerCreep(powerCreep, powerSpawn)
+      create.state = "spawned"
+      this.runNextTick = true
+      return { executed: true }
+    }
+
+    case "spawned": {
+      const powerCreep = Game.powerCreeps[create.powerCreepName]
+      if (powerCreep == null || powerCreep.room == null) {
+        return { executed: true }
+      }
+      this.launchPowerCreepProces(powerCreep.name, powerCreep.room.name)
+      return { executed: true }
+    }
+    }
+  }
+
+  private createPowerCreep(name: PowerCreepName): "succeeded" | "failed" | "gpl not enough" {
     const result = PowerCreep.create(name, POWER_CLASS.OPERATOR)
     switch (result as number) { // ERR_INVALID_ARGSが入っていないため
     case OK:
       processLog(this, `PowerCreep ${name} is created`)
-      return
+      return "succeeded"
 
     case ERR_NOT_ENOUGH_RESOURCES:
-      return
+      return "gpl not enough"
 
     case ERR_NAME_EXISTS:
     case ERR_INVALID_ARGS:
     default:
       PrimitiveLogger.programError(`${this.constructor.name} PowerCreep.create() returns ${result}, name: ${name}`)
-      return
+      return "failed"
     }
   }
 
@@ -269,24 +338,24 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
     })
   }
 
-  private upgrade(powerCreep: PowerCreep, power: PowerConstant): {executed: boolean} {
+  private upgrade(powerCreep: PowerCreep, power: PowerConstant): "succeeded" | "failed" | "gpl not enough" {
     const result = powerCreep.upgrade(power)
     switch (result) {
     case OK:
       processLog(this, `PowerCreep ${powerCreep.name} upgraded ${powerName(power)}, ${managePowerCreepLink()}`)
-      return {executed: true}
+      return "succeeded"
 
     case ERR_NOT_ENOUGH_RESOURCES:
-      return { executed: false }
+      return "gpl not enough"
 
     case ERR_FULL:
       processLog(this, `PowerCreep ${powerCreep.name} has max ${powerName(power)} level, ${managePowerCreepLink()}`)
-      return { executed: true }
+      return "failed"
 
     case ERR_NOT_OWNER:
     case ERR_INVALID_ARGS:
       PrimitiveLogger.programError(`${this.constructor.name} powerCreep.upgrade() returns ${result}, ${powerCreep.name}, ${powerName(power)}`)
-      return { executed: true }
+      return "failed"
     }
   }
 }
