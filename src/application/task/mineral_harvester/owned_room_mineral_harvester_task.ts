@@ -147,7 +147,8 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       })
 
       const creep = creepInfo.creep
-      if (creep.store.getFreeCapacity(mineralType) <= 0 || mineral.mineralAmount <= 0) {
+      const harvestAmount = creep.getActiveBodyparts(WORK) * GameConstants.creep.actionPower.harvestMineral
+      if ((creep.store.getFreeCapacity(mineralType) - harvestAmount) <= 0 || mineral.mineralAmount <= 0) {
         const transferTarget = this.transferTarget(roomResource)
         if (transferTarget == null) {
           return []
@@ -195,7 +196,12 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
   }
 
   private mineralHarvesterBody(energyCapacity: number): BodyPartConstant[] {
-    return createCreepBody([], [WORK, WORK, WORK, CARRY, MOVE, MOVE], energyCapacity, 4)
+    const bodyUnit: BodyPartConstant[] = [
+      WORK, WORK, WORK, WORK, WORK,
+      CARRY, CARRY, CARRY,
+      MOVE, MOVE, MOVE, MOVE,
+    ]
+    return createCreepBody([], bodyUnit, energyCapacity, 4)
   }
 
   // ---- Extractor ---- //
