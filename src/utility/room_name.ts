@@ -274,6 +274,32 @@ export class RoomCoordinate {
     return false
   }
 
+  public exitDirectionTo(roomName: RoomName): TOP | BOTTOM | LEFT | RIGHT | null {
+    const exits = Game.map.describeExits(this.roomName)
+    if (exits == null) { // sim環境ではundefinedが返る
+      return null
+    }
+
+    for (const [exitDirection, neighbourRoomName] of Array.from(Object.entries(exits))) {
+      if (neighbourRoomName !== roomName) {
+        continue
+      }
+      switch (exitDirection) {
+      case "1":
+        return TOP
+      case "3":
+        return RIGHT
+      case "5":
+        return BOTTOM
+      case "7":
+        return LEFT
+      default:
+        return null
+      }
+    }
+    return null
+  }
+
   /**
    * @returns highwayの算出は象限をまたぐときに1部屋分ずれる
    */
