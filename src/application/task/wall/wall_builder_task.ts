@@ -140,14 +140,15 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
 
         if (hasWalls === true) {
           if ((Game.time % 3) === 1) {
-            const defendStructureTypes: StructureConstant[] = [
+            const vitalStructureTypes: StructureConstant[] = [
               STRUCTURE_SPAWN,
               STRUCTURE_STORAGE,
               STRUCTURE_TERMINAL,
               STRUCTURE_TOWER,
+              STRUCTURE_FACTORY,
             ]
             for (const structure of roomResource.room.find(FIND_MY_STRUCTURES)) {
-              if (defendStructureTypes.includes(structure.structureType) !== true) {
+              if (vitalStructureTypes.includes(structure.structureType) !== true) {
                 continue
               }
               roomResource.room.createConstructionSite(structure.pos, STRUCTURE_RAMPART)
