@@ -414,6 +414,10 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   private launchProcess(): void {
+    if (Game.cpu.bucket < 9000) {
+      return
+    }
+
     const minimumEnergyAmount = 50000
 
     const harvestPowerBankCost = 10
