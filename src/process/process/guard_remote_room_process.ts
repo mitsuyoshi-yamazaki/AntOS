@@ -136,7 +136,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     private readonly numberOfCreeps: number,
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
-    private readonly talkingTo: TalkingInfo,
+    private talkingTo: TalkingInfo,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -243,6 +243,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public runOnTick(): void {
+    if ((Game.time % 1511) === 27) {
+      this.talkingTo = {}
+    }
+
     const whitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
 
     const targetRoom = Game.rooms[this.targetRoomName]
@@ -484,8 +488,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
   private getClosestHostile(creep: Creep, hostileCreeps: Creep[], whitelist: string[]): Creep | null {
     const ignoreUsernames = this.ignoreUsers.map(user => user.name)
-    const filteredCreeps = hostileCreeps.filter(creep => {
-      const username = creep.owner.username
+    const filteredCreeps = hostileCreeps.filter(hostileCreep => {
+      const username = hostileCreep.owner.username
       if (ignoreUsernames.includes(username) === true) {
         this.setTalkToUsername(creep.name, username)
         return false
@@ -551,7 +555,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
     talkingTo.index = (talkingTo.index + 1) % talk.messages.length
     const message = talk.messages[talkingTo.index]
-    if (message == null) {
+    if (message == null || message.length <= 0) {
       return
     }
     creep.say(message, true)
