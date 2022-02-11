@@ -52,7 +52,6 @@ export class OwnedRoomResource extends NormalRoomResource {
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
     private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
 
-    /** @deprecated use roomInfoAccessor.roomInfo instead */
     public readonly roomInfo: OwnedRoomInfo,
   ) {
     super(controller, roomInfo)
