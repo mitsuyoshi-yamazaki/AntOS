@@ -30,6 +30,7 @@ ProcessDecoder.register("ProduceCommodityProcess", state => {
 })
 
 const noProduct = "no products"
+const notOperating = "not operating"
 
 type ProductInfo = {
   readonly commodityType: CommodityConstant
@@ -205,6 +206,13 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return
     }
 
+    const notOperatingReasonIndex = this.stopSpawningReasons.indexOf(notOperating)
+    if (notOperatingReasonIndex >= 0) {
+      if (factory.effects != null && factory.effects.some(effect => effect.effect === PWR_OPERATE_FACTORY) === true) {
+        this.stopSpawningReasons.splice(notOperatingReasonIndex, 1)
+      }
+    }
+
     const terminal = roomResource.activeStructures.terminal
     if (terminal != null && product != null && terminal.store.getUsedCapacity(product.commodityType) >= product.amount) {
       this.products.shift()
@@ -378,9 +386,9 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       processLog(this, "factory is full")
       break
 
-    case ERR_BUSY:
     case ERR_INVALID_TARGET:
-      this.addSpawnStopReason(`invalid product (${coloredResourceType(product.commodityType)} ${result})`)
+    case ERR_BUSY:
+      this.addSpawnStopReason(notOperating)
       break
     }
   }
