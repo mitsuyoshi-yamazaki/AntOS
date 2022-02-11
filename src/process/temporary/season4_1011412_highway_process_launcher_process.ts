@@ -514,7 +514,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       }
       const creepSpec = {
         harvesterCount: target.neighbourCount >= 2 ? 2 : 1,
-        haulerCount: 1,
+        haulerCount: Game.map.getRoomLinearDistance(parentRoomName, target.roomName) >= 4 ? 2 : 1,
       }
       OperatingSystem.os.addProcess(null, processId => Season4275982HarvestCommodityProcess.create(processId, parentRoomName, depositInfo, creepSpec))
       return
