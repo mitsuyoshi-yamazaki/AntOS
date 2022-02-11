@@ -37,7 +37,7 @@ interface KeywordArgumentsInterface {
   // ---- Custom Type ---- //
   ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource>
   roomCoordinate(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate>
-  typedString<T extends string>(index: number, typeName: string, typeGuard: ((arg: string) => arg is T), key: string, options?: ArgumentParsingOptions): SingleArgument<void, T>
+  typedString<T extends string>(index: number, key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleArgument<void, T>
 }
 
 export class ListArguments implements KeywordArgumentsInterface {
@@ -141,7 +141,7 @@ export class ListArguments implements KeywordArgumentsInterface {
     return new RoomCoordinateArgument(key, this.getValueAt(index, key), options)
   }
 
-  public typedString<T extends string>(index: number, typeName: string, typeGuard: ((arg: string) => arg is T), key: string, options?: ArgumentParsingOptions): SingleArgument<void, T> {
+  public typedString<T extends string>(index: number, key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleArgument<void, T> {
     return new TypedStringArgument(key, this.getValueAt(index, key), typeName, typeGuard, options)
   }
 
