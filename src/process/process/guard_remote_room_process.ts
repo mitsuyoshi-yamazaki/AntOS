@@ -16,6 +16,8 @@ import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { RoomResources } from "room_resource/room_resources"
+import { Timestamp } from "utility/timestamp"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -32,6 +34,25 @@ export type GuardRemoteRoomProcessCreepType = typeof guardRemoteRoomProcessCreep
 export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemoteRoomProcessCreepType => {
   return (guardRemoteRoomProcessCreepType as (readonly string[])).includes(obj)
 }
+
+const finishConditionTypes = [
+  "never",
+  "duration",
+  "owned_room",
+] as const
+
+type FinishConditionNever = {
+  readonly case: "never"
+}
+type FinishConditionDuration = {
+  readonly case: "duration"
+  readonly until: Timestamp
+}
+type FinishConditionOwnedRoom = {
+  readonly case: "owned_room"
+  readonly condition: "tower" | "storage"
+}
+type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom
 
 type Username = string
 
@@ -113,6 +134,8 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   numberOfCreeps: number
   ignoreUsers: IgnoreUser[]
   talkingTo: TalkingInfo
+  finishCondition: FinishCondition
+  stopSpawningReasons: string[]
 }
 
 export class GuardRemoteRoomProcess implements Process, Procedural, MessageObserver {
@@ -137,6 +160,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
     private talkingTo: TalkingInfo,
+    private finishCondition: FinishCondition,
+    private stopSpawningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -159,15 +184,20 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       targetId: this.targetId,
       ignoreUsers: this.ignoreUsers,
       talkingTo: this.talkingTo,
+      finishCondition: this.finishCondition,
+      stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: GuardRemoteRoomProcessState): GuardRemoteRoomProcess {
-    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo)
+    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo, state.finishCondition, state.stopSpawningReasons)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: GuardRemoteRoomProcessCreepType, numberOfCreeps: number): GuardRemoteRoomProcess {
-    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {})
+    const defaultFinishCondition: FinishConditionNever = {
+      case: "never"
+    }
+    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, defaultFinishCondition, [])
   }
 
   public processShortDescription(): string {
@@ -178,15 +208,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.creepType,
     ]
 
-    const stopReason = this.stopSendingGuardReason()
-    if (stopReason != null) {
-      descriptions.push(`stopped by: ${stopReason}`)
+    if (this.stopSpawningReasons.length > 0) {
+      descriptions.push(`stopped by: ${this.stopSpawningReasons.join(", ")}`)
     }
     return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "change_creep_type"]
+    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -198,12 +227,55 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return this.addIgnoreUsers(components)
       case "change_creep_type":
         return this.changeCreepType(components)
+      case "change_finish_condition":
+        return this.changeFinishCondition(components)
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private changeFinishCondition(args: string[]): string {
+    const keywordArguments = new KeywordArguments(args)
+    const conditionType = keywordArguments.string("condition").parse()
+
+    const condition = ((): FinishCondition => {
+      switch (conditionType) {
+      case "duration": {
+        const duration = keywordArguments.int("duration").parse({ min: 1000 })
+        return {
+          case: "duration",
+          until: Game.time + duration
+        }
+      }
+
+      case "owned_room": {
+        const roomCondition = keywordArguments.string("room_condition").parse()
+        if (roomCondition !== "tower" && roomCondition !== "storage") {
+          throw `room_condition can either "tower" or "storage" (${roomCondition})`
+        }
+        return {
+          case: "owned_room",
+          condition: roomCondition,
+        }
+      }
+
+      case "never":
+        return {
+          case: "never"
+        }
+
+      default:
+        throw `invalid condition ${conditionType}, available conditions: ${finishConditionTypes}`
+      }
+    })()
+
+    const oldValue = this.finishCondition
+    this.finishCondition = condition
+    return `changed condition: ${conditionType} from ${oldValue.case}`
   }
 
   /** @throws */
@@ -266,11 +338,12 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return true
     }).length
 
-    if ((creeps.length - dyingCreepCount) < this.numberOfCreeps) {
-      const shouldSendGuard = this.stopSendingGuardReason() == null
-      if (shouldSendGuard === true) {
-        this.requestCreep()
-      }
+    if (this.stopSpawningReasons.length <= 0) {
+      this.checkFinishCondition()
+    }
+
+    if (this.stopSpawningReasons.length <= 0 && (creeps.length - dyingCreepCount) < this.numberOfCreeps) {
+      this.requestCreep()
     }
 
     switch (this.creepType) {
@@ -283,30 +356,53 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
   }
 
-  private stopSendingGuardReason(): string | null {
+  private checkFinishCondition(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      return "no parent room"
+      this.addStopSpawningReason("no parent room")
+      return
     }
     const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
     if (energyAmount < 50000) {
-      return "lack of energy"
+      return
     }
 
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
-      return null
+      return
     }
-    if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length < 2) {
-      return null
+
+    if (targetRoom.controller != null && targetRoom.controller.safeMode != null) {
+      this.addStopSpawningReason("target room is safemode")
+      return
     }
-    if (targetRoom.storage == null) {
-      return null
+
+    switch (this.finishCondition.case) {
+    case "owned_room":
+      ((): void => {
+        switch (this.finishCondition.condition) {
+        case "tower":
+          if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length > 0) {
+            this.addStopSpawningReason("owned room tower")
+          }
+          return
+        case "storage":
+          if (targetRoom.storage != null) {
+            this.addStopSpawningReason("owned room storage")
+          }
+          return
+        }
+      })()
+      return
+
+    case "duration":
+      if (Game.time >= this.finishCondition.until) {
+        this.addStopSpawningReason("duration ended")
+      }
+      return
+    case "never":
+      return
     }
-    if (targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
-      return null
-    }
-    return "target room is set up"
   }
 
   private requestCreep(): void {
@@ -559,6 +655,13 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return
     }
     creep.say(message, true)
+  }
+
+  private addStopSpawningReason(reason: string): void {
+    if (this.stopSpawningReasons.includes(reason) === true) {
+      return
+    }
+    this.stopSpawningReasons.push(reason)
   }
 }
 
