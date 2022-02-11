@@ -84,7 +84,6 @@ class Config {
   // boostLabs?: Id<StructureLab>[]
   // excludedRemotes?: RoomName[]
   // waitingPosition?: { x: number, y: number }
-  // noRepairWallIds?: Id<StructureWall | StructureRampart>[]
 
   public addGenericWaitingPositions(positions: Position[]): void {
     if (this.config.genericWaitingPositions == null) {
@@ -143,6 +142,25 @@ class Config {
   }
   public clearPower(): void {
     this.config.powers = []
+  }
+
+  public addNoRepairWallIds(wallIds: Id<StructureWall | StructureRampart>[]): void {
+    if (this.config.noRepairWallIds == null) {
+      this.config.noRepairWallIds = []
+    }
+    const noRepairWallIds = this.config.noRepairWallIds
+    wallIds.forEach(wallId => {
+      if (noRepairWallIds.includes(wallId) === true) {
+        return
+      }
+      noRepairWallIds.push(wallId)
+    })
+  }
+  public getNoRepairWallIds(): Id<StructureWall | StructureRampart>[] {
+    if (this.config.noRepairWallIds == null) {
+      return []
+    }
+    return [...this.config.noRepairWallIds]
   }
 }
 

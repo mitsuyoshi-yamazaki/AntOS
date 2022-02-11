@@ -98,12 +98,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     }
 
     const repairWallFilter = (): (wall: StructureWall | StructureRampart) => boolean => {
-      const excludedIds = ((): Id<StructureWall | StructureRampart>[] => {
-        if (roomResource.roomInfo.config?.noRepairWallIds != null) {
-          return [...roomResource.roomInfo.config?.noRepairWallIds]
-        }
-        return []
-      })()
+      const excludedIds = roomResource.roomInfoAccessor.config.getNoRepairWallIds()
 
       const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : roomResource.roomInfoAccessor.config.wallMaxHits
 
