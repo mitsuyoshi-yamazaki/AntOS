@@ -111,6 +111,10 @@ export const GameMap = {
     return Result.Succeeded(undefined)
   },
 
+  hasWaypoints(roomName: RoomName, destinationRoomName: RoomName): boolean {
+    return this.getWaypoints(roomName, destinationRoomName, {ignoreMissingWaypoints: true}) != null
+  },
+
   /** waypointsを考慮したRoom間距離 */
   pathDistance(fromRoomName: RoomName, toRoomName: RoomName): number | null {
     return Game.map.getRoomLinearDistance(fromRoomName, toRoomName) // FixMe:

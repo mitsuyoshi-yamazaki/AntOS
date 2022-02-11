@@ -15,7 +15,7 @@ import { Environment } from "utility/environment"
 import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
-import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess, GuardRemoteRoomProcessCreepType } from "process/process/guard_remote_room_process"
+import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
@@ -93,8 +93,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason1143119LabChargerProcess()
       case "Season1200082SendMineralProcess":
         return this.launchSeason1200082SendMineralProcess()
-      case "GuardRemoteRoomProcess":
-        return this.launchGuardRemoteRoomProcess()
       case "Season1349943DisturbPowerHarvestingProcess":
         return this.launchSeason1349943DisturbPowerHarvestingProcess()
       case "Season1521073SendResourceProcess":
@@ -433,44 +431,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>, maxBodyCount)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchGuardRemoteRoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-    const creepType = args.get("creep_type")
-    if (creepType == null) {
-      return this.missingArgumentError("creep_type")
-    }
-    if (!isGuardRemoteRoomProcessCreepType(creepType)) {
-      return Result.Failed(`Invalid creep type ${creepType}, options: ${GuardRemoteRoomProcessCreepType}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
@@ -1144,6 +1104,35 @@ ProcessLauncher.register("World39013108CollectResourceProcess", args => {
     const interval = args.int("interval").parse({min: 0})
 
     return Result.Succeeded((processId) => World39013108CollectResourceProcess.create(processId, roomName, resourceType, amount, interval))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("GuardRemoteRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    const waypoints = ((): RoomName[] => {
+      const waypointsArgument = args.roomNameList("waypoints").parseOptional()
+      if (waypointsArgument != null) {
+        if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+          GameMap.setWaypoints(roomName, targetRoomName, waypointsArgument)
+        }
+        return waypointsArgument
+      }
+      const stored = GameMap.getWaypoints(roomName, targetRoomName, { ignoreMissingWaypoints: true })
+      if (stored == null) {
+        throw `waypoints not given and waypoints from ${roomLink(roomName)} to ${roomLink(targetRoomName)} is not stored`
+      }
+      return stored
+    })()
+
+    const creepType = args.typedString("creep_type", "GuardRemoteRoomProcessCreepType", isGuardRemoteRoomProcessCreepType).parse()
+    const creepCount = args.int("creep_count").parse({min: 1, max: 5})
+
+    return Result.Succeeded((processId) => GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, creepCount))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
