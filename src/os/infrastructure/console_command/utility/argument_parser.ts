@@ -92,7 +92,7 @@ export class RoomNameListArgument extends SingleOptionalArgument<{ my?: boolean,
   }
 }
 
-export class ResourceTypeArgument<T extends string> extends SingleOptionalArgument<void, T> {
+export class TypedStringArgument<T extends string> extends SingleOptionalArgument<void, T> {
   public constructor(
     key: string,
     value: string | null,
@@ -200,6 +200,16 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
       throw this.missingArgumentErrorMessage()
     }
     return this.value
+  }
+}
+
+export class StringListArgument extends SingleOptionalArgument<void, string[]> {
+  /** throws */
+  public parse(): string[] {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    return this.value.split(",")
   }
 }
 

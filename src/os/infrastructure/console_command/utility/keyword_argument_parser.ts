@@ -4,7 +4,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomCoordinate, RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, ResourceTypeArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument } from "./argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -14,6 +14,7 @@ interface KeywordArgumentsInterface {
   int(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number>
   float(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number>
   string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
+  stringList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string[]>
   boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean>
   localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position>
   localPositions(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position[]>
@@ -36,6 +37,7 @@ interface KeywordArgumentsInterface {
   // ---- Custom Type ---- //
   ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource>
   roomCoordinate(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate>
+  typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T>
 
   interRoomPath(
     fromRoomKey: string,
@@ -85,6 +87,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new StringArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
+  public stringList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string[]> {
+    return new StringListArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
   public boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean> {
     return new BooleanArgument(key, this.argumentMap.get(key) ?? null, options)
   }
@@ -123,19 +129,19 @@ export class KeywordArguments implements KeywordArgumentsInterface {
   }
 
   public resourceType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, ResourceConstant> {
-    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "ResourceConstant", isResourceConstant, options)
+    return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, "ResourceConstant", isResourceConstant, options)
   }
 
   public boostCompoundType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, MineralBoostConstant> {
-    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "MineralBoostConstant", isMineralBoostConstant, options)
+    return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, "MineralBoostConstant", isMineralBoostConstant, options)
   }
 
   public depositType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, DepositConstant> {
-    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "DepositConstant", isDepositConstant, options)
+    return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, "DepositConstant", isDepositConstant, options)
   }
 
   public commodityType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, CommodityConstant> {
-    return new ResourceTypeArgument(key, this.argumentMap.get(key) ?? null, "CommodityConstant", isCommodityConstant, options)
+    return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, "CommodityConstant", isCommodityConstant, options)
   }
 
   public powerType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, PowerConstant> {
@@ -157,6 +163,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public roomCoordinate(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
     return new RoomCoordinateArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  public typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T> {
+    return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, typeName, typeGuard, options)
   }
 
   // ---- ---- //
