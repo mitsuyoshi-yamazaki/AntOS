@@ -12,7 +12,6 @@ import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { randomDirection } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
@@ -24,6 +23,7 @@ ProcessDecoder.register("GuardRemoteRoomProcess", state => {
 const guardRemoteRoomProcessCreepType = [
   "small-ranged-attacker",
   "ranged-attacker",
+  "high-speed-ranged-attacker",
   "heavy-ranged-attacker",
 ] as const
 export type GuardRemoteRoomProcessCreepType = typeof guardRemoteRoomProcessCreepType[number]
@@ -49,21 +49,38 @@ type TalkingInfo = {
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
 const smallRangedAttackerBody: BodyPartConstant[] = [  // RCL6
+  TOUGH,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   HEAL, HEAL,
+  MOVE,
 ]
 const rangedAttackerBody: BodyPartConstant[] = [  // RCL7
+  TOUGH, TOUGH,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE,
+  MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   HEAL, HEAL, HEAL, HEAL, HEAL,
+  MOVE,
+]
+const highSpeedangedAttackerBody: BodyPartConstant[] = [  // RCL8
+  TOUGH, TOUGH,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  MOVE,
 ]
 const heavyRangedAttackerBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
@@ -71,12 +88,13 @@ const heavyRangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL,
+  MOVE,
 ]
 
 export interface GuardRemoteRoomProcessState extends ProcessState {
@@ -104,8 +122,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly creepRole: CreepRole[]
-  private readonly creepBody: BodyPartConstant[]
+  private creepRole: CreepRole[]
+  private creepBody: BodyPartConstant[]
 
   private constructor(
     public readonly launchTime: number,
@@ -113,7 +131,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private readonly creepType: GuardRemoteRoomProcessCreepType,
+    private creepType: GuardRemoteRoomProcessCreepType,
     private readonly numberOfCreeps: number,
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
@@ -122,20 +140,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
 
-    switch (this.creepType) {
-    case "small-ranged-attacker":
-      this.creepRole = rangedAttackerRole
-      this.creepBody = smallRangedAttackerBody
-      break
-    case "ranged-attacker":
-      this.creepRole = rangedAttackerRole
-      this.creepBody = rangedAttackerBody
-      break
-    case "heavy-ranged-attacker":
-      this.creepRole = rangedAttackerRole
-      this.creepBody = heavyRangedAttackerBody
-      break
-    }
+    const { roles, body } = creepSpecFor(creepType)
+    this.creepRole = roles
+    this.creepBody = body
   }
 
   public encode(): GuardRemoteRoomProcessState {
@@ -168,7 +175,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user"]
+    const commandList = ["help", "add_ignore_user", "change_creep_type"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -178,12 +185,32 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return `Commands: ${commandList}`
       case "add_ignore_user":
         return this.addIgnoreUsers(components)
+      case "change_creep_type":
+        return this.changeCreepType(components)
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private changeCreepType(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const creepType = listArguments.typedString(0, "creep type", "GuardRemoteRoomProcessCreepType", isGuardRemoteRoomProcessCreepType).parse()
+    if (creepType === this.creepType) {
+      throw `creep type ${creepType} already set`
+    }
+
+    const oldValue = this.creepType
+    this.creepType = creepType
+
+    const { roles, body } = creepSpecFor(creepType)
+    this.creepRole = roles
+    this.creepBody = body
+
+    return `changed creep type ${creepType} from ${oldValue}`
   }
 
   /** @throws */
@@ -248,11 +275,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     switch (this.creepType) {
     case "small-ranged-attacker":
     case "ranged-attacker":
+    case "high-speed-ranged-attacker":
     case "heavy-ranged-attacker":
       creeps.forEach(creep => this.runRangedAttacker(creep, whitelist))
-      break
-    default:
-      PrimitiveLogger.programError(`${this.constructor.name} unhandled creep type ${this.creepType}`)
       break
     }
   }
@@ -507,5 +532,30 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return
     }
     creep.say(message, true)
+  }
+}
+
+function creepSpecFor(creepType: GuardRemoteRoomProcessCreepType): { roles: CreepRole[], body: BodyPartConstant[] } {
+  switch (creepType) {
+  case "small-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: smallRangedAttackerBody,
+    }
+  case "ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: rangedAttackerBody,
+    }
+  case "high-speed-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: highSpeedangedAttackerBody,
+    }
+  case "heavy-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: heavyRangedAttackerBody,
+    }
   }
 }
