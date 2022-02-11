@@ -15,6 +15,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -171,7 +172,17 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${roomLink(this.targetRoomName)} ${creepCount}/${this.numberOfCreeps}cr ${this.creepType}`
+    const descriptions: string[] = [
+      roomLink(this.targetRoomName),
+      `${creepCount}/${this.numberOfCreeps}cr`,
+      this.creepType,
+    ]
+
+    const stopReason = this.stopSendingGuardReason()
+    if (stopReason != null) {
+      descriptions.push(`stopped by: ${stopReason}`)
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -241,32 +252,18 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
-
-    if (creeps[0] == null || (creeps.length < this.numberOfCreeps && creeps[0].ticksToLive != null && creeps[0].ticksToLive < 900)) {
-      const shouldSendGuard = ((): boolean => {
-        const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
-        if (objects == null) {
-          return false
-        }
-        const energyAmount = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-          + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-        if (energyAmount < 50000) {
-          return false
-        }
-        if (targetRoom == null) {
-          return true
-        }
-        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length < 2) {
-          return true
-        }
-        if (targetRoom.storage == null) {
-          return true
-        }
-        if (targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
-          return true
-        }
+    const dyingCreepCount = creeps.filter(creep => {
+      if (creep.ticksToLive == null) {
         return false
-      })()
+      }
+      if (creep.ticksToLive > 300) {
+        return false
+      }
+      return true
+    }).length
+
+    if ((creeps.length - dyingCreepCount) < this.numberOfCreeps) {
+      const shouldSendGuard = this.stopSendingGuardReason() == null
       if (shouldSendGuard === true) {
         this.requestCreep()
       }
@@ -280,6 +277,32 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       creeps.forEach(creep => this.runRangedAttacker(creep, whitelist))
       break
     }
+  }
+
+  private stopSendingGuardReason(): string | null {
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
+      return "no parent room"
+    }
+    const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
+    if (energyAmount < 50000) {
+      return "lack of energy"
+    }
+
+    const targetRoom = Game.rooms[this.targetRoomName]
+    if (targetRoom == null) {
+      return null
+    }
+    if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length < 2) {
+      return null
+    }
+    if (targetRoom.storage == null) {
+      return null
+    }
+    if (targetRoom.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 50000) {
+      return null
+    }
+    return "target room is set up"
   }
 
   private requestCreep(): void {
