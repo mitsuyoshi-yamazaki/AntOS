@@ -199,12 +199,13 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       this.addSpawnStopReason(noProduct)
     }
 
-    const factory = Game.getObjectById(this.factoryId)
-    if (factory == null) {
+    const retrievedFactory = Game.getObjectById(this.factoryId)
+    if (retrievedFactory == null) {
       this.addSpawnStopReason("no factory")
       processLog(this, `No factory in ${roomLink(this.roomName)}`)
       return
     }
+    const factory = retrievedFactory
 
     const notOperatingReasonIndex = this.stopSpawningReasons.indexOf(notOperating)
     if (notOperatingReasonIndex >= 0) {
@@ -219,7 +220,17 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return
     }
 
-    const hasEnoughEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) > 70000
+    const minimumEnergy = ((): number => {
+      const defaultMinimumEnergy = 70000
+      if (factory.level == null) {
+        return defaultMinimumEnergy
+      }
+      if (factory.level <= 0) {
+        return defaultMinimumEnergy
+      }
+      return 60000
+    })()
+    const hasEnoughEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) > minimumEnergy
     const shouldSpawn = ((): boolean => {
       if (hasEnoughEnergy !== true) {
         return false
