@@ -58,7 +58,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     private readonly factoryId: Id<StructureFactory>,
     private products: CommodityConstant[],
     private excludedProducts: CommodityConstant[],
@@ -120,12 +120,14 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     const products = this.products.map(commodityType => coloredResourceType(commodityType)).join(", ")
     const excludedProducts = this.excludedProducts.map(commodityType => coloredResourceType(commodityType)).join(", ")
     const ingredients = this.getAllIngredients().map(commodityType => coloredResourceType(commodityType)).join(", ")
+    const minimumAmounts = Array.from(Object.entries(this.ingredientMinimumAmounts)).map(([resourceType, amount]) => `${coloredResourceType(resourceType as ResourceConstant)} ${amount}`).join(", ")
 
     const descriptions: string[] = [
       `${roomLink(this.roomName)}`,
       `- products: ${products}`,
       `- excluded: ${excludedProducts}`,
       `- total ingredients: ${ingredients}`,
+      `- minimum amounts: ${minimumAmounts}`
     ]
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`stop spawning reasons:\n${this.stopSpawningReasons.map(reason => `- ${reason}`).join("\n")}`)
@@ -178,7 +180,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
         const listArguments = new ListArguments(components)
         const ingredient = listArguments.resourceType(0, "ingredient type").parse()
         const amount = listArguments.int(1, "amount").parse({ min: 0, max: GameConstants.structure.terminal.capacity })
-        this.ingredientMinimumAmounts[ingredient] = amount
+        this.setResourceMinimumAmount(ingredient, amount)
 
         return `set ${coloredResourceType(ingredient)} minimum amount ${amount}`
       }
@@ -215,6 +217,14 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  public setResourceMinimumAmount(resourceType: ResourceConstant, amount: number): void {
+    this.ingredientMinimumAmounts[resourceType] = amount
+  }
+
+  public requiredIngredients(): CommodityIngredient[] {
+    return this.getAllIngredients()
   }
 
   public runOnTick(): void {

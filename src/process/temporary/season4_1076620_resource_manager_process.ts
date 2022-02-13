@@ -13,6 +13,8 @@ import { OperatingSystem } from "os/os"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
+import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
   return Season41076620ResourceManagerProcess.decode(state as Season41076620ResourceManagerProcessState)
@@ -23,18 +25,24 @@ type ResourceTransfer = {
   readonly amount: number
   readonly destinationRoomName: RoomName
 }
+type ResourceAmount = {
+  readonly resourceType: ResourceConstant
+  readonly amount: number
+}
 
 const terminalMinimumFreeSpace = 10000
+const harvestingMineralMinimumAmount = 20000
 const runInterval = 2000
 const terminalCooldownInterval = GameConstants.structure.terminal.cooldown + 1
 
 export interface Season41076620ResourceManagerProcessState extends ProcessState {
-  readonly resourceTransfer: {[roomName: string]: ResourceTransfer[]}
   readonly processState: {
     readonly dryRun: boolean
     readonly runNextTick: boolean
     readonly lastRunTimestamp: Timestamp  // (Game.time % runInterval) === lastRunTimestamp
   }
+  readonly resourceTransfer: { [roomName: string]: ResourceTransfer[] }
+  readonly minimumResourceAmounts: { [roomName: string]: ResourceAmount[] }
 }
 
 /**
@@ -43,7 +51,6 @@ export interface Season41076620ResourceManagerProcessState extends ProcessState 
  * - for Research
  * - for Boost
  * - attacked
- * - powerは均等に
  * - room_infoに情報をもたせたうえでroom_infoにproductを設定する
  * - 余った（スコア可能な）tier0 commodityも算出できる
  * - どこにmineralを使うとスコアを最大化できるか
@@ -61,6 +68,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       lastRunTimestamp: Timestamp
     },
     private resourceTransfer: { [roomName: string]: ResourceTransfer[] },
+    private minimumResourceAmounts: { [roomName: string]: ResourceAmount[] },
   ) {
     this.taskIdentifier = this.constructor.name
   }
@@ -72,11 +80,12 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       i: this.processId,
       processState: this.processState,
       resourceTransfer: this.resourceTransfer,
+      minimumResourceAmounts: this.minimumResourceAmounts,
     }
   }
 
   public static decode(state: Season41076620ResourceManagerProcessState): Season41076620ResourceManagerProcess {
-    return new Season41076620ResourceManagerProcess(state.l, state.i, state.processState, state.resourceTransfer)
+    return new Season41076620ResourceManagerProcess(state.l, state.i, state.processState, state.resourceTransfer, state.minimumResourceAmounts ?? {})
   }
 
   public static create(processId: ProcessId): Season41076620ResourceManagerProcess {
@@ -85,7 +94,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       runNextTick: false,
       lastRunTimestamp: Game.time
     }
-    return new Season41076620ResourceManagerProcess(Game.time, processId, processState, {})
+    return new Season41076620ResourceManagerProcess(Game.time, processId, processState, {}, {})
   }
 
   public processShortDescription(): string {
@@ -104,14 +113,28 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
   }
 
   public processDescription(): string {
-    const roomDescriptions = Array.from(Object.entries(this.resourceTransfer)).flatMap(([roomName, resourceTransferList]): string[] => {
-      if (resourceTransferList.length <= 0) {
+    const roomDescriptions = RoomResources.getOwnedRoomResources().flatMap((roomResource): string[] => {
+      const roomName = roomResource.room.name
+      const minimumAmounts = this.minimumResourceAmounts[roomName]
+      const minimumAmountDescription = ((): string => {
+        if (minimumAmounts == null || minimumAmounts.length <= 0) {
+          return ""
+        }
+        return `, minimum amounts: ${minimumAmounts.map(amount => `${coloredResourceType(amount.resourceType)} ${amount.amount}`).join(", ")}`
+      })()
+
+      const roomDescription: string[] = [
+        `- ${roomLink(roomName)}${minimumAmountDescription}`,
+      ]
+
+      const resourceTransferList = this.resourceTransfer[roomName]
+      if (minimumAmountDescription.length <= 0 && (resourceTransferList == null || resourceTransferList.length <= 0)) {
         return []
       }
-      const roomDescription: string[] = [
-        `- ${roomLink(roomName)}`,
-        ...resourceTransferList.map(resourceTransfer => `  - ${roomLink(resourceTransfer.destinationRoomName)}: ${resourceTransfer.amount} ${coloredResourceType(resourceTransfer.resourceType)}`)
-      ]
+
+      if (resourceTransferList != null && resourceTransferList.length > 0) {
+        roomDescription.push(...resourceTransferList.map(resourceTransfer => `  - ${roomLink(resourceTransfer.destinationRoomName)}: ${resourceTransfer.amount} ${coloredResourceType(resourceTransfer.resourceType)}`))
+      }
 
       return roomDescription
     })
@@ -126,7 +149,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_boosts", "remove_boosts", "status", "run_next_tick", "set_dry_run"]
+    const commandList = ["help", "add_boosts", "remove_boosts", "status", "run_next_tick", "set_dry_run", "refresh_minimum_resource_amounts"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -149,6 +172,8 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
 
         return `dry run set ${dryRun} (from ${oldValue})`
       }
+      case "refresh_minimum_resource_amounts":
+        return this.refreshMinimumResourceAmounts()
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -157,22 +182,80 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     }
   }
 
-  // /** @throws */
-  // private addBoostCompound(boostType: MineralBoostConstant, amount: ProductAmount): string {
-  //   if (this.production.boosts.some(boost => boost.productType === boostType) === true) {
-  //     throw `${coloredResourceType(boostType)} is already in the list`
-  //   }
-  //   this.production.boosts.push({
-  //     productType: boostType,
-  //     amount,
-  //   })
-  //   return `${coloredResourceType(boostType)} (${amount}) set`
-  // }
+  /** @throws */
+  private refreshMinimumResourceAmounts(): string {
+    const harvestingMineralTypes: MineralConstant[] = []
+    this.minimumResourceAmounts = {}
 
-  // /** @throws */
-  // private addBoosts(args: string[]): string {
-  //   throw "not implemented" // TODP:
-  // }
+    const getMinimumResourceAmountList = (roomName: RoomName): ResourceAmount[] => {
+      const stored = this.minimumResourceAmounts[roomName]
+      if (stored != null) {
+        return stored
+      }
+      const newList: ResourceAmount[] = []
+      this.minimumResourceAmounts[roomName] = newList
+      return newList
+    }
+
+    RoomResources.getOwnedRoomResources().forEach(roomResource => {
+      if (roomResource.mineral == null) {
+        return
+      }
+      const mineralType = roomResource.mineral.mineralType
+      if (harvestingMineralTypes.includes(mineralType) === true) {
+        return
+      }
+      harvestingMineralTypes.push(mineralType)
+
+      getMinimumResourceAmountList(roomResource.room.name).push({
+        resourceType: mineralType,
+        amount: harvestingMineralMinimumAmount,
+      })
+    })
+
+    const skMineralHarvestProcesses: Season4332399SKMineralHarvestProcess[] = []
+    const produceCommodityProcesses: ContinuouslyProduceCommodityProcess[] = []
+
+    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
+      const process = processInfo.process
+      if (process instanceof Season4332399SKMineralHarvestProcess) {
+        skMineralHarvestProcesses.push(process)
+        return
+      }
+      if (process instanceof ContinuouslyProduceCommodityProcess) {
+        produceCommodityProcesses.push(process)
+        return
+      }
+    })
+
+    skMineralHarvestProcesses.forEach(process => {
+      const mineralType = process.harvestingMineralType()
+      if (mineralType == null) {
+        return
+      }
+      if (harvestingMineralTypes.includes(mineralType) === true) {
+        return
+      }
+      harvestingMineralTypes.push(mineralType)
+
+      getMinimumResourceAmountList(process.roomName).push({
+        resourceType: mineralType,
+        amount: harvestingMineralMinimumAmount,
+      })
+    })
+
+    produceCommodityProcesses.forEach(process => {
+      const minimumAmountList = getMinimumResourceAmountList(process.roomName)
+      minimumAmountList.forEach(amount => {
+        process.setResourceMinimumAmount(amount.resourceType, amount.amount)
+      })
+    })
+
+    const results = Array.from(Object.entries(this.minimumResourceAmounts)).map(([roomName, amountList]) => {
+      return `- ${roomLink(roomName)}: ${amountList.map(amount => `${coloredResourceType(amount.resourceType)} ${amount.amount}`).join(", ")}`
+    })
+    return `minimum amount set:\n${results.join("\n")}`
+  }
 
   public runOnTick(): void {
     if ((Game.time % terminalCooldownInterval) === 0) {
@@ -204,16 +287,24 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     })
 
     const powerProcessingRoomNames: RoomName[] = []
+    const produceProcesses: ContinuouslyProduceCommodityProcess[] = []
     OperatingSystem.os.listAllProcesses().forEach(processInfo => {
       const process = processInfo.process
       if (process instanceof PowerProcessProcess) {
         powerProcessingRoomNames.push(process.parentRoomName)
         return
       }
-      // TODO:
+      if (process instanceof ContinuouslyProduceCommodityProcess) {
+        produceProcesses.push(process)
+        return
+      }
     })
 
     this.calculatePowerTransfer(allRoomResources, powerProcessingRoomNames)
+  }
+
+  private calculateCommodityIngredientTransfer(roomResources: OwnedRoomResource[], produceProcesses: ContinuouslyProduceCommodityProcess[]): void {
+
   }
 
   private calculatePowerTransfer(roomResources: OwnedRoomResource[], powerProcessingRoomNames: RoomName[]): void {

@@ -66,7 +66,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
     private stopSpawnReason: string[],
@@ -127,6 +127,10 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     default:
       return `Invalid command ${command}. Available commands are: ${commands}`
     }
+  }
+
+  public harvestingMineralType(): MineralConstant | null {
+    return this.mineralType
   }
 
   public runOnTick(): void {
