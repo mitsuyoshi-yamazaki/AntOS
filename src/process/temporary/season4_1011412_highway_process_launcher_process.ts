@@ -5,7 +5,6 @@ import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import type { RoomName } from "utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import type { Timestamp } from "utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
@@ -61,6 +60,8 @@ interface Season41011412HighwayProcessLauncherProcessState extends ProcessState 
   readonly bases: BaseInfo[]
   readonly observeResults: { [roomName: string]: ObserveResult }
   readonly stopLaunchingReasons: string[]
+  readonly maxProcessCount: number
+  readonly storageRooms: {[roomName: string]: RoomName}
 }
 
 export class Season41011412HighwayProcessLauncherProcess implements Process, Procedural, MessageObserver {
@@ -75,6 +76,8 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     private readonly bases: BaseInfo[],
     private readonly observeResults: { [roomName: string]: ObserveResult},
     private readonly stopLaunchingReasons: string[],
+    private maxProcessCount: number,
+    private readonly storageRooms: { [roomName: string]: RoomName },
   ) {
     this.identifier = `${this.constructor.name}`
   }
@@ -87,6 +90,8 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       bases: this.bases,
       observeResults: this.observeResults,
       stopLaunchingReasons: this.stopLaunchingReasons,
+      maxProcessCount: this.maxProcessCount,
+      storageRooms: this.storageRooms,
     }
   }
 
@@ -97,11 +102,13 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       state.bases,
       state.observeResults,
       state.stopLaunchingReasons,
+      state.maxProcessCount ?? 10,  // FixMe: Migration
+      state.storageRooms ?? {}, // FixMe: Migration
     )
   }
 
   public static create(processId: ProcessId): Season41011412HighwayProcessLauncherProcess {
-    return new Season41011412HighwayProcessLauncherProcess(Game.time, processId, [], {}, [])
+    return new Season41011412HighwayProcessLauncherProcess(Game.time, processId, [], {}, [], 10, {})
   }
 
   public processShortDescription(): string {
@@ -111,7 +118,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   public processDescription(): string {
     try {
       const descriptions: string[] = [
-        `- ${this.bases.length} bases`,
+        `- ${this.bases.length} bases (max process count: ${this.maxProcessCount})`,
         ...this.bases.flatMap(base => this.baseInfo(base.roomName)),
       ]
 
@@ -122,7 +129,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "show"]
+    const commandList = ["help", "add", "show", "set_max_process_count", "add_storage_rooms"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -142,12 +149,43 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         }
         return this.processDescription()
       }
+      case "set_max_process_count": {
+        const listArguments = new ListArguments(components)
+        const maxProcessCount = listArguments.int(0, "max process count").parse({ min: 0 })
+        const oldValue = this.maxProcessCount
+        this.maxProcessCount = maxProcessCount
+        return `max process count set ${this.maxProcessCount} (from ${oldValue})`
+      }
+      case "add_storage_rooms":
+        return this.addStorageRooms(components)
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private addStorageRooms(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const storageRoomResource = listArguments.ownedRoomResource(0, "storage room name").parse()
+    const storageRoomName = storageRoomResource.room.name
+    if (storageRoomResource.activeStructures.storage == null) {
+      throw `${roomLink(storageRoomName)} has no storage`
+    }
+    const targetRoomNames = listArguments.roomNameList(1, "target room names").parse()
+
+    const allTargetRoomnames = this.bases.flatMap(base => base.targetRoomNames)
+    targetRoomNames.forEach(targetRoomName => {
+      if (allTargetRoomnames.includes(targetRoomName) === true) {
+        return
+      }
+      throw `${roomLink(targetRoomName)} is not in the target list`
+    })
+
+    targetRoomNames.forEach(targetRoomName => (this.storageRooms[targetRoomName] = storageRoomName))
+    return `storage room ${roomLink(storageRoomName)} set for ${targetRoomNames.map(targetRoomName => roomLink(targetRoomName)).join(",")}`
   }
 
   /** @throws */
@@ -195,15 +233,15 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
   /** @throws */
   private addBase(args: string[]): string {
-    const keywordArguments = new KeywordArguments(args)
-    const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
+    const listArguments = new ListArguments(args)
+    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
     const roomName = roomResource.room.name
     const observer = roomResource.activeStructures.observer
     if (observer == null) {
       throw `no observer in ${roomLink(roomName)}`
     }
 
-    const targetRoomNames = keywordArguments.roomNameList("target_room_names").parse()
+    const targetRoomNames = listArguments.roomNameList(1, "target room names").parse()
     if (targetRoomNames.length <= 0) {
       throw "target_room_names has 0 length"
     }
@@ -369,9 +407,13 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     const ignoreReasons: string[] = []
 
     if (neighbourCount < 3) {
-      ignoreReasons.push(`lack of empty space (${neighbourCount})`)
+      // if (powerBank.power < 4000) {
+      ignoreReasons.push(`lack of empty space ${neighbourCount} and power ${powerBank.power}`)
+      // } else {
+      //   // launch boosted
+      // }
     }
-    if (powerBank.power < 3000) {
+    if (powerBank.power < 2500) {
       ignoreReasons.push(`power too little (${powerBank.power})`)
     }
 
@@ -445,8 +487,16 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       return
     })
 
+    let launchableProcessCount = this.maxProcessCount - runningHarvestProcessTargetIds.length
+    if (launchableProcessCount <= 0) {
+      return
+    }
+
     this.bases.forEach(base => {
       let launched = false as boolean
+      if (launchableProcessCount <= 0) {
+        return
+      }
 
       const spawnCost = baseSpawnTimeCost.get(base.roomName) ?? 0
       if (spawnCost > maxCost) {
@@ -475,13 +525,14 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
             target.ignoreReasons.push("harvesting")
             continue
           }
-          if ((target.decayBy - Game.time) < 3000) {
+          if ((target.decayBy - Game.time) < 2500) {
             target.ignoreReasons.push("decaying")
             continue
           }
 
           this.launchHarvestProcess(target, base.roomName)
           launched = true
+          launchableProcessCount -= 1
           break
         }
       })
@@ -490,35 +541,59 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
   private launchHarvestProcess(target: TargetInfo, parentRoomName: RoomName): void {
     target.ignoreReasons.push("harvesting")
-    const waypoints = GameMap.getWaypoints(parentRoomName, target.roomName) ?? []
 
     switch (target.case) {
-    case "power bank": {
-      const powerBankInfo = {
-        id: target.targetId,
-        powerAmount: target.powerAmount,
-        position: target.position,
-        neighbourCount: target.neighbourCount,
-      }
-      const process = OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
-      Memory.os.logger.filteringProcessIds.push(process.processId)
+    case "power bank":
+      this.launchHarvestPowerProcess(target, parentRoomName)
+      return
+    case "deposit":
+      this.launchHarvestDepositProcess(target, parentRoomName)
       return
     }
-    case "deposit": {
-      const depositInfo = {
-        roomName: target.roomName,
-        depositId: target.targetId,
-        commodityType: target.commodityType,
-        neighbourCellCount: target.neighbourCount,
-        currentCooldown: target.currentCooldown,
-      }
-      const creepSpec = {
-        harvesterCount: target.neighbourCount >= 2 ? 2 : 1,
-        haulerCount: Game.map.getRoomLinearDistance(parentRoomName, target.roomName) >= 4 ? 2 : 1,
-      }
-      OperatingSystem.os.addProcess(null, processId => Season4275982HarvestCommodityProcess.create(processId, parentRoomName, depositInfo, creepSpec))
-      return
+  }
+
+  private launchHarvestPowerProcess(target: PowerBankTargetInfo, parentRoomName: RoomName): void {
+    const powerBankInfo = {
+      id: target.targetId,
+      powerAmount: target.powerAmount,
+      position: target.position,
+      neighbourCount: target.neighbourCount,
     }
+
+    const waypoints = GameMap.getWaypoints(parentRoomName, target.roomName) ?? []
+    const shouldBoost = ((): boolean => {
+      if (powerBankInfo.neighbourCount >= 3) {
+        return false
+      }
+      return false  // TODO:
+    })()
+
+    const process = OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
+    Memory.os.logger.filteringProcessIds.push(process.processId)
+
+    const storageRoomName = this.storageRooms[target.roomName]
+    if (storageRoomName != null) {
+      process.setStorageRoomName(storageRoomName)
+    }
+  }
+
+  private launchHarvestDepositProcess(target: DepositTargetInfo, parentRoomName: RoomName): void {
+    const depositInfo = {
+      roomName: target.roomName,
+      depositId: target.targetId,
+      commodityType: target.commodityType,
+      neighbourCellCount: target.neighbourCount,
+      currentCooldown: target.currentCooldown,
+    }
+    const creepSpec = {
+      harvesterCount: target.neighbourCount >= 2 ? 2 : 1,
+      haulerCount: Game.map.getRoomLinearDistance(parentRoomName, target.roomName) >= 4 ? 2 : 1,
+    }
+    const process = OperatingSystem.os.addProcess(null, processId => Season4275982HarvestCommodityProcess.create(processId, parentRoomName, depositInfo, creepSpec))
+
+    const storageRoomName = this.storageRooms[target.roomName]
+    if (storageRoomName != null) {
+      process.setStorageRoomName(storageRoomName)
     }
   }
 }
