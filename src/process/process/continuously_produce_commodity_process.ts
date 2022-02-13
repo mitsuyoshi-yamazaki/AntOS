@@ -134,7 +134,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add_excluded_products", "clear_excluded_products", "set_minimum_amount", "stop", "resume"]
+    const commandList = ["help", "status", "add_excluded_products", "clear_excluded_products", "set_minimum_amount", "verify", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -181,6 +181,22 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
         this.ingredientMinimumAmounts[ingredient] = amount
 
         return `set ${coloredResourceType(ingredient)} minimum amount ${amount}`
+      }
+
+      case "verify": {
+        const allIngredients = this.getAllIngredients()
+        const overlap: CommodityIngredient[] = []
+        this.products.forEach(product => {
+          if (allIngredients.includes(product) === true) {
+            overlap.push(product)
+            return
+          }
+        })
+
+        if (overlap.length > 0) {
+          throw `${overlap.map(resourceType => coloredResourceType(resourceType)).join(",")} are product and ingredient`
+        }
+        return "ok"
       }
 
       case "stop":
@@ -317,9 +333,9 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     const resourceType = Array.from(Object.keys(creep.store))[0] as ResourceConstant | null
     if (resourceType != null) {
       if ((allIngredients as string[]).includes(resourceType) === true) {
-        if ((factory.store.getUsedCapacity(resourceType) + creep.store.getUsedCapacity(resourceType)) < this.withdrawMaximumAmountInFactory(resourceType)) {
-          return MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, resourceType))
-        }
+        // if ((factory.store.getUsedCapacity(resourceType) + creep.store.getUsedCapacity(resourceType)) < this.withdrawMaximumAmountInFactory(resourceType)) {
+        return MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, resourceType))
+        // }
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
     }
@@ -376,9 +392,9 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
       .flatMap((resourceType): { resourceType: ResourceConstant, amount: number }[] => {
         const amount = factory.store.getUsedCapacity(resourceType)
         if ((allIngredients as ResourceConstant[]).includes(resourceType) === true) {
-          if (amount < this.withdrawMaximumAmountInFactory(resourceType)) {
-            return []
-          }
+          // if (amount < this.withdrawMaximumAmountInFactory(resourceType)) {
+          return []
+          // }
         }
         return [{
           resourceType,
@@ -395,9 +411,9 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     return resourceTypesToWithdraw[0]
   }
 
-  private withdrawMaximumAmountInFactory(resourceType: ResourceConstant): number {
-    return Math.ceil(this.chargeMaximumAmountInFactory(resourceType) * 1.5)
-  }
+  // private withdrawMaximumAmountInFactory(resourceType: ResourceConstant): number {
+  //   return Math.ceil(this.chargeMaximumAmountInFactory(resourceType) * 1.5)
+  // }
 
   private chargeMaximumAmountInFactory(resourceType: ResourceConstant): number {
     if (isDepositConstant(resourceType)) {
