@@ -154,7 +154,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
         if (RoomResources.getOwnedRoomResource(roomName) == null) {
           throw `${roomLink(roomName)} is not mine`
         }
-        this.storageRoomName = roomName
+        this.setStorageRoomName(roomName)
         return `storage room ${roomLink(roomName)} set`
       } catch (error) {
         return `${error}`
@@ -164,6 +164,10 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     default:
       return `Unknown command ${command}, see: "help"`
     }
+  }
+
+  public setStorageRoomName(storageRoomName: RoomName): void {
+    this.storageRoomName = storageRoomName
   }
 
   public runOnTick(): void {
