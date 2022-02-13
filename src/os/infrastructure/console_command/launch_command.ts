@@ -55,7 +55,7 @@ import { Season4964954HarvestPowerProcess } from "process/temporary/season4_9649
 import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
 // import { Season41035999ScoreFleetProcess } from "process/temporary/season4_1035999_score_fleet_process"
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
-import { } from "process/temporary/season4_1076620_resource_manager_process"
+import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 
 type LaunchCommandResult = Result<Process, string>
@@ -1150,6 +1150,14 @@ ProcessLauncher.register("ContinuouslyProduceCommodityProcess", args => {
     }
 
     return Result.Succeeded((processId) => ContinuouslyProduceCommodityProcess.create(processId, roomName, factory))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season41076620ResourceManagerProcess", () => {
+  try {
+    return Result.Succeeded((processId) => Season41076620ResourceManagerProcess.create(processId))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
