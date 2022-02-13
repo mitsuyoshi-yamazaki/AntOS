@@ -257,7 +257,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
 
     if (terminal != null && product != null) {
       if (hasEnoughEnergy === true) {
-        this.produce(factory, product)
+        this.produce(factory, product, roomResource)
       }
 
       World.resourcePools.assignTasks(
@@ -379,7 +379,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     return resource.resourceType
   }
 
-  private produce(factory: StructureFactory, product: ProductInfo): void {
+  private produce(factory: StructureFactory, product: ProductInfo, roomResource: OwnedRoomResource): void {
     const result = factory.produce(product.commodityType)
     switch (result) {
     case OK:
@@ -400,11 +400,19 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     case ERR_INVALID_TARGET:
     case ERR_BUSY:
       this.addSpawnStopReason(notOperating)
+      roomResource.roomInfoAccessor.config.enablePower(PWR_OPERATE_FACTORY)
       break
     }
   }
 
   private addSpawnStopReason(reason: string): void {
+    if (reason === noProduct) {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource != null) {
+        roomResource.roomInfoAccessor.config.disablePower(PWR_OPERATE_FACTORY)
+      }
+    }
+
     if (this.stopSpawningReasons.includes(reason) === true) {
       return
     }
