@@ -15,6 +15,8 @@ import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
+import { CommodityIngredient } from "utility/resource"
+import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
   return Season41076620ResourceManagerProcess.decode(state as Season41076620ResourceManagerProcessState)
@@ -32,7 +34,7 @@ type ResourceAmount = {
 
 const terminalMinimumFreeSpace = 10000
 const harvestingMineralMinimumAmount = 20000
-const runInterval = 2000
+const runInterval = 1000
 const terminalCooldownInterval = GameConstants.structure.terminal.cooldown + 1
 
 export interface Season41076620ResourceManagerProcessState extends ProcessState {
@@ -149,7 +151,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_boosts", "remove_boosts", "status", "run_next_tick", "set_dry_run", "refresh_minimum_resource_amounts"]
+    const commandList = ["help", "add_boosts", "remove_boosts", "status", "run_next_tick", "set_dry_run", "refresh_minimum_resource_amounts", "clear_reserved_transfers"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -174,6 +176,9 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       }
       case "refresh_minimum_resource_amounts":
         return this.refreshMinimumResourceAmounts()
+      case "clear_reserved_transfers":
+        this.resourceTransfer = {}
+        return "ok"
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -261,7 +266,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     if ((Game.time % terminalCooldownInterval) === 0) {
       this.transferResources()
     }
-    if ((this.processState.runNextTick !== true) && ((Game.time % runInterval) !== this.processState.lastRunTimestamp)) {
+    if ((this.processState.runNextTick !== true) && ((Game.time % runInterval) !== (this.processState.lastRunTimestamp % runInterval))) {
       return
     }
     this.processState.runNextTick = false
@@ -301,10 +306,118 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     })
 
     this.calculatePowerTransfer(allRoomResources, powerProcessingRoomNames)
+    this.calculateCommodityIngredientTransfer(allRoomResources, produceProcesses)
   }
 
   private calculateCommodityIngredientTransfer(roomResources: OwnedRoomResource[], produceProcesses: ContinuouslyProduceCommodityProcess[]): void {
+    const excludedIngredientTypes: CommodityIngredient[] = [RESOURCE_ENERGY]
+    const allRequiredIngredients: CommodityIngredient[] = []
+    const requiredIngredientMap = new ValuedArrayMap<CommodityIngredient, RoomName>()
 
+    produceProcesses.forEach(process => {
+      const roomName = process.roomName
+      const ingredients = process.requiredIngredients().filter(ingredient => {
+        if (excludedIngredientTypes.includes(ingredient) === true) {
+          return false
+        }
+        return true
+      })
+
+      ingredients.forEach(ingredient => {
+        requiredIngredientMap.getValueFor(ingredient).push(roomName)
+
+        if (allRequiredIngredients.includes(ingredient) !== true) {
+          allRequiredIngredients.push(ingredient)
+        }
+      })
+    })
+
+    const minimumResourceAmount = 5000
+    const resourceRoomMap = new ValuedArrayMap<CommodityIngredient, OwnedRoomResource>()
+
+    const getMinimumAmountFor = (ingredient: CommodityIngredient, roomName: RoomName): number | null => {
+      const roomResourceMinimumAmounts = this.minimumResourceAmounts[roomName]
+      if (roomResourceMinimumAmounts == null) {
+        return null
+      }
+      const amount = roomResourceMinimumAmounts.find(minimumAmount => minimumAmount.resourceType === ingredient)
+      if (amount == null) {
+        return null
+      }
+      return amount.amount
+    }
+
+    roomResources.forEach(roomResource => {
+      const roomName = roomResource.room.name
+      const terminal = roomResource.activeStructures.terminal
+      if (terminal == null) {
+        return
+      }
+
+      allRequiredIngredients.forEach(ingredient => {
+        const minimumAmount = getMinimumAmountFor(ingredient, roomName) ?? 0
+        if (roomResource.getResourceAmount(ingredient) < (minimumAmount + minimumResourceAmount)) {
+          return
+        }
+        resourceRoomMap.getValueFor(ingredient).push(roomResource)
+      })
+    })
+
+    const getRoomResourceTransferList = (roomName: RoomName): ResourceTransfer[] => {
+      const stored = this.resourceTransfer[roomName]
+      if (stored != null) {
+        return stored
+      }
+      const newList: ResourceTransfer[] = []
+      this.resourceTransfer[roomName] = newList
+      return newList
+    }
+
+    const getSendableResourceAmount = (ingredient: CommodityIngredient, roomResource: OwnedRoomResource): number => {
+      const minimumAmount = getMinimumAmountFor(ingredient, roomResource.room.name) ?? 0
+      const resourceAmount = roomResource.getResourceAmount(ingredient)
+      const amount = resourceAmount - minimumAmount
+      if (amount <= 0 ) {
+        return 0
+      }
+      return amount
+    }
+
+    const transferMaxAmount = 10000
+    const registerResourceTransfer = (ingredient: CommodityIngredient, fromRoomResources: OwnedRoomResource[], toRoomNames: RoomName[]): void => {
+      if (fromRoomResources.length <= 0) {
+        return
+      }
+      const fromRoomNames = fromRoomResources.map(roomResource => roomResource.room.name)
+      const filteredDestinationRoomNames = toRoomNames.filter(roomName => {
+        if (fromRoomNames.includes(roomName) === true) {
+          return false
+        }
+        return true
+      })
+      if (toRoomNames.length <= 0) {
+        return
+      }
+
+      fromRoomResources.forEach(roomResource => {
+        const totalAmountToSend = getSendableResourceAmount(ingredient, roomResource)
+        const sendAmountForRoom = Math.min(Math.floor(totalAmountToSend / filteredDestinationRoomNames.length), transferMaxAmount)
+        const roomName = roomResource.room.name
+
+        filteredDestinationRoomNames.forEach(toRoomName => {
+          getRoomResourceTransferList(roomName).push({
+            resourceType: ingredient,
+            amount: sendAmountForRoom,
+            destinationRoomName: toRoomName,
+          })
+        })
+      })
+    }
+
+    Array.from(resourceRoomMap.entries()).forEach(([ingredient, roomResources]) => {
+      const destinationRooms = requiredIngredientMap.getValueFor(ingredient)
+      registerResourceTransfer(ingredient, roomResources, destinationRooms)
+    })
   }
 
   private calculatePowerTransfer(roomResources: OwnedRoomResource[], powerProcessingRoomNames: RoomName[]): void {
@@ -377,8 +490,16 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
 
     Array.from(Object.entries(this.resourceTransfer)).forEach(([roomName, resourceTransfer]) => {
       const roomResource = RoomResources.getOwnedRoomResource(roomName)
-      const terminal = roomResource?.activeStructures.terminal
+      if (roomResource == null) {
+        resourceTransfer.splice(0, resourceTransfer.length)
+        return
+      }
+      const terminal = roomResource.activeStructures.terminal
       if (terminal == null || terminal.cooldown > 0) {
+        return
+      }
+      if (roomResource.getResourceAmount(RESOURCE_ENERGY) < 50000) {
+        resourceTransfer.splice(0, resourceTransfer.length)
         return
       }
       const transfer = resourceTransfer[0]
@@ -390,6 +511,11 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
         return
       }
       receivedRoomNames.push(transfer.destinationRoomName)
+
+      const destinationRoomResource = RoomResources.getOwnedRoomResource(transfer.destinationRoomName)
+      if (destinationRoomResource == null || destinationRoomResource.activeStructures.terminal == null || destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() < terminalMinimumFreeSpace) {
+        return
+      }
 
       sentResources.push({
         ...transfer,
