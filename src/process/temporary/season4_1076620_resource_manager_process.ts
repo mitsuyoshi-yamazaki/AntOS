@@ -15,7 +15,7 @@ import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
-import { CommodityIngredient } from "utility/resource"
+import { CommodityIngredient, commodityTier, isCommodityConstant } from "utility/resource"
 import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
@@ -35,7 +35,7 @@ type ResourceAmount = {
 const terminalMinimumFreeSpace = 10000
 const harvestingMineralMinimumAmount = 20000
 const runInterval = 1000
-const terminalCooldownInterval = GameConstants.structure.terminal.cooldown + 1
+const terminalCooldownInterval = Math.ceil(GameConstants.structure.terminal.cooldown * 1.5)
 
 export interface Season41076620ResourceManagerProcessState extends ProcessState {
   readonly processState: {
@@ -332,7 +332,22 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       })
     })
 
-    const minimumResourceAmount = 5000
+    const getIngredientMinimumAmount = (ingredient: CommodityIngredient): number => {
+      if (!(isCommodityConstant(ingredient))) {
+        return 5000
+      }
+      switch (commodityTier(ingredient)) {
+      case 0:
+        return 200
+      case 1:
+        return 10
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+        return 1
+      }
+    }
     const resourceRoomMap = new ValuedArrayMap<CommodityIngredient, OwnedRoomResource>()
 
     const getMinimumAmountFor = (ingredient: CommodityIngredient, roomName: RoomName): number | null => {
@@ -356,22 +371,12 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
 
       allRequiredIngredients.forEach(ingredient => {
         const minimumAmount = getMinimumAmountFor(ingredient, roomName) ?? 0
-        if (roomResource.getResourceAmount(ingredient) < (minimumAmount + minimumResourceAmount)) {
+        if (roomResource.getResourceAmount(ingredient) < (minimumAmount + getIngredientMinimumAmount(ingredient))) {
           return
         }
         resourceRoomMap.getValueFor(ingredient).push(roomResource)
       })
     })
-
-    const getRoomResourceTransferList = (roomName: RoomName): ResourceTransfer[] => {
-      const stored = this.resourceTransfer[roomName]
-      if (stored != null) {
-        return stored
-      }
-      const newList: ResourceTransfer[] = []
-      this.resourceTransfer[roomName] = newList
-      return newList
-    }
 
     const getSendableResourceAmount = (ingredient: CommodityIngredient, roomResource: OwnedRoomResource): number => {
       const minimumAmount = getMinimumAmountFor(ingredient, roomResource.room.name) ?? 0
@@ -385,27 +390,37 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
 
     const transferMaxAmount = 10000
     const registerResourceTransfer = (ingredient: CommodityIngredient, fromRoomResources: OwnedRoomResource[], toRoomNames: RoomName[]): void => {
-      if (fromRoomResources.length <= 0) {
-        return
-      }
-      const fromRoomNames = fromRoomResources.map(roomResource => roomResource.room.name)
-      const filteredDestinationRoomNames = toRoomNames.filter(roomName => {
-        if (fromRoomNames.includes(roomName) === true) {
+      const roomResources = fromRoomResources.filter(roomResource => {
+        const roomName = roomResource.room.name
+        if (requiredIngredientMap.getValueFor(ingredient).includes(roomName) === true) {
           return false
         }
         return true
       })
-      if (toRoomNames.length <= 0) {
+      if (roomResources.length <= 0) {
         return
       }
 
-      fromRoomResources.forEach(roomResource => {
+      roomResources.forEach(roomResource => {
+        const roomName = roomResource.room.name
+        const filteredDestinationRoomNames = toRoomNames.filter(toRoomName => {
+          if (toRoomName === roomName) {
+            return false
+          }
+          return true
+        })
+        if (filteredDestinationRoomNames.length <= 0) {
+          return
+        }
+
         const totalAmountToSend = getSendableResourceAmount(ingredient, roomResource)
         const sendAmountForRoom = Math.min(Math.floor(totalAmountToSend / filteredDestinationRoomNames.length), transferMaxAmount)
-        const roomName = roomResource.room.name
+        if (sendAmountForRoom <= 0) {
+          return
+        }
 
         filteredDestinationRoomNames.forEach(toRoomName => {
-          getRoomResourceTransferList(roomName).push({
+          this.getResourceTransferListFor(roomName).push({
             resourceType: ingredient,
             amount: sendAmountForRoom,
             destinationRoomName: toRoomName,
@@ -417,6 +432,12 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     Array.from(resourceRoomMap.entries()).forEach(([ingredient, roomResources]) => {
       const destinationRooms = requiredIngredientMap.getValueFor(ingredient)
       registerResourceTransfer(ingredient, roomResources, destinationRooms)
+    })
+
+    Array.from(Object.keys(this.resourceTransfer)).forEach(roomName => {
+      this.getResourceTransferListFor(roomName).sort((lhs, rhs) => {
+        return lhs.amount - rhs.amount
+      })
     })
   }
 
