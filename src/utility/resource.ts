@@ -1,3 +1,5 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+
 export const MineralBaseCompoundsConstant: MineralBaseCompoundsConstant[] = [
   RESOURCE_HYDROXIDE,
   RESOURCE_ZYNTHIUM_KEANITE,
@@ -109,32 +111,26 @@ export const ResourceConstant: ResourceConstant[] = [
   ...CommodityConstant,
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralBoostConstant(arg: string): arg is MineralBoostConstant {
   return (MineralBoostConstant as string[]).includes(arg)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralCompoundConstant(arg: string): arg is MineralCompoundConstant {
   return (MineralCompoundConstant as string[]).includes(arg)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isMineralConstant(arg: string): arg is MineralConstant {
   return (MineralConstant as string[]).includes(arg)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isDepositConstant(arg: string): arg is DepositConstant {
   return (DepositConstant as string[]).includes(arg)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isCommodityConstant(arg: string): arg is CommodityConstant {
   return (CommodityConstant as string[]).includes(arg)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
 export function isResourceConstant(arg: string): arg is ResourceConstant {
   return (ResourceConstant as string[]).includes(arg)
 }
@@ -214,3 +210,107 @@ export function boostableCreepBody(boost: MineralBoostConstant): BodyPartConstan
 }
 
 export type CommodityIngredient = DepositConstant | CommodityConstant | MineralConstant | RESOURCE_ENERGY | RESOURCE_GHODIUM
+
+export const commodityTiers = [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+] as const
+export type CommodityTier = typeof commodityTiers[number]
+export function commodityTier(commodityType: CommodityConstant): CommodityTier {
+  if ((Tier0CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 0
+  }
+  if ((Tier1CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 1
+  }
+  if ((Tier2CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 2
+  }
+  if ((Tier3CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 4
+  }
+  if ((Tier4CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 4
+  }
+  if ((Tier5CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
+    return 5
+  }
+  PrimitiveLogger.programError(`${commodityType} is not commodity type`)
+  return 0
+}
+
+export function commodityTypeForTier(tier: CommodityTier): CommodityConstant[] {
+  switch (tier) {
+  case 1:
+    return [...Tier1CommodityConstants]
+  case 2:
+    return [...Tier2CommodityConstants]
+  case 3:
+    return [...Tier3CommodityConstants]
+  case 4:
+    return [...Tier4CommodityConstants]
+  case 5:
+    return [...Tier5CommodityConstants]
+  case 0:
+  default:
+    return [...Tier0CommodityConstants]
+  }
+}
+
+export const Tier0CommodityConstants = [
+  RESOURCE_UTRIUM_BAR,
+  RESOURCE_LEMERGIUM_BAR,
+  RESOURCE_ZYNTHIUM_BAR,
+  RESOURCE_KEANIUM_BAR,
+  RESOURCE_GHODIUM_MELT,
+  RESOURCE_OXIDANT,
+  RESOURCE_REDUCTANT,
+  RESOURCE_PURIFIER,
+  RESOURCE_BATTERY,
+  RESOURCE_WIRE,
+  RESOURCE_CELL,
+  RESOURCE_ALLOY,
+  RESOURCE_CONDENSATE,
+]
+
+export const Tier1CommodityConstants = [
+  RESOURCE_COMPOSITE,
+  RESOURCE_SWITCH,
+  RESOURCE_PHLEGM,
+  RESOURCE_TUBE,
+  RESOURCE_CONCENTRATE,
+]
+
+export const Tier2CommodityConstants = [
+  RESOURCE_CRYSTAL,
+  RESOURCE_TRANSISTOR,
+  RESOURCE_TISSUE,
+  RESOURCE_FIXTURES,
+  RESOURCE_EXTRACT,
+]
+
+export const Tier3CommodityConstants = [
+  RESOURCE_LIQUID,
+  RESOURCE_MICROCHIP,
+  RESOURCE_MUSCLE,
+  RESOURCE_FRAME,
+  RESOURCE_SPIRIT,
+]
+
+export const Tier4CommodityConstants = [
+  RESOURCE_CIRCUIT,
+  RESOURCE_ORGANOID,
+  RESOURCE_HYDRAULICS,
+  RESOURCE_EMANATION,
+]
+
+export const Tier5CommodityConstants = [
+  RESOURCE_DEVICE,
+  RESOURCE_ORGANISM,
+  RESOURCE_MACHINE,
+  RESOURCE_ESSENCE,
+]
