@@ -481,12 +481,12 @@ function calculateFirstSpawnPosition(controller: StructureController, showsCostM
   const room = controller.room
   const spawn = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] as StructureSpawn | null
   if (spawn != null) {
-    return { firstSpawnPosition: spawn.pos, roomCenter: null}
+    return { firstSpawnPosition: spawn.pos, roomCenter: spawn.pos.positionTo(LEFT)}
   }
 
   const spawnFlags = room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_GREY)
   if (spawnFlags.length === 1 && spawnFlags[0] != null) {
-    return { firstSpawnPosition: spawnFlags[0].pos, roomCenter: null }
+    return { firstSpawnPosition: spawnFlags[0].pos, roomCenter: spawnFlags[0].pos.positionTo(LEFT) }
   }
   if (spawnFlags.length > 1) {
     const storageFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREEN)
