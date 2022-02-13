@@ -6,7 +6,7 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { generateCodename } from "utility/unique_id"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { CommodityIngredient, CommodityTier, commodityTiers, commodityTypeForTier } from "utility/resource"
+import { CommodityIngredient, commodityTier, CommodityTier, commodityTiers, commodityTypeForTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { World } from "world_info/world_info"
@@ -378,12 +378,31 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   private resourceTypeToChargeFactory(factory: StructureFactory, terminal: StructureTerminal, allIngredients: CommodityIngredient[]): CommodityIngredient | null {
-    const maximumAmountInFactory = 2000
+    const maximumAmountInFactory = (resourceType: CommodityIngredient): number => {
+      if (isDepositConstant(resourceType)) {
+        return 1000
+      }
+      if (isCommodityConstant(resourceType)) {
+        const tier = commodityTier(resourceType)
+        switch (tier) {
+        case 0:
+          return 100
+        case 1:
+          return 10
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+          return 1
+        }
+      }
+      return 2000
+    }
 
     // factory内にmaximumAmountInFactory未満で、かつterminalに0以上のresourceを、factory内に少ない順
     const ingredientAmounts = allIngredients.flatMap((ingredient): { ingredient: CommodityIngredient, amountInFactory: number }[] => {
       const amountInFactory = factory.store.getUsedCapacity(ingredient)
-      if (amountInFactory > maximumAmountInFactory) {
+      if (amountInFactory > maximumAmountInFactory(ingredient)) {
         return []
       }
 
