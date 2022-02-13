@@ -21,7 +21,7 @@ import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { decodeRoomPosition, Position, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { bodyCost } from "utility/creep_body"
+import { bodyCost, CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
@@ -37,6 +37,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
@@ -70,13 +71,93 @@ const healerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL, HEAL,
+  MOVE,
 ]
+
+// ---- Boosted ---- //
+const boostedCreepBoosts: MineralBoostConstant[] = [
+  RESOURCE_UTRIUM_HYDRIDE,
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_GHODIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+]
+const boostedAttackerBody: BodyPartConstant[] = [
+  TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,
+  TOUGH,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+  ATTACK, ATTACK,
+  MOVE,
+]
+
+const boostedHealerBody: BodyPartConstant[] = [
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
+  HEAL, HEAL, HEAL, HEAL,
+  MOVE,
+]
+
+export function canLaunchBoostedPowerBankHarvester(parentRoomName: RoomName): boolean {
+  const roomResource = RoomResources.getOwnedRoomResource(parentRoomName)
+  if (roomResource == null) {
+    return false
+  }
+  const boostLabs = roomResource.roomInfoAccessor.config.getBoostLabs()
+  if (boostLabs.length !== boostedCreepBoosts.length) {
+    return false
+  }
+  const requiredBoosts = new Map<MineralBoostConstant, number>()
+  const addBoostCost = (boosts: Map<MineralBoostConstant, number>): void => {
+    boosts.forEach((cost, boost) => requiredBoosts.set(boost, (requiredBoosts.get(boost) ?? 0) + cost))
+  }
+  addBoostCost(CreepBody.boostCost(boostedAttackerBody, boostedCreepBoosts))
+  addBoostCost(CreepBody.boostCost(boostedHealerBody, boostedCreepBoosts))
+
+  boostedCreepBoosts.forEach((boost): void => {
+    const cost = requiredBoosts.get(boost)
+    if (cost == null) {
+      return
+    }
+    const boostCost = cost
+
+    const hasLab = boostLabs.some(lab => {
+      if (lab.mineralType !== boost) {
+        return false
+      }
+      if (lab.store.getUsedCapacity(boost) < boostCost) {
+        return false
+      }
+      return true
+    })
+    if (hasLab !== true) {
+      return
+    }
+    requiredBoosts.delete(boost)
+  })
+
+  if (requiredBoosts.size > 0) {
+    return false
+  }
+  return true
+}
 
 interface Season4964954HarvestPowerProcessCreepSpec {
   maxCount: number
@@ -104,6 +185,7 @@ export interface Season4964954HarvestPowerProcessState extends ProcessState {
   powerDropPoints: RoomPositionState[]
   attackerHealerPair: {attackerName: CreepName, healerName: CreepName}[]
   storageRoomName: RoomName | null
+  shouldLaunchBoostedCreep: boolean
 }
 
 export class Season4964954HarvestPowerProcess implements Process, Procedural, MessageObserver {
@@ -206,6 +288,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     private readonly powerDropPoints: RoomPosition[],
     private readonly attackerHealerPair: { attackerName: CreepName, healerName: CreepName }[],
     private storageRoomName: RoomName | null,
+    private shouldLaunchBoostedCreep: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -229,6 +312,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       powerDropPoints: this.powerDropPoints.map(position => position.encode()),
       attackerHealerPair: this.attackerHealerPair,
       storageRoomName: this.storageRoomName,
+      shouldLaunchBoostedCreep: this.shouldLaunchBoostedCreep,
     }
   }
 
@@ -245,10 +329,12 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       state.powerDropPoints?.map(positionState => decodeRoomPosition(positionState)) ?? [],
       state.attackerHealerPair,
       state.storageRoomName,
+      state.shouldLaunchBoostedCreep ?? false,
     )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], powerBankInfo: PowerBankInfo): Season4964954HarvestPowerProcess {
+    const shouldLaunchBoostedCreep = false
     return new Season4964954HarvestPowerProcess(
       Game.time,
       processId,
@@ -261,6 +347,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       [],
       [],
       null,
+      shouldLaunchBoostedCreep,
     )
   }
 
@@ -282,7 +369,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       case "set_storage_room": {
         const listArguments = new ListArguments(components)
         const storageRoomName = listArguments.roomName(0, "storage room name").parse({ my: true })
-        this.storageRoomName = storageRoomName
+        this.setStorageRoomName(storageRoomName)
         return `storage room ${roomLink(storageRoomName)} set`
       }
 
@@ -292,6 +379,10 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  public setStorageRoomName(storageRoomName: RoomName): void {
+    this.storageRoomName = storageRoomName
   }
 
   public runOnTick(): void {
@@ -954,16 +1045,21 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     if (this.powerBankInfo == null) {
       return null
     }
-    const emptyHauler = creep.pos.findInRange(emptyHaulers, 1)[0]
-    const powerBankPosition = decodeRoomPosition(this.powerBankInfo.position, this.targetRoomName)
-    if (emptyHauler == null) {
-      return MoveToTask.create(powerBankPosition, 1)
+    try {
+      return MoveToTask.create((new RoomPosition(25, 25, this.targetRoomName)), 5)
+    } catch {
+      return null
     }
-    if (creep.pos.isNearTo(powerBankPosition) === true) {
-      return MoveToTask.create(emptyHauler.pos, 0)
-    } else {
-      return MoveToTask.create(powerBankPosition, 1)
-    }
+    // const emptyHauler = creep.pos.findInRange(emptyHaulers, 1)[0]
+    // const powerBankPosition = decodeRoomPosition(this.powerBankInfo.position, this.targetRoomName)
+    // if (emptyHauler == null) {
+    //   return MoveToTask.create(powerBankPosition, 1)
+    // }
+    // if (creep.pos.isNearTo(powerBankPosition) === true) {
+    //   return MoveToTask.create(emptyHauler.pos, 0)
+    // } else {
+    //   return MoveToTask.create(powerBankPosition, 1)
+    // }
   }
 
   private attackNearbyHostileHaulerTask(creep: Creep): CreepTask | null {
