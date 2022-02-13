@@ -5,6 +5,7 @@ import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomCoordinate, RoomName } from "utility/room_name"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument } from "./argument_parser"
+import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -16,6 +17,7 @@ interface KeywordArgumentsInterface {
   string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
   stringList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string[]>
   boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean>
+  list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T>
   localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position>
   localPositions(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position[]>
 
@@ -93,6 +95,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean> {
     return new BooleanArgument(key, this.argumentMap.get(key) ?? null, options)
+  }
+
+  public list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
+    return IterableArgument.create(key, this.argumentMap.get(key) ?? null, argumentType, options)
   }
 
   public localPosition(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, Position> {

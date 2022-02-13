@@ -3,6 +3,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomCoordinate, RoomName } from "utility/room_name"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument, StringListArgument } from "./argument_parser"
+import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -14,8 +15,8 @@ interface KeywordArgumentsInterface {
   int(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number>
   string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string>
-  stringList(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string[]>
   boolean(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, boolean>
+  list<T extends IterableArgumentType>(index: number, key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T>
   localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position>
   localPositions(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position[]>
 
@@ -69,6 +70,10 @@ export class ListArguments implements KeywordArgumentsInterface {
 
   public boolean(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, boolean> {
     return new BooleanArgument(key, this.getValueAt(index, key), options)
+  }
+
+  public list<T extends IterableArgumentType>(index: number, key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
+    return IterableArgument.create(key, this.getValueAt(index, key), argumentType, options)
   }
 
   public localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position> {
