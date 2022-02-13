@@ -88,8 +88,21 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   public static create(processId: ProcessId, roomName: RoomName, factory: StructureFactory): ContinuouslyProduceCommodityProcess {
-    const products = productsForFactory(factory, [])
-    return new ContinuouslyProduceCommodityProcess(Game.time, processId, roomName, factory.id, products, [], {}, [])
+    const defaultExcludedProducts: CommodityConstant[] = [RESOURCE_BATTERY]
+    const products = productsForFactory(factory, defaultExcludedProducts)
+    const ingredientMinimumAmounts: IngredientMinimumAmounts = {}
+    const stopSpawningReasons: string[] = []
+
+    return new ContinuouslyProduceCommodityProcess(
+      Game.time,
+      processId,
+      roomName,
+      factory.id,
+      products,
+      defaultExcludedProducts,
+      ingredientMinimumAmounts,
+      stopSpawningReasons,
+    )
   }
 
   public processShortDescription(): string {
