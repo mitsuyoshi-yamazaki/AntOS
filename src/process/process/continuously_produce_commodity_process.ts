@@ -476,6 +476,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
       return this.hasEnoughIngredientsIn(factory, product)
     })
     if (product == null) {
+      roomResource.roomInfoAccessor.config.disablePower(PWR_OPERATE_FACTORY)
       return
     }
 
@@ -484,6 +485,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     case OK:
     case ERR_NOT_ENOUGH_RESOURCES:
     case ERR_TIRED:
+      roomResource.roomInfoAccessor.config.disablePower(PWR_OPERATE_FACTORY)
       break
 
     case ERR_NOT_OWNER:
