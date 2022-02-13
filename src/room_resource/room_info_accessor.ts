@@ -81,7 +81,6 @@ class Config {
   }
 
   // researchCompounds?: { [index in MineralCompoundConstant]?: number }
-  // boostLabs?: Id<StructureLab>[]
   // excludedRemotes?: RoomName[]
   // waitingPosition?: { x: number, y: number }
 
@@ -161,6 +160,32 @@ class Config {
       return []
     }
     return [...this.config.noRepairWallIds]
+  }
+
+  public addBoostLabs(boostLabs: StructureLab[]): void {
+    if (this.config.boostLabs == null) {
+      this.config.boostLabs = []
+    }
+    const boostLabIds = this.config.boostLabs
+
+    boostLabs.forEach(lab => {
+      if (boostLabIds.some(labId => labId === lab.id) === true) {
+        return
+      }
+      boostLabIds.push(lab.id)
+    })
+  }
+  public getBoostLabs(): StructureLab[] {
+    if (this.config.boostLabs == null) {
+      return []
+    }
+    return this.config.boostLabs.flatMap((labId): StructureLab[] => {
+      const lab = Game.getObjectById(labId)
+      if (lab == null) {
+        return []
+      }
+      return [lab]
+    })
   }
 }
 
