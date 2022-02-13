@@ -61,4 +61,8 @@ const StructureMaxCount: { [structureType in BuildableStructureConstant]: number
 export const StructureGameConstants = {
   availability: StructureAvailability,
   maxCount: StructureMaxCount,
+  terminal: {
+    cooldown: 10,
+    capacity: 300000,
+  },
 }

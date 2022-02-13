@@ -103,7 +103,7 @@ export const GameConstants = {
   },
   power: PowerGameConstants,
   structure: StructureGameConstants,
-}
+} as const
 
 export const ApplicationConstants = {
   performance: {
