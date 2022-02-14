@@ -75,12 +75,12 @@ export class OwnedRoomResource extends NormalRoomResource {
     const spawns: StructureSpawn[] = []
     const extensions: StructureExtension[] = []
     const towers: StructureTower[] = []
-    let storage: StructureStorage | null = null
-    let terminal: StructureTerminal | null = null
-    let extractor: StructureExtractor | null = null
-    let observer: StructureObserver | null = null
-    let powerSpawn: StructurePowerSpawn | null = null
-    let factory: StructureFactory | null = null
+    let storage = null as StructureStorage | null
+    let terminal = null as StructureTerminal | null
+    let extractor = null as StructureExtractor | null
+    let observer = null as StructureObserver | null
+    let powerSpawn = null as StructurePowerSpawn | null
+    let factory = null as StructureFactory | null
     const chargeableStructures: EnergyChargeableStructure[] = []
     const researchLabs = ((): ResearchLabs | null => {
       if (roomInfo.researchLab == null) {
@@ -230,6 +230,10 @@ export class OwnedRoomResource extends NormalRoomResource {
         break // TODO: 全て網羅する
       }
     })
+
+    if (chargeableStructures.length <= 0 && factory != null && factory.store.getUsedCapacity(RESOURCE_ENERGY) < 1000) {
+      chargeableStructures.push(factory)
+    }
 
     this.activeStructures = {
       spawns,
