@@ -155,8 +155,13 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
     return `positions ${positions.map(position => `(${describePosition(position)})`).join(", ")} set`
   }
 
-  case "show":
-    throw "not implemented yet"
+  case "show": {
+    const waitingPositions = roomResource.roomInfoAccessor.config.getAllWaitingPositions()
+    if (waitingPositions.length <= 0) {
+      return "no waiting positions"
+    }
+    return waitingPositions.map(position => `${position}`).join(", ")
+  }
 
   default:
     throw `Invalid action ${action}, actions: set, show`

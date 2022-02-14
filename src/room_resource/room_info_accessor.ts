@@ -1,4 +1,4 @@
-import { Position } from "prototype/room_position"
+import { decodeRoomPosition, Position } from "prototype/room_position"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig } from "./room_info"
 
@@ -89,6 +89,12 @@ class Config {
       this.config.genericWaitingPositions = []
     }
     this.config.genericWaitingPositions.push(...positions)
+  }
+  public getAllWaitingPositions(): RoomPosition[] {
+    if (this.config.genericWaitingPositions == null) {
+      return []
+    }
+    return this.config.genericWaitingPositions.map(position => decodeRoomPosition(position, this.roomName))
   }
   public getGenericWaitingPosition(): RoomPosition | null {
     if (this.config.genericWaitingPositions == null) {

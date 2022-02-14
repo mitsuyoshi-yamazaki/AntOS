@@ -43,7 +43,7 @@ export class FleeFromAttackerTask implements CreepTask {
   public run(creep: Creep): TaskProgressType {
     const roomResource = RoomResources.getNormalRoomResource(creep.room.name)
     if (roomResource == null || roomResource.hostiles.creeps.length > 0) {
-      const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+      const whitelist = Memory.gameInfo.sourceHarvestWhitelist ?? []
       const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
         .filter(creep => {
           if (whitelist.includes(creep.owner.username) === true) {
