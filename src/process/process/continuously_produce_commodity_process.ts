@@ -235,11 +235,6 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
 
     const allIngredients = this.getAllIngredients()
 
-    // const product = this.products[0]
-    // if (product == null) {
-    //   this.addSpawnStopReason(noProduct) // TODO: disable powerの条件
-    // }
-
     const retrievedFactory = Game.getObjectById(this.factoryId)
     if (retrievedFactory == null) {
       this.addSpawnStopReason("no factory")
@@ -315,7 +310,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     const carryCapacity = ((): number => {
       switch (tier) {
       case 0:
-        return 500
+        return 700
       case 1:
       case 2:
       case 3:
