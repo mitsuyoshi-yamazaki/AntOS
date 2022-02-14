@@ -32,9 +32,9 @@ type ResourceAmount = {
   readonly amount: number
 }
 
-const terminalMinimumFreeSpace = 10000
+const terminalMinimumFreeSpace = 20000
 const harvestingMineralMinimumAmount = 20000
-const runInterval = 1000
+const runInterval = 1511
 const terminalCooldownInterval = Math.ceil(GameConstants.structure.terminal.cooldown * 1.5)
 
 export interface Season41076620ResourceManagerProcessState extends ProcessState {
