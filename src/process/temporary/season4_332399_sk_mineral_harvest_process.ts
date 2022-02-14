@@ -22,6 +22,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { avoidSourceKeeper } from "script/move_to_room"
+import { Timestamp } from "utility/timestamp"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
@@ -29,6 +30,7 @@ ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
 
 const fleeRange = 4
 const keeperLairSpawnTime = 15
+const noMineralReason = "no mineral"
 
 export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
   roomName: RoomName
@@ -37,6 +39,7 @@ export interface Season4332399SKMineralHarvestProcessState extends ProcessState 
 
   mineralType: MineralConstant | null
   stopSpawnReason: string[]
+  regenerateBy: Timestamp | null
 }
 
 /** RCL7以上 */
@@ -71,6 +74,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     private readonly waypoints: RoomName[],
     private stopSpawnReason: string[],
     private mineralType: MineralConstant | null,
+    private regenerateBy: Timestamp | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -86,15 +90,16 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       waypoints: this.waypoints,
       stopSpawnReason: this.stopSpawnReason,
       mineralType: this.mineralType,
+      regenerateBy: this.regenerateBy,
     }
   }
 
   public static decode(state: Season4332399SKMineralHarvestProcessState): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType)
+    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType, state.regenerateBy)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null)
+    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null, null)
   }
 
   public processShortDescription(): string {
@@ -144,8 +149,18 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       this.addStopSpawnReason("invader core")
     }
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
-    if (mineral != null && mineral.mineralAmount <= 0) {
-      this.addStopSpawnReason("no mineral")
+    if (mineral != null) {
+      if (mineral.mineralAmount <= 0) {
+        if (mineral.ticksToRegeneration != null) {
+          this.regenerateBy = Game.time + mineral.ticksToRegeneration
+        }
+        this.addStopSpawnReason(noMineralReason)
+      } else {
+        const index = this.stopSpawnReason.indexOf(noMineralReason)
+        if (index >= 0) {
+          this.stopSpawnReason.splice(index, 1)
+        }
+      }
     }
     if (mineral != null) {
       this.mineralType = mineral.mineralType
@@ -171,6 +186,13 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       }
       PrimitiveLogger.programError(`${this.identifier} unknown creep type ${creep.name}`)
     })
+
+    if (this.stopSpawnReason.length > 0 && this.regenerateBy != null && Game.time > this.regenerateBy) {
+      const index = this.stopSpawnReason.indexOf(noMineralReason)
+      if (index >= 0) {
+        this.stopSpawnReason.splice(index, 1)
+      }
+    }
 
     if (this.stopSpawnReason.length <= 0) {
       const harvestingPower = OperatingSystem.os.listAllProcesses().some(processInfo => {
