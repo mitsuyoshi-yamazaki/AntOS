@@ -368,6 +368,9 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
       if (creep.ticksToLive != null && creep.ticksToLive < 200) {
         return true
       }
+      if (carryingCommodityHarvesters.length > 0) {
+        return false
+      }
       if (deposit != null) {
         if (storeAmount > 100 && deposit.cooldown > 25) {
           return true
