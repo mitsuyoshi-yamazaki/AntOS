@@ -152,7 +152,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const targetRoom = Game.rooms[this.targetRoomName]
         const routeCalculatedTimestamp = targetRoomInfo.routeCalculatedTimestamp[source.id]
         if (routeCalculatedTimestamp == null) {
-          targetRoomInfo.routeCalculatedTimestamp[source.id] = Game.time - Math.floor(Math.random() * routeRecalculationInterval) // 0  // 乱数を設定するのはMigration時のみ
+          targetRoomInfo.routeCalculatedTimestamp[source.id] = 0  // 乱数を設定するのはMigration時のみ
         } else {
           if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
             this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container != null)
