@@ -129,7 +129,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "show", "set_max_process_count", "add_storage_rooms"]
+    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms"]
     const components = message.split(" ")
     const command = components.shift()
 
