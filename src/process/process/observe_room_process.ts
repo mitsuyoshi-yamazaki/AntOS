@@ -50,6 +50,7 @@ export class ObserveRoomProcess implements Process, Procedural {
   }
 
   public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, duration: Timestamp): ObserveRoomProcess {
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} ObserveRoomProcess only `)
     return new ObserveRoomProcess(Game.time, processId, roomName, targetRoomName, Game.time + duration)
   }
 

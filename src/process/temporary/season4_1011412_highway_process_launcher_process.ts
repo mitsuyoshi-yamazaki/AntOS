@@ -6,7 +6,6 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import type { RoomName } from "utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import type { Timestamp } from "utility/timestamp"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
 import { OperatingSystem } from "os/os"
 import { Season4964954HarvestPowerProcess } from "./season4_964954_harvest_power_process"
@@ -14,6 +13,7 @@ import { Season4275982HarvestCommodityProcess } from "./season4_275982_harvest_c
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { Season4ObserverManager } from "./season4_observer_manager"
 
 ProcessDecoder.register("Season41011412HighwayProcessLauncherProcess", state => {
   return Season41011412HighwayProcessLauncherProcess.decode(state as Season41011412HighwayProcessLauncherProcessState)
@@ -80,6 +80,12 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     private readonly storageRooms: { [roomName: string]: RoomName },
   ) {
     this.identifier = `${this.constructor.name}`
+
+    bases.forEach(base => {
+      base.targetRoomNames.forEach(targetRoomName => {
+        Season4ObserverManager.addRequest(base.roomName, targetRoomName, "medium", 1)
+      })
+    })
   }
 
   public encode(): Season41011412HighwayProcessLauncherProcessState {
@@ -250,6 +256,10 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       throw "targets duplicated"
     }
 
+    targetRoomNames.forEach(targetRoomName => {
+      Season4ObserverManager.addRequest(roomName, targetRoomName, "medium", 1)
+    })
+
     const targetBase = this.bases.find(base => base.roomName === roomName)
     if (targetBase != null) {
       targetBase.targetRoomNames.push(...targetRoomNames)
@@ -298,40 +308,11 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public runOnTick(): void {
-    if (this.bases.length <= 0) {
+    if ((Game.time % 11) !== 0 && (Game.time % 13) !== 0) {
       return
     }
-
-    const timestamp = (Game.time % 9)
-    switch (timestamp) {
-    case 0: // reserve observation cycle
-      this.reserveObservation()
-      return
-    case 1: // observe cycle
-      this.observe()
-      this.launchProcess()
-      return
-    default:
-      return
-    }
-  }
-
-  private reserveObservation(): void {
-    this.bases.forEach(base => {
-      const observer = Game.getObjectById(base.observerId)
-      if (observer == null) {
-        return
-      }
-      base.observeIndex = (base.observeIndex + 1) % base.targetRoomNames.length
-      const targetRoomName = base.targetRoomNames[base.observeIndex]
-
-      if (targetRoomName == null) {
-        PrimitiveLogger.programError(`${this.constructor.name} ${this.processId} targetRoomNames[${base.observeIndex}] returns undefined (target rooms: ${base.targetRoomNames.join(",")})`)
-        return
-      }
-
-      observer.observeRoom(targetRoomName)
-    })
+    this.observe()
+    this.launchProcess()
   }
 
   private observe(): void {
