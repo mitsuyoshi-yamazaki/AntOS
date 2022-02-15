@@ -1,4 +1,5 @@
 import { Environment } from "./environment"
+import { Timestamp } from "./timestamp"
 
 const textColors: { [index: string]: string } = {
   // Log level
@@ -39,6 +40,13 @@ export function tab(text: string, tabs: Tab): string {
   const numberOfSpaces = Math.max(tabs - text.length, 0)
   const spacer = spaces.slice(0, numberOfSpaces)
   return `${text}${spacer}`
+}
+
+export function describeTime(ticks: Timestamp): string {
+  if (ticks < 1000) {
+    return `${ticks} ticks`
+  }
+  return `${Math.floor(ticks / 1000)}k ticks`
 }
 
 function baseUrl(): string {

@@ -58,6 +58,7 @@ import { World39013108CollectResourceProcess } from "process/temporary/world_390
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_launcher_process"
+import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1167,6 +1168,34 @@ ProcessLauncher.register("Season41076620ResourceManagerProcess", () => {
 ProcessLauncher.register("Season4ScoreLauncherProcess", () => {
   try {
     return Result.Succeeded((processId) => Season4ScoreLauncherProcess.create(processId))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("WithdrawStructureProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    if (roomResource.activeStructures.terminal == null && roomResource.activeStructures.storage == null) {
+      throw `${roomLink(roomName)} has no terminal nor storage`
+    }
+
+    const targetStructureIds = args.list("target_ids", "object_id").parse() as Id<WithdrawStructureProcessTargetType>[]
+    targetStructureIds.forEach(structureId => {
+      const structure = Game.getObjectById(structureId)
+      if (structure == null) {
+        throw `structure for ID ${structureId} does not exist`
+      }
+      if (structure.room.name !== roomName) {
+        throw `structure ${structure} is not in ${roomLink(roomName)} (in ${roomLink(structure.room.name)})`
+      }
+      if (!(isWithdrawStructureProcessTargetType(structure))) {
+        throw `structure ${structure} is not expected type`
+      }
+    })
+
+    return Result.Succeeded((processId) => WithdrawStructureProcess.create(processId, roomName, targetStructureIds))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
