@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName, roomTypeOf } from "utility/room_name"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, describeTime, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -31,6 +31,7 @@ ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
 const fleeRange = 4
 const keeperLairSpawnTime = 15
 const noMineralReason = "no mineral"
+const invaderCoreReason = "invader core"
 
 export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
   roomName: RoomName
@@ -111,6 +112,10 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     if (this.stopSpawnReason.length > 0) {
       descriptions.push(`spawn stopped: ${this.stopSpawnReason.join(", ")}`)
     }
+    if (this.regenerateBy != null && this.regenerateBy > Game.time) {
+      const regenerateIn = this.regenerateBy - Game.time
+      descriptions.push(`regenerate in ${describeTime(regenerateIn)}`)
+    }
     return descriptions.join(" ")
   }
 
@@ -145,8 +150,17 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
 
     const targetRoom = Game.rooms[this.targetRoomName]
-    if ((Game.time % 43) === 3 && targetRoom != null && targetRoom.find(FIND_HOSTILE_STRUCTURES, {filter:{structureType: STRUCTURE_INVADER_CORE}}).length > 0) {
-      this.addStopSpawnReason("invader core")
+    if (targetRoom != null) {
+      if (targetRoom.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_INVADER_CORE } }).length > 0) {
+        this.addStopSpawnReason(invaderCoreReason)
+      } else {
+        if (this.stopSpawnReason.length > 0) {
+          const index = this.stopSpawnReason.findIndex(reason => reason === invaderCoreReason)
+          if (index >= 0) {
+            this.stopSpawnReason.splice(index, 1)
+          }
+        }
+      }
     }
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
     if (mineral != null) {
