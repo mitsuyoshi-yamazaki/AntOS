@@ -57,6 +57,7 @@ import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/s
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
+import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_launcher_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1158,6 +1159,14 @@ ProcessLauncher.register("ContinuouslyProduceCommodityProcess", args => {
 ProcessLauncher.register("Season41076620ResourceManagerProcess", () => {
   try {
     return Result.Succeeded((processId) => Season41076620ResourceManagerProcess.create(processId))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4ScoreLauncherProcess", () => {
+  try {
+    return Result.Succeeded((processId) => Season4ScoreLauncherProcess.create(processId))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
