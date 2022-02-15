@@ -14,7 +14,6 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { processLog } from "os/infrastructure/logger"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { AttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { GameConstants } from "utility/constants"
@@ -31,13 +30,14 @@ import { findRoomRoute } from "utility/map"
 import { ParallelTask } from "v5_object_task/creep_task/combined_task/parallel_task"
 import { RangedAttackApiWrapper } from "v5_object_task/creep_task/api_wrapper/ranged_attack_api_wrapper"
 import { HealApiWrapper } from "v5_object_task/creep_task/api_wrapper/heal_api_wrapper"
-import { CreepName, isV5CreepMemory } from "prototype/creep"
+import { CreepName, defaultMoveToOptions, isV5CreepMemory } from "prototype/creep"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
+import { Quad, QuadState } from "../../../submodules/attack/quad/quad"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
@@ -186,6 +186,7 @@ export interface Season4964954HarvestPowerProcessState extends ProcessState {
   attackerHealerPair: {attackerName: CreepName, healerName: CreepName}[]
   storageRoomName: RoomName | null
   shouldLaunchBoostedCreep: boolean
+  quadState: QuadState | null
 }
 
 export class Season4964954HarvestPowerProcess implements Process, Procedural, MessageObserver {
@@ -289,6 +290,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     private readonly attackerHealerPair: { attackerName: CreepName, healerName: CreepName }[],
     private storageRoomName: RoomName | null,
     private shouldLaunchBoostedCreep: boolean,
+    private quadState: QuadState | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -313,6 +315,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       attackerHealerPair: this.attackerHealerPair,
       storageRoomName: this.storageRoomName,
       shouldLaunchBoostedCreep: this.shouldLaunchBoostedCreep,
+      quadState: this.quadState,
     }
   }
 
@@ -329,7 +332,8 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       state.powerDropPoints?.map(positionState => decodeRoomPosition(positionState)) ?? [],
       state.attackerHealerPair,
       state.storageRoomName,
-      state.shouldLaunchBoostedCreep ?? false,
+      state.shouldLaunchBoostedCreep,
+      state.quadState,
     )
   }
 
@@ -348,6 +352,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       [],
       null,
       shouldLaunchBoostedCreep,
+      null,
     )
   }
 
@@ -394,10 +399,42 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       }
     }
 
-    const scoutCount = this.countCreep(this.scoutSpec.roles)
-    const attackerCount = this.countCreep(this.attackerSpec.roles)
-    const healerCount = this.countCreep(this.healerSpec.roles)
+    const allCreeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     const haulerSpec = this.haulerSpec
+
+    const scouts: Creep[] = []
+    const attackers: Creep[] = []
+    const healers: Creep[] = []
+    const haulers: Creep[] = []
+    const rangedAttackers: Creep[] = []
+
+    allCreeps.forEach(creep => {
+      if (hasNecessaryRoles(creep, this.attackerSpec.roles) === true) {
+        attackers.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, this.healerSpec.roles) === true) {
+        healers.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, haulerSpec.roles) === true) {
+        haulers.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, this.rangedAttackerSpec.roles) === true) {
+        rangedAttackers.push(creep)
+        return
+      }
+      if (hasNecessaryRoles(creep, this.scoutSpec.roles) === true) {
+        scouts.push(creep)
+        return
+      }
+    })
+    const scoutCount = scouts.length
+    const attackerCount = attackers.length
+    const healerCount = healers.length
+    const haulerCount = haulers.length
+    const rangedAttackerCount = rangedAttackers.length
 
     const attackersInTargetRoom = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => {
       if (creep.room.name !== this.targetRoomName) {
@@ -408,11 +445,8 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       }
       return true
     })
-    const haulers = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, haulerSpec.roles) === true)
-    const haulerCount = haulers.length
-    const rangedAttackerCount = this.countCreep(this.rangedAttackerSpec.roles)
 
-    World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, haulerSpec.roles)).forEach(hauler => {
+    haulers.forEach(hauler => {
       if (hauler.ticksToLive != null && hauler.ticksToLive !== 2) {
         return
       }
@@ -498,7 +532,6 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
         } else {
           const targetPowerBank = powerBank
           const needsAttacker = ((): boolean => {
-            const attackers = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, this.attackerSpec.roles))
             if (attackers.length === 0) {
               return true
             }
@@ -598,10 +631,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     }
 
     const ticksToRoom = this.ticksToPowerBank ?? this.estimatedTicksToRoom
-    const haulerInTargetRoom = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => {
-      if (hasNecessaryRoles(creep, this.haulerSpec.roles) !== true) {
-        return false
-      }
+    const haulerInTargetRoom = haulers.filter(creep => {
       if (creep.pos.roomName !== this.targetRoomName) {
         return false
       }
@@ -624,8 +654,46 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     })()
 
     this.runScout()
-    this.runAttackers(powerBank, haulerReady, haulers.filter(creep => creep.store.getUsedCapacity(RESOURCE_POWER) <= 0))
-    this.runHealers(powerBank, attackersInTargetRoom)
+
+    if (powerBank != null && (this.attackerHealerPair.length > 0 || this.quadState != null)) {
+      const hostileAttackerCreeps = powerBank.pos.findInRange(FIND_HOSTILE_CREEPS, 16).filter(hostileCreep => {
+        return hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(HEAL) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0
+      })
+      if (hostileAttackerCreeps.length > 0) {
+        const quad = ((): Quad | null => {
+          if (this.quadState != null) {
+            const decoded = Quad.decode(this.quadState)
+            if (decoded != null) {
+              return decoded
+            }
+          }
+          return this.assembleQuad()
+        })()
+        if (quad != null) {
+          this.runQuad(quad, hostileAttackerCreeps)
+
+          quad.creepNames.forEach(creepName => {
+            const attackerIndex = attackers.findIndex(creep => creep.name === creepName)
+            if (attackerIndex >= 0) {
+              attackers.splice(attackerIndex, 1)
+            }
+            const healerIndex = healers.findIndex(creep => creep.name === creepName)
+            if (healerIndex >= 0) {
+              healers.splice(healerIndex, 1)
+            }
+          })
+
+          this.quadState = quad.encode()
+        }
+      } else {
+        if (this.quadState != null) {
+          this.disassembleQuad()
+        }
+      }
+    }
+
+    this.runAttackers(attackers, powerBank, haulerReady)
+    this.runHealers(healers, powerBank, attackersInTargetRoom)
     this.runHauler(powerBank, powerResources)
     this.runRangedAttacker()
 
@@ -651,6 +719,85 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
         OperatingSystem.os.killProcess(this.processId)
       }
     }
+  }
+
+  private runQuad(quad: Quad, hostileCreeps: Creep[]): void {
+    try {
+      const closestHostile = ((): Creep | null => {
+        return quad.pos.findClosestByPath(hostileCreeps)
+      })()
+
+      quad.beforeRun()
+      quad.heal()
+
+      if (quad.pos.roomName === this.targetRoomName) {
+        if (closestHostile == null) {
+          return
+        }
+        const optionalTargets = hostileCreeps.filter(creep => {
+          if (creep.name === closestHostile.name) {
+            return false
+          }
+          return true
+        })
+
+        quad.moveTo(closestHostile.pos, 1)
+        quad.attack(closestHostile, optionalTargets, false)
+      } else {
+        quad.moveToRoom(this.targetRoomName, [])
+        quad.passiveAttack(hostileCreeps, false)
+      }
+      quad.run()
+    } catch {
+      //
+    }
+  }
+
+  private assembleQuad(): Quad | null {
+    const attackerHealerPairs = this.attackerHealerPair.flatMap((namePair): {attacker: Creep, healer: Creep}[] => {
+      const attacker = Game.creeps[namePair.attackerName]
+      const healer = Game.creeps[namePair.healerName]
+      if (attacker == null || healer == null) {
+        return []
+      }
+      return [{
+        attacker,
+        healer,
+      }]
+    })
+
+    const firstPair = attackerHealerPairs.shift()
+    if (firstPair == null) {
+      return null
+    }
+
+    const leaderCreep = firstPair.attacker
+    const follwerCreeps: Creep[] = [firstPair.healer]
+    attackerHealerPairs.forEach(pair => {
+      if (follwerCreeps.length < 3) {
+        follwerCreeps.push(pair.attacker)
+      }
+      if (follwerCreeps.length < 3) {
+        follwerCreeps.push(pair.healer)
+      }
+    })
+
+    const quad = Quad.create(leaderCreep, follwerCreeps)
+    if (quad == null) {
+      return null
+    }
+    const quadCreeps: Creep[] = [
+      leaderCreep,
+      ...follwerCreeps,
+    ]
+    quadCreeps.forEach(creep => {
+      creep.v5task = null
+    })
+    return quad
+  }
+
+  private disassembleQuad(): void {
+    this.quadState = null
   }
 
   // ---- Ranged Attacker ---- //
@@ -682,7 +829,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
 
   private rangedAttackerTask(creep: Creep): CreepTask | null {
     if (creep.room.name !== this.targetRoomName) {
-      return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      return this.createMoveToRoomTask(creep)
     }
 
     const hostileCreeps = creep.room.find(FIND_HOSTILE_CREEPS).filter(c => {
@@ -741,7 +888,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
   private haulerTask(creep: Creep, powerBank: StructurePowerBank | null, powerResources: (Resource | Ruin | Tombstone)[]): CreepTask | null {
     if (powerBank != null) {
       const tasks: CreepTask[] = [
-        MoveToRoomTask.create(this.targetRoomName, this.waypoints),
+        this.createMoveToRoomTask(creep),
         MoveToTask.create(powerBank.pos, 3),
       ]
       return FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }))
@@ -881,51 +1028,60 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     })
   }
 
-  private runHealers(powerBank: StructurePowerBank | null, attackersInRoom: Creep[]): void {
-    World.resourcePools.assignTasks(
-      this.parentRoomName,
-      this.identifier,
-      CreepPoolAssignPriority.Low,
-      creep => this.healerTask(creep, powerBank, attackersInRoom),
-      creep => hasNecessaryRoles(creep, this.healerSpec.roles),
-    )
+  private runHealers(healers: Creep[], powerBank: StructurePowerBank | null, attackersInRoom: Creep[]): void {
+    healers.forEach(creep => this.runHealer(creep, powerBank, attackersInRoom))
   }
 
-  private healerTask(creep: Creep, powerBank: StructurePowerBank | null, attackersInRoom: Creep[]): CreepTask | null {
+  private runHealer(creep: Creep, powerBank: StructurePowerBank | null, attackersInRoom: Creep[]): void {
+    const isDamaged = creep.hits < (creep.hitsMax - 200)
+    if (isDamaged === true) {
+      creep.heal(creep)
+    }
+
+    if (creep.v5task != null) {
+      return
+    }
+
     if (creep.room.name !== this.targetRoomName) {
-      return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      creep.v5task = this.createMoveToRoomTask(creep)
+      return
     }
 
     const getNearbyDamagedCreeps = (): Creep[] => {
       return creep.room.find(FIND_MY_CREEPS).filter(myCreep => myCreep.hits < myCreep.hitsMax)
     }
 
-    const healCreepTask = (healTarget: Creep): CreepTask => {
+    const heal = (healTarget: Creep): void => {
+      if (isDamaged === true) {
+        return
+      }
       const range = creep.pos.getRangeTo(healTarget.pos)
       if (range <= GameConstants.creep.actionRange.heal) {
-        return MoveToTargetTask.create(HealApiWrapper.create(healTarget))
+        creep.heal(healTarget)
+      } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
+        creep.rangedHeal(healTarget)
+        creep.moveTo(healTarget.pos, defaultMoveToOptions())
+      } else {
+        creep.moveTo(healTarget.pos, defaultMoveToOptions())
       }
-      // if (range <= GameConstants.creep.actionRange.rangedHeal) {
-      //   return MoveToTargetTask.create(RangedHealApiWrapper.create(healTarget))
-      // }
-      return MoveToTask.create(healTarget.pos, 1)
     }
 
-    const healDamagedCreepTask = (): CreepTask | null => {
+    const healDamagedCreep = (): void => {
       const damagedCreep = creep.pos.findClosestByRange(getNearbyDamagedCreeps())
       if (damagedCreep == null) {
-        return null
+        return
       }
-      return healCreepTask(damagedCreep)
+      heal(damagedCreep)
     }
 
     if (powerBank == null) {
-      return healDamagedCreepTask()
+      return healDamagedCreep()
     }
 
-    if (creep.pos.getRangeTo(powerBank.pos) > 2) {
-      return MoveToTask.create(powerBank.pos, 2)
-    }
+    // TODO: 消す
+    // if (creep.pos.getRangeTo(powerBank.pos) > 2) {
+    //   return MoveToTask.create(powerBank.pos, 2)
+    // }
 
     const healerPair = this.attackerHealerPair.map((pair, index) => ({ pair, index})).find(pair => pair.pair.healerName === creep.name)
     if (healerPair == null) {
@@ -938,7 +1094,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       })
 
       if (healerLessAttacker == null) {
-        return healDamagedCreepTask()
+        return healDamagedCreep()
       }
 
       this.attackerHealerPair.push({
@@ -946,15 +1102,15 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
         healerName: creep.name,
       })
 
-      return healCreepTask(healerLessAttacker)
+      return heal(healerLessAttacker)
     }
 
     const pairedAttacker = Game.creeps[healerPair.pair.attackerName]
     if (pairedAttacker == null) {
       this.attackerHealerPair.splice(healerPair.index, 1)
-      return null
+      return
     }
-    return healCreepTask(pairedAttacker)
+    return heal(pairedAttacker)
   }
 
   // ---- Attacker ---- //
@@ -975,30 +1131,35 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     })
   }
 
-  private runAttackers(powerBank: StructurePowerBank | null, haulerReady: boolean, emptyHaulers: Creep[]): void {
-    World.resourcePools.assignTasks(
-      this.parentRoomName,
-      this.identifier,
-      CreepPoolAssignPriority.Low,
-      creep => this.attackerTask(creep, powerBank, haulerReady, emptyHaulers),
-      creep => hasNecessaryRoles(creep, this.attackerSpec.roles),
-    )
+  private runAttackers(attackers: Creep[], powerBank: StructurePowerBank | null, haulerReady: boolean): void {
+    attackers.forEach(creep => this.runAttacker(creep, powerBank, haulerReady))
   }
 
-  private attackerTask(creep: Creep, powerBank: StructurePowerBank | null, haulerReady: boolean, emptyHaulers: Creep[]): CreepTask | null {
+  private runAttacker(creep: Creep, powerBank: StructurePowerBank | null, haulerReady: boolean): void {
     if (this.pickupFinished === true) {
-      return this.attackNearbyHostileHaulerTask(creep)
+      const nearbyHauler = this.nearbyHostileHauler(creep)
+      if (nearbyHauler != null) {
+        creep.moveTo(nearbyHauler, defaultMoveToOptions())
+        creep.attack(nearbyHauler)
+        return
+      }
     }
     const hostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, GameConstants.creep.actionRange.attack)
       .filter(hostileCreep => {
         return this.whitelistedUsernames.includes(hostileCreep.owner.username) !== true
       })[0]
     if (hostileCreep != null && hostileCreep.getActiveBodyparts(ATTACK) <= 0) {
-      return RunApiTask.create(AttackApiWrapper.create(hostileCreep))
+      creep.attack(hostileCreep)
+      return
+    }
+
+    if (creep.v5task != null) {
+      return
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      return MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+      creep.v5task = this.createMoveToRoomTask(creep)
+      return
     }
 
     if (powerBank != null) {
@@ -1030,25 +1191,35 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
         return false
       })()
       if (shouldAttack === true) {
-        return MoveToTargetTask.create(AttackApiWrapper.create(powerBank))
+        if (creep.pos.getRangeTo(powerBank.pos) > 1) {
+          creep.moveTo(powerBank.pos, defaultMoveToOptions())
+        }
+        creep.attack(powerBank)
+        return
       } else {
         // creep.say("waiting")
-        return null
+        return
       }
     }
 
-    const attackNearbyHostileHaulerTask = this.attackNearbyHostileHaulerTask(creep)
-    if (attackNearbyHostileHaulerTask != null) {
-      return attackNearbyHostileHaulerTask
+    const nearbyHauler = this.nearbyHostileHauler(creep)
+    if (nearbyHauler != null) {
+      creep.moveTo(nearbyHauler, defaultMoveToOptions())
+      creep.attack(nearbyHauler)
+      return
     }
 
     if (this.powerBankInfo == null) {
-      return null
+      return
     }
     try {
-      return MoveToTask.create((new RoomPosition(25, 25, this.targetRoomName)), 5)
+      const waitingPosition = new RoomPosition(25, 25, this.targetRoomName)
+      if (creep.pos.getRangeTo(waitingPosition) > 4) {
+        creep.moveTo(waitingPosition, defaultMoveToOptions())
+      }
+      return
     } catch {
-      return null
+      return
     }
     // const emptyHauler = creep.pos.findInRange(emptyHaulers, 1)[0]
     // const powerBankPosition = decodeRoomPosition(this.powerBankInfo.position, this.targetRoomName)
@@ -1062,17 +1233,13 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     // }
   }
 
-  private attackNearbyHostileHaulerTask(creep: Creep): CreepTask | null {
-    const hostileHauler = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS).filter(hostileCreep => {
+  private nearbyHostileHauler(creep: Creep): Creep | null {
+    return creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS).filter(hostileCreep => {
       if (this.whitelistedUsernames.includes(hostileCreep.owner.username) === true) {
         return false
       }
       return (hostileCreep.getActiveBodyparts(CARRY) > 0)
     }))
-    if (hostileHauler == null) {
-      return null
-    }
-    return MoveToTargetTask.create(AttackApiWrapper.create(hostileHauler))
   }
 
   // ---- Scout ---- //
@@ -1115,14 +1282,14 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     }
 
     const tasks: CreepTask[] = [
-      MoveToRoomTask.create(this.targetRoomName, this.waypoints),
+      this.createMoveToRoomTask(creep),
       MoveToTask.create(waitingPosition, range),
     ]
     return FleeFromAttackerTask.create(SequentialTask.create(tasks, options))
   }
 
-  // ---- Functions ---- //
-  private countCreep(roles: CreepRole[]): number {
-    return World.resourcePools.countCreeps(this.parentRoomName, this.identifier, creep => hasNecessaryRoles(creep, roles))
+  private createMoveToRoomTask(creep: Creep): MoveToRoomTask {
+    const waypoints: RoomName[] = creep.room.name === this.parentRoomName ? this.waypoints : []
+    return MoveToRoomTask.create(this.targetRoomName, waypoints)
   }
 }
