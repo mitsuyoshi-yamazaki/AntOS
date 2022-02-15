@@ -1,7 +1,7 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, SingleOptionalArgument, StringArgument, TypedStringArgument } from "./argument_parser"
 
-export type IterableArgumentType = "string" | "int" | "float" | "boolean" | "resource" | "mineral_boost" | "deposit" | "commodity"
+export type IterableArgumentType = "string" | "int" | "float" | "boolean" | "resource" | "mineral_boost" | "deposit" | "commodity" | "object_id"
 
 type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? void
   : T extends "int" ? { min?: number, max?: number }
@@ -10,6 +10,7 @@ type IterableArgumentOption<T extends IterableArgumentType> = T extends "string"
   : T extends "mineral_boost" ? void
   : T extends "deposit" ? void
   : T extends "commodity" ? void
+  : T extends "object_id" ? void
   : void  // "boolean"
 
 type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "string" ? string
@@ -19,6 +20,7 @@ type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "str
   : T extends "mineral_boost" ? MineralBoostConstant
   : T extends "deposit" ? DepositConstant
   : T extends "commodity" ? CommodityConstant
+  : T extends "object_id" ? string
   : boolean // "boolean"
 
 const SingularParsers: { [T in IterableArgumentType]: (key: string, value: string, parseOptions?: ArgumentParsingOptions) => SingleOptionalArgument<IterableArgumentOption<T>, IterableArgumentReturnType<T>> } = {
@@ -45,6 +47,9 @@ const SingularParsers: { [T in IterableArgumentType]: (key: string, value: strin
   },
   commodity: (key: string, value: string, options?: ArgumentParsingOptions): TypedStringArgument<CommodityConstant> => {
     return new TypedStringArgument(key, value, "CommodityConstant", isCommodityConstant, options)
+  },
+  object_id: (key: string, value: string, parseOptions?: ArgumentParsingOptions): StringArgument => {
+    return new StringArgument(key, value, parseOptions)
   },
 }
 
