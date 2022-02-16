@@ -46,6 +46,10 @@ interface Season4784484ScoreProcessState extends ProcessState {
   readonly haulerName: CreepName | null
 }
 
+/**
+ * - fallback
+ * - 得点されていた場合
+ */
 export class Season4784484ScoreProcess implements Process, Procedural {
   public readonly identifier: string
   public get taskIdentifier(): string {
