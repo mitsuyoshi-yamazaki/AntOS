@@ -33,7 +33,7 @@ import { World35872159TestDeclarationProcess } from "process/temporary/world_358
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
-import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
+import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_test_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"

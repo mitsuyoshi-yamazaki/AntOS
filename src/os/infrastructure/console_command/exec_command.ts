@@ -26,7 +26,7 @@ import { BoostLabChargerProcess } from "process/process/boost_lab_charger_proces
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
+import { temporaryScript } from "../../../../submodules/private/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"

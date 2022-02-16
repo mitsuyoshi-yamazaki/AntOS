@@ -37,7 +37,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
-import { Quad, QuadState } from "../../../submodules/attack/quad/quad"
+import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
