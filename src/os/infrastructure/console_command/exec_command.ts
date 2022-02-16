@@ -22,10 +22,9 @@ import { OperatingSystem } from "os/os"
 import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
-import { Season1143119LabChargerProcess } from "process/temporary/season_1143119_lab_charger_process"
+import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
-import { decodeRoomPosition } from "prototype/room_position"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { temporaryScript } from "../../../../submodules/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
@@ -69,8 +68,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.dismantle()
       case "resource":
         return this.resource()
-      case "set_boost_labs":
-        return this.setBoostLabs()
       case "set_waiting_position":
         return this.setWaitingPosition()
       case "show_room_plan":
@@ -547,114 +544,6 @@ export class ExecCommand implements ConsoleCommand {
     }
   }
 
-  // Game.io("exec set_boost_labs room_name=W53S36 total_boost_lab_count=6")
-  private setBoostLabs(): CommandExecutionResult {
-    const outputs: string[] = []
-
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-
-    const resources = RoomResources.getOwnedRoomResource(roomName)
-    if (resources == null) {
-      return `Room ${roomLink(roomName)} is not owned`
-    }
-
-    const rawTotalBoostLabCount = args.get("total_boost_lab_count")
-    if (rawTotalBoostLabCount == null) {
-      return this.missingArgumentError("total_boost_lab_count")
-    }
-    const totalBoostLabCount = parseInt(rawTotalBoostLabCount)
-    if (isNaN(totalBoostLabCount) === true) {
-      return `total_boost_lab_count is not a number ${rawTotalBoostLabCount}`
-    }
-
-    if ((resources.roomInfo.config?.boostLabs?.length ?? 0) >= totalBoostLabCount) {
-      return `${roomLink(roomName)} has boost labs`
-    }
-
-    const numberOfBoostLabs = ((): number => {
-      const boostLabs = resources.roomInfo.config?.boostLabs
-      if (boostLabs != null) {
-        return Math.max(totalBoostLabCount - boostLabs.length, 0)
-      }
-      return totalBoostLabCount
-    })()
-
-    const researchLab = resources.roomInfo.researchLab
-    const boostLabIds: Id<StructureLab>[] = []
-
-    if (researchLab != null) {
-      const outputLabs = [...researchLab.outputLabs]
-        .flatMap(labId => {
-          const lab = Game.getObjectById(labId)
-          if (lab == null) {
-            PrimitiveLogger.programError(`setBoostLabs() lab with ID ${labId} not found in ${roomLink(roomName)}`)
-            return []
-          }
-          return lab
-        })
-
-      if (resources.roomInfo.roomPlan?.centerPosition != null) {
-        const centerPosition = decodeRoomPosition(resources.roomInfo.roomPlan.centerPosition, roomName)
-        outputLabs.sort((lhs, rhs) => {
-          return centerPosition.getRangeTo(lhs) - centerPosition.getRangeTo(rhs)
-        })
-      }
-
-      if (outputLabs.length > numberOfBoostLabs) {
-        outputLabs.splice(numberOfBoostLabs, outputLabs.length - numberOfBoostLabs)
-      }
-      boostLabIds.push(...outputLabs.map(lab => lab.id))
-      boostLabIds.forEach(labId => {
-        const index = researchLab.outputLabs.indexOf(labId)
-        if (index < 0) {
-          return
-        }
-        researchLab.outputLabs.splice(index, 1)
-      })
-      outputs.push(`Removed from research output lab: ${boostLabIds}`)
-
-    } else {  // researchLab == null
-      const labs = ((): StructureLab[] => {
-        const foundLabs = resources.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
-        if (resources.roomInfo.config?.boostLabs == null) {
-          return foundLabs
-        }
-        const storedBoostLabIds = [...resources.roomInfo.config.boostLabs]
-        return foundLabs.filter(lab => storedBoostLabIds.includes(lab.id) !== true)
-      })()
-      if (labs.length > numberOfBoostLabs) {
-        labs.splice(numberOfBoostLabs, labs.length - numberOfBoostLabs)
-      }
-      boostLabIds.push(...labs.map(lab => lab.id))
-
-      if (boostLabIds.length > 0) {
-        outputs.push(`Found ${boostLabIds.length} unused labs`)
-      }
-    }
-
-    if (resources.roomInfo.config == null) {
-      resources.roomInfo.config = {}
-      outputs.push("Add roomInfo.config")
-    }
-    if (resources.roomInfo.config.boostLabs != null && resources.roomInfo.config.boostLabs.length > 0) {
-      outputs.push(`Overwrite boostLabs ${resources.roomInfo.config.boostLabs.length} labs -> ${boostLabIds.length} labs`)
-    } else {
-      outputs.push(`Set ${boostLabIds.length} labs`)
-    }
-    if (resources.roomInfo.config.boostLabs == null) {
-      resources.roomInfo.config.boostLabs = boostLabIds
-    } else {
-      resources.roomInfo.config.boostLabs.push(...boostLabIds)
-    }
-
-    return `\n${outputs.join("\n")}`
-  }
-
   // Game.io("exec set_waiting_position room_name=W52S25 pos=35,21")
   private setWaitingPosition(): CommandExecutionResult {
     const args = this._parseProcessArguments()
@@ -851,7 +740,7 @@ export class ExecCommand implements ConsoleCommand {
         }
         return []
       }
-      if (process instanceof Season1143119LabChargerProcess) {
+      if (process instanceof BoostLabChargerProcess) {
         if (process.parentRoomName === room.name) {
           return process
         }

@@ -115,49 +115,49 @@ const boostedHealerBody: BodyPartConstant[] = [
   MOVE,
 ]
 
-export function canLaunchBoostedPowerBankHarvester(parentRoomName: RoomName): boolean {
-  const roomResource = RoomResources.getOwnedRoomResource(parentRoomName)
-  if (roomResource == null) {
-    return false
-  }
-  const boostLabs = roomResource.roomInfoAccessor.config.getBoostLabs()
-  if (boostLabs.length !== boostedCreepBoosts.length) {
-    return false
-  }
-  const requiredBoosts = new Map<MineralBoostConstant, number>()
-  const addBoostCost = (boosts: Map<MineralBoostConstant, number>): void => {
-    boosts.forEach((cost, boost) => requiredBoosts.set(boost, (requiredBoosts.get(boost) ?? 0) + cost))
-  }
-  addBoostCost(CreepBody.boostCost(boostedAttackerBody, boostedCreepBoosts))
-  addBoostCost(CreepBody.boostCost(boostedHealerBody, boostedCreepBoosts))
+// export function canLaunchBoostedPowerBankHarvester(parentRoomName: RoomName): boolean {
+//   const roomResource = RoomResources.getOwnedRoomResource(parentRoomName)
+//   if (roomResource == null) {
+//     return false
+//   }
+//   const boostLabs = roomResource.roomInfoAccessor.config.getBoostLabs()
+//   if (boostLabs.length !== boostedCreepBoosts.length) {
+//     return false
+//   }
+//   const requiredBoosts = new Map<MineralBoostConstant, number>()
+//   const addBoostCost = (boosts: Map<MineralBoostConstant, number>): void => {
+//     boosts.forEach((cost, boost) => requiredBoosts.set(boost, (requiredBoosts.get(boost) ?? 0) + cost))
+//   }
+//   addBoostCost(CreepBody.boostCost(boostedAttackerBody, boostedCreepBoosts))
+//   addBoostCost(CreepBody.boostCost(boostedHealerBody, boostedCreepBoosts))
 
-  boostedCreepBoosts.forEach((boost): void => {
-    const cost = requiredBoosts.get(boost)
-    if (cost == null) {
-      return
-    }
-    const boostCost = cost
+//   boostedCreepBoosts.forEach((boost): void => {
+//     const cost = requiredBoosts.get(boost)
+//     if (cost == null) {
+//       return
+//     }
+//     const boostCost = cost
 
-    const hasLab = boostLabs.some(lab => {
-      if (lab.mineralType !== boost) {
-        return false
-      }
-      if (lab.store.getUsedCapacity(boost) < boostCost) {
-        return false
-      }
-      return true
-    })
-    if (hasLab !== true) {
-      return
-    }
-    requiredBoosts.delete(boost)
-  })
+//     const hasLab = boostLabs.some(lab => {
+//       if (lab.mineralType !== boost) {
+//         return false
+//       }
+//       if (lab.store.getUsedCapacity(boost) < boostCost) {
+//         return false
+//       }
+//       return true
+//     })
+//     if (hasLab !== true) {
+//       return
+//     }
+//     requiredBoosts.delete(boost)
+//   })
 
-  if (requiredBoosts.size > 0) {
-    return false
-  }
-  return true
-}
+//   if (requiredBoosts.size > 0) {
+//     return false
+//   }
+//   return true
+// }
 
 interface Season4964954HarvestPowerProcessCreepSpec {
   maxCount: number

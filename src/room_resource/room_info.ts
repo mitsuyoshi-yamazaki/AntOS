@@ -7,11 +7,21 @@ import type { Timestamp } from "utility/timestamp"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
+type RemoteRoomTestConfig = {
+  enablePathCaching?: boolean
+}
+
 export type RemoteRoomInfo = {
   readonly roomName: RoomName
   enabled: boolean
   routeCalculatedTimestamp: { [sourceId: string]: Timestamp}
   constructionFinished: boolean
+  testConfig?: RemoteRoomTestConfig
+}
+
+export type BoostLabInfo = {
+  readonly labId: Id<StructureLab>
+  readonly boost: MineralBoostConstant
 }
 
 export interface BasicRoomInfo {
@@ -45,7 +55,6 @@ export type OwnedRoomConfig = {
   disableUnnecessaryTasks?: boolean
   researchCompounds?: { [index in MineralCompoundConstant]?: number }
   collectResources?: boolean
-  boostLabs?: Id<StructureLab>[]
   excludedRemotes?: RoomName[]
   waitingPosition?: Position
   genericWaitingPositions?: Position[]
@@ -71,6 +80,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     readonly inputLab2: Id<StructureLab>
     readonly outputLabs: Id<StructureLab>[]
   }
+  boostLabs: BoostLabInfo[]
   highestRcl: number
   roomPlan: {
     centerPosition: Position
@@ -169,6 +179,7 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     roomPlan: null,
     reachable: true,
     remoteRoomInfo: {},
+    boostLabs: [],
   }
 }
 
@@ -187,5 +198,6 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     roomPlan: null,
     reachable: normalRoomInfo.reachable,
     remoteRoomInfo: {},
+    boostLabs: [],
   }
 }

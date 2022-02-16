@@ -1,6 +1,9 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeRoomPosition, Position } from "prototype/room_position"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
+import { Result } from "utility/result"
 import { RoomName } from "utility/room_name"
-import { OwnedRoomInfo, OwnedRoomConfig } from "./room_info"
+import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
 
 export const defaultMaxWallHits = 5000000
 
@@ -167,41 +170,161 @@ class Config {
     }
     return [...this.config.noRepairWallIds]
   }
-
-  public addBoostLabs(boostLabs: StructureLab[]): void {
-    if (this.config.boostLabs == null) {
-      this.config.boostLabs = []
-    }
-    const boostLabIds = this.config.boostLabs
-
-    boostLabs.forEach(lab => {
-      if (boostLabIds.some(labId => labId === lab.id) === true) {
-        return
-      }
-      boostLabIds.push(lab.id)
-    })
-  }
-  public getBoostLabs(): StructureLab[] {
-    if (this.config.boostLabs == null) {
-      return []
-    }
-    return this.config.boostLabs.flatMap((labId): StructureLab[] => {
-      const lab = Game.getObjectById(labId)
-      if (lab == null) {
-        return []
-      }
-      return [lab]
-    })
-  }
 }
 
 export class OwnedRoomInfoAccessor {
   public readonly config: Config
+  public readonly roomName: RoomName
 
   public constructor(
-    public readonly roomName: RoomName,
+    private readonly room: Room,
     public readonly roomInfo: OwnedRoomInfo,
   ) {
-    this.config = new Config(roomName, roomInfo)
+    this.roomName = room.name
+    this.config = new Config(this.roomName, roomInfo)
+
+    if (this.roomInfo.boostLabs == null) {
+      this.roomInfo.boostLabs = []
+    }
+
+  }
+
+  public setRemoteRoomPathCachingEnabled(remoteRoomName: RoomName, enabled: boolean): void {
+    try {
+      const remoteRoomInfo = this.roomInfo.remoteRoomInfo[remoteRoomName]
+      if (remoteRoomInfo == null) {
+        throw `no remote room ${roomLink(remoteRoomName)} in ${roomLink(this.roomName)}`
+      }
+      if (remoteRoomInfo.testConfig == null) {
+        remoteRoomInfo.testConfig = {}
+      }
+      remoteRoomInfo.testConfig.enablePathCaching = enabled
+    } catch (error) {
+      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${error}`)
+    }
+  }
+
+  public addBoosts(boosts: MineralBoostConstant[]): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
+    try {
+      this.roomInfo.boostLabs.forEach(boostLabInfo => {
+        if (boosts.includes(boostLabInfo.boost) === true) {
+          throw `${coloredResourceType(boostLabInfo.boost)} is already in the list ${roomLink(this.roomName)}`
+        }
+      })
+
+      const unassignedLabs = this.unassignedLabs()
+      const researchOutputLabs = this.researchOutputLabs()
+      const assignableLabCount = unassignedLabs.length + researchOutputLabs.length
+
+      const assignableLabs: StructureLab[] = [
+        ...unassignedLabs,
+        ...researchOutputLabs,
+      ]
+
+      const newBoostLabs: {lab: StructureLab, boost: MineralBoostConstant}[] = []
+      boosts.forEach((boost, index) => {
+        const lab = assignableLabs[index]
+        if (lab == null) {
+          throw `lack of available labs. assignable lab count: ${assignableLabCount} > ${boosts.length} boosts`
+        }
+        newBoostLabs.push({
+          boost,
+          lab,
+        })
+      })
+
+      const removedFromResearchOutputLabs: StructureLab[] = []
+      if (this.roomInfo.researchLab != null) {
+        const researchOutputLabs = this.roomInfo.researchLab.outputLabs
+        newBoostLabs.forEach(labInfo => {
+          const outputLabIndex = researchOutputLabs.indexOf(labInfo.lab.id)
+          if (outputLabIndex < 0) {
+            return
+          }
+          researchOutputLabs.splice(outputLabIndex, 1)
+          removedFromResearchOutputLabs.push(labInfo.lab)
+        })
+      }
+
+      return Result.Succeeded({
+        newBoostLabs: newBoostLabs.map(labInfo => ({ boost: labInfo.boost, labId: labInfo.lab.id })),
+        removedFromResearchOutputLabs,
+      })
+    } catch (error) {
+      return Result.Failed(`${error}`)
+    }
+  }
+  public removeBoosts(boosts: MineralBoostConstant[]): Result<{ addedToResearchOutputLabIds: Id<StructureLab>[] }, string> {
+    try {
+      this.roomInfo.boostLabs.forEach(boostLabInfo => {
+        if (boosts.includes(boostLabInfo.boost) !== true) {
+          throw `${coloredResourceType(boostLabInfo.boost)} is not in the list ${roomLink(this.roomName)}`
+        }
+      })
+
+      const addedToResearchOutputLabIds: Id<StructureLab>[] = []
+      boosts.forEach(boost => {
+        const boostLabInfo = this.roomInfo.boostLabs
+          .map((labInfo, index) => ({ labId: labInfo.labId, boost: labInfo.boost, index }))
+          .find(labInfo => labInfo.boost === boost)
+        if (boostLabInfo == null) {
+          return
+        }
+        this.roomInfo.boostLabs.splice(boostLabInfo.index, 1)
+        addedToResearchOutputLabIds.push(boostLabInfo.labId)
+      })
+
+      return Result.Succeeded({ addedToResearchOutputLabIds })
+
+    } catch (error) {
+      return Result.Failed(`${error}`)
+    }
+  }
+  public removeAllBoosts(): { addedToResearchOutputLabIds: Id<StructureLab>[], removedBoosts: MineralBoostConstant[] } {
+    const addedToResearchOutputLabIds: Id<StructureLab>[] = []
+    const removedBoosts: MineralBoostConstant[] = this.roomInfo.boostLabs.map(labInfo => labInfo.boost)
+
+    if (this.roomInfo.researchLab != null) {
+      const labIds = this.roomInfo.boostLabs.map(labInfo => labInfo.labId)
+      this.roomInfo.researchLab.outputLabs.push(...labIds)
+      addedToResearchOutputLabIds.push(...labIds)
+    }
+    return {
+      addedToResearchOutputLabIds,
+      removedBoosts,
+    }
+  }
+  public getBoostLabs(): BoostLabInfo[] {
+    return [...this.roomInfo.boostLabs]
+  }
+
+  private researchOutputLabs(): StructureLab[] {
+    if (this.roomInfo.researchLab == null) {
+      return []
+    }
+    return [
+      ...this.roomInfo.researchLab.outputLabs.flatMap((labId): StructureLab[] => {
+        const lab = Game.getObjectById(labId)
+        if (lab == null) {
+          return []
+        }
+        return [lab]
+      })
+    ]
+  }
+
+  private unassignedLabs(): StructureLab[] {
+    const assignedLabIds: Id<StructureLab>[] = [
+      ...this.roomInfo.boostLabs.map(labInfo => labInfo.labId)
+    ]
+    const researchLab = this.roomInfo.researchLab
+    if (researchLab != null) {
+      assignedLabIds.push(researchLab.inputLab1)
+      assignedLabIds.push(researchLab.inputLab2)
+      assignedLabIds.push(...researchLab.outputLabs)
+    }
+
+    return (this.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
+      .filter(lab => assignedLabIds.includes(lab.id) !== true)
   }
 }

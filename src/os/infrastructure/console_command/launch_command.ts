@@ -12,7 +12,6 @@ import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
-import { Season1143119LabChargerProcess, Season1143119LabChargerProcessLabInfo } from "process/temporary/season_1143119_lab_charger_process"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
@@ -20,7 +19,7 @@ import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
@@ -93,8 +92,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
-      case "Season1143119LabChargerProcess":
-        return this.launchSeason1143119LabChargerProcess()
       case "Season1200082SendMineralProcess":
         return this.launchSeason1200082SendMineralProcess()
       case "Season1349943DisturbPowerHarvestingProcess":
@@ -328,45 +325,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return BuyPixelProcess.create(processId)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason1143119LabChargerProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const rawLabIds = args.get("labs")
-    if (rawLabIds == null) {
-      return this.missingArgumentError("labs")
-    }
-    const labStates: Season1143119LabChargerProcessLabInfo[] = []
-    for (const rawLabInfo of rawLabIds.split(",")) {
-      const [labId, boost] = rawLabInfo.split(":")
-      if (labId == null || boost == null) {
-        return Result.Failed(`Invalid labs format lab ID:${labId}, boost: ${boost} (${rawLabIds}), labs=&ltlab ID&gt:&ltboost&gt,...`)
-      }
-      const lab = Game.getObjectById(labId)
-      if (!(lab instanceof StructureLab)) {
-        return Result.Failed(`${lab} is not StructureLab`)
-      }
-      if (lab.room.name !== roomName) {
-        return Result.Failed(`${lab} is not in ${roomLink(roomName)} (${roomLink(lab.room.name)})`)
-      }
-      if (!isMineralBoostConstant(boost)) {
-        return Result.Failed(`${boost} is not MineralBoostConstant`)
-      }
-      labStates.push({
-        lab,
-        boost,
-      })
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1143119LabChargerProcess.create(processId, roomName, labStates)
     })
     return Result.Succeeded(process)
   }

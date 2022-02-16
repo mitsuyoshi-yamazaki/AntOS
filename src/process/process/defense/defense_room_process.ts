@@ -192,14 +192,14 @@ export class DefenseRoomProcess implements Process, Procedural {
           unboostedIntercepters.push(creep)
         }
       })
-      const boostLabIds = roomResources.roomInfo.config?.boostLabs ?? []
-      const boostLab = boostLabIds
-        .flatMap((labId): StructureLab[] => {
-          const lab = Game.getObjectById(labId)
-          if (lab instanceof StructureLab) {
-            return [lab]
+      const boostLabs = roomResources.roomInfoAccessor.getBoostLabs()
+      const boostLab = boostLabs
+        .flatMap((labInfo): StructureLab[] => {
+          const lab = Game.getObjectById(labInfo.labId)
+          if (lab == null) {
+            return []
           }
-          return []
+          return [lab]
         })
         .find(lab => {
           if (lab.store.getUsedCapacity(RESOURCE_UTRIUM_HYDRIDE) > 0) {

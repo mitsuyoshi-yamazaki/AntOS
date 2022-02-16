@@ -30,6 +30,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { RemoteRoomInfo } from "room_resource/room_info"
 import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
+import { PathCacheAccessor } from "utility/path_cache"
 
 const routeRecalculationInterval = 40000
 
@@ -155,7 +156,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
           targetRoomInfo.routeCalculatedTimestamp[source.id] = 0  // 乱数を設定するのはMigration時のみ
         } else {
           if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
-            this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container != null)
+            this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container)
           }
         }
       }
@@ -364,7 +365,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     }
   }
 
-  private calculateRoute(objects: OwnedRoomObjects, source: Source, targetRoomInfo: RemoteRoomInfo, targetRoom: Room, hasContainer: boolean): void {
+  private calculateRoute(objects: OwnedRoomObjects, source: Source, targetRoomInfo: RemoteRoomInfo, targetRoom: Room, container: StructureContainer | null): void {
+    const hasContainer = container != null
     const sourcePosition = source.pos
     const storage = objects.activeStructures.storage
     if (storage == null) {
@@ -375,11 +377,14 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     const codename = generateCodename(this.constructor.name, this.startTime)
     const range = hasContainer ? 2 : 1
-    const result = placeRoadConstructionMarks(storage.pos, sourcePosition, codename, {range})
+    const disableRouteWaypoint = targetRoomInfo.testConfig?.enablePathCaching ?? false
+
+    const result = placeRoadConstructionMarks(storage.pos, sourcePosition, codename, {range, disableRouteWaypoint})
 
     try {
       switch (result.resultType) {
       case "succeeded": {
+        cachePath(result.value, targetRoomInfo)
         this.constructInWaypointRooms(result.value)
         if (hasContainer !== true) {
           const lastPosition = result.value[result.value.length - 1]
@@ -446,4 +451,11 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       GameMap.setWaypoints(this.roomName, this.targetRoomName, roomNames)
     }
   }
+}
+
+function cachePath(path: RoomPosition[], targetRoomInfo: RemoteRoomInfo): void {
+  if (targetRoomInfo.testConfig?.enablePathCaching !== true) {
+    return
+  }
+  PathCacheAccessor.setPathCache(path)
 }
