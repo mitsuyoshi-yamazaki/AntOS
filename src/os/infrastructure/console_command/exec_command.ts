@@ -155,7 +155,7 @@ export class ExecCommand implements ConsoleCommand {
 
     const dryRun = true
 
-    const result = placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual", { dryRun })
+    const result = placeRoadConstructionMarks(startObject.pos, goalObject.pos, "manual", { dryRun, disableRouteWaypoint: true })
     switch (result.resultType) {
     case "succeeded":
       return "ok"
