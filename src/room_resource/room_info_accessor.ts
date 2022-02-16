@@ -184,9 +184,8 @@ export class OwnedRoomInfoAccessor {
     this.config = new Config(this.roomName, roomInfo)
 
     if (this.roomInfo.boostLabs == null) {
-      this.roomInfo.boostLabs = []
+      this.roomInfo.boostLabs = []  // FixMe: Migration
     }
-
   }
 
   public setRemoteRoomPathCachingEnabled(remoteRoomName: RoomName, enabled: boolean): void {
@@ -245,6 +244,8 @@ export class OwnedRoomInfoAccessor {
           removedFromResearchOutputLabs.push(labInfo.lab)
         })
       }
+
+      this.roomInfo.boostLabs.push(...newBoostLabs.map(labInfo => ({ labId: labInfo.lab.id, boost: labInfo.boost})))
 
       return Result.Succeeded({
         newBoostLabs: newBoostLabs.map(labInfo => ({ boost: labInfo.boost, labId: labInfo.lab.id })),
