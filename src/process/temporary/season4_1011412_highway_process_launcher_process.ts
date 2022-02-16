@@ -61,7 +61,11 @@ interface Season41011412HighwayProcessLauncherProcessState extends ProcessState 
   readonly observeResults: { [roomName: string]: ObserveResult }
   readonly stopLaunchingReasons: string[]
   readonly maxProcessCount: number
-  readonly storageRooms: {[roomName: string]: RoomName}
+  readonly storageRooms: { [roomName: string]: RoomName }
+  readonly settings: {
+    readonly powerHarvestingEnabled: boolean
+    readonly depositHarvestingEnabled: boolean
+  }
 }
 
 export class Season41011412HighwayProcessLauncherProcess implements Process, Procedural, MessageObserver {
@@ -78,6 +82,10 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     private readonly stopLaunchingReasons: string[],
     private maxProcessCount: number,
     private readonly storageRooms: { [roomName: string]: RoomName },
+    private readonly settings: {
+      powerHarvestingEnabled: boolean
+      depositHarvestingEnabled: boolean
+    },
   ) {
     this.identifier = `${this.constructor.name}`
 
@@ -98,10 +106,21 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       stopLaunchingReasons: this.stopLaunchingReasons,
       maxProcessCount: this.maxProcessCount,
       storageRooms: this.storageRooms,
+      settings: this.settings,
     }
   }
 
   public static decode(state: Season41011412HighwayProcessLauncherProcessState): Season41011412HighwayProcessLauncherProcess {
+    const settings = ((): { powerHarvestingEnabled: boolean, depositHarvestingEnabled: boolean } => {
+      if (state.settings != null) {
+        return state.settings
+      }
+      return {
+        powerHarvestingEnabled: true,
+        depositHarvestingEnabled: true,
+      }
+    })()
+
     return new Season41011412HighwayProcessLauncherProcess(
       state.l,
       state.i,
@@ -110,21 +129,55 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       state.stopLaunchingReasons,
       state.maxProcessCount ?? 10,  // FixMe: Migration
       state.storageRooms ?? {}, // FixMe: Migration
+      settings,
     )
   }
 
   public static create(processId: ProcessId): Season41011412HighwayProcessLauncherProcess {
-    return new Season41011412HighwayProcessLauncherProcess(Game.time, processId, [], {}, [], 10, {})
+    const settings = {
+      powerHarvestingEnabled: true,
+      depositHarvestingEnabled: true,
+    }
+    return new Season41011412HighwayProcessLauncherProcess(Game.time, processId, [], {}, [], 10, {}, settings)
   }
 
   public processShortDescription(): string {
-    return `watching ${this.bases.map(base => roomLink(base.roomName)).join(",")}`
+    const harvestingResources: string[] = []
+    if (this.settings.powerHarvestingEnabled === true) {
+      harvestingResources.push("power")
+    }
+    if (this.settings.depositHarvestingEnabled === true) {
+      harvestingResources.push("deposit")
+    }
+    const descriptions: string[] = [
+    ]
+    if (harvestingResources.length > 0) {
+      descriptions.push(`harvesting ${harvestingResources.join(",")}`)
+    } else {
+      descriptions.push("harvest stopped")
+    }
+    descriptions.push(`${this.bases.map(base => roomLink(base.roomName)).join(",")}`)
+    return descriptions.join(" ")
   }
 
   public processDescription(): string {
     try {
+      const harvestingResources: string[] = []
+      if (this.settings.powerHarvestingEnabled === true) {
+        harvestingResources.push("power")
+      }
+      if (this.settings.depositHarvestingEnabled === true) {
+        harvestingResources.push("deposit")
+      }
+      const harvestDescription = ((): string => {
+        if (harvestingResources.length > 0) {
+          return `harvesting ${harvestingResources.join(",")}`
+        } else {
+          return "harvest stopped"
+        }
+      })()
       const descriptions: string[] = [
-        `- ${this.bases.length} bases (max process count: ${this.maxProcessCount})`,
+        `- ${this.bases.length} bases, ${harvestDescription} (max process count: ${this.maxProcessCount})`,
         ...this.bases.flatMap(base => this.baseInfo(base.roomName)),
       ]
 
@@ -135,7 +188,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms"]
+    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms", "set_power_harvesting_enabled", "set_deposit_harvesting_enabled"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -164,6 +217,20 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       }
       case "add_storage_rooms":
         return this.addStorageRooms(components)
+      case "set_power_harvesting_enabled": {
+        const listArguments = new ListArguments(components)
+        const enabled = listArguments.boolean(0, "enabled").parse()
+        const oldValue = this.settings.powerHarvestingEnabled
+        this.settings.powerHarvestingEnabled = enabled
+        return `set power harvesting enabled ${enabled} (from ${oldValue})`
+      }
+      case "set_deposit_harvesting_enabled": {
+        const listArguments = new ListArguments(components)
+        const enabled = listArguments.boolean(0, "enabled").parse()
+        const oldValue = this.settings.depositHarvestingEnabled
+        this.settings.depositHarvestingEnabled = enabled
+        return `set deposit harvesting enabled ${enabled} (from ${oldValue})`
+      }
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -499,6 +566,12 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         }
 
         for (const target of observeResult.targets) {
+          if (target.case === "power bank" && this.settings.powerHarvestingEnabled !== true) {
+            continue
+          }
+          if (target.case === "deposit" && this.settings.depositHarvestingEnabled !== true) {
+            continue
+          }
           if (target.ignoreReasons.length > 0) {
             continue
           }
