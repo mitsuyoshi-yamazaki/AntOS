@@ -58,6 +58,7 @@ import { Season41076620ResourceManagerProcess } from "process/temporary/season4_
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_launcher_process"
 import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
+import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1154,6 +1155,16 @@ ProcessLauncher.register("WithdrawStructureProcess", args => {
     })
 
     return Result.Succeeded((processId) => WithdrawStructureProcess.create(processId, roomName, targetStructureIds))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4TravelerTestProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => Season4TravelerTestProcess.create(processId, roomName))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
