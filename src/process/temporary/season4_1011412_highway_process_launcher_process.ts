@@ -14,6 +14,7 @@ import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { Season4ObserverManager } from "./season4_observer_manager"
+import { processLog } from "os/infrastructure/logger"
 
 ProcessDecoder.register("Season41011412HighwayProcessLauncherProcess", state => {
   return Season41011412HighwayProcessLauncherProcess.decode(state as Season41011412HighwayProcessLauncherProcessState)
@@ -268,21 +269,6 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       throw `${roomLink(baseRoomName)} is not in the list`
     }
 
-    const targetDescription = (target: TargetInfo): string[] => {
-      switch (target.case) {
-      case "power bank":
-        return [
-          `  - ${coloredResourceType(RESOURCE_POWER)} in ${roomLink(target.roomName)}, amount: ${target.powerAmount}, decay: ${target.decayBy - Game.time}`,
-          ...target.ignoreReasons.map(reason => `    - ${reason}`)
-        ]
-      case "deposit":
-        return [
-          `  - ${coloredResourceType(target.commodityType)} in ${roomLink(target.roomName)}, cooldown: ${target.currentCooldown}, decay: ${target.decayBy - Game.time}`,
-          ...target.ignoreReasons.map(reason => `    - ${reason}`)
-        ]
-      }
-    }
-
     const observeResultsDesctiptions = (observeTargetRoomName: RoomName): string[] => {
       const observeResults = this.observeResults[observeTargetRoomName]
       if (observeResults == null) {
@@ -291,7 +277,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
       return [
         `- ${roomLink(observeTargetRoomName)}: observed at ${Game.time - observeResults.observedAt} ticks ago`,
-        ...observeResults.targets.flatMap(target => targetDescription(target)),
+        ...observeResults.targets.flatMap(target => targetDescription(target).map(line => `  ${line}`)),
       ]
     }
 
@@ -421,7 +407,9 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
           if (storedTargetIds.includes(target.id) === true) {
             return []
           }
-          return [this.makeTargetInfo(target)]
+          const targetInfo = this.makeTargetInfo(target)
+          processLog(this, `found new target\n${targetDescription(targetInfo)}`)
+          return [targetInfo]
         })
 
         observeResult.targets.push(...newTargets)
@@ -649,5 +637,20 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     if (storageRoomName != null) {
       process.setStorageRoomName(storageRoomName)
     }
+  }
+}
+
+const targetDescription = (target: TargetInfo): string[] => {
+  switch (target.case) {
+  case "power bank":
+    return [
+      `- ${coloredResourceType(RESOURCE_POWER)} in ${roomLink(target.roomName)}, amount: ${target.powerAmount}, decay: ${target.decayBy - Game.time}`,
+      ...target.ignoreReasons.map(reason => `  - ${reason}`)
+    ]
+  case "deposit":
+    return [
+      `- ${coloredResourceType(target.commodityType)} in ${roomLink(target.roomName)}, cooldown: ${target.currentCooldown}, decay: ${target.decayBy - Game.time}`,
+      ...target.ignoreReasons.map(reason => `  - ${reason}`)
+    ]
   }
 }
