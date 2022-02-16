@@ -14,6 +14,7 @@ import { directionDescription, GameConstants } from "utility/constants"
 import { isCommodityConstant } from "utility/resource"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import { processLog } from "os/infrastructure/logger"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 declare const COMMODITY_SCORE: { [commodityType: string]: number }
 
@@ -113,15 +114,63 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   }
 
   public processShortDescription(): string {
-    return "not implemented yet"
+    const descriptions: string[] = [
+      `observing ${this.observingHighways.length} highways`,
+    ]
+    const lastObservedConvoy = this.lastObservedConvoy()
+    if (lastObservedConvoy != null) {
+      descriptions.push(`last convoy ${describeTime(lastObservedConvoy.ticksAgo)} ago in ${roomLink(lastObservedConvoy.roomName)}`)
+    } else {
+      descriptions.push("no convoy observed")
+    }
+    return descriptions.join(", ")
   }
 
   public processDescription(): string {
-    return "not implemented yet"
+    const descriptions: string[] = [
+      `observing ${this.observingHighways.length} highways`,
+    ]
+
+    const allHighwayDescriptions = this.observingHighways.flatMap((highwayInfo): string[] => {
+      const highway = highwayInfo.highway
+      const highwayDescriptions: string[] = [
+        `- highway ${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}`
+      ]
+      const convoysInStartRoom = this.convoyCreepsOnHighway(highway.startRoomName)
+      if (convoysInStartRoom.length > 0) {
+        const commodityDescription = convoysInStartRoom.map(convoyCreep => coloredResourceType(convoyCreep.commodityType)).join(",")
+        highwayDescriptions.push(`  - ${convoysInStartRoom.length} convoys in ${roomLink(highway.startRoomName)}, ${commodityDescription}`)
+      }
+      const convoysInEndRoom = this.convoyCreepsOnHighway(highway.endRoomName)
+      if (convoysInEndRoom.length > 0) {
+        const commodityDescription = convoysInEndRoom.map(convoyCreep => coloredResourceType(convoyCreep.commodityType)).join(",")
+        highwayDescriptions.push(`  - ${convoysInEndRoom.length} convoys in ${roomLink(highway.endRoomName)}, ${commodityDescription}`)
+      }
+
+      return highwayDescriptions
+    })
+    descriptions.push(...allHighwayDescriptions)
+
+    return descriptions.join("\n")
+  }
+
+  private lastObservedConvoy(): { roomName: RoomName, ticksAgo: Timestamp } | null {
+    const observedConvoys = Array.from(Object.values(this.convoyCreeps))
+    observedConvoys.sort((lhs, rhs) => {
+      return rhs.observedAt - lhs.observedAt
+    })
+    const lastObservedConvoyInfo = observedConvoys[0]
+    if (lastObservedConvoyInfo == null) {
+      return null
+    }
+    return {
+      roomName: lastObservedConvoyInfo.roomName,
+      ticksAgo: Game.time - lastObservedConvoyInfo.observedAt,
+    }
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add_highway", "show_logs"]
+    const commandList = ["help", "status", "add_highway", "show_convoy", "show_logs"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -136,6 +185,9 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       case "add_highway":
         return this.addHighway(components)
 
+      case "show_convoy":
+        return this.showConvoyOnHighway(components)
+
       case "show_logs":
         return this.showLogs()
 
@@ -145,6 +197,23 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private showConvoyOnHighway(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const edgeRoomName = listArguments.roomName(0, "highway edge room name").parse()
+    const convoyCreeps = this.convoyCreepsOnHighway(edgeRoomName)
+
+    const results: string[] = [
+      `${convoyCreeps.length} convoys observed`,
+      ...convoyCreeps.map(convoyCreep => `- ${convoyCreepDescription(convoyCreep)}`),
+    ]
+    return results.join("\n")
+  }
+
+  private convoyCreepsOnHighway(highwayEdgeRoomName: RoomName): ConvoyCreepInfo[] {
+    return Array.from(Object.values(this.convoyCreeps)).filter(convoyCreep => convoyCreep.roomName === highwayEdgeRoomName)
   }
 
   /** @throws */
@@ -403,6 +472,10 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
 function highwayDescription(highway: Highway): string {
   return `${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}`
+}
+
+function convoyCreepDescription(convoyCreep: ConvoyCreepInfo): string {
+  return `${roomLink(convoyCreep.roomName)} ${directionDescription(convoyCreep.direction)} ${coloredResourceType(convoyCreep.commodityType)} at ${convoyCreep.observedAt}, estimate despawn ${convoyCreep.estimatedDespawnTime} ticks`
 }
 
 function logDescription(log: ObserveLog): string {
