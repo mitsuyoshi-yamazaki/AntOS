@@ -425,15 +425,23 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     if (isDepositConstant(resourceType)) {
       return 1000
     }
+    if (resourceType === RESOURCE_COMPOSITE) {
+      return 20
+    }
+    if (resourceType === RESOURCE_LIQUID) {
+      return 150
+    }
     if (isCommodityConstant(resourceType)) {
       const tier = commodityTier(resourceType)
       switch (tier) {
       case 0:
-        return 100
+        return 310
       case 1:
-        return 10
+        return 45
       case 2:
+        return 5
       case 3:
+        return 3
       case 4:
       case 5:
         return 1
