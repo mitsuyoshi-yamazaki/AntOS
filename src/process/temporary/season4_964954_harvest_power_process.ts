@@ -657,6 +657,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
 
     if (powerBank != null && (this.attackerHealerPair.length > 0 || this.quadState != null)) {
       const hostileAttackerCreeps = powerBank.pos.findInRange(FIND_HOSTILE_CREEPS, 16).filter(hostileCreep => {
+        if (this.whitelistedUsernames.includes(hostileCreep.owner.username) === true) {
+          return false
+        }
         return hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(HEAL) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0
       })
       if (hostileAttackerCreeps.length > 0) {
