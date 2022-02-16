@@ -9,10 +9,6 @@
     ],
     "outDir": "dist",
     "baseUrl": "src/",
-    "typeRoots": [
-      "node_modules/@types",
-      "types"
-    ],
     "sourceMap": true,
     "strict": true,
     "experimentalDecorators": true,
