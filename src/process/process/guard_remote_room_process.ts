@@ -190,7 +190,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public static decode(state: GuardRemoteRoomProcessState): GuardRemoteRoomProcess {
-    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo, state.finishCondition, state.stopSpawningReasons)
+    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo, state.finishCondition, state.stopSpawningReasons ?? [])
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: GuardRemoteRoomProcessCreepType, numberOfCreeps: number): GuardRemoteRoomProcess {
