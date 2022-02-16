@@ -1,3 +1,4 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
 import { ProcessId } from "process/process"
@@ -122,14 +123,18 @@ export class ProcessCommand implements ConsoleCommand {
   }
 
   private describeProcess(processInfo: ProcessInfo): CommandExecutionResult {
-    const basicDescription = `${processInfo.processId} ${processInfo.type}, running: ${processInfo.running}`
-    if (processInfo.process.processDescription != null) {
-      return `${basicDescription}\n${processInfo.process.processDescription()}`
-    } else if (processInfo.process.processShortDescription != null) {
-      return `${basicDescription}\n${processInfo.process.processShortDescription()}`
-    } else {
-      return basicDescription
-    }
+    const result = ErrorMapper.wrapLoop((): string => {
+      const basicDescription = `${processInfo.processId} ${processInfo.type}, running: ${processInfo.running}`
+      if (processInfo.process.processDescription != null) {
+        return `${basicDescription}\n${processInfo.process.processDescription()}`
+      } else if (processInfo.process.processShortDescription != null) {
+        return `${basicDescription}\n${processInfo.process.processShortDescription()}`
+      } else {
+        return basicDescription
+      }
+    }, "")()
+
+    return result ?? primitiveErrorDescriptionFor(processInfo)
   }
 
   private listProcess(filterTypeName?: string): CommandExecutionResult {
@@ -170,12 +175,19 @@ export class ProcessCommandRunner {
       getAlignedText("Index", "PID", "Type", "Running", "Description"),
     ]
     const processDescriptions = OperatingSystem.os.listAllProcesses().map((processInfo, index) => ({ processInfo, index })).filter(filter).map(info => {
-      const { processInfo, index } = info
-      const shortDescription = processInfo.process.processShortDescription == null ? "" : processInfo.process.processShortDescription()
-      return getAlignedText(`${index}`, `${processInfo.processId}`, processInfo.type, `${processInfo.running}`, shortDescription)
+      const result = ErrorMapper.wrapLoop((): string => {
+        const { processInfo, index } = info
+        const shortDescription = processInfo.process.processShortDescription == null ? "" : processInfo.process.processShortDescription()
+        return getAlignedText(`${index}`, `${processInfo.processId}`, processInfo.type, `${processInfo.running}`, shortDescription)
+      }, "")()
+      return result ?? primitiveErrorDescriptionFor(info.processInfo)
     })
     results.push(...processDescriptions)
 
     return results.join("\n")
   }
+}
+
+function primitiveErrorDescriptionFor(processInfo: ProcessInfo): string {
+  return `${processInfo.process.constructor.name} ${processInfo.processId}`
 }
