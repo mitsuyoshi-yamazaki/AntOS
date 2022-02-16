@@ -4,3 +4,6 @@
 [submodule "submodules/private"]
 	path = submodules/private
 	url = git@github.com:mitsuyoshi-yamazaki/AntOSSubmodule.git
+[submodule "submodules/traveler"]
+	path = submodules/traveler
+	url = git@github.com:mitsuyoshi-yamazaki/Traveler.git
