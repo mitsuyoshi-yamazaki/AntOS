@@ -39,16 +39,6 @@ export interface Season1143119LabChargerProcessState extends ProcessState {
   stopSpawning: boolean
 }
 
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
-
-// 3Towers full boosted ranged attacker
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W9S24 labs=60f967be396ad538632751b5:XZHO2,60f92938993e4f921d6487aa:XKHO2,6106ee55706bd84a378e1ee7:XLHO2,61073ced8f86f51bf3f51e78:XGHO2")
-
-// tier3 4towers dismantler
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W21S23 labs=61085d0c464512bdf3c72008:XZHO2,61084244e3f522438c8577a0:XZH2O,610836368631b6143cd4cd0c:XLHO2,610d21b256c81947c9e72d78:XKHO2,610d4472e3f5226d9687a54c:XGHO2")
-
-// collect
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 labs=61072e7d8631b61addd464c2:XZHO2,6107707f22b7dd084bded966:XZH2O,6107c31e36a5b7de9159d0de:XLHO2")
 export class Season1143119LabChargerProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
@@ -96,6 +86,26 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     const boostDescriptions: string[] = this.labStates.map(labState => coloredResourceType(labState.boost))
     return `${roomLink(this.parentRoomName)} ${numberOfCreeps}cr ${boostDescriptions.join(",")}`
+  }
+
+  public addBoost(boost: MineralBoostConstant, lab: StructureLab): void {
+    if (this.labStates.some(labState => labState.boost === boost) === true) {
+      PrimitiveLogger.programError(`${this.taskIdentifier} ${this.processId} boost ${coloredResourceType(boost)} is already in the list`)
+      return
+    }
+    this.labStates.push({
+      boost,
+      labId: lab.id,
+    })
+  }
+
+  public removeBoost(boost: MineralBoostConstant): void {
+    const index = this.labStates.findIndex(labState => labState.boost === boost)
+    if (index < 0) {
+      PrimitiveLogger.programError(`${this.taskIdentifier} ${this.processId} boost ${coloredResourceType(boost)} is not in the list`)
+      return
+    }
+    this.labStates.splice(index, 1)
   }
 
   public runOnTick(): void {
