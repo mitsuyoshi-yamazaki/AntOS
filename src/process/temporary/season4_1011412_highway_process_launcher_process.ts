@@ -189,7 +189,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms", "set_power_harvesting_enabled", "set_deposit_harvesting_enabled"]
+    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms", "set_power_harvesting_enabled", "set_deposit_harvesting_enabled", "launch_target"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -232,12 +232,45 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         this.settings.depositHarvestingEnabled = enabled
         return `set deposit harvesting enabled ${enabled} (from ${oldValue})`
       }
+      case "launch_target":
+        return this.launchTarget(components)
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private launchTarget(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const targetId = listArguments.gameObjectId(0, "target id").parse()
+    const result = ((): { parentRoomName: RoomName, targetInfo: TargetInfo} | null => {
+      for (const base of this.bases) {
+        for (const targetRoomName of base.targetRoomNames) {
+          const observeResults = this.observeResults[targetRoomName]
+          if (observeResults == null) {
+            continue
+          }
+          for (const target of observeResults.targets) {
+            if (target.targetId === targetId) {
+              return {
+                parentRoomName: base.roomName,
+                targetInfo: target,
+              }
+            }
+          }
+        }
+      }
+      return null
+    })()
+
+    if (result == null) {
+      throw `no target with ID ${targetId}`
+    }
+    this.launchHarvestProcess(result.targetInfo, result.parentRoomName)
+    return `launched: ${roomLink(result.parentRoomName)}\n${targetDescription(result.targetInfo).join("\n")}`
   }
 
   /** @throws */
