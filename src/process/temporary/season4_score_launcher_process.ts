@@ -4,12 +4,15 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { getHighwayRooms, Highway, RoomName } from "utility/room_name"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { coloredResourceType, coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, describeTime, roomLink } from "utility/log"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { Timestamp } from "utility/timestamp"
 import { Environment } from "utility/environment"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { } from "./season4_observer_manager"
+import { Season4ObserverManager } from "./season4_observer_manager"
+import { Position } from "prototype/room_position"
+import { directionDescription, GameConstants } from "utility/constants"
+import { isCommodityConstant } from "utility/resource"
 
 declare const COMMODITY_SCORE: { [commodityType: string]: number }
 
@@ -19,29 +22,39 @@ ProcessDecoder.register("Season4ScoreLauncherProcess", state => {
 
 type ConvoyDirection = TOP | BOTTOM | LEFT | RIGHT
 
+type FirstLookConvoyCreep = {
+  readonly observedAt: Timestamp
+  readonly commodityType: CommodityConstant
+  readonly localPosition: Position
+  readonly roomName: RoomName
+}
 type ConvoyCreepInfo = {
-  readonly id: Id<Creep>
+  readonly observedAt: Timestamp
   readonly commodityType: CommodityConstant
   readonly roomName: RoomName
   readonly direction: ConvoyDirection
-  readonly destinationRoomName: RoomName
+  readonly estimatedDespawnTime: Timestamp
 }
 
 type ObserveLog = {
-  readonly creepId: Id<Creep>
   readonly observedAt: Timestamp
   readonly commodityType: CommodityConstant
+  readonly direction: ConvoyDirection | "unknown"
   readonly roomName: RoomName
 }
 
 type HighwayObservingInfo = {
-  readonly highway: Highway
-  readonly roomNames: RoomName[]
+  readonly observerRoomName: RoomName
+  readonly direction: "vertical" | "horizontal"
+  readonly startRoomName: RoomName
+  readonly endRoomName: RoomName
 }
 
 export interface Season4ScoreLauncherProcessState extends ProcessState {
   readonly observingHighways: HighwayObservingInfo[]
-  readonly observeLogs: ObserveLog[]
+  readonly firstLookConvoyCreeps: { [creepId: string]: FirstLookConvoyCreep }
+  readonly convoyCreeps: {[creepId: string]: ConvoyCreepInfo}
+  readonly creepObserveLogs: ObserveLog[]
 }
 
 export class Season4ScoreLauncherProcess implements Process, Procedural, MessageObserver {
@@ -51,9 +64,15 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly observingHighways: HighwayObservingInfo[],
-    private readonly observeLogs: ObserveLog[],
+    private readonly firstLookConvoyCreeps: { [creepId: string]: FirstLookConvoyCreep },
+    private readonly convoyCreeps: { [creepId: string]: ConvoyCreepInfo },
+    private readonly creepObserveLogs: ObserveLog[],
   ) {
     this.taskIdentifier = this.constructor.name
+
+    observingHighways.forEach(highway => {
+      this.addObserveRequest(highway)
+    })
   }
 
   public encode(): Season4ScoreLauncherProcessState {
@@ -62,16 +81,18 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       l: this.launchTime,
       i: this.processId,
       observingHighways: this.observingHighways,
-      observeLogs: this.observeLogs,
+      firstLookConvoyCreeps: this.firstLookConvoyCreeps,
+      convoyCreeps: this.convoyCreeps,
+      creepObserveLogs: this.creepObserveLogs,
     }
   }
 
   public static decode(state: Season4ScoreLauncherProcessState): Season4ScoreLauncherProcess {
-    return new Season4ScoreLauncherProcess(state.l, state.i, state.observingHighways, state.observeLogs)
+    return new Season4ScoreLauncherProcess(state.l, state.i, state.observingHighways, state.firstLookConvoyCreeps, state.convoyCreeps, state.creepObserveLogs)
   }
 
   public static create(processId: ProcessId): Season4ScoreLauncherProcess {
-    return new Season4ScoreLauncherProcess(Game.time, processId, [], [])
+    return new Season4ScoreLauncherProcess(Game.time, processId, [], {}, {}, [])
   }
 
   public processShortDescription(): string {
@@ -112,26 +133,45 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   /** @throws */
   private addHighway(args: string[]): string {
     const listArguments = new ListArguments(args)
-    const highwayRoomCoordinate = listArguments.roomCoordinate(0, "room name on highway").parse()
+    const observerRoomResource = listArguments.ownedRoomResource(0, "observer room name").parse()
+    const observerRoomName = observerRoomResource.room.name
+    if (observerRoomResource.activeStructures.observer == null) {
+      throw `${roomLink(observerRoomName)} has no observer`
+    }
+
+    const highwayRoomCoordinate = listArguments.roomCoordinate(1, "room name on highway").parse()
     const highwayRoomName = highwayRoomCoordinate.roomName
     const detailedCoordinate = highwayRoomCoordinate.detailedCoordinate()
     if (detailedCoordinate.case !== "highway") {
       throw `${roomLink(highwayRoomName)} is not on a highway (${detailedCoordinate.case})`
     }
     const targetHighway = detailedCoordinate.highway
-    if (this.observingHighways.some(info => info.highway.startRoomName === targetHighway.startRoomName && info.highway.endRoomName === targetHighway.endRoomName) === true) {
+    const highwayRoomNames = getHighwayRooms(targetHighway)
+    const startRoomName = highwayRoomNames[0]
+    const endRoomName = highwayRoomNames[highwayRoomNames.length - 1]
+
+    if (startRoomName == null || endRoomName == null || startRoomName === endRoomName) {
+      throw `Highway ${highwayDescription(targetHighway)} lack of rooms (${highwayRoomNames.map(r => roomLink(r)).join(",")})`
+    }
+
+    if (this.observingHighways.some(info => info.startRoomName === startRoomName && info.endRoomName === endRoomName) === true) {
       throw `Highway ${highwayDescription(targetHighway)} is already been observed`
     }
 
-    const roomNames = getHighwayRooms(targetHighway)
-    if (roomNames.length <= 0) {
-      throw `Highway ${highwayDescription(targetHighway)} has no rooms`
+    const startRoomObserveDistance = Game.map.getRoomLinearDistance(observerRoomName, startRoomName)
+    const endRoomObserveDistance = Game.map.getRoomLinearDistance(observerRoomName, endRoomName)
+    if (startRoomObserveDistance > 10 || endRoomObserveDistance > 10) {
+      throw `Highway ${highwayDescription(targetHighway)} is not in observer range. ${roomLink(observerRoomName)} =${startRoomObserveDistance}= ${roomLink(startRoomName)}, ${roomLink(observerRoomName)} =${endRoomObserveDistance}= ${roomLink(endRoomName)}`
     }
-    this.observingHighways.push({
-      highway: targetHighway,
-      roomNames,
-    })
 
+    const targetHighwayInfo: HighwayObservingInfo = {
+      observerRoomName,
+      direction: targetHighway.direction,
+      startRoomName,
+      endRoomName
+    }
+    this.addObserveRequest(targetHighwayInfo)
+    this.observingHighways.push(targetHighwayInfo)
     return `Added ${highwayDescription(targetHighway)}`
   }
 
@@ -139,10 +179,10 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     if (this.observingHighways.length <= 0) {
       return "no observe targets"
     }
-    if (this.observeLogs.length <= 0) {
+    if (this.creepObserveLogs.length <= 0) {
       return "no convoy observed"
     }
-    return this.observeLogs.map(log => `- ${logDescription(log)}`).join("\n")
+    return this.creepObserveLogs.map(log => `- ${logDescription(log)}`).join("\n")
   }
 
   public runOnTick(): void {
@@ -151,60 +191,110 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       return
     }
 
-    if ((Game.time % 17) !== 3) {
-      return
-    }
+    // if ((Game.time % 17) !== 3) {
+    //   return
+    // }
 
     this.observingHighways.forEach(highwayInfo => {
-      highwayInfo.roomNames.forEach(roomName => {
-        const room = Game.rooms[roomName]
-        if (room == null) {
-          return
-        }
-        this.observeRoom(room)
-      })
+      this.observeRoom(highwayInfo.startRoomName)
+      this.observeRoom(highwayInfo.endRoomName)
     })
   }
 
-  private observeRoom(room: Room): void {
+  private observeRoom(roomName: RoomName): void {
+    const room = Game.rooms[roomName]
+    if (room == null) {
+      return
+    }
     const npcCreeps = room.find(FIND_HOSTILE_CREEPS, { filter: { owner: { username: SYSTEM_USERNAME } } })
     if (npcCreeps.length <= 0) {
       return
     }
 
+    const time = Game.time
     npcCreeps.forEach(creep => {
-      const log = this.convoyCreepInfo(creep)
-      if (log == null) {
+      if (this.firstLookConvoyCreeps[creep.id] != null) {
         return
       }
-      this.addObserveLog(log)
+      const storedResourceTypes = Array.from(Object.keys(creep.store)) as ResourceConstant[]
+      const resourceType = storedResourceTypes[0]
+      if (storedResourceTypes.length !== 1 || resourceType == null || !isCommodityConstant(resourceType)) {
+        return
+      }
+      const score = COMMODITY_SCORE[resourceType]
+      if (score == null || score <= 0) {
+        return
+      }
+      this.firstLookConvoyCreeps[creep.id] = {
+        observedAt: time,
+        commodityType: resourceType,
+        localPosition: { x: creep.pos.x, y: creep.pos.y },
+        roomName: creep.room.name,
+      }
     })
   }
 
-  private convoyCreepInfo(creep: Creep): ObserveLog | null {
-    const storedResources = Array.from(Object.entries(creep.store))
-    if (storedResources.length !== 1 || storedResources[0] == null) {
-      return null
-    }
-    // TODO: 得点されていた（= 得点する余地が少ない）場合の処理
-    const resourceType = storedResources[0][0]
-    const score = COMMODITY_SCORE[resourceType]
-    if (score == null || score <= 0) {
-      return null
-    }
-    return {
-      creepId: creep.id,
-      observedAt: Game.time,
-      commodityType: resourceType as CommodityConstant,
-      roomName: creep.room.name,
-    }
-  }
+  // private convoyCreepInfo(creep: Creep): ObserveLog | null {
+  //   const storedResources = Array.from(Object.entries(creep.store))
+  //   if (storedResources.length !== 1 || storedResources[0] == null) {
+  //     return null
+  //   }
+  //   // TODO: 得点されていた（= 得点する余地が少ない）場合の処理
+  //   const resourceType = storedResources[0][0]
+  //   const score = COMMODITY_SCORE[resourceType]
+  //   if (score == null || score <= 0) {
+  //     return null
+  //   }
+  //   return {
+  //     creepId: creep.id,
+  //     observedAt: Game.time,
+  //     commodityType: resourceType as CommodityConstant,
+  //     roomName: creep.room.name,
+  //   }
+  // }
 
-  private addObserveLog(log: ObserveLog): void {
-    if (this.observeLogs.some(observeLog => observeLog.creepId === log.creepId) === true) {
+  private gabageCollection(): void {
+    const tooOldTimestamp = Game.time - GameConstants.creep.life.lifeTime
+    if (tooOldTimestamp < 0) {
       return
     }
-    this.observeLogs.push(log)
+
+    const logs: ObserveLog[] = []
+
+    const fitstLookConvoyCreeps = Array.from(Object.entries(this.firstLookConvoyCreeps))
+    fitstLookConvoyCreeps.forEach(([creepId, firstLook]) => {
+      if (firstLook.observedAt < tooOldTimestamp) {
+        return
+      }
+
+      logs.push({
+        observedAt: firstLook.observedAt,
+        commodityType: firstLook.commodityType,
+        direction: "unknown",
+        roomName: firstLook.roomName,
+      })
+      delete this.firstLookConvoyCreeps[creepId]
+    })
+
+    const convoyCreeps = Array.from(Object.entries(this.convoyCreeps))
+    convoyCreeps.forEach(([creepId, convoyCreep]) => {
+      if (convoyCreep.observedAt < tooOldTimestamp) {
+        return
+      }
+
+      logs.push({
+        observedAt: convoyCreep.observedAt,
+        commodityType: convoyCreep.commodityType,
+        direction: convoyCreep.direction,
+        roomName: convoyCreep.roomName,
+      })
+      delete this.convoyCreeps[creepId]
+    })
+  }
+
+  private addObserveRequest(highwayInfo: HighwayObservingInfo): void {
+    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.startRoomName, "long", 3)
+    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.endRoomName, "long", 3)
   }
 }
 
@@ -213,12 +303,12 @@ function highwayDescription(highway: Highway): string {
 }
 
 function logDescription(log: ObserveLog): string {
-  const timestamp = ((): string => {
-    const duration = Game.time - log.observedAt
-    if (duration < 1000) {
-      return `${duration}ticks ago`
+  const timestamp = describeTime(Game.time - log.observedAt)
+  const direction = ((): string => {
+    if (typeof log.direction === "string") {
+      return log.direction
     }
-    return `${Math.floor(duration / 1000)}k ticks ago`
+    return directionDescription(log.direction)
   })()
-  return `${coloredResourceType(log.commodityType)} ${timestamp} at ${roomLink(log.roomName)}`
+  return `${coloredResourceType(log.commodityType)} ${timestamp} ago ${direction} in ${roomLink(log.roomName)}`
 }
