@@ -19,7 +19,6 @@ import { BoostLabInfo, OwnedRoomInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("Season1143119LabChargerProcess", state => {  // FixMe: Migration
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
@@ -90,8 +89,6 @@ export class BoostLabChargerProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    OperatingSystem.os.killProcess(this.processId)
-
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)

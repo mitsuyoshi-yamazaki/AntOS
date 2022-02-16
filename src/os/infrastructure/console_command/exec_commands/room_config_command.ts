@@ -314,27 +314,6 @@ function toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map
   return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
 }
 
-// TODO: 消す
-// function disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): string {
-//   const room = Game.rooms[roomName]
-//   if (room == null) {
-//     return `${roomLink(roomName)} no found`
-//   }
-//   if (roomInfo.researchLab == null) {
-//     return `roomInfo.researchLab is null ${roomLink(roomName)}`
-//   }
-
-//   if (roomInfo.config?.boostLabs == null) {
-//     return `no boost labs in ${roomLink(roomName)}`
-//   }
-
-//   const oldValue = [...roomInfo.config.boostLabs]
-//   roomInfo.researchLab.outputLabs.push(...oldValue)
-//   roomInfo.config.boostLabs = []
-
-//   return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
-// }
-
 /** throws */
 function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {
   const room = roomResource.room
