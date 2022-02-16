@@ -18,7 +18,7 @@ import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { CommodityConstant, DepositConstant, isResourceConstant } from "utility/resource"
+import { isResourceConstant, Tier1CommodityConstants, Tier2CommodityConstants, Tier3CommodityConstants, Tier4CommodityConstants, Tier5CommodityConstants } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
@@ -274,8 +274,11 @@ export class Season1838855DistributorProcess implements Process, Procedural, Mes
       RESOURCE_ENERGY,
       RESOURCE_POWER,
       RESOURCE_OPS,
-      ...DepositConstant,
-      ...CommodityConstant,
+      ...Tier1CommodityConstants,
+      ...Tier2CommodityConstants,
+      ...Tier3CommodityConstants,
+      ...Tier4CommodityConstants,
+      ...Tier5CommodityConstants,
     ]
 
     const creepResourceType = Object.keys(creep.store)[0]
@@ -365,7 +368,7 @@ export class Season1838855DistributorProcess implements Process, Procedural, Mes
       }
       if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 20000) {
         processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
-        return null
+        return RunApiTask.create(TransferEnergyApiWrapper.create(energySource))
       }
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
     }

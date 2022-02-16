@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName, roomTypeOf } from "utility/room_name"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, describeTime, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -22,6 +22,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { avoidSourceKeeper } from "script/move_to_room"
+import { Timestamp } from "utility/timestamp"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)
@@ -29,6 +30,8 @@ ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
 
 const fleeRange = 4
 const keeperLairSpawnTime = 15
+const noMineralReason = "no mineral"
+const invaderCoreReason = "invader core"
 
 export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
   roomName: RoomName
@@ -37,6 +40,7 @@ export interface Season4332399SKMineralHarvestProcessState extends ProcessState 
 
   mineralType: MineralConstant | null
   stopSpawnReason: string[]
+  regenerateBy: Timestamp | null
 }
 
 /** RCL7以上 */
@@ -66,11 +70,12 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
     private stopSpawnReason: string[],
     private mineralType: MineralConstant | null,
+    private regenerateBy: Timestamp | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -86,15 +91,16 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       waypoints: this.waypoints,
       stopSpawnReason: this.stopSpawnReason,
       mineralType: this.mineralType,
+      regenerateBy: this.regenerateBy,
     }
   }
 
   public static decode(state: Season4332399SKMineralHarvestProcessState): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType)
+    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType, state.regenerateBy)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null)
+    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null, null)
   }
 
   public processShortDescription(): string {
@@ -105,6 +111,10 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     ]
     if (this.stopSpawnReason.length > 0) {
       descriptions.push(`spawn stopped: ${this.stopSpawnReason.join(", ")}`)
+    }
+    if (this.regenerateBy != null && this.regenerateBy > Game.time) {
+      const regenerateIn = this.regenerateBy - Game.time
+      descriptions.push(`regenerate in ${describeTime(regenerateIn)}`)
     }
     return descriptions.join(" ")
   }
@@ -129,6 +139,10 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
   }
 
+  public harvestingMineralType(): MineralConstant | null {
+    return this.mineralType
+  }
+
   public runOnTick(): void {
     const roomResources = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResources == null) {
@@ -136,12 +150,31 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     }
 
     const targetRoom = Game.rooms[this.targetRoomName]
-    if ((Game.time % 43) === 3 && targetRoom != null && targetRoom.find(FIND_HOSTILE_STRUCTURES, {filter:{structureType: STRUCTURE_INVADER_CORE}}).length > 0) {
-      this.addStopSpawnReason("invader core")
+    if (targetRoom != null) {
+      if (targetRoom.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_INVADER_CORE } }).length > 0) {
+        this.addStopSpawnReason(invaderCoreReason)
+      } else {
+        if (this.stopSpawnReason.length > 0) {
+          const index = this.stopSpawnReason.findIndex(reason => reason === invaderCoreReason)
+          if (index >= 0) {
+            this.stopSpawnReason.splice(index, 1)
+          }
+        }
+      }
     }
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
-    if (mineral != null && mineral.mineralAmount <= 0) {
-      this.addStopSpawnReason("no mineral")
+    if (mineral != null) {
+      if (mineral.mineralAmount <= 0) {
+        if (mineral.ticksToRegeneration != null) {
+          this.regenerateBy = Game.time + mineral.ticksToRegeneration
+        }
+        this.addStopSpawnReason(noMineralReason)
+      } else {
+        const index = this.stopSpawnReason.indexOf(noMineralReason)
+        if (index >= 0) {
+          this.stopSpawnReason.splice(index, 1)
+        }
+      }
     }
     if (mineral != null) {
       this.mineralType = mineral.mineralType
@@ -167,6 +200,13 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       }
       PrimitiveLogger.programError(`${this.identifier} unknown creep type ${creep.name}`)
     })
+
+    if (this.stopSpawnReason.length > 0 && this.regenerateBy != null && Game.time > this.regenerateBy) {
+      const index = this.stopSpawnReason.indexOf(noMineralReason)
+      if (index >= 0) {
+        this.stopSpawnReason.splice(index, 1)
+      }
+    }
 
     if (this.stopSpawnReason.length <= 0) {
       const harvestingPower = OperatingSystem.os.listAllProcesses().some(processInfo => {

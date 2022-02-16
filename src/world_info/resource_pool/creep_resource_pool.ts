@@ -53,9 +53,8 @@ export class CreepPool implements ResourcePoolType<Creep> {
         if (creep.memory.i != taskIdentifier) {
           return false
         }
-        return true
+        return filter(creep)
       })
-      .filter(filter)
       .length
   }
 
@@ -69,9 +68,8 @@ export class CreepPool implements ResourcePoolType<Creep> {
         if (creep.memory.i != taskIdentifier) {
           return false
         }
-        return true
+        return filter(creep)
       })
-      .filter(filter)
   }
 
   /**
@@ -90,9 +88,8 @@ export class CreepPool implements ResourcePoolType<Creep> {
         if (creep.memory.i != taskIdentifier) {
           return false
         }
-        return true
+        return filter(creep)
       })
-      .filter(filter)
 
     const filteredCreeps = ((): Creep[] => {
       switch (priority) {

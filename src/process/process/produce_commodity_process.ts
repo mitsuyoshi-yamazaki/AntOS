@@ -30,6 +30,7 @@ ProcessDecoder.register("ProduceCommodityProcess", state => {
 })
 
 const noProduct = "no products"
+const notOperating = "not operating"
 
 type ProductInfo = {
   readonly commodityType: CommodityConstant
@@ -198,11 +199,19 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       this.addSpawnStopReason(noProduct)
     }
 
-    const factory = Game.getObjectById(this.factoryId)
-    if (factory == null) {
+    const retrievedFactory = Game.getObjectById(this.factoryId)
+    if (retrievedFactory == null) {
       this.addSpawnStopReason("no factory")
       processLog(this, `No factory in ${roomLink(this.roomName)}`)
       return
+    }
+    const factory = retrievedFactory
+
+    const notOperatingReasonIndex = this.stopSpawningReasons.indexOf(notOperating)
+    if (notOperatingReasonIndex >= 0) {
+      if (factory.effects != null && factory.effects.some(effect => effect.effect === PWR_OPERATE_FACTORY) === true) {
+        this.stopSpawningReasons.splice(notOperatingReasonIndex, 1)
+      }
     }
 
     const terminal = roomResource.activeStructures.terminal
@@ -211,7 +220,17 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       return
     }
 
-    const hasEnoughEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) > 70000
+    const minimumEnergy = ((): number => {
+      const defaultMinimumEnergy = 70000
+      if (factory.level == null) {
+        return defaultMinimumEnergy
+      }
+      if (factory.level <= 0) {
+        return defaultMinimumEnergy
+      }
+      return 60000
+    })()
+    const hasEnoughEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) > minimumEnergy
     const shouldSpawn = ((): boolean => {
       if (hasEnoughEnergy !== true) {
         return false
@@ -238,7 +257,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
 
     if (terminal != null && product != null) {
       if (hasEnoughEnergy === true) {
-        this.produce(factory, product)
+        this.produce(factory, product, roomResource)
       }
 
       World.resourcePools.assignTasks(
@@ -360,7 +379,7 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
     return resource.resourceType
   }
 
-  private produce(factory: StructureFactory, product: ProductInfo): void {
+  private produce(factory: StructureFactory, product: ProductInfo, roomResource: OwnedRoomResource): void {
     const result = factory.produce(product.commodityType)
     switch (result) {
     case OK:
@@ -378,14 +397,22 @@ export class ProduceCommodityProcess implements Process, Procedural, MessageObse
       processLog(this, "factory is full")
       break
 
-    case ERR_BUSY:
     case ERR_INVALID_TARGET:
-      this.addSpawnStopReason(`invalid product (${coloredResourceType(product.commodityType)} ${result})`)
+    case ERR_BUSY:
+      this.addSpawnStopReason(notOperating)
+      roomResource.roomInfoAccessor.config.enablePower(PWR_OPERATE_FACTORY)
       break
     }
   }
 
   private addSpawnStopReason(reason: string): void {
+    if (reason === noProduct) {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource != null) {
+        roomResource.roomInfoAccessor.config.disablePower(PWR_OPERATE_FACTORY)
+      }
+    }
+
     if (this.stopSpawningReasons.includes(reason) === true) {
       return
     }

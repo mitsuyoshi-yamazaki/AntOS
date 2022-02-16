@@ -131,6 +131,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
 
     if (hauler == null) {
       if (this.haulerName != null) {
+        OperatingSystem.os.killProcess(this.processId)
         return
       }
 

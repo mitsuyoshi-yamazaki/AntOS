@@ -126,7 +126,7 @@ export const RoomResources: RoomResourcesInterface = {
   // ---- Rooms ---- //
   getClaimableRoomCount(): number {
     const roomCountInShard = this.getOwnedRoomResources().length
-    const gclFarmReservationCount = GclFarmResources.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length
+    const gclFarmReservationCount = 0 // GclFarmResources.gclFarmRoomNames().filter(roomName => this.getOwnedRoomResource(roomName) != null).length // FixMe: 予約されている部屋数と運用されている部屋数が二重に計上されている
 
     if (Environment.hasMultipleShards !== true) {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)

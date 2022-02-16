@@ -10,7 +10,7 @@ export type RoomType = RoomTypeNormal | RoomTypeHighway | RoomTypeHighwayCrossin
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
-type Highway = {
+export type Highway = {
   readonly direction: "vertical" | "horizontal"
   readonly startRoomName: RoomName  // top/left
   readonly endRoomName: RoomName  // bottom/right
@@ -432,5 +432,25 @@ function yDirection(direction: RoomCoordinateDirection): "N" | "S" {
   case "SE":
   case "SW":
     return "S"
+  }
+}
+
+/**
+ * highway crossing以外の部屋
+ */
+export function getHighwayRooms(highway: Highway): RoomName[] {
+  const startRoomCoordinate = RoomCoordinate.parse(highway.startRoomName)
+  const endRoomCoordinate = RoomCoordinate.parse(highway.endRoomName)
+
+  if (startRoomCoordinate == null || endRoomCoordinate == null) {
+    return []
+  }
+
+  const roomCount = 9
+  switch (highway.direction) {
+  case "vertical":
+    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(0, index + 1).roomName)
+  case "horizontal":
+    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(index + 1, 0).roomName)
   }
 }

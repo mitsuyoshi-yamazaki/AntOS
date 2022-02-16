@@ -266,7 +266,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
       this.spawnPowerCreep(powerCreep, powerSpawn)
       create.state = "spawned"
       this.runNextTick = true
-      return { executed: true }
+      return { executed: false }
     }
 
     case "spawned": {

@@ -25,7 +25,6 @@ export interface MovePowerCreepProcessState extends ProcessState {
   renewed: boolean
 }
 
-// Game.io("launch -l MovePowerCreepProcess from_room_name=W6S29 to_room_name=W17S11 waypoints=W6S30,W10S30,W10S10,W17S10 power_creep_name=power_creep_0002")
 export class MovePowerCreepProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier

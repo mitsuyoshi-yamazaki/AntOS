@@ -119,7 +119,7 @@ const roadRouteCost = {
 /**
  * - 途中の部屋までRoadが引かれている場合はある程度良い経路を選択する
  */
-export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number }): Result<RoomPosition[], string> {
+export function placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number, disableRouteWaypoint?: boolean }): Result<RoomPosition[], string> {
   const calculator = new RemoteHarvesterRouteCalculator()
   return calculator.placeRoadConstructionMarks(startPosition, sourcePosition, codename, options)
 }
@@ -145,7 +145,10 @@ class RemoteHarvesterRouteCalculator {
     return positions
   }
 
-  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number }): Result<RoomPosition[], string> {
+  /**
+   * @param options.disableRouteWaypoint 途中のRoomまで道が引かれている場合、その道から先の経路のみしか探索しない機能を無効化する
+   */
+  public placeRoadConstructionMarks(startPosition: RoomPosition, sourcePosition: RoomPosition, codename: string, options?: { dryRun?: boolean, range?: number, disableRouteWaypoint?: boolean }): Result<RoomPosition[], string> {
     const sourceRange = options?.range ?? 1
 
     const shortestRoomRoutes = calculateInterRoomShortestRoutes(startPosition.roomName, sourcePosition.roomName)
@@ -183,11 +186,13 @@ class RemoteHarvesterRouteCalculator {
     })
 
     const shortestRoute = ((): RoomPosition[] | string => {
-      positionsByRoutes.sort((lhs, rhs) => {
-        return lhs.route.length - rhs.route.length
-      })
-      if (positionsByRoutes[0] != null) {
-        return positionsByRoutes[0].route
+      if (options?.disableRouteWaypoint !== true) {
+        positionsByRoutes.sort((lhs, rhs) => {
+          return lhs.route.length - rhs.route.length
+        })
+        if (positionsByRoutes[0] != null) {
+          return positionsByRoutes[0].route
+        }
       }
 
       const alternativeRouteResult = calculateRoadPositionsFor(startPosition, sourcePosition)

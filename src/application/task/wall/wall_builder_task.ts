@@ -98,12 +98,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     }
 
     const repairWallFilter = (): (wall: StructureWall | StructureRampart) => boolean => {
-      const excludedIds = ((): Id<StructureWall | StructureRampart>[] => {
-        if (roomResource.roomInfo.config?.noRepairWallIds != null) {
-          return [...roomResource.roomInfo.config?.noRepairWallIds]
-        }
-        return []
-      })()
+      const excludedIds = roomResource.roomInfoAccessor.config.getNoRepairWallIds()
 
       const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : roomResource.roomInfoAccessor.config.wallMaxHits
 
@@ -145,14 +140,15 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
 
         if (hasWalls === true) {
           if ((Game.time % 3) === 1) {
-            const defendStructureTypes: StructureConstant[] = [
+            const vitalStructureTypes: StructureConstant[] = [
               STRUCTURE_SPAWN,
               STRUCTURE_STORAGE,
               STRUCTURE_TERMINAL,
               STRUCTURE_TOWER,
+              STRUCTURE_FACTORY,
             ]
             for (const structure of roomResource.room.find(FIND_MY_STRUCTURES)) {
-              if (defendStructureTypes.includes(structure.structureType) !== true) {
+              if (vitalStructureTypes.includes(structure.structureType) !== true) {
                 continue
               }
               roomResource.room.createConstructionSite(structure.pos, STRUCTURE_RAMPART)

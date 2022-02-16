@@ -1,9 +1,11 @@
+import { OperatingSystem } from "os/os"
+import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { describePosition } from "prototype/room_position"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { powerName } from "utility/power"
-import { isMineralCompoundConstant } from "utility/resource"
+import { isMineralBoostConstant, isMineralCompoundConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { KeywordArguments } from "../utility/keyword_argument_parser"
 import { ListArguments } from "../utility/list_argument_parser"
@@ -19,11 +21,13 @@ type NumberAccessorCommands = typeof numberAccessorCommands[number]
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
-  const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "disable_boost_labs", "toggle_auto_attack"]
+  const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "toggle_auto_attack"]
   const commandList: string[] = [
     "help",
     "waiting_position",
     "powers",
+    "boosts",
+    "set_remote_room_path_cache_enabled",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -43,6 +47,10 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return waitingPosition(roomResource, args)
   case "powers":
     return powers(roomResource, args)
+  case "boosts":
+    return boosts(roomResource, args)
+  case "set_remote_room_path_cache_enabled":
+    return setRemoteRoomPathCacheEnabled(roomResource, args)
 
   case "mineral_max_amount":
   case "construction_interval":
@@ -58,14 +66,132 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   case "research_compounds":
     return configureResearchCompounds(roomName, roomInfo, parseProcessArguments(args))
   case "refresh_research_labs":
-    return refreshResearchLabs(roomName, roomInfo, parseProcessArguments(args))
-  case "disable_boost_labs":
-    return disableBoostLabs(roomName, roomInfo)
+    return refreshResearchLabs(roomName, roomResource, parseProcessArguments(args))
+  // case "disable_boost_labs": // TODO: 消す
+  //   return disableBoostLabs(roomName, roomInfo)
   case "toggle_auto_attack":
     return toggleAutoAttack(roomName, roomInfo, parseProcessArguments(args))
   default:
     throw `Invalid command ${command}, see "help"`
   }
+}
+
+const boostCommandActions = [
+  "add",
+  "remove",
+] as const
+type BoostCommandAction = typeof boostCommandActions[number]
+function isBoostCommandAction(arg: string): arg is BoostCommandAction {
+  if ((boostCommandActions as (readonly string[])).includes(arg) === true) {
+    return true
+  }
+  return false
+}
+
+/** @throws */
+function boosts(roomResource: OwnedRoomResource, args: string[]): string {
+  const roomName = roomResource.room.name
+  const listArguments = new ListArguments(args)
+  const action = listArguments.typedString(0, "action", "BoostCommandAction", isBoostCommandAction).parse()
+
+  switch (action) {
+  case "add": {
+    const boost = listArguments.boostCompoundType(1, "boost").parse()
+    const process = ((): BoostLabChargerProcess => {
+      const runningProcess = labChargerProcessFor(roomName)
+      if (runningProcess != null) {
+        return runningProcess
+      }
+      return OperatingSystem.os.addProcess(null, processId => BoostLabChargerProcess.create(processId, roomName))
+    })()
+
+    return ((): string => {
+      const result = roomResource.roomInfoAccessor.addBoosts([boost])
+      switch (result.resultType) {
+      case "succeeded": {
+        const successMessages: string[] = [
+          `added ${coloredResourceType(boost)}, process: ${process.constructor.name} ${process.processId}`,
+          ...result.value.newBoostLabs.map(labInfo => `- ${coloredResourceType(labInfo.boost)}: ${labInfo.labId}`)
+        ]
+        if (result.value.removedFromResearchOutputLabs.length > 0) {
+          successMessages.push("removed from research outputs:")
+          successMessages.push(...result.value.removedFromResearchOutputLabs.map(lab => `- ${lab.id} (${lab.pos})`))
+        }
+        return successMessages.join("\n")
+      }
+      case "failed":
+        throw result.reason
+      }
+    })()
+  }
+
+  case "remove": {
+    const boost = ((): MineralBoostConstant | "all" => {
+      const arg = listArguments.string(1, "boost").parse()
+      if (isMineralBoostConstant(arg)) {
+        return arg
+      }
+      if (arg === "all") {
+        return arg
+      }
+      throw `boost argument should be either MineralBoostConstant or "all" (${arg} given)`
+    })()
+
+    if (boost === "all") {
+      const { addedToResearchOutputLabIds, removedBoosts } = roomResource.roomInfoAccessor.removeAllBoosts()
+      const results: string[] = [
+        `removed ${removedBoosts.map(boost => coloredResourceType(boost)).join(",")}`,
+      ]
+      if (addedToResearchOutputLabIds.length > 0) {
+        results.push("added to research outputs:")
+        results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
+      }
+      return results.join("\n")
+    }
+
+    const results: string[] = [
+      `removed ${coloredResourceType(boost)}`
+    ]
+    const result = roomResource.roomInfoAccessor.removeBoosts([boost])
+    switch (result.resultType) {
+    case "succeeded": {
+      const { addedToResearchOutputLabIds } = result.value
+      if (addedToResearchOutputLabIds.length > 0) {
+        results.push("added to research outputs:")
+        results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
+      }
+      return results.join("\n")
+    }
+
+    case "failed":
+      throw result.reason
+    }
+  }
+  }
+}
+
+function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
+  for (const processInfo of OperatingSystem.os.listAllProcesses()) {
+    const process = processInfo.process
+    if (!(process instanceof BoostLabChargerProcess)) {
+      continue
+    }
+    if (process.parentRoomName !== roomName) {
+      continue
+    }
+    return process
+  }
+  return null
+}
+
+/** @throws */
+function setRemoteRoomPathCacheEnabled(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const remoteRoomName = listArguments.roomName(0, "remote room name").parse()
+  const enabled = listArguments.boolean(1, "enabled").parse()
+  roomResource.roomInfoAccessor.setRemoteRoomPathCachingEnabled(remoteRoomName, enabled)
+
+  return "set"
 }
 
 /** @throws */
@@ -155,8 +281,13 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
     return `positions ${positions.map(position => `(${describePosition(position)})`).join(", ")} set`
   }
 
-  case "show":
-    throw "not implemented yet"
+  case "show": {
+    const waitingPositions = roomResource.roomInfoAccessor.config.getAllWaitingPositions()
+    if (waitingPositions.length <= 0) {
+      return "no waiting positions"
+    }
+    return waitingPositions.map(position => `${position}`).join(", ")
+  }
 
   default:
     throw `Invalid action ${action}, actions: set, show`
@@ -183,32 +314,31 @@ function toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map
   return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
 }
 
-function disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): string {
-  const room = Game.rooms[roomName]
-  if (room == null) {
-    return `${roomLink(roomName)} no found`
-  }
-  if (roomInfo.researchLab == null) {
-    return `roomInfo.researchLab is null ${roomLink(roomName)}`
-  }
+// TODO: 消す
+// function disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): string {
+//   const room = Game.rooms[roomName]
+//   if (room == null) {
+//     return `${roomLink(roomName)} no found`
+//   }
+//   if (roomInfo.researchLab == null) {
+//     return `roomInfo.researchLab is null ${roomLink(roomName)}`
+//   }
 
-  if (roomInfo.config?.boostLabs == null) {
-    return `no boost labs in ${roomLink(roomName)}`
-  }
+//   if (roomInfo.config?.boostLabs == null) {
+//     return `no boost labs in ${roomLink(roomName)}`
+//   }
 
-  const oldValue = [...roomInfo.config.boostLabs]
-  roomInfo.researchLab.outputLabs.push(...oldValue)
-  roomInfo.config.boostLabs = []
+//   const oldValue = [...roomInfo.config.boostLabs]
+//   roomInfo.researchLab.outputLabs.push(...oldValue)
+//   roomInfo.config.boostLabs = []
 
-  return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
-}
+//   return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
+// }
 
 /** throws */
-function refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {
-  const room = Game.rooms[roomName]
-  if(room == null) {
-    return `${roomLink(roomName)} no found`
-  }
+function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {
+  const room = roomResource.room
+  const roomInfo = roomResource.roomInfo
   if (roomInfo.researchLab == null) {
     roomInfo.researchLab = setResearchLabs(room, roomInfo, args)
   }
@@ -228,7 +358,7 @@ function refreshResearchLabs(roomName: RoomName, roomInfo: OwnedRoomInfo, args: 
     }
   })
 
-  const boostLabIds = roomInfo.config?.boostLabs
+  const boostLabIds = roomResource.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.labId)
   if (boostLabIds != null) {
     boostLabIds.forEach(boostLabId => {
       const index = labIdsInRoom.indexOf(boostLabId)

@@ -232,7 +232,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         }
       }
 
-      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller))
+      if (objects.controller.level < 8) {
+        return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(objects.controller))  // UpgraderがいるとUpgradeできないためタスクが成功も失敗もしないままとなる
+      }
 
     } else {
       const structureToCharge = objects.getStructureToCharge(creep.pos)
@@ -249,15 +251,16 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
           }
         }
       }
-      if (this.saying !== Game.time) {
-        this.saying = Game.time
-        creep.say("no task2")
-      }
-      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
-        return this.randomMoveTask(creep, objects.activeStructures.spawns[0].pos)
-      }
-      return null
     }
+
+    if (this.saying !== Game.time) {
+      this.saying = Game.time
+      creep.say("no task2")
+    }
+    if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
+      return this.randomMoveTask(creep, objects.activeStructures.spawns[0].pos)
+    }
+    return null
   }
 
   private randomMoveTask(creep: Creep, fromPosition: RoomPosition): CreepTask | null {

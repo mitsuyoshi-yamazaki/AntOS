@@ -15,41 +15,33 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { RoomName } from "utility/room_name"
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
-import { OwnedRoomInfo } from "room_resource/room_info"
+import { BoostLabInfo, OwnedRoomInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { OperatingSystem } from "os/os"
 
-ProcessDecoder.register("Season1143119LabChargerProcess", state => {
-  return Season1143119LabChargerProcess.decode(state as Season1143119LabChargerProcessState)
+ProcessDecoder.register("Season1143119LabChargerProcess", state => {  // FixMe: Migration
+  return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
 })
 
-export type Season1143119LabChargerProcessLabInfo = {
-  boost: MineralBoostConstant
-  lab: StructureLab
+ProcessDecoder.register("BoostLabChargerProcess", state => {
+  return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
+})
+
+const noBoostReason = "no boost"
+
+type StructureLabInfo = {
+  readonly lab: StructureLab
+  readonly boost: MineralBoostConstant
 }
 
-type LabState = {
-  boost: MineralBoostConstant
-  labId: Id<StructureLab>
+export interface BoostLabChargerProcessState extends ProcessState {
+  readonly parentRoomName: RoomName
+  readonly stopSpawningReasons: string[]
 }
 
-export interface Season1143119LabChargerProcessState extends ProcessState {
-  parentRoomName: RoomName
-  labStates: LabState[]
-  stopSpawning: boolean
-}
-
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W14S28 labs=61011ce4706bd898698bc8dc:XZHO2,6101e0c67c1295e98c0ff933:XLHO2,6102750e8f86f5cb23f3328c:KHO2,61025016e69a6a6dcc642732:XGHO2,6101c18256c819be8be26aca:XZH2O")
-
-// 3Towers full boosted ranged attacker
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W9S24 labs=60f967be396ad538632751b5:XZHO2,60f92938993e4f921d6487aa:XKHO2,6106ee55706bd84a378e1ee7:XLHO2,61073ced8f86f51bf3f51e78:XGHO2")
-
-// tier3 4towers dismantler
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W21S23 labs=61085d0c464512bdf3c72008:XZHO2,61084244e3f522438c8577a0:XZH2O,610836368631b6143cd4cd0c:XLHO2,610d21b256c81947c9e72d78:XKHO2,610d4472e3f5226d9687a54c:XGHO2")
-
-// collect
-// Game.io("launch -l Season1143119LabChargerProcess room_name=W3S24 labs=61072e7d8631b61addd464c2:XZHO2,6107707f22b7dd084bded966:XZH2O,6107c31e36a5b7de9159d0de:XLHO2")
-export class Season1143119LabChargerProcess implements Process, Procedural {
+export class BoostLabChargerProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -57,66 +49,65 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
   public readonly identifier: string
   private readonly codename: string
 
-  public get boosts(): MineralBoostConstant[] {
-    return this.labStates.map(labState => labState.boost)
-  }
-
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    private readonly labStates: LabState[],
-    private stopSpawning: boolean,
+    private readonly stopSpawningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season1143119LabChargerProcessState {
+  public encode(): BoostLabChargerProcessState {
     return {
-      t: "Season1143119LabChargerProcess",
+      t: "BoostLabChargerProcess",
       l: this.launchTime,
       i: this.processId,
       parentRoomName: this.parentRoomName,
-      labStates: this.labStates,
-      stopSpawning: this.stopSpawning,
+      stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
-  public static decode(state: Season1143119LabChargerProcessState): Season1143119LabChargerProcess {
-    return new Season1143119LabChargerProcess(state.l, state.i, state.parentRoomName, state.labStates, state.stopSpawning)
+  public static decode(state: BoostLabChargerProcessState): BoostLabChargerProcess {
+    return new BoostLabChargerProcess(state.l, state.i, state.parentRoomName, state.stopSpawningReasons)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, labs: Season1143119LabChargerProcessLabInfo[]): Season1143119LabChargerProcess {
-    const labStates: LabState[] = labs.map(labInfo => ({boost: labInfo.boost, labId: labInfo.lab.id}))
-    return new Season1143119LabChargerProcess(Game.time, processId, parentRoomName, labStates, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName): BoostLabChargerProcess {
+    return new BoostLabChargerProcess(Game.time, processId, parentRoomName, [])
   }
 
   public processShortDescription(): string {
     const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    const boostDescriptions: string[] = this.labStates.map(labState => coloredResourceType(labState.boost))
+    const boostDescriptions = ((): string[] => {
+      const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+      if (roomResource == null) {
+        return []
+      }
+      return this.boostLabInfo(roomResource).map(labState => coloredResourceType(labState.boost))
+    })()
     return `${roomLink(this.parentRoomName)} ${numberOfCreeps}cr ${boostDescriptions.join(",")}`
   }
 
   public runOnTick(): void {
-    const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
-    if (resources == null) {
+    OperatingSystem.os.killProcess(this.processId)
+
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
       PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
-    if (resources.roomInfo.config?.boostLabs == null) {
-      this.stopSpawning = true
+    const boostLabInfo = this.boostLabInfo(roomResource)
+    if (boostLabInfo.length <= 0) {
+      this.addStopSpawningReason(noBoostReason)
     }
-    const boostLabs = resources.roomInfo.config?.boostLabs ?? []
 
-    const labs: Season1143119LabChargerProcessLabInfo[] = this.labStates.flatMap(labState => {
+    const labs: StructureLabInfo[] = boostLabInfo.flatMap(labState => {
       const lab = Game.getObjectById(labState.labId)
       if (lab == null) {
-        PrimitiveLogger.fatal(`${this.identifier} target lab ${labState.labId} not found ${roomLink(this.parentRoomName)}`)
-        return []
-      }
-      if (boostLabs.includes(labState.labId) !== true) {
-        this.stopSpawning = true
+        if ((Game.time % 17) === 5) {
+          PrimitiveLogger.fatal(`${this.identifier} target lab ${labState.labId} not found ${roomLink(this.parentRoomName)}`)
+        }
         return []
       }
       return {
@@ -125,7 +116,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       }
     })
 
-    const terminal = resources.activeStructures.terminal
+    const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
       PrimitiveLogger.fatal(`${this.identifier} target terminal not found ${roomLink(this.parentRoomName)}`)
       return
@@ -143,13 +134,13 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
       }
       return false
     })()
-    const shouldCollectResources = resources.roomInfo.config?.collectResources ?? false
+    const shouldCollectResources = roomResource.roomInfo.config?.collectResources ?? false
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount < 1 && (needResourceTransfer === true || shouldCollectResources === true)) {
       this.requestCreep()
     }
 
-    this.runCreep(terminal, labs, shouldCollectResources, resources.roomInfo)
+    this.runCreep(terminal, labs, shouldCollectResources, roomResource.roomInfo)
   }
 
   private requestCreep(): void {
@@ -165,7 +156,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): void {
+  private runCreep(terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
@@ -175,7 +166,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
       creep.say("dying")
       return null
@@ -261,7 +252,7 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     return null
   }
 
-  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: Season1143119LabChargerProcessLabInfo[]): CreepTask | null {
+  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[]): CreepTask | null {
     creep.say("collect")
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0]
@@ -283,6 +274,18 @@ export class Season1143119LabChargerProcess implements Process, Procedural {
     }
     creep.say("no mineral")
     return null
+  }
+
+  // ---- Utility ---- //
+  private boostLabInfo(roomResource: OwnedRoomResource): BoostLabInfo[] {
+    return roomResource.roomInfoAccessor.getBoostLabs()
+  }
+
+  private addStopSpawningReason(reason: string): void {
+    if (this.stopSpawningReasons.includes(reason) === true) {
+      return
+    }
+    this.stopSpawningReasons.push(reason)
   }
 }
 

@@ -102,7 +102,7 @@ export class SequentialTask implements CreepTask {
         return TaskProgressType.FinishedAndRan
       }
       this.childTasks.shift()
-      return TaskProgressType.FinishedAndRan
+      return TaskProgressType.InProgress
 
     case TaskProgressType.InProgress:
       return TaskProgressType.InProgress

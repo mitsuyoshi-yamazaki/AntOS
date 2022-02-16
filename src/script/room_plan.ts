@@ -22,10 +22,10 @@ export function describeLabs(roomName: RoomName): string {
 
 export function parseLabs(room: Room): Result<{ inputLab1: StructureLab, inputLab2: StructureLab, outputLabs: StructureLab[] }, string> {
   const labs = room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[]
-  let minX = GameConstants.room.edgePosition.max
-  let maxX = GameConstants.room.edgePosition.min
-  let minY = GameConstants.room.edgePosition.max
-  let maxY = GameConstants.room.edgePosition.min
+  let minX = GameConstants.room.edgePosition.max as number
+  let maxX = GameConstants.room.edgePosition.min as number
+  let minY = GameConstants.room.edgePosition.max as number
+  let maxY = GameConstants.room.edgePosition.min as number
 
   labs.forEach(lab => {
     if (lab.pos.x < minX) {

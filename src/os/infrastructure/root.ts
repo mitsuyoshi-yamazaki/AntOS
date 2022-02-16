@@ -15,6 +15,7 @@ import { ProcessRequestStore } from "os/process_request_store"
 import { EventManager } from "event_handler/event_manager"
 import { GameMap } from "game/game_map"
 import { GameRecord } from "game/game_record"
+import { Season4ObserverManager } from "process/temporary/season4_observer_manager"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
@@ -71,6 +72,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       GameRecord.beforeTick()
     }, "GameRecord.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      Season4ObserverManager.beforeTick()
+    }, "Season4ObserverManager.beforeTick()")()
   }
 
   public runAfterTick(): void {
@@ -109,6 +114,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       GameRecord.afterTick()
     }, "GameRecord.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      Season4ObserverManager.afterTick()
+    }, "Season4ObserverManager.afterTick()")()
   }
 
   // ---- Private ---- //
