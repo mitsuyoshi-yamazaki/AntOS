@@ -922,8 +922,19 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
 
     const commodityType = args.commodityType("commodity_type").parse()
     const amount = args.int("amount").parse({min: 10, max: 1000})
+    const dryRun = args.boolean("dry_run").parseOptional() ?? false
 
-    return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
+    return Result.Succeeded((processId) => Season4784484ScoreProcess.create(
+      processId,
+      roomName,
+      highwayEntranceRoomName,
+      direction,
+      commodityType,
+      amount,
+      {
+        dryRun,
+      },
+    ))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

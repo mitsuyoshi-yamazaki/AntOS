@@ -44,6 +44,9 @@ interface Season4784484ScoreProcessState extends ProcessState {
   readonly amount: number
   readonly scoutName: CreepName | null
   readonly haulerName: CreepName | null
+  readonly options: {
+    readonly dryRun: boolean
+  }
 }
 
 /**
@@ -67,7 +70,10 @@ export class Season4784484ScoreProcess implements Process, Procedural {
     private readonly commodityType: CommodityConstant,
     private readonly amount: number,
     private scoutName: CreepName | null,
-  private haulerName: CreepName | null,
+    private haulerName: CreepName | null,
+    readonly options: {
+      readonly dryRun: boolean
+    },
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${this.roomName}_${this.commodityType}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -85,6 +91,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       amount: this.amount,
       scoutName: this.scoutName,
       haulerName: this.haulerName,
+      options: this.options,
     }
   }
 
@@ -98,26 +105,32 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       state.commodityType,
       state.amount,
       state.scoutName,
-      state.haulerName
+      state.haulerName,
+      state.options,
     )
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, highwayEntranceRoomName: RoomName, direction: HighwayDirection, commodityType: CommodityConstant, amount: number): Season4784484ScoreProcess {
-    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null)
+  public static create(processId: ProcessId, roomName: RoomName, highwayEntranceRoomName: RoomName, direction: HighwayDirection, commodityType: CommodityConstant, amount: number, options?: { dryRun?: boolean }): Season4784484ScoreProcess {
+    const fixTypedOptions = {
+      dryRun: options?.dryRun ?? false,
+    }
+    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null, fixTypedOptions)
   }
 
   public processShortDescription(): string {
+    const dryRun = this.options.dryRun === true ? "[Dry run] " : ""
+
     const haulerDescription = ((): string => {
       if (this.haulerName == null) {
-        return "no creep"
+        return `${dryRun}no creep`
       }
       const hauler = Game.creeps[this.haulerName]
       if (hauler == null) {
-        return "finished"
+        return `${dryRun}finished`
       }
-      return `hauler in ${hauler.pos}`
+      return `${dryRun}hauler in ${hauler.pos}`
     })()
-    return `${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
+    return `${dryRun}${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
   }
 
   public runOnTick(): void {
@@ -160,11 +173,16 @@ export class Season4784484ScoreProcess implements Process, Procedural {
   private spawnHauler(roomResource: OwnedRoomResource): void {
     const requiredCarryCount = Math.ceil(this.amount / GameConstants.creep.actionPower.carryCapacity)
     const armorCount = Math.ceil(requiredCarryCount / 3)
-    const body: BodyPartConstant[] = [
-      ...Array(armorCount).fill(MOVE),
-      ...Array(requiredCarryCount).fill(CARRY),
-      ...Array(requiredCarryCount).fill(MOVE),
-    ]
+    const body = ((): BodyPartConstant[] => {
+      if (this.options.dryRun === true) {
+        return [MOVE, CARRY, MOVE]
+      }
+      return [
+        ...Array(armorCount).fill(MOVE),
+        ...Array(requiredCarryCount).fill(CARRY),
+        ...Array(requiredCarryCount).fill(MOVE),
+      ]
+    })()
 
     if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable) {
       PrimitiveLogger.programError(`${this.taskIdentifier} energy capacity insufficient (required: ${CreepBody.cost(body)} &gt ${roomResource.room.energyCapacityAvailable})`)
@@ -190,15 +208,33 @@ export class Season4784484ScoreProcess implements Process, Procedural {
   }
 
   private runHauler(creep: Creep, terminal: StructureTerminal): void {
+    if (this.options.dryRun === true) {
+      creep.say("debugging", true)
+    }
+
     if (creep.v5task != null) {
       // TODO: convoyがいたらタスクをキルする
       // TODO: 攻撃Creepがいたらfallbackする
       return
     }
 
+    const getResourceType = (): { resourceType: ResourceConstant, amount: number } => {
+      if (this.options.dryRun === true) {
+        return {
+          resourceType: RESOURCE_ENERGY,
+          amount: 1,
+        }
+      }
+      return {
+        resourceType: this.commodityType,
+        amount: this.amount,
+      }
+    }
+
+    const { resourceType, amount } = getResourceType()
     if (creep.room.name === this.roomName) {
-      if (creep.store.getUsedCapacity(this.commodityType) <= 0) {
-        creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, this.commodityType, this.amount)))
+      if (creep.store.getUsedCapacity(resourceType) <= 0) {
+        creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, resourceType, amount)))
         return
       }
 
@@ -207,7 +243,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return
     }
 
-    if (creep.store.getUsedCapacity(this.commodityType) <= 0) {
+    if (creep.store.getUsedCapacity(resourceType) <= 0) {
       creep.say("done", true)
       return
     }
@@ -222,7 +258,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
         ]
         const tasks: CreepTask[] = [
           MoveToRoomTask.create(this.roomName, waypoints),
-          MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, this.commodityType)),
+          MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType)),
         ]
         creep.v5task = FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false }))
         return
@@ -234,7 +270,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return
     }
 
-    if (creep.transfer(convoyCreep, this.commodityType) === ERR_NOT_IN_RANGE) {
+    if (creep.transfer(convoyCreep, resourceType) === ERR_NOT_IN_RANGE) {
       creep.moveTo(convoyCreep, defaultMoveToOptions())
     }
   }
