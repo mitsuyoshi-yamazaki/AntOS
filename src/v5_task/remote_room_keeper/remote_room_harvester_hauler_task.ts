@@ -28,6 +28,10 @@ import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_resources"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
+import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
+import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/travel_to_target_task"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -175,11 +179,19 @@ export class RemoteRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
+    const createMoveToTargetTask = (apiWrapper: AnyCreepApiWrapper & TargetingApiWrapper): MoveToTargetTask | TravelToTargetTask => {
+      const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName]
+      if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
+        return TravelToTargetTask.create(apiWrapper)
+      }
+      return MoveToTargetTask.create(apiWrapper)
+    }
+
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.store.getUsedCapacity(RESOURCE_POWER) > 0) {
         const powerStorage = objects.activeStructures.terminal ?? objects.activeStructures.storage
         if (powerStorage != null) {
-          return MoveToTargetTask.create(TransferResourceApiWrapper.create(powerStorage, RESOURCE_POWER))
+          return createMoveToTargetTask(TransferResourceApiWrapper.create(powerStorage, RESOURCE_POWER))
         }
       } else {
         const targetRoom = Game.rooms[this.targetRoomName]
@@ -190,22 +202,19 @@ export class RemoteRoomHaulerTask extends Task {
               return lhs.amount - rhs.amount
             })[0]
           if (droppedPower != null) {
-            return MoveToTargetTask.create(PickupApiWrapper.create(droppedPower))
+            return createMoveToTargetTask(PickupApiWrapper.create(droppedPower))
           }
 
           const tombstone = targetRoom.find(FIND_TOMBSTONES)
             .filter(tombstone => getResourceAmountOf(tombstone, RESOURCE_POWER))[0]
           if (tombstone != null) {
-            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(tombstone, RESOURCE_POWER))
+            return createMoveToTargetTask(WithdrawResourceApiWrapper.create(tombstone, RESOURCE_POWER))
           }
         }
       }
       const energySource = this.getEnergySource(energySources)
       if (energySource != null) {
-        if (this.targetRoomName === "W8S24" && creep.room.name === "W9S24") {
-          return MoveToTask.create(new RoomPosition(49, 19, creep.room.name), 0)
-        }
-        return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
+        return createMoveToTargetTask(GetEnergyApiWrapper.create(energySource))
       }
       creep.say("no source")
       return MoveToRoomTask.create(this.targetRoomName, [])
@@ -229,7 +238,7 @@ export class RemoteRoomHaulerTask extends Task {
 
       if (deliverTarget != null) {
         const tasks: CreepTask[] = [
-          MoveToTargetTask.create(TransferEnergyApiWrapper.create(deliverTarget)),
+          createMoveToTargetTask(TransferEnergyApiWrapper.create(deliverTarget)),
         ]
         return SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false })
       }
@@ -239,7 +248,7 @@ export class RemoteRoomHaulerTask extends Task {
       if (creep.getActiveBodyparts(WORK) > 0) {
         return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
       }
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
+      return createMoveToTargetTask(TransferEnergyApiWrapper.create(objects.activeStructures.storage))
     }
 
     const structureToCharge = objects.getStructureToCharge(creep.pos)
@@ -247,7 +256,7 @@ export class RemoteRoomHaulerTask extends Task {
       if (creep.getActiveBodyparts(WORK) > 0) {
         return MoveToTransferHaulerTask.create(TransferEnergyApiWrapper.create(structureToCharge))
       }
-      return MoveToTargetTask.create(TransferEnergyApiWrapper.create(structureToCharge))
+      return createMoveToTargetTask(TransferEnergyApiWrapper.create(structureToCharge))
     }
 
     const spawn = objects.activeStructures.spawns[0]

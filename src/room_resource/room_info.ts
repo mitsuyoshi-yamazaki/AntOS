@@ -8,6 +8,7 @@ import type { Timestamp } from "utility/timestamp"
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
 type RemoteRoomTestConfig = {
+  travelerEnabled?: boolean
 }
 
 export type RemoteRoomInfo = {

@@ -49,12 +49,16 @@ declare global {
   }
 }
 
+export function createRoomPositionId(x: number, y: number, roomName: RoomName): RoomPositionId {
+  return `${roomName}_${x},${y}` as RoomPositionId
+}
+
 // 毎tick呼び出すこと
 export function init(): void {
   try {
     Object.defineProperty(RoomPosition.prototype, "id", {
       get(): RoomPositionId {
-        return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
+        return createRoomPositionId(this.x, this.y, this.roomName)
       },
     })
 

@@ -10,8 +10,9 @@ import { ProcessDecoder } from "process/process_decoder"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepName } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { decodeRoomPosition, Position } from "prototype/room_position"
+import { decodeRoomPosition, describePosition, Position } from "prototype/room_position"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { travelTo, TravelToOptions } from "prototype/travel_to"
 
 ProcessDecoder.register("Season4TravelerTestProcess", state => {
   return Season4TravelerTestProcess.decode(state as Season4TravelerTestProcessState)
@@ -21,6 +22,7 @@ export interface Season4TravelerTestProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly creepName: CreepName | null
   readonly position: Position | null
+  readonly cachePath: boolean
 }
 
 export class Season4TravelerTestProcess implements Process, Procedural, MessageObserver {
@@ -37,6 +39,7 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
     private readonly roomName: RoomName,
     private creepName: CreepName | null,
     private position: Position | null,
+    private cachePath: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
   }
@@ -49,15 +52,16 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
       roomName: this.roomName,
       creepName: this.creepName,
       position: this.position,
+      cachePath: this.cachePath,
     }
   }
 
   public static decode(state: Season4TravelerTestProcessState): Season4TravelerTestProcess | null {
-    return new Season4TravelerTestProcess(state.l, state.i, state.roomName, state.creepName, state.position)
+    return new Season4TravelerTestProcess(state.l, state.i, state.roomName, state.creepName, state.position, state.cachePath)
   }
 
   public static create(processId: ProcessId, roomName: RoomName): Season4TravelerTestProcess {
-    return new Season4TravelerTestProcess(Game.time, processId, roomName, null, null)
+    return new Season4TravelerTestProcess(Game.time, processId, roomName, null, null, false)
   }
 
   public processShortDescription(): string {
@@ -65,7 +69,7 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set"]
+    const commandList = ["help", "set", "set_cachepath"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -75,6 +79,12 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
         const listArguments = new ListArguments(components)
         this.position = listArguments.localPosition(0, "position").parse()
         return "set"
+      }
+
+      case "set_cachepath": {
+        const listArguments = new ListArguments(components)
+        this.cachePath = listArguments.boolean(0, "cache path").parse()
+        return `set ${this.cachePath}`
       }
 
       default:
@@ -137,6 +147,12 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
     if (position == null) {
       return
     }
-    // creep.travelTo(position)
+    creep.say(describePosition(position))
+
+    const options: TravelToOptions = {
+      cachePath: this.cachePath,
+      showPath: true,
+    }
+    travelTo(creep, position, options)
   }
 }

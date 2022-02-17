@@ -65,6 +65,12 @@ export function init(): void {
     }
   }
 
+  if (Memory.pathCache == null) {
+    Memory.pathCache = {
+      paths: {}
+    }
+  }
+
   if (Memory.rooms == null) {
     Memory.rooms = {}
   }
