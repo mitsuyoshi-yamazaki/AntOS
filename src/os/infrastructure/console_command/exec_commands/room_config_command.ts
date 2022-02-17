@@ -49,8 +49,6 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return powers(roomResource, args)
   case "boosts":
     return boosts(roomResource, args)
-  case "set_remote_room_path_cache_enabled":
-    return setRemoteRoomPathCacheEnabled(roomResource, args)
 
   case "mineral_max_amount":
   case "construction_interval":
@@ -182,16 +180,6 @@ function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null
     return process
   }
   return null
-}
-
-/** @throws */
-function setRemoteRoomPathCacheEnabled(roomResource: OwnedRoomResource, args: string[]): string {
-  const listArguments = new ListArguments(args)
-  const remoteRoomName = listArguments.roomName(0, "remote room name").parse()
-  const enabled = listArguments.boolean(1, "enabled").parse()
-  roomResource.roomInfoAccessor.setRemoteRoomPathCachingEnabled(remoteRoomName, enabled)
-
-  return "set"
 }
 
 /** @throws */

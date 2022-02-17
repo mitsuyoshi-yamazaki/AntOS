@@ -10,7 +10,6 @@ import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
-import { PathCacheMemory } from "utility/path_cache"
 
 export interface SectorMemory {
   name: string
@@ -46,7 +45,6 @@ declare global {
     eventMemory: EventMemory
     gameMap: GameMapMemory
     gclFarm: GclFarmMemory
-    pathCache: PathCacheMemory
 
     lastLOANtime: number | undefined
     LOANalliance: string | undefined

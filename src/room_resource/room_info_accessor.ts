@@ -188,21 +188,6 @@ export class OwnedRoomInfoAccessor {
     }
   }
 
-  public setRemoteRoomPathCachingEnabled(remoteRoomName: RoomName, enabled: boolean): void {
-    try {
-      const remoteRoomInfo = this.roomInfo.remoteRoomInfo[remoteRoomName]
-      if (remoteRoomInfo == null) {
-        throw `no remote room ${roomLink(remoteRoomName)} in ${roomLink(this.roomName)}`
-      }
-      if (remoteRoomInfo.testConfig == null) {
-        remoteRoomInfo.testConfig = {}
-      }
-      remoteRoomInfo.testConfig.enablePathCaching = enabled
-    } catch (error) {
-      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${error}`)
-    }
-  }
-
   public addBoosts(boosts: MineralBoostConstant[]): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
     try {
       this.roomInfo.boostLabs.forEach(boostLabInfo => {
