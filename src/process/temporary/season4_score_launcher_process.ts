@@ -15,6 +15,7 @@ import { isCommodityConstant } from "utility/resource"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ValuedArrayMap } from "utility/valued_collection"
 
 declare const COMMODITY_SCORE: { [commodityType: string]: number }
 
@@ -71,7 +72,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly observingHighways: HighwayObservingInfo[],
+    private observingHighways: HighwayObservingInfo[],
     private readonly firstLookConvoyCreeps: { [creepId: string]: FirstLookConvoyCreep },
     private readonly convoyCreeps: { [creepId: string]: ConvoyCreepInfo },
     private readonly creepObserveLogs: ObserveLog[],
@@ -131,20 +132,36 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       `observing ${this.observingHighways.length} highways`,
     ]
 
+    const commoditiesByDirection = (convoy: ConvoyCreepInfo[], roomName: RoomName): string => {
+      const commoditiesByDirection = convoy.reduce((result, current) => {
+        result.getValueFor(current.direction).push(current.commodityType)
+        return result
+      }, new ValuedArrayMap<ConvoyDirection, CommodityConstant>())
+
+      const commodityDescription = Array.from(commoditiesByDirection.entries())
+        .map(([direction, commodities]) => {
+          const directionDescriptions: string[] = [
+            `${directionDescription(direction)}: `,
+            commodities.map(commodity => coloredResourceType(commodity)).join(","),
+          ]
+          return directionDescriptions.join("")
+        })
+        .join(", ")
+      return `  - ${convoy.length} convoys in ${roomLink(roomName)}, ${commodityDescription}`
+    }
+
     const allHighwayDescriptions = this.observingHighways.flatMap((highwayInfo): string[] => {
       const highway = highwayInfo.highway
       const highwayDescriptions: string[] = [
-        `- highway ${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}`
+        `- highway ${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}, observed from: ${roomLink(highwayInfo.observerRoomName)}, score: ${roomLink(highwayInfo.scoreRoomName)}`
       ]
       const convoysInStartRoom = this.convoyCreepsOnHighway(highway.startRoomName)
       if (convoysInStartRoom.length > 0) {
-        const commodityDescription = convoysInStartRoom.map(convoyCreep => coloredResourceType(convoyCreep.commodityType)).join(",")
-        highwayDescriptions.push(`  - ${convoysInStartRoom.length} convoys in ${roomLink(highway.startRoomName)}, ${commodityDescription}`)
+        highwayDescriptions.push(commoditiesByDirection(convoysInStartRoom, highway.startRoomName))
       }
       const convoysInEndRoom = this.convoyCreepsOnHighway(highway.endRoomName)
       if (convoysInEndRoom.length > 0) {
-        const commodityDescription = convoysInEndRoom.map(convoyCreep => coloredResourceType(convoyCreep.commodityType)).join(",")
-        highwayDescriptions.push(`  - ${convoysInEndRoom.length} convoys in ${roomLink(highway.endRoomName)}, ${commodityDescription}`)
+        highwayDescriptions.push(commoditiesByDirection(convoysInEndRoom, highway.endRoomName))
       }
 
       return highwayDescriptions
@@ -170,7 +187,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add_highway", "show_convoy", "show_logs"]
+    const commandList = ["help", "status", "add_highway", "remove_highway", "show_convoy", "show_logs"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -184,6 +201,9 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
       case "add_highway":
         return this.addHighway(components)
+
+      case "remove_highway":
+        return this.removeHighway(components)
 
       case "show_convoy":
         return this.showConvoyOnHighway(components)
@@ -214,6 +234,25 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
   private convoyCreepsOnHighway(highwayEdgeRoomName: RoomName): ConvoyCreepInfo[] {
     return Array.from(Object.values(this.convoyCreeps)).filter(convoyCreep => convoyCreep.roomName === highwayEdgeRoomName)
+  }
+
+  /** @throws */
+  private removeHighway(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const removeArgument = ((): RoomName | "all" => {
+      const arg = listArguments.string(0, "room name or all").parse()
+      if (arg === "all") {
+        return arg
+      }
+      return arg
+    })()
+
+    if (removeArgument === "all") {
+      this.observingHighways = []
+      return "removed all highways"
+    }
+
+    throw "not implemented yet"
   }
 
   /** @throws */
@@ -381,8 +420,12 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     const direction = dy > 0 ? BOTTOM : TOP
     const estimatedDespawnTime = ((): Timestamp => {
       const convoySpeed = 2
-      const shortDuration = 0 * GameConstants.room.size * convoySpeed
-      const longDuration = 8 * GameConstants.room.size * convoySpeed
+      const averageConvoyCreepCount = 5
+
+      // 部屋の境界では1sq/tickで進むため
+      const ticksToPassRoom = ((GameConstants.room.size - averageConvoyCreepCount) * convoySpeed) + averageConvoyCreepCount
+      const shortDuration = 0 * ticksToPassRoom
+      const longDuration = 8 * ticksToPassRoom
       switch (roomPosition) {
       case "start": // 上
         return direction === TOP ? shortDuration : longDuration
@@ -461,12 +504,17 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       delete this.convoyCreeps[creepId]
     })
 
+    logs.sort((lhs, rhs) => {
+      return lhs.observedAt - rhs.observedAt
+    })
+
+    this.creepObserveLogs.push(...logs)
     this.ignoreCreepIds = []
   }
 
   private addObserveRequest(highwayInfo: HighwayObservingInfo): void {
-    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.highway.startRoomName, "long", 3)
-    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.highway.endRoomName, "long", 3)
+    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.highway.startRoomName, "long", 1)
+    Season4ObserverManager.addRequest(highwayInfo.observerRoomName, highwayInfo.highway.endRoomName, "long", 1)
   }
 }
 
