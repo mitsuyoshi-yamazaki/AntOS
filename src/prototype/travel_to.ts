@@ -1,5 +1,4 @@
 import { GameConstants } from "utility/constants"
-import { RoomName } from "utility/room_name"
 import { createRoomPositionId, Position } from "./room_position"
 
 export type TravelToOptions = {
@@ -43,7 +42,7 @@ export function travelTo(creep: Creep, position: RoomPosition, options?: TravelT
     }
 
     const path = creep.pos.findPathTo(position, options?.findPathOpts)
-    PathCache.cachePath(creep.pos.roomName, position, path)
+    PathCache.cachePath(creep.pos, position, path)
 
     return creep.moveByPath(path)
   } else {
@@ -90,12 +89,17 @@ const PathCache = {
     return result
   },
 
-  cachePath(currentRoomName: RoomName, destinationPosition: RoomPosition, path: PathStep[]): void {
+  cachePath(currentPosition: RoomPosition, destinationPosition: RoomPosition, path: PathStep[]): void {
+    const currentRoomName = currentPosition.roomName
     const cachedPath = getCachedPathFor(destinationPosition)
-    path.forEach(step => {
-      const roomPositionId = createRoomPositionId(step.x, step.y, currentRoomName)
-      cachedPath[roomPositionId] = step.direction
-    })
+    path.reduce((result, current) => {
+      const roomPositionId = createRoomPositionId(result.x, result.y, currentRoomName)
+      cachedPath[roomPositionId] = current.direction
+      return {
+        x: current.x,
+        y: current.y,
+      }
+    }, {x: currentPosition.x, y: currentPosition.y} as Position)
   },
 }
 
