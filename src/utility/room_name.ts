@@ -12,7 +12,7 @@ type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
 export type Highway = {
   readonly direction: "vertical" | "horizontal"
-  readonly startRoomName: RoomName  // top/left
+  readonly startRoomName: RoomName  // top/left // highway_crossingからひとつ入った部屋
   readonly endRoomName: RoomName  // bottom/right
 }
 type DetailedCoordinateHighway = {
@@ -440,17 +440,16 @@ function yDirection(direction: RoomCoordinateDirection): "N" | "S" {
  */
 export function getHighwayRooms(highway: Highway): RoomName[] {
   const startRoomCoordinate = RoomCoordinate.parse(highway.startRoomName)
-  const endRoomCoordinate = RoomCoordinate.parse(highway.endRoomName)
 
-  if (startRoomCoordinate == null || endRoomCoordinate == null) {
+  if (startRoomCoordinate == null) {
     return []
   }
 
   const roomCount = 9
   switch (highway.direction) {
   case "vertical":
-    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(0, index + 1).roomName)
+    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(0, index).roomName)
   case "horizontal":
-    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(index + 1, 0).roomName)
+    return Array(roomCount).fill(0).map((x, index) => startRoomCoordinate.getRoomCoordinateTo(index, 0).roomName)
   }
 }
