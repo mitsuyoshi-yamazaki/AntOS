@@ -23,6 +23,8 @@ import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequenti
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
@@ -230,10 +232,16 @@ export class Season4784484ScoreProcess implements Process, Procedural {
         amount: this.amount,
       }
     }
-
     const { resourceType, amount } = getResourceType()
+
+    const dying = creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.55)
+
     if (creep.room.name === this.roomName) {
       if (creep.store.getUsedCapacity(resourceType) <= 0) {
+        if (dying === true) {
+          creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
+          return
+        }
         creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, resourceType, amount)))
         return
       }
@@ -250,7 +258,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
 
     const convoyCreep = this.findConvoyCreep(creep.room)
     if (convoyCreep == null) {
-      if (creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.55)) {
+      if (dying === true) {
         creep.say("back to room")
         const waypoints: RoomName[] = [
           this.highwayEntranceRoomName,
