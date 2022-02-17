@@ -2,7 +2,7 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
-import { getHighwayRooms, Highway, RoomName } from "utility/room_name"
+import { getHighwayRooms, Highway, RoomCoordinate, RoomName } from "utility/room_name"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { coloredResourceType, coloredText, describeTime, roomLink } from "utility/log"
 import { Timestamp } from "utility/timestamp"
@@ -267,7 +267,13 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     const scoreRoomName = keywordArguments.roomName("score_room_name").parse({my: true})
 
     const highwayEntranceRoomCoordinate = keywordArguments.roomCoordinate("highway_entrance_room_name").parse()
-    const highwayRoomCoordinate = highwayEntranceRoomCoordinate
+    const highwayRoomCoordinate = ((): RoomCoordinate => {
+      const optionalHighwayRoomCoordinate = keywordArguments.roomCoordinate("highway_room_name").parseOptional()
+      if (optionalHighwayRoomCoordinate != null) {
+        return optionalHighwayRoomCoordinate
+      }
+      return highwayEntranceRoomCoordinate
+    })()
     const highwayRoomName = highwayRoomCoordinate.roomName
     const detailedCoordinate = highwayRoomCoordinate.detailedCoordinate()
     if (detailedCoordinate.case !== "highway") {
@@ -476,7 +482,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
     const fitstLookConvoyCreeps = Array.from(Object.entries(this.firstLookConvoyCreeps))
     fitstLookConvoyCreeps.forEach(([creepId, firstLook]) => {
-      if (firstLook.observedAt < tooOldTimestamp) {
+      if (firstLook.observedAt > tooOldTimestamp) {
         return
       }
 
@@ -491,7 +497,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
     const convoyCreeps = Array.from(Object.entries(this.convoyCreeps))
     convoyCreeps.forEach(([creepId, convoyCreep]) => {
-      if (convoyCreep.observedAt < tooOldTimestamp) {
+      if (convoyCreep.observedAt > tooOldTimestamp) {
         return
       }
 
