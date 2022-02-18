@@ -15,7 +15,7 @@ import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
-import { CommodityIngredient, commodityTier, isCommodityConstant } from "utility/resource"
+import { CommodityIngredient, commodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
@@ -333,6 +333,9 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     })
 
     const getIngredientMinimumAmount = (ingredient: CommodityIngredient): number => {
+      if (isDepositConstant(ingredient)) {
+        return 2000
+      }
       if (!(isCommodityConstant(ingredient))) {
         return 5000
       }

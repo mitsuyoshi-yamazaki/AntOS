@@ -18,8 +18,7 @@ import { ListArguments } from "os/infrastructure/console_command/utility/list_ar
 import { ValuedArrayMap } from "utility/valued_collection"
 import { OperatingSystem } from "os/os"
 import { Season4784484ScoreProcess } from "./season4_784484_score_process"
-
-declare const COMMODITY_SCORE: { [commodityType: string]: number }
+import { getSeason4CommodityScore } from "utility/season4"
 
 ProcessDecoder.register("Season4ScoreLauncherProcess", state => {
   return Season4ScoreLauncherProcess.decode(state as Season4ScoreLauncherProcessState)
@@ -108,15 +107,6 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   }
 
   public static decode(state: Season4ScoreLauncherProcessState): Season4ScoreLauncherProcess {
-    const options = ((): { launchScoreProcess: boolean } => { // FixMe: Migration
-      if (state.options != null) {
-        return state.options
-      }
-      return {
-        launchScoreProcess: false
-      }
-    })()
-
     return new Season4ScoreLauncherProcess(
       state.l,
       state.i,
@@ -125,7 +115,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       state.convoyCreeps,
       state.creepObserveLogs,
       state.ignoreCreepIds,
-      options,
+      state.options,
     )
   }
 
@@ -137,6 +127,9 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     const descriptions: string[] = [
       `observing ${this.observingHighways.length} highways`,
     ]
+    if (this.options.launchScoreProcess !== true) {
+      descriptions.push("no score process launch")
+    }
     const lastObservedConvoy = this.lastObservedConvoy()
     if (lastObservedConvoy != null) {
       descriptions.push(`last convoy ${describeTime(lastObservedConvoy.ticksAgo)} ago in ${roomLink(lastObservedConvoy.roomName)}`)
@@ -418,7 +411,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
           return { shouldObserveRoom: true }
         }
         const convoyCreepInfo = this.createConvoyCreepInVerticalHighway(firstLookCreepInfo, dy > 0 ? 1 : -1, roomPosition)
-        this.didFoundConvoy(convoyCreepInfo, highway)
+        this.didFoundConvoy(creep.id, convoyCreepInfo, highway)
         this.convoyCreeps[creep.id] = convoyCreepInfo
         break
       }
@@ -428,7 +421,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
           return { shouldObserveRoom: true }
         }
         const convoyCreepInfo = this.createConvoyCreepInHorizontalHighway(firstLookCreepInfo, dx > 0 ? 1 : -1, roomPosition)
-        this.didFoundConvoy(convoyCreepInfo, highway)
+        this.didFoundConvoy(creep.id, convoyCreepInfo, highway)
         this.convoyCreeps[creep.id] = convoyCreepInfo
         break
       }
@@ -443,7 +436,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       this.ignoreCreepIds.push(creep.id)
       return { shouldObserveRoom: false }
     }
-    const score = COMMODITY_SCORE[resourceType]
+    const score = getSeason4CommodityScore(resourceType)
     if (score == null || score <= 0) {
       this.ignoreCreepIds.push(creep.id)
       return { shouldObserveRoom: false }
@@ -458,24 +451,42 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     return { shouldObserveRoom: true }
   }
 
-  private didFoundConvoy(info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
+  private didFoundConvoy(convoyCreepId: Id<Creep>, info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
     if (this.options.launchScoreProcess === true) {
-      this.launchScoreProcess(info, highway)
+      this.launchScoreProcess(convoyCreepId, info, highway)
     }
     this.convoyFoundLog(info)
   }
 
-  private launchScoreProcess(info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
+  private launchScoreProcess(convoyCreepId: Id<Creep>, info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
+    if (info.estimatedDespawnTime < 500) {
+      return
+    }
+
     const amount = 10 // TODO:
+    const oppositeDirection = ((): ConvoyDirection => {
+      switch (info.direction) {
+      case TOP:
+        return BOTTOM
+      case BOTTOM:
+        return TOP
+      case LEFT:
+        return RIGHT
+      case RIGHT:
+        return LEFT
+      }
+    })()
 
     OperatingSystem.os.addProcess(null, processId => {
       return Season4784484ScoreProcess.create(
         processId,
         highway.scoreRoomName,
         highway.highwayEntranceRoomName,
-        info.direction,
+        oppositeDirection,
         info.commodityType,
         amount,
+        convoyCreepId,
+        info.estimatedDespawnTime,
         {
           dryRun: true,
         },
@@ -521,10 +532,10 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       const shortDuration = 0 * GameConstants.room.size * convoySpeed
       const longDuration = 8 * GameConstants.room.size * convoySpeed
       switch (roomPosition) {
-      case "start": // 左
-        return direction === LEFT ? shortDuration : longDuration
-      case "end": // 右
+      case "start": // 右
         return direction === RIGHT ? shortDuration : longDuration
+      case "end": // 左
+        return direction === LEFT ? shortDuration : longDuration
       }
     })()
 
@@ -607,3 +618,4 @@ function logDescription(log: ObserveLog): string {
   })()
   return `${coloredResourceType(log.commodityType)} ${timestamp} ago ${direction} in ${roomLink(log.roomName)}`
 }
+

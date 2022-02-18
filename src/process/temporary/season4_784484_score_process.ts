@@ -25,6 +25,8 @@ import { CreepBody } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { Timestamp } from "utility/timestamp"
+import { Position } from "prototype/room_position"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
@@ -46,6 +48,14 @@ interface Season4784484ScoreProcessState extends ProcessState {
   readonly amount: number
   readonly scoutName: CreepName | null
   readonly haulerName: CreepName | null
+  readonly convoyCreepInfo: {
+    readonly creepId: Id<Creep>
+    readonly estimatedDespawnTime: Timestamp
+    readonly lastLocation: {
+      readonly position: Position,
+      readonly roomName: RoomName,
+    } | null
+  }
   readonly options: {
     readonly dryRun: boolean
   }
@@ -54,6 +64,8 @@ interface Season4784484ScoreProcessState extends ProcessState {
 /**
  * - fallback
  * - 得点されていた場合
+ * - Convoyが入れ違いになったことを検出する
+ *   - IDを記憶しておき、room eventのexitを見る
  */
 export class Season4784484ScoreProcess implements Process, Procedural {
   public readonly identifier: string
@@ -73,6 +85,14 @@ export class Season4784484ScoreProcess implements Process, Procedural {
     private readonly amount: number,
     private scoutName: CreepName | null,
     private haulerName: CreepName | null,
+    readonly convoyCreepInfo: {
+      readonly creepId: Id<Creep>
+      readonly estimatedDespawnTime: Timestamp,
+      lastLocation: {
+        position: Position
+        roomName: RoomName
+      } | null
+    },
     readonly options: {
       readonly dryRun: boolean
     },
@@ -93,6 +113,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       amount: this.amount,
       scoutName: this.scoutName,
       haulerName: this.haulerName,
+      convoyCreepInfo: this.convoyCreepInfo,
       options: this.options,
     }
   }
@@ -108,15 +129,21 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       state.amount,
       state.scoutName,
       state.haulerName,
+      state.convoyCreepInfo,
       state.options,
     )
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, highwayEntranceRoomName: RoomName, direction: HighwayDirection, commodityType: CommodityConstant, amount: number, options?: { dryRun?: boolean }): Season4784484ScoreProcess {
+  public static create(processId: ProcessId, roomName: RoomName, highwayEntranceRoomName: RoomName, direction: HighwayDirection, commodityType: CommodityConstant, amount: number, convoyCreepId: Id<Creep>, estimatedDespawnTime: Timestamp, options?: { dryRun?: boolean }): Season4784484ScoreProcess {
+    const convoyCreepInfo = {
+      creepId: convoyCreepId,
+      estimatedDespawnTime: Game.time + estimatedDespawnTime,
+      lastLocation: null,
+    }
     const fixTypedOptions = {
       dryRun: options?.dryRun ?? false,
     }
-    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null, fixTypedOptions)
+    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null, convoyCreepInfo, fixTypedOptions)
   }
 
   public processShortDescription(): string {

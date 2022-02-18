@@ -920,8 +920,10 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
       throw `room next to the entrance room ${roomLink(nextHighwayRoom)} is not on a highway ${nextHighwayRoomCoordinate?.roomType}`
     }
 
+    const convoyCreepId = args.gameObjectId("convoy_creep_id").parse() as Id<Creep>
+    const estimatedDespawnTime = Game.time + 1000
     const commodityType = args.commodityType("commodity_type").parse()
-    const amount = args.int("amount").parse({min: 10, max: 1000})
+    const amount = args.int("amount").parse({min: 1, max: 999})
     const dryRun = args.boolean("dry_run").parseOptional() ?? false
 
     return Result.Succeeded((processId) => Season4784484ScoreProcess.create(
@@ -931,6 +933,8 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
       direction,
       commodityType,
       amount,
+      convoyCreepId,
+      estimatedDespawnTime,
       {
         dryRun,
       },
