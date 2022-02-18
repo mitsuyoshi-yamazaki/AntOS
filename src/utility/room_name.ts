@@ -12,8 +12,8 @@ type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]
 
 export type Highway = {
   readonly direction: "vertical" | "horizontal"
-  readonly startRoomName: RoomName  // top/left // highway_crossingからひとつ入った部屋
-  readonly endRoomName: RoomName  // bottom/right
+  readonly startRoomName: RoomName  // top/right // highway_crossingからひとつ入った部屋 // TODO: WS以外の象限で動作するか確認する
+  readonly endRoomName: RoomName  // bottom/left
 }
 type DetailedCoordinateHighway = {
   readonly case: RoomTypeHighway
