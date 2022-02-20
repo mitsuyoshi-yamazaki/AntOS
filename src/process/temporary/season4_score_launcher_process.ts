@@ -52,6 +52,7 @@ type HighwayObservingInfo = {
   readonly observerRoomName: RoomName
   readonly scoreRoomName: RoomName
   readonly highwayEntranceRoomName: RoomName
+  readonly scoreDirection: ConvoyDirection
   readonly highway: {
     readonly direction: HighwayDirection
     readonly startRoomName: RoomName
@@ -165,7 +166,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     const allHighwayDescriptions = this.observingHighways.flatMap((highwayInfo): string[] => {
       const highway = highwayInfo.highway
       const highwayDescriptions: string[] = [
-        `- highway ${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}, observed from: ${roomLink(highwayInfo.observerRoomName)}, score: ${roomLink(highwayInfo.scoreRoomName)}`
+        `- highway ${roomLink(highway.startRoomName)} = ${roomLink(highway.endRoomName)}, observed from: ${roomLink(highwayInfo.observerRoomName)}, score: ${roomLink(highwayInfo.scoreRoomName)}, score direction ${directionDescription(highwayInfo.scoreDirection)}`
       ]
       const convoysInStartRoom = this.convoyCreepsOnHighway(highway.startRoomName)
       if (convoysInStartRoom.length > 0) {
@@ -199,7 +200,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add_highway", "remove_highway", "show_convoy", "show_logs", "set_option"]
+    const commandList = ["help", "status", "add_highway", "remove_highway", "show_convoy", "show_logs", "set_option", "launch_debugger"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -226,12 +227,43 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       case "set_option":
         return this.setOption(components)
 
+      case "launch_debugger":
+        return this.launchDebugger(components)
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private launchDebugger(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const highwayStartRoomName = listArguments.roomName(0, "highway start room name").parse()
+    const highway = this.observingHighways.find(observingHighway => observingHighway.highway.startRoomName === highwayStartRoomName)
+    if (highway == null) {
+      throw `no highway starts from ${roomLink(highwayStartRoomName)}`
+    }
+
+    OperatingSystem.os.addProcess(null, processId => {
+      return Season4784484ScoreProcess.create(
+        processId,
+        highway.scoreRoomName,
+        highway.highwayEntranceRoomName,
+        highway.scoreDirection,
+        RESOURCE_WIRE,
+        10,
+        "test" as Id<Creep>,
+        500,
+        {
+          dryRun: true,
+        },
+      )
+    })
+
+    return `launched score-er from ${roomLink(highway.highwayEntranceRoomName)} to ${directionDescription(highway.scoreDirection)}`
   }
 
   /** @throws */
@@ -331,10 +363,16 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       throw `Highway ${highwayDescription(targetHighway)} is not in observer range. ${roomLink(observerRoomName)} =${startRoomObserveDistance}= ${roomLink(startRoomName)}, ${roomLink(observerRoomName)} =${endRoomObserveDistance}= ${roomLink(endRoomName)}`
     }
 
+    const scoreDirection = keywordArguments.direction("score_direction").parse()
+    if (scoreDirection !== TOP && scoreDirection !== BOTTOM && scoreDirection !== LEFT && scoreDirection !== RIGHT) {
+      throw `${directionDescription(scoreDirection)} is not highway direction`
+    }
+
     const targetHighwayInfo: HighwayObservingInfo = {
       observerRoomName,
       scoreRoomName,
       highwayEntranceRoomName: highwayEntranceRoomCoordinate.roomName,
+      scoreDirection,
       highway: {
         direction: targetHighway.direction,
         startRoomName,
@@ -453,7 +491,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
   private didFoundConvoy(convoyCreepId: Id<Creep>, info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
     if (this.options.launchScoreProcess === true) {
-      this.launchScoreProcess(convoyCreepId, info, highway)
+      // this.launchScoreProcess(convoyCreepId, info, highway) // TODO:
     }
     this.convoyFoundLog(info)
   }
@@ -464,31 +502,19 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     }
 
     const amount = 10 // TODO:
-    const oppositeDirection = ((): ConvoyDirection => {
-      switch (info.direction) {
-      case TOP:
-        return BOTTOM
-      case BOTTOM:
-        return TOP
-      case LEFT:
-        return RIGHT
-      case RIGHT:
-        return LEFT
-      }
-    })()
 
     OperatingSystem.os.addProcess(null, processId => {
       return Season4784484ScoreProcess.create(
         processId,
         highway.scoreRoomName,
         highway.highwayEntranceRoomName,
-        oppositeDirection,
+        highway.scoreDirection,
         info.commodityType,
         amount,
         convoyCreepId,
         info.estimatedDespawnTime,
         {
-          dryRun: true,
+          dryRun: true, // TODO:
         },
       )
     })
