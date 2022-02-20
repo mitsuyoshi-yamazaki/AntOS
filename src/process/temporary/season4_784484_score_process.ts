@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { RoomName } from "utility/room_name"
@@ -27,12 +27,15 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { Timestamp } from "utility/timestamp"
 import { Position } from "prototype/room_position"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
 })
 
 type HighwayDirection = TOP | BOTTOM | LEFT | RIGHT
+type ScoreProcessState = "running" | "fallback"
 
 const convoyOwnername = "Screeps"
 
@@ -56,6 +59,7 @@ interface Season4784484ScoreProcessState extends ProcessState {
       readonly roomName: RoomName,
     } | null
   }
+  readonly processState: ScoreProcessState
   readonly options: {
     readonly dryRun: boolean
   }
@@ -67,7 +71,7 @@ interface Season4784484ScoreProcessState extends ProcessState {
  * - Convoyが入れ違いになったことを検出する
  *   - IDを記憶しておき、room eventのexitを見る
  */
-export class Season4784484ScoreProcess implements Process, Procedural {
+export class Season4784484ScoreProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -86,14 +90,15 @@ export class Season4784484ScoreProcess implements Process, Procedural {
     private scoutName: CreepName | null,
     private haulerName: CreepName | null,
     readonly convoyCreepInfo: {
-      readonly creepId: Id<Creep>
+      creepId: Id<Creep>
       readonly estimatedDespawnTime: Timestamp,
       lastLocation: {
         position: Position
         roomName: RoomName
       } | null
     },
-    readonly options: {
+    private processState: ScoreProcessState,
+    private readonly options: {
       readonly dryRun: boolean
     },
   ) {
@@ -114,6 +119,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       scoutName: this.scoutName,
       haulerName: this.haulerName,
       convoyCreepInfo: this.convoyCreepInfo,
+      processState: this.processState,
       options: this.options,
     }
   }
@@ -130,6 +136,7 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       state.scoutName,
       state.haulerName,
       state.convoyCreepInfo,
+      state.processState ?? "running",
       state.options,
     )
   }
@@ -143,7 +150,8 @@ export class Season4784484ScoreProcess implements Process, Procedural {
     const fixTypedOptions = {
       dryRun: options?.dryRun ?? false,
     }
-    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null, convoyCreepInfo, fixTypedOptions)
+    const processState: ScoreProcessState = "running"
+    return new Season4784484ScoreProcess(Game.time, processId, roomName, highwayEntranceRoomName, direction, commodityType, amount, null, null, convoyCreepInfo, processState, fixTypedOptions)
   }
 
   public processShortDescription(): string {
@@ -160,6 +168,65 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return `${dryRun}hauler in ${hauler.pos}`
     })()
     return `${dryRun}${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "fallback", "set"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "fallback": {
+        const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+        if (roomResource == null) {
+          throw `no room resource ${roomLink(this.roomName)}`
+        }
+        if (roomResource.activeStructures.terminal == null) {
+          throw `no terminal in ${roomLink(this.roomName)}`
+        }
+        const hauler = ((): Creep | null => {
+          if (this.haulerName == null) {
+            return null
+          }
+          return Game.creeps[this.haulerName] ?? null
+        })()
+        if (hauler == null) {
+          throw `no hauler (name: ${this.haulerName})`
+        }
+        this.fallback(hauler, roomResource.activeStructures.terminal, "manually")
+        return "fallback"
+      }
+
+      case "set":
+        return this.setArgument(components)
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private setArgument(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const argumentName = listArguments.string(0, "argument").parse()
+
+    switch (argumentName) {
+    case "convoy_creep_id": {
+      const convoyCreepId = listArguments.gameObjectId(1, "convoy creep id").parse() as Id<Creep>
+      this.convoyCreepInfo.creepId = convoyCreepId
+      return "set"
+    }
+
+    default:
+      throw `invalid argument ${argumentName}, set "convoy_creep_id"`
+    }
   }
 
   public runOnTick(): void {
@@ -241,25 +308,28 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       creep.say("debugging", true)
     }
 
+    if (this.processState !== "fallback" && creep.room.name !== this.roomName) {
+      const attackerInRoom = creep.room.find(FIND_HOSTILE_CREEPS).filter(hostileCreep =>
+        hostileCreep.getActiveBodyparts(ATTACK) > 0 || hostileCreep.getActiveBodyparts(RANGED_ATTACK) > 0
+      ).length > 0
+      if (attackerInRoom === true) {
+        this.fallback(creep, terminal, "enemy presence")
+        return
+      }
+    }
+
     if (creep.v5task != null) {
       // TODO: convoyがいたらタスクをキルする
       // TODO: 攻撃Creepがいたらfallbackする
       return
     }
 
-    const getResourceType = (): { resourceType: ResourceConstant, amount: number } => {
-      if (this.options.dryRun === true) {
-        return {
-          resourceType: RESOURCE_ENERGY,
-          amount: 1,
-        }
-      }
-      return {
-        resourceType: this.commodityType,
-        amount: this.amount,
-      }
+    if (this.processState === "fallback") {
+      this.fallback(creep, terminal, "program bug")
+      return
     }
-    const { resourceType, amount } = getResourceType()
+
+    const { resourceType, amount } = this.getResourceType()
 
     const dying = creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.55)
 
@@ -283,20 +353,10 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return
     }
 
-    const convoyCreep = this.findConvoyCreep(creep.room)
+    const convoyCreep = this.findConvoyCreep()
     if (convoyCreep == null) {
       if (dying === true) {
-        creep.say("back to room")
-        const waypoints: RoomName[] = [
-          this.highwayEntranceRoomName,
-          ...(GameMap.getWaypoints(this.highwayEntranceRoomName, this.roomName) ?? []),
-        ]
-        const tasks: CreepTask[] = [
-          MoveToRoomTask.create(this.roomName, waypoints),
-          MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType)),
-        ]
-        creep.v5task = FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false }))
-        return
+        this.fallback(creep, terminal, "creep dying")
       }
 
       // TODO: 入れ替わりになった場合
@@ -305,21 +365,66 @@ export class Season4784484ScoreProcess implements Process, Procedural {
       return
     }
 
-    if (creep.transfer(convoyCreep, resourceType) === ERR_NOT_IN_RANGE) {
+    const transferResult = creep.transfer(convoyCreep, resourceType)
+    switch (transferResult) {
+    case OK:
+      break
+
+    case ERR_NOT_IN_RANGE:
       creep.moveTo(convoyCreep, defaultMoveToOptions())
+      break
+
+    case ERR_FULL:
+      PrimitiveLogger.fatal(`${this.taskIdentifier} ${this.processId} convoy ${this.convoyCreepInfo.creepId} is full ${creep.name} ${creep.pos}`)
+      this.fallback(creep, terminal, "convoy full")
+      break
+
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_INVALID_TARGET:
+    case ERR_INVALID_ARGS:
+      PrimitiveLogger.fatal(`${this.taskIdentifier} ${this.processId} creep.transfer() returns ${transferResult} ${creep.name} ${creep.pos}`)
+      this.fallback(creep, terminal, "transfer failed")
+      break
     }
   }
 
-  private findConvoyCreep(room: Room): Creep | null {
-    return room.find(FIND_HOSTILE_CREEPS).filter(creep => {
-      if (creep.owner.username !== convoyOwnername) {
-        return false
+  private getResourceType(): { resourceType: ResourceConstant, amount: number } {
+    if (this.options.dryRun === true) {
+      return {
+        resourceType: RESOURCE_ENERGY,
+        amount: 1,
       }
-      if (creep.store.getUsedCapacity(this.commodityType) <= 0) {
-        return false
-      }
-      return true
-    })[0] ?? null
+    }
+    return {
+      resourceType: this.commodityType,
+      amount: this.amount,
+    }
+  }
+
+  private fallback(creep: Creep, terminal: StructureTerminal, reason: string): void {
+    PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} ${this.taskIdentifier} ${this.processId} ${creep.name} ${creep.pos} fallback: ${reason}`)
+
+    this.processState = "fallback"
+    const { resourceType } = this.getResourceType()
+
+    creep.say("back to room")
+    const waypoints: RoomName[] = [
+      this.highwayEntranceRoomName,
+      ...(GameMap.getWaypoints(this.highwayEntranceRoomName, this.roomName) ?? []),
+    ]
+    const tasks: CreepTask[] = [
+      MoveToRoomTask.create(this.roomName, waypoints),
+      MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType)),
+      RunApiTask.create(SuicideApiWrapper.create()),
+    ]
+    creep.v5task = FleeFromAttackerTask.create(SequentialTask.create(tasks, { ignoreFailure: false, finishWhenSucceed: false }))
+    return
+  }
+
+  private findConvoyCreep(): Creep | null {
+    return Game.getObjectById(this.convoyCreepInfo.creepId) ?? null
   }
 
   private nextRoomName(room: Room): RoomName {
