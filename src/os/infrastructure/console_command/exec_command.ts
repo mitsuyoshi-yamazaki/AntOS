@@ -6,7 +6,7 @@ import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_tas
 import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
-import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { SequentialTask as V5SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
@@ -35,6 +35,7 @@ import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
 import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
+import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -307,7 +308,7 @@ export class ExecCommand implements ConsoleCommand {
       return `Creep ${creepName} is not v5`
     }
     const moveTasks = waypoints.map(waypoint => MoveToTask.create(waypoint, 0))
-    creep.memory.t = SequentialTask.create(moveTasks, {ignoreFailure: false, finishWhenSucceed: false}).encode()
+    creep.memory.t = V5SequentialTask.create(moveTasks, {ignoreFailure: false, finishWhenSucceed: false}).encode()
 
     return "ok"
   }
@@ -334,20 +335,19 @@ export class ExecCommand implements ConsoleCommand {
       return `Target ${targetId} does not exists`
     }
 
-    const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
-    if (resourceType == null) {
+    const resourceTypes = Object.keys(creep.store) as ResourceConstant[]
+    if (resourceTypes.length <= 0) {
       return "nothing to transfer"
     }
-    if (!isResourceConstant(resourceType)) {
-      return `${resourceType} is not resource type`
-    }
     if (isV5CreepMemory(creep.memory)) {
-      creep.memory.t = MoveToTargetTaskV5.create(TransferResourceApiWrapper.create(target, resourceType)).encode()
-      return `transfer ${resourceType}`
+      const tasks = resourceTypes.map(resourceType => MoveToTargetTaskV5.create(TransferResourceApiWrapper.create(target, resourceType)))
+      creep.memory.t = V5SequentialTask.create(tasks, {finishWhenSucceed: false, ignoreFailure: false}).encode()
+      return `transfer ${resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
     }
     if (isV6CreepMemory(creep.memory)) {
-      creep.memory.t = MoveToTargetTask.create(TransferApiWrapper.create(target, resourceType)).encode()
-      return `transfer ${resourceType}`
+      const tasks = resourceTypes.map(resourceType => MoveToTargetTask.create(TransferApiWrapper.create(target, resourceType)))
+      creep.memory.t = SequentialTask.create(tasks).encode()
+      return `transfer ${resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
     }
     return `Creep ${creepName} is not neither v5 or v6`
   }
@@ -393,7 +393,7 @@ export class ExecCommand implements ConsoleCommand {
     const tasks: CreepTask[] = [
       MoveToTargetTaskV5.create(apiWrapper),
     ]
-    creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+    creep.memory.t = V5SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
     return "ok"
   }
 
@@ -432,7 +432,7 @@ export class ExecCommand implements ConsoleCommand {
     const tasks: CreepTask[] = [
       MoveToTargetTaskV5.create(apiWrapper),
     ]
-    creep.memory.t = SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }).encode()
+    creep.memory.t = V5SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }).encode()
     return "ok"
   }
 
@@ -540,7 +540,7 @@ export class ExecCommand implements ConsoleCommand {
     case "succeeded":
       return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomName)}`
     case "failed":
-      return result.reason
+      return result.reason.errorMessage
     }
   }
 
