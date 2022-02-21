@@ -24,13 +24,16 @@ ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
 })
 
-const errorMessages: string[] = []
+let errorMessages: string[] = []
 const raiseError = (errorMessage: string): void => {
   if (errorMessages.includes(errorMessage) === true) {
     return
   }
+  if (errorMessages.length > 200) {
+    errorMessages = []
+  }
   errorMessages.push(errorMessage)
-  PrimitiveLogger.fatal(errorMessage)
+  PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${errorMessage}`)
 }
 
 const rangedAttackRange = GameConstants.creep.actionRange.rangedAttack
@@ -227,7 +230,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       if (creep == null) {
         // 寿命死以外
         delete this.intercepterCreepNames[roomName]
-        PrimitiveLogger.fatal(`${this.constructor.name} ${this.processId} intercepter ${intercepterName} was killed ${roomHistoryLink(roomName)}`)
+        raiseError(`${this.constructor.name} ${this.processId} intercepter ${intercepterName} was killed ${roomHistoryLink(roomName)}`)
       } else {
         if (creep.ticksToLive != null && creep.ticksToLive <= 1) {
           delete this.intercepterCreepNames[roomName]
