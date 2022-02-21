@@ -17,6 +17,7 @@ import { ContinuouslyProduceCommodityProcess } from "process/process/continuousl
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
 import { CommodityIngredient, commodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ValuedArrayMap } from "utility/valued_collection"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
   return Season41076620ResourceManagerProcess.decode(state as Season41076620ResourceManagerProcessState)
@@ -260,6 +261,39 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       return `- ${roomLink(roomName)}: ${amountList.map(amount => `${coloredResourceType(amount.resourceType)} ${amount.amount}`).join(", ")}`
     })
     return `minimum amount set:\n${results.join("\n")}`
+  }
+
+  public stopForAWhile(): void {
+    // this.removeReservedResourceTransfer(resourceType)
+    this.removeAllReservedTransfer()  // Terminalのcooldownを避けるため
+
+    // if (duration <= 0) {
+    //   PrimitiveLogger.programError(`${this.taskIdentifier} ${this.processId} `)
+    // }
+
+    this.processState.lastRunTimestamp = (Game.time - 1) % runInterval
+    processLog(this, "interval reset")
+  }
+
+  private removeAllReservedTransfer(): void {
+    this.resourceTransfer = {}
+  }
+
+  private removeReservedResourceTransfer(resourceType: CommodityIngredient): void {
+    processLog(this, `removed ${coloredResourceType(resourceType)} `)
+
+    Array.from(Object.values(this.resourceTransfer)).forEach(reservedTransfer => {
+      const removeIndices = reservedTransfer.flatMap((transfer, index): number[] => {
+        if (transfer.resourceType !== resourceType) {
+          return []
+        }
+        return [index]
+      })
+      removeIndices.reverse()
+      removeIndices.forEach(index => {
+        reservedTransfer.splice(index, 1)
+      })
+    })
   }
 
   public runOnTick(): void {
