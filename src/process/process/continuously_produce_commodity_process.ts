@@ -6,7 +6,7 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { generateCodename } from "utility/unique_id"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { CommodityIngredient, commodityTier, CommodityTier, commodityTiers, commodityTypeForTier, isCommodityConstant, isDepositConstant } from "utility/resource"
+import { CommodityIngredient, getCommodityTier, CommodityTier, commodityTiers, commodityTypesForTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { World } from "world_info/world_info"
@@ -432,7 +432,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
       return 150
     }
     if (isCommodityConstant(resourceType)) {
-      const tier = commodityTier(resourceType)
+      const tier = getCommodityTier(resourceType)
       switch (tier) {
       case 0:
         return 310
@@ -590,7 +590,7 @@ function getFactoryTier(factory: StructureFactory): CommodityTier {
 function productsForFactory(factory: StructureFactory, excludedProducts: CommodityConstant[]): CommodityConstant[] {
   const tier = getFactoryTier(factory)
 
-  return commodityTypeForTier(tier).flatMap(commodityType => {
+  return commodityTypesForTier(tier).flatMap(commodityType => {
     if (excludedProducts.includes(commodityType) === true) {
       return []
     }

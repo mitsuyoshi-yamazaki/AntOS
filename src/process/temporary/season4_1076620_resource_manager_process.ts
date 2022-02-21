@@ -15,9 +15,8 @@ import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
-import { CommodityIngredient, commodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"
+import { CommodityIngredient, getCommodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ValuedArrayMap } from "utility/valued_collection"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
   return Season41076620ResourceManagerProcess.decode(state as Season41076620ResourceManagerProcessState)
@@ -373,7 +372,7 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
       if (!(isCommodityConstant(ingredient))) {
         return 5000
       }
-      switch (commodityTier(ingredient)) {
+      switch (getCommodityTier(ingredient)) {
       case 0:
         return 200
       case 1:
