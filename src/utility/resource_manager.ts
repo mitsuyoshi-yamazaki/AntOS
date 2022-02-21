@@ -23,7 +23,7 @@ interface ResourceManagerInterface {
   resourceInRoom(resourceType: ResourceConstant, options?: { excludedRoomNames?: RoomName[] }): Map<RoomName, number>
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: {excludedRoomNames?: RoomName[], threshold?: number}): Result<number, string>
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: { excludedRoomNames?: RoomName[], threshold?: number }): Result<number, { errorMessage: string, sentAmount: number }>
 }
 
 export const ResourceManager: ResourceManagerInterface = {
@@ -125,7 +125,7 @@ export const ResourceManager: ResourceManagerInterface = {
   },
 
   // ---- Send Resource ---- //
-  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: { excludedRoomNames?: RoomName[], threshold?: number}): Result<number, string> {
+  collect(resourceType: ResourceConstant, roomName: RoomName, requiredAmount: number | "all", options?: { excludedRoomNames?: RoomName[], threshold?: number}): Result<number, {errorMessage: string, sentAmount: number}> {
     const resourceInRoom = Array.from(this.resourceInRoom(resourceType, options).entries()).sort(([lhs], [rhs]) => {
       return Game.map.getRoomLinearDistance(roomName, lhs) - Game.map.getRoomLinearDistance(roomName, rhs)
     })
@@ -215,9 +215,12 @@ export const ResourceManager: ResourceManagerInterface = {
       }
     })
 
-    const failedResult = (): ResultFailed<string> => {
+    const failedResult = (): ResultFailed<{ errorMessage: string, sentAmount: number }> => {
       errorMessages.unshift(`${sentAmount}/${requiredAmount} ${coloredResourceType(resourceType)} sent to ${roomLink(roomName)}`)
-      return Result.Failed(errorMessages.join("\n"))
+      return Result.Failed({
+        errorMessage: errorMessages.join("\n"),
+        sentAmount,
+      })
     }
 
     if (requiredAmount === "all") {
