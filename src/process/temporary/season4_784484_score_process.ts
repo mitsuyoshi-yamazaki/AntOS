@@ -167,7 +167,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
       }
       return `${dryRun}hauler in ${hauler.pos}`
     })()
-    return `${dryRun}${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}`
+    return `${dryRun}${roomLink(this.roomName)} ${coloredResourceType(this.commodityType)} ${haulerDescription}, convoy ID: ${this.convoyCreepInfo.creepId}`
   }
 
   public didReceiveMessage(message: string): string {
