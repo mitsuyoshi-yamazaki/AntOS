@@ -392,6 +392,30 @@ export class OwnedRoomObjects {
       }
     })
 
+    if (chargeableStructures.length < 12) {
+      const chargeableLinks = ((): StructureLink[] => {
+        const roomInfoMemory = Memory.v6RoomInfo[room.name]
+        if (roomInfoMemory?.roomType !== "owned") {
+          return []
+        }
+        const extraLinkIds = roomInfoMemory.config?.extraLinkIds
+        if (extraLinkIds == null) {
+          return []
+        }
+        return extraLinkIds.flatMap(linkId => {
+          const link = Game.getObjectById(linkId)
+          if (link == null) {
+            return []
+          }
+          if (link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+            return []
+          }
+          return [link]
+        })
+      })()
+      chargeableStructures.push(...chargeableLinks)
+    }
+
     // Distributorで行う
     // if (chargeableStructures.length <= 0) {
     //   if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {

@@ -59,6 +59,7 @@ import { ContinuouslyProduceCommodityProcess } from "process/process/continuousl
 import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_launcher_process"
 import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
 import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
+import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1180,6 +1181,25 @@ ProcessLauncher.register("Season4TravelerTestProcess", args => {
     const roomName = args.roomName("room_name").parse({my: true})
 
     return Result.Succeeded((processId) => Season4TravelerTestProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4OperateExtraLinkProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    if ((roomResource.roomInfo.config?.extraLinkIds?.length ?? 0) <= 0) {
+      throw `${roomLink(roomName)} doesn't have extra links`
+    }
+
+    const upgraderLink = args.visibleGameObject<StructureLink>("upgrader_link_id").parse({inRoomName: roomName})
+    if (!(upgraderLink instanceof StructureLink)) {
+      throw `${upgraderLink} is not StructureLink`
+    }
+
+    return Result.Succeeded((processId) => Season4OperateExtraLinkProcess.create(processId, roomName, upgraderLink.id))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
