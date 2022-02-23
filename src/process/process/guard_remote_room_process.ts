@@ -328,22 +328,41 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
-    const dyingCreepCount = creeps.filter(creep => {
-      if (creep.ticksToLive == null) {
+    const shouldSpawn = ((): boolean => {
+      if (this.stopSpawningReasons.length > 0) {
         return false
       }
-      if (creep.ticksToLive > 300) {
+      if (this.numberOfCreeps === 1) {
+        const dyingCreepCount = creeps.filter(creep => {
+          if (creep.ticksToLive == null) {
+            return false
+          }
+          if (creep.ticksToLive > 300) {
+            return false
+          }
+          return true
+        }).length
+
+        if ((creeps.length - dyingCreepCount) < this.numberOfCreeps) {
+          return true
+        }
         return false
       }
-      return true
-    }).length
+
+      // numberOfCreepsが2以上の場合、spawnのタイミングをずらす
+      const isSpawning = creeps.some(creep => creep.spawning === true)
+      if (isSpawning !== true && creeps.length < this.numberOfCreeps) {
+        return true
+      }
+      return false
+    })()
+
+    if (shouldSpawn === true) {
+      this.requestCreep()
+    }
 
     if (this.stopSpawningReasons.length <= 0) {
       this.checkFinishCondition()
-    }
-
-    if (this.stopSpawningReasons.length <= 0 && (creeps.length - dyingCreepCount) < this.numberOfCreeps) {
-      this.requestCreep()
     }
 
     switch (this.creepType) {
