@@ -11,7 +11,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Season4ObserverManager } from "./season4_observer_manager"
 import { Position } from "prototype/room_position"
 import { directionDescription, GameConstants } from "utility/constants"
-import { isCommodityConstant } from "utility/resource"
+import { getCommodityTier, isCommodityConstant } from "utility/resource"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
@@ -227,7 +227,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "add_highway", "remove_highway", "show_convoy", "show_logs", "set_option", "launch_debugger", "add_scoreable_resources", "remove_scoreable_resource"]
+    const commandList = ["help", "status", "add_highway", "remove_highway", "show_convoy", "show_logs", "set_option", "launch_debugger", "launch_score_process", "add_scoreable_resources", "remove_scoreable_resource"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -257,6 +257,9 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       case "launch_debugger":
         return this.launchDebugger(components)
 
+      case "launch_score_process":
+        return this.launchScoreProcessManually(components)
+
       case "add_scoreable_resources":
         return this.addScoreableResource(components)
 
@@ -264,7 +267,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
         return this.removeScoreableResource(components)
 
       default:
-        throw `Invalid command ${commandList}. see "help"`
+        throw `Invalid command ${command}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
@@ -300,6 +303,67 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     }
     this.scoreableResources.splice(index, 1)
     return `removed ${coloredResourceType(commodityType)}, scoreable resource types: ${this.scoreableResources.map(resourceType => coloredResourceType(resourceType)).join(",")}`
+  }
+
+  /** @throws */
+  private launchScoreProcessManually(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const commodityType = listArguments.commodityType(0, "commodity type").parse()
+    const highwayRoomName = listArguments.roomName(1, "highway room name").parse()
+    const amount = ((): number | "all" => {
+      try {
+        return listArguments.int(2, "resource amount").parse({ min: 1, max: 999 })
+      } catch {
+        const stringValue = listArguments.string(2, "resource amount").parse()
+        if (stringValue === "all") {
+          return stringValue
+        }
+        throw `2nd argument should be integer or "all" (${stringValue})`
+      }
+    })()
+
+    const keywordArguments = new KeywordArguments(args)
+    const specifiedonvoyCreepId = keywordArguments.gameObjectId("convoy_creep_id").parseOptional() as Id<Creep>
+
+    const findResult = Array.from(Object.entries(this.convoyCreeps)).find(([convoyCreepId, convoyInfo]) => {
+      if (convoyInfo.commodityType !== commodityType) {
+        return false
+      }
+      if (convoyInfo.roomName !== highwayRoomName) {
+        return false
+      }
+      if (specifiedonvoyCreepId != null) {
+        if (convoyCreepId !== specifiedonvoyCreepId) {
+          return false
+        }
+      }
+      return true
+    })
+    if (findResult == null) {
+      throw `no convoy observed (${coloredResourceType(commodityType)} in ${roomLink(highwayRoomName)})`
+    }
+    const [convoyCreepId, convoyInfo] = findResult
+
+    const highwayResult = this.observingHighways
+      .flatMap(highwayInfo => {
+        return [
+          { highwayInfo, observeRoomName: highwayInfo.highway.startRoomName },
+          { highwayInfo, observeRoomName: highwayInfo.highway.endRoomName },
+        ]
+      })
+      .find(info => {
+        if (info.observeRoomName !== highwayRoomName) {
+          return false
+        }
+        return true
+      })
+    if (highwayResult == null) {
+      throw `no observing highway for ${roomLink(highwayRoomName)}`
+    }
+    const { highwayInfo } = highwayResult
+
+    this.launchScoreProcess(convoyCreepId as Id<Creep>, convoyInfo, highwayInfo, {ignoreScoreableResource: true, amount})
+    return "ok"
   }
 
   /** @throws */
@@ -558,25 +622,67 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     this.convoyFoundLog(info)
   }
 
-  private launchScoreProcess(convoyCreepId: Id<Creep>, info: ConvoyCreepInfo, highway: HighwayObservingInfo): void {
+  private launchScoreProcess(convoyCreepId: Id<Creep>, info: ConvoyCreepInfo, highway: HighwayObservingInfo, options?: {ignoreScoreableResource?: boolean, amount?: number | "all"}): void {
+    const notLaunchedLog = (reason: string): void => {
+      processLog(this, `score ${coloredResourceType(info.commodityType)} not launched: ${reason}`)
+    }
+
     if (this.options.launchScoreProcess !== true) {
+      notLaunchedLog("disabled")
       return
     }
-    if (this.scoreableResources.includes(info.commodityType) !== true) {
-      return
+    const defaultAmountValue = 999
+    if (options?.ignoreScoreableResource !== true) {
+      if (this.scoreableResources.includes(info.commodityType) !== true) {
+        notLaunchedLog("not in the list")
+        return
+      }
+      const tierMaxReserve = ((): number => {
+        const commodityTier = getCommodityTier(info.commodityType)
+        switch (commodityTier) {
+        case 0:
+        case 1:
+        case 2:
+          if (info.commodityType === RESOURCE_CRYSTAL) {
+            return 0
+          }
+          return 20000
+        case 3:
+        case 4:
+        case 5:
+          return 0
+        }
+      })()
+
+      const totalResourceAmount = ResourceManager.amount(info.commodityType)
+      if (totalResourceAmount < tierMaxReserve) {
+        notLaunchedLog(`less than max reserve (${tierMaxReserve})`)
+        return
+      }
     }
     if (info.estimatedDespawnTime < 500) {
+      notLaunchedLog(`about to despawn (${info.estimatedDespawnTime})`)
       return
     }
 
-    const defaultAmount = 999
+    const defaultAmount = ((): number => {
+      if (options?.amount == null) {
+        return defaultAmountValue
+      }
+      if (typeof options.amount === "number") {
+        return options.amount
+      }
+      return Math.min(ResourceManager.amount(info.commodityType), defaultAmountValue)
+    })()
 
     const roomResource = RoomResources.getOwnedRoomResource(highway.scoreRoomName)
     const terminal = roomResource?.activeStructures.terminal
     if (terminal == null) {
+      notLaunchedLog(`no terminal in ${roomLink(highway.scoreRoomName)}`)
       return
     }
     let commodityAmout = terminal.store.getUsedCapacity(info.commodityType)
+    let transferFailed = false as boolean
     if (commodityAmout < defaultAmount) {
       const collectResult = ResourceManager.collect(info.commodityType, highway.scoreRoomName, defaultAmount)
       switch (collectResult.resultType) {
@@ -585,6 +691,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
         break
 
       case "failed":
+        transferFailed = true
         commodityAmout += collectResult.reason.sentAmount
         break
       }
@@ -597,6 +704,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
 
     const scoreAmount = Math.min(commodityAmout, defaultAmount)
     if (scoreAmount <= 0) {
+      notLaunchedLog(`score amount is 0 (commodityAmout: ${commodityAmout}, defaultAmount: ${defaultAmount}, transferFailed: ${transferFailed})`)
       return
     }
 
