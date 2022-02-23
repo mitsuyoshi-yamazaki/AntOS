@@ -123,13 +123,45 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
 
     const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
     const body = ((): BodyPartConstant[] => {
+      const isOccupied = ((): boolean => {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom == null) {
+          return false
+        }
+        const controller = targetRoom.controller
+        if (controller == null || controller.my === true || controller.reservation == null) {
+          return false
+        }
+        if (controller.reservation.username === Game.user.name) {
+          return false
+        }
+        return true
+      })()
+
+      const minimumBody = [MOVE, CLAIM]
       const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
         return defaultBody
       }
+
+      if (isOccupied === true) {
+        const attackerBody = CreepBody.create([], [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM], resources.room.energyCapacityAvailable, 10)
+        if (attackerBody.length <= 0) {
+          return minimumBody
+        }
+
+        attackerBody.sort((lhs, rhs) => {
+          if (lhs === rhs) {
+            return 0
+          }
+          return lhs === CLAIM ? 1 : -1
+        })
+        return attackerBody
+      }
+
       if (CreepBody.cost(defaultBody) > resources.room.energyCapacityAvailable) {
-        return [MOVE, CLAIM]
+        return minimumBody
       }
       return defaultBody
     })()
