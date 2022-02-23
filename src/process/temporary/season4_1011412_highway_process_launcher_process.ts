@@ -15,6 +15,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { Season4ObserverManager } from "./season4_observer_manager"
 import { processLog } from "os/infrastructure/logger"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
 ProcessDecoder.register("Season41011412HighwayProcessLauncherProcess", state => {
   return Season41011412HighwayProcessLauncherProcess.decode(state as Season41011412HighwayProcessLauncherProcessState)
@@ -92,7 +93,11 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
     bases.forEach(base => {
       base.targetRoomNames.forEach(targetRoomName => {
-        Season4ObserverManager.addRequest(base.roomName, targetRoomName, "medium", 1)
+        const observer = Game.getObjectById(base.observerId)
+        if (observer == null) {
+          return
+        }
+        Season4ObserverManager.addRequest(observer.room.name, targetRoomName, "medium", 1)
       })
     })
   }
@@ -328,22 +333,34 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     const listArguments = new ListArguments(args)
     const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
     const roomName = roomResource.room.name
-    const observer = roomResource.activeStructures.observer
-    if (observer == null) {
-      throw `no observer in ${roomLink(roomName)}`
-    }
+
+    const keywordArguments = new KeywordArguments(args)
+    const observerRoomResource = keywordArguments.ownedRoomResource("observer_room_name").parseOptional()
+
+    const observer = ((): StructureObserver => {
+      if (observerRoomResource != null) {
+        if (observerRoomResource.activeStructures.observer == null) {
+          throw `no observer in ${roomLink(observerRoomResource.room.name)}`
+        }
+        return observerRoomResource.activeStructures.observer
+      }
+      if (roomResource.activeStructures.observer == null) {
+        throw `no observer in ${roomLink(roomResource.room.name)}`
+      }
+      return roomResource.activeStructures.observer
+    })()
 
     const targetRoomNames = listArguments.roomNameList(1, "target room names").parse()
     if (targetRoomNames.length <= 0) {
       throw "target_room_names has 0 length"
     }
-    const targetingBases = this.bases.filter(base => base.targetRoomNames.some(targetRoomName => targetRoomNames.includes(targetRoomName) === true) === true)
+    const targetingBases = this.bases.flatMap(base => base.targetRoomNames.filter(targetRoomName => targetRoomNames.includes(targetRoomName) === true))
     if (targetingBases.length > 0) {
-      throw "targets duplicated"
+      throw `targets duplicated (${targetingBases.map(targetRoomName => roomLink(targetRoomName)).join(",")})`
     }
 
     targetRoomNames.forEach(targetRoomName => {
-      Season4ObserverManager.addRequest(roomName, targetRoomName, "medium", 1)
+      Season4ObserverManager.addRequest(observer.room.name, targetRoomName, "medium", 1)
     })
 
     const targetBase = this.bases.find(base => base.roomName === roomName)
