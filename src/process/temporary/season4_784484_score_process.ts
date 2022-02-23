@@ -16,7 +16,7 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { GameMap } from "game/game_map"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { GameConstants } from "utility/constants"
+import { directionDescription, GameConstants } from "utility/constants"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
@@ -37,8 +37,6 @@ ProcessDecoder.register("Season4784484ScoreProcess", state => {
 type HighwayDirection = TOP | BOTTOM | LEFT | RIGHT
 type ScoreProcessState = "running" | "fallback"
 
-const convoyOwnername = "Screeps"
-
 const haulerRoles: CreepRole[] = [CreepRole.Hauler]
 
 interface Season4784484ScoreProcessState extends ProcessState {
@@ -55,8 +53,10 @@ interface Season4784484ScoreProcessState extends ProcessState {
     readonly creepId: Id<Creep>
     readonly estimatedDespawnTime: Timestamp
     readonly lastLocation: {
-      readonly position: Position,
-      readonly roomName: RoomName,
+      readonly observedAt: Timestamp
+      readonly position: Position
+      readonly roomName: RoomName
+      readonly encounted: boolean
     } | null
   }
   readonly processState: ScoreProcessState
@@ -84,7 +84,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly highwayEntranceRoomName: RoomName,
-    private readonly direction: HighwayDirection,
+    private direction: HighwayDirection,
     private readonly commodityType: CommodityConstant,
     private readonly amount: number,
     private scoutName: CreepName | null,
@@ -93,8 +93,10 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
       creepId: Id<Creep>
       readonly estimatedDespawnTime: Timestamp,
       lastLocation: {
-        position: Position
-        roomName: RoomName
+        readonly observedAt: Timestamp
+        readonly position: Position
+        readonly roomName: RoomName
+        readonly encounted: boolean
       } | null
     },
     private processState: ScoreProcessState,
@@ -136,7 +138,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
       state.scoutName,
       state.haulerName,
       state.convoyCreepInfo,
-      state.processState ?? "running",
+      state.processState,
       state.options,
     )
   }
@@ -350,19 +352,66 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
 
     if (creep.store.getUsedCapacity(resourceType) <= 0) {
       creep.say("done", true)
+      if (creep.store.getUsedCapacity() <= 0) {
+        creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
+      }
       return
     }
 
     const convoyCreep = this.findConvoyCreep()
+
+    if (this.convoyCreepInfo.lastLocation != null) {
+      const lastLocation = this.convoyCreepInfo.lastLocation
+      const inDifferentRoom = convoyCreep == null || convoyCreep.room.name !== creep.room.name
+
+      if (lastLocation.encounted === true && inDifferentRoom === true) {
+        if (lastLocation != null) {
+          if (lastLocation.roomName === creep.room.name) {
+            const convoyDirection = ((): HighwayDirection | null => {
+              const lastPosition = lastLocation.position
+              const min = GameConstants.room.edgePosition.min + 1
+              const max = GameConstants.room.edgePosition.max - 1
+              if (lastPosition.x <= min) {
+                return LEFT
+              }
+              if (lastPosition.x >= max) {
+                return RIGHT
+              }
+              if (lastPosition.y <= min) {
+                return TOP
+              }
+              if (lastPosition.y >= max) {
+                return BOTTOM
+              }
+              return null
+            })()
+
+            if (convoyDirection != null && this.direction !== convoyDirection) {
+              const oldValue = this.direction
+              this.direction = convoyDirection
+              PrimitiveLogger.log(`${coloredText("[Info]", "info")} ${this.taskIdentifier} ${this.processId} changed direction ${directionDescription(convoyDirection)} from ${directionDescription(oldValue)}`)
+            }
+          }
+        }
+      }
+    }
+
     if (convoyCreep == null) {
       if (dying === true) {
         this.fallback(creep, terminal, "creep dying")
       }
 
-      // TODO: 入れ替わりになった場合
       const nextRoomName = this.nextRoomName(creep.room)
       this.moveToNextRoom(creep, nextRoomName)
       return
+    }
+
+    const encounted = convoyCreep.room.name === creep.room.name
+    this.convoyCreepInfo.lastLocation = {
+      observedAt: Game.time,
+      position: { x: convoyCreep.pos.x, y: convoyCreep.pos.y },
+      roomName: convoyCreep.room.name,
+      encounted,
     }
 
     const transferResult = creep.transfer(convoyCreep, resourceType)
