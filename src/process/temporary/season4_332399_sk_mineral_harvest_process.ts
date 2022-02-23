@@ -32,11 +32,15 @@ const fleeRange = 4
 const keeperLairSpawnTime = 15
 const noMineralReason = "no mineral"
 const invaderCoreReason = "invader core"
+const waypointInvaderCoreReason = (roomName: RoomName): string => {
+  return `waypoint invader core ${roomName}`
+}
 
 export interface Season4332399SKMineralHarvestProcessState extends ProcessState {
   roomName: RoomName
   targetRoomName: RoomName
   waypoints: RoomName[]
+  waypointSKRooms: RoomName[]
 
   mineralType: MineralConstant | null
   stopSpawnReason: string[]
@@ -73,6 +77,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
     public readonly roomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
+    private readonly waypointSKRooms: RoomName[],
     private stopSpawnReason: string[],
     private mineralType: MineralConstant | null,
     private regenerateBy: Timestamp | null,
@@ -89,6 +94,7 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       roomName: this.roomName,
       targetRoomName: this.targetRoomName,
       waypoints: this.waypoints,
+      waypointSKRooms: this.waypointSKRooms,
       stopSpawnReason: this.stopSpawnReason,
       mineralType: this.mineralType,
       regenerateBy: this.regenerateBy,
@@ -96,11 +102,11 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
   }
 
   public static decode(state: Season4332399SKMineralHarvestProcessState): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.stopSpawnReason, state.mineralType, state.regenerateBy)
+    return new Season4332399SKMineralHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.waypoints, state.waypointSKRooms, state.stopSpawnReason, state.mineralType, state.regenerateBy)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): Season4332399SKMineralHarvestProcess {
-    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], null, null)
+    return new Season4332399SKMineralHarvestProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, [], [], null, null)
   }
 
   public processShortDescription(): string {
@@ -149,19 +155,30 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       return
     }
 
+    const invaderCoreExists = (room: Room): boolean => {
+      return room.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_INVADER_CORE } }).length > 0
+    }
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null) {
-      if (targetRoom.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_INVADER_CORE } }).length > 0) {
+      if (invaderCoreExists(targetRoom)) {
         this.addStopSpawnReason(invaderCoreReason)
       } else {
-        if (this.stopSpawnReason.length > 0) {
-          const index = this.stopSpawnReason.findIndex(reason => reason === invaderCoreReason)
-          if (index >= 0) {
-            this.stopSpawnReason.splice(index, 1)
-          }
-        }
+        this.removeStopSpawnReason(invaderCoreReason)
       }
     }
+    this.waypointSKRooms.forEach(waypointRoomName => {
+      const waypointRoom = Game.rooms[waypointRoomName]
+      if (waypointRoom == null) {
+        return
+      }
+      const reason = waypointInvaderCoreReason(waypointRoomName)
+      if (invaderCoreExists(waypointRoom)) {
+        this.addStopSpawnReason(reason)
+      } else {
+        this.removeStopSpawnReason(reason)
+      }
+    })
+
     const mineral = targetRoom?.find(FIND_MINERALS)[0] ?? null
     if (mineral != null) {
       if (mineral.mineralAmount <= 0) {
@@ -489,5 +506,16 @@ export class Season4332399SKMineralHarvestProcess implements Process, Procedural
       return
     }
     this.stopSpawnReason.push(reason)
+  }
+
+  private removeStopSpawnReason(reason: string): void {
+    if (this.stopSpawnReason.length <= 0) {
+      return
+    }
+    const index = this.stopSpawnReason.findIndex(storedReason => storedReason === reason)
+    if (index < 0) {
+      return
+    }
+    this.stopSpawnReason.splice(index, 1)
   }
 }
