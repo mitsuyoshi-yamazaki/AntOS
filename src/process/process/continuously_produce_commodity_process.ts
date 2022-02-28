@@ -62,7 +62,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     private readonly factoryId: Id<StructureFactory>,
     private products: CommodityConstant[],
     private excludedProducts: CommodityConstant[],
-    private readonly ingredientMinimumAmounts: IngredientMinimumAmounts,
+    private ingredientMinimumAmounts: IngredientMinimumAmounts,
     private stopSpawningReasons: string[]
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
@@ -221,6 +221,10 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
 
   public setResourceMinimumAmount(resourceType: ResourceConstant, amount: number): void {
     this.ingredientMinimumAmounts[resourceType] = amount
+  }
+
+  public clearResourceMinimumAmounts(): void {
+    this.ingredientMinimumAmounts = {}
   }
 
   public requiredIngredients(): CommodityIngredient[] {
