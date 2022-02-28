@@ -31,7 +31,7 @@ import { RemoteRoomInfo } from "room_resource/room_info"
 import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
 
-const routeRecalculationInterval = 40000
+const routeRecalculationInterval = 80000
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
