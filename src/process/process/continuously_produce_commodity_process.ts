@@ -33,6 +33,8 @@ ProcessDecoder.register("ContinuouslyProduceCommodityProcess", state => {
 const noProduct = "no products"
 const notOperating = "not operating"
 
+const finished = true as boolean
+
 type IngredientMinimumAmounts = {[resourceType: string]: number}
 
 interface ContinuouslyProduceCommodityProcessState extends ProcessState {
@@ -341,7 +343,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   private newHaulerTask(creep: Creep, factory: StructureFactory, terminal: StructureTerminal, allIngredients: CommodityIngredient[], roomResource: OwnedRoomResource): CreepTask | null {
     const resourceType = Array.from(Object.keys(creep.store))[0] as ResourceConstant | null
     if (resourceType != null) {
-      if ((allIngredients as string[]).includes(resourceType) === true) {
+      if ((allIngredients as string[]).includes(resourceType) === true && finished !== true) {
         return MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, resourceType))
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
@@ -404,7 +406,19 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   private resourceToWithdraw(factory: StructureFactory, allIngredients: CommodityIngredient[]): { resourceType: ResourceConstant, amount: number } | null {
-    const resourceTypesToWithdraw = (Array.from(Object.keys(factory.store)) as ResourceConstant[])
+    const resources = (Array.from(Object.keys(factory.store)) as ResourceConstant[])
+    if (finished === true) {
+      const resourceType = resources[0]
+      if (resourceType == null) {
+        return null
+      }
+      return {
+        resourceType,
+        amount: factory.store.getUsedCapacity(resourceType)
+      }
+    }
+
+    const resourceTypesToWithdraw = resources
       .flatMap((resourceType): { resourceType: ResourceConstant, amount: number }[] => {
         const amount = factory.store.getUsedCapacity(resourceType)
         if ((allIngredients as ResourceConstant[]).includes(resourceType) === true) {
@@ -455,6 +469,10 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   private resourceTypeToChargeFactory(factory: StructureFactory, allIngredients: CommodityIngredient[], roomResource: OwnedRoomResource): CommodityIngredient | null {
+    if (finished === true) {
+      return null
+    }
+
     // factory内にmaximumAmountInFactory未満で、かつterminalに0以上のresourceを、factory内に少ない順
     const ingredientAmounts = allIngredients.flatMap((ingredient): { ingredient: CommodityIngredient, amountInFactory: number }[] => {
       const amountInFactory = factory.store.getUsedCapacity(ingredient)

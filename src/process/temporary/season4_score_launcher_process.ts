@@ -11,7 +11,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Season4ObserverManager } from "./season4_observer_manager"
 import { Position } from "prototype/room_position"
 import { directionDescription, GameConstants } from "utility/constants"
-import { getCommodityTier, isCommodityConstant } from "utility/resource"
+import { isCommodityConstant } from "utility/resource"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
@@ -639,26 +639,27 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       //   return
       // }
       const tierMaxReserve = ((): number => {
-        const scoreableResources: CommodityConstant[] = [
-          RESOURCE_CRYSTAL,
-          RESOURCE_GHODIUM_MELT,
-        ]
-        if (scoreableResources.includes(info.commodityType) === true) {
-          return 0
-        }
-        const commodityTier = getCommodityTier(info.commodityType)
-        switch (commodityTier) {
-        case 0:
-          return 5000
-        case 1:
-          return 1000
-        case 2:
-          return 200
-        case 3:
-        case 4:
-        case 5:
-          return 0
-        }
+        return 0
+        // const scoreableResources: CommodityConstant[] = [
+        //   RESOURCE_CRYSTAL,
+        //   RESOURCE_GHODIUM_MELT,
+        // ]
+        // if (scoreableResources.includes(info.commodityType) === true) {
+        //   return 0
+        // }
+        // const commodityTier = getCommodityTier(info.commodityType)
+        // switch (commodityTier) {
+        // case 0:
+        //   return 5000
+        // case 1:
+        //   return 1000
+        // case 2:
+        //   return 200
+        // case 3:
+        // case 4:
+        // case 5:
+        //   return 0
+        // }
       })()
 
       const totalResourceAmount = ResourceManager.amount(info.commodityType)
