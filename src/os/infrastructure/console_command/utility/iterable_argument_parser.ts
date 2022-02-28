@@ -1,7 +1,8 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
-import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, SingleOptionalArgument, StringArgument, TypedStringArgument } from "./argument_parser"
+import { RoomName } from "utility/room_name"
+import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument } from "./argument_parser"
 
-export type IterableArgumentType = "string" | "int" | "float" | "boolean" | "resource" | "mineral_boost" | "deposit" | "commodity" | "object_id"
+export type IterableArgumentType = "string" | "int" | "float" | "boolean" | "resource" | "mineral_boost" | "deposit" | "commodity" | "object_id" | "room_name"
 
 type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? void
   : T extends "int" ? { min?: number, max?: number }
@@ -11,6 +12,7 @@ type IterableArgumentOption<T extends IterableArgumentType> = T extends "string"
   : T extends "deposit" ? void
   : T extends "commodity" ? void
   : T extends "object_id" ? void
+  : T extends "room_name" ? { my?: boolean, allowClosedRoom?: boolean }
   : void  // "boolean"
 
 type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "string" ? string
@@ -21,6 +23,7 @@ type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "str
   : T extends "deposit" ? DepositConstant
   : T extends "commodity" ? CommodityConstant
   : T extends "object_id" ? string
+  : T extends "room_name" ? RoomName
   : boolean // "boolean"
 
 const SingularParsers: { [T in IterableArgumentType]: (key: string, value: string, parseOptions?: ArgumentParsingOptions) => SingleOptionalArgument<IterableArgumentOption<T>, IterableArgumentReturnType<T>> } = {
@@ -50,6 +53,9 @@ const SingularParsers: { [T in IterableArgumentType]: (key: string, value: strin
   },
   object_id: (key: string, value: string, parseOptions?: ArgumentParsingOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
+  },
+  room_name: (key: string, value: string, parseOptions?: ArgumentParsingOptions): RoomNameArgument => {
+    return new RoomNameArgument(key, value, parseOptions)
   },
 }
 
