@@ -105,7 +105,7 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     private readonly convoyCreeps: { [creepId: string]: ConvoyCreepInfo },
     private readonly creepObserveLogs: ObserveLog[],
     private ignoreCreepIds: Id<Creep>[],
-    private scoreableResources: CommodityConstant[],
+    private scoreableResources: CommodityConstant[],  // シーズン終了が近いので無視
     private readonly options: {
       launchScoreProcess: boolean
     },
@@ -169,7 +169,8 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
   public processDescription(): string {
     const descriptions: string[] = [
       `observing ${this.observingHighways.length} highways`,
-      `scoreable resources: ${this.scoreableResources.map(resourceType => coloredResourceType(resourceType)).join(",")}`,
+      // `scoreable resources: ${this.scoreableResources.map(resourceType => coloredResourceType(resourceType)).join(",")}`,
+      "score with all resources",
     ]
 
     const commoditiesByDirection = (convoy: ConvoyCreepInfo[], roomName: RoomName): string => {
@@ -633,20 +634,26 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     }
     const defaultAmountValue = 999
     if (options?.ignoreScoreableResource !== true) {
-      if (this.scoreableResources.includes(info.commodityType) !== true) {
-        notLaunchedLog("not in the list")
-        return
-      }
+      // if (this.scoreableResources.includes(info.commodityType) !== true) {
+      //   notLaunchedLog("not in the list")
+      //   return
+      // }
       const tierMaxReserve = ((): number => {
+        const scoreableResources: CommodityConstant[] = [
+          RESOURCE_CRYSTAL,
+          RESOURCE_GHODIUM_MELT,
+        ]
+        if (scoreableResources.includes(info.commodityType) === true) {
+          return 0
+        }
         const commodityTier = getCommodityTier(info.commodityType)
         switch (commodityTier) {
         case 0:
+          return 5000
         case 1:
+          return 1000
         case 2:
-          if (info.commodityType === RESOURCE_CRYSTAL) {
-            return 0
-          }
-          return 20000
+          return 200
         case 3:
         case 4:
         case 5:
@@ -683,8 +690,9 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
     }
     let commodityAmout = terminal.store.getUsedCapacity(info.commodityType)
     let transferFailed = false as boolean
-    if (commodityAmout < defaultAmount) {
-      const collectResult = ResourceManager.collect(info.commodityType, highway.scoreRoomName, defaultAmount)
+    const collectAmount = defaultAmount - commodityAmout
+    if (collectAmount > 0) {
+      const collectResult = ResourceManager.collect(info.commodityType, highway.scoreRoomName, collectAmount)
       switch (collectResult.resultType) {
       case "succeeded":
         commodityAmout += collectResult.value
@@ -697,15 +705,15 @@ export class Season4ScoreLauncherProcess implements Process, Procedural, Message
       }
     }
 
-    const resourceManagerProcess = getResourceManagerProcess()
-    if (resourceManagerProcess != null) {
-      resourceManagerProcess.stopForAWhile()
-    }
-
     const scoreAmount = Math.min(commodityAmout, defaultAmount)
     if (scoreAmount <= 0) {
       notLaunchedLog(`score amount is 0 (commodityAmout: ${commodityAmout}, defaultAmount: ${defaultAmount}, transferFailed: ${transferFailed})`)
       return
+    }
+
+    const resourceManagerProcess = getResourceManagerProcess()
+    if (resourceManagerProcess != null) {
+      resourceManagerProcess.stopForAWhile()
     }
 
     PrimitiveLogger.log(`${coloredText("[Launch]", "info")} launched score process ${scoreAmount} ${coloredResourceType(info.commodityType)} from ${roomLink(highway.scoreRoomName)} to ${roomLink(info.roomName)} (history: ${roomHistoryLink(highway.scoreRoomName, Game.time + 10)}`)
