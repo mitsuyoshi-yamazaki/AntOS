@@ -1194,7 +1194,7 @@ ProcessLauncher.register("Season4OperateExtraLinkProcess", args => {
       throw `${roomLink(roomName)} doesn't have extra links`
     }
 
-    const upgraderLink = args.visibleGameObject<StructureLink>("upgrader_link_id").parse({inRoomName: roomName})
+    const upgraderLink = args.visibleGameObject("upgrader_link_id").parse({inRoomName: roomName})
     if (!(upgraderLink instanceof StructureLink)) {
       throw `${upgraderLink} is not StructureLink`
     }

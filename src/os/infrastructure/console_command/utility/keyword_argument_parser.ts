@@ -28,7 +28,7 @@ interface KeywordArgumentsInterface {
   roomNameList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName[]>
   room(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, Room>
   gameObjectId(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
-  visibleGameObject<T extends RoomObject>(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{inRoomName?: RoomName}, T>
+  visibleGameObject(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject>
   resourceType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, ResourceConstant>
   boostCompoundType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, MineralBoostConstant>
   depositType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, DepositConstant>
@@ -135,8 +135,8 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return this.string(key, options)
   }
 
-  public visibleGameObject<T extends RoomObject>(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ inRoomName?: RoomName }, T> {
-    return new VisibleRoomObjectArgument<T>(key, this.argumentMap.get(key) ?? null, options)
+  public visibleGameObject(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {
+    return new VisibleRoomObjectArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
   public resourceType(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, ResourceConstant> {

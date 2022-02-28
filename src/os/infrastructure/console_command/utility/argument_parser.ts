@@ -393,13 +393,13 @@ export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, Owne
   }
 }
 
-export class VisibleRoomObjectArgument<T extends RoomObject> extends SingleOptionalArgument<{ inRoomName?: RoomName }, T> {
+export class VisibleRoomObjectArgument extends SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {
   /** throws */
-  public parse(options?: { inRoomName?: RoomName }): T {
+  public parse(options?: { inRoomName?: RoomName }): RoomObject {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
-    const obj = Game.getObjectById(this.value as Id<T>)
+    const obj = Game.getObjectById(this.value as Id<RoomObject>)
     if (obj == null) {
       throw `no object with ID ${this.value}`
     }
