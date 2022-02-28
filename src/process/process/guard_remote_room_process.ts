@@ -215,7 +215,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition"]
+    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition", "resume", "stop"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -229,6 +229,12 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return this.changeCreepType(components)
       case "change_finish_condition":
         return this.changeFinishCondition(components)
+      case "resume":
+        this.stopSpawningReasons = []
+        return "ok"
+      case "stop":
+        this.addStopSpawningReason("manually")
+        return "ok"
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -349,7 +355,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return false
       }
 
+      if (creeps.length < (this.numberOfCreeps - 1)) {
+        return true
+      }
       // numberOfCreepsが2以上の場合、spawnのタイミングをずらす
+      if (this.numberOfCreeps === 2 && creeps.length === 1 && creeps[0] != null) {
+        const ticksToLive = creeps[0].ticksToLive
+        if (ticksToLive != null && ticksToLive > (GameConstants.creep.life.lifeTime - 300)) {
+          return false
+        }
+      }
       const isSpawning = creeps.some(creep => creep.spawning === true)
       if (isSpawning !== true && creeps.length < this.numberOfCreeps) {
         return true
@@ -546,7 +561,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
-    if (waitingTarget == null) {      this.talk(creep)
+    if (waitingTarget == null) {
       this.talk(creep)
       return
     }
@@ -571,8 +586,15 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     this.rangedAttack(creep, target)
-    if (target.getActiveBodyparts(ATTACK) > 0 && target.pos.getRangeTo(creep.pos) <= 2) {
-      this.fleeFrom(target.pos, creep, 4)
+    if (target.getActiveBodyparts(ATTACK) > 0) {
+      const range = target.pos.getRangeTo(creep.pos)
+      if (range <= 2) {
+        this.fleeFrom(target.pos, creep, 4)
+      } else if (range === 3) {
+        // do nothing
+      } else {
+        creep.moveTo(target)
+      }
     } else {
       if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
         creep.moveTo(target)
@@ -589,8 +611,15 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
 
-      if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
-        this.fleeFrom(closestHostile.pos, creep, 4)
+      if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
+        const range = closestHostile.pos.getRangeTo(creep)
+        if (range <= 2) {
+          this.fleeFrom(closestHostile.pos, creep, 4)
+        } else if (range === 3) {
+          // do nothing
+        } else {
+          creep.moveTo(closestHostile)
+        }
         moved = true
       }
     }
