@@ -25,6 +25,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { Environment } from "utility/environment"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -221,6 +222,11 @@ export class OwnedRoomHaulerTask extends Task {
             if (amount <= 0) {
               return false
             }
+            if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+              if (tomb.pos.x <= 1) {
+                return false
+              }
+            }
             if (hasResource !== true) {
               return true
             }
@@ -247,12 +253,17 @@ export class OwnedRoomHaulerTask extends Task {
           if (objects.hostiles.creeps.length > 0) {
             return null
           }
+          if (hasResource === true) {
+            return null
+          }
           return objects.droppedResources.filter(resource => {
+            if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+              if (resource.pos.x <= 1) {
+                return false
+              }
+            }
             if (resource.resourceType !== RESOURCE_ENERGY) {
               return true
-            }
-            if (hasResource === true) {
-              return false
             }
             return resource.amount > 100
           })[0] ?? null
@@ -300,6 +311,11 @@ export class OwnedRoomHaulerTask extends Task {
         if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
           return false
         }
+        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+          if (resource.pos.x <= 1) {
+            return false
+          }
+        }
         return resource.amount >= 100
       })
       if (droppedEnergy != null) {
@@ -309,6 +325,11 @@ export class OwnedRoomHaulerTask extends Task {
       const tombstone = objects.tombStones.find(tombstone => {
         if (tombstone.v5TargetedBy.length > 0) {
           return false
+        }
+        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+          if (tombstone.pos.x <= 1) {
+            return false
+          }
         }
         return tombstone.store.getUsedCapacity(RESOURCE_ENERGY) >= 100  // TODO: その他のリソースも回収する
       })
