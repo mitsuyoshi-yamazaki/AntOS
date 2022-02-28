@@ -262,6 +262,10 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     return `minimum amount set:\n${results.join("\n")}`
   }
 
+  public clearResourceMinimumAmounts(): void {
+    this.minimumResourceAmounts = {}
+  }
+
   public stopForAWhile(): void {
     // this.removeReservedResourceTransfer(resourceType)
     this.removeAllReservedTransfer()  // Terminalのcooldownを避けるため
