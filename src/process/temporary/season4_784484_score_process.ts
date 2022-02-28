@@ -29,6 +29,7 @@ import { Timestamp } from "utility/timestamp"
 import { Position } from "prototype/room_position"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ResourceManager } from "utility/resource_manager"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
   return Season4784484ScoreProcess.decode(state as Season4784484ScoreProcessState)
@@ -333,7 +334,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
 
     const { resourceType, amount } = this.getResourceType()
 
-    const dying = creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime * 0.55)
+    const dying = creep.ticksToLive != null && creep.ticksToLive < (GameConstants.creep.life.lifeTime - 600)
 
     if (creep.room.name === this.roomName) {
       if (creep.store.getUsedCapacity(resourceType) <= 0) {
@@ -341,7 +342,40 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
           creep.v5task = RunApiTask.create(SuicideApiWrapper.create())
           return
         }
-        creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, resourceType, amount)))
+
+        const amountInTerminal = terminal.store.getUsedCapacity(resourceType)
+        if (amountInTerminal >= amount) {
+          creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, resourceType, amount)))
+          return
+        }
+
+        const totalResourceAmount = ResourceManager.amount(resourceType)
+        if (totalResourceAmount < amount) {
+          creep.say("no res1")
+          return
+        }
+        const collectAmount = Math.max(totalResourceAmount - amountInTerminal, amount, 0)
+        if (collectAmount <= 0) {
+          creep.say("no res2")
+          return
+        }
+
+        const withdrawAmount = ((): number => {
+          const collectResult = ResourceManager.collect(resourceType, this.roomName, collectAmount)
+          switch (collectResult.resultType) {
+          case "succeeded":
+            return collectResult.value
+
+          case "failed":
+            return collectResult.reason.sentAmount
+          }
+        })()
+        if (withdrawAmount <= 0) {
+          creep.say("no res3")
+          return
+        }
+
+        creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, resourceType, withdrawAmount)))
         return
       }
 
