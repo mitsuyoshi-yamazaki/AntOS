@@ -66,6 +66,9 @@ export type OwnedRoomConfig = {
   powers?: PowerConstant[]
   wallMaxHits?: number
   extraLinkIds?: Id<StructureLink>[]
+  useSafemodeInBoostrap?: boolean
+  bootstrapUntilRcl5?: boolean
+  forceAttack?: boolean
 }
 
 export interface OwnedRoomInfo extends BasicRoomInfo {

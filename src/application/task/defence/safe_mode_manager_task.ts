@@ -69,6 +69,11 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       return taskOutputs
     }
 
+    if (roomResource.activeStructures.towers.length <= 0 && roomResource.roomInfo.config?.useSafemodeInBoostrap === true) {
+      this.activateSafemode(roomResource.controller, `boostrapping ${roomLink(roomResource.room.name)}, invaders: ${invaders}`, taskOutputs)
+      return taskOutputs
+    }
+
     if (roomResource.activeStructures.towers.length > 0) {
       if (roomResource.activeStructures.towers.some(tower => (tower.store.getUsedCapacity(RESOURCE_ENERGY) < (tower.store.getCapacity(RESOURCE_ENERGY) * 0.14)))) {
         this.activateSafemode(roomResource.controller, `invaders: ${invaders}`, taskOutputs)
