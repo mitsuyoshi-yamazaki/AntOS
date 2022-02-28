@@ -295,7 +295,10 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
     this.estimatedTicksToRoom = findRoomRoute(this.parentRoomName, this.targetRoomName, this.waypoints).length * GameConstants.room.size
-    this.whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist ?? []
+    this.whitelistedUsernames = [
+      ...Game.whitelist,
+      ...(Memory.gameInfo.sourceHarvestWhitelist ?? []),
+    ]
 
     this.fullAttackPower = this.attackerSpec.body.filter(b => (b === ATTACK)).length * GameConstants.creep.actionPower.attack
   }

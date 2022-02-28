@@ -25,7 +25,6 @@ export interface Season2055924SendResourcesProcessState extends ProcessState {
   readonly excludes: ResourceConstant[]
 }
 
-// Game.io("launch -l Season2055924SendResourcesProcess room_name=W1N36 target_sector_names=W45S5 excluded_resource_types=energy")
 export class Season2055924SendResourcesProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
