@@ -36,6 +36,7 @@ import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
+import { execCreepCommand } from "./exec_commands/creep_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -83,6 +84,10 @@ export class ExecCommand implements ConsoleCommand {
         return this.checkAlliance()
       case "unclaim":
         return this.unclaim()
+      case "prepare_unclaim":
+        return this.prepareUnclaim(args)
+      case "creep":
+        return this.creep(args)
       case "power_creep":
         return this.powerCreep(args)
       case "room_path_finding":
@@ -825,6 +830,28 @@ export class ExecCommand implements ConsoleCommand {
     }
 
     return messages.join("\n")
+  }
+
+  /** @throws */
+  private prepareUnclaim(args: string[]): CommandExecutionResult {
+    const keywordArguments = new KeywordArguments(args)
+    const roomName = keywordArguments.roomName("room_name").parse({my: true})
+    const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
+    const excludedResourceTypes = keywordArguments.list("excluded_resource_types", "resource").parseOptional() ?? []
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
+    })
+
+    return `send resource process ${process.processId} launched`
+  }
+
+  /** @throws */
+  private creep(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const creep = listArguments.creep(0, "creep name").parse()
+    args.shift()
+    return execCreepCommand(creep, args)
   }
 
   /** @throws */
