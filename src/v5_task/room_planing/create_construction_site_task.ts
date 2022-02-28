@@ -6,6 +6,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 export const constructionSiteFlagColorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
@@ -102,12 +103,13 @@ export class CreateConstructionSiteTask extends Task {
     })()
     const availableEnergy = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-    this.placeConstructionSite(objects.controller.room, [...objects.flags], centerPosition, availableEnergy)
+    this.placeConstructionSite(roomResource, [...objects.flags], centerPosition, availableEnergy)
 
     return TaskStatus.InProgress
   }
 
-  private placeConstructionSite(room: Room, flags: Flag[], centerPosition: RoomPosition, availableEnergy: number): void {
+  private placeConstructionSite(roomResource: OwnedRoomResource, flags: Flag[], centerPosition: RoomPosition, availableEnergy: number): void {
+    const room = roomResource.room
     if (room.controller == null) {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
@@ -158,6 +160,11 @@ export class CreateConstructionSiteTask extends Task {
       const structureType = constructionSiteFlagColorMap.get(flag.color)
       if (structureType == null) {
         continue
+      }
+      if (roomResource.roomInfo.config?.bootstrapUntilRcl5 === true) {
+        if (structureType !== STRUCTURE_TOWER && structureType !== STRUCTURE_SPAWN) {
+          continue
+        }
       }
       if (structureType === STRUCTURE_EXTENSION && shouldPlaceExtensions !== true) {
         continue
