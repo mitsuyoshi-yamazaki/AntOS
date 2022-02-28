@@ -33,7 +33,7 @@ export class RoomPlanner {
     if (firstSpawnPositions == null) {
       return Result.Failed("Failed to calculate first spawn position")
     }
-    PrimitiveLogger.log(`First spawn position: ${firstSpawnPositions.firstSpawnPosition}, manually flagged room center: ${firstSpawnPositions.roomCenter}`)
+    PrimitiveLogger.log(`First spawn position: ${firstSpawnPositions.firstSpawnPosition}, room center: ${firstSpawnPositions.roomCenter}`)
 
     const room = controller.room
 
@@ -72,6 +72,7 @@ export class RoomPlanner {
   }
 
   private placeFlags(firstSpawnPosition: RoomPosition): Result<{ center: RoomPosition }, string> {
+    console.log("placeFlags")
     const controller = this.controller
     const room = controller.room
 
@@ -486,7 +487,7 @@ function calculateFirstSpawnPosition(controller: StructureController, showsCostM
 
   const spawnFlags = room.find(FIND_FLAGS).filter(flag => flag.color === COLOR_GREY)
   if (spawnFlags.length === 1 && spawnFlags[0] != null) {
-    return { firstSpawnPosition: spawnFlags[0].pos, roomCenter: spawnFlags[0].pos.positionTo(LEFT) }
+    return { firstSpawnPosition: spawnFlags[0].pos, roomCenter: null }
   }
   if (spawnFlags.length > 1) {
     const storageFlag = room.find(FIND_FLAGS).find(flag => flag.color === COLOR_GREEN)
