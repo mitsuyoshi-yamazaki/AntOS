@@ -50,7 +50,7 @@ type FinishConditionDuration = {
 }
 type FinishConditionOwnedRoom = {
   readonly case: "owned_room"
-  readonly condition: "tower" | "storage"
+  readonly condition: "tower" | "2towers" | "storage"
 }
 type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom
 
@@ -157,7 +157,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private creepType: GuardRemoteRoomProcessCreepType,
-    private readonly numberOfCreeps: number,
+    private numberOfCreeps: number,
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
     private talkingTo: TalkingInfo,
@@ -204,7 +204,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       state.targetId,
       state.ignoreUsers,
       state.talkingTo,
-      state.safemodeCooldown ?? 500,
+      state.safemodeCooldown,
       state.finishCondition,
       state.stopSpawningReasons
     )
@@ -232,7 +232,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "resume", "stop"]
+    const commandList = ["help", "add_ignore_user", "set_creep_count", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "resume", "stop"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -242,6 +242,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return `Commands: ${commandList}`
       case "add_ignore_user":
         return this.addIgnoreUsers(components)
+      case "set_creep_count":
+        return this.setCreepCount(components)
       case "change_creep_type":
         return this.changeCreepType(components)
       case "change_finish_condition":
@@ -260,6 +262,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private setCreepCount(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const creepCount = listArguments.int(0, "creep count").parse({ min: 1, max: 10 })
+    const oldValue = this.numberOfCreeps
+    this.numberOfCreeps = creepCount
+
+    return `set ${this.numberOfCreeps} (from: ${oldValue})`
   }
 
   /** @throws */
@@ -289,8 +301,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
       case "owned_room": {
         const roomCondition = keywordArguments.string("room_condition").parse()
-        if (roomCondition !== "tower" && roomCondition !== "storage") {
-          throw `room_condition can either "tower" or "storage" (${roomCondition})`
+        if (roomCondition !== "tower" && roomCondition !== "storage" && roomCondition !== "2towers") {
+          throw `room_condition can either "tower", "2towers" or "storage" (${roomCondition})`
         }
         return {
           case: "owned_room",
@@ -447,6 +459,11 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         case "tower":
           if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length > 0) {
             this.addStopSpawningReason("owned room tower")
+          }
+          return
+        case "2towers":
+          if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length >= 2) {
+            this.addStopSpawningReason("owned room 2 towers")
           }
           return
         case "storage":
