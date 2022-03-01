@@ -135,6 +135,7 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   ignoreUsers: IgnoreUser[]
   talkingTo: TalkingInfo
   finishCondition: FinishCondition
+  safemodeCooldown: number
   stopSpawningReasons: string[]
 }
 
@@ -160,6 +161,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
     private talkingTo: TalkingInfo,
+    private safemodeCooldown: number,
     private finishCondition: FinishCondition,
     private stopSpawningReasons: string[],
   ) {
@@ -184,20 +186,35 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       targetId: this.targetId,
       ignoreUsers: this.ignoreUsers,
       talkingTo: this.talkingTo,
+      safemodeCooldown: this.safemodeCooldown,
       finishCondition: this.finishCondition,
       stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: GuardRemoteRoomProcessState): GuardRemoteRoomProcess {
-    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo, state.finishCondition, state.stopSpawningReasons ?? [])
+    return new GuardRemoteRoomProcess(
+      state.l,
+      state.i,
+      state.p,
+      state.tr,
+      state.w,
+      state.creepType,
+      state.numberOfCreeps,
+      state.targetId,
+      state.ignoreUsers,
+      state.talkingTo,
+      state.safemodeCooldown ?? 500,
+      state.finishCondition,
+      state.stopSpawningReasons
+    )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: GuardRemoteRoomProcessCreepType, numberOfCreeps: number): GuardRemoteRoomProcess {
     const defaultFinishCondition: FinishConditionNever = {
       case: "never"
     }
-    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, defaultFinishCondition, [])
+    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, 500, defaultFinishCondition, [])
   }
 
   public processShortDescription(): string {
@@ -215,7 +232,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition", "resume", "stop"]
+    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "resume", "stop"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -229,6 +246,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return this.changeCreepType(components)
       case "change_finish_condition":
         return this.changeFinishCondition(components)
+      case "change_safemode_cooldown":
+        return this.changeSafemodeCooldown(components)
       case "resume":
         this.stopSpawningReasons = []
         return "ok"
@@ -241,6 +260,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private changeSafemodeCooldown(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const cooldown = listArguments.int(0, "safemode cooldown").parse({ min: 0 })
+    const oldValue = this.safemodeCooldown
+    this.safemodeCooldown = cooldown
+
+    return `set ${this.safemodeCooldown} (from: ${oldValue})`
   }
 
   /** @throws */
@@ -328,7 +357,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const whitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
 
     const targetRoom = Game.rooms[this.targetRoomName]
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > 500) {
+    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > this.safemodeCooldown) {
       processLog(this, `target room ${this.targetRoomName} in safemode`)
       return
     }
