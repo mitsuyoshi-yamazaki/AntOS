@@ -1,22 +1,12 @@
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
 import { describeLabs, showRoomPlan } from "script/room_plan"
-import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { MoveToTargetTask as MoveToTargetTaskV5 } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { TransferResourceApiWrapper, TransferResourceApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
-import { isV5CreepMemory, isV6CreepMemory } from "prototype/creep"
-import { CreepTask } from "v5_object_task/creep_task/creep_task"
-import { SequentialTask as V5SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
-import { MoveToTargetTask } from "object_task/creep_task/task/move_to_target_task"
-import { TransferApiWrapper } from "object_task/creep_task/api_wrapper/transfer_api_wrapper"
-import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-import { DismantleApiWrapper } from "v5_object_task/creep_task/api_wrapper/dismantle_api_wrapper"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
 import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
@@ -25,7 +15,6 @@ import { Season2055924SendResourcesProcess } from "process/temporary/season_2055
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
-import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { temporaryScript } from "../../../../submodules/private/attack/script/temporary_script"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
@@ -35,7 +24,6 @@ import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
 import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
-import { SequentialTask } from "object_task/creep_task/combined_task/sequential_task"
 import { execCreepCommand } from "./exec_commands/creep_command"
 
 export class ExecCommand implements ConsoleCommand {
@@ -58,16 +46,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.getRoadPositionsToParentRoom()
       case "describeLabs":
         return this.describeLabs()
-      case "moveToRoom":
-        return this.moveToRoom()
-      case "move":
-        return this.moveCreep()
-      case "transfer":
-        return this.transfer()
-      case "pickup":
-        return this.pickup()
-      case "dismantle":
-        return this.dismantle()
       case "resource":
         return this.resource()
       case "set_waiting_position":
@@ -241,204 +219,6 @@ export class ExecCommand implements ConsoleCommand {
       return "" // FixMe: nullチェック
     }
     return describeLabs(roomName)
-  }
-
-  private moveToRoom(): CommandExecutionResult {
-    const args = this.parseProcessArguments("creep_name", "room_name", "waypoints")
-    if (typeof args === "string") {
-      return args
-    }
-    const [creepName, roomName, rawWaypoints] = args
-    if (creepName == null || roomName == null || rawWaypoints == null) {
-      return ""
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const creep = Game.creeps[creepName]
-    if (creep == null) {
-      return `Creep ${creepName} doesn't exists`
-    }
-    // if (creep.v5task != null) {
-    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    // }
-    if (!isV5CreepMemory(creep.memory)) {
-      return `Creep ${creepName} is not v5`
-    }
-    creep.memory.t = MoveToRoomTask.create(roomName, waypoints).encode()
-
-    return "ok"
-  }
-
-  private moveCreep(): CommandExecutionResult {
-    const args = this.parseProcessArguments("creep_name", "waypoints")
-    if (typeof args === "string") {
-      return args
-    }
-    const [creepName, rawWaypoints] = args
-    if (creepName == null || rawWaypoints == null) {
-      return ""
-    }
-    const creep = Game.creeps[creepName]
-    if (creep == null) {
-      return `Creep ${creepName} doesn't exists`
-    }
-    const roomName = creep.room.name
-
-    const waypoints: RoomPosition[] = []
-    const errors: string[] = []
-    rawWaypoints.split(",").forEach(waypoint => {
-      const components = waypoint.split(";")
-      if (components.length !== 2 || components[0] == null || components[1] == null) {
-        errors.push(`Invalid waypoint ${waypoint}`)
-        return
-      }
-      const x = parseInt(components[0], 10)
-      const y = parseInt(components[1], 10)
-      if (isNaN(x) === true || isNaN(y) === true) {
-        errors.push(`Invalid waypoint ${waypoint}`)
-        return
-      }
-      try {
-        waypoints.push(new RoomPosition(x, y, roomName))
-      } catch (e) {
-        errors.push(`Cannot create RoomPosition for ${waypoint}`)
-      }
-    })
-
-    if (errors.length > 0) {
-      return errors.join(", ")
-    }
-
-    if (!isV5CreepMemory(creep.memory)) {
-      return `Creep ${creepName} is not v5`
-    }
-    const moveTasks = waypoints.map(waypoint => MoveToTask.create(waypoint, 0))
-    creep.memory.t = V5SequentialTask.create(moveTasks, {ignoreFailure: false, finishWhenSucceed: false}).encode()
-
-    return "ok"
-  }
-
-  private transfer(): CommandExecutionResult {
-    const args = this.parseProcessArguments("creep_name", "target_id")
-    if (typeof args === "string") {
-      return args
-    }
-    const [creepName, targetId] = args
-    if (creepName == null || targetId == null) {
-      return ""
-    }
-
-    const creep = Game.creeps[creepName]
-    if (creep == null) {
-      return `Creep ${creepName} doesn't exists`
-    }
-    // if (creep.v5task != null) {
-    //   return `Creep ${creepName} has v5 task ${creep.v5task.constructor.name}`
-    // }
-    const target = Game.getObjectById(targetId) as TransferResourceApiWrapperTargetType | null
-    if (target == null) {
-      return `Target ${targetId} does not exists`
-    }
-
-    const resourceTypes = Object.keys(creep.store) as ResourceConstant[]
-    if (resourceTypes.length <= 0) {
-      return "nothing to transfer"
-    }
-    if (isV5CreepMemory(creep.memory)) {
-      const tasks = resourceTypes.map(resourceType => MoveToTargetTaskV5.create(TransferResourceApiWrapper.create(target, resourceType)))
-      creep.memory.t = V5SequentialTask.create(tasks, {finishWhenSucceed: false, ignoreFailure: false}).encode()
-      return `transfer ${resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
-    }
-    if (isV6CreepMemory(creep.memory)) {
-      const tasks = resourceTypes.map(resourceType => MoveToTargetTask.create(TransferApiWrapper.create(target, resourceType)))
-      creep.memory.t = SequentialTask.create(tasks).encode()
-      return `transfer ${resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
-    }
-    return `Creep ${creepName} is not neither v5 or v6`
-  }
-
-  private pickup(): CommandExecutionResult {
-    const args = this.parseProcessArguments("creep_name", "target_id")
-    if (typeof args === "string") {
-      return args
-    }
-    const [creepName, targetId] = args
-    if (creepName == null || targetId == null) {
-      return ""
-    }
-
-    const creep = Game.creeps[creepName]
-    if (creep == null) {
-      return `Creep ${creepName} doesn't exists`
-    }
-    const apiWrapper = ((): WithdrawApiWrapper | string => {
-      const target = Game.getObjectById(targetId)
-      if (target == null) {
-        return `Target ${targetId} does not exists`
-      }
-      if (target instanceof Resource) {
-        return WithdrawApiWrapper.create(target)
-      }
-      if (!(target instanceof Tombstone) && !(target instanceof StructureContainer) && !(target instanceof Ruin)) {
-        return `Unsupported target type ${target}`
-      }
-      if (target.store.getUsedCapacity() > 0 ) {
-        return WithdrawApiWrapper.create(target)
-      }
-      return `Nothing to pickup ${target}`
-    })()
-
-    if (typeof apiWrapper === "string") {
-      return apiWrapper
-    }
-
-    if (!isV5CreepMemory(creep.memory)) {
-      return `Creep ${creepName} is not v5`
-    }
-    const tasks: CreepTask[] = [
-      MoveToTargetTaskV5.create(apiWrapper),
-    ]
-    creep.memory.t = V5SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
-    return "ok"
-  }
-
-  private dismantle(): CommandExecutionResult {
-    const args = this.parseProcessArguments("creep_name", "target_id")
-    if (typeof args === "string") {
-      return args
-    }
-    const [creepName, targetId] = args
-    if (creepName == null || targetId == null) {
-      return ""
-    }
-
-    const creep = Game.creeps[creepName]
-    if (creep == null) {
-      return `Creep ${creepName} doesn't exists`
-    }
-    const apiWrapper = ((): DismantleApiWrapper | string => {
-      const target = Game.getObjectById(targetId)
-      if (target == null) {
-        return `Target ${targetId} does not exists`
-      }
-      if (target instanceof StructureWall) {
-        return DismantleApiWrapper.create(target)
-      }
-      return `${target} is not supported yet`
-    })()
-
-    if (typeof apiWrapper === "string") {
-      return apiWrapper
-    }
-
-    if (!isV5CreepMemory(creep.memory)) {
-      return `Creep ${creepName} is not v5`
-    }
-    const tasks: CreepTask[] = [
-      MoveToTargetTaskV5.create(apiWrapper),
-    ]
-    creep.memory.t = V5SequentialTask.create(tasks, { ignoreFailure: true, finishWhenSucceed: false }).encode()
-    return "ok"
   }
 
   private resource(): CommandExecutionResult {
