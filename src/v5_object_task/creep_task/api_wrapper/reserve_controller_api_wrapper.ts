@@ -55,7 +55,7 @@ export class ReserveControllerApiWrapper implements ApiWrapper<Creep, ReserveCon
 
     switch (result) {
     case OK: {
-      return FINISHED_AND_RAN
+      return IN_PROGRESS
     }
 
     case ERR_NOT_IN_RANGE:
