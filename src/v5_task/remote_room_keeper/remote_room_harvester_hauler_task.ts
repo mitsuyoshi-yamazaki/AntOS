@@ -184,7 +184,7 @@ export class RemoteRoomHaulerTask extends Task {
       if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
         return TravelToTargetTask.create(apiWrapper)
       }
-      return MoveToTargetTask.create(apiWrapper)
+      return MoveToTargetTask.create(apiWrapper, {fallbackEnabled: true})
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {

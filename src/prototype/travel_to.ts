@@ -1,11 +1,29 @@
 import { GameConstants } from "utility/constants"
 import { createRoomPositionId, Position } from "./room_position"
 
+/**
+ * - Cacheする経路を道の上のみに制限する
+ * - キャッシュを同一の部屋のみになるよう変更する
+ *   - 異なる部屋を目指す場合はまずexit positionを求め、exit positionをkeyにしてキャッシュを検索する
+ */
+
+export type TravelToState = {
+  /** last position */
+  lp: {
+    p: Position
+
+    /** ticks stacked */
+    s: number
+  }
+}
+
 export type TravelToOptions = {
   range?: number
   cachePath?: boolean
   showPath?: boolean
+  stackedValue?: number
   findPathOpts?: FindPathOpts
+  moveTo?: () => CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND
 }
 
 type TravelToReturnType = OK
@@ -31,7 +49,40 @@ export function travelTo(creep: Creep, position: RoomPosition, options?: TravelT
     return OK
   }
 
-  if (options?.cachePath === true) {
+  const travelToState = ((): TravelToState => {
+    const stored = creep.memory.tr
+    if (stored != null) {
+      return stored
+    }
+    const newState: TravelToState = {
+      lp: {
+        p: { x: creep.pos.x, y: creep.pos.y },
+        s: 0,
+      }
+    }
+    creep.memory.tr = newState
+    return newState
+  })()
+
+  let canUseCachedPath = true
+  const {x, y} = {...travelToState.lp.p}
+  if (creep.pos.isEqualTo(x, y) === true) {
+    travelToState.lp.s += 1
+    if (options?.stackedValue != null && travelToState.lp.s > options.stackedValue) {
+      canUseCachedPath = false
+    }
+  } else {
+    travelToState.lp = {
+      p: { x: creep.pos.x, y: creep.pos.y },
+      s: 0,
+    }
+  }
+
+  if (creep.room.controller != null && creep.room.controller.my === true) {
+    canUseCachedPath = false
+  }
+
+  if (options?.cachePath === true && canUseCachedPath === true) {
     if (options?.showPath === true) {
       showPath(creep.pos, position)
     }
@@ -46,6 +97,9 @@ export function travelTo(creep: Creep, position: RoomPosition, options?: TravelT
 
     return creep.moveByPath(path)
   } else {
+    if (options?.moveTo != null) {
+      return options.moveTo()
+    }
     return creep.moveTo(position, options?.findPathOpts)  // TODO:
   }
 }
@@ -151,3 +205,38 @@ function showPath(currentPosition: RoomPosition, destinationPosition: RoomPositi
     visual.text("#", position.x, position.y, {color: "#FF0000"})
   })
 }
+
+// type ReturnTypeSpecifier = "string" | "number" | "boolean"
+// type ReturnType<T extends ReturnTypeSpecifier> = T extends "string" ? string :
+//   T extends "number" ? number :
+//   T extends "boolean" ? boolean :
+//   never
+
+// // function getValue<T extends ReturnTypeSpecifier>(typeSpecifier: T): ReturnType<T> {
+// //   switch (typeSpecifier) {
+// //   case "string":
+// //     return ""
+// //   case "number":
+// //     return 0
+// //   case "boolean":
+// //     return false
+// //   }
+// // }
+
+// const ValueGetter: { [K in ReturnTypeSpecifier]: () => ReturnType<K> } = {
+//   string(): string {
+//     return ""
+//   },
+//   number(): number {
+//     return 0
+//   },
+//   boolean(): boolean {
+//     return false
+//   },
+// }
+
+// function getValue<T extends ReturnTypeSpecifier>(typeSpecifier: T): ReturnType<T> {
+//   const getter = ValueGetter[typeSpecifier] as (() => ReturnType<T>)
+//   // const getter = ValueGetter[typeSpecifier] as (() => string)
+//   return getter()
+// }

@@ -43,6 +43,10 @@ declare global {
     targetedBy(taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
+
+    /**
+     * @param direction 返り値のRoomPositionが部屋の外である場合はnullを返す（new RoomPosition(x + i, y + j, roomName) に失敗した際）
+     */
     positionTo(direction: DirectionConstant): RoomPosition | null
     nextRoomPositionTo(direction: DirectionConstant): RoomPosition
     nextRoomEdgePosition(): RoomPosition | null

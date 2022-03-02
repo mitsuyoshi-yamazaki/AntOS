@@ -9,6 +9,7 @@ import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { TaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
+import { TravelToState } from "./travel_to"
 
 // ---- Types and Constants ---- //
 export type CreepName = string
@@ -72,12 +73,25 @@ export function isAnyCreep(arg: any): arg is AnyCreep {
 // ---- Memory ---- //
 export type CreepMemory = V6CreepMemory | V5CreepMemory
 
-export interface V6CreepMemory {
-  /** system version */
-  v: ShortVersionV6
+interface CreepBaseMemory {
+  v: ShortVersionV5 | ShortVersionV6
 
   /** parent room name */
   p: RoomName
+
+  /** notifyWhenAttacked() set */ // 設定（無効化）したという情報しか格納していない=再度有効化するならもうひとつフラグが必要
+  n: boolean
+
+  tr?: TravelToState
+}
+
+declare global {
+  interface CreepMemory extends CreepBaseMemory { }
+}
+
+export interface V6CreepMemory extends CreepBaseMemory {
+  /** system version */
+  v: ShortVersionV6
 
   /** task */
   t: CreepTaskState | null
@@ -87,9 +101,6 @@ export interface V6CreepMemory {
 
   /** creep identifier */
   ci: string | null
-
-  /** notifyWhenAttacked() set */ // 設定（無効化）したという情報しか格納していない=再度有効化するならもうひとつフラグが必要
-  n: boolean
 }
 
 export function isCreepMemory(memory: globalThis.CreepMemory): memory is CreepMemory {
@@ -110,12 +121,9 @@ export function isV6CreepMemory(memory: globalThis.CreepMemory): memory is V6Cre
   return (memory as { v: ShortVersion }).v === ShortVersion.v6
 }
 
-export interface V5CreepMemory {
+export interface V5CreepMemory extends CreepBaseMemory {
   /** system version */
   v: ShortVersionV5
-
-  /** parent room name */
-  p: RoomName
 
   /** roles */
   r: CreepRole[]
@@ -125,9 +133,6 @@ export interface V5CreepMemory {
 
   /** task runner id */
   i: V5TaskIdentifier | null
-
-  /** notifyWhenAttacked() set */
-  n: boolean
 }
 
 export function isV5CreepMemory(memory: globalThis.CreepMemory): memory is V5CreepMemory {

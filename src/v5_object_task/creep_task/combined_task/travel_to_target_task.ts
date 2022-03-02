@@ -1,4 +1,4 @@
-import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
+import { defaultMoveToOptions, ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { TargetingApiWrapper, TargetingApiWrapperTargetType } from "v5_object_task/targeting_api_wrapper"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
@@ -114,10 +114,23 @@ export class TravelToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE: {
+      const moveTo = (): CreepMoveReturnCode | ERR_NO_PATH | ERR_INVALID_TARGET | ERR_NOT_FOUND => {
+        const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
+        return creep.moveTo(this.apiWrapper.target, moveToOps)
+      }
+      const findPathOpts: FindPathOpts = {
+        ignoreCreeps: true,
+        ignoreRoads: false,
+        maxRooms: 3,
+        range: this.apiWrapper.range,
+      }
       const travelToOptions: TravelToOptions = {
         range: this.apiWrapper.range,
         cachePath: true,
-        showPath: true,
+        showPath: false,
+        stackedValue: 2,
+        findPathOpts,
+        moveTo,
       }
       travelTo(creep, this.apiWrapper.target.pos, travelToOptions)
       return TaskProgressType.InProgress
@@ -133,5 +146,81 @@ export class TravelToTargetTask implements CreepTask {
     case ERR_PROGRAMMING_ERROR:
       return TaskProgressType.Finished
     }
+  }
+
+  private moveToOpts(creep: Creep, range: number, targetPosition: RoomPosition): MoveToOpts {
+    if (this.lastPosition != null) {
+      if (this.lastPosition.position.isEqualTo(creep.pos) === true) {
+        if ((Game.time - this.lastPosition.timestamp) > 2) {
+          const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
+          const maxOps = creep.pos.roomName === targetPosition.roomName ? 1500 : 2000
+          return {
+            maxRooms,
+            reusePath: this.options.reusePath ?? 3,
+            maxOps,
+            range,
+          }
+        } else {
+          if (creep.fatigue > 0) {
+            this.lastPosition.timestamp += 1
+          }
+        }
+      } else {
+        this.lastPosition = {
+          position: creep.pos,
+          timestamp: Game.time
+        }
+      }
+    } else {
+      this.lastPosition = {
+        position: creep.pos,
+        timestamp: Game.time
+      }
+    }
+
+    const inEconomicArea = ((): boolean => {
+      if (creep.room.controller == null) {
+        return false
+      }
+      if (creep.room.controller.my === true) {
+        return true
+      }
+      if (creep.room.controller.reservation == null) {
+        return false
+      }
+      if (creep.room.controller.reservation.username === Game.user.name) {
+        return true
+      }
+      return false
+    })()
+
+    const ignoreCreeps = ((): boolean => {
+      if (inEconomicArea !== true) {
+        return false
+      }
+      if (this.options.reusePath != null) {
+        return false
+      }
+      return true
+    })()
+
+    const reusePath = ((): number => {
+      if (this.options.reusePath != null) {
+        return this.options.reusePath
+      }
+      return inEconomicArea === true ? 100 : 0
+    })()
+
+    const options = defaultMoveToOptions()
+    options.range = range
+    options.maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
+    options.maxOps = creep.pos.roomName === targetPosition.roomName ? 500 : 1500
+    options.reusePath = reusePath,
+    options.ignoreCreeps = ignoreCreeps
+    if (this.options.ignoreSwamp === true) {
+      options.ignoreRoads = true
+      options.swampCost = 1
+    }
+    return options
   }
 }
