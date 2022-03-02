@@ -21,6 +21,7 @@ import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_
 import { RoomResources } from "room_resource/room_resources"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { decodeRoomPosition } from "prototype/room_position"
 
 let randomSeed = 0
 
@@ -84,21 +85,20 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       if (resources.roomInfo.roomPlan == null) {
         return 3
       }
-      const center = resources.roomInfo.roomPlan.centerPosition
-      try {
-        const centerPosition = new RoomPosition(center.x, center.y, this.roomName)
-        const controllerRange = resources.controller.pos.getRangeTo(centerPosition)
-        const requiredCount = Math.max(Math.floor(controllerRange / 4) + 1, 3)
-        if (resources.controller.level > 5) {
-          return requiredCount <= 3 ? 3 : 4
-        }
-        if (lackOfEnergy === true) {
-          return Math.min(requiredCount, 4)
-        }
-        return requiredCount
-      } catch {
+      if (resources.controller.level >= 6) {
         return 3
       }
+      const center = resources.roomInfo.roomPlan.centerPosition
+      const centerPosition = decodeRoomPosition(center, this.roomName)
+      const controllerRange = resources.controller.pos.getRangeTo(centerPosition)
+      const requiredCount = Math.max(Math.floor(controllerRange / 4) + 1, 3)
+      if (resources.controller.level > 5) {
+        return requiredCount <= 3 ? 3 : 4
+      }
+      if (lackOfEnergy === true) {
+        return Math.min(requiredCount, 4)
+      }
+      return requiredCount
     })()
     if (creepCount < 2) {
       const body = ((): BodyPartConstant[] => {
@@ -325,10 +325,22 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   private builderBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    return createCreepBody([], [CARRY, WORK, MOVE], objects.controller.room.energyCapacityAvailable, 7)
+    const maxUnitCount = ((): number => {
+      if (objects.controller.level >= 6) {
+        return 10
+      }
+      return 7
+    })()
+    return createCreepBody([], [CARRY, WORK, MOVE], objects.controller.room.energyCapacityAvailable, maxUnitCount)
   }
 
   private haulerBody(objects: OwnedRoomObjects): BodyPartConstant[] {
-    return createCreepBody([], [CARRY, CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 5)
+    const maxUnitCount = ((): number => {
+      if (objects.controller.level >= 6) {
+        return 6
+      }
+      return 5
+    })()
+    return createCreepBody([], [CARRY, CARRY, MOVE], objects.controller.room.energyCapacityAvailable, maxUnitCount)
   }
 }
