@@ -4,7 +4,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomCoordinate, RoomName } from "utility/room_name"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument } from "./argument_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument } from "./argument_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 
 /**
@@ -132,7 +132,7 @@ export class KeywordArguments implements KeywordArgumentsInterface {
   }
 
   public gameObjectId(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string> {
-    return this.string(key, options)
+    return new GameObjectIdArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
   public visibleGameObject(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {

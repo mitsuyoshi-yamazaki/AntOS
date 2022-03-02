@@ -393,6 +393,19 @@ export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, Owne
   }
 }
 
+export class GameObjectIdArgument extends SingleOptionalArgument<void, Id<RoomObject>> {
+  /** throws */
+  public parse(): Id<RoomObject> {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    if (this.value.length <= 0) {
+      throw "ID cannot be empty string"
+    }
+    return this.value as Id<RoomObject>
+  }
+}
+
 export class VisibleRoomObjectArgument extends SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {
   /** throws */
   public parse(options?: { inRoomName?: RoomName }): RoomObject {
