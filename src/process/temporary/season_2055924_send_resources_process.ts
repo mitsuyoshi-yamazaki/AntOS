@@ -8,7 +8,7 @@ import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
-import { Season1838855DistributorProcess } from "./season_1838855_distributor_process"
+import { DistributorProcess } from "../process/distributor_process"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
 import { SectorName } from "utility/room_sector"
@@ -63,11 +63,11 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     const distributorProcess = OperatingSystem.os.listAllProcesses()
       .map(processInfo => processInfo.process)
       .find(process => {
-        if (!(process instanceof Season1838855DistributorProcess)) {
+        if (!(process instanceof DistributorProcess)) {
           return false
         }
         return process.parentRoomName === parentRoomName
-      }) as Season1838855DistributorProcess | null
+      }) as DistributorProcess | null
     if (distributorProcess != null) {
       distributorProcess.setDrainStorage()
       PrimitiveLogger.log(`Drain storage ${roomLink(parentRoomName)}`)

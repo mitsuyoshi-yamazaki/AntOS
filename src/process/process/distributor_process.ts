@@ -25,13 +25,13 @@ import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 
-ProcessDecoder.register("Season1838855DistributorProcess", state => {
-  return Season1838855DistributorProcess.decode(state as Season1838855DistributorProcessState)
+ProcessDecoder.register("DistributorProcess", state => {
+  return DistributorProcess.decode(state as DistributorProcessState)
 })
 
 type EnergyStore = StructureTerminal | StructureStorage
 
-export interface Season1838855DistributorProcessState extends ProcessState {
+export interface DistributorProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
@@ -41,7 +41,7 @@ export interface Season1838855DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-export class Season1838855DistributorProcess implements Process, Procedural, MessageObserver {
+export class DistributorProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -61,9 +61,9 @@ export class Season1838855DistributorProcess implements Process, Procedural, Mes
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season1838855DistributorProcessState {
+  public encode(): DistributorProcessState {
     return {
-      t: "Season1838855DistributorProcess",
+      t: "DistributorProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -73,12 +73,12 @@ export class Season1838855DistributorProcess implements Process, Procedural, Mes
     }
   }
 
-  public static decode(state: Season1838855DistributorProcessState): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(state.l, state.i, state.p, state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
+  public static decode(state: DistributorProcessState): DistributorProcess {
+    return new DistributorProcess(state.l, state.i, state.p, state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName): Season1838855DistributorProcess {
-    return new Season1838855DistributorProcess(Game.time, processId, parentRoomName, null, null, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName): DistributorProcess {
+    return new DistributorProcess(Game.time, processId, parentRoomName, null, null, false)
   }
 
   public processShortDescription(): string {

@@ -22,7 +22,7 @@ import { Season1606052SKHarvesterProcess } from "process/temporary/season_160605
 import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
-import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { DistributorProcess } from "process/process/distributor_process"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
@@ -111,8 +111,8 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason1655635SKMineralHarvestProcess()
       case "Season4332399SKMineralHarvestProcess":
         return this.launchSeason4332399SKMineralHarvestProcess()
-      case "Season1838855DistributorProcess":
-        return this.launchSeason1838855DistributorProcess()
+      case "DistributorProcess":
+        return this.launchDistributorProcess()
       case "StealResourceProcess":
         return this.launchStealResourceProcess()
       case "Season2055924SendResourcesProcess":
@@ -546,7 +546,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1838855DistributorProcess(): LaunchCommandResult {
+  private launchDistributorProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -554,7 +554,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("room_name")
     }
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1838855DistributorProcess.create(processId, roomName)
+      return DistributorProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }

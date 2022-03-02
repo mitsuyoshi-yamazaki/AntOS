@@ -10,7 +10,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
 import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
-import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { DistributorProcess } from "process/process/distributor_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
@@ -513,7 +513,7 @@ export class ExecCommand implements ConsoleCommand {
         }
         return []
       }
-      if (process instanceof Season1838855DistributorProcess) {
+      if (process instanceof DistributorProcess) {
         if (process.parentRoomName === room.name) {
           return process
         }
