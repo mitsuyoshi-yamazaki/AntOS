@@ -39,7 +39,8 @@ export interface BasicRoomInfo {
   reachable: boolean
 }
 
-type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean } | { ownerType: "reserve", username: string }
+type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean, upgradeBlockedUntil: Timestamp | null }
+  | { ownerType: "reserve", username: string }
 
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
@@ -118,11 +119,18 @@ function getOwnerInfo(room: Room): RoomOwner | null {
       }
       return false
     })()
+    const upgradeBlockedUntil = ((): Timestamp | null => {
+      if (room.controller.upgradeBlocked == null) {
+        return null
+      }
+      return Game.time + room.controller.upgradeBlocked
+    })()
     return {
       ownerType: "claim",
       isAlive,
       safemodeEnabled: room.controller.safeMode != null,
-      username: room.controller.owner.username
+      username: room.controller.owner.username,
+      upgradeBlockedUntil,
     }
   }
   if (room.controller.reservation != null) {
