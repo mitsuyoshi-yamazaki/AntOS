@@ -1,5 +1,6 @@
 import { randomDirection } from "utility/constants"
 import { TaskProgressType } from "v5_object_task/object_task"
+import { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
@@ -9,6 +10,10 @@ export interface FleeFromSKLairTaskState extends CreepTaskState {
 }
 
 export class FleeFromSKLairTask implements CreepTask {
+  public get targetId(): TaskTargetTypeId | undefined {
+    return this.childTask.targetId
+  }
+
   private constructor(
     public readonly startTime: number,
     public readonly childTask: CreepTask,
@@ -34,7 +39,7 @@ export class FleeFromSKLairTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
-    const whitelist = Memory.gameInfo.sourceHarvestWhitelist || []
+    const whitelist = Memory.gameInfo.sourceHarvestWhitelist ?? []
     const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
       .filter(creep => {
         if (whitelist.includes(creep.owner.username) === true) {

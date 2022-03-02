@@ -1,6 +1,7 @@
 import { RoomResources } from "room_resource/room_resources"
 import { randomDirection } from "utility/constants"
 import { TaskProgressType } from "v5_object_task/object_task"
+import { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
@@ -12,6 +13,10 @@ export interface FleeFromAttackerTaskState extends CreepTaskState {
 }
 
 export class FleeFromAttackerTask implements CreepTask {
+  public get targetId(): TaskTargetTypeId | undefined {
+    return this.childTask.targetId
+  }
+
   private constructor(
     public readonly startTime: number,
     public readonly childTask: CreepTask,

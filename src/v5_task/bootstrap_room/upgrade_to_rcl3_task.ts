@@ -21,12 +21,13 @@ import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_a
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
-import { shouldSpawnBootstrapCreeps } from "./claim_room_task"
 import { GameConstants } from "utility/constants"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee_from_sk_lair_task"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { roomLink } from "utility/log"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10
@@ -487,4 +488,39 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
         structure.destroy()
       })
   }
+}
+
+function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName): boolean {
+  const targetRoomInfo = RoomResources.getRoomInfo(targetRoomName)
+  if (targetRoomInfo == null) {
+    return true
+  }
+  if (targetRoomInfo.roomType !== "normal") {
+    return true
+  }
+  if (targetRoomInfo.owner == null) {
+    return true
+  }
+  if (targetRoomInfo.owner.ownerType === "claim" && targetRoomInfo.owner.username !== Game.user.name) {
+    return false
+  }
+  const availableEnergy = ((): number => {
+    const roomResource = RoomResources.getOwnedRoomResource(roomName)
+    if (roomResource == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} is not owned`)
+      return 0
+    }
+    const storage = roomResource.activeStructures.storage
+    const terminal = roomResource.activeStructures.terminal
+    if (storage == null || terminal == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage or terminal`)
+      return 0
+    }
+    return (storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+  })()
+
+  if (availableEnergy < 40000) {
+    return false
+  }
+  return true
 }
