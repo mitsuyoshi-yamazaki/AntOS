@@ -15,7 +15,7 @@ const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition
   return `${fromPosition.id}_${toPosition.id}`
 }
 
-type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
+export type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
 type Position = {
   position: RoomPosition,
   timestamp: Timestamp
