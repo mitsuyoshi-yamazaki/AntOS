@@ -142,9 +142,16 @@ class ResourceTransferer {
         return "empty space"
       })()
       const storedResourceTypes: { resourceType: ResourceConstant, amount: number }[] = []
+      const excludedResourceTypes = ((): ResourceConstant[] => {
+        return [...resources.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.boost)]
+      })()
+
       const enumerateResources = (store: StoreDefinition): void => {
         const resourceTypes = Object.keys(store) as ResourceConstant[]
         resourceTypes.forEach(resourceType => {
+          if (excludedResourceTypes.includes(resourceType) === true) {
+            return
+          }
           const requiredAmount = requiredCompounds.get(resourceType) ?? 0
           const amount = Math.max((store.getUsedCapacity(resourceType) ?? 0) - requiredAmount, 0)
           storedResourceTypes.push({
