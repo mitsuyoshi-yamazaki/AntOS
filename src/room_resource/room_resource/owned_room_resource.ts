@@ -23,6 +23,9 @@ export interface RunningCreepInfo {
   creepIdentifier: string | null
 }
 
+/**
+ * 寿命は1tick
+ */
 export class OwnedRoomResource extends NormalRoomResource {
   /** Decayed structureは含めない */
   public readonly damagedStructures: AnyStructure[]

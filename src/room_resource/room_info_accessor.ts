@@ -171,9 +171,27 @@ class Config {
   }
 }
 
+type LinkInfo = {
+  readonly core: StructureLink | null
+  readonly upgrader: StructureLink | null
+  readonly sources: Map<Id<Source>, StructureLink>
+}
+
+/**
+ * 寿命は1tick
+ */
 export class OwnedRoomInfoAccessor {
   public readonly config: Config
   public readonly roomName: RoomName
+
+  public get links(): LinkInfo {
+    if (this._links == null) {
+      this._links = this.parseLinks()
+    }
+    return this._links
+  }
+
+  private _links: LinkInfo | null = null
 
   public constructor(
     private readonly room: Room,
@@ -181,10 +199,6 @@ export class OwnedRoomInfoAccessor {
   ) {
     this.roomName = room.name
     this.config = new Config(this.roomName, roomInfo)
-
-    if (this.roomInfo.boostLabs == null) {
-      this.roomInfo.boostLabs = []  // FixMe: Migration
-    }
   }
 
   public addBoosts(boosts: MineralBoostConstant[]): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
@@ -312,5 +326,54 @@ export class OwnedRoomInfoAccessor {
 
     return (this.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
       .filter(lab => assignedLabIds.includes(lab.id) !== true)
+  }
+
+  private parseLinks(): LinkInfo {
+    const parse = (linkId: Id<StructureLink> | null): StructureLink | null => {
+      if (linkId == null) {
+        return null
+      }
+      return Game.getObjectById(linkId)
+    }
+
+    const core = parse(this.roomInfo.links.coreLinkId)
+    if (core == null && this.roomInfo.links.coreLinkId != null) {
+      this.roomInfo.links.coreLinkId = null
+    }
+
+    const upgrader = parse(this.roomInfo.links.upgraderLinkId)
+    if (upgrader == null && this.roomInfo.links.upgraderLinkId != null) {
+      this.roomInfo.links.upgraderLinkId = null
+    }
+
+    const sources = new Map<Id<Source>, StructureLink>()
+    Array.from(Object.entries(this.roomInfo.links.sourceLinkIds)).forEach(([sourceId, linkId]) => {
+      const link = parse(linkId)
+      if (link == null) {
+        delete this.roomInfo.links.sourceLinkIds[sourceId]
+        return
+      }
+      sources.set(sourceId as Id<Source>, link)
+    })
+
+    return {
+      core,
+      upgrader,
+      sources,
+    }
+  }
+
+  public setLinkId(linkId: Id<StructureLink>, role: "core" | "upgrader" | Id<Source>): void {
+    switch (role) {
+    case "core":
+      this.roomInfo.links.coreLinkId = linkId
+      break
+    case "upgrader":
+      this.roomInfo.links.upgraderLinkId = linkId
+      break
+    default:
+      this.roomInfo.links.sourceLinkIds[role] = linkId
+      break
+    }
   }
 }

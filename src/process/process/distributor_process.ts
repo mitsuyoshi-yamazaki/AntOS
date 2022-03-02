@@ -35,9 +35,6 @@ export interface DistributorProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
-  linkId: Id<StructureLink> | null
-  upgraderLinkId: Id<StructureLink> | null
-
   drainStorage: boolean
 }
 
@@ -53,8 +50,6 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
-    public linkId: Id<StructureLink> | null,
-    public upgraderLinkId: Id<StructureLink> | null,
     private drainStorage: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
@@ -67,18 +62,16 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
-      linkId: this.linkId,
-      upgraderLinkId: this.upgraderLinkId,
       drainStorage: this.drainStorage,
     }
   }
 
   public static decode(state: DistributorProcessState): DistributorProcess {
-    return new DistributorProcess(state.l, state.i, state.p, state.linkId, state.upgraderLinkId, state.drainStorage ?? false)
+    return new DistributorProcess(state.l, state.i, state.p, state.drainStorage)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName): DistributorProcess {
-    return new DistributorProcess(Game.time, processId, parentRoomName, null, null, false)
+    return new DistributorProcess(Game.time, processId, parentRoomName, false)
   }
 
   public processShortDescription(): string {
@@ -129,14 +122,8 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       this.checkLink(resources)
     }
 
-    const getLink = ((linkId: Id<StructureLink> | null): StructureLink | null => {
-      if (linkId == null) {
-        return null
-      }
-      return Game.getObjectById(linkId)
-    })
-    const link = getLink(this.linkId)
-    const upgraderLink = getLink(this.upgraderLinkId)
+    const link = resources.roomInfoAccessor.links.core
+    const upgraderLink = resources.roomInfoAccessor.links.upgrader
     if (link != null && upgraderLink != null) {
       this.runLinks(link, upgraderLink)
     }
@@ -164,32 +151,23 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
   }
 
   private checkLink(resources: OwnedRoomResource): void {
-    if (this.linkId == null) {
+    if (resources.controller.level < 5) {
+      return
+    }
+    if (resources.roomInfoAccessor.links.core == null) {
       const roomPlan = resources.roomInfo.roomPlan
       if (roomPlan != null) {
-        try {
-          const roomCenter = new RoomPosition(roomPlan.centerPosition.x, roomPlan.centerPosition.y, this.parentRoomName)
-          const link = roomCenter.findInRange(FIND_MY_STRUCTURES, 1, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
-          if (link != null) {
-            this.linkId = link.id
-          }
-        } catch {
-          //
+        const roomCenter = decodeRoomPosition(roomPlan.centerPosition, this.parentRoomName)
+        const link = roomCenter.findInRange(FIND_MY_STRUCTURES, 1, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
+        if (link != null) {
+          resources.roomInfoAccessor.setLinkId(link.id, "core")
         }
       }
-    } else {
-      if (Game.getObjectById(this.linkId) == null) {
-        this.linkId = null
-      }
     }
-    if (this.upgraderLinkId == null) {
+    if (resources.roomInfoAccessor.links.upgrader == null) {
       const upgraderLink = resources.controller.pos.findInRange(FIND_MY_STRUCTURES, 3, { filter: { structureType: STRUCTURE_LINK } })[0] as StructureLink | null
       if (upgraderLink != null) {
-        this.upgraderLinkId = upgraderLink.id
-      }
-    } else {
-      if (Game.getObjectById(this.upgraderLinkId) == null) {
-        this.upgraderLinkId = null
+        resources.roomInfoAccessor.setLinkId(upgraderLink.id, "upgrader")
       }
     }
   }

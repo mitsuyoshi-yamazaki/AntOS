@@ -1,6 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
@@ -24,20 +23,8 @@ export interface RoomInfoMemory {
   /** energyStoreStructures */
   str: Id<EnergyStore>[]
 
-  /** distributor */
-  d: {
-    /** distributor position */
-    p: RoomPositionState
-
-    /** link id */
-    l: Id<StructureLink> | null
-  } | null
-
   /** upgrader */
   u: {
-    /** link id */
-    l: Id<StructureLink> | null
-
     /** container id */
     c: Id<StructureContainer> | null
   } | null
@@ -53,14 +40,7 @@ export interface RoomInfo {
   energyStoreStructures: EnergyStore[]
 
   /** @deprecated */
-  distributor: {
-    position: RoomPosition
-    link: StructureLink | null
-  } | null
-
-  /** @deprecated */
   upgrader: {
-    link: StructureLink | null
     container: StructureContainer | null
   } | null
 
@@ -209,7 +189,6 @@ export class OwnedRoomObjects {
           energySourceStructures: [],
           energyStoreStructures: [],
           upgrader: null,
-          distributor: null,
           bootstrapping: false,
           highestRcl: controller.level,
         }
@@ -589,42 +568,10 @@ export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
     energySourceStructures: roomInfoMemory.src?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
     energyStoreStructures: roomInfoMemory.str?.flatMap(id => Game.getObjectById(id) ?? []) ?? [],
 
-    distributor: (() => {
-      if (roomInfoMemory == null || roomInfoMemory.d == null) {
-        return null
-      }
-      const link = (() => {
-        if (roomInfoMemory.d.l == null) {
-          return null
-        }
-        const stored = Game.getObjectById(roomInfoMemory.d.l)
-        if (stored == null) {
-          roomInfoMemory.d.l = null
-          return null
-        }
-        return stored
-      })()
-      return {
-        position: decodeRoomPosition(roomInfoMemory.d.p),
-        link,
-      }
-    })(),
-
     upgrader: (() => {
       if (roomInfoMemory == null || roomInfoMemory.u == null) {
         return null
       }
-      const link = (() => {
-        if (roomInfoMemory.u.l == null) {
-          return null
-        }
-        const stored = Game.getObjectById(roomInfoMemory.u.l)
-        if (stored == null) {
-          roomInfoMemory.u.l = null
-          return null
-        }
-        return stored
-      })()
       const container = (() => {
         if (roomInfoMemory.u.c == null) {
           return null
@@ -637,7 +584,6 @@ export function decodeRoomInfo(roomInfoMemory: RoomInfoMemory): RoomInfo {
         return stored
       })()
       return {
-        link,
         container,
       }
     })(),
@@ -652,21 +598,11 @@ function encodeRoomInfo(roomInfo: RoomInfo): RoomInfoMemory {
     v: roomInfo.version,
     src: roomInfo.energySourceStructures.map(obj => obj.id),
     str: roomInfo.energyStoreStructures.map(obj => obj.id),
-    d: (() => {
-      if (roomInfo.distributor == null) {
-        return null
-      }
-      return {
-        p: roomInfo.distributor.position.encode(),
-        l: roomInfo.distributor.link?.id ?? null,
-      }
-    })(),
     u: (() => {
       if (roomInfo.upgrader == null) {
         return null
       }
       return {
-        l: roomInfo.upgrader.link?.id ?? null,
         c: roomInfo.upgrader.container?.id ?? null,
       }
     })(),
