@@ -60,6 +60,7 @@ import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_lau
 import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
 import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
 import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
+import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1200,6 +1201,16 @@ ProcessLauncher.register("Season4OperateExtraLinkProcess", args => {
     }
 
     return Result.Succeeded((processId) => Season4OperateExtraLinkProcess.create(processId, roomName, upgraderLink.id))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("BoostLabChargerProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => BoostLabChargerProcess.create(processId, roomName))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
