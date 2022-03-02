@@ -11,12 +11,10 @@ import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
-import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { BuildContainerTask } from "v5_task/build/build_container_task"
 import { roomLink } from "utility/log"
 import { TaskState } from "v5_task/task_state"
@@ -25,6 +23,10 @@ import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { ContinuousRunApiTask } from "v5_object_task/creep_task/combined_task/continuous_run_apis_task"
+import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
+import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -236,20 +238,26 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     source: Source,
     container: StructureContainer,
   ): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
-
-    if (noEnergy) {
-      const harvestPosition = container.pos
-      if (creep.pos.isEqualTo(harvestPosition) === true) {
-        return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
-      }
+    const harvestPosition = container.pos
+    if (creep.pos.isEqualTo(harvestPosition) !== true) {
       return MoveToTask.create(harvestPosition, 0)
     }
 
-    if (container.hits < container.hitsMax * 0.8) {
-      return RunApiTask.create(RepairApiWrapper.create(container))
+    const link = ((): StructureLink | null => {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource == null) {
+        return null
+      }
+      return roomResource.roomInfoAccessor.links.sources.get(this.sourceId) ?? null
+    })()
+
+    const apiWrappers: AnyCreepApiWrapper[] = [
+      HarvestEnergyApiWrapper.create(source, true),
+    ]
+    if (link != null) {
+      apiWrappers.push(FillEnergyApiWrapper.create(link))
     }
-    return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
+    return ContinuousRunApiTask.create(apiWrappers)
   }
 
   // ---- Build Container ---- //

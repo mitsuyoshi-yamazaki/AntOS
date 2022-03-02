@@ -206,7 +206,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       const max = Math.floor((energyCapacity - bodyCost(body)) / unitCost)
       if (isRcl8 === true) {
         if (storedEnergy < 40000) {
-          return Math.min(max, 2)
+          return Math.min(max, 1)
         }
         return Math.min(max, 5)
       }
