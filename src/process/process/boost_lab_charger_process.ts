@@ -20,10 +20,6 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
-ProcessDecoder.register("Season1143119LabChargerProcess", state => {  // FixMe: Migration
-  return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
-})
-
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
 })
