@@ -86,6 +86,14 @@ function isBoostCommandAction(arg: string): arg is BoostCommandAction {
   return false
 }
 
+/**
+ * 標準入力から呼び出された場合はエンコード処理より後に実行されるため
+ * Configは参照を直接保持しているために保存処理が不要？
+ */
+function saveRoomInfo(roomName: RoomName, roomInfo: OwnedRoomInfo): void {
+  Memory.v6RoomInfo[roomName] = roomInfo
+}
+
 /** @throws */
 function boosts(roomResource: OwnedRoomResource, args: string[]): string {
   const roomName = roomResource.room.name
@@ -115,6 +123,9 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
           successMessages.push("removed from research outputs:")
           successMessages.push(...result.value.removedFromResearchOutputLabs.map(lab => `- ${lab.id} (${lab.pos})`))
         }
+
+        saveRoomInfo(roomName, roomResource.roomInfo)
+
         return successMessages.join("\n")
       }
       case "failed":
@@ -144,6 +155,8 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
         results.push("added to research outputs:")
         results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
       }
+
+      saveRoomInfo(roomName, roomResource.roomInfo)
       return results.join("\n")
     }
 
@@ -158,6 +171,8 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
         results.push("added to research outputs:")
         results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
       }
+
+      saveRoomInfo(roomName, roomResource.roomInfo)
       return results.join("\n")
     }
 

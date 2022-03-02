@@ -1,6 +1,5 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { coloredResourceType, coloredText, roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
@@ -275,6 +274,7 @@ export class OwnedRoomInfoAccessor {
       this.roomInfo.researchLab.outputLabs.push(...labIds)
       addedToResearchOutputLabIds.push(...labIds)
     }
+    this.roomInfo.boostLabs = []
     return {
       addedToResearchOutputLabIds,
       removedBoosts,
