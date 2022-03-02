@@ -482,7 +482,7 @@ export class OwnedRoomObjects {
   }
 
   public getSource(position: RoomPosition): Source | null {
-    const sources = this.sources.filter(source => source.energy > 0)
+    const sources = this.sources.filter(source => source.energy > 0 || (source.ticksToRegeneration != null && source.ticksToRegeneration < 20))
     if (sources.length <= 0) {
       return null
     }
