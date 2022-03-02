@@ -10,7 +10,6 @@ import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsuffi
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Environment } from "utility/environment"
-import { GclFarmResources } from "./gcl_farm_resources"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -132,7 +131,7 @@ export const RoomResources: RoomResourcesInterface = {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
     }
 
-    const numberOfRoomsInShard3 = 3
+    const numberOfRoomsInShard3 = 4
     switch (Environment.shard) {  // TODO:
     case "shard2":
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
