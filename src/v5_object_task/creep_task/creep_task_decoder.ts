@@ -23,12 +23,15 @@ import { WithdrawResourceApiWrapper } from "./api_wrapper/withdraw_resource_api_
 import { FleeFromSKLairTask, FleeFromSKLairTaskState } from "./combined_task/flee_from_sk_lair_task"
 import { RandomMoveTask, RandomMoveTaskState } from "./meta_task/random_move_task"
 import { Run1TickTask, Run1TickTaskState } from "./combined_task/run_1_tick_task"
+import { TravelToTargetTask, TravelToTargetTaskState } from "./combined_task/travel_to_target_task"
+import { MoveToInvisibleTargetTask, MoveToInvisibleTargetTaskState } from "./combined_task/move_to_invisible_target_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   // ---- Combined task ---- //
   "MoveToTargetTask" = (state: CreepTaskState) => MoveToTargetTask.decode(state as unknown as MoveToTargetTaskState)
+  "TravelToTargetTask" = (state: CreepTaskState) => TravelToTargetTask.decode(state as unknown as TravelToTargetTaskState)
   "SequentialTask" = (state: CreepTaskState) => {
     const children: (CreepTask | null)[] = (state as unknown as SequentialTaskState).c.map(childState => decodeCreepTaskFromState(childState))
     return SequentialTask.decode(state as unknown as SequentialTaskState, children)
@@ -73,6 +76,7 @@ class CreepTaskDecoderMap {
     }
     return Run1TickTask.decode(run1TickTaskState, childTask)
   }
+  "MoveToInvisibleTargetTask" = (state: CreepTaskState) => MoveToInvisibleTargetTask.decode(state as unknown as MoveToInvisibleTargetTaskState)
 
   // ---- Meta task ---- //
   "MoveToRoomTask" = (state: CreepTaskState) => MoveToRoomTask.decode(state as unknown as MoveToRoomTaskState)

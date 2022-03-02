@@ -184,23 +184,7 @@ export class OwnedRoomInfoAccessor {
     this.config = new Config(this.roomName, roomInfo)
 
     if (this.roomInfo.boostLabs == null) {
-      this.roomInfo.boostLabs = []
-    }
-
-  }
-
-  public setRemoteRoomPathCachingEnabled(remoteRoomName: RoomName, enabled: boolean): void {
-    try {
-      const remoteRoomInfo = this.roomInfo.remoteRoomInfo[remoteRoomName]
-      if (remoteRoomInfo == null) {
-        throw `no remote room ${roomLink(remoteRoomName)} in ${roomLink(this.roomName)}`
-      }
-      if (remoteRoomInfo.testConfig == null) {
-        remoteRoomInfo.testConfig = {}
-      }
-      remoteRoomInfo.testConfig.enablePathCaching = enabled
-    } catch (error) {
-      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${error}`)
+      this.roomInfo.boostLabs = []  // FixMe: Migration
     }
   }
 
@@ -245,6 +229,8 @@ export class OwnedRoomInfoAccessor {
           removedFromResearchOutputLabs.push(labInfo.lab)
         })
       }
+
+      this.roomInfo.boostLabs.push(...newBoostLabs.map(labInfo => ({ labId: labInfo.lab.id, boost: labInfo.boost})))
 
       return Result.Succeeded({
         newBoostLabs: newBoostLabs.map(labInfo => ({ boost: labInfo.boost, labId: labInfo.lab.id })),

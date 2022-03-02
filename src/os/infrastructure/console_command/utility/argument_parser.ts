@@ -203,6 +203,22 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   }
 }
 
+// export class StringOrIntArgument extends SingleOptionalArgument<{ min?: number, max?: number }, string | number> {
+//   /** throws */
+//   public parse(options?: { min?: number, max?: number }): string | number {
+//     if (this.value == null) {
+//       throw this.missingArgumentErrorMessage()
+//     }
+
+//     try {
+//       const intValue = parseIntValue(this.key, this.value, options)
+//       return intValue
+//     }
+
+//     return this.value
+//   }
+// }
+
 export class StringListArgument extends SingleOptionalArgument<void, string[]> {
   /** throws */
   public parse(): string[] {
@@ -374,5 +390,38 @@ export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, Owne
       throw `${roomLink(this.value)} is not mine`
     }
     return roomResource
+  }
+}
+
+export class GameObjectIdArgument extends SingleOptionalArgument<void, Id<RoomObject>> {
+  /** throws */
+  public parse(): Id<RoomObject> {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    if (this.value.length <= 0) {
+      throw "ID cannot be empty string"
+    }
+    return this.value as Id<RoomObject>
+  }
+}
+
+export class VisibleRoomObjectArgument extends SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {
+  /** throws */
+  public parse(options?: { inRoomName?: RoomName }): RoomObject {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const obj = Game.getObjectById(this.value as Id<RoomObject>)
+    if (obj == null) {
+      throw `no object with ID ${this.value}`
+    }
+    if (obj.room == null) {
+      throw `object doesn't have room reference ${obj}`
+    }
+    if (options?.inRoomName != null && obj.room.name !== options.inRoomName) {
+      throw `${obj} is not in ${roomLink(options.inRoomName)} (${roomLink(obj.room.name)})`
+    }
+    return obj
   }
 }

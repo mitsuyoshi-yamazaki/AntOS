@@ -217,7 +217,7 @@ function attackTarget(roomResource: OwnedRoomResource, towerPositions: RoomPosit
       allTargets: [],
     }
   }
-  if (nextTargetInfo.maxTicksToKill > (nextTargetInfo.minimumTicksToEscape * 2)) {
+  if (roomResource.roomInfo.config?.forceAttack !== true && nextTargetInfo.maxTicksToKill > (nextTargetInfo.minimumTicksToEscape * 2)) {
     return {
       target: null,
       allTargets: [],

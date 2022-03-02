@@ -10,7 +10,7 @@ import { Environment } from "utility/environment"
 import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
-import { PathCacheMemory } from "utility/path_cache"
+import { PathCacheMemory } from "prototype/travel_to"
 
 export interface SectorMemory {
   name: string

@@ -8,7 +8,7 @@ import type { Timestamp } from "utility/timestamp"
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
 type RemoteRoomTestConfig = {
-  enablePathCaching?: boolean
+  travelerEnabled?: boolean
 }
 
 export type RemoteRoomInfo = {
@@ -65,6 +65,10 @@ export type OwnedRoomConfig = {
   concurrentConstructionSites?: number
   powers?: PowerConstant[]
   wallMaxHits?: number
+  extraLinkIds?: Id<StructureLink>[]
+  useSafemodeInBoostrap?: boolean
+  bootstrapUntilRcl5?: boolean
+  forceAttack?: boolean
 }
 
 export interface OwnedRoomInfo extends BasicRoomInfo {

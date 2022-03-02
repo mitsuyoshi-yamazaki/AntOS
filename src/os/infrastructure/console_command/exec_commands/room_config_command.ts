@@ -49,8 +49,6 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return powers(roomResource, args)
   case "boosts":
     return boosts(roomResource, args)
-  case "set_remote_room_path_cache_enabled":
-    return setRemoteRoomPathCacheEnabled(roomResource, args)
 
   case "mineral_max_amount":
   case "construction_interval":
@@ -185,16 +183,6 @@ function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null
 }
 
 /** @throws */
-function setRemoteRoomPathCacheEnabled(roomResource: OwnedRoomResource, args: string[]): string {
-  const listArguments = new ListArguments(args)
-  const remoteRoomName = listArguments.roomName(0, "remote room name").parse()
-  const enabled = listArguments.boolean(1, "enabled").parse()
-  roomResource.roomInfoAccessor.setRemoteRoomPathCachingEnabled(remoteRoomName, enabled)
-
-  return "set"
-}
-
-/** @throws */
 function accessNumberProperty(command: NumberAccessorCommands, roomResource: OwnedRoomResource, args: string[]): string {
   const listArguments = new ListArguments(args)
   const action = listArguments.string(0, "action").parse()
@@ -313,27 +301,6 @@ function toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map
 
   return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
 }
-
-// TODO: 消す
-// function disableBoostLabs(roomName: RoomName, roomInfo: OwnedRoomInfo): string {
-//   const room = Game.rooms[roomName]
-//   if (room == null) {
-//     return `${roomLink(roomName)} no found`
-//   }
-//   if (roomInfo.researchLab == null) {
-//     return `roomInfo.researchLab is null ${roomLink(roomName)}`
-//   }
-
-//   if (roomInfo.config?.boostLabs == null) {
-//     return `no boost labs in ${roomLink(roomName)}`
-//   }
-
-//   const oldValue = [...roomInfo.config.boostLabs]
-//   roomInfo.researchLab.outputLabs.push(...oldValue)
-//   roomInfo.config.boostLabs = []
-
-//   return `added ${oldValue.length} boost labs to research output labs (${roomInfo.researchLab.outputLabs.length} output labs)`
-// }
 
 /** throws */
 function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {

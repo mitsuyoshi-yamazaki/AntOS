@@ -76,7 +76,7 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
 
     case ERR_NOT_OWNER: // TODO: InvaderCoreがいると出る
       if ((Game.time % 101) === 7) {
-        PrimitiveLogger.fatal(`creep.harvest() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+        PrimitiveLogger.log(`creep.harvest() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       }
       return ERR_PROGRAMMING_ERROR
 

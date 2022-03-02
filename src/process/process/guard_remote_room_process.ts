@@ -50,7 +50,7 @@ type FinishConditionDuration = {
 }
 type FinishConditionOwnedRoom = {
   readonly case: "owned_room"
-  readonly condition: "tower" | "storage"
+  readonly condition: "tower" | "2towers" | "storage"
 }
 type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom
 
@@ -135,6 +135,7 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   ignoreUsers: IgnoreUser[]
   talkingTo: TalkingInfo
   finishCondition: FinishCondition
+  safemodeCooldown: number
   stopSpawningReasons: string[]
 }
 
@@ -156,10 +157,11 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private creepType: GuardRemoteRoomProcessCreepType,
-    private readonly numberOfCreeps: number,
+    private numberOfCreeps: number,
     private readonly targetId: Id<AnyStructure | AnyCreep> | null,
     private readonly ignoreUsers: IgnoreUser[],
     private talkingTo: TalkingInfo,
+    private safemodeCooldown: number,
     private finishCondition: FinishCondition,
     private stopSpawningReasons: string[],
   ) {
@@ -184,20 +186,35 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       targetId: this.targetId,
       ignoreUsers: this.ignoreUsers,
       talkingTo: this.talkingTo,
+      safemodeCooldown: this.safemodeCooldown,
       finishCondition: this.finishCondition,
       stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: GuardRemoteRoomProcessState): GuardRemoteRoomProcess {
-    return new GuardRemoteRoomProcess(state.l, state.i, state.p, state.tr, state.w, state.creepType, state.numberOfCreeps, state.targetId, state.ignoreUsers, state.talkingTo, state.finishCondition, state.stopSpawningReasons ?? [])
+    return new GuardRemoteRoomProcess(
+      state.l,
+      state.i,
+      state.p,
+      state.tr,
+      state.w,
+      state.creepType,
+      state.numberOfCreeps,
+      state.targetId,
+      state.ignoreUsers,
+      state.talkingTo,
+      state.safemodeCooldown,
+      state.finishCondition,
+      state.stopSpawningReasons
+    )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepType: GuardRemoteRoomProcessCreepType, numberOfCreeps: number): GuardRemoteRoomProcess {
     const defaultFinishCondition: FinishConditionNever = {
       case: "never"
     }
-    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, defaultFinishCondition, [])
+    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, 500, defaultFinishCondition, [])
   }
 
   public processShortDescription(): string {
@@ -215,7 +232,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "change_creep_type", "change_finish_condition"]
+    const commandList = ["help", "add_ignore_user", "set_creep_count", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "resume", "stop"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -225,16 +242,46 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return `Commands: ${commandList}`
       case "add_ignore_user":
         return this.addIgnoreUsers(components)
+      case "set_creep_count":
+        return this.setCreepCount(components)
       case "change_creep_type":
         return this.changeCreepType(components)
       case "change_finish_condition":
         return this.changeFinishCondition(components)
+      case "change_safemode_cooldown":
+        return this.changeSafemodeCooldown(components)
+      case "resume":
+        this.stopSpawningReasons = []
+        return "ok"
+      case "stop":
+        this.addStopSpawningReason("manually")
+        return "ok"
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private setCreepCount(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const creepCount = listArguments.int(0, "creep count").parse({ min: 1, max: 10 })
+    const oldValue = this.numberOfCreeps
+    this.numberOfCreeps = creepCount
+
+    return `set ${this.numberOfCreeps} (from: ${oldValue})`
+  }
+
+  /** @throws */
+  private changeSafemodeCooldown(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const cooldown = listArguments.int(0, "safemode cooldown").parse({ min: 0 })
+    const oldValue = this.safemodeCooldown
+    this.safemodeCooldown = cooldown
+
+    return `set ${this.safemodeCooldown} (from: ${oldValue})`
   }
 
   /** @throws */
@@ -254,8 +301,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
       case "owned_room": {
         const roomCondition = keywordArguments.string("room_condition").parse()
-        if (roomCondition !== "tower" && roomCondition !== "storage") {
-          throw `room_condition can either "tower" or "storage" (${roomCondition})`
+        if (roomCondition !== "tower" && roomCondition !== "storage" && roomCondition !== "2towers") {
+          throw `room_condition can either "tower", "2towers" or "storage" (${roomCondition})`
         }
         return {
           case: "owned_room",
@@ -322,28 +369,56 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const whitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
 
     const targetRoom = Game.rooms[this.targetRoomName]
-    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > 500) {
+    if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > this.safemodeCooldown) {
       processLog(this, `target room ${this.targetRoomName} in safemode`)
       return
     }
 
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
-    const dyingCreepCount = creeps.filter(creep => {
-      if (creep.ticksToLive == null) {
+    const shouldSpawn = ((): boolean => {
+      if (this.stopSpawningReasons.length > 0) {
         return false
       }
-      if (creep.ticksToLive > 300) {
+      if (this.numberOfCreeps === 1) {
+        const dyingCreepCount = creeps.filter(creep => {
+          if (creep.ticksToLive == null) {
+            return false
+          }
+          if (creep.ticksToLive > 300) {
+            return false
+          }
+          return true
+        }).length
+
+        if ((creeps.length - dyingCreepCount) < this.numberOfCreeps) {
+          return true
+        }
         return false
       }
-      return true
-    }).length
+
+      if (creeps.length < (this.numberOfCreeps - 1)) {
+        return true
+      }
+      // numberOfCreepsが2以上の場合、spawnのタイミングをずらす
+      if (this.numberOfCreeps === 2 && creeps.length === 1 && creeps[0] != null) {
+        const ticksToLive = creeps[0].ticksToLive
+        if (ticksToLive != null && ticksToLive > (GameConstants.creep.life.lifeTime - 300)) {
+          return false
+        }
+      }
+      const isSpawning = creeps.some(creep => creep.spawning === true)
+      if (isSpawning !== true && creeps.length < this.numberOfCreeps) {
+        return true
+      }
+      return false
+    })()
+
+    if (shouldSpawn === true) {
+      this.requestCreep()
+    }
 
     if (this.stopSpawningReasons.length <= 0) {
       this.checkFinishCondition()
-    }
-
-    if (this.stopSpawningReasons.length <= 0 && (creeps.length - dyingCreepCount) < this.numberOfCreeps) {
-      this.requestCreep()
     }
 
     switch (this.creepType) {
@@ -384,6 +459,11 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         case "tower":
           if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length > 0) {
             this.addStopSpawningReason("owned room tower")
+          }
+          return
+        case "2towers":
+          if (targetRoom.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } }).length >= 2) {
+            this.addStopSpawningReason("owned room 2 towers")
           }
           return
         case "storage":
@@ -527,7 +607,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
-    if (waitingTarget == null) {      this.talk(creep)
+    if (waitingTarget == null) {
       this.talk(creep)
       return
     }
@@ -552,8 +632,15 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     this.rangedAttack(creep, target)
-    if (target.getActiveBodyparts(ATTACK) > 0 && target.pos.getRangeTo(creep.pos) <= 2) {
-      this.fleeFrom(target.pos, creep, 4)
+    if (target.getActiveBodyparts(ATTACK) > 0) {
+      const range = target.pos.getRangeTo(creep.pos)
+      if (range <= 2) {
+        this.fleeFrom(target.pos, creep, 4)
+      } else if (range === 3) {
+        // do nothing
+      } else {
+        creep.moveTo(target)
+      }
     } else {
       if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
         creep.moveTo(target)
@@ -570,8 +657,15 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
 
-      if (closestHostile.getActiveBodyparts(ATTACK) > 0 && closestHostile.pos.getRangeTo(creep) <= 2) {
-        this.fleeFrom(closestHostile.pos, creep, 4)
+      if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
+        const range = closestHostile.pos.getRangeTo(creep)
+        if (range <= 2) {
+          this.fleeFrom(closestHostile.pos, creep, 4)
+        } else if (range === 3) {
+          // do nothing
+        } else {
+          creep.moveTo(closestHostile)
+        }
         moved = true
       }
     }

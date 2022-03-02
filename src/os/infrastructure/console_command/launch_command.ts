@@ -33,7 +33,7 @@ import { World35872159TestDeclarationProcess } from "process/temporary/world_358
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
-import { SubmoduleTestProcess } from "../../../../submodules/submodule_test_process"
+import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_test_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
@@ -58,6 +58,8 @@ import { Season41076620ResourceManagerProcess } from "process/temporary/season4_
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_launcher_process"
 import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
+import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
+import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -919,10 +921,25 @@ ProcessLauncher.register("Season4784484ScoreProcess", args => {
       throw `room next to the entrance room ${roomLink(nextHighwayRoom)} is not on a highway ${nextHighwayRoomCoordinate?.roomType}`
     }
 
+    const convoyCreepId = args.gameObjectId("convoy_creep_id").parse() as Id<Creep>
+    const estimatedDespawnTime = Game.time + 1000
     const commodityType = args.commodityType("commodity_type").parse()
-    const amount = args.int("amount").parse({min: 10, max: 1000})
+    const amount = args.int("amount").parse({min: 1, max: 999})
+    const dryRun = args.boolean("dry_run").parseOptional() ?? false
 
-    return Result.Succeeded((processId) => Season4784484ScoreProcess.create(processId, roomName, highwayEntranceRoomName, direction, commodityType, amount))
+    return Result.Succeeded((processId) => Season4784484ScoreProcess.create(
+      processId,
+      roomName,
+      highwayEntranceRoomName,
+      direction,
+      commodityType,
+      amount,
+      convoyCreepId,
+      estimatedDespawnTime,
+      {
+        dryRun,
+      },
+    ))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -1154,6 +1171,35 @@ ProcessLauncher.register("WithdrawStructureProcess", args => {
     })
 
     return Result.Succeeded((processId) => WithdrawStructureProcess.create(processId, roomName, targetStructureIds))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4TravelerTestProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => Season4TravelerTestProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season4OperateExtraLinkProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    if ((roomResource.roomInfo.config?.extraLinkIds?.length ?? 0) <= 0) {
+      throw `${roomLink(roomName)} doesn't have extra links`
+    }
+
+    const upgraderLink = args.visibleGameObject("upgrader_link_id").parse({inRoomName: roomName})
+    if (!(upgraderLink instanceof StructureLink)) {
+      throw `${upgraderLink} is not StructureLink`
+    }
+
+    return Result.Succeeded((processId) => Season4OperateExtraLinkProcess.create(processId, roomName, upgraderLink.id))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

@@ -67,7 +67,7 @@ export function init(): void {
 
   if (Memory.pathCache == null) {
     Memory.pathCache = {
-      cache: {},
+      paths: {}
     }
   }
 

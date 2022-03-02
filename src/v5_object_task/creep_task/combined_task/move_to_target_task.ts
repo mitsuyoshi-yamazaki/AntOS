@@ -4,25 +4,18 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromState } from "../creep_api_wrapper"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
-import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { decodeRoomPosition, RoomPositionId, RoomPositionState } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { DirectionConstants } from "utility/direction"
 
-const errors = new Map<string, number>()
-function raiseError(errorMessage: string): void {
-  if (errors.size > 100) {
-    errors.clear()
-  }
-  const errorCount = (errors.get(errorMessage) ?? 0) + 1
-  errors.set(errorMessage, errorCount)
-
-  if (errorCount % 50 === 0) {
-    PrimitiveLogger.log(`${errorMessage} (${errorCount} times)`)
-  }
+const noPathPositions: string[] = []
+const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition): string => {
+  return `${fromPosition.id}_${toPosition.id}`
 }
 
-type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
+export type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
 type Position = {
   position: RoomPosition,
   timestamp: Timestamp
@@ -32,10 +25,13 @@ type PositionState = {
   timestamp: Timestamp,
 }
 
-export interface MoveToTargetTaskOptions {
+type MoveToTargetTaskFixedOptions = {
   ignoreSwamp: boolean
   reusePath: number | null
+  fallbackEnabled: boolean
 }
+
+export type MoveToTargetTaskOptions = Partial<MoveToTargetTaskFixedOptions>
 
 export interface MoveToTargetTaskState extends CreepTaskState {
   /** api warpper state */
@@ -46,6 +42,7 @@ export interface MoveToTargetTaskState extends CreepTaskState {
 
   lastPosition: PositionState | null
   reusePath: number | null
+  fallbackEnabled: boolean
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -57,7 +54,7 @@ export class MoveToTargetTask implements CreepTask {
   private constructor(
     public readonly startTime: number,
     public readonly apiWrapper: MoveToTargetTaskApiWrapper,
-    private readonly options: MoveToTargetTaskOptions,
+    private readonly options: MoveToTargetTaskFixedOptions,
     private lastPosition: Position | null,
   ) {
     this.shortDescription = apiWrapper.shortDescription
@@ -79,6 +76,7 @@ export class MoveToTargetTask implements CreepTask {
           timestamp: this.lastPosition.timestamp,
         }
       })(),
+      fallbackEnabled: this.options.fallbackEnabled,
     }
   }
 
@@ -87,9 +85,10 @@ export class MoveToTargetTask implements CreepTask {
     if (wrapper == null) {
       return null
     }
-    const options: MoveToTargetTaskOptions = {
+    const options: MoveToTargetTaskFixedOptions = {
       ignoreSwamp: state.is,
       reusePath: state.reusePath,
+      fallbackEnabled: state.fallbackEnabled ?? false,
     }
     const lastPosition = ((): Position | null => {
       if (state.lastPosition == null) {
@@ -104,13 +103,11 @@ export class MoveToTargetTask implements CreepTask {
   }
 
   public static create(apiWrapper: MoveToTargetTaskApiWrapper, options?: MoveToTargetTaskOptions): MoveToTargetTask {
-    const opt = ((): MoveToTargetTaskOptions => {
-      if (options != null) {
-        return options
-      }
+    const opt = ((): MoveToTargetTaskFixedOptions => {
       return {
-        ignoreSwamp: false,
-        reusePath: null,
+        ignoreSwamp: options?.ignoreSwamp ?? false,
+        reusePath: options?.reusePath ?? null,
+        fallbackEnabled: options?.fallbackEnabled ?? false,
       }
     })()
     return new MoveToTargetTask(Game.time, apiWrapper, opt, null)
@@ -130,14 +127,30 @@ export class MoveToTargetTask implements CreepTask {
     case ERR_NOT_IN_RANGE: {
       const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
       const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
-      if (moveToResult === ERR_NO_PATH && creep.room.name !== this.apiWrapper.target.pos.roomName) {
-        moveToOps.maxOps = 3000
-        moveToOps.maxRooms = 16
-        moveToOps.ignoreCreeps = false
-        const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
-        if (retryResult === ERR_NO_PATH) {
-          const error = `creep.moveTo() ${creep.name} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
-          raiseError(error)
+      if (moveToResult === ERR_NO_PATH && this.options.fallbackEnabled === true) {
+        const routeIdentifier = getRouteIdentifier(creep.pos, this.apiWrapper.target.pos)
+        if (noPathPositions.includes(routeIdentifier) !== true) {
+          if (creep.room.controller == null || creep.room.controller.my !== true) {
+            moveToOps.maxOps = 3000
+            moveToOps.maxRooms = 16
+            // moveToOps.ignoreCreeps = false
+            moveToOps.range = 5
+            moveToOps.reusePath = 0
+            const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+            if (retryResult !== ERR_NO_PATH) {
+              return TaskProgressType.InProgress
+            }
+
+            noPathPositions.push(routeIdentifier)
+            const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
+            PrimitiveLogger.log(error)
+          }
+        }
+
+        const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
+        if (emptyPositionDirection != null) {
+          creep.move(emptyPositionDirection)
+          return TaskProgressType.InProgress
         }
       }
       return TaskProgressType.InProgress
@@ -247,4 +260,104 @@ export class MoveToTargetTask implements CreepTask {
     }
     return options
   }
+}
+
+const walkableStructureTypes: StructureConstant[] = [
+  STRUCTURE_ROAD,
+  STRUCTURE_CONTAINER,
+  STRUCTURE_RAMPART,
+]
+class EmptyPositionCache {
+  private filledPositionDirections = new Map<RoomPositionId, DirectionConstant[]>()
+  private emptyPositionDirections = new Map<RoomPositionId, DirectionConstant[]>()
+
+  public beforeTick(): void {
+    this.emptyPositionDirections.clear()
+
+    if ((Game.time % 10009) === 17) {
+      this.refreshFilledDirections()
+    }
+  }
+
+  public afterTick(): void {
+  }
+
+  public getEmptyPositionDirection(position: RoomPosition): DirectionConstant | null {
+    const storedDirections = this.storedEmptyPositionDirections(position)
+    const emptyPositionDirection = storedDirections.pop()
+    return emptyPositionDirection ?? null
+  }
+
+  /**
+   * @returns 参照を返すのでオブジェクトに変更を入れる場合はそのまま変更する
+   */
+  private storedEmptyPositionDirections(position: RoomPosition): DirectionConstant[] {
+    const identifier = position.id
+    const stored = this.emptyPositionDirections.get(identifier)
+    if (stored != null) {
+      return stored
+    }
+
+    const emptyPositionDirections = this.emptyPositionDirectionsFor(position, identifier)
+    this.emptyPositionDirections.set(identifier, emptyPositionDirections)
+    return emptyPositionDirections
+  }
+
+  private emptyPositionDirectionsFor(position: RoomPosition, identifier: RoomPositionId): DirectionConstant[] {
+    const filledDirections = this.filledDirectionsFor(position, identifier)
+    const directions = DirectionConstants.filter(direction => {
+      if (filledDirections.includes(direction) === true) {
+        return false
+      }
+      const targetPosition = position.positionTo(direction)
+      if (targetPosition == null) {
+        return false
+      }
+      const creeps = targetPosition.lookFor(LOOK_CREEPS)
+      if (creeps.length > 0) {
+        return false
+      }
+      return true
+    })
+
+    return directions
+  }
+
+  private filledDirectionsFor(position: RoomPosition, identifier: RoomPositionId): DirectionConstant[] {
+    const stored = this.filledPositionDirections.get(identifier)
+    if (stored != null) {
+      return [...stored]
+    }
+
+    const filledDirections = DirectionConstants.filter(direction => {
+      const targetPosition = position.positionTo(direction)
+      if (targetPosition == null) {
+        return true
+      }
+      const terrains = targetPosition.lookFor(LOOK_TERRAIN)
+      if (terrains.some(terrain => terrain === "wall") === true) {
+        return true
+      }
+      const structures = targetPosition.lookFor(LOOK_STRUCTURES)
+      if (structures.some(structure => walkableStructureTypes.includes(structure.structureType) !== true) === true) {
+        return true
+      }
+      return false
+    })
+
+    this.filledPositionDirections.set(identifier, filledDirections)
+    // console.log(`${position} in ${roomLink(position.roomName)} filled ${filledDirections.map(direction => directionDescription(direction)).join(",")}`)
+
+    return filledDirections
+  }
+
+  private refreshFilledDirections(): void {
+    // TODO: 現状ではdeployによるheapのリセットに期待している
+  }
+}
+
+export const emptyPositionCache = new EmptyPositionCache()
+
+function getEmptyPositionDirection(position: RoomPosition): DirectionConstant | null {
+  return emptyPositionCache.getEmptyPositionDirection(position)
 }

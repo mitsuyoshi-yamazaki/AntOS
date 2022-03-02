@@ -15,7 +15,7 @@ import { processLog } from "os/infrastructure/logger"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
-import { CommodityIngredient, commodityTier, isCommodityConstant } from "utility/resource"
+import { CommodityIngredient, getCommodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("Season41076620ResourceManagerProcess", state => {
@@ -262,6 +262,43 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     return `minimum amount set:\n${results.join("\n")}`
   }
 
+  public clearResourceMinimumAmounts(): void {
+    this.minimumResourceAmounts = {}
+  }
+
+  public stopForAWhile(): void {
+    // this.removeReservedResourceTransfer(resourceType)
+    this.removeAllReservedTransfer()  // Terminalのcooldownを避けるため
+
+    // if (duration <= 0) {
+    //   PrimitiveLogger.programError(`${this.taskIdentifier} ${this.processId} `)
+    // }
+
+    this.processState.lastRunTimestamp = (Game.time - 1) % runInterval
+    processLog(this, "interval reset")
+  }
+
+  private removeAllReservedTransfer(): void {
+    this.resourceTransfer = {}
+  }
+
+  private removeReservedResourceTransfer(resourceType: CommodityIngredient): void {
+    processLog(this, `removed ${coloredResourceType(resourceType)} `)
+
+    Array.from(Object.values(this.resourceTransfer)).forEach(reservedTransfer => {
+      const removeIndices = reservedTransfer.flatMap((transfer, index): number[] => {
+        if (transfer.resourceType !== resourceType) {
+          return []
+        }
+        return [index]
+      })
+      removeIndices.reverse()
+      removeIndices.forEach(index => {
+        reservedTransfer.splice(index, 1)
+      })
+    })
+  }
+
   public runOnTick(): void {
     if ((Game.time % terminalCooldownInterval) === 0) {
       this.transferResources()
@@ -333,10 +370,13 @@ export class Season41076620ResourceManagerProcess implements Process, Procedural
     })
 
     const getIngredientMinimumAmount = (ingredient: CommodityIngredient): number => {
+      if (isDepositConstant(ingredient)) {
+        return 2000
+      }
       if (!(isCommodityConstant(ingredient))) {
         return 5000
       }
-      switch (commodityTier(ingredient)) {
+      switch (getCommodityTier(ingredient)) {
       case 0:
         return 200
       case 1:

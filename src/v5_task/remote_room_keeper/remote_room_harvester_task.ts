@@ -30,9 +30,8 @@ import { RoomResources } from "room_resource/room_resources"
 import { RemoteRoomInfo } from "room_resource/room_info"
 import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
-import { PathCacheAccessor } from "utility/path_cache"
 
-const routeRecalculationInterval = 40000
+const routeRecalculationInterval = 80000
 
 export interface RemoteRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -377,14 +376,13 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
     const codename = generateCodename(this.constructor.name, this.startTime)
     const range = hasContainer ? 2 : 1
-    const disableRouteWaypoint = targetRoomInfo.testConfig?.enablePathCaching ?? false
+    const disableRouteWaypoint = false
 
     const result = placeRoadConstructionMarks(storage.pos, sourcePosition, codename, {range, disableRouteWaypoint})
 
     try {
       switch (result.resultType) {
       case "succeeded": {
-        cachePath(result.value, targetRoomInfo)
         this.constructInWaypointRooms(result.value)
         if (hasContainer !== true) {
           const lastPosition = result.value[result.value.length - 1]
@@ -451,11 +449,4 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       GameMap.setWaypoints(this.roomName, this.targetRoomName, roomNames)
     }
   }
-}
-
-function cachePath(path: RoomPosition[], targetRoomInfo: RemoteRoomInfo): void {
-  if (targetRoomInfo.testConfig?.enablePathCaching !== true) {
-    return
-  }
-  PathCacheAccessor.setPathCache(path)
 }

@@ -15,7 +15,7 @@ import { processLog } from "os/infrastructure/logger"
 import { Timestamp } from "utility/timestamp"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { GameConstants } from "utility/constants"
-import { coloredText, roomLink } from "utility/log"
+import { coloredText, profileLink, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { calculateTowerDamage } from "utility/tower"
 import { } from "./tower_interception"
@@ -250,9 +250,10 @@ export class DefenseRoomProcess implements Process, Procedural {
       return Math.max(hostileInfo.clusters.length, 3)
     })()
 
-    if (intercepters.length < intercepterMaxCount) {
+    const energyCapacityAvailable = roomResources.room.energyCapacityAvailable
+    if (intercepters.length < intercepterMaxCount && energyCapacityAvailable > 1000) {
       const small = intercepters.length <= 0
-      this.spawnIntercepter(small, roomResources.room.energyCapacityAvailable)
+      this.spawnIntercepter(small, energyCapacityAvailable)
     }
 
     if (intercepters.length > 0 && roomResources.hostiles.creeps.length > 0) {
@@ -903,6 +904,20 @@ export class DefenseRoomProcess implements Process, Procedural {
       return
     }
 
-    addLog(`${roomLink(this.roomName)} is attacked by ${hostileInfo.clusters.length} hostile clusters with ${hostileInfo.totalHealPower} heals at ${timestamp}`)
+    const usernames: string[] = []
+    hostileInfo.clusters
+      .forEach(cluster => {
+        cluster.hostileCreeps.forEach(hostileCreep => {
+          const username = hostileCreep.creep.owner.username
+          if (usernames.includes(username) === true) {
+            return
+          }
+          usernames.push(username)
+        })
+      })
+
+    const profiles = usernames.map(username => profileLink(username)).join(", ")
+
+    addLog(`${roomLink(this.roomName)} is attacked by ${hostileInfo.clusters.length} hostile clusters (${profiles}) with ${hostileInfo.totalHealPower} heals at ${timestamp}`)
   }
 }

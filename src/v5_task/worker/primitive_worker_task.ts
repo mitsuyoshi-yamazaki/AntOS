@@ -280,7 +280,12 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   private getHarvestTaskFor(creep: Creep, objects: OwnedRoomObjects, harvestableNeighbourRooms: RoomName[]): CreepTask | null {
-    if (creep.room.name !== this.roomName) {
+    const isNeighbourOccupied = (neighbourRoom: Room): boolean => {
+      return neighbourRoom.controller == null
+        || (neighbourRoom.controller.owner == null && (neighbourRoom.controller.reservation == null || neighbourRoom.controller.reservation.username === Game.user.name))
+    }
+
+    if (creep.room.name !== this.roomName && isNeighbourOccupied(creep.room) !== true) {
       const source = creep.room.find(FIND_SOURCES).sort((lhs, rhs) => {
         return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
       })[0]
@@ -312,7 +317,9 @@ export class PrimitiveWorkerTask extends Task {
       if (room == null) {
         return MoveToRoomTask.create(harvestableNeighbourRoom, [])
       }
-      neighbourSources.push(...room.find(FIND_SOURCES))
+      if (isNeighbourOccupied(room) !== true) {
+        neighbourSources.push(...room.find(FIND_SOURCES))
+      }
     }
 
     const targetSource = neighbourSources.sort((lhs, rhs) => {

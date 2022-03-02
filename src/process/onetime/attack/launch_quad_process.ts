@@ -4,9 +4,9 @@ import { OperatingSystem } from "os/os"
 import { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { Timestamp } from "utility/timestamp"
-import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/attack/quad/quad_process"
+import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
 import { processLog } from "os/infrastructure/logger"
-import { QuadSpec, QuadSpecState } from "../../../../submodules/attack/quad/quad_spec"
+import { QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)

@@ -60,8 +60,12 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
     })()
     const result = shouldAttack ? creep.attackController(this.target) : creep.claimController(this.target)
 
-    const roomSign = this.sign ?? Sign.signForOwnedRoom()
-    creep.signController(this.target, roomSign)
+    if (shouldAttack === true) {
+      // TODO: sign
+    } else {
+      const roomSign = this.sign ?? Sign.signForOwnedRoom()
+      creep.signController(this.target, roomSign)
+    }
 
     switch (result) {
     case OK: {

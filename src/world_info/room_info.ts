@@ -1,6 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
+import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
 import { RoomName, roomSectorNameOf } from "utility/room_name"
@@ -392,6 +393,30 @@ export class OwnedRoomObjects {
       }
     })
 
+    if (chargeableStructures.length < 12) {
+      const chargeableLinks = ((): StructureLink[] => {
+        const roomInfoMemory = Memory.v6RoomInfo[room.name]
+        if (roomInfoMemory?.roomType !== "owned") {
+          return []
+        }
+        const extraLinkIds = roomInfoMemory.config?.extraLinkIds
+        if (extraLinkIds == null) {
+          return []
+        }
+        return extraLinkIds.flatMap(linkId => {
+          const link = Game.getObjectById(linkId)
+          if (link == null) {
+            return []
+          }
+          if (link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+            return []
+          }
+          return [link]
+        })
+      })()
+      chargeableStructures.push(...chargeableLinks)
+    }
+
     // Distributorで行う
     // if (chargeableStructures.length <= 0) {
     //   if (terminal != null && (room.storage != null && room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 50000)) {
@@ -472,7 +497,16 @@ export class OwnedRoomObjects {
   }
 
   public getEnergySource(position: RoomPosition): EnergySource | null { // TODO: Resource等は量も考慮する
-    const energySources = this.energySources
+    let energySources = this.energySources
+    if (this.controller.room.name === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+      energySources = energySources.filter(source => {
+        if (source.pos.x <= 1) {
+          return false
+        }
+        return true
+      })
+    }
+
     if (energySources.length <= 0) {
       return null
     }

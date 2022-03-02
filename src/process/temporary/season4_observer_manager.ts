@@ -2,6 +2,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
+import { Timestamp } from "utility/timestamp"
+import { ValuedMapMap } from "utility/valued_collection"
 
 type ObserveInterval = "short" | "medium" | "long"
 
@@ -27,6 +29,7 @@ type Observation = {
 }
 
 const observations = new Map<RoomName, Observation>() // <observerRoomName, observation>
+const reserved = new ValuedMapMap<RoomName, Timestamp, RoomName>() // <observerRoomName, observeTime, targetRoomName>
 const requestArguments: ObserveRequestArguments[] = []
 
 export const Season4ObserverManager = {
@@ -47,6 +50,37 @@ export const Season4ObserverManager = {
       interval,
       concectiveTicks,
     })
+  },
+
+  reserveObservation(observerRoomName: RoomName, targetRoomName: RoomName, ticksAfter: Timestamp, options?: {retry?: boolean}): void {
+    const reservationMap = reserved.getValueFor(observerRoomName)
+    const observeTime = Game.time + ticksAfter
+    const observeRoomName = reservationMap.get(observeTime)
+    if (observeRoomName === targetRoomName) {
+      return
+    }
+    if (observeRoomName != null) {
+      if (options?.retry === true) {
+        const retryTime = observeTime + 1
+        const retryObserveRoomName = reservationMap.get(retryTime)
+        if (retryObserveRoomName === targetRoomName) {
+          return
+        }
+        if (retryObserveRoomName != null) {
+          PrimitiveLogger.log(`observation reservation for ${roomLink(observerRoomName)} to ${roomLink(targetRoomName)} at ${observeTime} failed`)
+          return
+        }
+
+        reservationMap.set(retryTime, targetRoomName)
+        return
+
+      } else {
+        PrimitiveLogger.log(`observation reservation for ${roomLink(observerRoomName)} to ${roomLink(targetRoomName)} at ${observeTime} failed`)
+        return
+      }
+    }
+
+    reservationMap.set(observeTime, targetRoomName)
   },
 
   // 一旦デプロイでクリアされるため不要
@@ -176,7 +210,30 @@ function getObserveRoomListFor(request: ObserveRequest, interval: ObserveInterva
 }
 
 function observe(): void {
+  const skipRoomNames: RoomName[] = []
+  const time = Game.time
+  reserved.forEach((reservationMap, roomName) => {
+    const reservedTargetRoomName = reservationMap.get(time)
+    if (reservedTargetRoomName == null) {
+      return
+    }
+
+    const roomResource = RoomResources.getOwnedRoomResource(roomName)
+    const observer = roomResource?.activeStructures.observer
+    if (observer == null) {
+      PrimitiveLogger.programError(`${roomLink(roomName)} has no observer`)
+      return
+    }
+
+    observeRoom(observer, reservedTargetRoomName)
+    reservationMap.delete(time)
+  })
+
+
   observations.forEach(observation => {
+    if (skipRoomNames.includes(observation.request.observerRoomName) === true) {
+      return
+    }
     const observer = Game.getObjectById(observation.request.observerId)
     if (observer == null) {
       return
@@ -184,18 +241,22 @@ function observe(): void {
 
     const nextTargetRoomName = observation.observeTable[observation.index]
     if (nextTargetRoomName != null) {
-      const result = observer.observeRoom(nextTargetRoomName)
-      switch (result) {
-      case OK:
-        break
-      case ERR_NOT_OWNER:
-      case ERR_NOT_IN_RANGE:
-      case ERR_INVALID_ARGS:
-      case ERR_RCL_NOT_ENOUGH:
-        PrimitiveLogger.programError(`${coloredText("[Error]", "error")} observer.observeRoom(${roomLink(nextTargetRoomName)}) in ${roomLink(observation.request.observerRoomName)} failed with ${result}`)
-        break
-      }
+      observeRoom(observer, nextTargetRoomName)
     }
     observation.index = (observation.index + 1) % observation.observeTable.length
   })
+}
+
+function observeRoom(observer: StructureObserver, targetRoomName: RoomName): void {
+  const result = observer.observeRoom(targetRoomName)
+  switch (result) {
+  case OK:
+    break
+  case ERR_NOT_OWNER:
+  case ERR_NOT_IN_RANGE:
+  case ERR_INVALID_ARGS:
+  case ERR_RCL_NOT_ENOUGH:
+    PrimitiveLogger.programError(`${coloredText("[Error]", "error")} observer.observeRoom(${roomLink(targetRoomName)}) in ${roomLink(observer.room.name)} failed with ${result}`)
+    break
+  }
 }

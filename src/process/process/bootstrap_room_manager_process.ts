@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { decodeTasksFrom } from "v5_task/task_decoder"
 import { ProcessState } from "../process_state"
@@ -12,6 +12,8 @@ import { isRoomName, RoomName } from "utility/room_name"
 import { Result } from "utility/result"
 import { ProcessDecoder } from "../process_decoder"
 import { RoomResources } from "room_resource/room_resources"
+import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { GameMap } from "game/game_map"
 
 type TargetRoom = {
   readonly parentRoomName: RoomName
@@ -138,90 +140,75 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
   }
 
   public didReceiveMessage(message: string): string {
-    if (message.startsWith("clear ") === true) {
-      const roomName = message.slice(6)
-      if (!isRoomName(roomName)) {
-        return `${roomName} is not room name`
-      }
-
-      const childTask = this.tasks.find(task => task.targetRoomName === roomName)
-      if (childTask == null) {
-        return `${roomLink(roomName)} is not bootstrapping`
-      }
-      this.removeTask(childTask)
-      return `Removed boostrap task for ${roomLink(roomName)}`
-    }
-
-    const args = new Map<string, string>()
-    for (const keyValue of message.split(" ")) {
-      const [key, value] = keyValue.split("=")
-      if (key == null || value == null) {
-        return `Invalid argument ${keyValue}`
-      }
-      args.set(key, value)
-    }
-
-    const missingArgumentError = (argumentName: string): string => `Missing argument ${argumentName}`
-
-    const parentRoomName = args.get("parent_room_name")
-    if (parentRoomName == null) {
-      return missingArgumentError("parent_room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const claimInfo = ((): { parentRoomName: RoomName, waypoints: RoomName[] } | string => {
-      const claimParentRoomName = args.get("claim_parent_room_name")
-      if (claimParentRoomName == null) {
-        return {
-          parentRoomName,
-          waypoints: [...waypoints],
+    try {
+      if (message.startsWith("clear ") === true) {
+        const roomName = message.slice(6)
+        if (!isRoomName(roomName)) {
+          return `${roomName} is not room name`
         }
-      }
-      const rawClaimWaypoints = args.get("claim_waypoints")
-      if (rawClaimWaypoints == null) {
-        return missingArgumentError("claim_waypoints")
-      }
-      const claimWaypoints = rawClaimWaypoints.split(",") ?? []
-      return {
-        parentRoomName: claimParentRoomName,
-        waypoints: claimWaypoints,
-      }
-    })()
-    if (typeof claimInfo === "string") {
-      return claimInfo
-    }
 
-    const requiredEnergy = ((): number | null => {
-      const rawEnergy = args.get("energy")
-      if (rawEnergy == null) {
-        return 0
+        const childTask = this.tasks.find(task => task.targetRoomName === roomName)
+        if (childTask == null) {
+          return `${roomLink(roomName)} is not bootstrapping`
+        }
+        this.removeTask(childTask)
+        return `Removed boostrap task for ${roomLink(roomName)}`
       }
-      const energy = parseInt(rawEnergy, 10)
-      if (isNaN(energy) === true) {
-        return null
-      }
-      return energy
-    })()
-    if (requiredEnergy == null) {
-      return `Invalid energy ${args.get("energy")} is not a number`
-    }
 
-    const ignoreSpawn = args.get("ignore_spawn") === "1"
-    this.addTargetRoomQueue(
-      parentRoomName,
-      targetRoomName,
-      waypoints,
-      claimInfo,
-      requiredEnergy,
-      ignoreSpawn,
-    )
+      const components = message.split(" ")
+      const keywordArguments = new KeywordArguments(components)
+
+      const parentRoomName = keywordArguments.roomName("parent_room_name").parse({ my: true })
+      const targetRoomName = keywordArguments.roomName("target_room_name").parse()
+
+      const getWaypoints = (fromRoomName: RoomName): RoomName[] => {
+        const waypointsArgument = keywordArguments.roomNameList("waypoints").parseOptional()
+        if (waypointsArgument != null) {
+          if (GameMap.hasWaypoints(fromRoomName, targetRoomName) !== true) {
+            GameMap.setWaypoints(fromRoomName, targetRoomName, waypointsArgument)
+          }
+          return waypointsArgument
+        }
+        const stored = GameMap.getWaypoints(fromRoomName, targetRoomName, { ignoreMissingWaypoints: true })
+        if (stored == null) {
+          throw `waypoints not given and waypoints from ${roomLink(fromRoomName)} to ${roomLink(targetRoomName)} is not stored`
+        }
+        return stored
+      }
+
+      const waypoints = getWaypoints(parentRoomName)
+      const claimInfo = ((): { parentRoomName: RoomName, waypoints: RoomName[] } | string => {
+        const claimParentRoomName = keywordArguments.roomName("claim_parent_room_name").parseOptional({ my: true })
+        if (claimParentRoomName == null) {
+          return {
+            parentRoomName,
+            waypoints: [...waypoints],
+          }
+        }
+        const claimWaypoints = getWaypoints(claimParentRoomName)
+        return {
+          parentRoomName: claimParentRoomName,
+          waypoints: claimWaypoints,
+        }
+      })()
+      if (typeof claimInfo === "string") {
+        return claimInfo
+      }
+
+      const requiredEnergy = keywordArguments.int("energy").parseOptional({ min: 0 }) ?? 0
+
+      const ignoreSpawn = keywordArguments.boolean("ignore_spawn").parseOptional() === true
+      this.addTargetRoomQueue(
+        parentRoomName,
+        targetRoomName,
+        waypoints,
+        claimInfo,
+        requiredEnergy,
+        ignoreSpawn,
+      )
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
     return "target queued"
   }
 

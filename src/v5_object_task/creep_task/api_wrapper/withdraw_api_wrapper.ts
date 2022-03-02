@@ -8,7 +8,7 @@ import { EnergyStore } from "prototype/room_object"
 import { isResourceConstant } from "utility/resource"
 
 type WithdrawApiWrapperResult = FINISHED | IN_PROGRESS | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
-type WithdrawApiWrapperTargetType = EnergyStore | Ruin | StructureLab | StructureFactory | StructureLink | StructureExtension | StructureSpawn | StructureTower
+export type WithdrawApiWrapperTargetType = EnergyStore | Ruin | StructureLab | StructureFactory | StructureLink | StructureExtension | StructureSpawn | StructureTower
 
 export interface WithdrawApiWrapperState extends CreepApiWrapperState {
   /** target id */

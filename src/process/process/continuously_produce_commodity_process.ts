@@ -6,7 +6,7 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { generateCodename } from "utility/unique_id"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { CommodityIngredient, commodityTier, CommodityTier, commodityTiers, commodityTypeForTier, isCommodityConstant, isDepositConstant } from "utility/resource"
+import { CommodityIngredient, getCommodityTier, CommodityTier, commodityTiers, commodityTypesForTier, isCommodityConstant, isDepositConstant } from "utility/resource"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { World } from "world_info/world_info"
@@ -32,6 +32,8 @@ ProcessDecoder.register("ContinuouslyProduceCommodityProcess", state => {
 
 const noProduct = "no products"
 const notOperating = "not operating"
+
+const finished = true as boolean
 
 type IngredientMinimumAmounts = {[resourceType: string]: number}
 
@@ -62,7 +64,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     private readonly factoryId: Id<StructureFactory>,
     private products: CommodityConstant[],
     private excludedProducts: CommodityConstant[],
-    private readonly ingredientMinimumAmounts: IngredientMinimumAmounts,
+    private ingredientMinimumAmounts: IngredientMinimumAmounts,
     private stopSpawningReasons: string[]
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
@@ -223,6 +225,10 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     this.ingredientMinimumAmounts[resourceType] = amount
   }
 
+  public clearResourceMinimumAmounts(): void {
+    this.ingredientMinimumAmounts = {}
+  }
+
   public requiredIngredients(): CommodityIngredient[] {
     return this.getAllIngredients()
   }
@@ -337,7 +343,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   private newHaulerTask(creep: Creep, factory: StructureFactory, terminal: StructureTerminal, allIngredients: CommodityIngredient[], roomResource: OwnedRoomResource): CreepTask | null {
     const resourceType = Array.from(Object.keys(creep.store))[0] as ResourceConstant | null
     if (resourceType != null) {
-      if ((allIngredients as string[]).includes(resourceType) === true) {
+      if ((allIngredients as string[]).includes(resourceType) === true && finished !== true) {
         return MoveToTargetTask.create(TransferResourceApiWrapper.create(factory, resourceType))
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
@@ -400,7 +406,19 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   private resourceToWithdraw(factory: StructureFactory, allIngredients: CommodityIngredient[]): { resourceType: ResourceConstant, amount: number } | null {
-    const resourceTypesToWithdraw = (Array.from(Object.keys(factory.store)) as ResourceConstant[])
+    const resources = (Array.from(Object.keys(factory.store)) as ResourceConstant[])
+    if (finished === true) {
+      const resourceType = resources[0]
+      if (resourceType == null) {
+        return null
+      }
+      return {
+        resourceType,
+        amount: factory.store.getUsedCapacity(resourceType)
+      }
+    }
+
+    const resourceTypesToWithdraw = resources
       .flatMap((resourceType): { resourceType: ResourceConstant, amount: number }[] => {
         const amount = factory.store.getUsedCapacity(resourceType)
         if ((allIngredients as ResourceConstant[]).includes(resourceType) === true) {
@@ -425,15 +443,23 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     if (isDepositConstant(resourceType)) {
       return 1000
     }
+    if (resourceType === RESOURCE_COMPOSITE) {
+      return 20
+    }
+    if (resourceType === RESOURCE_LIQUID) {
+      return 150
+    }
     if (isCommodityConstant(resourceType)) {
-      const tier = commodityTier(resourceType)
+      const tier = getCommodityTier(resourceType)
       switch (tier) {
       case 0:
-        return 100
+        return 310
       case 1:
-        return 10
+        return 45
       case 2:
+        return 5
       case 3:
+        return 3
       case 4:
       case 5:
         return 1
@@ -443,6 +469,10 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
   }
 
   private resourceTypeToChargeFactory(factory: StructureFactory, allIngredients: CommodityIngredient[], roomResource: OwnedRoomResource): CommodityIngredient | null {
+    if (finished === true) {
+      return null
+    }
+
     // factory内にmaximumAmountInFactory未満で、かつterminalに0以上のresourceを、factory内に少ない順
     const ingredientAmounts = allIngredients.flatMap((ingredient): { ingredient: CommodityIngredient, amountInFactory: number }[] => {
       const amountInFactory = factory.store.getUsedCapacity(ingredient)
@@ -582,7 +612,7 @@ function getFactoryTier(factory: StructureFactory): CommodityTier {
 function productsForFactory(factory: StructureFactory, excludedProducts: CommodityConstant[]): CommodityConstant[] {
   const tier = getFactoryTier(factory)
 
-  return commodityTypeForTier(tier).flatMap(commodityType => {
+  return commodityTypesForTier(tier).flatMap(commodityType => {
     if (excludedProducts.includes(commodityType) === true) {
       return []
     }

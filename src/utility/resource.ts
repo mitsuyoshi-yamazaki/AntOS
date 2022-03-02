@@ -220,7 +220,7 @@ export const commodityTiers = [
   5,
 ] as const
 export type CommodityTier = typeof commodityTiers[number]
-export function commodityTier(commodityType: CommodityConstant): CommodityTier {
+export function getCommodityTier(commodityType: CommodityConstant): CommodityTier {
   if ((Tier0CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
     return 0
   }
@@ -243,7 +243,7 @@ export function commodityTier(commodityType: CommodityConstant): CommodityTier {
   return 0
 }
 
-export function commodityTypeForTier(tier: CommodityTier): CommodityConstant[] {
+export function commodityTypesForTier(tier: CommodityTier): CommodityConstant[] {
   switch (tier) {
   case 1:
     return [...Tier1CommodityConstants]

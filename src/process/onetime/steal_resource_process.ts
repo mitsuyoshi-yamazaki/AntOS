@@ -17,21 +17,25 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { DepositConstant, isResourceConstant, MineralBoostConstant } from "utility/resource"
+import { CommodityConstant, DepositConstant, isResourceConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
 })
 
 const resourcePriority: ResourceConstant[] = [  // 添字の大きいほうが優先
+  ...MineralConstant,
+  ...MineralBaseCompoundsConstant,
   ...MineralBoostConstant,
-  RESOURCE_ZYNTHIUM,
-  RESOURCE_CATALYST,
   ...DepositConstant,
+  ...CommodityConstant,
   RESOURCE_OPS,
   RESOURCE_POWER,
 ]
@@ -54,9 +58,10 @@ export interface StealResourceProcessState extends ProcessState {
   takeAll: boolean
   creepCount: number
   finishWorking: number
+  stopSpawningReasons: string[]
 }
 
-export class StealResourceProcess implements Process, Procedural {
+export class StealResourceProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -73,8 +78,9 @@ export class StealResourceProcess implements Process, Procedural {
     private readonly targetId: Id<TargetType>,
     private state: State,
     private readonly takeAll: boolean,
-    private readonly creepCount: number,
+    private creepCount: number,
     private readonly finishWorking: number,
+    private stopSpawningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -93,20 +99,64 @@ export class StealResourceProcess implements Process, Procedural {
       takeAll: this.takeAll,
       creepCount: this.creepCount,
       finishWorking: this.finishWorking,
+      stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: StealResourceProcessState): StealResourceProcess {
-    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount ?? 1, state.finishWorking ?? 250)
+    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount, state.finishWorking, state.stopSpawningReasons ?? [])
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean, creepCount: number, finishWorkig: number): StealResourceProcess {
-    return new StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll, creepCount, finishWorkig)
+    return new StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll, creepCount, finishWorkig, [])
   }
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${roomLink(this.targetRoomName)} ${this.state}, ${creepCount}cr`
+    const descriptions: string[] = [
+      `${roomLink(this.targetRoomName)} ${this.state}`,
+      `${creepCount}cr`,
+    ]
+    if (this.stopSpawningReasons.length > 0) {
+      descriptions.push(`spawn stopped due to: ${this.stopSpawningReasons.join(", ")}`)
+    }
+    return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "set_creep_count", "stop", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "set_creep_count": {
+        const listArguments = new ListArguments(components)
+        const count = listArguments.int(0, "creep count").parse({ min: 1, max: 10 })
+        const oldValue = this.creepCount
+        this.creepCount = count
+        return `set creep count ${count} (from ${oldValue})`
+      }
+
+      case "resume": {
+        const oldValues = [...this.stopSpawningReasons]
+        this.stopSpawningReasons = []
+        return `resumed (stopped reasons: ${oldValues.join(", ")})`
+      }
+
+      case "stop":
+        this.addStopSpawningReason("manual")
+        return "ok"
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
@@ -151,7 +201,7 @@ export class StealResourceProcess implements Process, Procedural {
       }
       return this.creepCount
     })()
-    if (this.state !== "finished" && creepCount < numberOfCreeps) {
+    if (this.state !== "finished" && creepCount < numberOfCreeps && this.stopSpawningReasons.length <= 0) {
       this.requestHauler(objects.controller.room.energyCapacityAvailable)
     }
 
@@ -169,9 +219,18 @@ export class StealResourceProcess implements Process, Procedural {
       if (this.targetRoomName === this.parentRoomName) {
         return CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 6)
       } else {
-        return CreepBody.create([], [CARRY, MOVE], energyCapacity, 12)
+        return CreepBody.create([], [CARRY, MOVE], energyCapacity, 25)
       }
     })()
+    body.sort((lhs, rhs) => {
+      if (lhs === rhs) {
+        return 0
+      }
+      if (lhs === MOVE) {
+        return 1
+      }
+      return -1
+    })
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
@@ -199,9 +258,15 @@ export class StealResourceProcess implements Process, Procedural {
     }
 
     if (creep.room.name === this.targetRoomName) {
-      const target = Game.getObjectById(this.targetId)
-      if (target != null) {
-        if (creep.store.getFreeCapacity() > 0) {
+      if (creep.store.getFreeCapacity() > 0) {
+
+        const droppedResource = creep.room.find(FIND_DROPPED_RESOURCES).find(resource => resourcePriority.includes(resource.resourceType) === true)
+        if (droppedResource != null) {
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(PickupApiWrapper.create(droppedResource)))
+        }
+
+        const target = Game.getObjectById(this.targetId)
+        if (target != null) {
           const resourceType = this.resourceToSteal(target)
           const shouldFinish = ((): boolean => {
             if (resourceType == null) {
@@ -219,9 +284,9 @@ export class StealResourceProcess implements Process, Procedural {
             return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(target, resourceType)))
           }
         }
+        const waypoints = [...this.waypoints].reverse()
+        return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, waypoints))
       }
-      const waypoints = [...this.waypoints].reverse()
-      return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, waypoints))
     }
 
     if (creep.store.getUsedCapacity() <= 0) {
@@ -244,5 +309,12 @@ export class StealResourceProcess implements Process, Procedural {
         return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)
       })[0]
     return resourceType ?? null
+  }
+
+  private addStopSpawningReason(reason: string): void {
+    if (this.stopSpawningReasons.includes(reason) === true) {
+      return
+    }
+    this.stopSpawningReasons.push(reason)
   }
 }

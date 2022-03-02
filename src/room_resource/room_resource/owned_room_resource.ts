@@ -231,6 +231,23 @@ export class OwnedRoomResource extends NormalRoomResource {
       }
     })
 
+    const chargeableLinks = ((): StructureLink[] => {
+      if (roomInfo.config?.extraLinkIds == null) {
+        return []
+      }
+      return roomInfo.config.extraLinkIds.flatMap(linkId => {
+        const link = Game.getObjectById(linkId)
+        if (link == null) {
+          return []
+        }
+        if (link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+          return []
+        }
+        return [link]
+      })
+    })()
+    chargeableStructures.push(...chargeableLinks)
+
     if (chargeableStructures.length <= 0 && factory != null && factory.store.getUsedCapacity(RESOURCE_ENERGY) < 1000) {
       chargeableStructures.push(factory)
     }

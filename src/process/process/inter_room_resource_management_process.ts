@@ -8,6 +8,8 @@ import { OwnedRoomInfo } from "room_resource/room_info"
 import { processLog } from "os/infrastructure/logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessDecoder } from "process/process_decoder"
+import { OperatingSystem } from "os/os"
+import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
@@ -103,7 +105,21 @@ class ResourceTransferer {
   private readonly ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
 
   public constructor() {
+    const disabledRoomNames: RoomName[] = []
+    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
+      if (processInfo.process instanceof Season2055924SendResourcesProcess) {
+        const roomName = processInfo.process.parentRoomName
+        if (disabledRoomNames.includes(roomName) !== true) {
+          disabledRoomNames.push(roomName)
+        }
+      }
+    })
+
     RoomResources.getOwnedRoomResources().forEach(resources => {
+      if (disabledRoomNames.includes(resources.room.name) === true) {
+        return
+      }
+
       const terminal = resources.activeStructures.terminal
       const storage = resources.activeStructures.storage
       if (terminal == null) {

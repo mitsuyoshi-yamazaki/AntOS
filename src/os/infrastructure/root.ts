@@ -16,6 +16,7 @@ import { EventManager } from "event_handler/event_manager"
 import { GameMap } from "game/game_map"
 import { GameRecord } from "game/game_record"
 import { Season4ObserverManager } from "process/temporary/season4_observer_manager"
+import { emptyPositionCache } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
@@ -76,6 +77,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       Season4ObserverManager.beforeTick()
     }, "Season4ObserverManager.beforeTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      emptyPositionCache.beforeTick()
+    }, "emptyPositionCache.beforeTick()")()
   }
 
   public runAfterTick(): void {
@@ -118,6 +123,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       Season4ObserverManager.afterTick()
     }, "Season4ObserverManager.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      emptyPositionCache.afterTick()
+    }, "emptyPositionCache.afterTick()")()
   }
 
   // ---- Private ---- //

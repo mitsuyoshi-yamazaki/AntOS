@@ -37,7 +37,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
-import { Quad, QuadState } from "../../../submodules/attack/quad/quad"
+import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 
 ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
   return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
@@ -295,7 +295,10 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
     this.estimatedTicksToRoom = findRoomRoute(this.parentRoomName, this.targetRoomName, this.waypoints).length * GameConstants.room.size
-    this.whitelistedUsernames = Memory.gameInfo.sourceHarvestWhitelist ?? []
+    this.whitelistedUsernames = [
+      ...Game.whitelist,
+      ...(Memory.gameInfo.sourceHarvestWhitelist ?? []),
+    ]
 
     this.fullAttackPower = this.attackerSpec.body.filter(b => (b === ATTACK)).length * GameConstants.creep.actionPower.attack
   }

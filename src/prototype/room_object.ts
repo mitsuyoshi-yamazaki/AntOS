@@ -9,6 +9,7 @@ export type EnergyChargeableStructure = StructureSpawn
   | StructureLab  // TODO: まだある
   | StructureNuker
   | StructureFactory
+  | StructureLink
 
 /** Energyを引き出せるオブジェクト */
 export type EnergyStore = Tombstone | Resource | StructureContainer | StructureStorage | StructureTerminal | Creep

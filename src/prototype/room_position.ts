@@ -43,10 +43,18 @@ declare global {
     targetedBy(taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
+
+    /**
+     * @param direction 返り値のRoomPositionが部屋の外である場合はnullを返す（new RoomPosition(x + i, y + j, roomName) に失敗した際）
+     */
     positionTo(direction: DirectionConstant): RoomPosition | null
     nextRoomPositionTo(direction: DirectionConstant): RoomPosition
     nextRoomEdgePosition(): RoomPosition | null
   }
+}
+
+export function createRoomPositionId(x: number, y: number, roomName: RoomName): RoomPositionId {
+  return `${roomName}_${x},${y}` as RoomPositionId
 }
 
 // 毎tick呼び出すこと
@@ -54,7 +62,7 @@ export function init(): void {
   try {
     Object.defineProperty(RoomPosition.prototype, "id", {
       get(): RoomPositionId {
-        return `${this.roomName}_${this.x},${this.y}` as RoomPositionId
+        return createRoomPositionId(this.x, this.y, this.roomName)
       },
     })
 
