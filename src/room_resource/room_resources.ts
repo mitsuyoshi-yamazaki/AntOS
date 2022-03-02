@@ -197,8 +197,12 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
       if (stored.roomType === "owned") {
 
         // FixMe: Migration: 消す
-        if (stored.remoteRoomInfo == null) {
-          stored.remoteRoomInfo = {}
+        if (stored.links == null) {
+          stored.links = {
+            coreLinkId: null,
+            upgraderLinkId: null,
+            sourceLinkIds: {},
+          }
         }
 
         return stored

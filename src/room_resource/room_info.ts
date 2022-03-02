@@ -24,6 +24,12 @@ export type BoostLabInfo = {
   readonly boost: MineralBoostConstant
 }
 
+type LinkInfo = {
+  coreLinkId: Id<StructureLink> | null
+  upgraderLinkId: Id<StructureLink> | null
+  sourceLinkIds: { [sourceId: string]: Id<StructureLink> }
+}
+
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6
   readonly roomType: "normal" | "owned"
@@ -94,6 +100,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     /** @deprecated */
     wallPositions?: WallPosition[]
   } | null
+  links: LinkInfo // TODO: readonlyにする
 
   // ---- Remote Room ---- //
   remoteRoomInfo: { [roomName: string]: RemoteRoomInfo}
@@ -189,6 +196,11 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    links: {
+      coreLinkId: null,
+      upgraderLinkId: null,
+      sourceLinkIds: {},
+    },
     reachable: true,
     remoteRoomInfo: {},
     boostLabs: [],
@@ -208,6 +220,11 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    links: {
+      coreLinkId: null,
+      upgraderLinkId: null,
+      sourceLinkIds: {},
+    },
     reachable: normalRoomInfo.reachable,
     remoteRoomInfo: {},
     boostLabs: [],
