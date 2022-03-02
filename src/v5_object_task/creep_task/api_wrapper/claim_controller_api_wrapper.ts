@@ -43,6 +43,10 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
   }
 
   public run(creep: Creep): ClaimControllerApiWrapperResult {
+    if (this.target.upgradeBlocked != null) {
+      return IN_PROGRESS
+    }
+
     const shouldAttack = ((): boolean => {
       if (this.target.owner != null) {
         if (this.target.owner.username !== Game.user.name) {
@@ -61,7 +65,9 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
     const result = shouldAttack ? creep.attackController(this.target) : creep.claimController(this.target)
 
     if (shouldAttack === true) {
-      // TODO: sign
+      if (this.target.sign == null || this.target.sign.username !== Game.user.name) {
+        creep.signController(this.target, Sign.signForHostileRoom())
+      }
     } else {
       const roomSign = this.sign ?? Sign.signForOwnedRoom()
       creep.signController(this.target, roomSign)
@@ -89,7 +95,7 @@ export class ClaimControllerApiWrapper implements ApiWrapper<Creep, ClaimControl
     case ERR_INVALID_TARGET:
     case ERR_FULL:
     default:
-      PrimitiveLogger.fatal(`creep.claimController() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.${shouldAttack ? "attackController" : "claimController"}() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

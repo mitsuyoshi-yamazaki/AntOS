@@ -13,8 +13,9 @@ import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import { GameConstants } from "utility/constants"
 
-export function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName): boolean {
+function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName): boolean {
   const targetRoomInfo = RoomResources.getRoomInfo(targetRoomName)
   if (targetRoomInfo == null) {
     return true
@@ -22,11 +23,21 @@ export function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: R
   if (targetRoomInfo.roomType !== "normal") {
     return true
   }
-  if (targetRoomInfo.owner == null) {
-    return true
-  }
-  if (targetRoomInfo.owner.ownerType === "claim" && targetRoomInfo.owner.username !== Game.user.name) {
-    return false
+  // if (targetRoomInfo.owner == null) {
+  //   return true
+  // }
+  // if (targetRoomInfo.owner.ownerType === "claim" && targetRoomInfo.owner.username !== Game.user.name) {
+  //   return false
+  // }
+  if (targetRoomInfo.owner?.ownerType === "claim") {
+    if (targetRoomInfo.owner.upgradeBlockedUntil != null) {
+      if (Game.time < (targetRoomInfo.owner.upgradeBlockedUntil - (GameConstants.creep.life.claimLifeTime * 0.8))) {
+        return false
+      }
+    }
+    if (targetRoomInfo.owner.safemodeEnabled === true) {
+      return false
+    }
   }
   const availableEnergy = ((): number => {
     const roomResource = RoomResources.getOwnedRoomResource(roomName)
@@ -123,27 +134,33 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
 
     const creepTask = MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
     const body = ((): BodyPartConstant[] => {
-      const isOccupied = ((): boolean => {
-        const targetRoom = Game.rooms[this.targetRoomName]
-        if (targetRoom == null) {
-          return false
-        }
-        const controller = targetRoom.controller
-        if (controller == null || controller.my === true || controller.reservation == null) {
-          return false
-        }
-        if (controller.reservation.username === Game.user.name) {
-          return false
-        }
-        return true
-      })()
-
       const minimumBody = [MOVE, CLAIM]
       const defaultBody = [MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM]
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
         return defaultBody
       }
+      if (resources.getResourceAmount(RESOURCE_ENERGY) < 40000) {
+        return defaultBody
+      }
+
+      const isOccupied = ((): boolean => {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        if (targetRoom == null) {
+          return false
+        }
+        const controller = targetRoom.controller
+        if (controller == null) {
+          return false
+        }
+        if (controller.reservation != null && controller.reservation.username === Game.user.name) {
+          return false
+        }
+        if (controller.owner != null && controller.my === true) {
+          return false
+        }
+        return true
+      })()
 
       if (isOccupied === true) {
         const attackerBody = CreepBody.create([], [MOVE, MOVE, MOVE, MOVE, MOVE, CLAIM], resources.room.energyCapacityAvailable, 10)
