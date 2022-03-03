@@ -88,7 +88,7 @@ export class PowerProcessProcess implements Process, Procedural {
 
     const powerAmount = roomResource.getResourceAmount(RESOURCE_POWER)
     const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
-    const hasEnoughEnergy = energyAmount > 70000
+    const hasEnoughEnergy = energyAmount > 150000
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
     if (creepCount <= 0 && powerAmount > 0 && hasEnoughEnergy === true) {
