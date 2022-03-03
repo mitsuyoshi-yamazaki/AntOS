@@ -53,7 +53,10 @@ export class RemoteRoomManagerTask extends Task {
     const remoteRoomInfo = RoomResources.getOwnedRoomResource(roomName)?.roomInfo.remoteRoomInfo
 
     const harvestingRemoteRoomNames = RoomResources.getOwnedRoomResources().flatMap((resource): RoomName[] => {
-      return Array.from(Object.keys(resource.roomInfoAccessor.roomInfo.remoteRoomInfo))
+      return [
+        resource.room.name,
+        ...Array.from(Object.keys(resource.roomInfoAccessor.roomInfo.remoteRoomInfo)),
+      ]
     })
 
     const exits = Game.map.describeExits(roomName)
@@ -68,7 +71,22 @@ export class RemoteRoomManagerTask extends Task {
         }
         children.push(RemoteRoomKeeperTask.create(roomName, neighbour))
 
-        const enabled = harvestingRemoteRoomNames.includes(neighbour) !== true
+        const enabled = ((): boolean => {
+          if (harvestingRemoteRoomNames.includes(neighbour) === true) {
+            return false
+          }
+          const neighbourRoomInfo = RoomResources.getRoomInfo(neighbour)
+          if (neighbourRoomInfo == null) {
+            return true
+          }
+          if (neighbourRoomInfo.roomType === "owned") {
+            return false
+          }
+          if (neighbourRoomInfo.owner?.ownerType === "claim") {
+            return false
+          }
+          return true
+        })()
 
         if (remoteRoomInfo != null) {
           remoteRoomInfo[neighbour] = {
