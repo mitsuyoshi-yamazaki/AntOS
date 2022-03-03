@@ -126,12 +126,21 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
           }
         }
 
-        this.reservedUpgrades.push({
+        const upgrade: UpgradePowerCreep = {
           case: "upgrade",
           powerCreepName,
           powerType,
-        })
-        return `Reserved ${powerName(powerType)} for ${powerCreepName}, index: ${this.reservedUpgrades.length - 1}`
+        }
+
+        const unshift = keywordArguments.boolean("unshift").parseOptional() ?? false
+        if (unshift === true) {
+          this.reservedUpgrades.unshift(upgrade)
+        } else {
+          this.reservedUpgrades.push(upgrade)
+        }
+        const index = unshift === true ? 0 : this.reservedUpgrades.length - 1
+
+        return `Reserved ${powerName(powerType)} for ${powerCreepName}, index: ${index}`
       }
 
       case "create": {
@@ -346,7 +355,7 @@ export class UpgradePowerCreepProcess implements Process, Procedural, MessageObs
       return "succeeded"
 
     case ERR_NOT_ENOUGH_RESOURCES:
-      return "gpl not enough"
+      return "gpl not enough" // PowerCreepのレベルが不足している場合もここに入る
 
     case ERR_FULL:
       processLog(this, `PowerCreep ${powerCreep.name} has max ${powerName(power)} level, ${managePowerCreepLink()}`)
