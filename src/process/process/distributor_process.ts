@@ -125,7 +125,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     const link = resources.roomInfoAccessor.links.core
     const upgraderLink = resources.roomInfoAccessor.links.upgrader
     if (link != null && upgraderLink != null) {
-      this.runLinks(link, upgraderLink)
+      this.runLinks(link, upgraderLink, resources)
     }
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
@@ -185,15 +185,36 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     })
   }
 
-  private runLinks(link: StructureLink, upgraderLink: StructureLink): void {
-    if (link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-      return
-    }
+  private runLinks(coreLink: StructureLink, upgraderLink: StructureLink, roomResource: OwnedRoomResource): void {
     const linkConstants = GameConstants.link
     if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) >= (linkConstants.capaity * linkConstants.loss)) {
       return
     }
-    link.transferEnergy(upgraderLink)
+
+    const sourceLinks = Array.from(roomResource.roomInfoAccessor.links.sources.values())
+    const energySourceLinks = [
+      ...sourceLinks,
+      coreLink,
+    ].flatMap((link): {link: StructureLink, energyAmount: number}[] => {
+      if (link.cooldown > 0) {
+        return []
+      }
+      return [{
+        link,
+        energyAmount: link.store.getUsedCapacity(RESOURCE_ENERGY),
+      }]
+    })
+
+    energySourceLinks.sort((lhs, rhs) => rhs.energyAmount - lhs.energyAmount)
+
+    const energySourceLink = energySourceLinks[0]
+    if (energySourceLink == null) {
+      return
+    }
+    if (energySourceLink.energyAmount < linkConstants.capaity * 0.5) {
+      return
+    }
+    energySourceLink.link.transferEnergy(upgraderLink)
   }
 
   private newDistributorTask(creep: Creep, link: StructureLink | null, resources: OwnedRoomResource, position: RoomPosition): CreepTask | null {
@@ -201,7 +222,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       return MoveToTask.create(position, 0)
     }
 
-    if (this.drainStorage === true) {
+    if (this.drainStorage === true && resources.activeStructures.terminal != null && resources.activeStructures.terminal.store.getFreeCapacity() > 20000) {
       return this.drainStorageTask(creep, resources)
     }
 
