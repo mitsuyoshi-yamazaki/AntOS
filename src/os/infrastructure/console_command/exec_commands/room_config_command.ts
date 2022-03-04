@@ -32,6 +32,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "change_room_type",
     "toggle_remote",
     "toggle_auto_attack",
+    "show_labs",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -59,6 +60,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleRemoteRoom(roomResource, args)
   case "toggle_auto_attack":
     return toggleAutoAttack(roomResource, args)
+  case "show_labs":
+    return showLabs(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -79,6 +82,55 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   default:
     throw `Invalid command ${command}, see "help"`
   }
+}
+
+
+/** @throws */
+function showLabs(roomResource: OwnedRoomResource, args: string[]): string {
+  type LabDescription = { lab: StructureLab, text: string, color: string }
+  const labs: LabDescription[] = []
+
+  const boostLabs: LabDescription[] = roomResource.roomInfoAccessor.boostLabs.map(labInfo => ({
+    lab: labInfo.lab,
+    text: (labInfo.boost[0] ?? "").toUpperCase(),
+    color: coloredResourceType(labInfo.boost),
+  }))
+  labs.push(...boostLabs)
+
+  const researchLabs = roomResource.roomInfoAccessor.researchLabs
+  if (researchLabs != null) {
+    const researchLabTextColor = "#000000"
+    labs.push({
+      lab: researchLabs.inputLab1,
+      text: "i",
+      color: researchLabTextColor,
+    })
+    labs.push({
+      lab: researchLabs.inputLab2,
+      text: "i",
+      color: researchLabTextColor,
+    })
+    labs.push(...researchLabs.outputLabs.map((lab): LabDescription => {
+      return {
+        lab,
+        text: "o",
+        color: researchLabTextColor,
+      }
+    }))
+  }
+
+  labs.forEach(labDescription => {
+    const position = labDescription.lab.pos
+    roomResource.room.visual.text(labDescription.text, position.x, position.y, {color: labDescription.color})
+  })
+
+  const researchLabDescription = ((): string => {
+    if (researchLabs == null) {
+      return "no research labs"
+    }
+    return `${researchLabs.outputLabs.length} research output labs`
+  })()
+  return `${boostLabs.length} boost labs, ${researchLabDescription}`
 }
 
 /** @throws */
