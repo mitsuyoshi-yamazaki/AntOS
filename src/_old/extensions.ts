@@ -32,7 +32,6 @@ declare global {
   }
 
   interface Memory {
-    last_tick: number
     os: OSMemory
     versions: string[]
     cpu_usages: number[]
@@ -51,9 +50,6 @@ declare global {
     lastLOANtime: number | undefined
     LOANalliance: string | undefined
   }
-}
-
-export function init() {
 }
 
 export function tick(): void {

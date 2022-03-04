@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { init as extensionInit, tick as extensionTick } from "_old/extensions"
+import { tick as extensionTick } from "_old/extensions"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
 import { SystemInfo } from "utility/system_info"
@@ -7,13 +7,16 @@ import { SystemInfo } from "utility/system_info"
 export function init(): void {
   const now = Game.time
 
-  Memory.last_tick = now
-
   if (!Memory.versions) {
     Memory.versions = []
   }
   const version = SystemInfo.application.version
   if (Memory.versions.indexOf(version) < 0) {
+    const removeCount = 10
+    if (Memory.versions.length > (removeCount * 2)) {
+      Memory.versions.splice(removeCount, removeCount)
+    }
+
     Memory.versions.push(version)
     console.log(`Updated v${version}`)
   }
@@ -84,8 +87,6 @@ export function init(): void {
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
   }
-
-  extensionInit()
 }
 
 export function tick(): void {

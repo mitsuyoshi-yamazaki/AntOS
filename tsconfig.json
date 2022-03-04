@@ -11,6 +11,7 @@
     "baseUrl": "src/",
     "sourceMap": true,
     "strict": true,
+    "allowJs": true,
     "experimentalDecorators": true,
     "noImplicitReturns": true,
     "allowSyntheticDefaultImports": true,
