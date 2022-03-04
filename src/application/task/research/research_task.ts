@@ -300,7 +300,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
       this.codename,
       this.identifier,
       null,
-      createCreepBody([], [MOVE, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 2),
+      createCreepBody([], [MOVE, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 4),
       null,
       0,
     )
