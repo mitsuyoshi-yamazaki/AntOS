@@ -43,6 +43,8 @@ export interface BasicRoomInfo {
   readonly energyStoreStructureIds: Id<EnergyStore>[]
 
   reachable: boolean
+
+  readonly localWhitelistedUsers?: string[]
 }
 
 type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean, upgradeBlockedUntil: Timestamp | null }
