@@ -52,7 +52,6 @@ import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
 import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
-// import { Season41035999ScoreFleetProcess } from "process/temporary/season4_1035999_score_fleet_process"
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
@@ -1025,57 +1024,6 @@ ProcessLauncher.register("Season41011412HighwayProcessLauncherProcess", () => {
     return Result.Failed(`${error}`)
   }
 })
-
-// ProcessLauncher.register("Season41035999ScoreFleetProcess", args => {
-//   try {
-//     const roomResource = args.ownedRoomResource("room_name").parse()
-//     const roomName = roomResource.room.name
-//     const spawn = roomResource.activeStructures.spawns[0]
-//     if (spawn == null) {
-//       throw `no spawn in ${roomLink(roomName)}`
-//     }
-//     const highwayEntranceRoomName = args.roomName("highway_entrance_room_name").parse()
-//     const direction = args.direction("direction").parse()
-//     if (direction === TOP_LEFT || direction === TOP_RIGHT || direction === BOTTOM_LEFT || direction === BOTTOM_RIGHT) {
-//       throw `Invalid direction ${directionName(direction)}(${direction})`
-//     }
-//     const commodityType = args.commodityType("commodity_type").parse()
-
-//     const waypoints = GameMap.getWaypoints(roomName, highwayEntranceRoomName) ?? []
-//     const nextWaypointRoomName = waypoints[0] ?? highwayEntranceRoomName
-//     const nextRoomName = ((): RoomName => {
-//       const route = Game.map.findRoute(roomName, nextWaypointRoomName)
-//       if (route === ERR_NO_PATH) {
-//         return nextWaypointRoomName
-//       }
-//       const firstStep = route[0]
-//       if (firstStep == null) {
-//         return nextWaypointRoomName
-//       }
-//       return firstStep.room
-//     })()
-//     const exit = roomResource.room.findExitTo(nextRoomName)
-//     if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
-//       throw `cannot find exit to ${roomLink(nextRoomName)} from ${roomLink(roomName)}`
-//     }
-
-//     const exitPosition = spawn.pos.findClosestByPath(exit)
-//     if (exitPosition == null) {
-//       throw `no exit position found in ${roomLink(roomName)}`
-//     }
-
-//     return Result.Succeeded((processId) => Season41035999ScoreFleetProcess.create(
-//       processId,
-//       roomName,
-//       highwayEntranceRoomName,
-//       direction,
-//       commodityType,
-
-//     ))
-//   } catch (error) {
-//     return Result.Failed(`${error}`)
-//   }
-// })
 
 ProcessLauncher.register("World39013108CollectResourceProcess", args => {
   try {
