@@ -20,7 +20,7 @@ import { GameConstants } from "utility/constants"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { decodeRoomPosition, Position, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { bodyCost, CreepBody } from "utility/creep_body"
+import { bodyCost } from "utility/creep_body"
 import { OperatingSystem } from "os/os"
 import { RunApisTask } from "v5_object_task/creep_task/combined_task/run_apis_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
@@ -36,11 +36,10 @@ import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
-import { RoomResources } from "room_resource/room_resources"
 import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 
-ProcessDecoder.register("Season4964954HarvestPowerProcess", state => {
-  return Season4964954HarvestPowerProcess.decode(state as Season4964954HarvestPowerProcessState)
+ProcessDecoder.register("HarvestPowerProcess", state => {
+  return HarvestPowerProcess.decode(state as HarvestPowerProcessState)
 })
 
 type PowerBankInfo = {
@@ -81,39 +80,39 @@ const healerBody: BodyPartConstant[] = [
 ]
 
 // ---- Boosted ---- //
-const boostedCreepBoosts: MineralBoostConstant[] = [
-  RESOURCE_UTRIUM_HYDRIDE,
-  RESOURCE_LEMERGIUM_OXIDE,
-  RESOURCE_GHODIUM_OXIDE,
-  RESOURCE_ZYNTHIUM_OXIDE,
-]
-const boostedAttackerBody: BodyPartConstant[] = [
-  TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,
-  TOUGH,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE,
-  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
-  ATTACK, ATTACK,
-  MOVE,
-]
+// const boostedCreepBoosts: MineralBoostConstant[] = [
+//   RESOURCE_UTRIUM_HYDRIDE,
+//   RESOURCE_LEMERGIUM_OXIDE,
+//   RESOURCE_GHODIUM_OXIDE,
+//   RESOURCE_ZYNTHIUM_OXIDE,
+// ]
+// const boostedAttackerBody: BodyPartConstant[] = [
+//   TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,
+//   TOUGH,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK, ATTACK, ATTACK, ATTACK,
+//   ATTACK, ATTACK,
+//   MOVE,
+// ]
 
-const boostedHealerBody: BodyPartConstant[] = [
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE, MOVE, MOVE, MOVE, MOVE,
-  MOVE,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
-  HEAL, HEAL, HEAL, HEAL,
-  MOVE,
-]
+// const boostedHealerBody: BodyPartConstant[] = [
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE, MOVE, MOVE, MOVE, MOVE,
+//   MOVE,
+//   HEAL, HEAL, HEAL, HEAL, HEAL,
+//   HEAL, HEAL, HEAL, HEAL, HEAL,
+//   HEAL, HEAL, HEAL, HEAL, HEAL,
+//   HEAL, HEAL, HEAL, HEAL, HEAL,
+//   HEAL, HEAL, HEAL, HEAL,
+//   MOVE,
+// ]
 
 // export function canLaunchBoostedPowerBankHarvester(parentRoomName: RoomName): boolean {
 //   const roomResource = RoomResources.getOwnedRoomResource(parentRoomName)
@@ -159,13 +158,13 @@ const boostedHealerBody: BodyPartConstant[] = [
 //   return true
 // }
 
-interface Season4964954HarvestPowerProcessCreepSpec {
+interface HarvestPowerProcessCreepSpec {
   maxCount: number
   roles: CreepRole[]
   body: BodyPartConstant[]
 }
 
-export interface Season4964954HarvestPowerProcessState extends ProcessState {
+export interface HarvestPowerProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
@@ -189,7 +188,7 @@ export interface Season4964954HarvestPowerProcessState extends ProcessState {
   quadState: QuadState | null
 }
 
-export class Season4964954HarvestPowerProcess implements Process, Procedural, MessageObserver {
+export class HarvestPowerProcess implements Process, Procedural, MessageObserver {
   public get isPickupFinished(): boolean {
     return this.pickupFinished
   }
@@ -203,22 +202,22 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
   private readonly fullAttackPower: number
   private readonly whitelistedUsernames: string[]
 
-  private readonly scoutSpec: Season4964954HarvestPowerProcessCreepSpec = {
+  private readonly scoutSpec: HarvestPowerProcessCreepSpec = {
     maxCount: 1,
     roles: [CreepRole.Scout],
     body: [MOVE],
   }
-  private readonly attackerSpec: Season4964954HarvestPowerProcessCreepSpec = {
+  private readonly attackerSpec: HarvestPowerProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Attacker, CreepRole.Mover],
     body: attackerBody,
   }
-  private readonly healerSpec: Season4964954HarvestPowerProcessCreepSpec = {
+  private readonly healerSpec: HarvestPowerProcessCreepSpec = {
     maxCount: 3,
     roles: [CreepRole.Healer, CreepRole.Mover],
     body: healerBody,
   }
-  private readonly rangedAttackerSpec: Season4964954HarvestPowerProcessCreepSpec = {
+  private readonly rangedAttackerSpec: HarvestPowerProcessCreepSpec = {
     maxCount: 1,
     roles: [CreepRole.RangedAttacker, CreepRole.Mover],
     body: [
@@ -226,7 +225,7 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
       MOVE, HEAL, MOVE, HEAL,
     ],
   }
-  private get haulerSpec(): Season4964954HarvestPowerProcessCreepSpec {
+  private get haulerSpec(): HarvestPowerProcessCreepSpec {
     const roles = [CreepRole.Hauler, CreepRole.Mover]
     const parentRoom = Game.rooms[this.parentRoomName]
 
@@ -303,9 +302,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     this.fullAttackPower = this.attackerSpec.body.filter(b => (b === ATTACK)).length * GameConstants.creep.actionPower.attack
   }
 
-  public encode(): Season4964954HarvestPowerProcessState {
+  public encode(): HarvestPowerProcessState {
     return {
-      t: "Season4964954HarvestPowerProcess",
+      t: "HarvestPowerProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -322,8 +321,8 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     }
   }
 
-  public static decode(state: Season4964954HarvestPowerProcessState): Season4964954HarvestPowerProcess | null {
-    return new Season4964954HarvestPowerProcess(
+  public static decode(state: HarvestPowerProcessState): HarvestPowerProcess | null {
+    return new HarvestPowerProcess(
       state.l,
       state.i,
       state.p,
@@ -340,9 +339,9 @@ export class Season4964954HarvestPowerProcess implements Process, Procedural, Me
     )
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], powerBankInfo: PowerBankInfo): Season4964954HarvestPowerProcess {
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], powerBankInfo: PowerBankInfo): HarvestPowerProcess {
     const shouldLaunchBoostedCreep = false
-    return new Season4964954HarvestPowerProcess(
+    return new HarvestPowerProcess(
       Game.time,
       processId,
       parentRoomName,

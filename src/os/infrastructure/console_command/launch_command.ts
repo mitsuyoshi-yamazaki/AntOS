@@ -48,7 +48,7 @@ import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
 import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
-import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
+import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
 import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
@@ -942,7 +942,7 @@ ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
+ProcessLauncher.register("HarvestPowerProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -959,7 +959,7 @@ ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
       neighbourCount,
     }
 
-    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
+    return Result.Succeeded((processId) => HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

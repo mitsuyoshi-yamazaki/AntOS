@@ -8,7 +8,7 @@ import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import type { Timestamp } from "utility/timestamp"
 import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
 import { OperatingSystem } from "os/os"
-import { Season4964954HarvestPowerProcess } from "./season4_964954_harvest_power_process"
+import { HarvestPowerProcess } from "../onetime/harvest_power_process"
 import { HarvestCommodityProcess } from "../onetime/harvest_commodity_process"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
@@ -556,7 +556,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
 
     OperatingSystem.os.listAllProcesses().forEach(processInfo => {
       const process = processInfo.process
-      if (process instanceof Season4964954HarvestPowerProcess) {
+      if (process instanceof HarvestPowerProcess) {
         runningHarvestProcessTargetIds.push(process.powerBankInfo.id)
         const roomName = process.parentRoomName
         const cost = (baseSpawnTimeCost.get(roomName) ?? 0) + harvestPowerBankCost
@@ -660,7 +660,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     //   return false  // TODO:
     // })()
 
-    const process = OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
+    const process = OperatingSystem.os.addProcess(null, processId => HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
     Memory.os.logger.filteringProcessIds.push(process.processId)
 
     const storageRoomName = this.storageRooms[target.roomName]
