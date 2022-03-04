@@ -6,7 +6,6 @@ import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { RoomName } from "utility/room_name"
-import { Timestamp } from "utility/timestamp"
 import { } from "./construction_saboteur_process"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
@@ -31,10 +30,17 @@ type TargetRoomInfo = {
 
 type CreepKilledLog = {
   case: "creep killed"
-  body: BodyPartConstant[]
-  timestamp: Timestamp
+  bodyDescription: string
 }
-type Log = CreepKilledLog
+type HostileCreepKilledLog = {
+  case: "hostile creep killed"
+  bodyDescription: string
+}
+type HostileStructureDestroyedLog = {
+  case: "hostile structure destroyed"
+  structureType: StructureConstant
+}
+type Log = CreepKilledLog | HostileCreepKilledLog | HostileStructureDestroyedLog
 
 type ChildProcessInfo = {
   readonly constructionSaboteurProcessId: ProcessId
@@ -47,6 +53,8 @@ interface AttackRoomProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly targetRoomInfo: TargetRoomInfo
   readonly childProcessInfo: ChildProcessInfo
+  readonly resourceSpent: { [resourceType: string]: number }
+  readonly logs: Log[]
 }
 
 /**

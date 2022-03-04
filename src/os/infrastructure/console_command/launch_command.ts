@@ -61,6 +61,7 @@ import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, Withdra
 import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
 import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
+// import { } from "process/onetime/attack/attack_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
