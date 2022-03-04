@@ -82,7 +82,19 @@ export class PowerCreepProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.parentRoomName)} ${this.powerCreepName}`
+    const descriptions: string[] = [
+      roomLink(this.parentRoomName),
+      this.powerCreepName,
+    ]
+    const powerCreep = Game.powerCreeps[this.powerCreepName]
+    if (powerCreep == null) {
+      descriptions.push("removed")
+    } else {
+      if (powerCreep.room == null) {
+        descriptions.push("not spawned")
+      }
+    }
+    return descriptions.join(" ")
   }
 
   public runOnTick(): void {
