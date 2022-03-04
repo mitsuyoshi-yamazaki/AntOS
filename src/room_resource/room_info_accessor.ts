@@ -82,7 +82,6 @@ class Config {
     this.config = roomInfo.config
   }
 
-  // researchCompounds?: { [index in MineralCompoundConstant]?: number }
   // excludedRemotes?: RoomName[]
   // waitingPosition?: { x: number, y: number }
 
@@ -168,6 +167,25 @@ class Config {
       return []
     }
     return [...this.config.noRepairWallIds]
+  }
+
+  public addResearchCompounds(compound: MineralCompoundConstant, amount: number): void {
+    if (this.config?.researchCompounds == null) {
+      this.config.researchCompounds = {}
+    }
+
+    const stored = this.config.researchCompounds[compound]
+    if (stored != null) {
+      this.config.researchCompounds[compound] = stored + amount
+    } else {
+      this.config.researchCompounds[compound] = amount
+    }
+  }
+  public researchingCompounds(): MineralBaseCompoundsConstant[] {
+    if (this.config?.researchCompounds == null) {
+      return []
+    }
+    return Array.from(Object.keys(this.config.researchCompounds)) as MineralBaseCompoundsConstant[]
   }
 }
 

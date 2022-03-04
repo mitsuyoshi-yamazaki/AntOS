@@ -142,9 +142,10 @@ class ResourceTransferer {
         return "empty space"
       })()
       const storedResourceTypes: { resourceType: ResourceConstant, amount: number }[] = []
-      const excludedResourceTypes = ((): ResourceConstant[] => {
-        return [...resources.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.boost)]
-      })()
+      const excludedResourceTypes: ResourceConstant[] = [
+        ...resources.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.boost),
+        ...resources.roomInfoAccessor.config.researchingCompounds(),
+      ]
 
       const enumerateResources = (store: StoreDefinition): void => {
         const resourceTypes = Object.keys(store) as ResourceConstant[]
