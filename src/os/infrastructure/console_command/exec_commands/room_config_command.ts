@@ -1,5 +1,6 @@
 import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
+import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { describePosition } from "prototype/room_position"
 import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
@@ -21,7 +22,7 @@ type NumberAccessorCommands = typeof numberAccessorCommands[number]
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
-  const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs", "toggle_auto_attack"]
+  const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs"]
   const commandList: string[] = [
     "help",
     "waiting_position",
@@ -30,6 +31,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "set_remote_room_path_cache_enabled",
     "change_room_type",
     "toggle_remote",
+    "toggle_auto_attack",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -55,6 +57,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return changeRoomType(roomResource, args)
   case "toggle_remote":
     return toggleRemoteRoom(roomResource, args)
+  case "toggle_auto_attack":
+    return toggleAutoAttack(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -72,11 +76,47 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return refreshResearchLabs(roomName, roomResource, parseProcessArguments(args))
   // case "disable_boost_labs": // TODO: 消す
   //   return disableBoostLabs(roomName, roomInfo)
-  case "toggle_auto_attack":
-    return toggleAutoAttack(roomName, roomInfo, parseProcessArguments(args))
   default:
     throw `Invalid command ${command}, see "help"`
   }
+}
+
+/** @throws */
+function toggleAutoAttack(roomResource: OwnedRoomResource, args: string[]): string {
+  const roomName = roomResource.room.name
+  const listArguments = new ListArguments(args)
+  const enabled = listArguments.boolean(0, "enabled").parse()
+
+  const describeBoolean = (flag: boolean): string => {
+    return flag === true ? "enabled" : "disabled"
+  }
+
+  if (enabled === roomResource.roomInfoAccessor.config.enableAutoAttack) {
+    return `already ${describeBoolean(enabled)}`
+  }
+
+  roomResource.roomInfoAccessor.config.enableAutoAttack = enabled
+
+  if (enabled === true) {
+    OperatingSystem.os.addProcess(null, processId => {
+      return World35587255ScoutRoomProcess.create(processId, roomName)
+    })
+  } else {
+    const scoutRoomProcessInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      if (!(processInfo.process instanceof World35587255ScoutRoomProcess)) {
+        return false
+      }
+      if (processInfo.process.parentRoomName !== roomName) {
+        return false
+      }
+      return true
+    })
+    if (scoutRoomProcessInfo != null) {
+      OperatingSystem.os.killProcess(scoutRoomProcessInfo.processId)
+    }
+  }
+
+  return describeBoolean(enabled)
 }
 
 /** @throws */
@@ -348,25 +388,6 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
 }
 
 // ---- Old Commands ---- //
-function toggleAutoAttack(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {
-  const rawEnabled = args.get("enabled")
-  if(rawEnabled == null) {
-    return missingArgumentError("enabled")
-  }
-  if (rawEnabled !== "0" && rawEnabled !== "1") {
-    return `Invalid enable argument ${rawEnabled}: set 0 or 1`
-  }
-  const enabled = rawEnabled === "1"
-
-  if (roomInfo.config == null) {
-    roomInfo.config = {}
-  }
-  const oldValue = roomInfo.config.enableAutoAttack
-  roomInfo.config.enableAutoAttack = enabled
-
-  return `${roomLink(roomName)} auto attack set ${oldValue} => ${enabled}`
-}
-
 /** throws */
 function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {
   const room = roomResource.room
