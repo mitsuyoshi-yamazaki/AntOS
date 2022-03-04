@@ -28,6 +28,7 @@ export interface RoomPositionFilteringOptions {
   excludeTerrainWalls: boolean
   excludeStructures: boolean
   excludeWalkableStructures: boolean
+  allowedStructureTypes?: StructureConstant[]
 }
 
 declare global {
@@ -131,6 +132,7 @@ export function init(): void {
       const positions: RoomPosition[] = []
       try {
         const walkableTerrains: Terrain[] = ["swamp", "plain"]
+        const allowedStructureTypes = options.allowedStructureTypes ?? []
         const walkableStructures: StructureConstant[] = [STRUCTURE_CONTAINER, STRUCTURE_ROAD]
 
         const needLook = options.excludeStructures === true || options.excludeTerrainWalls === true || options.excludeWalkableStructures === true
@@ -166,6 +168,9 @@ export function init(): void {
                 }
               }
               if (obj.type === LOOK_STRUCTURES && obj.structure != null) {
+                if (allowedStructureTypes.includes(obj.structure.structureType) === true) {
+                  continue
+                }
                 if (options.excludeWalkableStructures === true) {
                   shouldExclude = true
                   break

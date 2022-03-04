@@ -1,5 +1,39 @@
 
 /*
+bucket
+
+[8:15:28 PM][shard2]cpu: 294, bucket: 798, bucket in the next tick: 784
+[8:15:32 PM][shard2]cpu: 265, bucket: 775, bucket in the next tick: 790
+[8:15:36 PM][shard2]cpu: 287, bucket: 779, bucket in the next tick: 772
+[8:15:39 PM][shard2]cpu: 254, bucket: 762, bucket in the next tick: 788
+[8:15:44 PM][shard2]cpu: 286, bucket: 776, bucket in the next tick: 770
+[8:15:47 PM][shard2]cpu: 242, bucket: 759, bucket in the next tick: 797
+[8:15:51 PM][shard2]cpu: 289, bucket: 788, bucket in the next tick: 779
+[8:15:55 PM][shard2]cpu: 264, bucket: 770, bucket in the next tick: 786
+[8:15:59 PM][shard2]cpu: 282, bucket: 767, bucket in the next tick: 765
+[8:16:03 PM][shard2]cpu: 241, bucket: 755, bucket in the next tick: 794
+[8:16:07 PM][shard2]cpu: 272, bucket: 763, bucket in the next tick: 771
+[8:16:11 PM][shard2]cpu: 243, bucket: 762, bucket in the next tick: 799
+[8:16:15 PM][shard2]cpu: 282, bucket: 777, bucket in the next tick: 775
+[8:16:19 PM][shard2]cpu: 254, bucket: 766, bucket in the next tick: 792
+[8:16:23 PM][shard2]cpu: 264, bucket: 762, bucket in the next tick: 778
+[8:16:27 PM][shard2]cpu: 248, bucket: 768, bucket in the next tick: 800
+[8:16:31 PM][shard2]cpu: 267, bucket: 791, bucket in the next tick: 804
+[8:16:35 PM][shard2]cpu: 248, bucket: 794, bucket in the next tick: 826
+[8:16:39 PM][shard2]cpu: 281, bucket: 815, bucket in the next tick: 814
+[8:16:42 PM][shard2]cpu: 239, bucket: 805, bucket in the next tick: 846
+[8:16:46 PM][shard2]cpu: 290, bucket: 835, bucket in the next tick: 825
+[8:16:50 PM][shard2]cpu: 245, bucket: 815, bucket in the next tick: 850
+[8:16:54 PM][shard2]cpu: 264, bucket: 820, bucket in the next tick: 836
+[8:16:58 PM][shard2]cpu: 247, bucket: 827, bucket in the next tick: 860
+[8:17:02 PM][shard2]cpu: 262, bucket: 829, bucket in the next tick: 847
+[8:17:06 PM][shard2]cpu: 251, bucket: 838, bucket in the next tick: 867
+[8:17:10 PM][shard2]cpu: 274, bucket: 847, bucket in the next tick: 853
+[8:17:13 PM][shard2]cpu: 236, bucket: 844, bucket in the next tick: 888
+[8:17:17 PM][shard2]cpu: 289, bucket: 860, bucket in the next tick: 851
+[8:17:21 PM][shard2]cpu: 244, bucket: 841, bucket in the next tick: 877
+[8:17:25 PM][shard2]cpu: 268, bucket: 867, bucket in the next tick: 879
+
 Season 4
 957353
 calls		time		avg		function

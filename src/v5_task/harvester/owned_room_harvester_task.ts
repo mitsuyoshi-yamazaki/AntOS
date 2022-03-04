@@ -16,7 +16,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
 import { BuildContainerTask } from "v5_task/build/build_container_task"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { TaskState } from "v5_task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { bodyCost } from "utility/creep_body"
@@ -28,7 +28,6 @@ import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { Environment } from "utility/environment"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -271,9 +270,6 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
   }
 
   private checkLink(source: Source, harvesterPosition: RoomPosition, roomResource: OwnedRoomResource): StructureLink | null {
-    if (this.roomName !== "W47S9" && Environment.shard !== "shard3") {  // FixMe:
-      return null
-    }
     if (roomResource.hostiles.creeps.length > 0) {
       return null
     }
@@ -305,20 +301,28 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       return targetLink
     }
 
+    const logNoLinkPlaceError = (message: string): void => {
+      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.taskIdentifier} no place for link ${source}, ${source.pos} in ${roomLink(this.roomName)} ${message}`)
+    }
+
     if (this.canPlaceLink == null) {
       this.canPlaceLink = ((): boolean => {
         if (harvesterPosition.findInRange(FIND_SOURCES, 2).length >= 2) {
+          logNoLinkPlaceError("other source too close")
           return false
         }
         const coreLink = roomResource.roomInfoAccessor.links.core
         if (coreLink != null && harvesterPosition.getRangeTo(coreLink.pos) <= 1) {
+          logNoLinkPlaceError("core link too close")
           return false
         }
         const upgraderLink = roomResource.roomInfoAccessor.links.upgrader
         if (upgraderLink != null && harvesterPosition.getRangeTo(upgraderLink.pos) <= 1) {
+          logNoLinkPlaceError("too close upgrader link")
           return false
         }
         if (harvesterPosition.getRangeTo(roomResource.controller.pos) <= 4) {
+          logNoLinkPlaceError("too close controller")
           return false
         }
         return true
@@ -335,6 +339,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       excludeStructures: true,
       excludeWalkableStructures: true,
       excludeTerrainWalls: true,
+      allowedStructureTypes: [STRUCTURE_RAMPART],
     }
     const positions = harvesterPosition.positionsInRange(1, options).map(position => {
       const distance = ((): number => {
@@ -354,7 +359,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
 
     if (linkPosition == null) {
       this.canPlaceLink = false
-      PrimitiveLogger.fatal(`${this.taskIdentifier} no place for link ${source}, ${source.pos} in ${roomLink(this.roomName)}`)
+      logNoLinkPlaceError("")
       return null
     }
 
