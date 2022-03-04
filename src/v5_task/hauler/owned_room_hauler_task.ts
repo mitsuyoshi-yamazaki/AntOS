@@ -106,21 +106,18 @@ export class OwnedRoomHaulerTask extends Task {
     ]
 
     if (objects.activeStructures.storage != null) {
-      const isMinimumCpuUse = ((): boolean => {
+      const shouldSpawn = ((): boolean => {
         const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
         if (roomResource == null) {
           return false
         }
-        if (roomResource.roomInfo.ownedRoomType.case !== "minimum-cpu-use") {
-          return false
+        if (roomResource.roomInfoAccessor.sourceEnergyTransferType.case === "hauler") {
+          return true
         }
-        if (roomResource.sources.length !== Array.from(roomResource.roomInfoAccessor.links.sources.values()).length) {
-          return false
-        }
-        return true
+        return false
       })()
 
-      if (isMinimumCpuUse !== true) {
+      if (shouldSpawn === true) {
         const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
         problemFinders.push(problemFinder)
       }

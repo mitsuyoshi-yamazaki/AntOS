@@ -177,6 +177,15 @@ type LinkInfo = {
   readonly sources: Map<Id<Source>, StructureLink>
 }
 
+type SourceEnergyTransferHauler = {
+  case: "hauler"
+}
+type SourceEnergyTransferLink = {
+  case: "link"
+  readonly sourceLinks: Map<Id<Source>, StructureLink>
+}
+type SourceEnergyTransferType = SourceEnergyTransferHauler | SourceEnergyTransferLink
+
 /**
  * 寿命は1tick
  */
@@ -190,15 +199,52 @@ export class OwnedRoomInfoAccessor {
     }
     return this._links
   }
+  public get sourceEnergyTransferType(): SourceEnergyTransferType {
+    return this._sourceEnergyTransferType
+  }
 
   private _links: LinkInfo | null = null
+  private _sourceEnergyTransferType: SourceEnergyTransferType
 
   public constructor(
     private readonly room: Room,
     public readonly roomInfo: OwnedRoomInfo,
+    controller: StructureController,
+    sources: Source[],
   ) {
     this.roomName = room.name
-    this.config = new Config(this.roomName, roomInfo)
+    this.config = new Config(this.roomName, roomInfo);
+
+    ((): void => {
+      if (controller.level < 8) {
+        this._sourceEnergyTransferType = {
+          case: "hauler",
+        }
+        return
+      }
+      // if (this.roomInfo.ownedRoomType.case !== "minimum-cpu-use") {  // 通常の部屋もRCL8であれば15e/tickであるはず
+      //   this._sourceEnergyTransferType = {
+      //     case: "hauler",
+      //   }
+      //   return
+      // }
+      if (sources.length < 2) { // エネルギー産出が不足するため
+        this._sourceEnergyTransferType = {
+          case: "hauler",
+        }
+        return
+      }
+      if (sources.length !== Array.from(this.links.sources.values()).length) {
+        this._sourceEnergyTransferType = {
+          case: "hauler",
+        }
+        return
+      }
+      this._sourceEnergyTransferType = {
+        case: "link",
+        sourceLinks: new Map(this.links.sources),
+      }
+    })()
   }
 
   public addBoosts(boosts: MineralBoostConstant[]): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
