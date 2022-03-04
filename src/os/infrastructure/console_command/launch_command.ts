@@ -49,7 +49,7 @@ import { Season4784484ScoreProcess } from "process/temporary/season4_784484_scor
 import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
 import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
-import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
+import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
@@ -1003,9 +1003,9 @@ ProcessLauncher.register("PowerProcessProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season41011412HighwayProcessLauncherProcess", () => {
+ProcessLauncher.register("HighwayProcessLauncherProcess", () => {
   try {
-    return Result.Succeeded((processId) => Season41011412HighwayProcessLauncherProcess.create(processId))
+    return Result.Succeeded((processId) => HighwayProcessLauncherProcess.create(processId))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

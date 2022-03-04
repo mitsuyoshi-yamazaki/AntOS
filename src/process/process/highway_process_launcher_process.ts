@@ -13,12 +13,12 @@ import { HarvestCommodityProcess } from "../onetime/harvest_commodity_process"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
-import { Season4ObserverManager } from "./season4_observer_manager"
+import { Season4ObserverManager } from "../temporary/season4_observer_manager"
 import { processLog } from "os/infrastructure/logger"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
 
-ProcessDecoder.register("Season41011412HighwayProcessLauncherProcess", state => {
-  return Season41011412HighwayProcessLauncherProcess.decode(state as Season41011412HighwayProcessLauncherProcessState)
+ProcessDecoder.register("HighwayProcessLauncherProcess", state => {
+  return HighwayProcessLauncherProcess.decode(state as HighwayProcessLauncherProcessState)
 })
 
 type BaseInfo = {
@@ -58,7 +58,7 @@ type ObserveResult = {
   readonly targets: TargetInfo[]
 }
 
-interface Season41011412HighwayProcessLauncherProcessState extends ProcessState {
+interface HighwayProcessLauncherProcessState extends ProcessState {
   readonly bases: BaseInfo[]
   readonly observeResults: { [roomName: string]: ObserveResult }
   readonly stopLaunchingReasons: string[]
@@ -70,7 +70,7 @@ interface Season41011412HighwayProcessLauncherProcessState extends ProcessState 
   }
 }
 
-export class Season41011412HighwayProcessLauncherProcess implements Process, Procedural, MessageObserver {
+export class HighwayProcessLauncherProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -102,9 +102,9 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     })
   }
 
-  public encode(): Season41011412HighwayProcessLauncherProcessState {
+  public encode(): HighwayProcessLauncherProcessState {
     return {
-      t: "Season41011412HighwayProcessLauncherProcess",
+      t: "HighwayProcessLauncherProcess",
       l: this.launchTime,
       i: this.processId,
       bases: this.bases,
@@ -116,7 +116,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     }
   }
 
-  public static decode(state: Season41011412HighwayProcessLauncherProcessState): Season41011412HighwayProcessLauncherProcess {
+  public static decode(state: HighwayProcessLauncherProcessState): HighwayProcessLauncherProcess {
     const settings = ((): { powerHarvestingEnabled: boolean, depositHarvestingEnabled: boolean } => {
       if (state.settings != null) {
         return state.settings
@@ -127,7 +127,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       }
     })()
 
-    return new Season41011412HighwayProcessLauncherProcess(
+    return new HighwayProcessLauncherProcess(
       state.l,
       state.i,
       state.bases,
@@ -139,12 +139,12 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     )
   }
 
-  public static create(processId: ProcessId): Season41011412HighwayProcessLauncherProcess {
+  public static create(processId: ProcessId): HighwayProcessLauncherProcess {
     const settings = {
       powerHarvestingEnabled: true,
       depositHarvestingEnabled: true,
     }
-    return new Season41011412HighwayProcessLauncherProcess(Game.time, processId, [], {}, [], 10, {}, settings)
+    return new HighwayProcessLauncherProcess(Game.time, processId, [], {}, [], 10, {}, settings)
   }
 
   public processShortDescription(): string {
