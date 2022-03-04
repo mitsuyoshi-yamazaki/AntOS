@@ -43,7 +43,6 @@ import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
-import { } from "process/temporary/season4_628862_downgrade_room_process"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
