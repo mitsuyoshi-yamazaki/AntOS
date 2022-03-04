@@ -14,7 +14,7 @@ export function init(): void {
   if (Memory.versions.indexOf(version) < 0) {
     const removeCount = 10
     if (Memory.versions.length > (removeCount * 2)) {
-      Memory.versions.splice(removeCount, removeCount)
+      Memory.versions.splice(removeCount, Memory.versions.length - removeCount)
     }
 
     Memory.versions.push(version)
