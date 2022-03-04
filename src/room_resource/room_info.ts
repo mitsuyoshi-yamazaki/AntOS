@@ -30,6 +30,21 @@ type LinkInfo = {
   sourceLinkIds: { [sourceId: string]: Id<StructureLink> }
 }
 
+export function isOwnedRoomTypes(arg: string): arg is ("normal" | "minimum-cpu-use") {
+  if (arg === "normal" || arg === "minimum-cpu-use") {
+    return true
+  }
+  return false
+}
+
+type OwnedRoomTypeNormal = {
+  readonly case: "normal"
+}
+type OwnedRoomTypeMinimumCpuUse = {
+  readonly case: "minimum-cpu-use"
+}
+type OwnedRoomType = OwnedRoomTypeNormal | OwnedRoomTypeMinimumCpuUse
+
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6
   readonly roomType: "normal" | "owned"
@@ -110,6 +125,8 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiency }
+
+  ownedRoomType: OwnedRoomType
 
   /** @deprecated use OwnedRoomInfoAccessor.config instead */
   config?: OwnedRoomConfig
@@ -206,6 +223,9 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     reachable: true,
     remoteRoomInfo: {},
     boostLabs: [],
+    ownedRoomType: {
+      case: "normal",
+    },
   }
 }
 
@@ -230,5 +250,8 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     reachable: normalRoomInfo.reachable,
     remoteRoomInfo: {},
     boostLabs: [],
+    ownedRoomType: {
+      case: "normal",
+    },
   }
 }

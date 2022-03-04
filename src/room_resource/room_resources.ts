@@ -213,16 +213,11 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
   })()
 
   // FixMe: Migration
-  const remoteRoomNames = Array.from(Object.keys(roomInfo.remoteRoomInfo))
-  remoteRoomNames.forEach(remoteRoomName => {
-    const remoteInfo = roomInfo.remoteRoomInfo[remoteRoomName]
-    if (remoteInfo == null) {
-      return
-    }
-    if (typeof remoteInfo.routeCalculatedTimestamp === "number") {
-      remoteInfo.routeCalculatedTimestamp = {}
-    }
-  })
+  // if (roomInfo.ownedRoomType == null) {
+  //   roomInfo.ownedRoomType = {
+  //     case: "normal",
+  //   }
+  // }
 
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }
