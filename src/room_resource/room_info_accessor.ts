@@ -194,6 +194,15 @@ type LinkInfo = {
   readonly upgrader: StructureLink | null
   readonly sources: Map<Id<Source>, StructureLink>
 }
+type BoostLab = {
+  readonly lab: StructureLab
+  readonly boost: MineralBoostConstant
+}
+type ResearchLabInfo = {
+  readonly inputLab1: StructureLab
+  readonly inputLab2: StructureLab
+  readonly outputLabs: StructureLab[]
+}
 
 type SourceEnergyTransferHauler = {
   case: "hauler"
@@ -217,11 +226,25 @@ export class OwnedRoomInfoAccessor {
     }
     return this._links
   }
+  public get boostLabs(): BoostLab[] {
+    if (this._boostLabs == null) {
+      this._boostLabs = this.getBoostLabInstances()
+    }
+    return this._boostLabs
+  }
+  public get researchLabs(): ResearchLabInfo | null {
+    if (this._researchLabs === "uninitialized") {
+      this._researchLabs = this.getResearchLabs()
+    }
+    return this._researchLabs
+  }
   public get sourceEnergyTransferType(): SourceEnergyTransferType {
     return this._sourceEnergyTransferType
   }
 
   private _links: LinkInfo | null = null
+  private _boostLabs: BoostLab[] | null = null
+  private _researchLabs: ResearchLabInfo | null | "uninitialized" = "uninitialized"
   private _sourceEnergyTransferType: SourceEnergyTransferType
 
   public constructor(
@@ -358,8 +381,47 @@ export class OwnedRoomInfoAccessor {
       removedBoosts,
     }
   }
+
+  /** @deprecated boostLabsを利用する */
   public getBoostLabs(): BoostLabInfo[] {
     return [...this.roomInfo.boostLabs]
+  }
+
+  private getBoostLabInstances(): BoostLab[] {
+    return this.roomInfo.boostLabs.flatMap((labInfo): BoostLab[] => {
+      const lab = Game.getObjectById(labInfo.labId)
+      if (lab == null) {
+        return []
+      }
+      return [{
+        lab,
+        boost: labInfo.boost,
+      }]
+    })
+  }
+
+  private getResearchLabs(): { inputLab1: StructureLab, inputLab2: StructureLab, outputLabs: StructureLab[] } | null {
+    if (this.roomInfo.researchLab == null) {
+      return null
+    }
+
+    const getLab = (labId: Id<StructureLab>): StructureLab | null => {
+      return Game.getObjectById(labId)
+    }
+
+    const inputLab1 = getLab(this.roomInfo.researchLab.inputLab1)
+    const inputLab2 = getLab(this.roomInfo.researchLab.inputLab2)
+    if (inputLab1 == null || inputLab2 == null) {
+      this.roomInfo.researchLab = undefined
+      return null
+    }
+
+    const outputLabs = this.researchOutputLabs()
+    return {
+      inputLab1,
+      inputLab2,
+      outputLabs,
+    }
   }
 
   private researchOutputLabs(): StructureLab[] {
