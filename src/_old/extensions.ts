@@ -12,11 +12,6 @@ import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 
-export interface SectorMemory {
-  name: string
-  regions: string[]
-}
-
 declare global {
   interface Game {
     io: (message: string) => string
