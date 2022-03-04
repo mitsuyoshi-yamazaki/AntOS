@@ -89,14 +89,27 @@ export class PowerCreepProcess implements Process, Procedural {
     programErrorOnHeapLogger.refresh(1000)
 
     const powerCreep = Game.powerCreeps[this.powerCreepName]
-    if (powerCreep == null || powerCreep.room == null) {
-      PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
+    if (powerCreep == null) {
+      PrimitiveLogger.fatal(`${this.identifier} ${this.processId} Power creep ${this.powerCreepName} lost ${roomLink(this.parentRoomName)}`)
       OperatingSystem.os.suspendProcess(this.processId)
       return
     }
+
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+
+    if (powerCreep.room == null) {
+      if (powerCreep.spawnCooldownTime != null) {
+        return
+      }
+      if (roomResource.activeStructures.powerSpawn == null) {
+        PrimitiveLogger.fatal(`${this.identifier} ${this.processId} ${roomLink(this.parentRoomName)} doesn't have power spawn`)
+        OperatingSystem.os.suspendProcess(this.processId)
+        return
+      }
+      this.spawn(powerCreep, roomResource.activeStructures.powerSpawn)
       return
     }
 
@@ -140,6 +153,21 @@ export class PowerCreepProcess implements Process, Procedural {
     }
 
     this.moveToWaitingPosition(powerCreep, roomResource)
+  }
+
+  private spawn(powerCreep: PowerCreep, powerSpawn: StructurePowerSpawn): void {
+    const spawnResult = powerCreep.spawn(powerSpawn)
+    switch (spawnResult) {
+    case OK:
+      return
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_INVALID_TARGET:
+    case ERR_TIRED:
+    case ERR_RCL_NOT_ENOUGH:
+      PrimitiveLogger.fatal(`${this.identifier} ${this.processId} cannot spawn power creep ${this.powerCreepName} in ${roomLink(this.parentRoomName)}`)
+      return
+    }
   }
 
   /**
