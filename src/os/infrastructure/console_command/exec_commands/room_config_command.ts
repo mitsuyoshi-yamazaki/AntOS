@@ -1,7 +1,7 @@
 import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { describePosition } from "prototype/room_position"
-import { OwnedRoomInfo } from "room_resource/room_info"
+import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { powerName } from "utility/power"
@@ -28,6 +28,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "powers",
     "boosts",
     "set_remote_room_path_cache_enabled",
+    "change_room_type",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -49,7 +50,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return powers(roomResource, args)
   case "boosts":
     return boosts(roomResource, args)
-
+  case "change_room_type":
+    return changeRoomType(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -72,6 +74,19 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   default:
     throw `Invalid command ${command}, see "help"`
   }
+}
+
+/** @throws */
+function changeRoomType(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const roomType = listArguments.typedString(0, "owned room type", "OwnedRoomType", isOwnedRoomTypes).parse()
+
+  const oldValue = roomResource.roomInfo.ownedRoomType.case
+  roomResource.roomInfo.ownedRoomType = {
+    case: roomType,
+  }
+
+  return `changed to ${roomType} (from: ${oldValue})`
 }
 
 const boostCommandActions = [
