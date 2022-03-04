@@ -11,7 +11,9 @@ export const memhack = {
   },
 
   beforeTick() {
-    delete global.Memory;
-    global.Memory = memhackMemory;
+    if (memhackMemory) {
+      delete global.Memory;
+      global.Memory = memhackMemory;
+    }
   },
 }
