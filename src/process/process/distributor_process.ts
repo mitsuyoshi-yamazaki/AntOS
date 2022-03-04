@@ -221,7 +221,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       return
     }
 
-    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) < 10) {
+    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) < (upgraderLink.store.getCapacity(RESOURCE_ENERGY) * 0.3)) {
       sourceLink.transferEnergy(upgraderLink)
       return
     }
