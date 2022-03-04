@@ -16,4 +16,10 @@ export const memhack = {
       global.Memory = memhackMemory;
     }
   },
+
+  afterTick() {
+    if (memhackMemory) {
+      RawMemory._parsed = Memory
+    }
+  },
 }

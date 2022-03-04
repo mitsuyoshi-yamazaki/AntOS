@@ -11,7 +11,9 @@ import { SystemInfo } from "utility/system_info"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
 import { } from "v8/operating_system/kernel"
 
-memhack.load()
+if (Game.shard.name === "shard3") { // TODO: shard3に問題が見られなければshard2に展開
+  memhack.load()
+}
 
 initializerInit()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
@@ -42,6 +44,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   memhack.beforeTick()
   // ScreepsProfiler.wrap(mainLoop)
   mainLoop()
+  memhack.afterTick()
 }, "Main")
 
 /**
