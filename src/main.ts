@@ -8,6 +8,7 @@ import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { SystemInfo } from "utility/system_info"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
+import { } from "v8/operating_system/kernel"
 
 Initializer.init()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`

@@ -182,6 +182,18 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
    */
   private upgraderBody(objects: OwnedRoomObjects): [BodyPartConstant[], number] {
     const isRcl8 = objects.controller.level === 8
+    if (isRcl8 === true) {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource?.roomInfo.ownedRoomType.case === "minimum-cpu-use") {
+        const creepCount = ((): number => {
+          if (roomResource.controller.ticksToDowngrade > 100000) {
+            return 0
+          }
+          return 1
+        })()
+        return [[MOVE, WORK, CARRY], creepCount]
+      }
+    }
 
     const bodyUnit = [WORK, WORK, WORK, MOVE]
     const unitCost = bodyCost(bodyUnit)
