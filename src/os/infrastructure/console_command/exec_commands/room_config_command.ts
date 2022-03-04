@@ -29,6 +29,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "boosts",
     "set_remote_room_path_cache_enabled",
     "change_room_type",
+    "toggle_remote",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -52,6 +53,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return boosts(roomResource, args)
   case "change_room_type":
     return changeRoomType(roomResource, args)
+  case "toggle_remote":
+    return toggleRemoteRoom(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -74,6 +77,38 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   default:
     throw `Invalid command ${command}, see "help"`
   }
+}
+
+/** @throws */
+function toggleRemoteRoom(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const remoteRoomNames = listArguments.list(0, "remote room names", "room_name").parse()
+  const enabled = listArguments.boolean(1, "enabled").parse()
+
+  const inexistenceRoomNames = remoteRoomNames.filter(remoteRoomName => {
+    if (roomResource.roomInfo.remoteRoomInfo[remoteRoomName] == null) {
+      return true
+    }
+    return false
+  })
+
+  if (inexistenceRoomNames.length > 0) {
+    throw `${inexistenceRoomNames.map(roomName => roomLink(roomName)).join(",")} are not ${roomLink(roomResource.room.name)} remote`
+  }
+
+  remoteRoomNames.forEach(remoteRoomName => {
+    const remoteRoomInfo = roomResource.roomInfo.remoteRoomInfo[remoteRoomName]
+    if (remoteRoomInfo == null) {
+      return
+    }
+    if (remoteRoomInfo.enabled !== true && enabled === true) {
+      remoteRoomInfo.routeCalculatedTimestamp = {}
+    }
+    remoteRoomInfo.enabled = enabled
+  })
+
+  const booleanDescription = enabled === true ? "enabled" : "disabled"
+  return `${booleanDescription} ${remoteRoomNames.map(roomName => roomLink(roomName)).join(",")}`
 }
 
 /** @throws */
