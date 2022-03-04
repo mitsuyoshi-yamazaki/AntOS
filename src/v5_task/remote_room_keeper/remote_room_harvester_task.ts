@@ -152,7 +152,13 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const targetRoom = Game.rooms[this.targetRoomName]
         const routeCalculatedTimestamp = targetRoomInfo.routeCalculatedTimestamp[source.id]
         if (routeCalculatedTimestamp == null) {
-          targetRoomInfo.routeCalculatedTimestamp[source.id] = 0  // 乱数を設定するのはMigration時のみ
+          const index = ((): number => {
+            if (targetRoom == null) {
+              return 0
+            }
+            return targetRoom.find(FIND_SOURCES).findIndex(source => source.id === this.sourceId)
+          })()
+          targetRoomInfo.routeCalculatedTimestamp[source.id] = Game.time - routeRecalculationInterval + index   // 乱数を設定するのはMigration時のみ
         } else {
           if (targetRoom != null && (Game.time > (routeCalculatedTimestamp + routeRecalculationInterval))) {
             this.calculateRoute(objects, source, targetRoomInfo, targetRoom, container)
@@ -353,10 +359,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       flag.remove()
       return
 
+    case ERR_NOT_OWNER:
     case ERR_FULL:
       return
 
-    case ERR_NOT_OWNER:
     case ERR_INVALID_ARGS:
     case ERR_RCL_NOT_ENOUGH:
       PrimitiveLogger.programError(`${this.taskIdentifier} createConstructionSite() in ${flag.pos} failed with error ${result}`)
