@@ -39,7 +39,7 @@ import { QuadMakerProcess } from "process/onetime/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomCoordinate, RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
-import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
+import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
@@ -843,7 +843,7 @@ ProcessLauncher.register("GclFarmManagerProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
+ProcessLauncher.register("HarvestCommodityProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -852,7 +852,7 @@ ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
     const harvesterCount = args.int("harvester_count").parse({max: 4})
     const haulerCount = 1
 
-    return Result.Succeeded((processId) => Season4275982HarvestCommodityProcess.create(
+    return Result.Succeeded((processId) => HarvestCommodityProcess.create(
       processId,
       roomName,
       {

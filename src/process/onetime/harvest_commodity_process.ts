@@ -28,8 +28,8 @@ import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdr
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { OperatingSystem } from "os/os"
 
-ProcessDecoder.register("Season4275982HarvestCommodityProcess", state => {
-  return Season4275982HarvestCommodityProcess.decode(state as Season4275982HarvestCommodityProcessState)
+ProcessDecoder.register("HarvestCommodityProcess", state => {
+  return HarvestCommodityProcess.decode(state as HarvestCommodityProcessState)
 })
 
 const maxCooldown = 50
@@ -48,7 +48,7 @@ type CreepSpec = {
   readonly haulerCount: number
 }
 
-export interface Season4275982HarvestCommodityProcessState extends ProcessState {
+export interface HarvestCommodityProcessState extends ProcessState {
   readonly parentRoomName: RoomName
   readonly depositInfo: DepositInfo
   readonly creepSpec: CreepSpec
@@ -56,7 +56,7 @@ export interface Season4275982HarvestCommodityProcessState extends ProcessState 
   readonly storageRoomName: RoomName | null
 }
 
-export class Season4275982HarvestCommodityProcess implements Process, Procedural, MessageObserver {
+export class HarvestCommodityProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -80,7 +80,7 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
   ) {
     this.identifier = ((): string => {
       if (this.processId === 287027000) {
-        return "Season4275982HarvestCommodityProcess_W19S19"  // TODO: 消す
+        return "HarvestCommodityProcess_W19S19"  // TODO: 消す
       }
       return `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.depositInfo.roomName}`
     })()
@@ -88,9 +88,9 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season4275982HarvestCommodityProcessState {
+  public encode(): HarvestCommodityProcessState {
     return {
-      t: "Season4275982HarvestCommodityProcess",
+      t: "HarvestCommodityProcess",
       l: this.launchTime,
       i: this.processId,
       parentRoomName: this.parentRoomName,
@@ -101,12 +101,12 @@ export class Season4275982HarvestCommodityProcess implements Process, Procedural
     }
   }
 
-  public static decode(state: Season4275982HarvestCommodityProcessState): Season4275982HarvestCommodityProcess {
-    return new Season4275982HarvestCommodityProcess(state.l, state.i, state.parentRoomName, state.depositInfo, state.creepSpec, state.suspendReasons, state.storageRoomName)
+  public static decode(state: HarvestCommodityProcessState): HarvestCommodityProcess {
+    return new HarvestCommodityProcess(state.l, state.i, state.parentRoomName, state.depositInfo, state.creepSpec, state.suspendReasons, state.storageRoomName)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, depositInfo: DepositInfo, creepSpec: CreepSpec): Season4275982HarvestCommodityProcess {
-    return new Season4275982HarvestCommodityProcess(Game.time, processId, parentRoomName, depositInfo, creepSpec, [], null)
+  public static create(processId: ProcessId, parentRoomName: RoomName, depositInfo: DepositInfo, creepSpec: CreepSpec): HarvestCommodityProcess {
+    return new HarvestCommodityProcess(Game.time, processId, parentRoomName, depositInfo, creepSpec, [], null)
   }
 
   public processShortDescription(): string {

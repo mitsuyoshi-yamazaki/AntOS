@@ -9,7 +9,7 @@ import type { Timestamp } from "utility/timestamp"
 import { Position, RoomPositionFilteringOptions } from "prototype/room_position"
 import { OperatingSystem } from "os/os"
 import { Season4964954HarvestPowerProcess } from "./season4_964954_harvest_power_process"
-import { Season4275982HarvestCommodityProcess } from "./season4_275982_harvest_commodity_process"
+import { HarvestCommodityProcess } from "../onetime/harvest_commodity_process"
 import { GameMap } from "game/game_map"
 import { RoomResources } from "room_resource/room_resources"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
@@ -563,7 +563,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
         baseSpawnTimeCost.set(roomName, cost)
         return
       }
-      if (process instanceof Season4275982HarvestCommodityProcess) {
+      if (process instanceof HarvestCommodityProcess) {
         runningHarvestProcessTargetIds.push(process.depositInfo.depositId)
         const roomName = process.parentRoomName
         const cost = (baseSpawnTimeCost.get(roomName) ?? 0) + harvestCommodityCost
@@ -653,12 +653,12 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
     }
 
     const waypoints = GameMap.getWaypoints(parentRoomName, target.roomName) ?? []
-    const shouldBoost = ((): boolean => {
-      if (powerBankInfo.neighbourCount >= 3) {
-        return false
-      }
-      return false  // TODO:
-    })()
+    // const shouldBoost = ((): boolean => {
+    //   if (powerBankInfo.neighbourCount >= 3) {
+    //     return false
+    //   }
+    //   return false  // TODO:
+    // })()
 
     const process = OperatingSystem.os.addProcess(null, processId => Season4964954HarvestPowerProcess.create(processId, parentRoomName, target.roomName, waypoints, powerBankInfo))
     Memory.os.logger.filteringProcessIds.push(process.processId)
@@ -681,7 +681,7 @@ export class Season41011412HighwayProcessLauncherProcess implements Process, Pro
       harvesterCount: target.neighbourCount >= 2 ? 2 : 1,
       haulerCount: Game.map.getRoomLinearDistance(parentRoomName, target.roomName) >= 4 ? 2 : 1,
     }
-    const process = OperatingSystem.os.addProcess(null, processId => Season4275982HarvestCommodityProcess.create(processId, parentRoomName, depositInfo, creepSpec))
+    const process = OperatingSystem.os.addProcess(null, processId => HarvestCommodityProcess.create(processId, parentRoomName, depositInfo, creepSpec))
 
     const storageRoomName = this.storageRooms[target.roomName]
     if (storageRoomName != null) {
