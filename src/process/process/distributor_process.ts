@@ -46,6 +46,8 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
   public readonly identifier: string
   private readonly codename: string
 
+  private isMinimumCpuUse = false
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -111,6 +113,17 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
       return
     }
+
+    this.isMinimumCpuUse = ((): boolean => {
+      if (resources.roomInfo.ownedRoomType.case !== "minimum-cpu-use") {
+        return false
+      }
+      if (resources.sources.length !== Array.from(resources.roomInfoAccessor.links.sources.values()).length) {
+        return false
+      }
+      return true
+    })()
+
     const distributorPosition = resources.roomInfo.roomPlan?.centerPosition
     if (distributorPosition == null) {
       PrimitiveLogger.fatal(`${this.identifier} no room plan ${roomLink(this.parentRoomName)}`)
@@ -186,6 +199,43 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
   }
 
   private runLinks(coreLink: StructureLink, upgraderLink: StructureLink, roomResource: OwnedRoomResource): void {
+    if (this.isMinimumCpuUse === true) {
+      this.transferEnergyFromSourceLinks(coreLink, upgraderLink, roomResource)
+      return
+    }
+
+    this.transferEnergyToUpgraderLink(coreLink, upgraderLink, roomResource)
+  }
+
+  private transferEnergyFromSourceLinks(coreLink: StructureLink, upgraderLink: StructureLink, roomResource: OwnedRoomResource): void {
+    const energyThreshold = GameConstants.link.capaity - 50
+    const sourceLinks = Array.from(roomResource.roomInfoAccessor.links.sources.values()).filter(link => {
+      if (link.cooldown > 0) {
+        return false
+      }
+      if (link.store.getUsedCapacity(RESOURCE_ENERGY) < energyThreshold) {
+        return false
+      }
+      return true
+    })
+
+    const sourceLink = sourceLinks[0]
+    if (sourceLink == null) {
+      return
+    }
+
+    if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) < 10) {
+      sourceLink.transferEnergy(upgraderLink)
+      return
+    }
+
+    if (coreLink.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      sourceLink.transferEnergy(coreLink)
+      return
+    }
+  }
+
+  private transferEnergyToUpgraderLink(coreLink: StructureLink, upgraderLink: StructureLink, roomResource: OwnedRoomResource): void {
     const linkConstants = GameConstants.link
     if (upgraderLink.store.getUsedCapacity(RESOURCE_ENERGY) >= (linkConstants.capaity * linkConstants.loss)) {
       return
@@ -195,7 +245,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     const energySourceLinks = [
       ...sourceLinks,
       coreLink,
-    ].flatMap((link): {link: StructureLink, energyAmount: number}[] => {
+    ].flatMap((link): { link: StructureLink, energyAmount: number }[] => {
       if (link.cooldown > 0) {
         return []
       }
@@ -242,8 +292,16 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       if (creep.store.getUsedCapacity() > 0) {
         return true
       }
-      if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-        return false
+      if (link != null) {
+        if (this.isMinimumCpuUse === true) {
+          if (link.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+            return false
+          }
+        } else {
+          if (link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            return false
+          }
+        }
       }
       return true
     })()
@@ -362,7 +420,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     const [energySource, energyStore] = energySources
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-      if (link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+      if (this.isMinimumCpuUse !== true && link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(TransferEnergyApiWrapper.create(link))
       }
       if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 20000) {
@@ -370,6 +428,10 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
         return RunApiTask.create(TransferEnergyApiWrapper.create(energySource))
       }
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
+    }
+
+    if (this.isMinimumCpuUse === true && link != null && link.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      return RunApiTask.create(WithdrawResourceApiWrapper.create(link, RESOURCE_ENERGY))
     }
 
     // if (link == null || link.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {

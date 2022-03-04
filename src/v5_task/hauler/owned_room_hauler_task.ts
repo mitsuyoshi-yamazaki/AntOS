@@ -26,6 +26,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { Environment } from "utility/environment"
+import { RoomResources } from "room_resource/room_resources"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -105,8 +106,24 @@ export class OwnedRoomHaulerTask extends Task {
     ]
 
     if (objects.activeStructures.storage != null) {
-      const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
-      problemFinders.push(problemFinder)
+      const isMinimumCpuUse = ((): boolean => {
+        const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+        if (roomResource == null) {
+          return false
+        }
+        if (roomResource.roomInfo.ownedRoomType.case !== "minimum-cpu-use") {
+          return false
+        }
+        if (roomResource.sources.length !== Array.from(roomResource.roomInfoAccessor.links.sources.values()).length) {
+          return false
+        }
+        return true
+      })()
+
+      if (isMinimumCpuUse !== true) {
+        const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
+        problemFinders.push(problemFinder)
+      }
     }
 
     this.checkProblemFinders(problemFinders)

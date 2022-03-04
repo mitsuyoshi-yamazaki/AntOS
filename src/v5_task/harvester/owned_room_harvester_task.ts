@@ -28,6 +28,7 @@ import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Environment } from "utility/environment"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -270,10 +271,9 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
   }
 
   private checkLink(source: Source, harvesterPosition: RoomPosition, roomResource: OwnedRoomResource): StructureLink | null {
-    if (this.roomName !== "W47S9") {  // FixMe:
+    if (this.roomName !== "W47S9" && Environment.shard !== "shard3") {  // FixMe:
       return null
     }
-    console.log("checkLink")
     if (roomResource.hostiles.creeps.length > 0) {
       return null
     }
