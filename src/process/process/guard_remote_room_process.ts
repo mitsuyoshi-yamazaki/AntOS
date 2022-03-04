@@ -434,7 +434,6 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   private checkFinishCondition(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      this.addStopSpawningReason("no parent room")
       return
     }
     const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
