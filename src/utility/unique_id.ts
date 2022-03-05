@@ -34,8 +34,15 @@ const sweets: string[] = [
   "beer", // 🍻
 ]
 
+const alphabet = "abcdefghijklmnopqrstuvwxyg"
+
 export function generateCodename(fixedParameter: string, flexibleParameter: number): string {
-  const adjectiveIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % adjectives.length
-  const sweetIndex = flexibleParameter % sweets.length
-  return `${adjectives[adjectiveIndex]}_${sweets[sweetIndex]}`
+  // if (Game.shard.name !== "shard3") { // TODO: 全展開する
+  //   const adjectiveIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % adjectives.length
+  //   const sweetIndex = flexibleParameter % sweets.length
+  //   return `${adjectives[adjectiveIndex]}_${sweets[sweetIndex]}`
+  // }
+  const firstIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % alphabet.length
+  const secondIndex = flexibleParameter % alphabet.length
+  return `${alphabet[firstIndex]}${alphabet[secondIndex]}`
 }
