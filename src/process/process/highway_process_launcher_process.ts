@@ -546,7 +546,7 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
       return
     }
 
-    const minimumEnergyAmount = 50000
+    const minimumEnergyAmount = 80000
 
     const harvestPowerBankCost = 10
     const harvestCommodityCost = 6
