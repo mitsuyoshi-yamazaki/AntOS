@@ -93,6 +93,7 @@ export class DefenseRoomProcess implements Process, Procedural {
   private readonly codename: string
 
   private readonly hostileCreepInfo = new Map<Id<Creep>, HostileCreepInfo>()
+  private excludedRampartIds: Id<StructureRampart>[] | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -285,11 +286,21 @@ export class DefenseRoomProcess implements Process, Procedural {
       return
     }
 
-    const excludedRampartIds = [  // FixMe:
-      "61ef963dcaae907cac3cb83a",
-      "61ef959958c1f75910f6688d",
-    ]
     const allRamparts = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[])
+    const excludedRampartIds = ((): Id<StructureRampart>[] => {
+      if (this.excludedRampartIds != null) {
+        return this.excludedRampartIds
+      }
+      this.excludedRampartIds = allRamparts.flatMap((rampart): Id<StructureRampart>[] => {
+        if (rampart.pos.findInRange(FIND_MY_STRUCTURES, 0).length > 1) {
+          return [rampart.id]
+        }
+        return []
+      })
+      return this.excludedRampartIds
+    })()
+
+    const allHidableRamparts = allRamparts
       .filter(rampart => {
         if (excludedRampartIds.includes(rampart.id) === true) {
           return false
@@ -337,7 +348,7 @@ export class DefenseRoomProcess implements Process, Procedural {
 
     const clusterTargetInfo = hostileClusters.map((cluster): ClusterTargetInfo => {
       const closestRamparts = cluster.hostileCreeps.reduce((result, current) => {
-        const closest = current.creep.pos.findClosestByRange(allRamparts)
+        const closest = current.creep.pos.findClosestByRange(allHidableRamparts)
         if (closest == null) {
           return result
         }
@@ -453,7 +464,7 @@ export class DefenseRoomProcess implements Process, Procedural {
         })
       })
 
-      allRamparts.forEach(rampart => {
+      allHidableRamparts.forEach(rampart => {
         costMatrix.set(rampart.pos.x, rampart.pos.y, 1)
       })
     }
