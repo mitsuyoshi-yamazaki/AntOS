@@ -226,6 +226,9 @@ export class PowerCreepProcess implements Process, Procedural {
     case PWR_OPERATE_FACTORY:
       return this.operateFactory(powerCreep, roomResource)
 
+    case PWR_REGEN_SOURCE:
+      return this.regenSource(powerCreep, roomResource)
+
     case PWR_OPERATE_TOWER:
     case PWR_OPERATE_STORAGE:
     case PWR_OPERATE_LAB:
@@ -236,12 +239,12 @@ export class PowerCreepProcess implements Process, Procedural {
     case PWR_DISRUPT_TOWER:
     case PWR_DISRUPT_SOURCE:
     case PWR_SHIELD:
-    case PWR_REGEN_SOURCE:
     case PWR_REGEN_MINERAL:
     case PWR_DISRUPT_TERMINAL:
     case PWR_OPERATE_POWER:
     case PWR_FORTIFY:
     case PWR_OPERATE_CONTROLLER:
+      powerCreep.say(`no${power}impl`)
       return {
         blocksFurtherOperations: false
       }
@@ -325,43 +328,32 @@ export class PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  // private operateRegenSource(powerCreep: PowerCreep, roomResource: OwnedRoomResource): OperationResult {
-  //   const regenSource = sources.find(source => {
-  //     if (source.effects == null) {
-  //       return true
-  //     }
-  //     return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
-  //   })
-  //   if (regenSource == null) {
-  //     return false
-  //   }
+  private regenSource(powerCreep: PowerCreep, roomResource: OwnedRoomResource): OperationResult {
+    const targetSource = roomResource.sources.find(source => {
+      if (source.effects == null) {
+        return true
+      }
+      return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+    })
+    if (targetSource == null) {
+      return {
+        blocksFurtherOperations: false,
+      }
+    }
 
-  //   const result = powerCreep.usePower(PWR_REGEN_SOURCE, regenSource)
-
-  //   switch (result) {
-  //   case OK:
-  //   case ERR_TIRED:
-  //     return false
-
-  //   case ERR_NOT_IN_RANGE:
-  //     powerCreep.moveTo(regenSource, defaultMoveToOptions())
-  //     return true
-
-  //   case ERR_NOT_ENOUGH_RESOURCES:
-  //   case ERR_NOT_OWNER:
-  //   case ERR_BUSY:
-  //   case ERR_INVALID_TARGET:
-  //   case ERR_FULL:
-  //   case ERR_INVALID_ARGS:
-  //   case ERR_NO_BODYPART:
-  //   default:
-  //     programErrorOnHeapLogger.add(`powerCreep.usePower(PWR_OPERATE_SPAWN) returns ${result} in ${roomLink(this.parentRoomName)}`)
-  //     return false
-  //   }
-  // }
+    const { executed } = this.usePower(powerCreep, PWR_REGEN_SOURCE, targetSource)
+    if (executed) {
+      return {
+        blocksFurtherOperations: true,
+      }
+    }
+    return {
+      blocksFurtherOperations: false,
+    }
+  }
 
   // ---- Power Creep Actions ---- //
-  private usePower(powerCreep: PowerCreep, power: PowerConstant, target?: StructureSpawn | StructureFactory): { executed: boolean } {
+  private usePower(powerCreep: PowerCreep, power: PowerConstant, target?: StructureSpawn | StructureFactory | Source): { executed: boolean } {
     const result = powerCreep.usePower(power, target)
 
     switch (result) {
