@@ -1,7 +1,33 @@
 
 /*
-bucket
+shard2 39500555
+calls		time		avg		function
+29665		6601.7		0.223		Creep.moveTo
+22827		4664.8		0.204		Creep.move
+19510		4101.4		0.210		Creep.moveByPath
+17086		3089.0		0.181		Creep.harvest
+133873		1566.8		0.012		RoomPosition.getRangeTo
+19477		1442.1		0.074		Creep.withdraw
+3928		1311.4		0.334		RoomPosition.findPathTo
+3928		1278.5		0.325		Room.findPath
+4880		1035.1		0.212		Creep.upgradeController
+207995		839.8		0.004		Room.find
+14174		763.6		0.054		Creep.transfer
+3101		611.1		0.197		Creep.reserveController
+5103		469.7		0.092		RoomPosition.findInRange
+2039		406.0		0.199		Creep.repair
+94497		168.7		0.002		RoomPosition.inRangeTo
+7897		156.0		0.020		RoomPosition.findClosestByPath
+70635		155.2		0.002		Creep.notifyWhenAttacked
+63550		132.5		0.002		RoomPosition.isNearTo
+79029		131.5		0.002		RoomPosition.encode
+572		118.0		0.206		Creep.attack
+1825		90.0		0.049		Room.createConstructionSite
+9699		73.0		0.008		RoomPosition.lookFor
+39360		71.2		0.002		RoomPosition.isEqualTo
+Avg: 286.49	Total: 28075.61	Ticks: 98
 
+bucket
 [8:15:28 PM][shard2]cpu: 294, bucket: 798, bucket in the next tick: 784
 [8:15:32 PM][shard2]cpu: 265, bucket: 775, bucket in the next tick: 790
 [8:15:36 PM][shard2]cpu: 287, bucket: 779, bucket in the next tick: 772
