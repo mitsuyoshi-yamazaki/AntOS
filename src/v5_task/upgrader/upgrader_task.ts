@@ -186,7 +186,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
       if (roomResource?.roomInfo.ownedRoomType.case === "minimum-cpu-use") {
         const creepCount = ((): number => {
-          if (roomResource.controller.ticksToDowngrade > 100000) {
+          if (roomResource.controller.ticksToDowngrade > 160000) {
             return 0
           }
           return 1

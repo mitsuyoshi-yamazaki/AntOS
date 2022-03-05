@@ -257,7 +257,7 @@ export class OwnedRoomInfoAccessor {
     this.config = new Config(this.roomName, roomInfo);
 
     ((): void => {
-      if (controller.level < 8) {
+      if (controller.level < 8) { // TODO: RCL7でLinkが建つが、Link間のエネルギー送信の処理が作られていない
         this._sourceEnergyTransferType = {
           case: "hauler",
         }
