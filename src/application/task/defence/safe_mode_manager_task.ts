@@ -10,7 +10,6 @@ import { roomLink } from "utility/log"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { DefenceTaskPerformance } from "application/task_profit/defence_task_performance"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Timestamp } from "utility/timestamp"
 
 type SafeModeManagerTaskOutput = void
 type SafeModeManagerTaskProblemTypes = UnexpectedProblem
