@@ -10,6 +10,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { OperatingSystem } from "os/os"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
+import { MineralCompoundIngredients } from "utility/resource"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
@@ -55,7 +56,14 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
     const logs: string[] = [
     ]
     logs.push(...(new CompoundManager()).run())
-    logs.push(...(new ResourceTransferer()).run())
+
+    const resourceTransfer = new ResourceTransferer()
+    logs.push(...resourceTransfer.run())
+
+    if (resourceTransfer.resourceIncomeDisabledRoomNames.length > 0) {
+      processLog(this, `${coloredText("[RESOURCE]", "almost")} resourceIncomeDisabledRoomNames: ${resourceTransfer.resourceIncomeDisabledRoomNames.map(r => roomLink(r)).join(",")}`)
+    }
+
     // if (logs.length <= 0) {
     //   logs.push("No resource transfer")
     // }
@@ -102,21 +110,26 @@ class CompoundManager {
 }
 
 class ResourceTransferer {
+  public get resourceIncomeDisabledRoomNames(): RoomName[] {
+    return this._resourceIncomeDisabledRoomNames
+  }
+
   private readonly ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
+  private readonly disabledRoomNames: RoomName[] = []
+  private readonly _resourceIncomeDisabledRoomNames: RoomName[] = []
 
   public constructor() {
-    const disabledRoomNames: RoomName[] = []
     OperatingSystem.os.listAllProcesses().forEach(processInfo => {
       if (processInfo.process instanceof Season2055924SendResourcesProcess) {
         const roomName = processInfo.process.parentRoomName
-        if (disabledRoomNames.includes(roomName) !== true) {
-          disabledRoomNames.push(roomName)
+        if (this.disabledRoomNames.includes(roomName) !== true) {
+          this.disabledRoomNames.push(roomName)
         }
       }
     })
 
     RoomResources.getOwnedRoomResources().forEach(resources => {
-      if (disabledRoomNames.includes(resources.room.name) === true) {
+      if (this.disabledRoomNames.includes(resources.room.name) === true) {
         return
       }
 
@@ -127,6 +140,11 @@ class ResourceTransferer {
       }
       if (storage == null) {
         return
+      }
+
+      const energyCapacity = terminal.store.getUsedCapacity(RESOURCE_ENERGY) + terminal.store.getFreeCapacity(RESOURCE_ENERGY)
+      if (energyCapacity < 100000) {
+        this.resourceIncomeDisabledRoomNames.push(resources.room.name)
       }
 
       const margin = 1000
@@ -144,8 +162,17 @@ class ResourceTransferer {
       const storedResourceTypes: { resourceType: ResourceConstant, amount: number }[] = []
       const excludedResourceTypes: ResourceConstant[] = [
         ...resources.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.boost),
-        ...resources.roomInfoAccessor.config.researchingCompounds(),
       ]
+      const researchingCompounds = resources.roomInfoAccessor.config.researchingCompounds()
+      excludedResourceTypes.push(...researchingCompounds)
+      excludedResourceTypes.push(...researchingCompounds.flatMap(compound => {
+        const ingredients = MineralCompoundIngredients[compound]
+        return [ingredients.lhs, ingredients.rhs]
+      }))
+
+      if (resources.mineral != null) {
+        excludedResourceTypes.push(resources.mineral.mineralType) // Mineral Harvestingが止まらなくなるため
+      }
 
       const enumerateResources = (store: StoreDefinition): void => {
         const resourceTypes = Object.keys(store) as ResourceConstant[]
@@ -295,8 +322,11 @@ class ResourceTransferer {
   }
 
   private resourceInsufficientTarget(fromRoomName: RoomName, resourceType: ResourceConstant): { resources: OwnedRoomResource, maxAmount: number } | null {
-    const energyInsufficientRooms: { resources: OwnedRoomResource, maxAmount: number, priority: number }[] = RoomResources.getResourceInsufficientRooms(resourceType)
+    const resourceInsufficientRooms: { resources: OwnedRoomResource, maxAmount: number, priority: number }[] = RoomResources.getResourceInsufficientRooms(resourceType)
       .flatMap(roomInfo => {
+        if (this.resourceIncomeDisabledRoomNames.includes(roomInfo.roomName) === true) {
+          return []
+        }
         if (roomInfo.roomName === fromRoomName) {
           return []
         }
@@ -333,7 +363,7 @@ class ResourceTransferer {
         }
       })
 
-    return energyInsufficientRooms
+    return resourceInsufficientRooms
       .sort((lhs, rhs) => {
         if (Math.floor(lhs.priority / transactionCostRound) !== Math.floor(rhs.priority / transactionCostRound)) {
           return lhs.priority < rhs.priority ? -1 : 1
@@ -347,6 +377,9 @@ class ResourceTransferer {
     const freeSpaceRooms: { resources: OwnedRoomResource, maxAmount: number, priority: number }[] = []
     this.ownedRoomResources
       .forEach((targetRoomResource, roomName) => {
+        if (this.resourceIncomeDisabledRoomNames.includes(roomName) === true) {
+          return
+        }
         if (roomName === fromRoomName) {
           return
         }
