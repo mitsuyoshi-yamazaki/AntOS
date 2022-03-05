@@ -212,13 +212,20 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
 
     const moveSpeed = 0.5
     const maximumWorkCount = Math.ceil((sourceCapacity / 300) / HARVEST_POWER) + 1
+    const carryCount = ((): number => {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource?.roomInfoAccessor.sourceEnergyTransferType.case === "link") {
+        return Math.ceil(maximumWorkCount / 6)
+      }
+      return 1
+    })()
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
       for (let i = 0; i < workCount; i += 1) {
         result.push(WORK)
       }
-      result.push(CARRY)
+      result.push(...Array<BodyPartConstant>(carryCount).fill(CARRY))
       const moveCount = Math.ceil((result.length / 2) * moveSpeed)
       for (let i = 0; i < moveCount; i += 1) {
         result.unshift(MOVE)
