@@ -58,6 +58,7 @@ import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, Withdra
 import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
 import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
+import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
 // import { } from "process/onetime/attack/attack_room_process"
 
 type LaunchCommandResult = Result<Process, string>
@@ -1146,6 +1147,32 @@ ProcessLauncher.register("BoostLabChargerProcess", args => {
     const roomName = args.roomName("room_name").parse({my: true})
 
     return Result.Succeeded((processId) => BoostLabChargerProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SignProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("room_name").parse()
+
+    const sign = ((): SignProcessSign => {
+      const targetRoom = Game.rooms[targetRoomName]
+      if (targetRoom != null && targetRoom.controller?.my === true) {
+        return {
+          case: "my room",
+        }
+      }
+
+      const sign = args.string("sign").parse()
+      return {
+        case: "normal",
+        sign,
+      }
+    })()
+
+    return Result.Succeeded((processId) => SignProcess.create(processId, roomName, targetRoomName, sign))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
