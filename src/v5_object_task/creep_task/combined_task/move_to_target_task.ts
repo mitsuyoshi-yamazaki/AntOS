@@ -7,13 +7,32 @@ import { CreepTaskState } from "../creep_task_state"
 import { decodeRoomPosition, RoomPositionId, RoomPositionState } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { DirectionConstants } from "utility/direction"
 import { GameConstants } from "utility/constants"
 
 const noPathPositions: string[] = []
 const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition): string => {
   return `${fromPosition.id}_${toPosition.id}`
+}
+
+const Logger = {
+  lastLog: 0,
+  logCount: 0,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  log(message: string): void {
+    this.logCount += 1
+
+    const interval = 500
+    if ((Game.time - this.lastLog) >= interval) {
+      if (this.logCount > 0) {
+        PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.logCount} path errors in this ${interval} ticks`)
+      }
+
+      this.logCount = 0
+      this.lastLog = Game.time
+    }
+  },
 }
 
 export type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
@@ -130,33 +149,33 @@ export class MoveToTargetTask implements CreepTask {
       const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
       if (moveToResult === ERR_NO_PATH && this.options.fallbackEnabled === true) {
         const routeIdentifier = getRouteIdentifier(creep.pos, this.apiWrapper.target.pos)
-        if (noPathPositions.includes(routeIdentifier) !== true) {
-          if (creep.room.controller == null || creep.room.controller.my !== true) {
-            const range = 5
-            const isEdge = (): boolean => {
-              const { min, max } = GameConstants.room.edgePosition
-              if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
-                return true
-              }
-              return false
+        // if (noPathPositions.includes(routeIdentifier) !== true) {
+        if (creep.room.controller == null || creep.room.controller.my !== true) {
+          const range = 5
+          const isEdge = (): boolean => {
+            const { min, max } = GameConstants.room.edgePosition
+            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+              return true
             }
-            if (creep.pos.getRangeTo(this.apiWrapper.target.pos) > range || isEdge() === true) {
-              moveToOps.maxOps = 3000
-              moveToOps.maxRooms = 5
-              moveToOps.ignoreCreeps = true
-              moveToOps.range = range
-              moveToOps.reusePath = 0
-              const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
-              if (retryResult !== ERR_NO_PATH) {
-                return TaskProgressType.InProgress
-              }
+            return false
+          }
+          if (creep.pos.getRangeTo(this.apiWrapper.target.pos) > range || isEdge() === true) {
+            moveToOps.maxOps = 3000
+            moveToOps.maxRooms = 5
+            moveToOps.ignoreCreeps = true
+            moveToOps.range = range
+            moveToOps.reusePath = 0
+            const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+            if (retryResult !== ERR_NO_PATH) {
+              return TaskProgressType.InProgress
+            }
 
-              noPathPositions.push(routeIdentifier)
-              const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
-              PrimitiveLogger.log(error)
-            }
+            noPathPositions.push(routeIdentifier)
+            const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
+            Logger.log(error)
           }
         }
+        // }
 
         const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
         if (emptyPositionDirection != null) {
