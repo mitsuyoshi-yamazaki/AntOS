@@ -177,11 +177,11 @@ export class MoveToTargetTask implements CreepTask {
         }
         // }
 
-        const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
-        if (emptyPositionDirection != null) {
-          creep.move(emptyPositionDirection)
-          return TaskProgressType.InProgress
-        }
+        // const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
+        // if (emptyPositionDirection != null) {
+        //   creep.move(emptyPositionDirection)
+        //   return TaskProgressType.InProgress
+        // }
       }
       return TaskProgressType.InProgress
     }
