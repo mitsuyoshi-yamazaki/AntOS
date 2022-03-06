@@ -1,10 +1,10 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Driver } from "../driver/driver"
+import { ProcessScheduler } from "./process_scheduler"
 
 export class Kernel {
-  public constructor(
-    private readonly drivers: Driver[],
-  ) {
+  private processSchedular = new ProcessScheduler()
+
+  public constructor() {
   }
 
   public run(): void {

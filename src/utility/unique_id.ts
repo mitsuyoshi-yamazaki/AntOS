@@ -1,4 +1,4 @@
-let uniqueIdIndex = 0
+let uniqueIdIndex = 0 // TODO: Game.timeとconcatしているのでafterTickで初期化できる
 const radix = 36
 
 export function generateUniqueId(prefix?: string): string {

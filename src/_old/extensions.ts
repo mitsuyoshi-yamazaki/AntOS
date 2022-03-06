@@ -11,10 +11,12 @@ import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
+import { StandardInput as v8StandardInput } from "v8/operating_system/system_call/standard_input"
 
 declare global {
   interface Game {
     io: (message: string) => string
+    v8: (message: string) => string // TODO: Game.ioに置き換える
 
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
@@ -50,6 +52,8 @@ declare global {
 export function tick(): void {
   // Gameオブジェクトは毎tick更新されるため
   Game.io = standardInput
+
+  Game.v8 = v8StandardInput.input
 
   Game.user = {
     name: 'Mitsuyoshi',

@@ -61,7 +61,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   case "toggle_auto_attack":
     return toggleAutoAttack(roomResource, args)
   case "show_labs":
-    return showLabs(roomResource, args)
+    return showLabs(roomResource)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -86,7 +86,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
 
 
 /** @throws */
-function showLabs(roomResource: OwnedRoomResource, args: string[]): string {
+function showLabs(roomResource: OwnedRoomResource): string {
   type LabDescription = { lab: StructureLab, text: string, color: string }
   const labs: LabDescription[] = []
 
