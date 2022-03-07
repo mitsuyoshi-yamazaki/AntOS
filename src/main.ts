@@ -9,8 +9,8 @@ import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { SystemInfo } from "utility/system_info"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
-import { BootLoader } from "v8/operating_system/boot_loader"
-import { Environment } from "utility/environment"
+// import { Environment } from "utility/environment"
+// import { BootLoader } from "v8/operating_system/boot_loader"
 
 memhack.load()
 
@@ -33,12 +33,12 @@ const mainLoop = () => {
     OperatingSystem.os.run()
   }, "OS")()
 
-  if (Environment.shard === "shard3") { // TODO:
-    ErrorMapper.wrapLoop((): void => {
-      const v8Kernel = BootLoader.loadKernel()
-      v8Kernel.run()
-    }, "v8 OS")()
-  }
+  // if (Environment.shard === "shard3") { // TODO:
+  //   ErrorMapper.wrapLoop((): void => {
+  //     const v8Kernel = BootLoader.loadKernel()
+  //     v8Kernel.run()
+  //   }, "v8 OS")()
+  // }
 
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
