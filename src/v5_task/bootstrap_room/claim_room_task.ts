@@ -153,11 +153,17 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
         if (controller == null) {
           return false
         }
-        if (controller.reservation != null && controller.reservation.username === Game.user.name) {
-          return false
+        if (controller.reservation != null) {
+          if (controller.reservation.username === Game.user.name) {
+            return false
+          }
+          return true
         }
-        if (controller.owner != null && controller.my === true) {
-          return false
+        if (controller.owner != null) {
+          if (controller.my === true) {
+            return false
+          }
+          return true
         }
         return true
       })()
