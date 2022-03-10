@@ -25,6 +25,7 @@ import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { execCreepCommand } from "./exec_commands/creep_command"
+import { CronProcess } from "process/onetime/cron_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -70,6 +71,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.powerCreep(args)
       case "room_path_finding":
         return this.roomPathFinding(args)
+      case "cron":
+        return this.cron(args)
       case "script":
         return this.runScript()
       default:
@@ -645,6 +648,22 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private roomPathFinding(args: string[]): CommandExecutionResult {
     return execRoomPathfindingCommand(args)
+  }
+
+  /** @throws */
+  private cron(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const interval = listArguments.int(0, "interval").parse({ min: 1 })
+    const command = this.rawCommand.split("command=")[1]  // LaunchCommandでこれを行うのがだるいため
+    if (command == null || command.length <= 0) {
+      throw "missing command argument"
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return CronProcess.create(processId, interval, command)
+    })
+    Memory.os.logger.filteringProcessIds.push(process.processId)
+    return "ok"
   }
 
   private runScript(): CommandExecutionResult {

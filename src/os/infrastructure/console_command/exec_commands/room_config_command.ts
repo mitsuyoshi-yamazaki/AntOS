@@ -121,7 +121,7 @@ function showLabs(roomResource: OwnedRoomResource): string {
 
   labs.forEach(labDescription => {
     const position = labDescription.lab.pos
-    roomResource.room.visual.text(labDescription.text, position.x, position.y, {color: labDescription.color})
+    roomResource.room.visual.text(labDescription.text, position.x, position.y, {color: labDescription.color, strokeWidth: 0.3})
   })
 
   const researchLabDescription = ((): string => {

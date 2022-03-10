@@ -2,6 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { Result, ResultFailed } from "utility/result"
 import {
   ConsoleCommand,
+  ConsoleCommandType,
   isConsoleCommand,
 } from "./console_command/console_command"
 import { ExecCommand } from "./console_command/exec_command"
@@ -37,36 +38,17 @@ export const standardInput = (rawCommand: string): string => {
  * - [ ] "/'で囲われたスペースを許可する
  */
 function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
-  const invalidCommandDescription = (description: string): ResultFailed<string> => {
-    return Result.Failed(`Parsing command failed: ${description} (raw command: "${rawCommand}")`)
+  const parseResult = parseStandardIOCommand(rawCommand)
+  let parsedArguments: { command: ConsoleCommandType, options: Map<string, string>, args: string[] }
+  switch (parseResult.resultType) {
+  case "failed":
+    return parseResult
+  case "succeeded":
+    parsedArguments = parseResult.value
+    break
   }
 
-  const components = rawCommand.split(" ")
-  if (components.length <= 0) {
-    return invalidCommandDescription("Empty Command")
-  }
-
-  const command = components[0]
-  if (command == null || !isConsoleCommand(command)) {
-    return invalidCommandDescription(`Unknown command ${command}`)
-  }
-  components.splice(0, 1)
-
-  const options = new Map<string, string>()
-  const args: string[] = []
-
-  components.forEach(component => {
-    if (component.startsWith("-")) {
-      const [optionKey, optionValue] = component.split("=")
-      if (optionKey != null) {
-        options.set(optionKey, optionValue ?? "")
-      }
-      return
-    }
-    if (component.length > 0) {
-      args.push(component)
-    }
-  })
+  const { command, options, args } = parsedArguments
 
   if (options.has("-v")) {
     const optionsDescription = Array.from(options.keys()).reduce((result, key) => {
@@ -107,4 +89,43 @@ function parseCommand(rawCommand: string): Result<ConsoleCommand, string> {
   case "log":
     return Result.Succeeded(new LogCommand(options, args, rawCommand))
   }
+}
+
+export function parseStandardIOCommand(rawCommand: string): Result<{ command: ConsoleCommandType, options: Map<string, string>, args: string[] }, string> {
+  const invalidCommandDescription = (description: string): ResultFailed<string> => {
+    return Result.Failed(`Parsing command failed: ${description} (raw command: "${rawCommand}")`)
+  }
+
+  const components = rawCommand.split(" ")
+  if (components.length <= 0) {
+    return invalidCommandDescription("Empty Command")
+  }
+
+  const command = components[0]
+  if (command == null || !isConsoleCommand(command)) {
+    return invalidCommandDescription(`Unknown command ${command}`)
+  }
+  components.splice(0, 1)
+
+  const options = new Map<string, string>()
+  const args: string[] = []
+
+  components.forEach(component => {
+    if (component.startsWith("-")) {
+      const [optionKey, optionValue] = component.split("=")
+      if (optionKey != null) {
+        options.set(optionKey, optionValue ?? "")
+      }
+      return
+    }
+    if (component.length > 0) {
+      args.push(component)
+    }
+  })
+
+  return Result.Succeeded({
+    command,
+    options,
+    args,
+  })
 }

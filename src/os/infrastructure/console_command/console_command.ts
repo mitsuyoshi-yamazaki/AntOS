@@ -10,7 +10,7 @@ const consoleCommandTypes = [
   "memory",
   "log",
 ] as const
-type ConsoleCommandType = typeof consoleCommandTypes[number]
+export type ConsoleCommandType = typeof consoleCommandTypes[number]
 
 export const isConsoleCommand = (obj: string): obj is ConsoleCommandType => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
