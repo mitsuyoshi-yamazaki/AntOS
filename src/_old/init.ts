@@ -21,6 +21,11 @@ export function init(): void {
     console.log(`Updated v${version}`)
   }
 
+  if (Memory.uniqueId == null) {
+    Memory.uniqueId = {
+      creepNameIndex: 0,
+    }
+  }
   if (Memory.gameInfo == null) {
     Memory.gameInfo = {
       whitelist: [],

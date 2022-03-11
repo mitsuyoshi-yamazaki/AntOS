@@ -12,6 +12,7 @@ import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { StandardInput as v8StandardInput } from "v8/operating_system/system_call/standard_input"
+import { UniqueIdMemory } from "utility/unique_id"
 
 declare global {
   interface Game {
@@ -36,6 +37,7 @@ declare global {
       last_bucket: number
     }
 
+    uniqueId: UniqueIdMemory
     gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName

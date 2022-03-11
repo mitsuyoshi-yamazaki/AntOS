@@ -28,6 +28,9 @@ export class RootProcess {
 
   /** デプロイ時、サーバーリセット時に呼び出される */
   public setup(): void {
+    ErrorMapper.wrapLoop((): void => {
+      UniqueId.load()
+    }, "UniqueId.load()")()
   }
 
   public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {

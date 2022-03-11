@@ -7,7 +7,7 @@ import { bodyDescription } from "utility/creep_body"
 import { roomLink } from "utility/log"
 import type { RoomName } from "utility/room_name"
 import { ShortVersion } from "utility/system_info"
-import { generateUniqueId } from "utility/unique_id"
+import { generateUniqueId, UniqueId } from "utility/unique_id"
 
 export class SpawnRequestHandler {
   public constructor(
@@ -84,7 +84,7 @@ export class SpawnRequestHandler {
 
   private spawnCreep(request: SpawnTaskRequestType, spawn: StructureSpawn): TaskLogRequest | null {
     const body = request.body
-    const creepName = generateUniqueId(request.codename)
+    const creepName = UniqueId.generateCreepName(request.codename)
     const memory: V6CreepMemory = {
       v: ShortVersion.v6,
       p: this.roomName,
