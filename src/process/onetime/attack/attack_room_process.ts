@@ -198,9 +198,16 @@ export class AttackRoomProcess implements Process, MessageObserver {
       }
     })()
 
+    const bunkerDescriptions: string[] = targetRoomPlan.bunkers.map(bunker => {
+      const wallHits = bunker.targetWalls.reduce((result, wall) => result + wall.rampartHits, 0)
+      const towerRampartHits = bunker.towers.reduce((result, tower) => result + tower.rampartHits, 0)
+      const estimatedWallHitsToDestroyTowers = wallHits + towerRampartHits
+
+      return `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns, estimated hits to destroy towers: ${estimatedWallHitsToDestroyTowers}`
+    })
     const info: string[] = [
       `calculated at ${describeTime(Game.time - targetRoomPlan.calculatedAt)} ago, ${targetRoomPlan.bunkers.length} bunkers`,
-      ...targetRoomPlan.bunkers.map(bunker => `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns`),
+      ...bunkerDescriptions,
       attackPlanDescription,
     ]
     return info.join("\n")
@@ -301,11 +308,6 @@ export class AttackRoomProcess implements Process, MessageObserver {
 
   private calculateAttackPlanFor(bunkers: Bunker[]): AttackPlan {
     const towerCount = bunkers.reduce((count, bunker) => count + bunker.towers.length, 0)
-    // const estimatedWallHitsToDestroyTowers = bunkers.reduce((hits, bunker) => {
-    //   const wallHits = bunker.targetWalls.reduce((result, wall) => result + wall.rampartHits, 0)
-    //   const towerRampartHits = bunker.towers.reduce((result, tower) => result + tower.rampartHits, 0)
-    //   return hits + wallHits + towerRampartHits
-    // }, 0)
 
     // TODO: 現状ではboostなし、RCL8想定、1Attacker,3Healer
     try {
