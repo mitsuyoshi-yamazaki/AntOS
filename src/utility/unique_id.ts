@@ -1,4 +1,3 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "./constants"
 
 export type UniqueIdMemory = {
@@ -44,7 +43,7 @@ export const UniqueId = {
 
     const creep = Game.creeps[shortName]
     if (creep != null) {
-      PrimitiveLogger.programError(`UniqueId.generateCreepName() duplicated name ${shortName} (${(creep.memory as {i?: string}).i})`)
+      // PrimitiveLogger.programError(`UniqueId.generateCreepName() duplicated name ${shortName} (${(creep.memory as {i?: string}).i})`)
       return this.generate(prefix)
     }
     return shortName
