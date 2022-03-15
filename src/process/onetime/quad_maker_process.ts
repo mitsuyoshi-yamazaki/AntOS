@@ -17,6 +17,7 @@ import { GameMap } from "game/game_map"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { LaunchQuadProcess } from "./attack/launch_quad_process"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { State, Stateful } from "os/infrastructure/state"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -28,15 +29,7 @@ const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
 const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids"]
 
 interface QuadMakerProcessState extends ProcessState {
-  readonly quadName: string
-  readonly roomName: RoomName
-  readonly targetRoomName: RoomName
-  readonly frontBaseRoomName: RoomName | null
-  readonly canHandleMelee: boolean
-  readonly damageTolerance: number, // 0.0~1.0
-  readonly boosts: MineralBoostConstant[],
-  readonly creepSpecs: QuadCreepSpec[],
-  readonly targetIds: Id<AnyCreep | AnyStructure>[],
+  readonly quadMakerState: QuadMakerState
 }
 
 export class QuadMakerProcess implements Process, Procedural, MessageObserver {
@@ -48,17 +41,9 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly quadName: string,
-    private roomName: RoomName,
-    private targetRoomName: RoomName,
-    private frontBaseRoomName: RoomName | null,
-    private canHandleMelee: boolean,
-    private damageTolerance: number,
-    private boosts: MineralBoostConstant[],
-    private creepSpecs: QuadCreepSpec[],
-    private targetIds: Id<AnyCreep | AnyStructure>[],
+    private readonly quadMaker: QuadMaker,
   ) {
-    this.identifier = `${this.constructor.name}_${this.processId}_${quadName}_${this.targetRoomName}`
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.quadMaker.quadName}_${this.quadMaker.targetRoomName}`
   }
 
   public encode(): QuadMakerProcessState {
@@ -66,15 +51,7 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
       t: "QuadMakerProcess",
       l: this.launchTime,
       i: this.processId,
-      quadName: this.quadName,
-      roomName: this.roomName,
-      targetRoomName: this.targetRoomName,
-      frontBaseRoomName: this.frontBaseRoomName,
-      canHandleMelee: this.canHandleMelee,
-      damageTolerance: this.damageTolerance,
-      boosts: this.boosts,
-      creepSpecs: this.creepSpecs,
-      targetIds: this.targetIds,
+      quadMakerState: this.quadMaker.encode(),
     }
   }
 
@@ -82,29 +59,16 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
     return new QuadMakerProcess(
       state.l,
       state.i,
-      state.quadName,
-      state.roomName,
-      state.targetRoomName,
-      state.frontBaseRoomName,
-      state.canHandleMelee,
-      state.damageTolerance,
-      state.boosts,
-      state.creepSpecs,
-      state.targetIds ?? [],
+      QuadMaker.decode(state.quadMakerState),
     )
   }
 
   public static create(processId: ProcessId, quadName: string, roomName: RoomName, targetRoomName: RoomName): QuadMakerProcess {
-    const frontBaseRoomName: RoomName | null = null
-    const canHandleMelee = canHandleMeleeDefaultValue
-    const damageTolerance = defaultDamageTolerance
-    const boosts: MineralBoostConstant[] = []
-    const creepSpec: QuadCreepSpec[] = []
-    return new QuadMakerProcess(Game.time, processId, quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec, [])
+    return new QuadMakerProcess(Game.time, processId, QuadMaker.create(quadName, roomName, targetRoomName))
   }
 
   public processShortDescription(): string {
-    return `${this.quadName} ${this.roomPathDescription()}`
+    return this.quadMaker.shortDescription()
   }
 
   public didReceiveMessage(message: string): string {
@@ -164,10 +128,10 @@ commands: ${commands}
       return this.reset(args)
 
     case "show":
-      return this.show()
+      return this.quadMaker.description()
 
     case "verify": {
-      const result = this.verify()
+      const result = this.quadMaker.verify()
       switch (result.resultType) {
       case "failed":
         return result.reason.join("\n")
@@ -204,9 +168,9 @@ commands: ${commands}
       if (isValidRoomName(roomName) !== true) {
         throw `Invalid room name ${roomName}`
       }
-      const oldValue = this.roomName
-      this.roomName = roomName
-      return `Changed room_name ${oldValue} =&gt ${this.roomName}`
+      const oldValue = this.quadMaker.roomName
+      this.quadMaker.roomName = roomName
+      return `Changed room_name ${oldValue} =&gt ${this.quadMaker.roomName}`
     }
 
     case "target_room_name": {
@@ -217,9 +181,9 @@ commands: ${commands}
       if (isValidRoomName(targetRoomName) !== true) {
         throw `Invalid target room name ${targetRoomName}`
       }
-      const oldValue = this.targetRoomName
-      this.targetRoomName = targetRoomName
-      return `Changed target_room_name ${oldValue} =&gt ${this.targetRoomName}`
+      const oldValue = this.quadMaker.targetRoomName
+      this.quadMaker.targetRoomName = targetRoomName
+      return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`
     }
 
     case "front_base_room_name": {
@@ -231,9 +195,9 @@ commands: ${commands}
       if (frontRoom == null || frontRoom.controller?.my !== true) {
         throw `Front room ${roomLink(frontBaseRoomName)} is not mine`
       }
-      const oldValue = this.frontBaseRoomName
-      this.frontBaseRoomName = frontBaseRoomName
-      return `Changed front_base_room_name ${oldValue} =&gt ${this.frontBaseRoomName}`
+      const oldValue = this.quadMaker.frontBaseRoomName
+      this.quadMaker.frontBaseRoomName = frontBaseRoomName
+      return `Changed front_base_room_name ${oldValue} =&gt ${this.quadMaker.frontBaseRoomName}`
     }
 
     default:
@@ -250,8 +214,8 @@ commands: ${commands}
       if (handleMelee !== "0" && handleMelee !== "1") {
         throw `handle_melee value should be "0" or "1" (${handleMelee})`
       }
-      this.canHandleMelee = handleMelee === "1"
-      return `set handle_melee=${this.canHandleMelee}`
+      this.quadMaker.canHandleMelee = handleMelee === "1"
+      return `set handle_melee=${this.quadMaker.canHandleMelee}`
     }
 
     case "damage_tolerance": {
@@ -266,8 +230,8 @@ commands: ${commands}
       if (value < 0 || value > 1) {
         throw `damage_tolerance invalid value ${value}. set 0.0~1.0`
       }
-      this.damageTolerance = value
-      return `set damage_tolerance=${this.damageTolerance}`
+      this.quadMaker.damageTolerance = value
+      return `set damage_tolerance=${this.quadMaker.damageTolerance}`
     }
 
     case "boosts": {
@@ -286,8 +250,8 @@ commands: ${commands}
         return result
       })()
 
-      this.boosts = boosts
-      return `set boosts=${this.boosts}`
+      this.quadMaker.boosts = boosts
+      return `set boosts=${this.quadMaker.boosts}`
     }
 
     case "creep": {
@@ -346,15 +310,15 @@ commands: ${commands}
         body
       }
       const newCreepSpecs = Array(creepCount).fill({ ...creepSpec })
-      this.creepSpecs.push(...newCreepSpecs)
+      this.quadMaker.creepSpecs.push(...newCreepSpecs)
       return `set ${newCreepSpecs.length} ${CreepBody.description(body)}, ${bodyDescription}`
     }
 
     case "target_ids": {
       const listArguments = new ListArguments(args)
       const targetIds = listArguments.string(0, "target ids").parse().split(",")
-      this.targetIds = targetIds as Id<AnyCreep | AnyStructure>[]
-      return `set target IDs ${this.targetIds.join(", ")}`
+      this.quadMaker.targetIds = targetIds as Id<AnyCreep | AnyStructure>[]
+      return `set target IDs ${this.quadMaker.targetIds.join(", ")}`
     }
 
     default:
@@ -367,55 +331,142 @@ commands: ${commands}
 
     switch (argument) {
     case "handle_melee":
-      this.canHandleMelee = canHandleMeleeDefaultValue
-      return `reset handle_melee to default value ${this.canHandleMelee}`
+      this.quadMaker.canHandleMelee = canHandleMeleeDefaultValue
+      return `reset handle_melee to default value ${this.quadMaker.canHandleMelee}`
 
     case "damage_tolerance":
-      this.damageTolerance = defaultDamageTolerance
-      return `reset damage_tolerance to default value ${this.damageTolerance}`
+      this.quadMaker.damageTolerance = defaultDamageTolerance
+      return `reset damage_tolerance to default value ${this.quadMaker.damageTolerance}`
 
     case "boosts":
-      this.boosts = []
-      return `reset boosts ${this.boosts.length} boosts`
+      this.quadMaker.boosts = []
+      return `reset boosts ${this.quadMaker.boosts.length} boosts`
 
     case "creep": {
       const listArguments = new ListArguments(args)
       if (listArguments.has(0) !== true) {
-        this.creepSpecs = []
-        return `reset creep ${this.creepSpecs.length} creeps`
+        this.quadMaker.creepSpecs = []
+        return `reset creep ${this.quadMaker.creepSpecs.length} creeps`
       }
-      const resetIndex = listArguments.int(0, "index").parse({ min: 0, max: this.creepSpecs.length - 1 })
-      this.creepSpecs.splice(resetIndex, 1)
-      return `reset index ${resetIndex}, ${this.creepSpecs.length} creeps`
+      const resetIndex = listArguments.int(0, "index").parse({ min: 0, max: this.quadMaker.creepSpecs.length - 1 })
+      this.quadMaker.creepSpecs.splice(resetIndex, 1)
+      return `reset index ${resetIndex}, ${this.quadMaker.creepSpecs.length} creeps`
     }
 
     case "target_ids":
-      this.targetIds = []
-      return `reset target_ids ${this.targetIds.length} IDs`
+      this.quadMaker.targetIds = []
+      return `reset target_ids ${this.quadMaker.targetIds.length} IDs`
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
   }
 
-  private roomPathDescription(): string {
-    const roomNames: RoomName[] = []
-    roomNames.push(this.roomName)
-    if (this.frontBaseRoomName != null) {
-      roomNames.push(this.frontBaseRoomName)
-    }
-    roomNames.push(this.targetRoomName)
+  private launchQuadProcess(args: string[]): string {
+    const keywardArguments = new KeywordArguments(args)
+    const dryRun = keywardArguments.boolean("dry_run").parseOptional() ?? true
+    const delay = keywardArguments.int("delay").parseOptional()
 
-    return roomNames.map(roomName => roomLink(roomName)).join("=>")
+    const launchResult = this.quadMaker.launchQuadProcess(dryRun, delay)
+    switch (launchResult.resultType) {
+    case "succeeded":
+      return launchResult.value.result
+    case "failed":
+      return launchResult.reason
+    }
+  }
+}
+
+export interface QuadMakerState extends State {
+  readonly quadName: string
+  readonly roomName: RoomName
+  readonly targetRoomName: RoomName
+  readonly frontBaseRoomName: RoomName | null
+  readonly canHandleMelee: boolean
+  readonly damageTolerance: number, // 0.0~1.0
+  readonly boosts: MineralBoostConstant[],
+  readonly creepSpecs: QuadCreepSpec[],
+  readonly targetIds: Id<AnyCreep | AnyStructure>[],
+}
+
+type QuadLaunchInfoDryRun = {
+  result: string
+}
+type QuadLaunchInfoRelease = {
+  process: SpecializedQuadProcess | LaunchQuadProcess
+  result: string
+}
+type QuadLaunchInfo<DryRun extends boolean> = DryRun extends true ? QuadLaunchInfoDryRun : QuadLaunchInfoRelease
+
+interface QuadMakerInterface {
+  shortDescription(): string
+  description(): string
+  verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]>
+}
+
+export class QuadMaker implements QuadMakerInterface, Stateful {
+  private constructor(
+    public readonly quadName: string,
+    public roomName: RoomName,
+    public targetRoomName: RoomName,
+    public frontBaseRoomName: RoomName | null,
+    public canHandleMelee: boolean,
+    public damageTolerance: number,
+    public boosts: MineralBoostConstant[],
+    public creepSpecs: QuadCreepSpec[],
+    public targetIds: Id<AnyCreep | AnyStructure>[],
+  ) {
   }
 
-  private show(): string {
+  public encode(): QuadMakerState {
+    return {
+      t: "QuadMaker",
+      quadName: this.quadName,
+      roomName: this.roomName,
+      targetRoomName: this.targetRoomName,
+      frontBaseRoomName: this.frontBaseRoomName,
+      canHandleMelee: this.canHandleMelee,
+      damageTolerance: this.damageTolerance,
+      boosts: this.boosts,
+      creepSpecs: this.creepSpecs,
+      targetIds: this.targetIds,
+    }
+  }
+
+  public static decode(state: QuadMakerState): QuadMaker {
+    return new QuadMaker(
+      state.quadName,
+      state.roomName,
+      state.targetRoomName,
+      state.frontBaseRoomName,
+      state.canHandleMelee,
+      state.damageTolerance,
+      state.boosts,
+      state.creepSpecs,
+      state.targetIds,
+    )
+  }
+
+  public static create(quadName: string, roomName: RoomName, targetRoomName: RoomName): QuadMaker {
+    const frontBaseRoomName: RoomName | null = null
+    const canHandleMelee = canHandleMeleeDefaultValue
+    const damageTolerance = defaultDamageTolerance
+    const boosts: MineralBoostConstant[] = []
+    const creepSpec: QuadCreepSpec[] = []
+    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec, [])
+  }
+
+  public shortDescription(): string {
+    return `${this.quadName} ${this.roomPathDescription()}`
+  }
+
+  public description(): string {
     const quadSpec = this.createQuadSpec()
     if (typeof quadSpec === "string") {
       return `${quadSpec}:
 ${this.quadName} ${this.roomPathDescription()}
-handle melee: ${ this.canHandleMelee }
-damage tolerance: ${ this.damageTolerance }
+handle melee: ${this.canHandleMelee}
+damage tolerance: ${this.damageTolerance}
 boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
 creeps: ${this.creepSpecs.length} creeps
 targets: ${this.targetIds.length} target IDs
@@ -432,7 +483,7 @@ targets: ${this.targetIds.length} target IDs
     return descriptions.join("\n")
   }
 
-  private verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]> {
+  public verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]> {
     const warningPrefix = coloredText("[WARN]", "warn")
     const errorPrefix = coloredText("[ERROR]", "error")
     const warnings: string[] = []
@@ -543,11 +594,7 @@ targets: ${this.targetIds.length} target IDs
     return `lack of move power: tier${moveTier} ${moveCount}MOVE, ${bodyCount} body`
   }
 
-  private launchQuadProcess(args: string[]): string {
-    const keywardArguments = new KeywordArguments(args)
-    const dryRun = keywardArguments.boolean("dry_run").parseOptional() ?? true
-    const delay = keywardArguments.int("delay").parseOptional()
-
+  public launchQuadProcess<DryRun extends boolean>(dryRun: DryRun, delay: number | null): Result<QuadLaunchInfo<DryRun>, string> {
     const parameterDescriptions: string[] = []
     if (dryRun === true) {
       parameterDescriptions.push("(dry run: set dry_run=0 to launch)")
@@ -559,15 +606,16 @@ targets: ${this.targetIds.length} target IDs
     const result = this.verify()
     switch (result.resultType) {
     case "failed": {
-      return `Launch failed ${parameterDescriptions.join(", ")}\n${result.reason.join("\n")}`
+      return Result.Failed(`Launch failed ${parameterDescriptions.join(", ")}\n${result.reason.join("\n")}`)
     }
     case "succeeded": {
       if (dryRun === true) {
         const header = `Launchable ${parameterDescriptions.join(", ")}`
         if (result.value.warnings.length > 0) {
-          return `${header}\n${result.value.warnings.join("\n")}\n${this.show()}`
+          return Result.Failed(`${header}\n${result.value.warnings.join("\n")}\n${this.description()}`)
         }
-        return `${header}\n${this.show()}`
+        const launchInfo: QuadLaunchInfo<true> = { result: `${header}\n${this.description()}` }
+        return Result.Succeeded(launchInfo as QuadLaunchInfo<DryRun>)
       }
 
       const launchArguments: SpecializedQuadLaunchArguments = {
@@ -577,7 +625,7 @@ targets: ${this.targetIds.length} target IDs
         frontBaseRoomName: this.frontBaseRoomName,
       }
 
-      const process = ((): Process => {
+      const process = ((): LaunchQuadProcess | SpecializedQuadProcess => {
         if (delay != null) {
           return OperatingSystem.os.addProcess(null, processId => {
             return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay }, launchArguments, result.value.quadSpec)
@@ -590,9 +638,13 @@ targets: ${this.targetIds.length} target IDs
 
       const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
       if (result.value.warnings.length > 0) {
-        return `${launchMessage}\n${result.value.warnings.join("\n")}\n${this.show()}`
+        return Result.Failed(`${launchMessage}\n${result.value.warnings.join("\n")}\n${this.description()}`)
       }
-      return `${launchMessage}\n${this.show()}`
+      const launchInfo: QuadLaunchInfo<false> = {
+        process,
+        result: `${launchMessage}\n${this.description()}`,
+      }
+      return Result.Succeeded(launchInfo as QuadLaunchInfo<DryRun>)
     }
     }
   }
@@ -611,5 +663,16 @@ targets: ${this.targetIds.length} target IDs
       [...this.boosts],
       [...this.creepSpecs],
     )
+  }
+
+  private roomPathDescription(): string {
+    const roomNames: RoomName[] = []
+    roomNames.push(this.roomName)
+    if (this.frontBaseRoomName != null) {
+      roomNames.push(this.frontBaseRoomName)
+    }
+    roomNames.push(this.targetRoomName)
+
+    return roomNames.map(roomName => roomLink(roomName)).join("=&gt")
   }
 }
