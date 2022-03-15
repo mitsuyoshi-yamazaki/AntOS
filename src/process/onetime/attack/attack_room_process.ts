@@ -8,7 +8,7 @@ import { ProcessState } from "process/process_state"
 import { Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
-import { describeTime, roomLink } from "utility/log"
+import { coloredText, describeTime, roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { QuadCreepSpec } from "../../../../submodules/private/attack/quad/quad_spec"
@@ -121,27 +121,61 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "show_target_room_info", "erase_room_plan"]
+    const commandList = ["help", "status", "erase_room_plan", "launch"]
 
     const components = message.split(" ")
     const command = components.shift()
 
-    switch (command) {
-    case "help":
-      return `Commands: ${commandList}`
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
 
-    case "show_target_room_info":
-      return this.showTargetRoomInfo()
+      case "status":
+        return this.showTargetRoomInfo()
 
-    case "erase_room_plan":
-      if (this.targetRoomInfo.observeRecord == null) {
-        return "not observed yet"
+      case "erase_room_plan":
+        if (this.targetRoomInfo.observeRecord == null) {
+          return "not observed yet"
+        }
+        this.targetRoomInfo.observeRecord.roomPlan = null
+        return "ok"
+
+      case "launch":
+        return this.launch()
+
+      default:
+        return `Invalid command ${command}. "help" to show command list`
       }
-      this.targetRoomInfo.observeRecord.roomPlan = null
-      return "ok"
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
+  }
 
-    default:
-      return `Invalid command ${command}. "help" to show command list`
+  /** @throws */
+  private launch(): string {
+    const attackPlan = this.targetRoomInfo.observeRecord?.roomPlan?.attackPlan
+    if (attackPlan == null) {
+      throw `no attack plan for ${roomLink(this.targetRoomInfo.roomName)}`
+    }
+
+    switch (attackPlan.case) {
+    case "none":
+      throw `attack plan cannot be created: ${attackPlan.reason}`
+    case "single_quad":
+      return this.launchSingleQuadAttack(attackPlan)
+    }
+  }
+
+  /** @throws */
+  private launchSingleQuadAttack(attackPlan: AttackPlanSingleQuad): string {
+    const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
+    const launchResult = quadMaker.launchQuadProcess(false, null)
+    switch (launchResult.resultType) {
+    case "succeeded":
+      return launchResult.value.result
+    case "failed":
+      throw launchResult.reason
     }
   }
 
@@ -155,7 +189,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
       const attackPlan = targetRoomPlan.attackPlan
       switch (attackPlan.case) {
       case "none":
-        return `no attack plan: ${attackPlan.reason}`
+        return `attack plan cannot be created: ${attackPlan.reason}`
       case "single_quad": {
         const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
         return `attack plan:\n${quadMaker.description()}`
