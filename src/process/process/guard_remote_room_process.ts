@@ -206,7 +206,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       state.talkingTo,
       state.safemodeCooldown,
       state.finishCondition,
-      state.stopSpawningReasons
+      state.stopSpawningReasons,
     )
   }
 
@@ -214,7 +214,21 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const defaultFinishCondition: FinishConditionNever = {
       case: "never"
     }
-    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, 500, defaultFinishCondition, [])
+    return new GuardRemoteRoomProcess(
+      Game.time,
+      processId,
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      creepType,
+      numberOfCreeps,
+      null,
+      [],
+      {},
+      500,
+      defaultFinishCondition,
+      [],
+    )
   }
 
   public processShortDescription(): string {
@@ -656,14 +670,36 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
 
-      if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
-        const range = closestHostile.pos.getRangeTo(creep)
-        if (range <= 2) {
-          this.fleeFrom(closestHostile.pos, creep, 4)
-        } else if (range === 3) {
-          // do nothing
-        } else {
-          creep.moveTo(closestHostile)
+      const hasAttackPart = closestHostile.getActiveBodyparts(ATTACK) > 0
+      const shouldFlee = ((): boolean => {
+        if ((creep.hitsMax - creep.hits) < 300) {
+          return false
+        }
+
+        if (hasAttackPart !== true && closestHostile.getActiveBodyparts(RANGED_ATTACK) <= 0) {
+          return false
+        }
+
+        const minimumMoveCount = ((): number => {
+          const totalBodyCount = creep.body.length
+          return Math.ceil(totalBodyCount / 3)
+        })()
+
+        return (creep.getActiveBodyparts(MOVE) - 3) < minimumMoveCount
+      })()
+
+      if (shouldFlee === true) {
+        this.fleeFrom(closestHostile.pos, creep, 8)
+      } else {
+        if (hasAttackPart === true) {
+          const range = closestHostile.pos.getRangeTo(creep)
+          if (range <= 2) {
+            this.fleeFrom(closestHostile.pos, creep, 4)
+          } else if (range === 3) {
+            // do nothing
+          } else {
+            creep.moveTo(closestHostile)
+          }
         }
         moved = true
       }
