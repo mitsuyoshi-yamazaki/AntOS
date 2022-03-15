@@ -7,7 +7,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { powerName } from "utility/power"
 import { isMineralBoostConstant, isMineralCompoundConstant } from "utility/resource"
-import { isRoomName, RoomName } from "utility/room_name"
+import { RoomName } from "utility/room_name"
 import { KeywordArguments } from "../utility/keyword_argument_parser"
 import { ListArguments } from "../utility/list_argument_parser"
 
@@ -22,7 +22,7 @@ type NumberAccessorCommands = typeof numberAccessorCommands[number]
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
-  const oldCommandList = ["excluded_remotes", "wall_positions", "research_compounds", "refresh_research_labs"]
+  const oldCommandList = ["wall_positions", "research_compounds", "refresh_research_labs"]
   const commandList: string[] = [
     "help",
     "waiting_position",
@@ -69,8 +69,6 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return accessNumberProperty(command, roomResource, args)
 
     // ---- Old Commands ---- //
-  case "excluded_remotes":
-    return addExcludedRemoteRoom(roomName, roomInfo, parseProcessArguments(args))
   case "wall_positions":
     return configureWallPositions(roomName, roomInfo, parseProcessArguments(args))
   case "research_compounds":
@@ -579,27 +577,6 @@ function configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo,
   default:
     return `Invalid action ${action}`
   }
-}
-
-function addExcludedRemoteRoom(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {
-  const remoteRoomName = args.get("remote_room_name")
-  if(remoteRoomName == null) {
-    return missingArgumentError("remote_room_name")
-  }
-  if (!isRoomName(remoteRoomName)) {
-    return `Invalid remote_room_name ${remoteRoomName}`
-  }
-  if (roomInfo.config == null) {
-    roomInfo.config = {}
-  }
-  if (roomInfo.config.excludedRemotes == null) {
-    roomInfo.config.excludedRemotes = []
-  }
-  if (roomInfo.config.excludedRemotes.includes(remoteRoomName) === true) {
-    return `${roomLink(remoteRoomName)} is already excluded`
-  }
-  roomInfo.config.excludedRemotes.push(remoteRoomName)
-  return `${roomLink(remoteRoomName)} is added to excluded list in ${roomLink(roomName)}`
 }
 
 function configureWallPositions(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {

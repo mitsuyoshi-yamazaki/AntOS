@@ -79,7 +79,6 @@ export type OwnedRoomConfig = {
   disableUnnecessaryTasks?: boolean
   researchCompounds?: { [index in MineralCompoundConstant]?: number }
   collectResources?: boolean
-  excludedRemotes?: RoomName[]
   waitingPosition?: Position
   genericWaitingPositions?: Position[]
   enableAutoAttack?: boolean

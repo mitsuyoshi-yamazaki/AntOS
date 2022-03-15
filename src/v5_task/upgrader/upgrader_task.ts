@@ -17,6 +17,7 @@ import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_e
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { bodyCost } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
+import { CreepBody } from "utility/creep_body"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */

@@ -82,7 +82,6 @@ class Config {
     this.config = roomInfo.config
   }
 
-  // excludedRemotes?: RoomName[]
   // waitingPosition?: { x: number, y: number }
 
   public addGenericWaitingPositions(positions: Position[]): void {
