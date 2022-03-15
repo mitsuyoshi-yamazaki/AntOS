@@ -109,7 +109,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
         return false
       }
       const mineralMaxAmount = roomResource.roomInfoAccessor.config.mineralMaxAmount
-      if (mineralAmount > mineralMaxAmount) {
+      if (mineralAmount >= mineralMaxAmount) {
         return false
       }
       if (roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) <= 20000) {
