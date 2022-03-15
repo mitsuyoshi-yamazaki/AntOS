@@ -494,7 +494,7 @@ export class ExecCommand implements ConsoleCommand {
     const dryRun = (args.get("dry_run") === "0") !== true
 
     const room = Game.rooms[roomName]
-    if (room == null || room.controller == null || room.controller.my !== true) {
+    if (room == null) {
       return `${roomLink(roomName)} is not owned`
     }
 
@@ -588,13 +588,15 @@ export class ExecCommand implements ConsoleCommand {
     if (dryRun === true) {
       messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
     } else {
-      const result = room.controller?.unclaim()
-      switch (result) {
-      case OK:
-        break
-      default:
-        messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
-        return messages.join("\n")
+      if (room.controller != null && room.controller.my === true) {
+        const result = room.controller?.unclaim()
+        switch (result) {
+        case OK:
+          break
+        default:
+          messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
+          return messages.join("\n")
+        }
       }
 
       messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
@@ -618,13 +620,16 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private prepareUnclaim(args: string[]): CommandExecutionResult {
     const keywordArguments = new KeywordArguments(args)
-    const roomName = keywordArguments.roomName("room_name").parse({my: true})
+    const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
     const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
     const excludedResourceTypes = keywordArguments.list("excluded_resource_types", "resource").parseOptional() ?? []
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
     })
+
+    roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
 
     return `send resource process ${process.processId} launched`
   }
