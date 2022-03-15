@@ -65,4 +65,8 @@ export const StructureGameConstants = {
     cooldown: 10,
     capacity: 300000,
   },
+  tower: {
+    maxAttackPower: TOWER_POWER_ATTACK,
+    minAttackPower: 150,
+  },
 }

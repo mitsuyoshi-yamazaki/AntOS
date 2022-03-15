@@ -5,13 +5,27 @@ import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { Position } from "prototype/room_position"
+import { GameConstants } from "utility/constants"
+import { CreepBody } from "utility/creep_body"
 import { describeTime, roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
+import { QuadCreepSpec } from "../../../../submodules/private/attack/quad/quad_spec"
+import { QuadMaker, QuadMakerState } from "../quad_maker/quad_maker"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
   return AttackRoomProcess.decode(state as AttackRoomProcessState)
 })
+
+type AttackPlanNone = {
+  readonly case: "none"
+  readonly reason: string
+}
+type AttackPlanSingleQuad = {
+  readonly case: "single_quad"
+  readonly quadMakerState: QuadMakerState
+}
+type AttackPlan = AttackPlanNone | AttackPlanSingleQuad
 
 type TargetStructure<T extends Structure<BuildableStructureConstant>> = {
   readonly id: Id<T>
@@ -27,6 +41,7 @@ type Bunker = {
 type TargetRoomPlan = {
   readonly calculatedAt: Timestamp
   readonly bunkers: Bunker[]
+  readonly attackPlan: AttackPlan
 }
 
 type ObserveRecord = {
@@ -128,9 +143,22 @@ export class AttackRoomProcess implements Process, MessageObserver {
       return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
 
+    const attackPlanDescription = ((): string => {
+      const attackPlan = targetRoomPlan.attackPlan
+      switch (attackPlan.case) {
+      case "none":
+        return `no attack plan: ${attackPlan.reason}`
+      case "single_quad": {
+        const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
+        return `attack plan:\n${quadMaker.description()}`
+      }
+      }
+    })()
+
     const info: string[] = [
       `calculated at ${describeTime(Game.time - targetRoomPlan.calculatedAt)} ago, ${targetRoomPlan.bunkers.length} bunkers`,
       ...targetRoomPlan.bunkers.map(bunker => `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns`),
+      attackPlanDescription,
     ]
     return info.join("\n")
   }
@@ -183,10 +211,12 @@ export class AttackRoomProcess implements Process, MessageObserver {
       spawns: this.getStructure(STRUCTURE_SPAWN, targetRoom) as TargetStructure<StructureSpawn>[],
       targetWalls: [],  // TODO:
     }
+    const bunkers: Bunker[] = [bunker]
 
     return {
       calculatedAt: Game.time,
-      bunkers: [bunker],
+      bunkers,
+      attackPlan: this.calculateAttackPlanFor(bunkers),
     }
   }
 
@@ -211,5 +241,71 @@ export class AttackRoomProcess implements Process, MessageObserver {
         rampartHits: getRampartHits(structure),
       }
     })
+  }
+
+  private calculateAttackPlanFor(bunkers: Bunker[]): AttackPlan {
+    const towerCount = bunkers.reduce((count, bunker) => count + bunker.towers.length, 0)
+    // const estimatedWallHitsToDestroyTowers = bunkers.reduce((hits, bunker) => {
+    //   const wallHits = bunker.targetWalls.reduce((result, wall) => result + wall.rampartHits, 0)
+    //   const towerRampartHits = bunker.towers.reduce((result, tower) => result + tower.rampartHits, 0)
+    //   return hits + wallHits + towerRampartHits
+    // }, 0)
+
+    // TODO: 現状ではboostなし、RCL8想定、1Attacker,3Healer
+    try {
+      const bodyMaxLength = GameConstants.creep.body.bodyPartMaxCount
+      const healerSpec = ((): QuadCreepSpec => {
+        const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
+        const requiredHealCount = Math.ceil(requiredHealPower / GameConstants.creep.actionPower.heal)
+        const healCount = Math.max(Math.ceil(requiredHealCount / 3), 4)
+
+        const rangedAttackCount = (bodyMaxLength / 2) - healCount
+        const moveCount = healCount + rangedAttackCount
+
+        const body: BodyPartConstant[] = [
+          ...Array(rangedAttackCount).fill(RANGED_ATTACK),
+          ...Array(moveCount).fill(MOVE),
+          ...Array(healCount).fill(HEAL),
+        ]
+        if (body.length > bodyMaxLength) {
+          throw `required ${healCount}HEALs/creep (estimated body: ${CreepBody.description(body)})`
+        }
+
+        return {
+          body,
+        }
+      })()
+
+      const attackerSpec = ((): QuadCreepSpec => {
+        const attackCount = bodyMaxLength / 2
+        const moveCount = attackCount
+
+        return {
+          body: [
+            ...Array(attackCount).fill(ATTACK),
+            ...Array(moveCount).fill(MOVE),
+          ],
+        }
+      })()
+
+      const quadMaker = QuadMaker.create("auto", this.roomName, this.targetRoomInfo.roomName)
+      quadMaker.boosts = []
+      quadMaker.canHandleMelee = true
+      quadMaker.creepSpecs = [
+        ...Array(3).fill(healerSpec),
+        attackerSpec,
+      ]
+
+      return {
+        case: "single_quad",
+        quadMakerState: quadMaker.encode(),
+      }
+
+    } catch (error) {
+      return {
+        case: "none",
+        reason: `${error}`,
+      }
+    }
   }
 }
