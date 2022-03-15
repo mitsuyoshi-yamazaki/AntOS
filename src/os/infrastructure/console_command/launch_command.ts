@@ -59,7 +59,7 @@ import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_t
 import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
-// import { } from "process/onetime/attack/attack_room_process"
+import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1173,6 +1173,21 @@ ProcessLauncher.register("SignProcess", args => {
     })()
 
     return Result.Succeeded((processId) => SignProcess.create(processId, roomName, targetRoomName, sign))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("AttackRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+      throw `waypoint not set between ${roomLink(roomName)} to ${roomLink(targetRoomName)}`
+    }
+
+    return Result.Succeeded((processId) => AttackRoomProcess.create(processId, roomName, targetRoomName))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

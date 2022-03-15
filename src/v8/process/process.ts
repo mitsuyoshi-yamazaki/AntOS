@@ -13,3 +13,8 @@ export interface Process<T> extends Stateful {
 
   run(args: T): void
 }
+
+/**
+ * - run時にdriver詰め合わせを引数に入れる
+ * - 上流のprocessは下流のprocessに対してdriverを組み替えて渡し、実行後に内容を改める
+ */

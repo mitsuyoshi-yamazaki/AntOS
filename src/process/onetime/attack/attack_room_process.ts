@@ -1,31 +1,44 @@
-import { GameMap } from "game/game_map"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
-import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
+import { Position } from "prototype/room_position"
+import { describeTime, roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
-import { } from "./construction_saboteur_process"
+import { Timestamp } from "utility/timestamp"
 
 ProcessDecoder.register("AttackRoomProcess", state => {
   return AttackRoomProcess.decode(state as AttackRoomProcessState)
 })
 
+type TargetStructure<T extends Structure<BuildableStructureConstant>> = {
+  readonly id: Id<T>
+  readonly position: Position
+  readonly rampartHits: number
+}
+
+type Bunker = {
+  readonly towers: TargetStructure<StructureTower>[]
+  readonly spawns: TargetStructure<StructureSpawn>[]
+  readonly targetWalls: TargetStructure<StructureWall | StructureRampart>[]
+}
+type TargetRoomPlan = {
+  readonly calculatedAt: Timestamp
+  readonly bunkers: Bunker[]
+}
+
 type ObserveRecord = {
   readonly owner: Owner | null
   readonly safemodeEndsAt: number | null
   readonly observedAt: number
+  readonly roomPlan: TargetRoomPlan | null
 }
 
 type TargetRoomInfo = {
   readonly roomName: RoomName
   observeRecord: ObserveRecord | null
-  readonly actions: {
-    constructionSaboteur: boolean // 斥候がいなければ情報が取れないため常に実行される想定
-    dismantle: boolean
-    attack: boolean
-  }
 }
 
 type CreepKilledLog = {
@@ -42,38 +55,13 @@ type HostileStructureDestroyedLog = {
 }
 type Log = CreepKilledLog | HostileCreepKilledLog | HostileStructureDestroyedLog
 
-type ChildProcessInfo = {
-  readonly constructionSaboteurProcessId: ProcessId
-  readonly downgradeProcesId: ProcessId // 不要な場合は起動して止めておく
-  readonly dismantleProcessIds: ProcessId[]
-  readonly attackProcessIds: ProcessId[]
-}
-
 interface AttackRoomProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly targetRoomInfo: TargetRoomInfo
-  readonly childProcessInfo: ChildProcessInfo
   readonly resourceSpent: { [resourceType: string]: number }
   readonly logs: Log[]
 }
 
-/**
- * - 常にScoutする
- * - 入力
- *   - RCL
- *   - Towerの有無
- *   - Controllerの露出
- *   - Safemode
- *   - 常駐のAttacker
- * - 出力
- *   - Scout
- *   - Dismantle
- *   - Attack
- *     - Type
- *     - Size
- *   - Downgrade
- *   - Stop
- */
 export class AttackRoomProcess implements Process, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -85,7 +73,8 @@ export class AttackRoomProcess implements Process, MessageObserver {
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly targetRoomInfo: TargetRoomInfo,
-    private readonly childProcessInfo: ChildProcessInfo,
+    private readonly resourceSpent: { [resourceType: string]: number },
+    private readonly logs: Log[],
   ) {
     this.identifier = `${this.constructor.name}`
   }
@@ -97,42 +86,26 @@ export class AttackRoomProcess implements Process, MessageObserver {
       i: this.processId,
       roomName: this.roomName,
       targetRoomInfo: this.targetRoomInfo,
-      childProcessInfo: this.childProcessInfo,
+      resourceSpent: this.resourceSpent,
+      logs: this.logs,
     }
   }
 
   public static decode(state: AttackRoomProcessState): AttackRoomProcess {
-    return new AttackRoomProcess(state.l, state.i, state.roomName, state.targetRoomInfo, state.childProcessInfo)
+    return new AttackRoomProcess(state.l, state.i, state.roomName, state.targetRoomInfo, state.resourceSpent, state.logs)
   }
 
   public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName): AttackRoomProcess {
     const targetRoomInfo: TargetRoomInfo = {
       roomName: targetRoomName,
       observeRecord: null,
-      actions: {
-        constructionSaboteur: false,
-        dismantle: false,
-        attack: false,
-      }
     }
 
-    const waypoints = GameMap.getWaypoints(roomName, targetRoomName) ?? []
-    const constructionSaboteurProcess = OperatingSystem.os.addProcess(processId, childProcessId => {
-      return Season570208DismantleRcl2RoomProcess.create(childProcessId, roomName, targetRoomName, waypoints, 1)
-    })
-    constructionSaboteurProcess.setKeepSpawning()
-
-    const childProcessInfo: ChildProcessInfo = {
-      constructionSaboteurProcessId: constructionSaboteurProcess.processId,
-      dismantleProcessIds: [],
-      attackProcessIds: [],
-    }
-
-    return new AttackRoomProcess(Game.time, processId, roomName, targetRoomInfo, childProcessInfo)
+    return new AttackRoomProcess(Game.time, processId, roomName, targetRoomInfo, {}, [])
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "activate", "deactivate"]
+    const commandList = ["help", "show_target_room_info"]
 
     const components = message.split(" ")
     const command = components.shift()
@@ -141,38 +114,25 @@ export class AttackRoomProcess implements Process, MessageObserver {
     case "help":
       return `Commands: ${commandList}`
 
-    case "activate":
-      return this.toggle(components[0] ?? null, true)
-
-    case "deactivate":
-      return this.toggle(components[0] ?? null, false)
+    case "show_target_room_info":
+      return this.showTargetRoomInfo()
 
     default:
       return `Invalid command ${command}. "help" to show command list`
     }
   }
 
-  private toggle(action: string | null, activated: boolean): string {
-    const actionList = ["construction_saboteur", "dismantle", "attack"]
-    switch (action) {
-    case "construction_saboteur": {
-      const oldValue = this.targetRoomInfo.actions.constructionSaboteur
-      this.targetRoomInfo.actions.constructionSaboteur = activated
-      return `set ${action} ${oldValue} => ${activated}`
+  private showTargetRoomInfo(): string {
+    const targetRoomPlan = this.targetRoomInfo.observeRecord?.roomPlan
+    if (targetRoomPlan == null) {
+      return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
-    case "dismantle": {
-      const oldValue = this.targetRoomInfo.actions.dismantle
-      this.targetRoomInfo.actions.dismantle = activated
-      return `set ${action} ${oldValue} => ${activated}`
-    }
-    case "attack": {
-      const oldValue = this.targetRoomInfo.actions.attack
-      this.targetRoomInfo.actions.attack = activated
-      return `set ${action} ${oldValue} => ${activated}`
-    }
-    default:
-      return `Invalid action ${action}. Available actions are: ${actionList}`
-    }
+
+    const info: string[] = [
+      `calculated at ${describeTime(Game.time - targetRoomPlan.calculatedAt)} ago, ${targetRoomPlan.bunkers.length} bunkers`,
+      ...targetRoomPlan.bunkers.map(bunker => `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns`),
+    ]
+    return info.join("\n")
   }
 
   public runOnTick(): void {
@@ -180,10 +140,14 @@ export class AttackRoomProcess implements Process, MessageObserver {
     if (targetRoom == null) {
       return  // constructionSaboteurProcessが動いているはず
     }
-    if (targetRoom.controller == null) {
+    if (targetRoom.controller == null || targetRoom.controller.owner == null) {
+      PrimitiveLogger.notice(`${this.identifier} ${roomLink(this.targetRoomInfo.roomName)} is no longer occupied`)
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
+
     const controller = targetRoom.controller
+    const owner = targetRoom.controller.owner
 
     const safemodeEndsAt = ((): number | null => {
       if (controller.safeMode == null) {
@@ -192,17 +156,60 @@ export class AttackRoomProcess implements Process, MessageObserver {
       return controller.safeMode + Game.time
     })()
 
+    const targetRoomPlan = ((): TargetRoomPlan => {
+      const storedPlan = this.targetRoomInfo.observeRecord?.roomPlan
+      if (storedPlan != null) {
+        if (Game.time - storedPlan.calculatedAt < 1000) {
+          return storedPlan
+        }
+      }
+      return this.calculateRoomPlan(targetRoom)
+    })()
+
     const observeRecord: ObserveRecord = {
+      owner,
       observedAt: Game.time,
       safemodeEndsAt,
+      roomPlan: targetRoomPlan,
     }
 
     this.targetRoomInfo.observeRecord = observeRecord
   }
 
-  private shouldLaunchDowngrader(): boolean {
+  private calculateRoomPlan(targetRoom: Room): TargetRoomPlan {
+    // TODO: 複数bunkerの部屋を解釈できるようにする
+    const bunker: Bunker = {
+      towers: this.getStructure(STRUCTURE_TOWER, targetRoom) as TargetStructure<StructureTower>[],
+      spawns: this.getStructure(STRUCTURE_SPAWN, targetRoom) as TargetStructure<StructureSpawn>[],
+      targetWalls: [],  // TODO:
+    }
 
+    return {
+      calculatedAt: Game.time,
+      bunkers: [bunker],
+    }
+  }
 
-    return true // TODO:
+  private getStructure<T extends BuildableStructureConstant>(structureType: T, room: Room): TargetStructure<Structure<T>>[] {
+    const wallStructureTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    const getRampartHits = (structure: Structure<T>): number => {
+      if (wallStructureTypes.includes(structure.structureType) === true) {
+        return structure.hits
+      }
+      const rampart = structure.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } })[0]
+      if (rampart == null) {
+        return 0
+      }
+      return rampart.hits
+    }
+
+    const structures: Structure<T>[] = room.find<Structure<T>>(FIND_STRUCTURES, { filter: { structureType: structureType } })
+    return structures.map((structure): TargetStructure<Structure<T>> => {
+      return {
+        id: structure.id,
+        position: { x: structure.pos.x, y: structure.pos.y },
+        rampartHits: getRampartHits(structure),
+      }
+    })
   }
 }
