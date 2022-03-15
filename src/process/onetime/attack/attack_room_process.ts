@@ -1,3 +1,4 @@
+import { Invader } from "game/invader"
 import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
@@ -46,7 +47,7 @@ type TargetRoomPlan = {
 }
 
 type ObserveRecord = {
-  readonly owner: Owner | null
+  readonly playerName: string | null
   readonly safemodeEndsAt: number | null
   readonly observedAt: number
   roomPlan: TargetRoomPlan | null
@@ -210,16 +211,27 @@ export class AttackRoomProcess implements Process, MessageObserver {
     if (targetRoom == null) {
       return  // constructionSaboteurProcessが動いているはず
     }
-    if (targetRoom.controller == null || targetRoom.controller.owner == null) {
+
+    const playerName = ((): string | null => {
+      if (targetRoom.controller?.owner?.username != null) {
+        return targetRoom.controller.owner.username
+      }
+      if (targetRoom.roomType === "source_keeper") {
+        return Invader.username
+      }
+      return null
+    })()
+    if (playerName == null) {
       PrimitiveLogger.notice(`${this.identifier} ${roomLink(this.targetRoomInfo.roomName)} is no longer occupied`)
       OperatingSystem.os.suspendProcess(this.processId)
-      return
     }
 
     const controller = targetRoom.controller
-    const owner = targetRoom.controller.owner
 
     const safemodeEndsAt = ((): number | null => {
+      if (controller == null) {
+        return null
+      }
       if (controller.safeMode == null) {
         return null
       }
@@ -237,7 +249,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
     })()
 
     const observeRecord: ObserveRecord = {
-      owner,
+      playerName,
       observedAt: Game.time,
       safemodeEndsAt,
       roomPlan: targetRoomPlan,
