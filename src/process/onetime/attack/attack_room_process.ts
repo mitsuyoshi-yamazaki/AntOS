@@ -1,3 +1,4 @@
+import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
@@ -48,7 +49,7 @@ type ObserveRecord = {
   readonly owner: Owner | null
   readonly safemodeEndsAt: number | null
   readonly observedAt: number
-  readonly roomPlan: TargetRoomPlan | null
+  roomPlan: TargetRoomPlan | null
 }
 
 type TargetRoomInfo = {
@@ -120,7 +121,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "show_target_room_info"]
+    const commandList = ["help", "show_target_room_info", "erase_room_plan"]
 
     const components = message.split(" ")
     const command = components.shift()
@@ -131,6 +132,13 @@ export class AttackRoomProcess implements Process, MessageObserver {
 
     case "show_target_room_info":
       return this.showTargetRoomInfo()
+
+    case "erase_room_plan":
+      if (this.targetRoomInfo.observeRecord == null) {
+        return "not observed yet"
+      }
+      this.targetRoomInfo.observeRecord.roomPlan = null
+      return "ok"
 
     default:
       return `Invalid command ${command}. "help" to show command list`
@@ -205,6 +213,8 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   private calculateRoomPlan(targetRoom: Room): TargetRoomPlan {
+    processLog(this, `target room plan calculated ${roomLink(targetRoom.name)}`)
+
     // TODO: 複数bunkerの部屋を解釈できるようにする
     const bunker: Bunker = {
       towers: this.getStructure(STRUCTURE_TOWER, targetRoom) as TargetStructure<StructureTower>[],
