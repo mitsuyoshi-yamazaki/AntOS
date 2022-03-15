@@ -194,7 +194,18 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add", "remove", "show", "set_max_process_count", "add_storage_rooms", "set_power_harvesting_enabled", "set_deposit_harvesting_enabled", "launch_target"]
+    const commandList = [
+      "help",
+      "add",
+      "remove",
+      "show",
+      "status",
+      "set_max_process_count",
+      "add_storage_rooms",
+      "set_power_harvesting_enabled",
+      "set_deposit_harvesting_enabled",
+      "launch_target",
+    ]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -214,6 +225,8 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
         }
         return this.processDescription()
       }
+      case "status":
+        return this.showStatus()
       case "set_max_process_count": {
         const listArguments = new ListArguments(components)
         const maxProcessCount = listArguments.int(0, "max process count").parse({ min: 0 })
@@ -245,6 +258,10 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
+  }
+
+  private showStatus(): string {
+    return this.bases.map(base => roomLink(base.roomName)).join(",")
   }
 
   /** @throws */
