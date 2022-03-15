@@ -469,21 +469,21 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
         this.addScout()
       }
     } else {
-      if (rangedAttackerCount < this.rangedAttackerSpec.maxCount) {
-        const hostileExists = targetRoom.find(FIND_HOSTILE_CREEPS).filter(creep => {
-          if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
-            return false
-          }
-          if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
-            return false
-          }
-          return (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(CARRY) > 0)
-        }).length > 0
+      // if (rangedAttackerCount < this.rangedAttackerSpec.maxCount) {
+      //   const hostileExists = targetRoom.find(FIND_HOSTILE_CREEPS).filter(creep => {
+      //     if (this.whitelistedUsernames.includes(creep.owner.username) === true) {
+      //       return false
+      //     }
+      //     if (creep.getActiveBodyparts(MOVE) <= 0 && creep.getActiveBodyparts(HEAL) <= 0) {
+      //       return false
+      //     }
+      //     return (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(CARRY) > 0)
+      //   }).length > 0
 
-        if (hostileExists === true) {
-          this.addRangedAttacker()
-        }
-      }
+      //   if (hostileExists === true) {
+      //     this.addRangedAttacker()
+      //   }
+      // }
 
       if (this.pickupFinished !== true) {
         const whitelistedHarvestCreep = ((): Creep | null => {
