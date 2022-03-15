@@ -17,13 +17,11 @@ import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest } from "v5_t
 import { bodyCost, createCreepBody, CreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { World } from "world_info/world_info"
-import { RandomMoveTask } from "v5_object_task/creep_task/meta_task/random_move_task"
 import { RoomResources } from "room_resource/room_resources"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { decodeRoomPosition } from "prototype/room_position"
-
-let randomSeed = 0
+import { SwapNearbyCreepPositionTask } from "v5_object_task/creep_task/meta_task/swap_nearby_creep_position_task"
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -197,11 +195,8 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         this.saying = Game.time
         creep.say("no task1")
       }
-      if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
-        randomSeed += 1
-        if ((Game.time + this.startTime + randomSeed) % 4 === 0) {
-          return RandomMoveTask.create()
-        }
+      if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 5) {
+        return SwapNearbyCreepPositionTask.create({ onRoadOnly: true })
       }
       return null
     }
@@ -257,8 +252,8 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       this.saying = Game.time
       creep.say("no task2")
     }
-    if (objects.activeStructures.spawns[0] != null && creep.pos.getRangeTo(objects.activeStructures.spawns[0].pos) < 5) {
-      return this.randomMoveTask(creep, objects.activeStructures.spawns[0].pos)
+    if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 5) {
+      return SwapNearbyCreepPositionTask.create({ onRoadOnly: true })
     }
     return null
   }

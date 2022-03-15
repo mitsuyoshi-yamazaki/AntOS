@@ -27,6 +27,7 @@ import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_a
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { Environment } from "utility/environment"
 import { RoomResources } from "room_resource/room_resources"
+import { SwapNearbyCreepPositionTask } from "v5_object_task/creep_task/meta_task/swap_nearby_creep_position_task"
 
 export interface OwnedRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -300,6 +301,9 @@ export class OwnedRoomHaulerTask extends Task {
         return MoveToTargetTask.create(GetEnergyApiWrapper.create(energySource))
       }
       creep.say("ns")
+      if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 5) {
+        return SwapNearbyCreepPositionTask.create({onRoadOnly: true})
+      }
       return null
     }
 
