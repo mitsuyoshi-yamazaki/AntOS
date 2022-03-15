@@ -9,7 +9,7 @@ import { ProcessState } from "process/process_state"
 import { Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
-import { coloredText, describeTime, roomLink } from "utility/log"
+import { coloredText, describeTime, roomLink, shortenedNumber } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { QuadCreepSpec } from "../../../../submodules/private/attack/quad/quad_spec"
@@ -186,14 +186,28 @@ export class AttackRoomProcess implements Process, MessageObserver {
       return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
 
-    const attackPlanDescription = ((): string => {
+    const { attackPlanDescription, totalDismantlePower } = ((): { attackPlanDescription: string, totalDismantlePower: number } => {
       const attackPlan = targetRoomPlan.attackPlan
       switch (attackPlan.case) {
       case "none":
-        return `attack plan cannot be created: ${attackPlan.reason}`
+        return {
+          attackPlanDescription: `attack plan cannot be created: ${attackPlan.reason}`,
+          totalDismantlePower: 0,
+        }
       case "single_quad": {
         const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
-        return `attack plan:\n${quadMaker.description()}`
+        const totalDismantlePower = ((): number => {
+          const quadSpec = quadMaker.currentQuadSpec()
+          if (quadSpec == null) {
+            return 0
+          }
+          const quadPower = quadSpec.totalPower()
+          return quadPower.attack + quadPower.ranged_attack + quadPower.dismantle
+        })()
+        return {
+          attackPlanDescription: `attack plan:\n${quadMaker.description()}`,
+          totalDismantlePower,
+        }
       }
       }
     })()
@@ -202,8 +216,13 @@ export class AttackRoomProcess implements Process, MessageObserver {
       const wallHits = bunker.targetWalls.reduce((result, wall) => result + wall.rampartHits, 0)
       const towerRampartHits = bunker.towers.reduce((result, tower) => result + tower.rampartHits, 0)
       const estimatedWallHitsToDestroyTowers = wallHits + towerRampartHits
+      const estimatedDestroyTime = describeTime(Math.ceil(estimatedWallHitsToDestroyTowers / totalDismantlePower))
 
-      return `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns, estimated hits to destroy towers: ${estimatedWallHitsToDestroyTowers}`
+      return [
+        `- ${bunker.towers.length} towers`,
+        `${bunker.spawns.length} spawns`,
+        `estimated hits to destroy towers: ${shortenedNumber(estimatedWallHitsToDestroyTowers)} (${estimatedDestroyTime})`
+      ].join(", ")
     })
     const info: string[] = [
       `calculated at ${describeTime(Game.time - targetRoomPlan.calculatedAt)} ago, ${targetRoomPlan.bunkers.length} bunkers`,

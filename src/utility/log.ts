@@ -42,11 +42,18 @@ export function tab(text: string, tabs: Tab): string {
   return `${text}${spacer}`
 }
 
-export function describeTime(ticks: Timestamp): string {
-  if (ticks < 1000) {
-    return `${ticks} ticks`
+export function shortenedNumber(num: number): string {
+  if (num < 1000) {
+    return `${num}`
   }
-  return `${Math.floor(ticks / 1000)}k ticks`
+  if (num < 1000000) {
+    return `${Math.floor(num / 1000)}k`
+  }
+  return `${Math.floor(num / 1000000)}M`
+}
+
+export function describeTime(ticks: Timestamp): string {
+  return `${shortenedNumber(ticks)} ticks`
 }
 
 function baseUrl(): string {

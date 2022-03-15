@@ -90,6 +90,7 @@ export const GameConstants = {
       harvestDeposit: HARVEST_DEPOSIT_POWER,
       heal: HEAL_POWER,
       repair: REPAIR_POWER,
+      dismantle: DISMANTLE_POWER,
     },
     actionCost: creepActionEnergyCost,
     boostCost: LAB_BOOST_MINERAL,

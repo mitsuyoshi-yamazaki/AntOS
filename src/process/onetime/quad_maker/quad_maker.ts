@@ -35,7 +35,9 @@ type QuadLaunchInfo<DryRun extends boolean> = DryRun extends true ? QuadLaunchIn
 interface QuadMakerInterface {
   shortDescription(): string
   description(): string
+  currentQuadSpec(): QuadSpec | null
   verify(): Result<{ quadSpec: QuadSpec, warnings: string[] }, string[]>
+  launchQuadProcess<DryRun extends boolean>(dryRun: DryRun, delay: number | null): Result<QuadLaunchInfo<DryRun>, string>
 }
 
 export class QuadMaker implements QuadMakerInterface, Stateful {
@@ -284,6 +286,14 @@ targets: ${this.targetIds.length} target IDs
       return Result.Succeeded(launchInfo as QuadLaunchInfo<DryRun>)
     }
     }
+  }
+
+  public currentQuadSpec(): QuadSpec | null {
+    const quadSpec = this.createQuadSpec()
+    if (typeof quadSpec === "string") {
+      return null
+    }
+    return quadSpec
   }
 
   private createQuadSpec(): QuadSpec | string {
