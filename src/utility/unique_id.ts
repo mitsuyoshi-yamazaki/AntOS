@@ -98,10 +98,7 @@ export function generateSweetName(fixedParameter: string, flexibleParameter: num
 
 /** @deprecated UniqueId.generateCodename()を使用 */
 export function generateCodename(fixedParameter: string, flexibleParameter: number): string {
-  //   const adjectiveIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % adjectives.length
-  //   const sweetIndex = flexibleParameter % sweets.length
-  //   return `${adjectives[adjectiveIndex]}_${sweets[sweetIndex]}`
-  const firstIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % radix
+  const firstIndex = ((fixedParameter.charCodeAt(0) + fixedParameter.length) % (radix - 10)) + 10 // 数字から始まらないように
   const secondIndex = flexibleParameter % radix
   return `${firstIndex.toString(radix)}${secondIndex.toString(radix)}`
 }
