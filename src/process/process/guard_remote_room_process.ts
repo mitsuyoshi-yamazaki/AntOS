@@ -685,11 +685,13 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
           return Math.ceil(totalBodyCount / 3)
         })()
 
-        return (creep.getActiveBodyparts(MOVE) - 3) < minimumMoveCount
+        return (creep.getActiveBodyparts(MOVE) - 6) < minimumMoveCount
       })()
 
       if (shouldFlee === true) {
+        creep.say("flee")
         this.fleeFrom(closestHostile.pos, creep, 8)
+        moved = true
       } else {
         const range = closestHostile.pos.getRangeTo(creep)
         if (hasAttackPart === true) {
