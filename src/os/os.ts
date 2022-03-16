@@ -168,6 +168,7 @@ export class OperatingSystem {
   private readonly rootProcess = new RootProcess()
   private readonly processStore = new ProcessStore()
   private readonly processIdsToKill: ProcessId[] = []
+  private processIdsToSuspend: ProcessId[] = []
 
   private constructor() {
     // !!!! 起動処理がOSアクセスを行う場合があるため、起動時に一度だけ行う処理はsetup()内部で実行すること !!!! //
@@ -184,6 +185,17 @@ export class OperatingSystem {
 
   public processOf(processId: ProcessId): Process | null {
     return this.processStore.get(processId)?.process ?? null
+  }
+
+  /**
+   * suspendを予約する。実行されるのはstoreProcesses()の前
+   * OSの起動中などに予約したい場合に用いる
+   */
+  public queueProcessSuspend(processId: ProcessId): void {
+    if (this.processIdsToSuspend.includes(processId) === true) {
+      return
+    }
+    this.processIdsToSuspend.push(processId)
   }
 
   public suspendProcess(processId: ProcessId): Result<string, string> {
@@ -295,6 +307,10 @@ export class OperatingSystem {
     ErrorMapper.wrapLoop(() => {
       this.executeAsynchronousTasks()
     }, "OperatingSystem.executeAsynchronousTasks()")()
+
+    ErrorMapper.wrapLoop(() => {
+      this.suspendQueuedProcesses()
+    }, "OperatingSystem.suspendQueuedProcesses()")()
 
     ErrorMapper.wrapLoop(() => {
       this.killProcesses()
@@ -419,6 +435,28 @@ export class OperatingSystem {
 
   private sendOSError(message: string): void {
     PrimitiveLogger.fatal(`[OS Error] ${message}`)
+  }
+
+  private suspendQueuedProcesses(): void {
+    const messages: string[] = []
+
+    this.processIdsToSuspend.forEach(processId => {
+      const result = this.suspendProcess(processId)
+      switch (result.resultType) {
+      case "succeeded":
+        messages.push(result.value)
+        break
+      case "failed":
+        messages.push(result.reason)
+        break
+      }
+    })
+
+    this.processIdsToSuspend = []
+
+    if (messages.length > 0) {
+      PrimitiveLogger.log(`Suspend process\n${messages.join("\n")}`)
+    }
   }
 
   // ---- Kill ---- //
