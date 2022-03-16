@@ -676,7 +676,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
           return false
         }
 
-        if (hasAttackPart !== true && closestHostile.getActiveBodyparts(RANGED_ATTACK) <= 0) {
+        if (hasAttackPart !== true && closestHostile.getActiveBodyparts(RANGED_ATTACK) <= 5) {
           return false
         }
 
@@ -691,8 +691,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       if (shouldFlee === true) {
         this.fleeFrom(closestHostile.pos, creep, 8)
       } else {
+        const range = closestHostile.pos.getRangeTo(creep)
         if (hasAttackPart === true) {
-          const range = closestHostile.pos.getRangeTo(creep)
           if (range <= 2) {
             this.fleeFrom(closestHostile.pos, creep, 4)
           } else if (range === 3) {
@@ -700,6 +700,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
           } else {
             creep.moveTo(closestHostile)
           }
+        } else {
+          creep.moveTo(closestHostile)
         }
         moved = true
       }
