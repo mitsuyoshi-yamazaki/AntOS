@@ -1196,11 +1196,11 @@ ProcessLauncher.register("AttackRoomProcess", args => {
 
 ProcessLauncher.register("DraftingRoomProcess", args => {
   try {
-    const roomCoordinate = args.roomCoordinate("room_name").parse({ my: true })
-    const observer = args.visibleGameObject("observer_id").parse({ inRoomName: roomCoordinate.roomName })
+    const observer = args.visibleGameObject("observer_id").parse()
     if (!(observer instanceof StructureObserver)) {
       throw `${observer} is not StructureObserver`
     }
+    const roomCoordinate = observer.room.coordinate
 
     return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate))
   } catch (error) {
