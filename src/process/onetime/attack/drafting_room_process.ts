@@ -12,6 +12,8 @@ import { OperatingSystem } from "os/os"
 import { AttackPlanner } from "./attack_planner"
 import { AttackRoomProcess } from "./attack_room_process"
 import { processLog } from "os/infrastructure/logger"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)
@@ -46,14 +48,19 @@ type CheckedRooms = {
   }
 }
 
+type Options = {
+  dryRun: boolean
+}
+
 export interface DraftingRoomProcessState extends ProcessState {
   readonly roomCoordinateState: RoomCoordinateState
   readonly runningState: RunningState
   readonly observerId: Id<StructureObserver>
   readonly checkedRooms: CheckedRooms
+  readonly options: Options
 }
 
-export class DraftingRoomProcess implements Process, Procedural {
+export class DraftingRoomProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
   private readonly roomName: RoomName
@@ -65,6 +72,7 @@ export class DraftingRoomProcess implements Process, Procedural {
     private readonly observerId: Id<StructureObserver>,
     private runningState: RunningState,
     private checkedRooms: CheckedRooms,
+    private readonly options: Options,
   ) {
     const roomName = this.roomCoordinate.roomName
     this.taskIdentifier = `${this.constructor.name}_${roomName}`
@@ -80,22 +88,26 @@ export class DraftingRoomProcess implements Process, Procedural {
       observerId: this.observerId,
       runningState: this.runningState,
       checkedRooms: this.checkedRooms,
+      options: this.options,
     }
   }
 
   public static decode(state: DraftingRoomProcessState): DraftingRoomProcess {
-    return new DraftingRoomProcess(state.l, state.i, RoomCoordinate.decode(state.roomCoordinateState), state.observerId, state.runningState, state.checkedRooms)
+    return new DraftingRoomProcess(state.l, state.i, RoomCoordinate.decode(state.roomCoordinateState), state.observerId, state.runningState, state.checkedRooms, state.options)
   }
 
-  public static create(processId: ProcessId, observer: StructureObserver, roomCoordinate: RoomCoordinate): DraftingRoomProcess {
+  public static create(processId: ProcessId, observer: StructureObserver, roomCoordinate: RoomCoordinate, dryRun: boolean): DraftingRoomProcess {
     PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} DraftingRoomProcess exclusively uses observer: make sure other processes don't use it.`)
 
     const runningState: RunningStateWaiting = {
       case: "waiting",
       nextRun: Game.time + 1,
     }
+    const options: Options = {
+      dryRun,
+    }
 
-    return new DraftingRoomProcess(Game.time, processId, roomCoordinate, observer.id, runningState, createEmptyCheckedRooms())
+    return new DraftingRoomProcess(Game.time, processId, roomCoordinate, observer.id, runningState, createEmptyCheckedRooms(), options)
   }
 
   public processShortDescription(): string {
@@ -109,6 +121,31 @@ export class DraftingRoomProcess implements Process, Procedural {
     ]
 
     return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "set_dry_run"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "set_dry_run": {
+        const listArguments = new ListArguments(components)
+        const dryRun = listArguments.boolean(0, "dry run").parse()
+        this.options.dryRun = dryRun
+        return "ok"
+      }
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
@@ -253,11 +290,15 @@ export class DraftingRoomProcess implements Process, Procedural {
 
     this.checkedRooms.results.attackableRoomNames.push(targetRoom.name)
 
-    const attackProcess = OperatingSystem.os.addProcess(null, processId => {
-      return AttackRoomProcess.create(processId, this.roomName, targetRoom, attackPlanner)
-    })
+    if (this.options.dryRun === true) {
+      processLog(this, `(dry run) ${attackPlan.case} attack plan for ${roomLink(targetRoom.name)}`)
+    } else {
+      const attackProcess = OperatingSystem.os.addProcess(null, processId => {
+        return AttackRoomProcess.create(processId, this.roomName, targetRoom, attackPlanner)
+      })
 
-    processLog(this, `launched AttackRoomProcess ${attackProcess.processId} with ${attackPlan.case} attack plan for ${roomLink(targetRoom.name)}`)
+      processLog(this, `launched AttackRoomProcess ${attackProcess.processId} with ${attackPlan.case} attack plan for ${roomLink(targetRoom.name)}`)
+    }
   }
 
   private getTargetRoomName(relativePosition: Position): RoomName {
