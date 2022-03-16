@@ -402,7 +402,11 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     const targetRoomName = this.getTargetRoomName(relativeRoomPosition)
     const targetRoom = Game.rooms[targetRoomName]
     if (targetRoom == null) {
-      PrimitiveLogger.programError(`${this.taskIdentifier} target room ${roomLink(targetRoomName)} is not visible`)
+      const roomStatus = Game.map.getRoomStatus(targetRoomName)
+      if (roomStatus != null && roomStatus.status === "closed") {
+        return
+      }
+      PrimitiveLogger.programError(`${this.taskIdentifier} target room ${roomLink(targetRoomName)} is not visible (status: ${roomStatus?.status})`)
       return
     }
 
