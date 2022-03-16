@@ -26,6 +26,8 @@ import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { execCreepCommand } from "./exec_commands/creep_command"
 import { CronProcess } from "process/onetime/cron_process"
+import { AttackPlanner } from "process/onetime/attack/attack_planner"
+import { QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -71,6 +73,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.powerCreep(args)
       case "room_path_finding":
         return this.roomPathFinding(args)
+      case "attack_plan":
+        return this.attackPlan(args)
       case "cron":
         return this.cron(args)
       case "script":
@@ -656,6 +660,37 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private roomPathFinding(args: string[]): CommandExecutionResult {
     return execRoomPathfindingCommand(args)
+  }
+
+  /** @throws */
+  private attackPlan(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const targetRoomName = listArguments.roomName(0, "target room name").parse()
+    const targetRoom = Game.rooms[targetRoomName]
+
+    if (targetRoom == null) {
+      const observer = listArguments.visibleGameObject(1, "observer id").parse()
+      if (!(observer instanceof StructureObserver)) {
+        throw `${observer} is not StructureObserver`
+      }
+      const observeResult = observer.observeRoom(targetRoomName)
+      if (observeResult !== OK) {
+        throw `observing ${roomLink(targetRoomName)} from ${roomLink(observer.room.name)} failed with ${observeResult}`
+      }
+      return `observing ${roomLink(targetRoomName)}. execute the same command in the next tick`
+    }
+
+    const attackPlanner = new AttackPlanner.Planner(targetRoom)
+    const targetRoomPlan = attackPlanner.targetRoomPlan
+
+    switch (targetRoomPlan.attackPlan.case) {
+    case "none":
+      return `no attack plan for ${roomLink(targetRoomName)}: ${targetRoomPlan.attackPlan.reason}`
+    case "single_quad": {
+      const quadSpec = QuadSpec.decode(targetRoomPlan.attackPlan.quadSpecState)
+      return `single quad plan:\n${quadSpec.description()}`
+    }
+    }
   }
 
   /** @throws */

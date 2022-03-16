@@ -1,10 +1,9 @@
 import { Position } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
-import { QuadMaker, QuadMakerState } from "../quad_maker/quad_maker"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
-import { QuadCreepSpec } from "../../../../submodules/private/attack/quad/quad_spec"
-import { RoomName } from "utility/room_name"
+import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
+import { shortenedNumber } from "utility/log"
 
 /**
  * - どの入り口から入るか、どのwallを攻撃するか最初は手動で設定する
@@ -17,7 +16,7 @@ export namespace AttackPlanner {
   }
   export type AttackPlanSingleQuad = {
     readonly case: "single_quad"
-    readonly quadMakerState: QuadMakerState
+    readonly quadSpecState: QuadSpecState
   }
   export type AttackPlan = AttackPlanNone | AttackPlanSingleQuad
 
@@ -45,8 +44,6 @@ export namespace AttackPlanner {
     public readonly targetRoomPlan: TargetRoomPlan
 
     public constructor(
-      private readonly parentRoomName: RoomName,
-
       /// Occupyされている部屋
       private readonly targetRoom: Room,
     ) {
@@ -95,15 +92,18 @@ export namespace AttackPlanner {
     private calculateAttackPlanFor(bunkers: Bunker[]): AttackPlan {
       const towerCount = bunkers.reduce((count, bunker) => count + bunker.towers.length, 0)
 
-      // TODO: 現状ではboostなし、RCL8想定、1Attacker,3Healer
+      // TODO: 現状ではboostなし、parent roomはRCL8想定、1Attacker,3Healer
       try {
         const bodyMaxLength = GameConstants.creep.body.bodyPartMaxCount
-        const healerSpec = ((): QuadCreepSpec => {
+        const healerCount = 3
+        const boosts: MineralBoostConstant[] = []
+
+        const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
           const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
           const requiredHealCount = Math.ceil(requiredHealPower / GameConstants.creep.actionPower.heal)
-          const healCount = Math.max(Math.ceil(requiredHealCount / 3), 4)
+          const healCount = Math.max(Math.ceil(requiredHealCount / healerCount), 4)
 
-          const rangedAttackCount = (bodyMaxLength / 2) - healCount
+          const rangedAttackCount = Math.max((bodyMaxLength / 2) - healCount, 0)
           const moveCount = healCount + rangedAttackCount
 
           const body: BodyPartConstant[] = [
@@ -115,34 +115,113 @@ export namespace AttackPlanner {
             throw `required ${healCount}HEALs/creep (estimated body: ${CreepBody.description(body)})`
           }
 
+          const rangedAttackPower = rangedAttackCount * healerCount
+
           return {
-            body,
+            healerSpec: {
+              body,
+            },
+            rangedAttackPower,
           }
         })()
 
-        const attackerSpec = ((): QuadCreepSpec => {
-          const attackCount = bodyMaxLength / 2
-          const moveCount = attackCount
+        const { attackerSpec, canHandleMelee } = ((): { attackerSpec: QuadCreepSpec, canHandleMelee: boolean} => {
+          const totalWallHits = bunkers.reduce((total, bunker) => {
+            const bunkerStructures: { rampartHits: number }[] = [
+              ...bunker.spawns,
+              ...bunker.towers,
+              ...bunker.targetWalls,
+            ]
+            return total + bunkerStructures.reduce((result, structure) => result + structure.rampartHits, 0)
+          }, 0)
+          const attackDuration = 1000
+          const requiredTotalDismantlePower = Math.ceil(totalWallHits / attackDuration)
+          const requiredDismantlePower = Math.max(requiredTotalDismantlePower - rangedAttackPower, 0)
 
-          return {
-            body: [
-              ...Array(attackCount).fill(ATTACK),
-              ...Array(moveCount).fill(MOVE),
-            ],
+          const hasEnoughAttackPower = rangedAttackPower > 400
+
+          if (hasEnoughAttackPower === true) {
+            const workCount = bodyMaxLength / 2
+            const maxDismantlePower = workCount * GameConstants.creep.actionPower.dismantle
+            const boost = Math.ceil(requiredDismantlePower / maxDismantlePower)
+            switch (boost) {
+            case 0:
+            case 1:
+              break
+            case 2:
+              boosts.push(RESOURCE_ZYNTHIUM_HYDRIDE)
+              break
+            case 3:
+              boosts.push(RESOURCE_ZYNTHIUM_ACID)
+              break
+            case 4:
+              boosts.push(RESOURCE_CATALYZED_ZYNTHIUM_ACID)
+              break
+            default:
+              throw `not enough dismantle power, required: ${shortenedNumber(requiredDismantlePower)}, total wall hits: ${shortenedNumber(totalWallHits)}, estimated boost: ${boost}x`
+            }
+
+            const moveCount = bodyMaxLength - workCount
+            return {
+              attackerSpec: {
+                body: [
+                  ...Array(workCount).fill(WORK),
+                  ...Array(moveCount).fill(MOVE),
+                ],
+              },
+              canHandleMelee: false,
+            }
+
+          } else {
+            const attackCount = bodyMaxLength / 2
+            const maxAttackPower = attackCount * GameConstants.creep.actionPower.attack
+            const boost = Math.ceil(requiredDismantlePower / maxAttackPower)
+            switch (boost) {
+            case 0:
+            case 1:
+              break
+            case 2:
+              boosts.push(RESOURCE_UTRIUM_HYDRIDE)
+              break
+            case 3:
+              boosts.push(RESOURCE_UTRIUM_ACID)
+              break
+            case 4:
+              boosts.push(RESOURCE_CATALYZED_UTRIUM_ACID)
+              break
+            default:
+              throw `not enough attack power, required: ${shortenedNumber(requiredDismantlePower)}, total wall hits: ${shortenedNumber(totalWallHits)}, estimated boost: ${boost}x`
+            }
+
+            const moveCount = bodyMaxLength - attackCount
+
+            return {
+              attackerSpec: {
+                body: [
+                  ...Array(attackCount).fill(ATTACK),
+                  ...Array(moveCount).fill(MOVE),
+                ],
+              },
+              canHandleMelee: true,
+            }
           }
         })()
 
-        const quadMaker = QuadMaker.create("auto", this.parentRoomName, this.targetRoom.name)
-        quadMaker.boosts = []
-        quadMaker.canHandleMelee = true
-        quadMaker.creepSpecs = [
+        const creepSpecs: QuadCreepSpec[] = [
           ...Array(3).fill(healerSpec),
           attackerSpec,
         ]
+        const quadSpec = new QuadSpec(
+          `auto_${this.targetRoom.name}`,
+          canHandleMelee,
+          QuadSpec.defaultDamageTolerance,
+          boosts,
+          creepSpecs,
+        )
 
         return {
           case: "single_quad",
-          quadMakerState: quadMaker.encode(),
+          quadSpecState: quadSpec.encode(),
         }
 
       } catch (error) {

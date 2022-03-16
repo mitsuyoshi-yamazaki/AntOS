@@ -284,7 +284,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       return
     }
 
-    const attackPlanner = new AttackPlanner.Planner(this.roomName, targetRoom)
+    const attackPlanner = new AttackPlanner.Planner(targetRoom)
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
     if (attackPlan.case === "none") {
       PrimitiveLogger.programError(`${this.taskIdentifier} cannot calculate attack plan for ${roomLink(targetRoomName)}`)
@@ -449,7 +449,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
   }
 
   private calculateAttackPlan(targetRoom: Room, ownerName: string): void {
-    const attackPlanner = new AttackPlanner.Planner(this.roomName, targetRoom)
+    const attackPlanner = new AttackPlanner.Planner(targetRoom)
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
 
     const getCheckedRoomList = (checkedRooms: CheckedRoom, ownerName: string): RoomName[] => {

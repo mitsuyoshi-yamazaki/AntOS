@@ -5,7 +5,7 @@ import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { QuadCreepSpec } from "../../../../submodules/private/attack/quad/quad_spec"
+import { QuadCreepSpec, QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
 import { isMineralBoostConstant } from "utility/resource"
 import { CreepBody, isBodyPartConstant } from "utility/creep_body"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
@@ -322,11 +322,11 @@ commands: ${commands}
 
     switch (argument) {
     case "handle_melee":
-      this.quadMaker.canHandleMelee = QuadMaker.canHandleMeleeDefaultValue
+      this.quadMaker.canHandleMelee = QuadSpec.canHandleMeleeDefaultValue
       return `reset handle_melee to default value ${this.quadMaker.canHandleMelee}`
 
     case "damage_tolerance":
-      this.quadMaker.damageTolerance = QuadMaker.defaultDamageTolerance
+      this.quadMaker.damageTolerance = QuadSpec.defaultDamageTolerance
       return `reset damage_tolerance to default value ${this.quadMaker.damageTolerance}`
 
     case "boosts":

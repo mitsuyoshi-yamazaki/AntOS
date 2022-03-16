@@ -5,8 +5,9 @@ import { OperatingSystem } from "os/os"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
-import { coloredText, describeTime, profileLink, roomLink, shortenedNumber } from "utility/log"
+import { coloredResourceType, coloredText, describeTime, profileLink, roomLink, shortenedNumber } from "utility/log"
 import { RoomName } from "utility/room_name"
+import { QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
 import { QuadMaker } from "../quad_maker/quad_maker"
 import { AttackPlanner } from "./attack_planner"
 
@@ -173,7 +174,13 @@ export class AttackRoomProcess implements Process, MessageObserver {
 
   /** @throws */
   private launchSingleQuadAttack(attackPlan: AttackPlanner.AttackPlanSingleQuad): string {
-    const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
+    const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
+    const quadMaker = QuadMaker.create(quadSpec, this.roomName, this.targetRoomInfo.roomName)
+
+    if (quadMaker.boosts.length > 0) {
+      throw `boosted quad is not supported yet (required: ${quadMaker.boosts.map(boost => coloredResourceType(boost)).join(",")})`
+    }
+
     const launchResult = quadMaker.launchQuadProcess(false, null)
     switch (launchResult.resultType) {
     case "succeeded":
@@ -198,7 +205,8 @@ export class AttackRoomProcess implements Process, MessageObserver {
           totalDismantlePower: 0,
         }
       case "single_quad": {
-        const quadMaker = QuadMaker.decode(attackPlan.quadMakerState)
+        const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
+        const quadMaker = QuadMaker.create(quadSpec, this.roomName, this.targetRoomInfo.roomName)
         const totalDismantlePower = ((): number => {
           const quadSpec = quadMaker.currentQuadSpec()
           if (quadSpec == null) {
@@ -279,7 +287,7 @@ function observe(parentRoomName: RoomName, targetRoom: Room, calculatedTargetRoo
     if (calculatedTargetRoomPlan != null) {
       return calculatedTargetRoomPlan
     }
-    const planner = new AttackPlanner.Planner(parentRoomName, targetRoom)
+    const planner = new AttackPlanner.Planner(targetRoom)
     return planner.targetRoomPlan
   })()
 

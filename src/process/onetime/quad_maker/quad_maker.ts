@@ -41,9 +41,6 @@ interface QuadMakerInterface {
 }
 
 export class QuadMaker implements QuadMakerInterface, Stateful {
-  public static readonly canHandleMeleeDefaultValue = false
-  public static readonly  defaultDamageTolerance = 0.15
-
   private constructor(
     public readonly quadName: string,
     public roomName: RoomName,
@@ -86,13 +83,31 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
     )
   }
 
-  public static create(quadName: string, roomName: RoomName, targetRoomName: RoomName): QuadMaker {
+  public static create(quadSpec: QuadSpec, roomName: RoomName, targetRoomName: RoomName): QuadMaker
+  public static create(quadName: string, roomName: RoomName, targetRoomName: RoomName): QuadMaker
+  public static create(arg: string | QuadSpec, roomName: RoomName, targetRoomName: RoomName): QuadMaker {
+    const { quadName, canHandleMelee, boosts, damageTolerance, creepSpecs } = ((): { quadName: string, canHandleMelee: boolean, damageTolerance: number, boosts: MineralBoostConstant[], creepSpecs: QuadCreepSpec[] } => {
+      if (typeof arg === "string") {
+        return {
+          quadName: arg,
+          canHandleMelee: QuadSpec.canHandleMeleeDefaultValue,
+          damageTolerance: QuadSpec.defaultDamageTolerance,
+          boosts: [],
+          creepSpecs: [],
+        }
+      } else {
+        const quadSpec = arg
+        return {
+          quadName: quadSpec.shortDescription,
+          canHandleMelee: quadSpec.canHandleMelee,
+          damageTolerance: quadSpec.defaultDamageTolerance,
+          boosts: quadSpec.boosts,
+          creepSpecs: quadSpec.creepSpecs,
+        }
+      }
+    })()
     const frontBaseRoomName: RoomName | null = null
-    const canHandleMelee = QuadMaker.canHandleMeleeDefaultValue
-    const damageTolerance = QuadMaker.defaultDamageTolerance
-    const boosts: MineralBoostConstant[] = []
-    const creepSpec: QuadCreepSpec[] = []
-    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpec, [])
+    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [])
   }
 
   public shortDescription(): string {
