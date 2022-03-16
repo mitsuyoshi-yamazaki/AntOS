@@ -8,7 +8,7 @@ import { Result, ResultFailed } from "utility/result"
 import { OperatingSystem } from "os/os"
 import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
 import { GameMap } from "game/game_map"
-import { LaunchQuadProcess } from "../attack/launch_quad_process"
+import { LaunchQuadProcess } from "./launch_quad_process"
 import { State, Stateful } from "os/infrastructure/state"
 
 export interface QuadMakerState extends State {
