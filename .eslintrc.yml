@@ -36,3 +36,4 @@ rules:
   "@typescript-eslint/no-empty-function": off
   "@typescript-eslint/strict-boolean-expressions":
     - error
+  "@typescript-eslint/no-namespace": off
