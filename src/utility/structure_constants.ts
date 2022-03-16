@@ -69,4 +69,7 @@ export const StructureGameConstants = {
     maxAttackPower: TOWER_POWER_ATTACK,
     minAttackPower: 150,
   },
+  observer: {
+    maxRange: OBSERVER_RANGE,
+  },
 }

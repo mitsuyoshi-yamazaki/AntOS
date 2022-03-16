@@ -60,6 +60,7 @@ import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operat
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
 import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+import { DraftingRoomProcess } from "process/onetime/attack/drafting_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1188,6 +1189,20 @@ ProcessLauncher.register("AttackRoomProcess", args => {
     }
 
     return Result.Succeeded((processId) => AttackRoomProcess.create(processId, roomName, targetRoomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DraftingRoomProcess", args => {
+  try {
+    const roomCoordinate = args.roomCoordinate("room_name").parse({ my: true })
+    const observer = args.visibleGameObject("observer_id").parse({ inRoomName: roomCoordinate.roomName })
+    if (!(observer instanceof StructureObserver)) {
+      throw `${observer} is not StructureObserver`
+    }
+
+    return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

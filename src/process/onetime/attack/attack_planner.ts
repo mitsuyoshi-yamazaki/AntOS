@@ -8,6 +8,7 @@ import { RoomName } from "utility/room_name"
 
 /**
  * - どの入り口から入るか、どのwallを攻撃するか最初は手動で設定する
+ * - Rampart hits考慮を入れる
  */
 export namespace AttackPlanner {
   export type AttackPlanNone = {
@@ -45,6 +46,8 @@ export namespace AttackPlanner {
 
     public constructor(
       private readonly parentRoomName: RoomName,
+
+      /// Occupyされている部屋
       private readonly targetRoom: Room,
     ) {
       this.targetRoomPlan = this.calculateRoomPlan(targetRoom)
