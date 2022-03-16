@@ -5,7 +5,7 @@ import { OperatingSystem } from "os/os"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
-import { coloredText, describeTime, roomLink, shortenedNumber } from "utility/log"
+import { coloredText, describeTime, profileLink, roomLink, shortenedNumber } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { QuadMaker } from "../quad_maker/quad_maker"
 import { AttackPlanner } from "./attack_planner"
@@ -108,7 +108,17 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.targetRoomInfo.roomName)}`
+    const descriptions: string[] = [
+      roomLink(this.targetRoomInfo.roomName),
+    ]
+    const observeRecord = this.targetRoomInfo.observeRecord
+    if (observeRecord != null) {
+      if (observeRecord.claimedPlayerName != null) {
+        descriptions.push(profileLink(observeRecord.claimedPlayerName))
+      }
+      descriptions.push(`observed at ${describeTime(Game.time - observeRecord.observedAt)} ago`)
+    }
+    return descriptions.join(" ")
   }
 
   public didReceiveMessage(message: string): string {
