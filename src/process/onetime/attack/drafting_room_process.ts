@@ -124,7 +124,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_dry_run"]
+    const commandList = ["help", "set_dry_run", "rerun"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -139,6 +139,14 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
         this.options.dryRun = dryRun
         return "ok"
       }
+
+      case "rerun":
+        this.checkedRooms = createEmptyCheckedRooms()
+        this.runningState = {
+          case: "waiting",
+          nextRun: Game.time,
+        }
+        return "ok"
 
       default:
         throw `Invalid command ${commandList}. see "help"`
