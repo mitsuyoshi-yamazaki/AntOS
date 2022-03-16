@@ -25,7 +25,7 @@ ProcessDecoder.register("DraftingRoomProcess", state => {
  * - 経路があるかどうか
  */
 
-const runInterval = 1000000 // 10000  // FixMe: 再計算せず、一度限り
+const runInterval = 100000000 // 10000  // FixMe: 再計算せず、一度限り
 const observerRange = GameConstants.structure.observer.maxRange
 
 type RunningStateWaiting = {
@@ -425,7 +425,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
 
   private observeNormalRoom(targetRoom: Room): void {
     const controller = targetRoom.controller
-    if (controller == null || controller.owner == null || controller.owner.username === Game.user.name) {
+    if (controller == null || controller.owner == null || Game.isEnemy(controller.owner) !== true) {
       return
     }
 
