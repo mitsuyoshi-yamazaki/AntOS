@@ -34,10 +34,23 @@ type RunningStateRunning = {
 }
 type RunningState = RunningStateWaiting | RunningStateRunning
 
+type CheckedRooms = {
+  readonly checkedRoomCount: {
+    highway: number
+    sourceKeeper: number
+    normal: number
+  }
+  readonly results: {
+    readonly attackableRoomNames: RoomName[]
+    readonly unattackableRoomNames: RoomName[]
+  }
+}
+
 export interface DraftingRoomProcessState extends ProcessState {
   readonly roomCoordinateState: RoomCoordinateState
   readonly runningState: RunningState
   readonly observerId: Id<StructureObserver>
+  readonly checkedRooms: CheckedRooms
 }
 
 export class DraftingRoomProcess implements Process, Procedural {
@@ -51,6 +64,7 @@ export class DraftingRoomProcess implements Process, Procedural {
     private readonly roomCoordinate: RoomCoordinate,
     private readonly observerId: Id<StructureObserver>,
     private runningState: RunningState,
+    private checkedRooms: CheckedRooms,
   ) {
     const roomName = this.roomCoordinate.roomName
     this.taskIdentifier = `${this.constructor.name}_${roomName}`
@@ -65,11 +79,12 @@ export class DraftingRoomProcess implements Process, Procedural {
       roomCoordinateState: this.roomCoordinate.encode(),
       observerId: this.observerId,
       runningState: this.runningState,
+      checkedRooms: this.checkedRooms,
     }
   }
 
   public static decode(state: DraftingRoomProcessState): DraftingRoomProcess {
-    return new DraftingRoomProcess(state.l, state.i, RoomCoordinate.decode(state.roomCoordinateState), state.observerId, state.runningState)
+    return new DraftingRoomProcess(state.l, state.i, RoomCoordinate.decode(state.roomCoordinateState), state.observerId, state.runningState, state.checkedRooms)
   }
 
   public static create(processId: ProcessId, observer: StructureObserver, roomCoordinate: RoomCoordinate): DraftingRoomProcess {
@@ -80,7 +95,7 @@ export class DraftingRoomProcess implements Process, Procedural {
       nextRun: Game.time + 1,
     }
 
-    return new DraftingRoomProcess(Game.time, processId, roomCoordinate, observer.id, runningState)
+    return new DraftingRoomProcess(Game.time, processId, roomCoordinate, observer.id, runningState, createEmptyCheckedRooms())
   }
 
   public processShortDescription(): string {
@@ -109,6 +124,7 @@ export class DraftingRoomProcess implements Process, Procedural {
       case: "running",
       relativePositionIndex: observeRoomRelativePosition,
     }
+    this.checkedRooms = createEmptyCheckedRooms()
   }
 
   private runRunningState(state: RunningStateRunning): void {
@@ -185,14 +201,17 @@ export class DraftingRoomProcess implements Process, Procedural {
 
     switch (targetRoom.roomType) {
     case "normal":
+      this.checkedRooms.checkedRoomCount.normal += 1
       this.observeNormalRoom(targetRoom)
       break
     case "source_keeper":
     case "sector_center":
+      this.checkedRooms.checkedRoomCount.sourceKeeper += 1
       this.observeSourceKeeperRoom(targetRoom)
       break
     case "highway":
     case "highway_crossing":
+      this.checkedRooms.checkedRoomCount.highway += 1
       break
     }
   }
@@ -219,8 +238,11 @@ export class DraftingRoomProcess implements Process, Procedural {
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
     if (attackPlan.case === "none") {
       // processLog(this, `cannot plan attack for ${roomLink(targetRoom.name)}`)
+      this.checkedRooms.results.unattackableRoomNames.push(targetRoom.name)
       return
     }
+
+    this.checkedRooms.results.attackableRoomNames.push(targetRoom.name)
 
     const attackProcess = OperatingSystem.os.addProcess(null, processId => {
       return AttackRoomProcess.create(processId, this.roomName, targetRoom, attackPlanner)
@@ -231,5 +253,19 @@ export class DraftingRoomProcess implements Process, Procedural {
 
   private getTargetRoomName(relativePosition: Position): RoomName {
     return this.roomCoordinate.getRoomCoordinateTo(relativePosition).roomName
+  }
+}
+
+function createEmptyCheckedRooms(): CheckedRooms {
+  return {
+    checkedRoomCount: {
+      highway: 0,
+      sourceKeeper: 0,
+      normal: 0,
+    },
+    results: {
+      attackableRoomNames: [],
+      unattackableRoomNames: [],
+    }
   }
 }
