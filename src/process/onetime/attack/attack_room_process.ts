@@ -1,5 +1,4 @@
 import { Invader } from "game/invader"
-import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
@@ -16,10 +15,10 @@ ProcessDecoder.register("AttackRoomProcess", state => {
 })
 
 type ObserveRecord = {
-  readonly playerName: string | null
+  readonly claimedPlayerName: string | null
   readonly safemodeEndsAt: number | null
   readonly observedAt: number
-  roomPlan: AttackPlanner.TargetRoomPlan | null
+  targetRoomPlan: AttackPlanner.TargetRoomPlan | null
 }
 
 type TargetRoomInfo = {
@@ -81,13 +80,31 @@ export class AttackRoomProcess implements Process, MessageObserver {
     return new AttackRoomProcess(state.l, state.i, state.roomName, state.targetRoomInfo, state.resourceSpent, state.logs)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName): AttackRoomProcess {
-    const targetRoomInfo: TargetRoomInfo = {
-      roomName: targetRoomName,
-      observeRecord: null,
-    }
+  public static create(processId: ProcessId, roomName: RoomName, targetRoom: Room, attackPlanner: AttackPlanner.Planner): AttackRoomProcess
+  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName): AttackRoomProcess
+  public static create(...args: [ProcessId, RoomName, Room, AttackPlanner.Planner] | [ProcessId, RoomName, RoomName]): AttackRoomProcess {
+    const [processId, roomName] = args
 
-    return new AttackRoomProcess(Game.time, processId, roomName, targetRoomInfo, {}, [])
+    if (typeof args[2] === "string") {
+      const targetRoomName = args[2]
+      const targetRoomInfo: TargetRoomInfo = {
+        roomName: targetRoomName,
+        observeRecord: null,
+      }
+
+      return new AttackRoomProcess(Game.time, processId, roomName, targetRoomInfo, {}, [])
+
+    } else {
+      const targetRoom = args[2]
+      const attackPlanner = (args as [ProcessId, RoomName, Room, AttackPlanner.Planner])[3]
+
+      const targetRoomInfo: TargetRoomInfo = {
+        roomName: targetRoom.name,
+        observeRecord: observe(roomName, targetRoom, attackPlanner.targetRoomPlan),
+      }
+
+      return new AttackRoomProcess(Game.time, processId, roomName, targetRoomInfo, {}, [])
+    }
   }
 
   public processShortDescription(): string {
@@ -112,7 +129,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
         if (this.targetRoomInfo.observeRecord == null) {
           return "not observed yet"
         }
-        this.targetRoomInfo.observeRecord.roomPlan = null
+        this.targetRoomInfo.observeRecord.targetRoomPlan = null
         return "ok"
 
       case "launch":
@@ -128,7 +145,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
 
   /** @throws */
   private launch(): string {
-    const attackPlan = this.targetRoomInfo.observeRecord?.roomPlan?.attackPlan
+    const attackPlan = this.targetRoomInfo.observeRecord?.targetRoomPlan?.attackPlan
     if (attackPlan == null) {
       throw `no attack plan for ${roomLink(this.targetRoomInfo.roomName)}`
     }
@@ -154,7 +171,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
   }
 
   private showTargetRoomInfo(): string {
-    const targetRoomPlan = this.targetRoomInfo.observeRecord?.roomPlan
+    const targetRoomPlan = this.targetRoomInfo.observeRecord?.targetRoomPlan
     if (targetRoomPlan == null) {
       return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
@@ -208,54 +225,57 @@ export class AttackRoomProcess implements Process, MessageObserver {
   public runOnTick(): void {
     const targetRoom = Game.rooms[this.targetRoomInfo.roomName]
     if (targetRoom == null) {
-      return  // constructionSaboteurProcessが動いているはず
+      return  // TODO: Observe
     }
 
-    const playerName = ((): string | null => {
-      if (targetRoom.controller?.owner?.username != null) {
-        return targetRoom.controller.owner.username
-      }
-      if (targetRoom.roomType === "source_keeper") {
-        return Invader.username
-      }
-      return null
-    })()
-    if (playerName == null) {
+    const updatedObserveRecord = observe(this.roomName, targetRoom, this.targetRoomInfo.observeRecord?.targetRoomPlan ?? null)
+
+    if (updatedObserveRecord.claimedPlayerName == null) {
       PrimitiveLogger.notice(`${this.identifier} ${roomLink(this.targetRoomInfo.roomName)} is no longer occupied`)
       OperatingSystem.os.suspendProcess(this.processId)
     }
 
-    const controller = targetRoom.controller
-
-    const safemodeEndsAt = ((): number | null => {
-      if (controller == null) {
-        return null
-      }
-      if (controller.safeMode == null) {
-        return null
-      }
-      return controller.safeMode + Game.time
-    })()
-
-    const targetRoomPlan = ((): AttackPlanner.TargetRoomPlan => {
-      const storedPlan = this.targetRoomInfo.observeRecord?.roomPlan
-      if (storedPlan != null) {
-        if (Game.time - storedPlan.calculatedAt < 1000) {
-          return storedPlan
-        }
-      }
-      processLog(this, `target room plan calculated ${roomLink(targetRoom.name)}`)
-      const draftingRoom = new AttackPlanner.Planner(this.roomName, targetRoom)
-      return draftingRoom.targetRoomPlan
-    })()
-
-    const observeRecord: ObserveRecord = {
-      playerName,
-      observedAt: Game.time,
-      safemodeEndsAt,
-      roomPlan: targetRoomPlan,
-    }
-
-    this.targetRoomInfo.observeRecord = observeRecord
+    this.targetRoomInfo.observeRecord = updatedObserveRecord
   }
+}
+
+function observe(parentRoomName: RoomName, targetRoom: Room, calculatedTargetRoomPlan: AttackPlanner.TargetRoomPlan | null): ObserveRecord {
+  const playerName = ((): string | null => {
+    if (targetRoom.controller?.owner?.username != null) {
+      return targetRoom.controller.owner.username
+    }
+    if (targetRoom.roomType === "source_keeper") {
+      return Invader.username
+    }
+    return null
+  })()
+
+  const controller = targetRoom.controller
+
+  const safemodeEndsAt = ((): number | null => {
+    if (controller == null) {
+      return null
+    }
+    if (controller.safeMode == null) {
+      return null
+    }
+    return controller.safeMode + Game.time
+  })()
+
+  const targetRoomPlan = ((): AttackPlanner.TargetRoomPlan => {
+    if (calculatedTargetRoomPlan != null) {
+      return calculatedTargetRoomPlan
+    }
+    const planner = new AttackPlanner.Planner(parentRoomName, targetRoom)
+    return planner.targetRoomPlan
+  })()
+
+  const observeRecord: ObserveRecord = {
+    claimedPlayerName: playerName,
+    observedAt: Game.time,
+    safemodeEndsAt,
+    targetRoomPlan,
+  }
+
+  return observeRecord
 }
