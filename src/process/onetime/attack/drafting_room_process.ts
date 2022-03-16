@@ -99,7 +99,16 @@ export class DraftingRoomProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)}`
+    const checkedRoomCount = Array.from(Object.values(this.checkedRooms.checkedRoomCount)).reduce((total, count) => total + count, 0)
+
+    const descriptions: string[] = [
+      roomLink(this.roomName),
+      `observed ${checkedRoomCount} rooms`,
+      `attackable: ${this.checkedRooms.results.attackableRoomNames.length}`,
+      `unattackable: ${this.checkedRooms.results.unattackableRoomNames.length}`,
+    ]
+
+    return descriptions.join(", ")
   }
 
   public runOnTick(): void {
