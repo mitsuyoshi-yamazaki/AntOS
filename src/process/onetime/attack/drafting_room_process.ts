@@ -16,6 +16,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { Invader } from "game/invader"
 import { GameMap } from "game/game_map"
+import { LeagueOfAutomatedNations } from "_old/loanUserList"
 
 ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)
@@ -160,7 +161,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
         this.checkedRooms = createEmptyCheckedRooms()
         this.runningState = {
           case: "waiting",
-          nextRun: Game.time,
+          nextRun: Game.time + 1,
         }
         return "ok"
 
@@ -308,7 +309,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
   }
 
   private runWaitingState(state: RunningStateWaiting): void {
-    if (Game.time > state.nextRun) {
+    if (Game.time < state.nextRun) {
       return
     }
 
@@ -429,7 +430,10 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
 
   private observeNormalRoom(targetRoom: Room): void {
     const controller = targetRoom.controller
-    if (controller == null || controller.owner == null || Game.isEnemy(controller.owner) !== true) {
+    if (controller == null || controller.owner == null) {
+      return
+    }
+    if (Game.isEnemy(controller.owner) !== true || LeagueOfAutomatedNations.napAllianceUsers.includes(controller.owner.username) === true) {
       return
     }
 
