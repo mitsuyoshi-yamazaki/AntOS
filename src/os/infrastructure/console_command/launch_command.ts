@@ -1201,8 +1201,9 @@ ProcessLauncher.register("DraftingRoomProcess", args => {
       throw `${observer} is not StructureObserver`
     }
     const roomCoordinate = observer.room.coordinate
+    const dryRun = args.boolean("dry_run").parseOptional() ?? true
 
-    return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate))
+    return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate, dryRun))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

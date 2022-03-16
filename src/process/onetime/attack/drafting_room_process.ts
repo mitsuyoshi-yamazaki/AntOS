@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { coloredText, roomLink } from "utility/log"
+import { coloredText, profileLink, roomLink } from "utility/log"
 import { RoomCoordinate, RoomCoordinateState, RoomName } from "utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { ProcessDecoder } from "process/process_decoder"
@@ -14,6 +14,7 @@ import { AttackRoomProcess } from "./attack_room_process"
 import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { Invader } from "game/invader"
 
 ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)
@@ -36,6 +37,7 @@ type RunningStateRunning = {
 }
 type RunningState = RunningStateWaiting | RunningStateRunning
 
+type CheckedRoom = {[ownerName: string]: RoomName[]}
 type CheckedRooms = {
   readonly checkedRoomCount: {
     highway: number
@@ -43,8 +45,8 @@ type CheckedRooms = {
     normal: number
   }
   readonly results: {
-    readonly attackableRoomNames: RoomName[]
-    readonly unattackableRoomNames: RoomName[]
+    readonly attackableRoomNames: CheckedRoom
+    readonly unattackableRoomNames: CheckedRoom
   }
 }
 
@@ -112,19 +114,22 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
 
   public processShortDescription(): string {
     const checkedRoomCount = Array.from(Object.values(this.checkedRooms.checkedRoomCount)).reduce((total, count) => total + count, 0)
+    const getTotalRoomCount = (checkedRooms: CheckedRoom): number => {
+      return Array.from(Object.values(checkedRooms)).reduce((total, roomNames) => total + roomNames.length, 0)
+    }
 
     const descriptions: string[] = [
       roomLink(this.roomName),
       `observed ${checkedRoomCount} rooms`,
-      `attackable: ${this.checkedRooms.results.attackableRoomNames.length}`,
-      `unattackable: ${this.checkedRooms.results.unattackableRoomNames.length}`,
+      `attackable: ${getTotalRoomCount(this.checkedRooms.results.attackableRoomNames)}`,
+      `unattackable: ${getTotalRoomCount(this.checkedRooms.results.unattackableRoomNames)}`,
     ]
 
     return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_dry_run", "rerun"]
+    const commandList = ["help", "set_dry_run", "rerun", "show_results"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -148,12 +153,42 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
         }
         return "ok"
 
+      case "show_results":
+        return this.showResults(components)
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private showResults(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const resultType = listArguments.string(0, "attackable/unattackable").parse()
+
+    const roomNamesByOwner = (checkedRooms: CheckedRoom): string[] => {
+      return Array.from(Object.entries(checkedRooms)).map(([ownerName, roomNames]) => `- ${profileLink(ownerName)}: ${roomNames.map(roomName => roomLink(roomName)).join(",")}`)
+    }
+
+    const results: string[] = []
+
+    switch (resultType) {
+    case "attackable":
+      results.push(`${this.checkedRooms.results.attackableRoomNames.length} attackable rooms found`)
+      results.push(...roomNamesByOwner(this.checkedRooms.results.attackableRoomNames))
+      break
+    case "unattackable":
+      results.push(`${this.checkedRooms.results.unattackableRoomNames.length} unattackable rooms found`)
+      results.push(...roomNamesByOwner(this.checkedRooms.results.unattackableRoomNames))
+      break
+    default:
+      throw `specify attackable or unattackable (${resultType})`
+    }
+
+    return results.join("\n")
   }
 
   public runOnTick(): void {
@@ -276,7 +311,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       return
     }
 
-    this.calculateAttackPlan(targetRoom)
+    this.calculateAttackPlan(targetRoom, controller.owner.username)
   }
 
   private observeSourceKeeperRoom(targetRoom: Room): void {
@@ -284,19 +319,29 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       return
     }
 
-    this.calculateAttackPlan(targetRoom)
+    this.calculateAttackPlan(targetRoom, Invader.username)
   }
 
-  private calculateAttackPlan(targetRoom: Room): void {
+  private calculateAttackPlan(targetRoom: Room, ownerName: string): void {
     const attackPlanner = new AttackPlanner.Planner(this.roomName, targetRoom)
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
+
+    const getCheckedRoomList = (checkedRooms: CheckedRoom, ownerName: string): RoomName[] => {
+      const stored = checkedRooms[ownerName]
+      if (stored != null) {
+        return stored
+      }
+      const newList: RoomName[] = []
+      checkedRooms[ownerName] = newList
+      return newList
+    }
+
     if (attackPlan.case === "none") {
-      // processLog(this, `cannot plan attack for ${roomLink(targetRoom.name)}`)
-      this.checkedRooms.results.unattackableRoomNames.push(targetRoom.name)
+      getCheckedRoomList(this.checkedRooms.results.unattackableRoomNames, ownerName).push(targetRoom.name)
       return
     }
 
-    this.checkedRooms.results.attackableRoomNames.push(targetRoom.name)
+    getCheckedRoomList(this.checkedRooms.results.attackableRoomNames, ownerName).push(targetRoom.name)
 
     if (this.options.dryRun === true) {
       processLog(this, `(dry run) ${attackPlan.case} attack plan for ${roomLink(targetRoom.name)}`)
@@ -322,8 +367,8 @@ function createEmptyCheckedRooms(): CheckedRooms {
       normal: 0,
     },
     results: {
-      attackableRoomNames: [],
-      unattackableRoomNames: [],
+      attackableRoomNames: {},
+      unattackableRoomNames: {},
     }
   }
 }
