@@ -478,6 +478,9 @@ export class ExecCommand implements ConsoleCommand {
     const LOANdata = JSON.parse(RawMemory.foreignSegment.data) as { [index: string]: string[] }
     for (const [alliance, usernames] of Object.entries(LOANdata)) {
       if (usernames.includes(playerName) === true) {
+        if (Memory.napAlliances.includes(alliance) === true) {
+          return `${playerName} found in alliance ${alliance} (Non-Aggression Pacts)`
+        }
         return `${playerName} found in alliance ${alliance}`
       }
     }

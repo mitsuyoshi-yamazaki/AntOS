@@ -1,6 +1,6 @@
 import { OSMemory } from "../os/os"
 
-import { populateLOANlist } from "./loanUserList"
+import { LeagueOfAutomatedNations } from "./loanUserList"
 import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
@@ -24,7 +24,6 @@ declare global {
     environment: string
 
     // Alliance
-    LOANlist: string[]
     whitelist: string[]
     isEnemy(player: Owner): boolean
   }
@@ -46,8 +45,8 @@ declare global {
     gclFarm: GclFarmMemory
     pathCache: PathCacheMemory
 
-    lastLOANtime: number | undefined
     LOANalliance: string | undefined
+    napAlliances: string[]
   }
 }
 
@@ -70,6 +69,6 @@ export function tick(): void {
     return Game.whitelist.includes(player.username) !== true
   }
 
-  populateLOANlist()
-  Game.whitelist = [...Game.LOANlist].concat(Memory.gameInfo.whitelist)
+  LeagueOfAutomatedNations.populate()
+  Game.whitelist = [...LeagueOfAutomatedNations.LOANlist].concat(Memory.gameInfo.whitelist)
 }

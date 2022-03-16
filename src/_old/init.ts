@@ -92,6 +92,10 @@ export function init(): void {
   if (!Memory.cpu_usages) {
     Memory.cpu_usages = []
   }
+
+  if (Memory.napAlliances == null) {
+    Memory.napAlliances = []
+  }
 }
 
 export function tick(): void {
