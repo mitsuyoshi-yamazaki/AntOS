@@ -202,16 +202,27 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     }
 
     const targetRooms = [...this.targetRooms]
+    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
 
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}
       this.checkRemoteRooms(targetRooms)
+      intercepters.forEach(creep => {
+        if (creep.hits < creep.hitsMax) {
+          creep.heal(creep)
+        }
+      })
       return
     }
 
     const currentTarget = this.currentTarget
     if (targetRooms.every(roomInfo => roomInfo.name !== currentTarget.roomName) === true) { // 手動でRemoteRoomが無効化された場合
       this.currentTarget = null
+      intercepters.forEach(creep => {
+        if (creep.hits < creep.hitsMax) {
+          creep.heal(creep)
+        }
+      })
       return
     }
 
@@ -229,7 +240,6 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     const target = this.currentTarget
 
     const creepMaxCount = 1
-    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
     Array.from(Object.entries(this.intercepterCreepNames)).forEach(([roomName, intercepterName]) => {
       const creep = Game.creeps[intercepterName]
       if (creep == null) {
