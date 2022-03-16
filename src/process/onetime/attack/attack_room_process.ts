@@ -52,11 +52,14 @@ export class AttackRoomProcess implements Process, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
+  public get targetRoomName(): RoomName {
+    return this.targetRoomInfo.roomName
+  }
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly roomName: RoomName,
+    public readonly roomName: RoomName,
     private readonly targetRoomInfo: TargetRoomInfo,
     private readonly resourceSpent: { [resourceType: string]: number },
     private readonly logs: Log[],

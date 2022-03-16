@@ -15,6 +15,7 @@ import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { Invader } from "game/invader"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)
@@ -35,7 +36,16 @@ type RunningStateRunning = {
   readonly case: "running"
   relativePositionIndex: Position
 }
-type RunningState = RunningStateWaiting | RunningStateRunning
+type RunningStateRestart = {
+  readonly case: "restart"
+  readonly relativePositionIndex: Position
+}
+type RunningStateLaunch = {
+  readonly case: "launch"
+  readonly targetRoomName: RoomName
+  readonly suspendedState: Timestamp | Position
+}
+type RunningState = RunningStateWaiting | RunningStateRunning | RunningStateRestart | RunningStateLaunch
 
 type CheckedRoom = {[ownerName: string]: RoomName[]}
 type CheckedRooms = {
@@ -119,6 +129,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     }
 
     const descriptions: string[] = [
+      this.runningState.case,
       roomLink(this.roomName),
       `observed ${checkedRoomCount} rooms`,
       `attackable: ${getTotalRoomCount(this.checkedRooms.results.attackableRoomNames)}`,
@@ -129,7 +140,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_dry_run", "rerun", "show_results"]
+    const commandList = ["help", "set_dry_run", "rerun", "show_results", "launch"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -156,12 +167,68 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       case "show_results":
         return this.showResults(components)
 
+      case "launch":
+        return this.launch(components)
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private launch(args: string[]): string {
+    const suspendedState = ((): Timestamp | Position => {
+      switch (this.runningState.case) {
+      case "launch":
+      case "restart":
+        throw `cannot launch during ${this.runningState.case}`
+      case "running":
+        return this.runningState.relativePositionIndex
+      case "waiting":
+        return this.runningState.nextRun
+      }
+    })()
+
+    const listArguments = new ListArguments(args)
+    const targetRoomName = listArguments.roomName(0, "room name").parse()
+
+    const launchedProcess = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      const process = processInfo.process
+      if (!(process instanceof AttackRoomProcess)) {
+        return false
+      }
+      if (process.roomName !== this.roomName) {
+        return false
+      }
+      if (process.targetRoomName !== targetRoomName) {
+        return false
+      }
+      return true
+    })
+
+    if (launchedProcess != null) {
+      throw `AttackRoomProcess ${roomLink(this.roomName)} =&gt ${roomLink(targetRoomName)} is already launched ${launchedProcess.processId}`
+    }
+
+    const attackableRoomnames = Array.from(Object.values(this.checkedRooms.results.attackableRoomNames)).flatMap(roomNames => roomNames)
+    if (attackableRoomnames.includes(targetRoomName) !== true) {
+      throw `${roomLink(targetRoomName)} is not marked as attackable`
+    }
+
+    if (GameMap.hasWaypoints(this.roomName, targetRoomName) !== true) {
+      const waypoints = listArguments.roomNameList(1, "waypoint").parse()
+      GameMap.setWaypoints(this.roomName, targetRoomName, waypoints)
+    }
+
+    this.runningState = {
+      case: "launch",
+      targetRoomName,
+      suspendedState,
+    }
+    return "launching..."
   }
 
   /** @throws */
@@ -199,6 +266,44 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     case "running":
       this.runRunningState(this.runningState)
       break
+    case "restart":
+      this.queueNextPosition(this.runningState.relativePositionIndex)
+      break
+    case "launch":
+      this.launchAttackProcess(this.runningState)
+      break
+    }
+  }
+
+  private launchAttackProcess(state: RunningStateLaunch): void {
+    const targetRoomName = state.targetRoomName
+    const targetRoom = Game.rooms[targetRoomName]
+    if (targetRoom == null) {
+      this.queueRoomObservation(targetRoomName)
+      return
+    }
+
+    const attackPlanner = new AttackPlanner.Planner(this.roomName, targetRoom)
+    const attackPlan = attackPlanner.targetRoomPlan.attackPlan
+    if (attackPlan.case === "none") {
+      PrimitiveLogger.programError(`${this.taskIdentifier} cannot calculate attack plan for ${roomLink(targetRoomName)}`)
+      return
+    }
+
+    OperatingSystem.os.addProcess(null, processId => {
+      return AttackRoomProcess.create(processId, this.roomName, targetRoom, attackPlanner)
+    })
+
+    if (typeof state.suspendedState === "number") {
+      this.runningState = {
+        case: "waiting",
+        nextRun: state.suspendedState,
+      }
+    } else {
+      this.runningState = {
+        case: "restart",
+        relativePositionIndex: state.suspendedState,
+      }
     }
   }
 
@@ -218,8 +323,11 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
 
   private runRunningState(state: RunningStateRunning): void {
     this.observeRoom(state.relativePositionIndex)
+    this.queueNextPosition(state.relativePositionIndex)
+  }
 
-    const nextIndex = this.nextRelativeRoomPositionIndex(state.relativePositionIndex)
+  private queueNextPosition(relativePositionIndex: Position): void {
+    const nextIndex = this.nextRelativeRoomPositionIndex(relativePositionIndex)
     if (nextIndex == null) {
       this.runningState = {
         case: "waiting",
@@ -229,7 +337,10 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     }
 
     this.queueRoomObservation(nextIndex)
-    state.relativePositionIndex = nextIndex
+    this.runningState = {
+      case: "running",
+      relativePositionIndex: nextIndex,
+    }
   }
 
   private nextRelativeRoomPositionIndex(currentIndex: Position): Position | null {
@@ -256,7 +367,9 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     return nextIndex
   }
 
-  private queueRoomObservation(relativeRoomPosition: Position): void {
+  private queueRoomObservation(targetRoomName: RoomName): void
+  private queueRoomObservation(relativeRoomPosition: Position): void
+  private queueRoomObservation(arg: RoomName | Position): void {
     const observer = Game.getObjectById(this.observerId)
     if (observer == null) {
       PrimitiveLogger.fatal(`${this.taskIdentifier} observer ${this.observerId} in ${roomLink(this.roomName)} lost`)
@@ -264,7 +377,12 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       return
     }
 
-    const targetRoomName = this.getTargetRoomName(relativeRoomPosition)
+    const targetRoomName = ((): RoomName => {
+      if (typeof arg === "string") {
+        return arg
+      }
+      return this.getTargetRoomName(arg)
+    })()
     const result = observer.observeRoom(targetRoomName)
 
     switch (result) {
