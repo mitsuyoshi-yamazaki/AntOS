@@ -399,6 +399,10 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource != null) {
       this.lackOfEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) < 30000
+
+      if (this.lackOfEnergy === true && (Game.time % 103) === 17) {
+        PrimitiveLogger.fatal(`${this.identifier} lack of energy (${roomResource.getResourceAmount(RESOURCE_ENERGY)}) in ${roomLink(this.parentRoomName)}`)
+      }
     } else {
       this.lackOfEnergy = true
     }

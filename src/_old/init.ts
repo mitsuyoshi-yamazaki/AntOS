@@ -73,6 +73,10 @@ export function init(): void {
     }
   }
 
+  if (Memory.ignoreRooms == null) {
+    Memory.ignoreRooms = []
+  }
+
   if (Memory.pathCache == null) {
     Memory.pathCache = {
       paths: {}

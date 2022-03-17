@@ -13,6 +13,7 @@ import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { StandardInput as v8StandardInput } from "v8/operating_system/system_call/standard_input"
 import { UniqueIdMemory } from "utility/unique_id"
+import { RoomName } from "utility/room_name"
 
 declare global {
   interface Game {
@@ -43,6 +44,7 @@ declare global {
     eventMemory: EventMemory
     gameMap: GameMapMemory
     gclFarm: GclFarmMemory
+    ignoreRooms: RoomName[]
     pathCache: PathCacheMemory
 
     LOANalliance: string | undefined

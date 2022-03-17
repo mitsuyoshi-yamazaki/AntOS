@@ -61,6 +61,7 @@ import { BoostLabChargerProcess } from "process/process/boost_lab_charger_proces
 import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
 import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { DraftingRoomProcess } from "process/onetime/attack/drafting_room_process"
+import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1204,6 +1205,19 @@ ProcessLauncher.register("DraftingRoomProcess", args => {
     const dryRun = args.boolean("dry_run").parseOptional() ?? true
 
     return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate, dryRun))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("AggressiveClaimProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const blockingWallIds = args.list("blocking_wall_ids", "object_id").parse() as Id<StructureWall | StructureRampart>[]
+    const excludeStructureIds = args.list("excluded_structure_id", "object_id").parse() as Id<AnyStructure>[]
+
+    return Result.Succeeded((processId) => AggressiveClaimProcess.create(processId, roomName, targetRoomName, blockingWallIds, excludeStructureIds))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
