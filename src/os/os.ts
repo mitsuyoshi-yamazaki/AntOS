@@ -475,6 +475,9 @@ export class OperatingSystem {
         this.sendOSError(`Trying to kill non existent process ${processId}`)
         return
       }
+      if (processInfo.process.deinit != null) {
+        processInfo.process.deinit()
+      }
 
       const result = this.processStore.remove(processId)
       if (result == null) {
