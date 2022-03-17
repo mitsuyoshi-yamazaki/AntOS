@@ -37,6 +37,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("HarvestPowerProcess", state => {
   return HarvestPowerProcess.decode(state as HarvestPowerProcessState)
@@ -276,6 +277,8 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
     }
   }
 
+  private lackOfEnergy = false
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -393,6 +396,13 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
   }
 
   public runOnTick(): void {
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource != null) {
+      this.lackOfEnergy = roomResource.getResourceAmount(RESOURCE_ENERGY) < 30000
+    } else {
+      this.lackOfEnergy = true
+    }
+
     const targetRoom = Game.rooms[this.targetRoomName]
     if (this.ticksToPowerBank == null) {
       const creepInTargetRoom = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, creep => (creep.room.name === this.targetRoomName))[0]
@@ -807,7 +817,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
 
   // ---- Ranged Attacker ---- //
   private addRangedAttacker(): void {
-    if (this.pickupFinished === true) {
+    if (this.pickupFinished === true || this.lackOfEnergy === true) {
       return
     }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
@@ -865,7 +875,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
 
   // ---- Hauler ---- //
   private addHauler(): void {
-    if (this.pickupFinished === true) {
+    if (this.pickupFinished === true || this.lackOfEnergy === true) {
       return
     }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
@@ -1017,7 +1027,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
 
   // ---- Healer ---- //
   private addHealer(): void {
-    if (this.pickupFinished === true) {
+    if (this.pickupFinished === true || this.lackOfEnergy === true) {
       return
     }
 
@@ -1120,7 +1130,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
 
   // ---- Attacker ---- //
   private addAttacker(): void {
-    if (this.pickupFinished === true) {
+    if (this.pickupFinished === true || this.lackOfEnergy === true) {
       return
     }
 
@@ -1249,7 +1259,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
 
   // ---- Scout ---- //
   private addScout(): void {
-    if (this.pickupFinished === true) {
+    if (this.pickupFinished === true || this.lackOfEnergy === true) {
       return
     }
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
