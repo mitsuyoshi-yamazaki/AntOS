@@ -7,9 +7,10 @@ import { shortenedNumber } from "utility/log"
 
 /**
  * - どの入り口から入るか、どのwallを攻撃するか最初は手動で設定する
- * - Rampart hits考慮を入れる
  */
 export namespace AttackPlanner {
+  type AttackerAction = "attack" | "dismantle" | "rangedAttack" | "heal"
+
   export type AttackPlanNone = {
     readonly case: "none"
     readonly reason: string
@@ -100,11 +101,17 @@ export namespace AttackPlanner {
 
         const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
           const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
-          const requiredHealCount = Math.ceil(requiredHealPower / GameConstants.creep.actionPower.heal)
-          const healCount = Math.max(Math.ceil(requiredHealCount / healerCount), 4)
+          const requiredHealPowerPerCreep = Math.ceil(requiredHealPower / healerCount)
+          const maxHealCount = Math.floor(bodyMaxLength / 2) - 1
+          const { bodyPartCount, boost } = this.bodyFor("heal", maxHealCount, requiredHealPowerPerCreep)
+          if (boost != null) {
+            boosts.push(boost)
+          }
 
-          const rangedAttackCount = Math.max((bodyMaxLength / 2) - healCount, 0)
-          const moveCount = healCount + rangedAttackCount
+          const healCount = bodyPartCount
+
+          const moveCount = Math.floor(bodyMaxLength / 2)
+          const rangedAttackCount = bodyMaxLength - moveCount - healCount
 
           const body: BodyPartConstant[] = [
             ...Array(rangedAttackCount).fill(RANGED_ATTACK),
@@ -142,23 +149,9 @@ export namespace AttackPlanner {
 
           if (hasEnoughAttackPower === true) {
             const workCount = bodyMaxLength / 2
-            const maxDismantlePower = workCount * GameConstants.creep.actionPower.dismantle
-            const boost = Math.ceil(requiredDismantlePower / maxDismantlePower)
-            switch (boost) {
-            case 0:
-            case 1:
-              break
-            case 2:
-              boosts.push(RESOURCE_ZYNTHIUM_HYDRIDE)
-              break
-            case 3:
-              boosts.push(RESOURCE_ZYNTHIUM_ACID)
-              break
-            case 4:
-              boosts.push(RESOURCE_CATALYZED_ZYNTHIUM_ACID)
-              break
-            default:
-              throw `not enough dismantle power, required: ${shortenedNumber(requiredDismantlePower)}, total wall hits: ${shortenedNumber(totalWallHits)}, estimated boost: ${boost}x`
+            const boost = this.boostFor("dismantle", workCount, requiredDismantlePower)
+            if (boost != null) {
+              boosts.push(boost)
             }
 
             const moveCount = bodyMaxLength - workCount
@@ -174,23 +167,9 @@ export namespace AttackPlanner {
 
           } else {
             const attackCount = bodyMaxLength / 2
-            const maxAttackPower = attackCount * GameConstants.creep.actionPower.attack
-            const boost = Math.ceil(requiredDismantlePower / maxAttackPower)
-            switch (boost) {
-            case 0:
-            case 1:
-              break
-            case 2:
-              boosts.push(RESOURCE_UTRIUM_HYDRIDE)
-              break
-            case 3:
-              boosts.push(RESOURCE_UTRIUM_ACID)
-              break
-            case 4:
-              boosts.push(RESOURCE_CATALYZED_UTRIUM_ACID)
-              break
-            default:
-              throw `not enough attack power, required: ${shortenedNumber(requiredDismantlePower)}, total wall hits: ${shortenedNumber(totalWallHits)}, estimated boost: ${boost}x`
+            const boost = this.boostFor("attack", attackCount, requiredDismantlePower)
+            if (boost != null) {
+              boosts.push(boost)
             }
 
             const moveCount = bodyMaxLength - attackCount
@@ -231,6 +210,48 @@ export namespace AttackPlanner {
         }
       }
     }
-  }
 
+    /** @throws */
+    private boostFor(action: AttackerAction, maxPartCount: number, requiredActionPower: number): MineralBoostConstant | null {
+      const maxPower = maxPartCount * GameConstants.creep.actionPower[action]
+      const boostTier = Math.max(Math.ceil(requiredActionPower / maxPower) - 1, 0)  // FixMe: toughなど線形に比例しないものは未対応
+      switch (boostTier) {
+      case 0:
+        return null
+      case 1:
+      case 2:
+      case 3:
+        return CreepBody.boostFor(action, boostTier)
+      default:
+        throw `not enough ${action} power, required: ${shortenedNumber(requiredActionPower)}, estimated boost: ${boostTier}x`
+      }
+    }
+
+    /** @throws */
+    private bodyFor(action: AttackerAction, maxPartCount: number, requiredActionPower: number): { bodyPartCount: number, boost: MineralBoostConstant | null } {
+      const actionPower = GameConstants.creep.actionPower[action]
+      const requiredBodyPartCount = (boostTier: number): number => {
+        return Math.ceil(requiredActionPower / (actionPower * (boostTier + 1)))
+      }
+
+      const maxPower = maxPartCount * actionPower
+      const boostTier = Math.max(Math.ceil(requiredActionPower / maxPower) - 1, 0)  // FixMe: toughなど線形に比例しないものは未対応
+      switch (boostTier) {
+      case 0:
+        return {
+          bodyPartCount: requiredBodyPartCount(boostTier),
+          boost: null,
+        }
+      case 1:
+      case 2:
+      case 3:
+        return {
+          bodyPartCount: requiredBodyPartCount(boostTier),
+          boost: CreepBody.boostFor(action, boostTier),
+        }
+      default:
+        throw `not enough ${action} power, required: ${shortenedNumber(requiredActionPower)}, estimated boost: ${boostTier}x`
+      }
+    }
+  }
 }

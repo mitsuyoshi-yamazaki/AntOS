@@ -83,6 +83,14 @@ export const CreepBody = {
   description: function (body: BodyPartConstant[]): string {
     return bodyDescription(body)
   },
+
+  boostFor(action: CreepBodyBoostableActionType, boostTier: 0 | 1 | 2 | 3): MineralBoostConstant | null {
+    if (boostTier === 0) {
+      return null
+    }
+
+    return boostForAction[action][boostTier]
+  },
 }
 
 // TODO: remove "export"
@@ -172,4 +180,72 @@ export function bodyDescription(body: BodyPartConstant[]): string {
     result.push(`<b>${value}${coloredBodyShortDescription(key)}</b>`)
   })
   return result.join("")
+}
+
+const boostForAction = {
+  harvest: {
+    1: RESOURCE_UTRIUM_OXIDE,
+    2: RESOURCE_UTRIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_UTRIUM_ALKALIDE,
+  },
+  build: {
+    1: RESOURCE_LEMERGIUM_HYDRIDE,
+    2: RESOURCE_LEMERGIUM_ACID,
+    3: RESOURCE_CATALYZED_LEMERGIUM_ACID,
+  },
+  repair: {
+    1: RESOURCE_LEMERGIUM_HYDRIDE,
+    2: RESOURCE_LEMERGIUM_ACID,
+    3: RESOURCE_CATALYZED_LEMERGIUM_ACID,
+  },
+  dismantle: {
+    1: RESOURCE_ZYNTHIUM_HYDRIDE,
+    2: RESOURCE_ZYNTHIUM_ACID,
+    3: RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+  },
+  upgradeController: {
+    1: RESOURCE_GHODIUM_HYDRIDE,
+    2: RESOURCE_GHODIUM_ACID,
+    3: RESOURCE_CATALYZED_GHODIUM_ACID,
+  },
+  attack: {
+    1: RESOURCE_UTRIUM_HYDRIDE,
+    2: RESOURCE_UTRIUM_ACID,
+    3: RESOURCE_CATALYZED_UTRIUM_ACID,
+  },
+  rangedAttack: {
+    1: RESOURCE_KEANIUM_OXIDE,
+    2: RESOURCE_KEANIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+  },
+  rangedMassAttack: {
+    1: RESOURCE_KEANIUM_OXIDE,
+    2: RESOURCE_KEANIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+  },
+  heal: {
+    1: RESOURCE_LEMERGIUM_OXIDE,
+    2: RESOURCE_LEMERGIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  },
+  rangedHeal: {
+    1: RESOURCE_LEMERGIUM_OXIDE,
+    2: RESOURCE_LEMERGIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  },
+  capacity: {
+    1: RESOURCE_KEANIUM_HYDRIDE,
+    2: RESOURCE_KEANIUM_ACID,
+    3: RESOURCE_CATALYZED_KEANIUM_ACID,
+  },
+  fatigue: {
+    1: RESOURCE_ZYNTHIUM_OXIDE,
+    2: RESOURCE_ZYNTHIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+  },
+  damage: {
+    1: RESOURCE_GHODIUM_OXIDE,
+    2: RESOURCE_GHODIUM_ALKALIDE,
+    3: RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+  },
 }
