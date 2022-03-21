@@ -18,15 +18,6 @@ export const Spawns: SpawnsInterface = {
   beforeTick: function (): StructureSpawn[] {
     allSpawns.splice(0, allSpawns.length)
     Object.entries(Game.spawns).forEach(([, spawn]) => {
-      // if (spawn == null) {
-      //   delete Memory.spawns[spawnName]
-      //   return
-      // }
-      if (spawn.room.name === "W45S3") {  // FixMe:
-        if (spawn.isActive() !== true) {
-          return
-        }
-      }
       allSpawns.push(spawn)
     })
 
