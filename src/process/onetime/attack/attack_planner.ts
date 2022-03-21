@@ -5,6 +5,7 @@ import { CreepBody } from "utility/creep_body"
 import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
 import { coloredResourceType, shortenedNumber } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { BoostTier, getBoostTier } from "utility/resource"
 
 const singleCreepMaxDamage = 3600
 
@@ -133,14 +134,27 @@ export namespace AttackPlanner {
       }, 0)
 
       try {
+        const quadAttackPlan = this.calculateSingleQuadAttackPlan(requiredHealPower, totalWallHits)
+        const boostMaxTier = getBoostMaxTier(quadAttackPlan.quadSpecState.boosts)
+        if (boostMaxTier <= 1) {
+          return quadAttackPlan
+        }
+
         if (totalWallHits < 50000 && requiredHealPower <= singleCreepMaxDamage) {
           try {
             return this.calculateSingleCreepAttackPlan(requiredHealPower, totalWallHits)
-          } catch {
-            // Quadで対処する
+          } catch (error) {
+            return {
+              case: "none",
+              reason: `${error}`,
+            }
           }
         }
-        return this.calculateSingleQuadAttackPlan(requiredHealPower, totalWallHits)
+
+        return {
+          case: "none",
+          reason: "no attack plan",
+        }
 
       } catch (error) {
         return {
@@ -165,7 +179,7 @@ export namespace AttackPlanner {
 
       const toughDamageDecreasement = 0.3
       const toughHits = 100
-      const toughCount = Math.ceil((Math.min(requiredHealPower * 2, singleCreepMaxDamage) * toughDamageDecreasement) / toughHits)
+      const toughCount = Math.ceil((Math.min(requiredHealPower * 1.2, singleCreepMaxDamage) * toughDamageDecreasement) / toughHits)
 
       const healPower = GameConstants.creep.actionPower.heal
       const healBoostTier = 3
@@ -340,4 +354,14 @@ export namespace AttackPlanner {
       }
     }
   }
+}
+
+function getBoostMaxTier(boosts: MineralBoostConstant[]): BoostTier {
+  return boosts.reduce((maxTier, boost) => {
+    const tier = getBoostTier(boost as MineralBoostConstant)
+    if (maxTier >= tier) {
+      return maxTier
+    }
+    return tier
+  }, 0 as BoostTier)
 }
