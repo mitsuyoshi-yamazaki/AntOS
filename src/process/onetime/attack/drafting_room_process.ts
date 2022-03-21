@@ -362,6 +362,9 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     if (nextIndex.x === 0 && nextIndex.y === 0) {
       return this.nextRelativeRoomPositionIndex(nextIndex)
     }
+    if ((this.roomCoordinate.getRoomCoordinateTo(nextIndex).y % 10) === 0) {
+      return this.nextRelativeRoomPositionIndex(nextIndex)
+    }
     if (nextIndex.y > observerRange) {
       return null
     }
