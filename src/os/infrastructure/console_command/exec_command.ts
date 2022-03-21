@@ -27,11 +27,8 @@ import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_co
 import { execCreepCommand } from "./exec_commands/creep_command"
 import { CronProcess } from "process/onetime/cron_process"
 import { AttackPlanner } from "process/onetime/attack/attack_planner"
-import { QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
-import { CreepBody } from "utility/creep_body"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
-import { } from "room_plan/mark01_room_planner"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -698,21 +695,7 @@ export class ExecCommand implements ConsoleCommand {
 
     const attackPlanner = new AttackPlanner.Planner(targetRoom)
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
-
-    switch (attackPlan.case) {
-    case "none":
-      return `no attack plan for ${roomLink(targetRoomName)}: ${attackPlan.reason}`
-    case "single_creep":
-      return [
-        "single creep plan:",
-        `- boosts: ${attackPlan.boosts.map(boost => coloredResourceType(boost)).join(",")}`,
-        `- body: ${CreepBody.description(attackPlan.body)}`,
-      ].join("\n")
-    case "single_quad": {
-      const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
-      return `single quad plan:\n${quadSpec.description()}`
-    }
-    }
+    return AttackPlanner.describePlan(attackPlan)
   }
 
   /** @throws */

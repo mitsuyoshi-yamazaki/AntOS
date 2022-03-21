@@ -3,7 +3,10 @@ import { Timestamp } from "utility/timestamp"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
-import { shortenedNumber } from "utility/log"
+import { coloredResourceType, shortenedNumber } from "utility/log"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+
+const singleCreepMaxDamage = 3600
 
 /**
  * - どの入り口から入るか、どのwallを攻撃するか最初は手動で設定する
@@ -18,14 +21,35 @@ export namespace AttackPlanner {
   }
   export type AttackPlanSingleCreep = {
     readonly case: "single_creep"
+    readonly reason: string
     readonly boosts: MineralBoostConstant[]
     readonly body: BodyPartConstant[]
   }
   export type AttackPlanSingleQuad = {
     readonly case: "single_quad"
+    readonly reason: string
     readonly quadSpecState: QuadSpecState
   }
   export type AttackPlan = AttackPlanNone | AttackPlanSingleCreep | AttackPlanSingleQuad
+
+  export function describePlan(attackPlan: AttackPlan): string {
+    switch (attackPlan.case) {
+    case "none":
+      return `attack plan cannot be created: ${attackPlan.reason}`
+
+    case "single_creep":
+      return [
+        `single creep plan (${attackPlan.reason})`,
+        `- boosts: ${attackPlan.boosts.map(boost => coloredResourceType(boost)).join(",")}`,
+        `- body: ${CreepBody.description(attackPlan.body)}`,
+      ].join("\n")
+
+    case "single_quad": {
+      const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
+      return `attack plan (${attackPlan.reason})\n${quadSpec.description()}`
+    }
+    }
+  }
 
   type TargetStructure<T extends Structure<BuildableStructureConstant>> = {
     readonly id: Id<T>
@@ -98,122 +122,178 @@ export namespace AttackPlanner {
 
     private calculateAttackPlanFor(bunkers: Bunker[]): AttackPlan {
       const towerCount = bunkers.reduce((count, bunker) => count + bunker.towers.length, 0)
-
-      // TODO: 現状ではboostなし、parent roomはRCL8想定、1Attacker,3Healer
-      try {
-        const bodyMaxLength = GameConstants.creep.body.bodyPartMaxCount
-        const healerCount = 3
-        const boosts: MineralBoostConstant[] = []
-
-        const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
-          const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
-          const requiredHealPowerPerCreep = Math.ceil(requiredHealPower / healerCount)
-          const maxHealCount = Math.floor(bodyMaxLength / 2) - 1
-          const { bodyPartCount, boost } = this.bodyFor("heal", maxHealCount, requiredHealPowerPerCreep)
-          if (boost != null) {
-            boosts.push(boost)
-          }
-
-          const healCount = bodyPartCount
-
-          const moveCount = Math.floor(bodyMaxLength / 2)
-          const rangedAttackCount = bodyMaxLength - moveCount - healCount
-
-          const body: BodyPartConstant[] = [
-            ...Array(rangedAttackCount).fill(RANGED_ATTACK),
-            ...Array(moveCount).fill(MOVE),
-            ...Array(healCount).fill(HEAL),
-          ]
-          if (body.length > bodyMaxLength) {
-            throw `required ${healCount}HEALs/creep (estimated body: ${CreepBody.description(body)})`
-          }
-
-          const rangedAttackPower = rangedAttackCount * healerCount
-
-          return {
-            healerSpec: {
-              body,
-            },
-            rangedAttackPower,
-          }
-        })()
-
-        const { attackerSpec, canHandleMelee } = ((): { attackerSpec: QuadCreepSpec, canHandleMelee: boolean} => {
-          const totalWallHits = bunkers.reduce((total, bunker) => {
-            const bunkerStructures: { rampartHits: number }[] = [
-              ...bunker.spawns,
-              ...bunker.towers,
-              ...bunker.targetWalls,
-            ]
-            return total + bunkerStructures.reduce((result, structure) => result + structure.rampartHits, 0)
-          }, 0)
-          const attackDuration = 1000
-          const requiredTotalDismantlePower = Math.ceil(totalWallHits / attackDuration)
-          const requiredDismantlePower = Math.max(requiredTotalDismantlePower - rangedAttackPower, 0)
-
-          const hasEnoughAttackPower = rangedAttackPower > 400
-
-          if (hasEnoughAttackPower === true) {
-            const workCount = bodyMaxLength / 2
-            const boost = this.boostFor("dismantle", workCount, requiredDismantlePower)
-            if (boost != null) {
-              boosts.push(boost)
-            }
-
-            const moveCount = bodyMaxLength - workCount
-            return {
-              attackerSpec: {
-                body: [
-                  ...Array(workCount).fill(WORK),
-                  ...Array(moveCount).fill(MOVE),
-                ],
-              },
-              canHandleMelee: false,
-            }
-
-          } else {
-            const attackCount = bodyMaxLength / 2
-            const boost = this.boostFor("attack", attackCount, requiredDismantlePower)
-            if (boost != null) {
-              boosts.push(boost)
-            }
-
-            const moveCount = bodyMaxLength - attackCount
-
-            return {
-              attackerSpec: {
-                body: [
-                  ...Array(attackCount).fill(ATTACK),
-                  ...Array(moveCount).fill(MOVE),
-                ],
-              },
-              canHandleMelee: true,
-            }
-          }
-        })()
-
-        const creepSpecs: QuadCreepSpec[] = [
-          ...Array(3).fill(healerSpec),
-          attackerSpec,
+      const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
+      const totalWallHits = bunkers.reduce((total, bunker) => {
+        const bunkerStructures: { rampartHits: number }[] = [
+          ...bunker.spawns,
+          ...bunker.towers,
+          ...bunker.targetWalls,
         ]
-        const quadSpec = new QuadSpec(
-          `auto_${this.targetRoom.name}`,
-          canHandleMelee,
-          QuadSpec.defaultDamageTolerance,
-          boosts,
-          creepSpecs,
-        )
+        return total + bunkerStructures.reduce((result, structure) => result + structure.rampartHits, 0)
+      }, 0)
 
-        return {
-          case: "single_quad",
-          quadSpecState: quadSpec.encode(),
+      try {
+        if (totalWallHits < 50000 && requiredHealPower <= singleCreepMaxDamage) {
+          try {
+            return this.calculateSingleCreepAttackPlan(requiredHealPower, totalWallHits)
+          } catch {
+            // Quadで対処する
+          }
         }
+        return this.calculateSingleQuadAttackPlan(requiredHealPower, totalWallHits)
 
       } catch (error) {
         return {
           case: "none",
           reason: `${error}`,
         }
+      }
+    }
+
+    /// Tier3 boost固定
+    private calculateSingleCreepAttackPlan(requiredHealPower: number, totalWallHits: number): AttackPlanSingleCreep {
+      if (requiredHealPower > singleCreepMaxDamage) {
+        throw `a creep can't handle ${requiredHealPower} damage`
+      }
+
+      const boosts: MineralBoostConstant[] = [
+        RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+        RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+        RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+        RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+      ]
+
+      const toughDamageDecreasement = 0.3
+      const toughHits = 100
+      const toughCount = Math.ceil((Math.min(requiredHealPower * 2, singleCreepMaxDamage) * toughDamageDecreasement) / toughHits)
+
+      const healPower = GameConstants.creep.actionPower.heal
+      const healBoostTier = 3
+      const healCount = Math.ceil((toughCount * toughHits) / (healPower * (healBoostTier + 1)))
+
+      const bodyPartMaxCount = GameConstants.creep.body.bodyPartMaxCount
+      const moveCount = Math.ceil(bodyPartMaxCount / 5)
+
+      const rangedAttackCount = Math.min(bodyPartMaxCount - toughCount - healCount - moveCount, 10)
+      if (rangedAttackCount <= 0) {
+        PrimitiveLogger.fatal(`calculateSingleCreepAttackPlan() invalid ranged attack count ${rangedAttackCount} (requiredHealPower: ${requiredHealPower}, ${toughCount}T${healCount}H${rangedAttackCount}RA${moveCount}M)`)
+        throw `invalid ranged attack count ${rangedAttackCount}`
+      }
+
+      return {
+        case: "single_creep",
+        reason: `estimated max damage: ${requiredHealPower}, total wall hits: ${shortenedNumber(totalWallHits)}`,
+        boosts,
+        body: [
+          ...Array(toughCount).fill(TOUGH),
+          ...Array(rangedAttackCount).fill(RANGED_ATTACK),
+          ...Array(moveCount).fill(MOVE),
+          ...Array(healCount).fill(HEAL),
+        ],
+      }
+    }
+
+    /** @throws */
+    private calculateSingleQuadAttackPlan(requiredHealPower: number, totalWallHits: number): AttackPlanSingleQuad {
+      // TODO: 現状ではboostなし、parent roomはRCL8想定、1Attacker,3Healer
+      const bodyMaxLength = GameConstants.creep.body.bodyPartMaxCount
+      const healerCount = 3
+      const boosts: MineralBoostConstant[] = []
+
+      const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
+        const requiredHealPowerPerCreep = Math.ceil(requiredHealPower / healerCount)
+        const maxHealCount = Math.floor(bodyMaxLength / 2) - 1
+        const { bodyPartCount, boost } = this.bodyFor("heal", maxHealCount, requiredHealPowerPerCreep)
+        if (boost != null) {
+          boosts.push(boost)
+        }
+
+        const healCount = bodyPartCount
+
+        const moveCount = Math.floor(bodyMaxLength / 2)
+        const rangedAttackCount = bodyMaxLength - moveCount - healCount
+
+        const body: BodyPartConstant[] = [
+          ...Array(rangedAttackCount).fill(RANGED_ATTACK),
+          ...Array(moveCount).fill(MOVE),
+          ...Array(healCount).fill(HEAL),
+        ]
+        if (body.length > bodyMaxLength) {
+          throw `required ${healCount}HEALs/creep (estimated body: ${CreepBody.description(body)})`
+        }
+
+        const rangedAttackPower = rangedAttackCount * healerCount
+
+        return {
+          healerSpec: {
+            body,
+          },
+          rangedAttackPower,
+        }
+      })()
+
+      const { attackerSpec, canHandleMelee } = ((): { attackerSpec: QuadCreepSpec, canHandleMelee: boolean } => {
+        const attackDuration = 1000
+        const requiredTotalDismantlePower = Math.ceil(totalWallHits / attackDuration)
+        const requiredDismantlePower = Math.max(requiredTotalDismantlePower - rangedAttackPower, 0)
+
+        const hasEnoughAttackPower = rangedAttackPower > 400
+
+        if (hasEnoughAttackPower === true) {
+          const workCount = bodyMaxLength / 2
+          const boost = this.boostFor("dismantle", workCount, requiredDismantlePower)
+          if (boost != null) {
+            boosts.push(boost)
+          }
+
+          const moveCount = bodyMaxLength - workCount
+          return {
+            attackerSpec: {
+              body: [
+                ...Array(workCount).fill(WORK),
+                ...Array(moveCount).fill(MOVE),
+              ],
+            },
+            canHandleMelee: false,
+          }
+
+        } else {
+          const attackCount = bodyMaxLength / 2
+          const boost = this.boostFor("attack", attackCount, requiredDismantlePower)
+          if (boost != null) {
+            boosts.push(boost)
+          }
+
+          const moveCount = bodyMaxLength - attackCount
+
+          return {
+            attackerSpec: {
+              body: [
+                ...Array(attackCount).fill(ATTACK),
+                ...Array(moveCount).fill(MOVE),
+              ],
+            },
+            canHandleMelee: true,
+          }
+        }
+      })()
+
+      const creepSpecs: QuadCreepSpec[] = [
+        ...Array(3).fill(healerSpec),
+        attackerSpec,
+      ]
+      const quadSpec = new QuadSpec(
+        `auto_${this.targetRoom.name}`,
+        canHandleMelee,
+        QuadSpec.defaultDamageTolerance,
+        boosts,
+        creepSpecs,
+      )
+
+      return {
+        case: "single_quad",
+        reason: `estimated max damage: ${requiredHealPower}, total wall hits: ${shortenedNumber(totalWallHits)}`,
+        quadSpecState: quadSpec.encode(),
       }
     }
 

@@ -5,7 +5,6 @@ import { OperatingSystem } from "os/os"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
-import { CreepBody } from "utility/creep_body"
 import { coloredResourceType, coloredText, describeTime, profileLink, roomLink, shortenedNumber } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
@@ -199,46 +198,21 @@ export class AttackRoomProcess implements Process, MessageObserver {
       return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
 
-    const { attackPlanDescription, totalDismantlePower } = ((): { attackPlanDescription: string, totalDismantlePower: number } => {
+    const attackPlanDescription = AttackPlanner.describePlan(targetRoomPlan.attackPlan)
+    const totalDismantlePower = ((): number => {
       const attackPlan = targetRoomPlan.attackPlan
       switch (attackPlan.case) {
       case "none":
-        return {
-          attackPlanDescription: `attack plan cannot be created: ${attackPlan.reason}`,
-          totalDismantlePower: 0,
-        }
+        return 0
       case "single_creep": {
         const quadSpec = new QuadSpec("auto-single", false, QuadSpec.defaultDamageTolerance, attackPlan.boosts, [{body: attackPlan.body}])
-        const attackPlanDescription = [
-          "single creep plan:",
-          `- boosts: ${attackPlan.boosts.map(boost => coloredResourceType(boost)).join(",")}`,
-          `- body: ${CreepBody.description(attackPlan.body)}`,
-        ].join("\n")
-        const totalDismantlePower = ((): number => {
-          const quadPower = quadSpec.totalPower()
-          return quadPower.attack + quadPower.ranged_attack + quadPower.dismantle
-        })()
-
-        return {
-          attackPlanDescription,
-          totalDismantlePower,
-        }
+        const quadPower = quadSpec.totalPower()
+        return quadPower.attack + quadPower.ranged_attack + quadPower.dismantle
       }
       case "single_quad": {
         const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
-        const quadMaker = QuadMaker.create(quadSpec, this.roomName, this.targetRoomInfo.roomName)
-        const totalDismantlePower = ((): number => {
-          const quadSpec = quadMaker.currentQuadSpec()
-          if (quadSpec == null) {
-            return 0
-          }
-          const quadPower = quadSpec.totalPower()
-          return quadPower.attack + quadPower.ranged_attack + quadPower.dismantle
-        })()
-        return {
-          attackPlanDescription: `attack plan:\n${quadMaker.description()}`,
-          totalDismantlePower,
-        }
+        const quadPower = quadSpec.totalPower()
+        return quadPower.attack + quadPower.ranged_attack + quadPower.dismantle
       }
       }
     })()
