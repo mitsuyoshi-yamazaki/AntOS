@@ -10,6 +10,7 @@ export interface Environment {
   world: World
   shard: ShardName
   hasMultipleShards: boolean
+  description: string
 
   isAutomatic(): boolean
 }
@@ -46,6 +47,7 @@ export const Environment: Environment = {
   world,
   shard: Game.shard.name,
   hasMultipleShards: hasMultipleShards,
+  description: `${Game.shard.name} in ${world}`,
 
   isAutomatic(): boolean {  // TODO: メモリからも設定可能にする
     switch (world) {

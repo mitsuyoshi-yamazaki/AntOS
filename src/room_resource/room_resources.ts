@@ -131,13 +131,15 @@ export const RoomResources: RoomResourcesInterface = {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
     }
 
-    const numberOfRoomsInShard3 = 4
+    const numberOfRoomsInShard3 = 5
     switch (Environment.shard) {  // TODO:
     case "shard2":
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
     case "shard3":
-    default:
       PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() counting claimable rooms in ${Environment.shard} not supported`)
+      return 0
+    default:
+      PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() unknown shard: ${Environment.shard}`)
       return 0
     }
   },

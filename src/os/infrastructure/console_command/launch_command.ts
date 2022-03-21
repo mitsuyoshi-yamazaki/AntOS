@@ -62,6 +62,7 @@ import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
 import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
 import { DraftingRoomProcess } from "process/onetime/attack/drafting_room_process"
 import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
+import { RoomResources } from "room_resource/room_resources"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1212,6 +1213,11 @@ ProcessLauncher.register("DraftingRoomProcess", args => {
 
 ProcessLauncher.register("AggressiveClaimProcess", args => {
   try {
+    const claimableRoomCount = RoomResources.getClaimableRoomCount()
+    if (claimableRoomCount <= 0) {
+      throw `${Environment.description} no claimable rooms`
+    }
+
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
     const blockingWallIds = args.list("blocking_wall_ids", "object_id").parse() as Id<StructureWall | StructureRampart>[]
