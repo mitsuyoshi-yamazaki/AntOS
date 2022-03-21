@@ -23,7 +23,7 @@
   ],
   "exclude": [
     "node_modules",
-    "src/knowledge/war_records/**/*",
+    "submodules/private/log/**/*",
     "**/*.test.ts"
   ]
 }
