@@ -1,5 +1,43 @@
 
 /*
+- v6RoomInfo: 327kB
+  - owned: 42 rooms, 58kB
+  - normal: 1083 rooms, 268kB
+- creeps: 299kB
+- os: 160kB
+- room_info: 7kB
+- gameMap: 6kB
+- profiler: 2kB
+- towers: 1kB
+- powerCreeps: 348B
+- debug: 281B
+- versions: 117B
+- cpu_usages: 85B
+- gameInfo: 74B
+- eventMemory: 58B
+- gclFarm: 23B
+- uniqueId: 22B
+- cpu: 20B
+- messenger: 19B
+- debug_last_tick: 15B
+- napAlliances: 13B
+- spawnCreepRequests: 13B
+- pathCache: 12B
+- LOANalliance: 11B
+- last_tick: 8B
+- lastLOANtime: 8B
+- migrated_memory: 4B
+- quitter: 2B
+- rooms: 2B
+- spawns: 2B
+- creep: 2B
+- spawn: 2B
+- creepRequests: 2B
+- game: 2B
+- launcher: 2B
+- ignoreRooms: 2B
+- squad_uid: 1B
+
 shard2 39500555
 calls		time		avg		function
 29665		6601.7		0.223		Creep.moveTo
