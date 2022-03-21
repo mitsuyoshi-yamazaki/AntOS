@@ -8,12 +8,12 @@ import { coloredText } from "utility/log"
 import { Timestamp } from "utility/timestamp"
 import { ProcessState } from "../process_state"
 
-ProcessDecoder.registerUndecodableProcess("OnHeapMultiTickProcess")
+ProcessDecoder.registerUndecodableProcess("OnHeapDelayProcess")
 
-export interface OnHeapMultiTickProcessState extends ProcessState {
+export interface OnHeapDelayProcessState extends ProcessState {
 }
 
-export class OnHeapMultiTickProcess implements Process, Procedural {
+export class OnHeapDelayProcess implements Process, Procedural {
   public readonly taskIdentifier: string
 
   private constructor(
@@ -28,16 +28,16 @@ export class OnHeapMultiTickProcess implements Process, Procedural {
     this.taskIdentifier = `${this.constructor.name}_${this.processId}`
   }
 
-  public encode(): OnHeapMultiTickProcessState {
+  public encode(): OnHeapDelayProcessState {
     return {
-      t: "OnHeapMultiTickProcess",
+      t: "OnHeapDelayProcess",
       l: this.launchTime,
       i: this.processId,
     }
   }
 
-  public static create(processId: ProcessId, description: string, delay: Timestamp, command: () => string): OnHeapMultiTickProcess {
-    return new OnHeapMultiTickProcess(Game.time, processId, description, Game.time + delay, command)
+  public static create(processId: ProcessId, description: string, delay: Timestamp, command: () => string): OnHeapDelayProcess {
+    return new OnHeapDelayProcess(Game.time, processId, description, Game.time + delay, command)
   }
 
   public processShortDescription(): string {
