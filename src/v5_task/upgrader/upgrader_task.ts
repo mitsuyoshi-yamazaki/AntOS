@@ -192,7 +192,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
           }
           return 1
         })()
-        return [[MOVE, WORK, CARRY], creepCount]
+        const body = CreepBody.create([CARRY], [WORK, WORK, MOVE], roomResource.room.energyCapacityAvailable, 7)
+        return [body, creepCount]
       }
     }
 
