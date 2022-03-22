@@ -4,7 +4,6 @@
 import type { TaskState } from "./task_state"
 import { RoomKeeperTask, RoomKeeperTaskState } from "./task/room_keeper/room_keeper_task"
 import { PrimitiveWorkerTask, PrimitiveWorkerTaskState } from "./task/worker/primitive_worker_task"
-import { Season3FindPowerBankTask, Season3FindPowerBankTaskState } from "./task/season3_power_harvester/season3_find_power_bank_task"
 import { V5BridgingTask, V5BridgingTaskState } from "./task/v5_bridging/v5_bridging_task"
 import { TemplateTask, TemplateTaskState } from "./task/template/template_task"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "./task/mineral_harvester/owned_room_mineral_harvester_task"
@@ -17,7 +16,6 @@ class TaskMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
   "RoomKeeperTask" = (state: TaskState) => RoomKeeperTask.decode(state as unknown as RoomKeeperTaskState)
   "PrimitiveWorkerTask" = (state: TaskState) => PrimitiveWorkerTask.decode(state as unknown as PrimitiveWorkerTaskState)
-  "Season3FindPowerBankTask" = (state: TaskState) => Season3FindPowerBankTask.decode(state as unknown as Season3FindPowerBankTaskState)
   "V5BridgingTask" = (state: TaskState) => V5BridgingTask.decode(state as unknown as V5BridgingTaskState)
   "TemplateTask" = (state: TaskState) => TemplateTask.decode(state as unknown as TemplateTaskState)
   "OwnedRoomMineralHarvesterTask" = (state: TaskState) => OwnedRoomMineralHarvesterTask.decode(state as unknown as OwnedRoomMineralHarvesterTaskState)

@@ -6,7 +6,6 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import type { RoomName } from "utility/room_name"
 import { TaskRequestHandler, TaskRequestHandlerInputs } from "./task_request_handler"
 import { GameConstants } from "utility/constants"
-import { Season3FindPowerBankTask, Season3FindPowerBankTaskPowerBankInfo, Season3FindPowerBankTaskState } from "../season3_power_harvester/season3_find_power_bank_task"
 import { TaskPrioritizer, TaskPrioritizerPrioritizedTasks, TaskPrioritizerTaskEstimation } from "./task_prioritizer"
 import { ObserveTaskPerformance } from "application/task_profit/observe_task_performance"
 import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
@@ -35,9 +34,6 @@ export interface RoomKeeperTaskState extends TaskState {
 
   /** child task states */
   c: {
-    /** find power bank task state */
-    pf: Season3FindPowerBankTaskState | null
-
     safeModeTaskState: SafeModeManagerTaskState
     mineralHarvesterTaskState: OwnedRoomMineralHarvesterTaskState | null
     researchTaskState: ResearchTaskState | null
@@ -58,7 +54,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     roomName: RoomName,
     private readonly children: {  // TODO: economyTasks: {[index: string]: EconomyTask} などの形式にしてprioritize忘れがないようにする
       safeMode: SafeModeManagerTask,
-      findPowerBank: Season3FindPowerBankTask | null,
       mineralHarvester: OwnedRoomMineralHarvesterTask | null,
       research: ResearchTask | null,
       wallBuilder: WallBuilderTask | null,
@@ -77,7 +72,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       ss: this.sessionStartTime,
       r: this.roomName,
       c: {
-        pf: this.children.findPowerBank?.encode() ?? null,
         safeModeTaskState: this.children.safeMode.encode(),
         mineralHarvesterTaskState: this.children.mineralHarvester?.encode() ?? null,
         researchTaskState: this.children.research?.encode() ?? null,
@@ -87,12 +81,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
   }
 
   public static decode(state: RoomKeeperTaskState): RoomKeeperTask {
-    const findPowerBank = ((): Season3FindPowerBankTask | null => {
-      if (state.c.pf == null) {
-        return null
-      }
-      return Season3FindPowerBankTask.decode(state.c.pf)
-    })()
     const safeMode = ((): SafeModeManagerTask => {
       if (state.c.safeModeTaskState == null) {  // Migration
         return SafeModeManagerTask.create(state.r)
@@ -118,7 +106,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       return WallBuilderTask.decode(state.c.wallBuilderTaskState)
     })()
     const children = {
-      findPowerBank,
       safeMode,
       mineralHarvester,
       research,
@@ -129,7 +116,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
 
   public static create(roomName: RoomName): RoomKeeperTask {
     const children = {
-      findPowerBank: null,
       safeMode: SafeModeManagerTask.create(roomName),
       mineralHarvester: null,
       research: null,
@@ -319,10 +305,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
 
     const observeTasks: AnyTask<ObserveTaskPerformance>[] = []
-    if (this.children.findPowerBank != null) {
-      observeTasks.push(this.children.findPowerBank)
-    }
-
     const consumeTasks: AnyTask<ConsumeTaskPerformance>[] = []
     if (this.children.wallBuilder != null) {
       consumeTasks.push(this.children.wallBuilder)
