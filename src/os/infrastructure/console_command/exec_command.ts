@@ -715,10 +715,11 @@ export class ExecCommand implements ConsoleCommand {
     return this.attackPlanFor(targetRoom)
   }
 
+  /** @throws */
   private attackPlanFor(targetRoom: Room): string {
     const attackPlanner = new AttackPlanner.Planner(targetRoom)
-    const attackPlan = attackPlanner.targetRoomPlan.attackPlan
-    return AttackPlanner.describePlan(attackPlan)
+    const targetRoomPlan = attackPlanner.targetRoomPlan
+    return AttackPlanner.describeTargetRoomPlan(targetRoomPlan)
   }
 
   /** @throws */

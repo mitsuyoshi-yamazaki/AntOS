@@ -155,14 +155,6 @@ export namespace RoomInterpreter {
   export const interpret = (targetRoom: Room): RoomInfo => {
     const beforeRun = Game.cpu.getUsed()
 
-    const vitalStructureTypes: StructureConstant[] = [
-      STRUCTURE_SPAWN,
-      STRUCTURE_TOWER,
-      STRUCTURE_STORAGE,
-      STRUCTURE_TERMINAL,
-    ]
-
-    const vitalStructures = getHostileStructures(vitalStructureTypes, targetRoom)
     const costMatrix = CostMatrix.create()
     CostMatrix.fillWalls(costMatrix, targetRoom)
 
@@ -176,15 +168,60 @@ export namespace RoomInterpreter {
 
     CostMatrix.fillEmptySpace(costMatrix, allExitPositions.flatMap(x => x))
 
+    const vitalStructureTypes: StructureConstant[] = [
+      STRUCTURE_SPAWN,
+      STRUCTURE_TOWER,
+      STRUCTURE_STORAGE,
+      STRUCTURE_TERMINAL,
+    ]
+
+    const vitalStructures = getHostileStructures(vitalStructureTypes, targetRoom)
+
+    PrimitiveLogger.log(`${coloredText("[Info]", "info")} RoomInterpreter.interpret() took ${Math.ceil(Game.cpu.getUsed() - beforeRun)} cpu (bucket: ${Game.cpu.bucket})`)
+
+    // TODO: 実装途中
     CostMatrix.iterate((x, y) => {
       targetRoom.visual.text(`${CostMatrix.get(costMatrix, { x, y })}`, x, y, {color: "#FFFFFF"})
     })
 
-    PrimitiveLogger.log(`${coloredText("[Info]", "info")} RoomInterpreter.interpret() took ${Math.ceil(Game.cpu.getUsed() - beforeRun)} cpu (bucket: ${Game.cpu.bucket})`)
-
     return {
-      bunkers: [] // TODO:
+      bunkers: []
     }
+  }
+
+
+  export const getConsecutiveExitPositions = (room: Room): RoomPosition[][] => {
+    const getEdgeExitPositions = (exitDirection: ExitConstant, sort: (lhs: RoomPosition, rhs: RoomPosition) => number): RoomPosition[][] => {
+      const exitPositions: RoomPosition[][] = []
+      const allExitPositions = room.find(exitDirection)
+      allExitPositions.sort(sort)
+      const firstExit = allExitPositions.shift()
+
+      if (firstExit != null) {
+        let exits: RoomPosition[] = [firstExit]
+        exitPositions.push(exits)
+
+        let anchorPosition = firstExit
+        allExitPositions.forEach(exit => {
+          if (exit.getRangeTo(anchorPosition) > 1) {
+            exits = []
+            exitPositions.push(exits)
+          }
+          anchorPosition = exit
+          exits.push(exit)
+        })
+      }
+      return exitPositions
+    }
+
+    const results: RoomPosition[][] = [
+      ...getEdgeExitPositions(FIND_EXIT_TOP, (lhs, rhs) => lhs.pos.x - rhs.pos.x),
+      ...getEdgeExitPositions(FIND_EXIT_BOTTOM, (lhs, rhs) => lhs.pos.x - rhs.pos.x),
+      ...getEdgeExitPositions(FIND_EXIT_LEFT, (lhs, rhs) => lhs.pos.y - rhs.pos.y),
+      ...getEdgeExitPositions(FIND_EXIT_RIGHT, (lhs, rhs) => lhs.pos.y - rhs.pos.y),
+    ]
+
+    return results
   }
 }
 
@@ -200,36 +237,3 @@ const getHostileStructures = (structureTypes: StructureConstant[], room: Room): 
   })
 }
 
-const getConsecutiveExitPositions = (room: Room): RoomPosition[][] => {
-  const getEdgeExitPositions = (exitDirection: ExitConstant, sort: (lhs: RoomPosition, rhs: RoomPosition) => number): RoomPosition[][] => {
-    const exitPositions: RoomPosition[][] = []
-    const allExitPositions = room.find(exitDirection)
-    allExitPositions.sort(sort)
-    const firstExit = allExitPositions.shift()
-
-    if (firstExit != null) {
-      let exits: RoomPosition[] = [firstExit]
-      exitPositions.push(exits)
-
-      let anchorPosition = firstExit
-      allExitPositions.forEach(exit => {
-        if (exit.getRangeTo(anchorPosition) > 1) {
-          exits = []
-          exitPositions.push(exits)
-        }
-        anchorPosition = exit
-        exits.push(exit)
-      })
-    }
-    return exitPositions
-  }
-
-  const results: RoomPosition[][] = [
-    ...getEdgeExitPositions(FIND_EXIT_TOP, (lhs, rhs) => lhs.pos.x - rhs.pos.x),
-    ...getEdgeExitPositions(FIND_EXIT_BOTTOM, (lhs, rhs) => lhs.pos.x - rhs.pos.x),
-    ...getEdgeExitPositions(FIND_EXIT_LEFT, (lhs, rhs) => lhs.pos.y - rhs.pos.y),
-    ...getEdgeExitPositions(FIND_EXIT_RIGHT, (lhs, rhs) => lhs.pos.y - rhs.pos.y),
-  ]
-
-  return results
-}

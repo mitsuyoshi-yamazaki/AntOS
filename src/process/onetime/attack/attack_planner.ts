@@ -1,11 +1,14 @@
-import { Position } from "prototype/room_position"
+import { decodeRoomPosition, Position } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
-import { coloredResourceType, shortenedNumber } from "utility/log"
+import { coloredResourceType, roomLink, shortenedNumber } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { BoostTier, getBoostTier } from "utility/resource"
+import { RoomName } from "utility/room_name"
+
+type ConstructedWall = StructureWall | StructureRampart
 
 const singleCreepMaxDamage = 3600
 
@@ -33,7 +36,7 @@ export namespace AttackPlanner {
   }
   export type AttackPlan = AttackPlanNone | AttackPlanSingleCreep | AttackPlanSingleQuad
 
-  export function describePlan(attackPlan: AttackPlan): string {
+  export function describeAttackPlan(attackPlan: AttackPlan): string {
     switch (attackPlan.case) {
     case "none":
       return `attack plan cannot be created: ${attackPlan.reason}`
@@ -61,12 +64,38 @@ export namespace AttackPlanner {
   type Bunker = {
     readonly towers: TargetStructure<StructureTower>[]
     readonly spawns: TargetStructure<StructureSpawn>[]
-    readonly targetWalls: TargetStructure<StructureWall | StructureRampart>[]
+    readonly targetWalls: TargetStructure<ConstructedWall>[]
   }
-  export type TargetRoomPlan = {
+  export type TargetRoomPlanNone = {
+    case: "none"
+    reason: string
+  }
+  export type TargetRoomPlanMultipleBunkers = {
+    case: "multiple_bunkers"
     readonly calculatedAt: Timestamp
     readonly bunkers: Bunker[]
     readonly attackPlan: AttackPlan
+  }
+  export type TargetRoomPlan = TargetRoomPlanNone | TargetRoomPlanMultipleBunkers
+
+  export const describeTargetRoomPlan = (targetRoomPlan: TargetRoomPlan): string => {
+    switch (targetRoomPlan.case) {
+    case "none":
+      return `no room plan (${targetRoomPlan.reason})`
+    case "multiple_bunkers": {
+      const wallDescription = (walls: TargetStructure<ConstructedWall>[]): string => {
+        if (walls.length <= 0) {
+          return "no walls"
+        }
+        return `${walls.map(wall => `(${wall.position.x},${wall.position.y})`).join(",")} walls`
+      }
+      return [
+        "multiple bunkers:",
+        ...targetRoomPlan.bunkers.map(bunker => `- ${bunker.towers.length} towers, ${bunker.spawns.length} spawns, ${wallDescription(bunker.targetWalls)}`),
+        describeAttackPlan(targetRoomPlan.attackPlan),
+      ].join("\n")
+    }
+    }
   }
 
   interface PlannerInterface {
@@ -79,19 +108,49 @@ export namespace AttackPlanner {
       /// Occupyされている部屋
       private readonly targetRoom: Room,
     ) {
-      this.targetRoomPlan = this.calculateRoomPlan(targetRoom)
+      try {
+        this.targetRoomPlan = this.calculateRoomPlan(targetRoom)
+      } catch (error) {
+        this.targetRoomPlan = {
+          case: "none",
+          reason: `${error}`,
+        }
+      }
     }
 
+    /** @throws */
     private calculateRoomPlan(targetRoom: Room): TargetRoomPlan {
       // TODO: 複数bunkerの部屋を解釈できるようにする
-      const bunker: Bunker = {
-        towers: this.getStructure(STRUCTURE_TOWER, targetRoom) as TargetStructure<StructureTower>[],
-        spawns: this.getStructure(STRUCTURE_SPAWN, targetRoom) as TargetStructure<StructureSpawn>[],
-        targetWalls: [],  // TODO:
-      }
+      const bunker = ((): Bunker => {
+        const towers = this.getStructure(STRUCTURE_TOWER, targetRoom) as TargetStructure<StructureTower>[]
+        const spawns = this.getStructure(STRUCTURE_SPAWN, targetRoom) as TargetStructure<StructureSpawn>[]
+
+        const targetWalls = ((): TargetStructure<ConstructedWall>[] => {
+          const vitalStructure = targetRoom.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_TOWER } })[0]
+            ?? targetRoom.find(FIND_HOSTILE_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0]
+          if (vitalStructure == null) {
+            return []
+          }
+
+          return getTargetWalls(targetRoom, vitalStructure).map(wall => {
+            return {
+              id: wall.id,
+              position: { x: wall.pos.x, y: wall.pos.y },
+              rampartHits: wall.hits,
+            }
+          })
+        })()
+
+        return {
+          towers,
+          spawns,
+          targetWalls,
+        }
+      })()
       const bunkers: Bunker[] = [bunker]
 
       return {
+        case: "multiple_bunkers",
         calculatedAt: Game.time,
         bunkers,
         attackPlan: this.calculateAttackPlanFor(bunkers),
@@ -151,10 +210,7 @@ export namespace AttackPlanner {
           }
         }
 
-        return {
-          case: "none",
-          reason: "no attack plan",
-        }
+        return quadAttackPlan
 
       } catch (error) {
         return {
@@ -364,4 +420,151 @@ function getBoostMaxTier(boosts: MineralBoostConstant[]): BoostTier {
     }
     return tier
   }, 0 as BoostTier)
+}
+
+const quadMemberDirections: DirectionConstant[] = [
+  TOP,
+  RIGHT,
+  TOP_RIGHT,
+]
+
+const getQuadMemberPositions = (position: RoomPosition): RoomPosition[] => {
+  return quadMemberDirections.flatMap(direction => position.positionTo(direction) ?? [])
+}
+
+/// Quad想定
+/** @throws */
+const getTargetWalls = (room: Room, vitalStructure: OwnedStructure): ConstructedWall[] => {
+  const exit = room.find(FIND_EXIT)[0]
+  if (exit == null) {
+    throw `no exits in room ${roomLink(room.name)}`
+  }
+
+  const constructedWalls: ConstructedWall[] = [
+    ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } }) as StructureWall[],
+    ...room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_RAMPART } }) as StructureRampart[],
+  ]
+
+  const pathFinderOptions: FindPathOpts = {
+    costCallback: quadCostCallback(room, constructedWalls),
+    range: 1,
+    ignoreCreeps: true,
+    maxRooms: 1,
+    ignoreDestructibleStructures: true,
+  }
+
+  const path = room.findPath(exit.pos, vitalStructure.pos, pathFinderOptions)
+
+  const positionIdentifier = (position: Position): string => {
+    return `${position.x},${position.y}`
+  }
+
+  const constructedWallByPosition = new Map<string, ConstructedWall>()
+  constructedWalls.forEach(constructedWall => {
+    constructedWallByPosition.set(positionIdentifier(constructedWall.pos), constructedWall)
+  })
+
+  return path.flatMap((pathPosition): ConstructedWall[] => {
+    const constructedWall = constructedWallByPosition.get(positionIdentifier(pathPosition))
+    if (constructedWall == null) {
+      return []
+    }
+    const roomPosition = decodeRoomPosition(pathPosition, room.name)
+
+    return [
+      constructedWall,
+      ...getQuadMemberPositions(roomPosition).flatMap((position): ConstructedWall[] => {
+        const wall = constructedWallByPosition.get(positionIdentifier(position))
+        if (wall == null) {
+          return []
+        }
+        return [wall]
+      })
+    ]
+  })
+}
+
+// TODO: CostMatrixのキャッシュはできるかも
+function quadCostCallback(room: Room, constructedWalls: ConstructedWall[]): (roomName: RoomName, costMatrix: CostMatrix) => CostMatrix {
+  return (roomName: RoomName, costMatrix: CostMatrix): CostMatrix => {
+    if (roomName !== room.name) {
+      return costMatrix
+    }
+
+    const setCostTo = (position: RoomPosition, cost: number): void => {
+      if (costMatrix.get(position.x, position.y) < cost) {
+        costMatrix.set(position.x, position.y, cost)
+      }
+      getQuadMemberPositions(position).forEach(p => {
+        if (costMatrix.get(p.x, p.y) < cost) {
+          costMatrix.set(p.x, p.y, cost)
+        }
+      })
+    }
+
+    const obstacleCost = GameConstants.pathFinder.costs.obstacle
+    const swampCost = GameConstants.pathFinder.costs.swamp
+    const roomMinEdge = GameConstants.room.edgePosition.min
+    const roomMaxEdge = GameConstants.room.edgePosition.max
+    const exitPositionCost = obstacleCost - 1
+    const constructedWallCost = obstacleCost - 1
+
+    for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
+      for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
+        const position = new RoomPosition(x, y, roomName)
+        if (position.isRoomEdge === true) {
+          setCostTo(position, exitPositionCost)
+          continue
+        }
+
+        const fieldType = getFieldType(position)
+        switch (fieldType) {
+        case "plain":
+          break
+
+        case "swamp":
+          setCostTo(position, swampCost)
+          break
+
+        case "terrain_wall":
+          setCostTo(position, obstacleCost)
+          break
+        }
+      }
+    }
+
+    constructedWalls.forEach(constructedWall => {
+      setCostTo(constructedWall.pos, constructedWallCost)
+    })
+
+    for (let y = roomMinEdge; y <= roomMaxEdge; y += 1) {
+      for (let x = roomMinEdge; x <= roomMaxEdge; x += 1) {
+        const costDescription = ((): string => {
+          const cost = costMatrix.get(x, y)
+          if (cost === obstacleCost) {
+            return "■"
+          }
+          return `${cost}`
+        })()
+        room.visual.text(costDescription, x, y, {color: "#FFFFFF"})
+      }
+    }
+
+    return costMatrix
+  }
+}
+
+function getFieldType(position: RoomPosition): "terrain_wall" | "swamp" | "plain" {
+  const terrain = position.lookFor(LOOK_TERRAIN)[0]
+  switch (terrain) {
+  case "plain":
+    return "plain"
+  case "swamp":
+    return "swamp"
+  case "wall":
+    return "terrain_wall"
+  default:
+    PrimitiveLogger.programError(`Unexpected terrain ${terrain} at ${position} in ${roomLink(position.roomName)}`)
+    return "terrain_wall"
+  }
 }

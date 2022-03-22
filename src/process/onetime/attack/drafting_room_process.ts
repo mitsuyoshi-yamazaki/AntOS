@@ -285,9 +285,18 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     }
 
     const attackPlanner = new AttackPlanner.Planner(targetRoom)
-    const attackPlan = attackPlanner.targetRoomPlan.attackPlan
+    const targetRoomPlan = attackPlanner.targetRoomPlan
+    switch (targetRoomPlan.case) {
+    case "none":
+      PrimitiveLogger.programError(`${this.taskIdentifier} cannot calculate ${roomLink(targetRoomName)} room plan (${targetRoomPlan.reason})`)
+      return
+    case "multiple_bunkers":
+      break
+    }
+
+    const attackPlan = targetRoomPlan.attackPlan
     if (attackPlan.case === "none") {
-      PrimitiveLogger.programError(`${this.taskIdentifier} cannot calculate attack plan for ${roomLink(targetRoomName)}`)
+      PrimitiveLogger.programError(`${this.taskIdentifier} cannot calculate attack plan for ${roomLink(targetRoomName)} (${attackPlan.reason})`)
       return
     }
 
@@ -453,7 +462,15 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
 
   private calculateAttackPlan(targetRoom: Room, ownerName: string): void {
     const attackPlanner = new AttackPlanner.Planner(targetRoom)
-    const attackPlan = attackPlanner.targetRoomPlan.attackPlan
+    const targetRoomPlan = attackPlanner.targetRoomPlan
+    switch (targetRoomPlan.case) {
+    case "none":
+      return
+    case "multiple_bunkers":
+      break
+    }
+
+    const attackPlan = targetRoomPlan.attackPlan
 
     const getCheckedRoomList = (checkedRooms: CheckedRoom, ownerName: string): RoomName[] => {
       const stored = checkedRooms[ownerName]

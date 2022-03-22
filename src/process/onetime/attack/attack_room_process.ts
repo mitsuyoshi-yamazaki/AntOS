@@ -159,7 +159,18 @@ export class AttackRoomProcess implements Process, MessageObserver {
 
   /** @throws */
   private launch(): string {
-    const attackPlan = this.targetRoomInfo.observeRecord?.targetRoomPlan?.attackPlan
+    const attackPlan = ((): AttackPlanner.AttackPlan | null => {
+      const targetRoomPlan = this.targetRoomInfo.observeRecord?.targetRoomPlan
+      if (targetRoomPlan == null) {
+        return null
+      }
+      switch (targetRoomPlan.case) {
+      case "none":
+        return null
+      case "multiple_bunkers":
+        return targetRoomPlan.attackPlan
+      }
+    })()
     if (attackPlan == null) {
       throw `no attack plan for ${roomLink(this.targetRoomInfo.roomName)}`
     }
@@ -197,8 +208,15 @@ export class AttackRoomProcess implements Process, MessageObserver {
     if (targetRoomPlan == null) {
       return `${roomLink(this.targetRoomInfo.roomName)} no room plan`
     }
+    const targetRoomPlanDescription = AttackPlanner.describeTargetRoomPlan(targetRoomPlan)
 
-    const attackPlanDescription = AttackPlanner.describePlan(targetRoomPlan.attackPlan)
+    switch (targetRoomPlan.case) {
+    case "none":
+      return targetRoomPlanDescription
+    case "multiple_bunkers":
+      break
+    }
+
     const totalDismantlePower = ((): number => {
       const attackPlan = targetRoomPlan.attackPlan
       switch (attackPlan.case) {
@@ -232,7 +250,7 @@ export class AttackRoomProcess implements Process, MessageObserver {
     const info: string[] = [
       `calculated at ${describeTime(Game.time - targetRoomPlan.calculatedAt)} ago, ${targetRoomPlan.bunkers.length} bunkers`,
       ...bunkerDescriptions,
-      attackPlanDescription,
+      targetRoomPlanDescription,
     ]
     return info.join("\n")
   }
