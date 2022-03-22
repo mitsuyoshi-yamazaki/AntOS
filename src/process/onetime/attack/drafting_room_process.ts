@@ -39,6 +39,7 @@ type RunningStateRunning = {
 }
 type RunningStateRestart = {
   readonly case: "restart"
+  readonly nextRun: Timestamp
   readonly relativePositionIndex: Position
 }
 type RunningStateLaunch = {
@@ -268,6 +269,9 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
       this.runRunningState(this.runningState)
       break
     case "restart":
+      if (Game.time < this.runningState.nextRun) {
+        break
+      }
       this.queueNextPosition(this.runningState.relativePositionIndex)
       break
     case "launch":
@@ -312,6 +316,7 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     } else {
       this.runningState = {
         case: "restart",
+        nextRun: Game.time + 1,
         relativePositionIndex: state.suspendedState,
       }
     }
@@ -332,6 +337,16 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
   }
 
   private runRunningState(state: RunningStateRunning): void {
+    if (Game.cpu.bucket < 9000) {
+      processLog(this, `suspend due to cpu bucket shortage (${Game.cpu.bucket})`)
+      this.runningState = {
+        case: "restart",
+        nextRun: Game.time + 100,
+        relativePositionIndex: state.relativePositionIndex,
+      }
+      return
+    }
+
     this.observeRoom(state.relativePositionIndex)
     this.queueNextPosition(state.relativePositionIndex)
   }
