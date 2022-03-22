@@ -17,8 +17,6 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { processLog } from "os/infrastructure/logger"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { OperatingSystem } from "os/os"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "./season_701205_power_harvester_swamp_runner_process"
 import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ProcessDecoder } from "process/process_decoder"
@@ -169,45 +167,33 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
     }
 
     if (this.stopSpawning !== true && this.squadSpawned !== true) {
-      const harvestingPower = OperatingSystem.os.listAllProcesses().some(processInfo => {
-        if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
+      const needsAttacker = ((): boolean => {
+        if (roomTypeOf(this.targetRoomName) !== "source_keeper") {
           return false
         }
-        if (processInfo.process.parentRoomName === this.parentRoomName && processInfo.process.isPickupFinished !== true) {
+        if (attackers.length >= 3) {
+          return false
+        }
+        if (attackers.length < 2) {
           return true
         }
-        return false
-      })
-
-      if (harvestingPower !== true) {
-        const needsAttacker = ((): boolean => {
-          if (roomTypeOf(this.targetRoomName) !== "source_keeper") {
+        return attackers.some(creep => {
+          if (creep.ticksToLive == null) {
             return false
           }
-          if (attackers.length >= 3) {
-            return false
-          }
-          if (attackers.length < 2) {
-            return true
-          }
-          return attackers.some(creep => {
-            if (creep.ticksToLive == null) {
-              return false
-            }
-            return creep.ticksToLive < 150
-          })
-        })()
+          return creep.ticksToLive < 150
+        })
+      })()
 
-        if (needsAttacker === true) {
-          const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
-          this.requestCreep(this.attackerRoles, this.attackerBody, priority)
+      if (needsAttacker === true) {
+        const priority: CreepSpawnRequestPriority = attackers.length === 0 ? CreepSpawnRequestPriority.Low : CreepSpawnRequestPriority.High
+        this.requestCreep(this.attackerRoles, this.attackerBody, priority)
+      } else {
+        if (harvesters[0] == null || (harvesters.length <= 1 &&  (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
+          this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
         } else {
-          if (harvesters[0] == null || (harvesters.length <= 1 &&  (harvesters[0].ticksToLive != null && harvesters[0].ticksToLive < 100))) {
-            this.requestCreep(this.harvesterRoles, this.harvesterBody, CreepSpawnRequestPriority.Low)
-          } else {
-            if (haulers.length < 1) {
-              this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
-            }
+          if (haulers.length < 1) {
+            this.requestCreep(this.haulerRoles, this.haulerBody, CreepSpawnRequestPriority.Low)
           }
         }
       }

@@ -6,16 +6,14 @@ import { Result, ResultFailed } from "utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { coloredText, roomLink } from "utility/log"
+import { roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
-import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
@@ -93,8 +91,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "Season570208DismantleRcl2RoomProcess":
         return this.launchSeason570208DismantleRcl2RoomProcess()
-      case "Season701205PowerHarvesterSwampRunnerProcess":
-        return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
       case "Season1200082SendMineralProcess":
@@ -272,53 +268,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints, numberOfCreeps)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason701205PowerHarvesterSwampRunnerProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const neighbourCount = ((): number => {
-      const targetRoom = Game.rooms[targetRoomName]
-      if (targetRoom == null) {
-        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no visible to ${roomLink(targetRoomName)}`)
-        return 3
-      }
-      const powerBank = targetRoom.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0]
-      if (powerBank == null) {
-        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no power bank found in ${roomLink(targetRoomName)}`)
-        return 3
-      }
-      return powerBank.pos.positionsInRange(1, {
-        excludeItself: true,
-        excludeTerrainWalls: true,
-        excludeStructures: true,
-        excludeWalkableStructures: false,
-      }).length
-    })()
-
-    const dryRun = args.get("dry_run")
-    if (dryRun != null) {
-      return Result.Failed(`${coloredText("[Dry Run]", "warn")} Season701205PowerHarvesterSwampRunnerProcess ${roomLink(targetRoomName)}, ${neighbourCount} attacker points`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount)
     })
     return Result.Succeeded(process)
   }

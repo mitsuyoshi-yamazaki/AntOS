@@ -18,20 +18,13 @@ import { RoomKeeperTaskProblemTypes } from "./task_request_handler/room_keeper_p
 import { AnyTaskProblem } from "application/any_problem"
 import { coloredText, roomLink } from "utility/log"
 import { RoomKeeperPerformance } from "application/task_profit/owned_room_performance"
-import { OperatingSystem } from "os/os"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
 import { OwnedRoomMineralHarvesterTask, OwnedRoomMineralHarvesterTaskState } from "../mineral_harvester/owned_room_mineral_harvester_task"
 import { ResearchTask, ResearchTaskState } from "../research/research_task"
 import { parseLabs } from "script/room_plan"
 import { SafeModeManagerTask, SafeModeManagerTaskState } from "../defence/safe_mode_manager_task"
 import { WallBuilderTask, WallBuilderTaskState } from "../wall/wall_builder_task"
 import { ConsumeTaskPerformance } from "application/task_profit/consume_task_performance"
-import { findRoomRoute } from "utility/map"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-
-const config = {
-  powerHarvestingEnabled: true
-}
 
 type RoomKeeperTaskOutput = void
 export type RoomKeeperTaskOutputs = TaskOutputs<RoomKeeperTaskOutput, RoomKeeperTaskProblemTypes>
@@ -155,9 +148,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
     }
     const taskPriority = this.prioritizeTasks(roomResource)
 
-    ErrorMapper.wrapLoop((): void => {
-      this.runPowerBankTasks(roomResource, requestHandlerInputs, taskPriority)
-    }, "runPowerBankTasks()")()
     ErrorMapper.wrapLoop((): void => {
       this.runMineralHarvestTask(roomResource, requestHandlerInputs, taskPriority)
     }, "runMineralHarvestTask()")()
@@ -297,112 +287,6 @@ export class RoomKeeperTask extends Task<RoomKeeperTaskOutput, RoomKeeperTaskPro
       return
     }
     roomResource.roomInfo.resourceInsufficiencies[RESOURCE_ENERGY] = "optional"
-  }
-
-  // ---- Power Bank ---- //
-  private runPowerBankTasks(roomResource: OwnedRoomResource, requestHandlerInputs: TaskRequestHandlerInputs, taskPriority: TaskPrioritizerPrioritizedTasks): void {
-    const removeFindPowerBankTask = () => {
-      if(this.children.findPowerBank != null) {
-        this.children.findPowerBank = null
-      }
-    }
-    const environment = true as boolean
-    // if (Environment.world !== "season 3") {
-    if (environment) {
-      removeFindPowerBankTask()
-      return
-    }
-    if (roomResource.controller.level <= 5) {
-      removeFindPowerBankTask()
-      return
-    }
-    if (roomResource.roomInfo.config?.disablePowerHarvesting === true) {
-      removeFindPowerBankTask()
-      return
-    }
-    const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-      + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-    if (energyAmount < 70000) {
-      return
-    }
-
-    if (this.children.findPowerBank == null) {
-      if (config.powerHarvestingEnabled !== true) {
-        return
-      }
-      if (roomResource.room.energyCapacityAvailable < 2300) {
-        return
-      }
-      this.children.findPowerBank = Season3FindPowerBankTask.create(this.roomName)
-      if (this.children.findPowerBank == null) {
-        return
-      }
-    }
-
-    const findPowerBankOutputs = this.children.findPowerBank.runSafely(roomResource)
-    this.concatRequests(findPowerBankOutputs, this.children.findPowerBank.identifier, taskPriority.executableTaskIdentifiers, requestHandlerInputs)
-
-    const powerBanks = (findPowerBankOutputs.output?.powerBanks ?? []).filter(powerBankInfo => {
-      if (this.canHarvestPowerBank(powerBankInfo, roomResource) !== true) {
-        return
-      }
-      const decay = powerBankInfo.decayedBy - Game.time
-      const minimumDamage = roomResource.controller.level < 7 ? 450 : 570
-      const powerBankHits = 2000000 // TODO: 実際の値を求める
-      const estimatedTicksToRoom = findRoomRoute(this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints).length * GameConstants.room.size
-      const margin = 500
-      const maxAttackerCount = 3
-      const estimatedTicksToDestroy = margin + estimatedTicksToRoom + Math.ceil((powerBankHits / minimumDamage) / Math.min(powerBankInfo.nearbySquareCount, maxAttackerCount))
-      if (decay < estimatedTicksToDestroy) {
-        requestHandlerInputs.logs.push({
-          taskIdentifier: this.identifier,
-          logEventType: "event",
-          message: `Power bank in ${roomLink(powerBankInfo.roomName)} estimated ticks to destroy: ${estimatedTicksToDestroy}, decay: ${Math.floor(decay / 100) * 100}`
-        })
-        return false
-      }
-      return true
-    })
-    const targetPowerBank = powerBanks.sort((lhs, rhs) => {
-      return lhs.powerAmount - rhs.powerAmount
-    })[0]
-
-    if (targetPowerBank == null) {
-      return
-    }
-    this.launchPowerBankHarvestProcess(targetPowerBank)
-    requestHandlerInputs.logs.push({
-      taskIdentifier: this.identifier,
-      logEventType: "event",
-      message: `Launched power bank harvester process ${roomLink(targetPowerBank.roomName)}, amount: ${targetPowerBank.powerAmount}, decay: ${targetPowerBank.decayedBy - Game.time}, nearby squares: ${targetPowerBank.nearbySquareCount}`
-    })
-  }
-
-  private canHarvestPowerBank(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo, roomResource: OwnedRoomResource): boolean {
-    const spawnOperatingRooms: RoomName[] = ["W21S23"]
-    let processCount = spawnOperatingRooms.includes(this.roomName) === true ? 2 : 1
-    if (roomResource.roomInfo.config?.disableUnnecessaryTasks === true) {
-      return false
-    }
-    for (const processInfo of OperatingSystem.os.listAllProcesses()) {
-      if (!(processInfo.process instanceof Season701205PowerHarvesterSwampRunnerProcess)) {
-        continue
-      }
-      if (processInfo.process.targetRoomName === powerBankInfo.roomName) {
-        return false
-      }
-      if (processInfo.process.parentRoomName === this.roomName && processInfo.process.isPickupFinished !== true) {
-        processCount -= 1
-        if (processCount <= 0) {
-          return false
-        }
-      }
-    }
-    return true
-  }
-
-  private launchPowerBankHarvestProcess(powerBankInfo: Season3FindPowerBankTaskPowerBankInfo): void {
-    OperatingSystem.os.addProcess(null, (processId => Season701205PowerHarvesterSwampRunnerProcess.create(processId, this.roomName, powerBankInfo.roomName, powerBankInfo.waypoints, powerBankInfo.nearbySquareCount)))
   }
 
   // ---- Request Handling ---- //
