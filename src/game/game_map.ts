@@ -1,4 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
 import { Result } from "utility/result"
 import { isValidRoomName, RoomCoordinate, RoomName } from "../utility/room_name"
@@ -125,6 +126,10 @@ export const GameMap = {
     MissingWaypoints.clear()
     return missingWaypoints
   },
+
+  calculateSafeRoute(fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null {
+    return calculateSafeRoute(fromRoomName, toRoomName)
+  },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
@@ -181,4 +186,38 @@ function straightRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName
     return null
   }
   return []
+}
+
+const calculateSafeRoute = (fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null => {
+  const normalCost = 1
+  const obstacleCost = Infinity
+
+  const routeCallback = (roomName: RoomName): number => {
+    if (roomName === fromRoomName || roomName === toRoomName) {
+      return normalCost
+    }
+
+    const roomInfo = RoomResources.getRoomInfo(roomName)
+    if (roomInfo == null) {
+      return normalCost
+    }
+    if (roomInfo.roomType !== "normal") {
+      return normalCost
+    }
+    if (roomInfo.owner == null) {
+      return normalCost
+    }
+    switch (roomInfo.owner.ownerType) {
+    case "reserve":
+      return normalCost
+    case "claim":
+      return obstacleCost
+    }
+  }
+
+  const route = Game.map.findRoute(fromRoomName, toRoomName, { routeCallback })
+  if (route === ERR_NO_PATH) {
+    return null
+  }
+  return route.map(routePosition => routePosition.room)
 }
