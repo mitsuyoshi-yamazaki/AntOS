@@ -29,6 +29,8 @@ import { CronProcess } from "process/onetime/cron_process"
 import { AttackPlanner } from "process/onetime/attack/attack_planner"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
+import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
+import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -76,6 +78,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.roomPathFinding(args)
       case "attack_plan":
         return this.attackPlan(args)
+      case "interpret_room":
+        return this.interpretRoom(args)
       case "cron":
         return this.cron(args)
       case "script":
@@ -690,12 +694,72 @@ export class ExecCommand implements ConsoleCommand {
       if (observeResult !== OK) {
         throw `observing ${roomLink(targetRoomName)} from ${roomLink(observer.room.name)} failed with ${observeResult}`
       }
-      return `observing ${roomLink(targetRoomName)}. execute the same command in the next tick`
+
+      OperatingSystem.os.addProcess(null, processId => {
+        return OnHeapDelayProcess.create(
+          processId,
+          `observe ${roomLink(targetRoomName)} for planning attack`,
+          1,
+          (): string => {
+            const observedTargetRoom = Game.rooms[targetRoomName]
+            if (observedTargetRoom == null) {
+              throw `observing ${roomLink(targetRoomName)} failed`
+            }
+            return this.attackPlanFor(observedTargetRoom)
+          }
+        )
+      })
+      return `reserved attack planning for ${roomLink(targetRoomName)}`
     }
 
+    return this.attackPlanFor(targetRoom)
+  }
+
+  private attackPlanFor(targetRoom: Room): string {
     const attackPlanner = new AttackPlanner.Planner(targetRoom)
     const attackPlan = attackPlanner.targetRoomPlan.attackPlan
     return AttackPlanner.describePlan(attackPlan)
+  }
+
+  /** @throws */
+  private interpretRoom(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const targetRoomName = listArguments.roomName(0, "target room name").parse()
+    const targetRoom = Game.rooms[targetRoomName]
+
+    if (targetRoom == null) {
+      const observer = listArguments.visibleGameObject(1, "observer id").parse()
+      if (!(observer instanceof StructureObserver)) {
+        throw `${observer} is not StructureObserver`
+      }
+      const observeResult = observer.observeRoom(targetRoomName)
+      if (observeResult !== OK) {
+        throw `observing ${roomLink(targetRoomName)} from ${roomLink(observer.room.name)} failed with ${observeResult}`
+      }
+
+      OperatingSystem.os.addProcess(null, processId => {
+        return OnHeapDelayProcess.create(
+          processId,
+          `observe ${roomLink(targetRoomName)} for interpreting room plan`,
+          1,
+          (): string => {
+            const observedTargetRoom = Game.rooms[targetRoomName]
+            if (observedTargetRoom == null) {
+              throw `observing ${roomLink(targetRoomName)} failed`
+            }
+            return this.interpretRoomFor(observedTargetRoom)
+          }
+        )
+      })
+      return `reserved interpreting for ${roomLink(targetRoomName)}`
+    }
+
+    return this.interpretRoomFor(targetRoom)
+  }
+
+  private interpretRoomFor(targetRoom: Room): string {
+    RoomInterpreter.interpret(targetRoom)
+    return "ok"
   }
 
   /** @throws */
