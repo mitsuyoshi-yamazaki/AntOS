@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
@@ -14,6 +14,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { powerName } from "utility/power"
 import { OnHeapLogger } from "utility/on_heap_logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("PowerCreepProcess", state => {
   return PowerCreepProcess.decode(state as PowerCreepProcessState)
@@ -28,12 +29,16 @@ const programErrorOnHeapLogger = new OnHeapLogger({
   logInterval: 100,
 })
 
+type RunningState = "normal" | "suicide"
+
 export interface PowerCreepProcessState extends ProcessState {
   /** parent room name */
   r: RoomName
 
   /** power creep name */
   p: PowerCreepName
+
+  readonly runningState: RunningState
 }
 
 // RoomObject.effects は undefined のことがあるため注意すること
@@ -44,7 +49,7 @@ Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f155
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
 Game.io("launch -l PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
-export class PowerCreepProcess implements Process, Procedural {
+export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -59,6 +64,7 @@ export class PowerCreepProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     public readonly powerCreepName: PowerCreepName,
+    private runningState: RunningState,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.powerCreepName}`
   }
@@ -70,15 +76,16 @@ export class PowerCreepProcess implements Process, Procedural {
       i: this.processId,
       r: this.parentRoomName,
       p: this.powerCreepName,
+      runningState: this.runningState,
     }
   }
 
   public static decode(state: PowerCreepProcessState): PowerCreepProcess | null {
-    return new PowerCreepProcess(state.l, state.i, state.r, state.p)
+    return new PowerCreepProcess(state.l, state.i, state.r, state.p, state.runningState ?? "normal")  // FixMe: Migration
   }
 
   public static create(processId: ProcessId, roomName: RoomName, powerCreepName: PowerCreepName): PowerCreepProcess {
-    return new PowerCreepProcess(Game.time, processId, roomName, powerCreepName)
+    return new PowerCreepProcess(Game.time, processId, roomName, powerCreepName, "normal")
   }
 
   public processShortDescription(): string {
@@ -90,11 +97,39 @@ export class PowerCreepProcess implements Process, Procedural {
     if (powerCreep == null) {
       descriptions.push("removed")
     } else {
-      if (powerCreep.room == null) {
-        descriptions.push("not spawned")
+      if (powerCreep.spawnCooldownTime != null) {
+        const spawnCooldown = (powerCreep.spawnCooldownTime - Date.now()) / (3600 * 1000)
+        const cooldownDescription = Math.floor(spawnCooldown * 10) / 10
+        descriptions.push(`spawn cooldown: ${cooldownDescription} hours`)
+      } else {
+        if (powerCreep.room == null) {
+          descriptions.push("not spawned")
+        }
       }
     }
     return descriptions.join(" ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "suicide"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "suicide":
+        this.runningState = "suicide"
+        return "ok"
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
@@ -110,6 +145,14 @@ export class PowerCreepProcess implements Process, Procedural {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
       return
+    }
+
+    switch (this.runningState) {
+    case "suicide":
+      this.suicide(powerCreep, roomResource)
+      return
+    case "normal":
+      break
     }
 
     if (powerCreep.room == null) {
@@ -165,6 +208,37 @@ export class PowerCreepProcess implements Process, Procedural {
     }
 
     this.moveToWaitingPosition(powerCreep, roomResource)
+  }
+
+  private suicide(powerCreep: PowerCreep, roomResource: OwnedRoomResource): void {
+    if (powerCreep.room == null) {
+      OperatingSystem.os.killProcess(this.processId)
+      return
+    }
+
+    powerCreep.say("suicide")
+
+    if (powerCreep.store.getUsedCapacity(RESOURCE_OPS) <= 0) {
+      powerCreep.suicide()
+      return
+    }
+
+    const storage = ((): StructureTerminal | StructureStorage | null => {
+      if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.store.getFreeCapacity() > 1000) {
+        return roomResource.activeStructures.terminal
+      }
+      if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.store.getFreeCapacity() > 1000) {
+        return roomResource.activeStructures.storage
+      }
+      return null
+    })()
+
+    if (storage == null) {
+      powerCreep.suicide()
+      return
+    }
+
+    this.transferOps(powerCreep, storage, {all: true})
   }
 
   private spawn(powerCreep: PowerCreep, powerSpawn: StructurePowerSpawn): void {
@@ -408,12 +482,13 @@ export class PowerCreepProcess implements Process, Procedural {
     }
   }
 
-  private transferOps(powerCreep: PowerCreep, opsStore: StructureTerminal | StructureStorage): void {
+  private transferOps(powerCreep: PowerCreep, opsStore: StructureTerminal | StructureStorage, options?: {all?: boolean}): void {
     if (powerCreep.pos.isNearTo(opsStore) !== true) {
       powerCreep.moveTo(opsStore, defaultMoveToOptions())
       return
     }
-    powerCreep.transfer(opsStore, RESOURCE_OPS, 100)
+    const amount: number | undefined = options?.all === true ? undefined : 100
+    powerCreep.transfer(opsStore, RESOURCE_OPS, amount)
   }
 
   private moveToWaitingPosition(powerCreep: PowerCreep, roomResource: OwnedRoomResource): void {
