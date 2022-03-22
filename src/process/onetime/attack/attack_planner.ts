@@ -111,6 +111,10 @@ export namespace AttackPlanner {
       try {
         this.targetRoomPlan = this.calculateRoomPlan(targetRoom)
       } catch (error) {
+        if (error instanceof Error) {
+          PrimitiveLogger.programError(`AttackPlanner.Planner.calculateRoomPlan() thrown an exception: ${error}\n${error.stack}`)
+        }
+
         this.targetRoomPlan = {
           case: "none",
           reason: `${error}`,
@@ -203,6 +207,10 @@ export namespace AttackPlanner {
           try {
             return this.calculateSingleCreepAttackPlan(requiredHealPower, totalWallHits)
           } catch (error) {
+            if (error instanceof Error) {
+              PrimitiveLogger.programError(`AttackPlanner.Planner.calculateSingleCreepAttackPlan() thrown an exception: ${error}\n${error.stack}`)
+            }
+
             return {
               case: "none",
               reason: `${error}`,
@@ -213,6 +221,10 @@ export namespace AttackPlanner {
         return quadAttackPlan
 
       } catch (error) {
+        if (error instanceof Error) {
+          PrimitiveLogger.programError(`AttackPlanner.Planner.calculateAttackPlanFor() thrown an exception: ${error}\n${error.stack}`)
+        }
+
         return {
           case: "none",
           reason: `${error}`,
@@ -269,10 +281,32 @@ export namespace AttackPlanner {
       const bodyMaxLength = GameConstants.creep.body.bodyPartMaxCount
       const healerCount = 3
       const boosts: MineralBoostConstant[] = []
+      const moveBoostTier = ((): BoostTier => {
+        const baseHealPower = GameConstants.creep.actionPower.heal * Math.floor(bodyMaxLength / 2) * healerCount
+        const tier0MoveMaxHealPower = baseHealPower
+        if (requiredHealPower <= tier0MoveMaxHealPower) {
+          return 0
+        }
+
+        const tier1MoveMaxHealPower = baseHealPower * 2
+        if (requiredHealPower <= tier1MoveMaxHealPower) {
+          return 1
+        }
+
+        // tier2 moveは使用しない
+        const tier3MoveMaxHealPower = baseHealPower * 4
+        if (requiredHealPower <= tier3MoveMaxHealPower) {
+          return 3
+        }
+        throw `estimated damage too large ${requiredHealPower}`
+      })()
+
+      const movePartMaxLength = Math.ceil(bodyMaxLength / (moveBoostTier + 2))
+      const workPartMaxLength = bodyMaxLength - movePartMaxLength
 
       const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
         const requiredHealPowerPerCreep = Math.ceil(requiredHealPower / healerCount)
-        const maxHealCount = Math.floor(bodyMaxLength / 2) - 1
+        const maxHealCount = workPartMaxLength - 1
         const { bodyPartCount, boost } = this.bodyFor("heal", maxHealCount, requiredHealPowerPerCreep)
         if (boost != null) {
           boosts.push(boost)
@@ -280,8 +314,11 @@ export namespace AttackPlanner {
 
         const healCount = bodyPartCount
 
-        const moveCount = Math.floor(bodyMaxLength / 2)
+        const moveCount = movePartMaxLength
         const rangedAttackCount = bodyMaxLength - moveCount - healCount
+        if (rangedAttackCount <= 0) {
+          throw `invalid ranged attack count ${rangedAttackCount}, requiredHealPower: ${requiredHealPower}, moveBoostTier: ${moveBoostTier}, workPartMaxLength: ${workPartMaxLength}`
+        }
 
         const body: BodyPartConstant[] = [
           ...Array(rangedAttackCount).fill(RANGED_ATTACK),
@@ -293,7 +330,6 @@ export namespace AttackPlanner {
         }
 
         const rangedAttackPower = rangedAttackCount * healerCount
-
         return {
           healerSpec: {
             body,
@@ -310,13 +346,13 @@ export namespace AttackPlanner {
         const hasEnoughAttackPower = rangedAttackPower > 400
 
         if (hasEnoughAttackPower === true) {
-          const workCount = bodyMaxLength / 2
+          const workCount = workPartMaxLength
           const boost = this.boostFor("dismantle", workCount, requiredDismantlePower)
           if (boost != null) {
             boosts.push(boost)
           }
 
-          const moveCount = bodyMaxLength - workCount
+          const moveCount = movePartMaxLength
           return {
             attackerSpec: {
               body: [
@@ -328,14 +364,13 @@ export namespace AttackPlanner {
           }
 
         } else {
-          const attackCount = bodyMaxLength / 2
+          const attackCount = workPartMaxLength
           const boost = this.boostFor("attack", attackCount, requiredDismantlePower)
           if (boost != null) {
             boosts.push(boost)
           }
 
-          const moveCount = bodyMaxLength - attackCount
-
+          const moveCount = movePartMaxLength
           return {
             attackerSpec: {
               body: [
