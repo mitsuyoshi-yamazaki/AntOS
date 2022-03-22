@@ -1,6 +1,6 @@
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
-import { GameConstants } from "utility/constants"
+import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
 import { coloredResourceType, roomLink, shortenedNumber } from "utility/log"
@@ -303,6 +303,10 @@ export namespace AttackPlanner {
 
       const movePartMaxLength = Math.ceil(bodyMaxLength / (moveBoostTier + 2))
       const workPartMaxLength = bodyMaxLength - movePartMaxLength
+      const moveBoost = CreepBody.boostFor("fatigue", moveBoostTier)
+      if (moveBoost != null) {
+        boosts.push(moveBoost)
+      }
 
       const { healerSpec, rangedAttackPower } = ((): { healerSpec: QuadCreepSpec, rangedAttackPower: number } => {
         const requiredHealPowerPerCreep = Math.ceil(requiredHealPower / healerCount)
@@ -320,6 +324,12 @@ export namespace AttackPlanner {
           throw `invalid ranged attack count ${rangedAttackCount}, requiredHealPower: ${requiredHealPower}, moveBoostTier: ${moveBoostTier}, workPartMaxLength: ${workPartMaxLength}`
         }
 
+        const rangedAttackBoostTier: BoostTier = moveBoostTier
+        const rangedAttackBoost = CreepBody.boostFor("rangedAttack", rangedAttackBoostTier)
+        if (rangedAttackBoost != null) {
+          boosts.push(rangedAttackBoost)
+        }
+
         const body: BodyPartConstant[] = [
           ...Array(rangedAttackCount).fill(RANGED_ATTACK),
           ...Array(moveCount).fill(MOVE),
@@ -329,7 +339,7 @@ export namespace AttackPlanner {
           throw `required ${healCount}HEALs/creep (estimated body: ${CreepBody.description(body)})`
         }
 
-        const rangedAttackPower = rangedAttackCount * healerCount
+        const rangedAttackPower = rangedAttackCount * GameConstants.creep.actionPower.rangedAttack * (rangedAttackBoostTier + 1) * healerCount
         return {
           healerSpec: {
             body,
@@ -462,9 +472,12 @@ const quadMemberDirections: DirectionConstant[] = [
   RIGHT,
   TOP_RIGHT,
 ]
-
+const quadMemberDirectionsForCostMatrix = quadMemberDirections.map(direction => oppositeDirection(direction))
 const getQuadMemberPositions = (position: RoomPosition): RoomPosition[] => {
   return quadMemberDirections.flatMap(direction => position.positionTo(direction) ?? [])
+}
+const getQuadMemberPositionsForCostMatrix = (position: RoomPosition): RoomPosition[] => {
+  return quadMemberDirectionsForCostMatrix.flatMap(direction => position.positionTo(direction) ?? [])
 }
 
 /// Quad想定
@@ -490,6 +503,10 @@ const getTargetWalls = (room: Room, vitalStructure: OwnedStructure): Constructed
 
   const path = room.findPath(exit.pos, vitalStructure.pos, pathFinderOptions)
 
+  path.forEach(pathPosition => {
+    room.visual.text("*", pathPosition.x, pathPosition.y, {color: "#FFFFFF"})
+  })
+
   const positionIdentifier = (position: Position): string => {
     return `${position.x},${position.y}`
   }
@@ -499,24 +516,34 @@ const getTargetWalls = (room: Room, vitalStructure: OwnedStructure): Constructed
     constructedWallByPosition.set(positionIdentifier(constructedWall.pos), constructedWall)
   })
 
-  return path.flatMap((pathPosition): ConstructedWall[] => {
+  const results: ConstructedWall[] = []
+
+  path.forEach(pathPosition => {
     const constructedWall = constructedWallByPosition.get(positionIdentifier(pathPosition))
     if (constructedWall == null) {
-      return []
+      return
     }
-    const roomPosition = decodeRoomPosition(pathPosition, room.name)
+    if (results.includes(constructedWall) !== true) {
+      results.push(constructedWall)
+    }
 
-    return [
-      constructedWall,
-      ...getQuadMemberPositions(roomPosition).flatMap((position): ConstructedWall[] => {
-        const wall = constructedWallByPosition.get(positionIdentifier(position))
-        if (wall == null) {
-          return []
-        }
-        return [wall]
-      })
-    ]
+    const roomPosition = decodeRoomPosition(pathPosition, room.name)
+    getQuadMemberPositions(roomPosition).forEach(position => {
+      const wall = constructedWallByPosition.get(positionIdentifier(position))
+      if (wall == null) {
+        return
+      }
+      if (results.includes(wall) !== true) {
+        results.push(wall)
+      }
+    })
   })
+
+  results.forEach(wall => {
+    room.visual.text("■", wall.pos.x, wall.pos.y, { color: "#FF0000" })
+  })
+
+  return results
 }
 
 // TODO: CostMatrixのキャッシュはできるかも
@@ -530,7 +557,7 @@ function quadCostCallback(room: Room, constructedWalls: ConstructedWall[]): (roo
       if (costMatrix.get(position.x, position.y) < cost) {
         costMatrix.set(position.x, position.y, cost)
       }
-      getQuadMemberPositions(position).forEach(p => {
+      getQuadMemberPositionsForCostMatrix(position).forEach(p => {
         if (costMatrix.get(p.x, p.y) < cost) {
           costMatrix.set(p.x, p.y, cost)
         }
