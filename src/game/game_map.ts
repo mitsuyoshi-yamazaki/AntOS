@@ -127,8 +127,8 @@ export const GameMap = {
     return missingWaypoints
   },
 
-  calculateSafeRoute(fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null {
-    return calculateSafeRoute(fromRoomName, toRoomName)
+  calculateSafeWaypoints(fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null {
+    return calculateSafeWaypoints(fromRoomName, toRoomName)
   },
 }
 
@@ -188,7 +188,7 @@ function straightRoomWaypoints(roomName: RoomName, destinationRoomName: RoomName
   return []
 }
 
-const calculateSafeRoute = (fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null => {
+const calculateSafeWaypoints = (fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null => {
   const normalCost = 1
   const obstacleCost = Infinity
 
@@ -219,5 +219,11 @@ const calculateSafeRoute = (fromRoomName: RoomName, toRoomName: RoomName): RoomN
   if (route === ERR_NO_PATH) {
     return null
   }
-  return route.map(routePosition => routePosition.room)
+  return route.flatMap((routePosition): RoomName[] => {
+    const roomName = routePosition.room
+    if (roomName === fromRoomName || roomName === toRoomName) {
+      return []
+    }
+    return [roomName]
+  })
 }
