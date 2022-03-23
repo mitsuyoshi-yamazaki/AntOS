@@ -22,10 +22,6 @@ ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)
 })
 
-/**
- * - 経路があるかどうか
- */
-
 const runInterval = 100000000 // 10000  // FixMe: 再計算せず、一度限り
 const observerRange = GameConstants.structure.observer.maxRange
 
@@ -221,7 +217,16 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     }
 
     if (GameMap.hasWaypoints(this.roomName, targetRoomName) !== true) {
-      const waypoints = listArguments.roomNameList(1, "waypoint").parse()
+      const waypoints = ((): RoomName[] => {
+        if (listArguments.has(1) === true) {
+          return listArguments.roomNameList(1, "waypoint").parse()
+        }
+        const calculated = GameMap.calculateSafeWaypoints(this.roomName, targetRoomName)
+        if (calculated != null) {
+          return calculated
+        }
+        return listArguments.roomNameList(1, "waypoint").parse()  // エラー送出用
+      })()
       GameMap.setWaypoints(this.roomName, targetRoomName, waypoints)
     }
 
@@ -498,11 +503,17 @@ export class DraftingRoomProcess implements Process, Procedural, MessageObserver
     }
 
     if (attackPlan.case === "none") {
-      getCheckedRoomList(this.checkedRooms.results.unattackableRoomNames, ownerName).push(targetRoom.name)
+      const roomList = getCheckedRoomList(this.checkedRooms.results.unattackableRoomNames, ownerName)
+      if (roomList.includes(targetRoom.name) !== true) {
+        roomList.push(targetRoom.name)
+      }
       return
     }
 
-    getCheckedRoomList(this.checkedRooms.results.attackableRoomNames, ownerName).push(targetRoom.name)
+    const roomList = getCheckedRoomList(this.checkedRooms.results.attackableRoomNames, ownerName)
+    if (roomList.includes(targetRoom.name) !== true) {
+      roomList.push(targetRoom.name)
+    }
 
     if (this.options.dryRun === true) {
       processLog(this, `(dry run) ${attackPlan.case} attack plan for ${roomLink(targetRoom.name)}`)

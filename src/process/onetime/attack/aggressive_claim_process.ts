@@ -108,7 +108,6 @@ export class AggressiveClaimProcess implements Process, Procedural {
       this.updateTargetRoomState(targetRoom)
     }
 
-
     const scouts: Creep[] = []
     const claimers: Creep[] = []
     const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
