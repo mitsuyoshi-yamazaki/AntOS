@@ -22,6 +22,7 @@ export type RemoteRoomInfo = {
 export type BoostLabInfo = {
   readonly labId: Id<StructureLab>
   readonly boost: MineralBoostConstant
+  requiredAmount: number
 }
 
 type LinkInfo = {
