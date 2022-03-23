@@ -19,6 +19,7 @@ import { BoostLabInfo, OwnedRoomInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { ResourceManager } from "utility/resource_manager"
 
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
@@ -87,9 +88,11 @@ export class BoostLabChargerProcess implements Process, Procedural {
   public runOnTick(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      PrimitiveLogger.fatal(`${this.identifier} ${roomLink(this.parentRoomName)} lost`)
       return
     }
+
+    this.transferRequiredResources(roomResource)
+
     const boostLabInfo = this.boostLabInfo(roomResource)
     if (boostLabInfo.length <= 0) {
       this.addStopSpawningReason(noBoostReason)
@@ -134,6 +137,33 @@ export class BoostLabChargerProcess implements Process, Procedural {
     }
 
     this.runCreep(terminal, labs, shouldCollectResources, roomResource.roomInfo)
+  }
+
+  private transferRequiredResources(roomResource: OwnedRoomResource): void {
+    if ((Game.time % 17) !== 3) {
+      return
+    }
+
+    const requiredBoost = roomResource.roomInfoAccessor.boostLabs.find(boostLabInfo => boostLabInfo.requredAmount > 0)
+    if (requiredBoost == null) {
+      return
+    }
+
+    const terminal = roomResource.activeStructures.terminal
+    if (terminal == null) {
+      return
+    }
+
+    const result = ResourceManager.collect(requiredBoost.boost, this.parentRoomName, requiredBoost.requredAmount)
+    switch (result.resultType) {
+    case "succeeded":
+      roomResource.roomInfoAccessor.decreaseRequiredBoostAmount(requiredBoost.boost, result.value)
+      break
+    case "failed": {
+      roomResource.roomInfoAccessor.decreaseRequiredBoostAmount(requiredBoost.boost, result.reason.sentAmount)
+      break
+    }
+    }
   }
 
   private requestCreep(): void {

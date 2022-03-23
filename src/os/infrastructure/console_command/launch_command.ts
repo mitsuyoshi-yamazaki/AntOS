@@ -1170,7 +1170,7 @@ ProcessLauncher.register("AggressiveClaimProcess", args => {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
     const blockingWallIds = args.list("blocking_wall_ids", "object_id").parse() as Id<StructureWall | StructureRampart>[]
-    const excludeStructureIds = args.list("excluded_structure_id", "object_id").parse() as Id<AnyStructure>[]
+    const excludeStructureIds = args.list("excluded_structure_ids", "object_id").parse() as Id<AnyStructure>[]
 
     return Result.Succeeded((processId) => AggressiveClaimProcess.create(processId, roomName, targetRoomName, blockingWallIds, excludeStructureIds))
   } catch (error) {

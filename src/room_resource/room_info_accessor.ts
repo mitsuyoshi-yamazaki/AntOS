@@ -1,5 +1,8 @@
+import { OperatingSystem } from "os/os"
+import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { coloredResourceType, roomLink } from "utility/log"
+import { MineralCompoundIngredients, ResourceConstant } from "utility/resource"
 import { Result } from "utility/result"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
@@ -180,11 +183,11 @@ class Config {
       this.config.researchCompounds[compound] = amount
     }
   }
-  public researchingCompounds(): MineralBaseCompoundsConstant[] {
+  public researchingCompounds(): MineralCompoundConstant[] {
     if (this.config?.researchCompounds == null) {
       return []
     }
-    return Array.from(Object.keys(this.config.researchCompounds)) as MineralBaseCompoundsConstant[]
+    return Array.from(Object.keys(this.config.researchCompounds)) as MineralCompoundConstant[]
   }
 }
 
@@ -196,6 +199,7 @@ type LinkInfo = {
 type BoostLab = {
   readonly lab: StructureLab
   readonly boost: MineralBoostConstant
+  readonly requredAmount: number
 }
 type ResearchLabInfo = {
   readonly inputLab1: StructureLab
@@ -251,6 +255,7 @@ export class OwnedRoomInfoAccessor {
     public readonly roomInfo: OwnedRoomInfo,
     controller: StructureController,
     sources: Source[],
+    private readonly mineralType: MineralConstant | null,
   ) {
     this.roomName = room.name
     this.config = new Config(this.roomName, roomInfo);
@@ -287,13 +292,23 @@ export class OwnedRoomInfoAccessor {
     })()
   }
 
-  public addBoosts(boosts: MineralBoostConstant[]): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
+  /**
+   * @param boosts 数量未定の場合は0を入れる
+   */
+  public addBoosts(boostInfo: Map<MineralBoostConstant, number>): Result<{newBoostLabs: BoostLabInfo[], removedFromResearchOutputLabs: StructureLab[]}, string> {
     try {
       this.roomInfo.boostLabs.forEach(boostLabInfo => {
-        if (boosts.includes(boostLabInfo.boost) === true) {
-          throw `${coloredResourceType(boostLabInfo.boost)} is already in the list ${roomLink(this.roomName)}`
+        const requiredAmount = boostInfo.get(boostLabInfo.boost)
+        if (requiredAmount == null) {
+          return
         }
+        boostLabInfo.requiredAmount += requiredAmount
+        boostInfo.delete(boostLabInfo.boost)
       })
+
+      if (boostInfo.size <= 0) {
+        return Result.Succeeded({newBoostLabs: [], removedFromResearchOutputLabs: []})
+      }
 
       const unassignedLabs = this.unassignedLabs()
       const researchOutputLabs = this.researchOutputLabs()
@@ -304,15 +319,16 @@ export class OwnedRoomInfoAccessor {
         ...researchOutputLabs,
       ]
 
-      const newBoostLabs: {lab: StructureLab, boost: MineralBoostConstant}[] = []
-      boosts.forEach((boost, index) => {
+      const newBoostLabs: {lab: StructureLab, boost: MineralBoostConstant, requiredAmount: number}[] = []
+      Array.from(boostInfo.entries()).forEach(([boost, requiredAmount], index) => {
         const lab = assignableLabs[index]
         if (lab == null) {
-          throw `lack of available labs. assignable lab count: ${assignableLabCount} > ${boosts.length} boosts`
+          throw `lack of available labs. assignable lab count: ${assignableLabCount} > ${boostInfo.size} boosts`
         }
         newBoostLabs.push({
           boost,
           lab,
+          requiredAmount,
         })
       })
 
@@ -329,15 +345,28 @@ export class OwnedRoomInfoAccessor {
         })
       }
 
-      this.roomInfo.boostLabs.push(...newBoostLabs.map(labInfo => ({ labId: labInfo.lab.id, boost: labInfo.boost})))
+      const newBoostLabInfo: BoostLabInfo[] = newBoostLabs.map(labInfo => ({ labId: labInfo.lab.id, boost: labInfo.boost, requiredAmount: labInfo.requiredAmount }))
+      this.roomInfo.boostLabs.push(...newBoostLabInfo)
+
+      const runningProcess = labChargerProcessFor(this.roomName)
+      if (runningProcess == null) {
+        OperatingSystem.os.addProcess(null, processId => BoostLabChargerProcess.create(processId, this.roomName))
+      }
 
       return Result.Succeeded({
-        newBoostLabs: newBoostLabs.map(labInfo => ({ boost: labInfo.boost, labId: labInfo.lab.id })),
+        newBoostLabs: newBoostLabInfo,
         removedFromResearchOutputLabs,
       })
     } catch (error) {
       return Result.Failed(`${error}`)
     }
+  }
+  public decreaseRequiredBoostAmount(boost: MineralBoostConstant, amount: number): void {
+    const boostLabInfo = this.roomInfo.boostLabs.find(boostLabInfo => boostLabInfo.boost === boost)
+    if (boostLabInfo == null) {
+      return
+    }
+    boostLabInfo.requiredAmount = Math.max(boostLabInfo.requiredAmount - amount, 0)
   }
   public removeBoosts(boosts: MineralBoostConstant[]): Result<{ addedToResearchOutputLabIds: Id<StructureLab>[] }, string> {
     try {
@@ -395,6 +424,7 @@ export class OwnedRoomInfoAccessor {
       return [{
         lab,
         boost: labInfo.boost,
+        requredAmount: labInfo.requiredAmount,
       }]
     })
   }
@@ -501,4 +531,63 @@ export class OwnedRoomInfoAccessor {
       break
     }
   }
+
+  /// 他Roomへ送付すると支障のでる資源
+  public usingResourceTypes(): { boosts: MineralBoostConstant[], research: ResourceConstant[], commodities: ResourceConstant[], harvesting: ResourceConstant[] } {
+    const research: ResourceConstant[] = []
+    const addResearchResource = (resourceType: ResourceConstant): void => {
+      if (research.includes(resourceType) === true) {
+        return
+      }
+      research.push(resourceType)
+    }
+    this.config.researchingCompounds().forEach(researchCompound => {
+      addResearchResource(researchCompound)
+      const ingredients = MineralCompoundIngredients[researchCompound]
+      addResearchResource(ingredients.lhs)
+      addResearchResource(ingredients.rhs)
+    })
+
+    const harvesting: ResourceConstant[] = []
+    if (this.mineralType != null) {
+      harvesting.push(this.mineralType)
+    }
+
+    return {
+      boosts: this.getBoostLabs().map(labInfo => labInfo.boost),
+      research,
+      commodities: [],  // TODO:
+      harvesting,
+    }
+  }
+
+  public usingAllResourceTypes(): ResourceConstant[] {
+    const result: ResourceConstant[] = []
+    const add = (resourceType: ResourceConstant): void => {
+      if (result.includes(resourceType) === true) {
+        return
+      }
+      result.push(resourceType)
+    }
+
+    Array.from(Object.values(this.usingResourceTypes())).forEach(resourceTypes => {
+      resourceTypes.forEach(resourceType => add(resourceType))
+    })
+
+    return result
+  }
+}
+
+function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
+  for (const processInfo of OperatingSystem.os.listAllProcesses()) {
+    const process = processInfo.process
+    if (!(process instanceof BoostLabChargerProcess)) {
+      continue
+    }
+    if (process.parentRoomName !== roomName) {
+      continue
+    }
+    return process
+  }
+  return null
 }

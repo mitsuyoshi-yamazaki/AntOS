@@ -10,7 +10,6 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { OperatingSystem } from "os/os"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
-import { MineralCompoundIngredients } from "utility/resource"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
@@ -160,19 +159,12 @@ class ResourceTransferer {
         return "empty space"
       })()
       const storedResourceTypes: { resourceType: ResourceConstant, amount: number }[] = []
-      const excludedResourceTypes: ResourceConstant[] = [
-        ...resources.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.boost),
-      ]
-      const researchingCompounds = resources.roomInfoAccessor.config.researchingCompounds()
-      excludedResourceTypes.push(...researchingCompounds)
-      excludedResourceTypes.push(...researchingCompounds.flatMap(compound => {
-        const ingredients = MineralCompoundIngredients[compound]
-        return [ingredients.lhs, ingredients.rhs]
-      }))
-
-      if (resources.mineral != null) {
-        excludedResourceTypes.push(resources.mineral.mineralType) // Mineral Harvestingが止まらなくなるため
-      }
+      const excludedResourceTypes = resources.roomInfoAccessor.usingAllResourceTypes().filter(resourceType => {
+        if (resources.getResourceAmount(resourceType) <= 120000) {
+          return true
+        }
+        return false
+      })
 
       const enumerateResources = (store: StoreDefinition): void => {
         const resourceTypes = Object.keys(store) as ResourceConstant[]
@@ -396,7 +388,7 @@ class ResourceTransferer {
         const priority = Game.market.calcTransactionCost(10000, fromRoomName, roomName)
         const resourceAmount = targetRoomResource.terminal.store.getUsedCapacity(resourceType) + targetRoomResource.storage.store.getUsedCapacity(resourceType)
 
-        if (resourceAmount > 0) {
+        if (resourceAmount > 0 && resourceAmount <= 120000) {
           resourceRooms.push({
             resources: targetRoomResource,
             maxAmount,

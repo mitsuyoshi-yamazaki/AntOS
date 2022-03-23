@@ -1,5 +1,4 @@
 import { OperatingSystem } from "os/os"
-import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { describePosition } from "prototype/room_position"
 import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
@@ -243,20 +242,15 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
   switch (action) {
   case "add": {
     const boost = listArguments.boostCompoundType(1, "boost").parse()
-    const process = ((): BoostLabChargerProcess => {
-      const runningProcess = labChargerProcessFor(roomName)
-      if (runningProcess != null) {
-        return runningProcess
-      }
-      return OperatingSystem.os.addProcess(null, processId => BoostLabChargerProcess.create(processId, roomName))
-    })()
 
     return ((): string => {
-      const result = roomResource.roomInfoAccessor.addBoosts([boost])
+      const boostInfo = new Map<MineralBoostConstant, number>()
+      boostInfo.set(boost, 0)
+
+      const result = roomResource.roomInfoAccessor.addBoosts(boostInfo)
       switch (result.resultType) {
       case "succeeded": {
         const successMessages: string[] = [
-          `added ${coloredResourceType(boost)}, process: ${process.constructor.name} ${process.processId}`,
           ...result.value.newBoostLabs.map(labInfo => `- ${coloredResourceType(labInfo.boost)}: ${labInfo.labId}`)
         ]
         if (result.value.removedFromResearchOutputLabs.length > 0) {
@@ -321,20 +315,6 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
     }
   }
   }
-}
-
-function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
-  for (const processInfo of OperatingSystem.os.listAllProcesses()) {
-    const process = processInfo.process
-    if (!(process instanceof BoostLabChargerProcess)) {
-      continue
-    }
-    if (process.parentRoomName !== roomName) {
-      continue
-    }
-    return process
-  }
-  return null
 }
 
 /** @throws */

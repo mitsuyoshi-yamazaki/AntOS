@@ -190,10 +190,6 @@ export class AttackRoomProcess implements Process, MessageObserver {
     const quadSpec = QuadSpec.decode(attackPlan.quadSpecState)
     const quadMaker = QuadMaker.create(quadSpec, this.roomName, this.targetRoomInfo.roomName)
 
-    if (quadMaker.boosts.length > 0) {
-      throw `boosted quad is not supported yet (required: ${quadMaker.boosts.map(boost => coloredResourceType(boost)).join(",")})`
-    }
-
     const launchResult = quadMaker.launchQuadProcess(false, null)
     switch (launchResult.resultType) {
     case "succeeded":

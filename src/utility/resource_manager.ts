@@ -151,6 +151,11 @@ export const ResourceManager: ResourceManagerInterface = {
         return
       }
 
+      const excludedResources = resources.roomInfoAccessor.usingAllResourceTypes()
+      if (excludedResources.includes(resourceType) === true) {
+        return
+      }
+
       if (threshold != null) {
         if (resources.getResourceAmount(resourceType) < threshold) {
           return
