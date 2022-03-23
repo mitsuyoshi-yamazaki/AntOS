@@ -576,6 +576,29 @@ export class OwnedRoomInfoAccessor {
 
     return result
   }
+
+  public labsForUnboost(): StructureLab[] {
+    const excludedLabs: StructureLab[] = [
+      ...this.boostLabs.map(labInfo => labInfo.lab),
+    ]
+
+    const researchLabs = this.researchLabs
+    if (researchLabs != null) {
+      excludedLabs.push(researchLabs.inputLab1)
+      excludedLabs.push(researchLabs.inputLab2)
+    }
+
+    return (this.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
+      .filter(lab => {
+        if (excludedLabs.includes(lab) === true) {
+          return false
+        }
+        if (lab.cooldown > 0) {
+          return false
+        }
+        return true
+      })
+  }
 }
 
 function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
