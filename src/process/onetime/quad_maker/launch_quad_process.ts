@@ -84,6 +84,7 @@ export class LaunchQuadProcess implements Process, Procedural {
     const process = OperatingSystem.os.addProcess(null, processId => {
       return SpecializedQuadProcess.create(processId, this.quadLaunchArguments, this.quadSpec)
     })
+    Memory.os.logger.filteringProcessIds.push(process.processId)
 
     const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
     processLog(this, launchMessage)

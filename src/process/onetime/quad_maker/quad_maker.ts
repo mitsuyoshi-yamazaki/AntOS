@@ -290,6 +290,7 @@ targets: ${this.targetIds.length} target IDs
         })
       })()
 
+      Memory.os.logger.filteringProcessIds.push(process.processId)
       const launchMessage = `${process.constructor.name} launched. Process ID: ${process.processId}`
       if (result.value.warnings.length > 0) {
         return Result.Failed(`${launchMessage}\n${result.value.warnings.join("\n")}\n${this.description()}`)
