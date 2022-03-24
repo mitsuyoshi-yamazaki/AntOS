@@ -19,9 +19,12 @@ import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
-import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { decodeRoomPosition } from "prototype/room_position"
 import { SwapNearbyCreepPositionTask } from "v5_object_task/creep_task/meta_task/swap_nearby_creep_position_task"
+import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
+import { Environment } from "utility/environment"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -162,11 +165,20 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   private taskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-      // OwnedRoomHaulerTask が行う
-      // const droppedEnergy = objects.droppedResources.find(resource => resource.resourceType === RESOURCE_ENERGY)
-      // if (droppedEnergy != null) {
-      //   return MoveToTargetTask.create(GetEnergyApiWrapper.create(droppedEnergy))
-      // }
+      if (creep.store.getFreeCapacity() > 0) {
+        const collectDroppedResourceTask = this.collectDroppedResourceTask(creep, objects)
+        if (collectDroppedResourceTask != null) {
+          return collectDroppedResourceTask
+        }
+      }
+
+      const storedResourceType = (Array.from(Object.keys(creep.store)) as ResourceConstant[])[0]
+      if (storedResourceType != null) {
+        const transferTarget = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        if (transferTarget != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, storedResourceType))
+        }
+      }
 
       if (creep.ticksToLive != null && creep.ticksToLive < 400) {
         const spawn = objects.activeStructures.spawns[0]
@@ -195,7 +207,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         this.saying = Game.time
         creep.say("no task1")
       }
-      if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 5) {
+      if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 10) {
         return SwapNearbyCreepPositionTask.create({ onRoadOnly: true })
       }
       return null
@@ -248,26 +260,85 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
     }
 
+    if (creep.store.getFreeCapacity() > 0) {
+      const collectDroppedResourceTask = this.collectDroppedResourceTask(creep, objects)
+      if (collectDroppedResourceTask != null) {
+        return collectDroppedResourceTask
+      }
+    }
+
     if (this.saying !== Game.time) {
       this.saying = Game.time
       creep.say("no task2")
     }
-    if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 5) {
+    if (objects.activeStructures.storage != null && creep.pos.getRangeTo(objects.activeStructures.storage.pos) < 10) {
       return SwapNearbyCreepPositionTask.create({ onRoadOnly: true })
     }
     return null
   }
 
-  private randomMoveTask(creep: Creep, fromPosition: RoomPosition): CreepTask | null {
-    const path = PathFinder.search(creep.pos, { pos: fromPosition, range: 5 }, {
-      flee: true,
-      maxRooms: 1,
-    })
-    const lastPosition = path.path[path.path.length - 1]
-    if (lastPosition == null) {
-      return null
+  private collectDroppedResourceTask(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
+    const hasResource = creep.store.getUsedCapacity() > 0
+    const resourcefulTombstones = ((): Tombstone[] => {
+      if (objects.hostiles.creeps.length > 0) {
+        return []
+      }
+      return objects.tombStones.filter(tomb => {
+        const amount = tomb.store.getUsedCapacity()
+        if (amount <= 0) {
+          return false
+        }
+        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+          if (tomb.pos.x <= 1) {
+            return false
+          }
+        }
+        if (hasResource !== true) {
+          return true
+        }
+        if (amount !== tomb.store.getUsedCapacity(RESOURCE_ENERGY)) {
+          return true
+        }
+        return false
+      })
+    })()
+    const resourcefulTombstone = creep.pos.findClosestByRange(resourcefulTombstones)
+    if (resourcefulTombstone != null) {
+      const resourceTypes = Object.keys(resourcefulTombstone.store) as ResourceConstant[]
+      const mineral = resourceTypes.filter(resourceType => resourceType !== RESOURCE_ENERGY)[0]
+
+      if (mineral != null) {
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, mineral))
+      }
+      if (resourceTypes.includes(RESOURCE_ENERGY) === true) {
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(resourcefulTombstone, RESOURCE_ENERGY))
+      }
     }
-    return MoveToTask.create(lastPosition, 3)
+
+    const droppedResource = ((): Resource | null => {
+      if (objects.hostiles.creeps.length > 0) {
+        return null
+      }
+      if (hasResource === true) {
+        return null
+      }
+      return objects.droppedResources.filter(resource => {
+        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+          if (resource.pos.x <= 1) {
+            return false
+          }
+        }
+        if (resource.resourceType !== RESOURCE_ENERGY) {
+          return true
+        }
+        return resource.amount > 200
+      })[0] ?? null
+    })()
+    if (droppedResource != null) {
+      return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
+    }
+
+    return null
   }
 
   // ---- Creep Request ---- //

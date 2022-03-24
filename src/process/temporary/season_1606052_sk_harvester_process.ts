@@ -41,7 +41,6 @@ export interface Season1606052SKHarvesterProcessState extends ProcessState {
   harvestMineral: boolean
 }
 
-// Game.io("launch -l Season1606052SKHarvesterProcess room_name=W3S24 target_room_name=W4S24 waypoints=W4S24")
 export class Season1606052SKHarvesterProcess implements Process, Procedural {
   public get taskIdentifier(): string {
     return this.identifier
