@@ -323,6 +323,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_EXTRACTOR,
       STRUCTURE_STORAGE,
       STRUCTURE_POWER_SPAWN,
+      STRUCTURE_LAB,
       STRUCTURE_TERMINAL,
       STRUCTURE_EXTENSION,
       STRUCTURE_SPAWN,
