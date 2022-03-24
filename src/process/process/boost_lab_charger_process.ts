@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -15,7 +15,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { RoomName } from "utility/room_name"
 import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
 import { RoomResources } from "room_resource/room_resources"
-import { BoostLabInfo, OwnedRoomInfo } from "room_resource/room_info"
+import { BoostLabInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
@@ -136,7 +136,7 @@ export class BoostLabChargerProcess implements Process, Procedural {
       this.requestCreep()
     }
 
-    this.runCreep(terminal, labs, shouldCollectResources, roomResource.roomInfo)
+    this.runCreep(terminal, labs, shouldCollectResources, roomResource)
   }
 
   private transferRequiredResources(roomResource: OwnedRoomResource): void {
@@ -160,6 +160,9 @@ export class BoostLabChargerProcess implements Process, Procedural {
       roomResource.roomInfoAccessor.decreaseRequiredBoostAmount(requiredBoost.boost, result.value)
       break
     case "failed": {
+      if (result.reason.sentAmount <= 0) {
+        PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.taskIdentifier} failed to collect ${coloredResourceType(requiredBoost.boost)}: ${result.reason.errorMessage}`)
+      }
       roomResource.roomInfoAccessor.decreaseRequiredBoostAmount(requiredBoost.boost, result.reason.sentAmount)
       break
     }
@@ -179,17 +182,17 @@ export class BoostLabChargerProcess implements Process, Procedural {
     })
   }
 
-  private runCreep(terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): void {
+  private runCreep(terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomResource: OwnedRoomResource): void {
     World.resourcePools.assignTasks(
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => this.creepTask(creep, terminal, labs, shouldCollectResources, roomInfo),
+      creep => this.creepTask(creep, terminal, labs, shouldCollectResources, roomResource),
       () => true,
     )
   }
 
-  private creepTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomInfo: OwnedRoomInfo): CreepTask | null {
+  private creepTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[], shouldCollectResources: boolean, roomResource: OwnedRoomResource): CreepTask | null {
     if (creep.store.getUsedCapacity() <= 0 && creep.ticksToLive != null && creep.ticksToLive < 50) {
       creep.say("dying")
       return null
@@ -256,18 +259,7 @@ export class BoostLabChargerProcess implements Process, Procedural {
       }
     }
 
-    const waitingPosition = ((): RoomPosition | null => {
-      if (roomInfo.config?.waitingPosition == null) {
-        return null
-      }
-      const { x, y } = roomInfo.config.waitingPosition
-      try {
-        return new RoomPosition(x, y, this.parentRoomName)
-      } catch (e) {
-        PrimitiveLogger.programError(`${this.identifier} cannot retrieve waiting position in ${roomLink(this.parentRoomName)}, ${x},${y}`)
-        return null
-      }
-    })()
+    const waitingPosition = roomResource.roomInfoAccessor.config.getGenericWaitingPosition()
     if (waitingPosition != null && creep.pos.isEqualTo(waitingPosition) !== true) {
       return MoveToTask.create(waitingPosition, 0)
     }
