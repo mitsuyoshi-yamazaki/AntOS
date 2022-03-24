@@ -1136,7 +1136,11 @@ ProcessLauncher.register("AttackRoomProcess", args => {
     const targetRoomName = args.roomName("target_room_name").parse()
 
     if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
-      throw `waypoint not set between ${roomLink(roomName)} to ${roomLink(targetRoomName)}`
+      const calculated = GameMap.calculateSafeWaypoints(roomName, targetRoomName)
+      if (calculated == null) {
+        throw `waypoint not set between ${roomLink(roomName)} to ${roomLink(targetRoomName)}`
+      }
+      GameMap.setWaypoints(roomName, targetRoomName, calculated)
     }
 
     return Result.Succeeded((processId) => AttackRoomProcess.create(processId, roomName, targetRoomName))

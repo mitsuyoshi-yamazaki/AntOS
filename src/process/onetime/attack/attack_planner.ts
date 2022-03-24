@@ -13,8 +13,7 @@ type ConstructedWall = StructureWall | StructureRampart
 const singleCreepMaxDamage = 3600
 
 /**
- * - どの入り口から入るか、どのwallを攻撃するか最初は手動で設定する
- * - Single Creep / Quadは与ダメージ（もしくは他の）パラメータの閾値により算出できる？
+ * - single/duoであれば攻略可能である場合
  */
 export namespace AttackPlanner {
   type AttackerAction = "attack" | "dismantle" | "rangedAttack" | "heal"
