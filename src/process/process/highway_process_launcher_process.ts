@@ -516,7 +516,7 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
       //   // launch boosted
       // }
     }
-    if (powerBank.power < 2500) {
+    if (powerBank.power < 1500) {
       ignoreReasons.push(`power too little (${powerBank.power})`)
     }
 
