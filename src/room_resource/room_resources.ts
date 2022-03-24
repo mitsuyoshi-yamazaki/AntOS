@@ -173,7 +173,10 @@ function enumerateCreeps(): void {
 
 function updateRoomInfo(room: Room): void {
   const storedRoomInfo = RoomResources.getRoomInfo(room.name)
-  if(storedRoomInfo == null) {
+  if (storedRoomInfo == null) {
+    if (room.roomType === "highway" || room.roomType === "highway_crossing") {
+      return
+    }
     Memory.v6RoomInfo[room.name] = createRoomInfo(room)
     return
   }
