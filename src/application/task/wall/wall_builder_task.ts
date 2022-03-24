@@ -228,6 +228,12 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       return MoveToTargetTask.create(RepairApiWrapper.create(wallToRepair))
     }
 
+    const randomRampart = roomResource.ramparts[Math.floor(Math.random() * roomResource.ramparts.length)]
+    if (randomRampart != null) {
+      return MoveToTargetTask.create(RepairApiWrapper.create(randomRampart))
+    }
+
+    creep.say("no walls")
     return null
   }
 
