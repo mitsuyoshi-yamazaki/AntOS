@@ -249,7 +249,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     if (roomPlan.wallPositions == null) {
       const wallPositions = calculateWallPositions(roomResource.room, false)
       if (typeof wallPositions === "string") {
-        PrimitiveLogger.fatal(`${roomLink(roomResource.room.name)} wall position calculation failed: ${wallPositions}`)
+        PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${roomLink(roomResource.room.name)} wall position calculation failed: ${wallPositions}`)
         return null
       }
       PrimitiveLogger.log(`${coloredText("[Wall builder]", "info")} ${wallPositions.length} walls in ${roomLink(roomResource.room.name)}`)
