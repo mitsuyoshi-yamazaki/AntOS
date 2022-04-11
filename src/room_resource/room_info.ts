@@ -90,6 +90,8 @@ export type OwnedRoomConfig = {
   powers?: PowerConstant[]
   wallMaxHits?: number
   extraLinkIds?: Id<StructureLink>[]
+
+  /// bootstrap中だけではなく、リスポーン後の最初の部屋にも適用される
   useSafemodeInBoostrap?: boolean
   bootstrapUntilRcl5?: boolean
   forceAttack?: boolean
@@ -204,6 +206,13 @@ export function buildOwnedRoomInfo(arg: NormalRoomInfo | Room): OwnedRoomInfo {
 }
 
 function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
+  const useSafemodeInBoostrap = ((): boolean | undefined => {
+    const numberOfOwnedRooms = Array.from(Object.values(Game.rooms)).filter(room => room.controller != null && room.controller.my === true).length
+    if (numberOfOwnedRooms <= 1) {
+      return true
+    }
+    return undefined
+  })()
   return {
     v: ShortVersion.v6,
     roomType: "owned",
@@ -226,6 +235,9 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     ownedRoomType: {
       case: "normal",
     },
+    config: {
+      useSafemodeInBoostrap,
+    }
   }
 }
 
