@@ -97,6 +97,7 @@ export class RoomKeeperTask extends Task {
             break
           case "season 4":
           case "botarena":
+          case "swc":
             OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
             break
           }

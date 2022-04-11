@@ -2,8 +2,9 @@ type PersistentWorld = "persistent world"
 type SimulationWorld = "simulation"
 type Season4 = "season 4"
 type BotArena = "botarena"
+type Swc = "swc"
 
-type World = PersistentWorld | SimulationWorld | Season4 | BotArena
+type World = PersistentWorld | SimulationWorld | Season4 | BotArena | Swc
 type ShardName = string
 
 export interface Environment {
@@ -26,6 +27,8 @@ const world = ((): World => {
   case "shard2":
   case "shard3":
     return "persistent world"
+  case "swc":
+    return "swc"
   case "botarena":
   default:
     return "botarena"
@@ -38,6 +41,7 @@ const hasMultipleShards = ((): boolean => {
     return true
   case "season 4":
   case "botarena":
+  case "swc":
   case "simulation":
     return false
   }
@@ -53,6 +57,7 @@ export const Environment: Environment = {
     switch (world) {
     case "persistent world":
     case "season 4":
+    case "swc":
     case "simulation":
       return false
     case "botarena":

@@ -77,6 +77,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       switch (Environment.world) {
       case "season 4":
       case "persistent world":
+      case "swc":
         return false
       case "simulation":
       case "botarena":

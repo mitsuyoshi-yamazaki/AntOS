@@ -62,6 +62,7 @@ function baseUrl(): string {
     case "persistent world":
     case "simulation":
     case "botarena":
+    case "swc":
       return "a"
     case "season 4":
       return "season"
