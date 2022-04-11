@@ -1,3 +1,4 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 
 export type EnergyChargeableStructure = StructureSpawn
@@ -46,16 +47,20 @@ declare global {
 
 // 毎tick呼び出すこと
 export function init(): void {
-  Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
-    get(): V5TaskRunnerId[] {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const id = (this as any).id // FlagにはIDがない
-      if (id == null) {
-        return []
-      }
-      return V5TaskTargetCache.targetingTaskRunnerIds(id)
-    },
-  })
+  try {
+    Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
+      get(): V5TaskRunnerId[] {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const id = (this as any).id // FlagにはIDがない
+        if (id == null) {
+          return []
+        }
+        return V5TaskTargetCache.targetingTaskRunnerIds(id)
+      },
+    })
+  } catch (error) {
+    PrimitiveLogger.programError(`RoomObject.init() ${error}`)
+  }
 }
 
 export function parseId<T>(id: Id<T> | null): T | null {
