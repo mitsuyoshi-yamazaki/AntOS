@@ -49,6 +49,7 @@ type MoveToTargetTaskFixedOptions = {
   ignoreSwamp: boolean
   reusePath: number | null
   fallbackEnabled: boolean
+  ignoreCreepsInRemote: boolean
 }
 
 export type MoveToTargetTaskOptions = Partial<MoveToTargetTaskFixedOptions>
@@ -63,6 +64,7 @@ export interface MoveToTargetTaskState extends CreepTaskState {
   lastPosition: PositionState | null
   reusePath: number | null
   fallbackEnabled: boolean
+  ignoreCreepsInRemote: boolean
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -97,6 +99,7 @@ export class MoveToTargetTask implements CreepTask {
         }
       })(),
       fallbackEnabled: this.options.fallbackEnabled,
+      ignoreCreepsInRemote: this.options.ignoreCreepsInRemote,
     }
   }
 
@@ -109,6 +112,7 @@ export class MoveToTargetTask implements CreepTask {
       ignoreSwamp: state.is,
       reusePath: state.reusePath,
       fallbackEnabled: state.fallbackEnabled ?? false,
+      ignoreCreepsInRemote: state.ignoreCreepsInRemote ?? false,
     }
     const lastPosition = ((): Position | null => {
       if (state.lastPosition == null) {
@@ -128,6 +132,7 @@ export class MoveToTargetTask implements CreepTask {
         ignoreSwamp: options?.ignoreSwamp ?? false,
         reusePath: options?.reusePath ?? null,
         fallbackEnabled: options?.fallbackEnabled ?? false,
+        ignoreCreepsInRemote: options?.ignoreCreepsInRemote ?? false,
       }
     })()
     return new MoveToTargetTask(Game.time, apiWrapper, opt, null)
@@ -245,31 +250,17 @@ export class MoveToTargetTask implements CreepTask {
     })()
 
     const ignoreCreeps = ((): boolean => {
+      if (this.options.ignoreCreepsInRemote === true) {
+        return true
+      }
       if (inEconomicArea !== true) {
         return false
       }
-      if (this.options.reusePath != null) {
-        return false
-      }
+      // if (this.options.reusePath != null) {
+      //   return false
+      // }
       return true
     })()
-
-    if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
-      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
-      const reusePath = ((): number => {
-        if (this.options.reusePath != null) {
-          return this.options.reusePath
-        }
-        return inEconomicArea === true ? 100 : 3
-      })()
-      return {
-        maxRooms,
-        reusePath,
-        maxOps: 4000,
-        range,
-        ignoreCreeps,
-      }
-    }
 
     const reusePath = ((): number => {
       if (this.options.reusePath != null) {

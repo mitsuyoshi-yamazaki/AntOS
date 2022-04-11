@@ -30,6 +30,7 @@ function moveToOptions(): MoveToTargetTaskOptions {
   return {
     reusePath: 0,
     ignoreSwamp: false,
+    ignoreCreepsInRemote: true,
   }
 }
 
@@ -280,17 +281,24 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   private getHarvestTaskFor(creep: Creep, objects: OwnedRoomObjects, harvestableNeighbourRooms: RoomName[]): CreepTask | null {
-    const isNeighbourOccupied = (neighbourRoom: Room): boolean => {
+    const isRoomHarvestable = (neighbourRoom: Room): boolean => {
       return neighbourRoom.controller == null
-        || (neighbourRoom.controller.owner == null && (neighbourRoom.controller.reservation == null || neighbourRoom.controller.reservation.username === Game.user.name))
+        || neighbourRoom.controller.owner == null
+        || neighbourRoom.controller.reservation == null
+        || neighbourRoom.controller.reservation.username === Game.user.name
     }
 
-    if (creep.room.name !== this.roomName && isNeighbourOccupied(creep.room) !== true) {
-      const source = creep.room.find(FIND_SOURCES).sort((lhs, rhs) => {
-        return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
-      })[0]
-      if (source != null) {
-        return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), moveToOptions())
+    if (creep.room.name !== this.roomName) {
+      if (isRoomHarvestable(creep.room) === true) {
+        const source = creep.room.find(FIND_SOURCES).sort((lhs, rhs) => {
+          return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
+        })[0]
+        if (source != null) {
+          return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source), moveToOptions())
+        }
+        console.log(`room ${creep.room.name} has no source`)
+      } else {
+        console.log(`room ${creep.room.name} occupied`)
       }
     }
 
@@ -317,7 +325,7 @@ export class PrimitiveWorkerTask extends Task {
       if (room == null) {
         return MoveToRoomTask.create(harvestableNeighbourRoom, [])
       }
-      if (isNeighbourOccupied(room) !== true) {
+      if (isRoomHarvestable(room) === true) {
         neighbourSources.push(...room.find(FIND_SOURCES))
       }
     }
