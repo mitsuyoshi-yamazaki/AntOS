@@ -42,10 +42,10 @@ export class RoomPlanner implements RoomPlannerInterface {
     const room = controller.room
 
     const result = ((): Result<{ center: RoomPosition }, string> | null => {
-      if (firstSpawnPositions.roomCenter != null) {
-        this.placeExtensionFlags(room, firstSpawnPositions.roomCenter)
-        return Result.Succeeded({ center: firstSpawnPositions.roomCenter })
-      }
+      // if (firstSpawnPositions.roomCenter != null) {
+      //   this.placeExtensionFlags(room, firstSpawnPositions.roomCenter)
+      //   return Result.Succeeded({ center: firstSpawnPositions.roomCenter })
+      // }
 
       return ErrorMapper.wrapLoop((): Result<{ center: RoomPosition }, string> => {
         return this.placeFlags(firstSpawnPositions.firstSpawnPosition)
@@ -337,6 +337,7 @@ export class RoomPlanner implements RoomPlannerInterface {
     })
   }
 
+  /// 極端に狭い地形ではRoadの周囲にExtensionを置く
   private placeExtensionFlags(room: Room, centerPosition: RoomPosition): void {
     const checkedPositions: RoomPosition[] = [
       centerPosition,
