@@ -14,6 +14,7 @@ export interface Environment {
   description: string
 
   isAutomatic(): boolean
+  isTeamMatch(): boolean
 }
 
 const world = ((): World => {
@@ -64,4 +65,16 @@ export const Environment: Environment = {
       return true
     }
   },
+
+  isTeamMatch(): boolean {
+    switch (world) {
+    case "persistent world":
+    case "season 4":
+    case "simulation":
+    case "botarena":
+      return false
+    case "swc":
+      return true
+    }
+  }
 }
