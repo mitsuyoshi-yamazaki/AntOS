@@ -6,6 +6,8 @@ local_configs.ts
 /dist
 /.rpt2_cache
 /node_modules
+/wasm/rust-wasm/pkg
+wasm/rust-wasm/target
 
 # Created by https://www.gitignore.io/api/macos
 

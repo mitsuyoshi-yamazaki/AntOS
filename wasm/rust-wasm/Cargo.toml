@@ -1,0 +1,15 @@
+[package]
+name = "rust-wasm"
+version = "0.1.0"
+authors = ["Yamazaki Mitsuyoshi <mitsuyoshi.tsukuba@gmail.com>"]
+description = ""
+license = "MIT/Apache-2.0"
+repository = "https://github.com/mitsuyoshi-yamazaki/AntOS"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
