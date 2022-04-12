@@ -62,6 +62,10 @@ import { DraftingRoomProcess } from "process/onetime/attack/drafting_room_proces
 import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
 import { RoomResources } from "room_resource/room_resources"
 import { } from "../../../../submodules/private/attack/planning/claimed_room_attack_planner_process"
+import { } from "process/onetime/saboteur/active_saboteur_process"
+import { } from "process/onetime/saboteur/passive_saboteur_process"
+import {} from "process/onetime/self_aware_creep_process"
+import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem_solver_v1_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1178,6 +1182,17 @@ ProcessLauncher.register("AggressiveClaimProcess", args => {
     const excludeStructureIds = args.list("excluded_structure_ids", "object_id").parse() as Id<AnyStructure>[]
 
     return Result.Succeeded((processId) => AggressiveClaimProcess.create(processId, roomName, targetRoomName, blockingWallIds, excludeStructureIds))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("ProblemSolver", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const problem = ProblemSolverV1.createTestProblem()
+
+    return Result.Succeeded((processId) => ProblemSolverV1Process.create(processId, roomName, problem))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

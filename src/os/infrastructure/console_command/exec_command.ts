@@ -32,6 +32,7 @@ import { PowerCreepProcess } from "process/process/power_creep/power_creep_proce
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 import { } from "../../../../submodules/private/attack/planning/attack_plan"
+import { } from "../../../../submodules/private/attack/platoon/platoon"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
