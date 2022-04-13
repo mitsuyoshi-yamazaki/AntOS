@@ -46,6 +46,9 @@ export interface OSMemory {
     shouldReadMemory?: boolean
   }
   logger: LoggerMemory
+  enabledDrivers: {
+    swcAllyRequest: boolean
+  },
 }
 
 function init(): void {
@@ -335,7 +338,10 @@ export class OperatingSystem {
         config: {},
         logger: {
           filteringProcessIds: [],
-        }
+        },
+        enabledDrivers: {
+          swcAllyRequest: false
+        },
       }
     }
     if (Memory.os.p == null) {
@@ -350,6 +356,11 @@ export class OperatingSystem {
     if (Memory.os.logger == null) {
       Memory.os.logger = {
         filteringProcessIds: [],
+      }
+    }
+    if (Memory.os.enabledDrivers == null) {
+      Memory.os.enabledDrivers = {
+        swcAllyRequest: false,
       }
     }
   }

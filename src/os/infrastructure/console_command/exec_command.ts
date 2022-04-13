@@ -3,7 +3,7 @@ import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPo
 import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
+import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
@@ -33,6 +33,7 @@ import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 import { } from "../../../../submodules/private/attack/planning/attack_plan"
 import { } from "../../../../submodules/private/attack/platoon/platoon"
+import { SwcAllyRequest } from "script/swc_ally_request"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -84,6 +85,10 @@ export class ExecCommand implements ConsoleCommand {
         return this.interpretRoom(args)
       case "cron":
         return this.cron(args)
+      case "enable_swc_ally_request":
+        return this.enableSwcAllyRequest()
+      case "show_swc_ally_requests":
+        return this.showSwcAllyRequests()
       case "script":
         return this.runScript()
       default:
@@ -779,6 +784,40 @@ export class ExecCommand implements ConsoleCommand {
     })
     Memory.os.logger.filteringProcessIds.push(process.processId)
     return "ok"
+  }
+
+  private enableSwcAllyRequest(): CommandExecutionResult {
+    Memory.os.enabledDrivers.swcAllyRequest = true
+
+    return "ok"
+  }
+
+  private showSwcAllyRequests(): CommandExecutionResult {
+    const requests = SwcAllyRequest.getRequests()
+    requests.sort((lhs, rhs) => rhs.request.priority - lhs.request.priority)
+
+    const invalidRequests: string[] = Array.from(SwcAllyRequest.getInvalidRequests().entries()).flatMap(([allyName, value]) => {
+      return [
+        `- ${profileLink(allyName)}:`,
+        ...value.map(invalidRequest => `  - ${invalidRequest.reason}, ${JSON.stringify(invalidRequest.request)}`),
+      ]
+    })
+
+    const results: string[] = []
+
+    if (requests.length > 0) {
+      results.push("requests:")
+      results.push(...requests.map(request => `- ${profileLink(request.allyName)}: ${SwcAllyRequest.describeRequest(request.request)}`))
+    }
+    if (invalidRequests.length > 0) {
+      results.push("invalid requests:")
+      results.push(...invalidRequests)
+    }
+    if (results.length <= 0) {
+      return "no requests"
+    }
+
+    return results.join("\n")
   }
 
   private runScript(): CommandExecutionResult {
