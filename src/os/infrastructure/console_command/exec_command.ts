@@ -797,6 +797,9 @@ export class ExecCommand implements ConsoleCommand {
     requests.sort((lhs, rhs) => rhs.request.priority - lhs.request.priority)
 
     const invalidRequests: string[] = Array.from(SwcAllyRequest.getInvalidRequests().entries()).flatMap(([allyName, value]) => {
+      if (value.length <= 0) {
+        return []
+      }
       return [
         `- ${profileLink(allyName)}:`,
         ...value.map(invalidRequest => `  - ${invalidRequest.reason}, ${JSON.stringify(invalidRequest.request)}`),

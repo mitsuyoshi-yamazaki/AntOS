@@ -176,9 +176,9 @@ export const SwcAllyRequest: SwcAllyRequestInterface = {
     case requestTypeExecute:
       return `[Execute:${request.priority}]`
     case requestTypeHate:
-      return `[Defense:${request.priority}] ${profileLink(request.playerName)}`
+      return `[Hate:${request.priority}] ${profileLink(request.playerName)}`
     case requestTypeResource:
-      return `[Defense:${request.priority}] ${roomLink(request.roomName)} ${request.maxAmount} ${coloredResourceType(request.resourceType)}`
+      return `[Resource:${request.priority}] ${roomLink(request.roomName)} ${request.maxAmount} ${coloredResourceType(request.resourceType)}`
     }
   },
 }
@@ -212,12 +212,12 @@ const checkAllies = (): void => {
     // console.log(`${currentAllyName} requests:\n${allyRequests.map(r => JSON.stringify(r)).join("\n")}`)
 
     const receivedRequests: Request[] = []
-    const invalidRequests: { rawRequest: unknown, reason: string }[] = []
+    const invalidRequests: { request: unknown, reason: string }[] = []
 
     allyRequests.forEach(request => {
       if (request == null) {
         invalidRequests.push({
-          rawRequest: request,
+          request,
           reason: "request is null",
         })
         return
@@ -229,13 +229,19 @@ const checkAllies = (): void => {
 
       } catch (error) {
         invalidRequests.push({
-          rawRequest: request,
+          request,
           reason: `${error}`,
         })
       }
     })
+
+    currentRequests.set(currentAllyName, {
+      requests: receivedRequests,
+      invalidRequests,
+    })
+
   } else {
-    console.log("Simple allies either has no segment or has the wrong name?", currentAllyName)
+    // console.log("Simple allies either has no segment or has the wrong name?", currentAllyName)
   }
 
   const nextAllyName = allyList[(Game.time + 1) % allyList.length]
