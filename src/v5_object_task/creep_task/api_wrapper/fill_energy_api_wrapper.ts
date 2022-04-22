@@ -69,7 +69,7 @@ export class FillEnergyApiWrapper implements ApiWrapper<Creep, FillEnergyApiWrap
     case ERR_INVALID_ARGS:
     default:
       if ((Game.time % 19) === 7) {
-        PrimitiveLogger.fatal(`creep.transfer() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+        PrimitiveLogger.fatal(`creep.transfer() to ${this.target} returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       }
       return ERR_PROGRAMMING_ERROR
     }

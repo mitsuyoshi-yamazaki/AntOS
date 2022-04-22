@@ -68,7 +68,7 @@ export class UpgradeControllerApiWrapper implements ApiWrapper<Creep, UpgradeCon
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
     default:
-      PrimitiveLogger.fatal(`creep.transfer() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.upgradeController() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

@@ -66,7 +66,7 @@ export class TransferEnergyApiWrapper implements ApiWrapper<Creep, TransferEnerg
     case ERR_INVALID_TARGET:
     case ERR_INVALID_ARGS:
     default:
-      PrimitiveLogger.fatal(`creep.transfer() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      PrimitiveLogger.fatal(`creep.transfer() to ${this.target} returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
     }
   }
