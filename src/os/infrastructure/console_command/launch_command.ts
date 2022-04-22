@@ -66,6 +66,8 @@ import { } from "process/onetime/saboteur/active_saboteur_process"
 import { } from "process/onetime/saboteur/passive_saboteur_process"
 import {} from "process/onetime/self_aware_creep_process"
 import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem_solver_v1_process"
+import { GameConstants } from "utility/constants"
+import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -102,10 +104,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason1200082SendMineralProcess()
       case "Season1349943DisturbPowerHarvestingProcess":
         return this.launchSeason1349943DisturbPowerHarvestingProcess()
-      case "Season1521073SendResourceProcess":
-        return this.launchSeason1521073SendResourceProcess()
-      case "Season1244215GenericDismantleProcess":
-        return this.launchSeason1244215GenericDismantleProcess()
       case "Season1606052SKHarvesterProcess":
         return this.launchSeason1606052SKHarvesterProcess()
       case "UpgradePowerCreepProcess":
@@ -306,56 +304,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1244215GenericDismantleProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawMaxBodyCount = args.get("max_body_count")
-    if (rawMaxBodyCount == null) {
-      return this.missingArgumentError("max_body_count")
-    }
-    const maxBodyCount = parseInt(rawMaxBodyCount, 10)
-    if (isNaN(maxBodyCount) === true) {
-      return Result.Failed(`max_body_count is not a number ${maxBodyCount}`)
-    }
-    const targetId = args.get("target_id")
-    if (targetId == null) {
-      return this.missingArgumentError("target_id")
-    }
-
-    const waypoints: RoomName[] = []
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
-      if (storedValue == null) {
-        return this.missingArgumentError("waypoints")
-      }
-      waypoints.push(...storedValue)
-
-    } else {
-      const parsedValue = rawWaypoints.split(",")
-
-      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
-      if (result.resultType === "failed") {
-        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-      }
-
-      waypoints.push(...parsedValue)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>, maxBodyCount)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchSeason1349943DisturbPowerHarvestingProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
@@ -383,45 +331,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker" | "large_ranged_attacker"))
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason1521073SendResourceProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawFinishWorking = args.get("finish_working")
-    if (rawFinishWorking == null) {
-      return this.missingArgumentError("finish_working")
-    }
-    const finishWorking = parseInt(rawFinishWorking, 10)
-    if (isNaN(finishWorking) === true) {
-      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
-    }
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints, finishWorking, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
@@ -760,6 +669,22 @@ export class LaunchCommand implements ConsoleCommand {
     })
     return Result.Succeeded(process)
   }
+}
+
+/** @throws */
+const getWaypoints = (keywordArguments: KeywordArguments, roomName: RoomName, targetRoomName: RoomName): RoomName[] => {
+  const waypointsArgument = keywordArguments.roomNameList("waypoints").parseOptional()
+  if (waypointsArgument != null) {
+    if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+      GameMap.setWaypoints(roomName, targetRoomName, waypointsArgument)
+    }
+    return waypointsArgument
+  }
+  const stored = GameMap.getWaypoints(roomName, targetRoomName, { ignoreMissingWaypoints: true })
+  if (stored == null) {
+    throw `waypoints not given and waypoints from ${roomLink(roomName)} to ${roomLink(targetRoomName)} is not stored`
+  }
+  return stored
 }
 
 ProcessLauncher.register("ProduceCommodityProcess", args => {
@@ -1112,11 +1037,18 @@ ProcessLauncher.register("BoostLabChargerProcess", args => {
 ProcessLauncher.register("SignProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
-    const targetRoomName = args.roomName("room_name").parse()
+    const targetRoomName = args.roomName("target_room_name").parseOptional() ?? roomName
 
     const sign = ((): SignProcessSign => {
       const targetRoom = Game.rooms[targetRoomName]
       if (targetRoom != null && targetRoom.controller?.my === true) {
+        const sign = args.string("sign").parseOptional()
+        if (sign != null) {
+          return {
+            case: "my room",
+            sign,
+          }
+        }
         return {
           case: "my room",
         }
@@ -1197,3 +1129,85 @@ ProcessLauncher.register("ProblemSolver", args => {
     return Result.Failed(`${error}`)
   }
 })
+
+ProcessLauncher.register("Season1244215GenericDismantleProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    const waypoints = ((): RoomName[] => {
+      const waypointsArgument = args.roomNameList("waypoints").parseOptional()
+      if (waypointsArgument != null) {
+        if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+          GameMap.setWaypoints(roomName, targetRoomName, waypointsArgument)
+        }
+        return waypointsArgument
+      }
+      const stored = GameMap.getWaypoints(roomName, targetRoomName, { ignoreMissingWaypoints: true })
+      if (stored == null) {
+        throw `waypoints not given and waypoints from ${roomLink(roomName)} to ${roomLink(targetRoomName)} is not stored`
+      }
+      return stored
+    })()
+
+    const targetId = args.gameObjectId("target_id").parse()
+    const maxBodyCount = args.int("max_body_count").parse({min: 1, max: GameConstants.creep.body.bodyPartMaxCount})
+
+    return Result.Succeeded((processId) => Season1244215GenericDismantleProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      targetId as Id<AnyStructure>,
+      maxBodyCount
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SendEnergyToAllyProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+    const numberOfCreeps = args.int("creep_count").parse({min: 1})
+    const allyRoomEntrancePosition = args.localPosition("room_entrance_position").parse()
+
+    return Result.Succeeded((processId) => SendEnergyToAllyProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      finishWorking,
+      numberOfCreeps,
+      allyRoomEntrancePosition
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season1521073SendResourceProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const finishWorking = args.int("finish_working").parse({ min: 0, max: GameConstants.creep.life.lifeTime })
+    const numberOfCreeps = args.int("creep_count").parse({ min: 1 })
+
+    return Result.Succeeded((processId) => Season1521073SendResourceProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      finishWorking,
+      numberOfCreeps,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+
