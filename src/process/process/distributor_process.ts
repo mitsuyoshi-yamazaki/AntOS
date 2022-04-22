@@ -143,7 +143,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       if ((resources.controller.level > 4 && resources.activeStructures.storage != null) || resources.activeStructures.terminal != null) {
         const body = ((): BodyPartConstant[] => {
           if (resources.controller.level < 8 || this.drainStorage === true) {
-            return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 8)
+            return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 16)
           }
           return CreepBody.create([MOVE], [CARRY], resources.room.energyCapacityAvailable, 4)
         })()
@@ -184,7 +184,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
 
   private requestDistributor(body: BodyPartConstant[]): void {
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-      priority: CreepSpawnRequestPriority.Low,
+      priority: CreepSpawnRequestPriority.Medium,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Hauler, CreepRole.Mover],
