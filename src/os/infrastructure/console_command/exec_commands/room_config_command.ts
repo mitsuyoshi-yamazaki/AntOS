@@ -216,6 +216,7 @@ function changeRoomType(roomResource: OwnedRoomResource, args: string[]): string
 const boostCommandActions = [
   "add",
   "remove",
+  "show",
 ] as const
 type BoostCommandAction = typeof boostCommandActions[number]
 function isBoostCommandAction(arg: string): arg is BoostCommandAction {
@@ -268,52 +269,56 @@ function boosts(roomResource: OwnedRoomResource, args: string[]): string {
     })()
   }
 
-  case "remove": {
-    const boost = ((): MineralBoostConstant | "all" => {
-      const arg = listArguments.string(1, "boost").parse()
-      if (isMineralBoostConstant(arg)) {
-        return arg
+  case "remove":
+    return ((): string => {
+      const boost = ((): MineralBoostConstant | "all" => {
+        const arg = listArguments.string(1, "boost").parse()
+        if (isMineralBoostConstant(arg)) {
+          return arg
+        }
+        if (arg === "all") {
+          return arg
+        }
+        throw `boost argument should be either MineralBoostConstant or "all" (${arg} given)`
+      })()
+
+      if (boost === "all") {
+        const { addedToResearchOutputLabIds, removedBoosts } = roomResource.roomInfoAccessor.removeAllBoosts()
+        const results: string[] = [
+          `removed ${removedBoosts.map(boost => coloredResourceType(boost)).join(",")}`,
+        ]
+        if (addedToResearchOutputLabIds.length > 0) {
+          results.push("added to research outputs:")
+          results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
+        }
+
+        saveRoomInfo(roomName, roomResource.roomInfo)
+        return results.join("\n")
       }
-      if (arg === "all") {
-        return arg
+
+      const results: string[] = [
+        `removed ${coloredResourceType(boost)}`
+      ]
+      const result = roomResource.roomInfoAccessor.removeBoosts([boost])
+      switch (result.resultType) {
+      case "succeeded": {
+        const { addedToResearchOutputLabIds } = result.value
+        if (addedToResearchOutputLabIds.length > 0) {
+          results.push("added to research outputs:")
+          results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
+        }
+
+        saveRoomInfo(roomName, roomResource.roomInfo)
+        return results.join("\n")
       }
-      throw `boost argument should be either MineralBoostConstant or "all" (${arg} given)`
+
+      case "failed":
+        throw result.reason
+      }
     })()
 
-    if (boost === "all") {
-      const { addedToResearchOutputLabIds, removedBoosts } = roomResource.roomInfoAccessor.removeAllBoosts()
-      const results: string[] = [
-        `removed ${removedBoosts.map(boost => coloredResourceType(boost)).join(",")}`,
-      ]
-      if (addedToResearchOutputLabIds.length > 0) {
-        results.push("added to research outputs:")
-        results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
-      }
-
-      saveRoomInfo(roomName, roomResource.roomInfo)
-      return results.join("\n")
-    }
-
-    const results: string[] = [
-      `removed ${coloredResourceType(boost)}`
-    ]
-    const result = roomResource.roomInfoAccessor.removeBoosts([boost])
-    switch (result.resultType) {
-    case "succeeded": {
-      const { addedToResearchOutputLabIds } = result.value
-      if (addedToResearchOutputLabIds.length > 0) {
-        results.push("added to research outputs:")
-        results.push(...addedToResearchOutputLabIds.map(labId => `- ${labId}`))
-      }
-
-      saveRoomInfo(roomName, roomResource.roomInfo)
-      return results.join("\n")
-    }
-
-    case "failed":
-      throw result.reason
-    }
-  }
+  case "show":
+    return roomResource.roomInfoAccessor.boostLabs.map(labInfo => coloredResourceType(labInfo.boost)).join(", ")
   }
 }
 
