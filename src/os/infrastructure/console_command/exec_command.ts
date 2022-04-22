@@ -514,7 +514,7 @@ export class ExecCommand implements ConsoleCommand {
 
     const room = Game.rooms[roomName]
     if (room == null) {
-      return `${roomLink(roomName)} is not owned`
+      return `no visible ${roomLink(roomName)}`
     }
 
     return this.unclaimRoom(room, dryRun)
@@ -770,6 +770,7 @@ export class ExecCommand implements ConsoleCommand {
     return "ok"
   }
 
+  // Game.io("exec cron 1000 command=exec script collect_power dry_run=0")  // 実装上execを指定しているが、他のosコマンドは実行されない
   /** @throws */
   private cron(args: string[]): CommandExecutionResult {
     const listArguments = new ListArguments(args)
