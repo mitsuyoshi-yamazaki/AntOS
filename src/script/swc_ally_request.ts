@@ -3,8 +3,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredResourceType, profileLink, roomLink } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { RoomName } from "utility/room_name"
+import { swcAllyRequestSegmentId } from "../../submodules/private/constants"
 
-const segmentID = 90
+const segmentID = swcAllyRequestSegmentId
 const allyList = Memory.gameInfo.whitelist
 
 // Priority convention:
