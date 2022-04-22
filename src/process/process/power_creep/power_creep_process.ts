@@ -461,7 +461,6 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
         executed: false,
       }
     }
-
   }
 
   private renewPowerCreep(powerCreep: PowerCreep, powerSpawn: StructurePowerSpawn): void {

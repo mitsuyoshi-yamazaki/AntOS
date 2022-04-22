@@ -31,20 +31,22 @@ type LinkInfo = {
   sourceLinkIds: { [sourceId: string]: Id<StructureLink> }
 }
 
-export function isOwnedRoomTypes(arg: string): arg is ("normal" | "minimum-cpu-use") {
-  if (arg === "normal" || arg === "minimum-cpu-use") {
-    return true
-  }
-  return false
-}
-
 type OwnedRoomTypeNormal = {
   readonly case: "normal"
 }
 type OwnedRoomTypeMinimumCpuUse = {
   readonly case: "minimum-cpu-use"
 }
+
 type OwnedRoomType = OwnedRoomTypeNormal | OwnedRoomTypeMinimumCpuUse
+type OwnedRoomCase = OwnedRoomType["case"]
+
+export function isOwnedRoomTypes(arg: string): arg is OwnedRoomCase {
+  if (arg === "normal" || arg === "minimum-cpu-use") {
+    return true
+  }
+  return false
+}
 
 export interface BasicRoomInfo {
   readonly v: ShortVersionV6

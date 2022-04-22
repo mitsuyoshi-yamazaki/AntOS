@@ -5,6 +5,8 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { interRoomMoveToOptions } from "prototype/creep"
+import { RoomName } from "utility/room_name"
+import { GameConstants } from "utility/constants"
 
 export interface MoveToTaskState extends CreepTaskState {
   /** destination position */
@@ -14,6 +16,7 @@ export interface MoveToTaskState extends CreepTaskState {
   r: number
 
   ignoreSwamp: boolean
+  isAllyRoom: boolean
 }
 
 export class MoveToTask implements CreepTask {
@@ -24,6 +27,7 @@ export class MoveToTask implements CreepTask {
     public readonly destinationPosition: RoomPosition,
     public readonly range: number,
     public readonly ignoreSwamp: boolean,
+    private readonly isAllyRoom: boolean,
   ) {
     this.shortDescription = `${this.destinationPosition.x},${this.destinationPosition.y}`
   }
@@ -35,15 +39,16 @@ export class MoveToTask implements CreepTask {
       d: this.destinationPosition.encode(),
       r: this.range,
       ignoreSwamp: this.ignoreSwamp,
+      isAllyRoom: this.isAllyRoom,
     }
   }
 
   public static decode(state: MoveToTaskState): MoveToTask {
-    return new MoveToTask(state.s, decodeRoomPosition(state.d), state.r, state.ignoreSwamp ?? false)
+    return new MoveToTask(state.s, decodeRoomPosition(state.d), state.r, state.ignoreSwamp ?? false, state.isAllyRoom ?? false)
   }
 
-  public static create(destinationPosition: RoomPosition, range: number, options?: { ignoreSwamp: boolean}): MoveToTask {
-    return new MoveToTask(Game.time, destinationPosition, range, options?.ignoreSwamp ?? false)
+  public static create(destinationPosition: RoomPosition, range: number, options?: { ignoreSwamp?: boolean, isAllyRoom?: boolean}): MoveToTask {
+    return new MoveToTask(Game.time, destinationPosition, range, options?.ignoreSwamp ?? false, options?.isAllyRoom ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -78,6 +83,26 @@ export class MoveToTask implements CreepTask {
       options.ignoreRoads = true
       options.swampCost = 1
     }
+    if (this.isAllyRoom === true) {
+      options.ignoreCreeps = false
+      options.costCallback = avoidConstructionSitesCostCallback
+    }
     return options
   }
+}
+
+export const avoidConstructionSitesCostCallback = (roomName: RoomName, costMatrix: CostMatrix): CostMatrix | void => {
+  const room = Game.rooms[roomName]
+  if (room == null) {
+    return costMatrix
+  }
+
+  const constructionSites = room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
+  const obstacleCost = GameConstants.pathFinder.costs.obstacle
+
+  constructionSites.forEach(constructionSite => {
+    costMatrix.set(constructionSite.pos.x, constructionSite.pos.y, obstacleCost)
+  })
+
+  return costMatrix
 }
