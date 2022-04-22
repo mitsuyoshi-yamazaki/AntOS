@@ -185,7 +185,7 @@ export namespace AttackPlanner {
 
     private calculateAttackPlanFor(bunkers: Bunker[]): AttackPlan {
       const towerCount = bunkers.reduce((count, bunker) => count + bunker.towers.length, 0)
-      const requiredHealPower = towerCount * GameConstants.structure.tower.maxAttackPower
+      const requiredHealPower = Math.max(towerCount * GameConstants.structure.tower.maxAttackPower, 100)
       const totalWallHits = bunkers.reduce((total, bunker) => {
         const bunkerStructures: { rampartHits: number }[] = [
           ...bunker.spawns,
