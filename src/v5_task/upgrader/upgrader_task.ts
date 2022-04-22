@@ -18,6 +18,7 @@ import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapp
 import { bodyCost } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 export interface UpgraderTaskState extends GeneralCreepWorkerTaskState {
   /** room name */
@@ -137,7 +138,11 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    const [body, numberOfCreeps] = this.upgraderBody(objects)
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return null
+    }
+    const [body, numberOfCreeps] = this.upgraderBody(objects, roomResource)
 
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover],
@@ -181,20 +186,24 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
   /**
    * @return body, numberOfCreeps
    */
-  private upgraderBody(objects: OwnedRoomObjects): [BodyPartConstant[], number] {
-    const isRcl8 = objects.controller.level === 8
-    if (isRcl8 === true) {
-      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
-      if (roomResource?.roomInfo.ownedRoomType.case === "minimum-cpu-use") {
-        const creepCount = ((): number => {
-          if (roomResource.controller.ticksToDowngrade > 160000) {
-            return 0
-          }
-          return 1
-        })()
-        const body = CreepBody.create([CARRY], [WORK, WORK, MOVE], roomResource.room.energyCapacityAvailable, 7)
-        return [body, creepCount]
+  private upgraderBody(objects: OwnedRoomObjects, roomResource: OwnedRoomResource): [BodyPartConstant[], number] {
+    const isRcl8 = roomResource.controller.level >= 8
+    const shouldUseMinimumUpgrader = ((): boolean => {
+      if (isRcl8 === true && roomResource.roomInfo.ownedRoomType.case === "minimum-cpu-use") {
+        return true
       }
+      return false
+    })()
+
+    if (shouldUseMinimumUpgrader) {
+      const creepCount = ((): number => {
+        if (roomResource.controller.ticksToDowngrade > 160000) {
+          return 0
+        }
+        return 1
+      })()
+      const body = CreepBody.create([CARRY], [WORK, WORK, MOVE], roomResource.room.energyCapacityAvailable, 7)
+      return [body, creepCount]
     }
 
     const bodyUnit = [WORK, WORK, WORK, MOVE]
