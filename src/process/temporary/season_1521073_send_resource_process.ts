@@ -45,7 +45,6 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
   stopSpawning: boolean
 }
 
-// Game.io("launch -l Season1521073SendResourceProcess room_name=W48S12 target_room_name=W47S15 waypoints=W47S15 finish_working=400 creeps=1")
 /** Haulerによる輸送 */
 export class Season1521073SendResourceProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
@@ -119,7 +118,7 @@ export class Season1521073SendResourceProcess implements Process, Procedural, Me
     const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
     const targetRoomObjects = World.rooms.getOwnedRoomObjects(this.targetRoomName)
     if (objects == null || targetRoomObjects == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} or ${roomLink(this.targetRoomName)} lost`)
+      PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.parentRoomName)} or ${roomLink(this.targetRoomName)} lost`)
       return
     }
     if (targetRoomObjects.activeStructures.terminal != null) {
@@ -155,7 +154,9 @@ export class Season1521073SendResourceProcess implements Process, Procedural, Me
       return this.maxNumberOfCreeps
     })()
     if (creeps.length < numberOfCreeps && this.stopSpawning !== true) {
-      this.requestCreep(CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20))
+      const body = CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20)
+      body.sort((lhs, rhs) => lhs === rhs ? 0 : lhs === MOVE ? 1 : -1)
+      this.requestCreep(body)
     }
 
     this.runCreep(energyStore, targetRoomObjects)
