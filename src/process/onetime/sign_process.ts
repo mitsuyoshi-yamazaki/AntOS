@@ -24,11 +24,12 @@ ProcessDecoder.register("SignProcess", state => {
 })
 
 type SignMyRoom = {
-  case: "my room"
+  readonly case: "my room"
+  readonly sign?: string
 }
 type SignNormalRoom = {
-  case: "normal"
-  sign: string
+  readonly case: "normal"
+  readonly sign: string
 }
 export type SignProcessSign = SignMyRoom | SignNormalRoom
 
@@ -82,7 +83,11 @@ export class SignProcess implements Process, Procedural {
     ]
     switch (this.sign.case) {
     case "my room":
-      descriptions.push("my room")
+      if (this.sign.sign != null) {
+        descriptions.push(`my room ${this.sign.sign}`)
+      } else {
+        descriptions.push("my room")
+      }
       break
     case "normal":
       descriptions.push(`${roomLink(this.targetRoomName)} ${this.sign.sign}`)
@@ -151,7 +156,7 @@ export class SignProcess implements Process, Procedural {
     const sign = ((): string => {
       switch (this.sign.case) {
       case "my room":
-        return Sign.signForOwnedRoom()
+        return this.sign.sign ?? Sign.signForOwnedRoom()
       case "normal":
         return this.sign.sign
       }
