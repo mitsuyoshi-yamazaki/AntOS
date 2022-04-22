@@ -298,7 +298,9 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
     }
 
     if (targetRoomObjects.controller.level < 2) {
-      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), {reusePath: 3, ignoreSwamp: false})
+      if (targetRoomObjects.controller.upgradeBlocked == null) {
+        return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), { reusePath: 3, ignoreSwamp: false })
+      }
     }
 
     const structureToCharge = targetRoomObjects.getStructureToCharge(creep.pos)
@@ -336,7 +338,19 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
     }
 
-    return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), { reusePath: 3, ignoreSwamp: false })
+    if (targetRoomObjects.controller.upgradeBlocked == null) {
+      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(targetRoomObjects.controller), { reusePath: 3, ignoreSwamp: false })
+    }
+
+    if (roomResources != null) {
+      const ramparts = [...roomResources.ramparts]
+      ramparts.sort((lhs, rhs) => lhs.hits - rhs.hits)
+      const rampart = ramparts[0]
+      if (rampart != null && rampart.hits < rampart.hitsMax) {
+        return MoveToTargetTask.create(RepairApiWrapper.create(rampart))
+      }
+    }
+    return null
   }
 
   private getDroppedEnergy(position: RoomPosition, targetRoomObjects: OwnedRoomObjects): Resource | null {
