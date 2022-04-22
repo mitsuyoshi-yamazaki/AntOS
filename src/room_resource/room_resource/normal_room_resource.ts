@@ -91,15 +91,26 @@ export class NormalRoomResource implements RoomResource {
     const allianceCreeps: Creep[] = []
     const alliancePowerCreeps: PowerCreep[] = []
 
+    const localWhitelistedUsers = roomInfo?.localWhitelistedUsers ?? []
+    const isEnemy = (owner: Owner): boolean => {
+      if (Game.isEnemy(owner) !== true) {
+        return false
+      }
+      if (localWhitelistedUsers.includes(owner.username) === true) {
+        return false
+      }
+      return true
+    }
+
     othersCreeps.forEach(creep => {
-      if (Game.isEnemy(creep.owner)) {
+      if (isEnemy(creep.owner)) {
         hostileCreeps.push(creep)
       } else {
         allianceCreeps.push(creep)
       }
     })
     othersPowerCreeps.forEach(powerCreep => {
-      if (Game.isEnemy(powerCreep.owner)) {
+      if (isEnemy(powerCreep.owner)) {
         hostilePowerCreeps.push(powerCreep)
       } else {
         alliancePowerCreeps.push(powerCreep)

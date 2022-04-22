@@ -66,7 +66,7 @@ export function calculateWallPositions(room: Room, showsCostMatrix: boolean): Wa
     positionsToDefend.push(flag.pos)
   })
 
-  if (positionsToDefend.length < (GameConstants.structure.maxCount.extension * 0.8)) {
+  if (positionsToDefend.length < (GameConstants.structure.maxCount.extension * 0.8) && room.name !== "W49S37") {  // FixMe:
     return `Lack of extensions: ${positionsToDefend.length} found (${GameConstants.structure.maxCount.extension} expected)`
   }
 

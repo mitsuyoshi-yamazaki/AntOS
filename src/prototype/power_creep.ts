@@ -14,3 +14,13 @@ export function init(): void {
     return TaskTargetCache.creepTargetingTaskRunnerInfo(this.id, taskType)
   }
 }
+
+export type DeployedPowerCreep = PowerCreep & { room: Room }
+export const isDeployedPowerCreep = (powerCreep: PowerCreep): powerCreep is DeployedPowerCreep => {
+  if (powerCreep.room == null) {
+    return false
+  }
+  return true
+}
+
+export type AnyDeployedCreep = Creep | DeployedPowerCreep

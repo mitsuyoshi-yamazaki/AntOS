@@ -6,23 +6,21 @@ import { Result, ResultFailed } from "utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { coloredText, roomLink } from "utility/log"
+import { roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
-import { Season701205PowerHarvesterSwampRunnerProcess } from "process/temporary/season_701205_power_harvester_swamp_runner_process"
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
-import { PrimitiveLogger } from "../primitive_logger"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
 import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
-import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { DistributorProcess } from "process/process/distributor_process"
 import { StealResourceProcess } from "process/onetime/steal_resource_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { InterRoomResourceManagementProcess } from "process/process/inter_room_resource_management_process"
@@ -35,24 +33,21 @@ import { SectorName } from "utility/room_sector"
 import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_test_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
-import { QuadMakerProcess } from "process/onetime/quad_maker_process"
+import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
 import { GameMap } from "game/game_map"
 import { RoomCoordinate, RoomName } from "utility/room_name"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
-import { Season4275982HarvestCommodityProcess } from "process/temporary/season4_275982_harvest_commodity_process"
+import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
 import { KeywordArguments } from "./utility/keyword_argument_parser"
-import { Season4596376ConvoyInterrupterProcess } from "process/temporary/season4_596376_convoy_interrupter_process"
-import { } from "process/temporary/season4_628862_downgrade_room_process"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"
 import { directionName } from "utility/direction"
 import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
-import { Season4964954HarvestPowerProcess } from "process/temporary/season4_964954_harvest_power_process"
-import { Season41011412HighwayProcessLauncherProcess } from "process/temporary/season4_1011412_highway_process_launcher_process"
-// import { Season41035999ScoreFleetProcess } from "process/temporary/season4_1035999_score_fleet_process"
+import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
+import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
 import { World39013108CollectResourceProcess } from "process/temporary/world_39013108_collect_resource_process"
 import { Season41076620ResourceManagerProcess } from "process/temporary/season4_1076620_resource_manager_process"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
@@ -60,6 +55,19 @@ import { Season4ScoreLauncherProcess } from "process/temporary/season4_score_lau
 import { isWithdrawStructureProcessTargetType, WithdrawStructureProcess, WithdrawStructureProcessTargetType } from "process/onetime/withdraw_structure_process"
 import { Season4TravelerTestProcess } from "process/temporary/season4_traveler_test_process"
 import { Season4OperateExtraLinkProcess } from "process/temporary/season4_operate_extra_link_process"
+import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
+import { SignProcess, SignProcessSign } from "process/onetime/sign_process"
+import { AttackRoomProcess } from "process/onetime/attack/attack_room_process"
+import { DraftingRoomProcess } from "process/onetime/attack/drafting_room_process"
+import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
+import { RoomResources } from "room_resource/room_resources"
+import { } from "../../../../submodules/private/attack/planning/claimed_room_attack_planner_process"
+import { } from "process/onetime/saboteur/active_saboteur_process"
+import { } from "process/onetime/saboteur/passive_saboteur_process"
+import {} from "process/onetime/self_aware_creep_process"
+import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem_solver_v1_process"
+import { GameConstants } from "utility/constants"
+import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -90,18 +98,12 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "Season570208DismantleRcl2RoomProcess":
         return this.launchSeason570208DismantleRcl2RoomProcess()
-      case "Season701205PowerHarvesterSwampRunnerProcess":
-        return this.launchSeason701205PowerHarvesterSwampRunnerProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
       case "Season1200082SendMineralProcess":
         return this.launchSeason1200082SendMineralProcess()
       case "Season1349943DisturbPowerHarvestingProcess":
         return this.launchSeason1349943DisturbPowerHarvestingProcess()
-      case "Season1521073SendResourceProcess":
-        return this.launchSeason1521073SendResourceProcess()
-      case "Season1244215GenericDismantleProcess":
-        return this.launchSeason1244215GenericDismantleProcess()
       case "Season1606052SKHarvesterProcess":
         return this.launchSeason1606052SKHarvesterProcess()
       case "UpgradePowerCreepProcess":
@@ -110,8 +112,8 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason1655635SKMineralHarvestProcess()
       case "Season4332399SKMineralHarvestProcess":
         return this.launchSeason4332399SKMineralHarvestProcess()
-      case "Season1838855DistributorProcess":
-        return this.launchSeason1838855DistributorProcess()
+      case "DistributorProcess":
+        return this.launchDistributorProcess()
       case "StealResourceProcess":
         return this.launchStealResourceProcess()
       case "Season2055924SendResourcesProcess":
@@ -273,53 +275,6 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason701205PowerHarvesterSwampRunnerProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-
-    const neighbourCount = ((): number => {
-      const targetRoom = Game.rooms[targetRoomName]
-      if (targetRoom == null) {
-        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no visible to ${roomLink(targetRoomName)}`)
-        return 3
-      }
-      const powerBank = targetRoom.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_POWER_BANK } })[0]
-      if (powerBank == null) {
-        PrimitiveLogger.fatal(`launchSeason701205PowerHarvesterSwampRunnerProcess no power bank found in ${roomLink(targetRoomName)}`)
-        return 3
-      }
-      return powerBank.pos.positionsInRange(1, {
-        excludeItself: true,
-        excludeTerrainWalls: true,
-        excludeStructures: true,
-        excludeWalkableStructures: false,
-      }).length
-    })()
-
-    const dryRun = args.get("dry_run")
-    if (dryRun != null) {
-      return Result.Failed(`${coloredText("[Dry Run]", "warn")} Season701205PowerHarvesterSwampRunnerProcess ${roomLink(targetRoomName)}, ${neighbourCount} attacker points`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season701205PowerHarvesterSwampRunnerProcess.create(processId, roomName, targetRoomName, waypoints, neighbourCount)
-    })
-    return Result.Succeeded(process)
-  }
-
   private launchBuyPixelProcess(): LaunchCommandResult {
     if (Environment.world !== "persistent world") {
       return Result.Failed(`Environment ${Environment.world} does not support pixel`)
@@ -345,56 +300,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1200082SendMineralProcess.create(processId, roomName, targetRoomName)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason1244215GenericDismantleProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawMaxBodyCount = args.get("max_body_count")
-    if (rawMaxBodyCount == null) {
-      return this.missingArgumentError("max_body_count")
-    }
-    const maxBodyCount = parseInt(rawMaxBodyCount, 10)
-    if (isNaN(maxBodyCount) === true) {
-      return Result.Failed(`max_body_count is not a number ${maxBodyCount}`)
-    }
-    const targetId = args.get("target_id")
-    if (targetId == null) {
-      return this.missingArgumentError("target_id")
-    }
-
-    const waypoints: RoomName[] = []
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
-      if (storedValue == null) {
-        return this.missingArgumentError("waypoints")
-      }
-      waypoints.push(...storedValue)
-
-    } else {
-      const parsedValue = rawWaypoints.split(",")
-
-      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
-      if (result.resultType === "failed") {
-        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-      }
-
-      waypoints.push(...parsedValue)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1244215GenericDismantleProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<AnyStructure>, maxBodyCount)
     })
     return Result.Succeeded(process)
   }
@@ -426,45 +331,6 @@ export class LaunchCommand implements ConsoleCommand {
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season1349943DisturbPowerHarvestingProcess.create(processId, roomName, waypoints, patrolRooms, attackerType as ("attacker" | "ranged_attacker" | "large_ranged_attacker"))
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason1521073SendResourceProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      return this.missingArgumentError("waypoints")
-    }
-    const waypoints = rawWaypoints.split(",")
-    const rawFinishWorking = args.get("finish_working")
-    if (rawFinishWorking == null) {
-      return this.missingArgumentError("finish_working")
-    }
-    const finishWorking = parseInt(rawFinishWorking, 10)
-    if (isNaN(finishWorking) === true) {
-      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
-    }
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1521073SendResourceProcess.create(processId, roomName, targetRoomName, waypoints, finishWorking, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
@@ -545,7 +411,7 @@ export class LaunchCommand implements ConsoleCommand {
     return Result.Succeeded(process)
   }
 
-  private launchSeason1838855DistributorProcess(): LaunchCommandResult {
+  private launchDistributorProcess(): LaunchCommandResult {
     const args = this.parseProcessArguments()
 
     const roomName = args.get("room_name")
@@ -553,7 +419,7 @@ export class LaunchCommand implements ConsoleCommand {
       return this.missingArgumentError("room_name")
     }
     const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season1838855DistributorProcess.create(processId, roomName)
+      return DistributorProcess.create(processId, roomName)
     })
     return Result.Succeeded(process)
   }
@@ -805,6 +671,22 @@ export class LaunchCommand implements ConsoleCommand {
   }
 }
 
+/** @throws */
+const getWaypoints = (keywordArguments: KeywordArguments, roomName: RoomName, targetRoomName: RoomName): RoomName[] => {
+  const waypointsArgument = keywordArguments.roomNameList("waypoints").parseOptional()
+  if (waypointsArgument != null) {
+    if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+      GameMap.setWaypoints(roomName, targetRoomName, waypointsArgument)
+    }
+    return waypointsArgument
+  }
+  const stored = GameMap.getWaypoints(roomName, targetRoomName, { ignoreMissingWaypoints: true })
+  if (stored == null) {
+    throw `waypoints not given and waypoints from ${roomLink(roomName)} to ${roomLink(targetRoomName)} is not stored`
+  }
+  return stored
+}
+
 ProcessLauncher.register("ProduceCommodityProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({my: true})
@@ -819,18 +701,6 @@ ProcessLauncher.register("ProduceCommodityProcess", args => {
     }
 
     return Result.Succeeded((processId) => ProduceCommodityProcess.create(processId, roomName, factory.id))
-  } catch (error) {
-    return Result.Failed(`${error}`)
-  }
-})
-
-ProcessLauncher.register("Season4596376ConvoyInterrupterProcess", args => {
-  try {
-    const roomName = args.roomName("room_name").parse({my: true})
-    const highwayRoomName1 = args.roomName("highway_room_name_1").parse()
-    const highwayRoomName2 = args.roomName("highway_room_name_2").parse()
-
-    return Result.Succeeded((processId) => Season4596376ConvoyInterrupterProcess.create(processId, roomName, {roomName1: highwayRoomName1, roomName2: highwayRoomName2}))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -856,7 +726,7 @@ ProcessLauncher.register("GclFarmManagerProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
+ProcessLauncher.register("HarvestCommodityProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -865,7 +735,7 @@ ProcessLauncher.register("Season4275982HarvestCommodityProcess", args => {
     const harvesterCount = args.int("harvester_count").parse({max: 4})
     const haulerCount = 1
 
-    return Result.Succeeded((processId) => Season4275982HarvestCommodityProcess.create(
+    return Result.Succeeded((processId) => HarvestCommodityProcess.create(
       processId,
       roomName,
       {
@@ -955,7 +825,7 @@ ProcessLauncher.register("DefenseRemoteRoomProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
+ProcessLauncher.register("HarvestPowerProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -972,7 +842,7 @@ ProcessLauncher.register("Season4964954HarvestPowerProcess", args => {
       neighbourCount,
     }
 
-    return Result.Succeeded((processId) => Season4964954HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
+    return Result.Succeeded((processId) => HarvestPowerProcess.create(processId, roomName, targetRoomName, waypoints, powerBankInfo))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -1016,64 +886,13 @@ ProcessLauncher.register("PowerProcessProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season41011412HighwayProcessLauncherProcess", () => {
+ProcessLauncher.register("HighwayProcessLauncherProcess", () => {
   try {
-    return Result.Succeeded((processId) => Season41011412HighwayProcessLauncherProcess.create(processId))
+    return Result.Succeeded((processId) => HighwayProcessLauncherProcess.create(processId))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
 })
-
-// ProcessLauncher.register("Season41035999ScoreFleetProcess", args => {
-//   try {
-//     const roomResource = args.ownedRoomResource("room_name").parse()
-//     const roomName = roomResource.room.name
-//     const spawn = roomResource.activeStructures.spawns[0]
-//     if (spawn == null) {
-//       throw `no spawn in ${roomLink(roomName)}`
-//     }
-//     const highwayEntranceRoomName = args.roomName("highway_entrance_room_name").parse()
-//     const direction = args.direction("direction").parse()
-//     if (direction === TOP_LEFT || direction === TOP_RIGHT || direction === BOTTOM_LEFT || direction === BOTTOM_RIGHT) {
-//       throw `Invalid direction ${directionName(direction)}(${direction})`
-//     }
-//     const commodityType = args.commodityType("commodity_type").parse()
-
-//     const waypoints = GameMap.getWaypoints(roomName, highwayEntranceRoomName) ?? []
-//     const nextWaypointRoomName = waypoints[0] ?? highwayEntranceRoomName
-//     const nextRoomName = ((): RoomName => {
-//       const route = Game.map.findRoute(roomName, nextWaypointRoomName)
-//       if (route === ERR_NO_PATH) {
-//         return nextWaypointRoomName
-//       }
-//       const firstStep = route[0]
-//       if (firstStep == null) {
-//         return nextWaypointRoomName
-//       }
-//       return firstStep.room
-//     })()
-//     const exit = roomResource.room.findExitTo(nextRoomName)
-//     if (exit === ERR_NO_PATH || exit === ERR_INVALID_ARGS) {
-//       throw `cannot find exit to ${roomLink(nextRoomName)} from ${roomLink(roomName)}`
-//     }
-
-//     const exitPosition = spawn.pos.findClosestByPath(exit)
-//     if (exitPosition == null) {
-//       throw `no exit position found in ${roomLink(roomName)}`
-//     }
-
-//     return Result.Succeeded((processId) => Season41035999ScoreFleetProcess.create(
-//       processId,
-//       roomName,
-//       highwayEntranceRoomName,
-//       direction,
-//       commodityType,
-
-//     ))
-//   } catch (error) {
-//     return Result.Failed(`${error}`)
-//   }
-// })
 
 ProcessLauncher.register("World39013108CollectResourceProcess", args => {
   try {
@@ -1204,3 +1023,191 @@ ProcessLauncher.register("Season4OperateExtraLinkProcess", args => {
     return Result.Failed(`${error}`)
   }
 })
+
+ProcessLauncher.register("BoostLabChargerProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => BoostLabChargerProcess.create(processId, roomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SignProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parseOptional() ?? roomName
+
+    const sign = ((): SignProcessSign => {
+      const targetRoom = Game.rooms[targetRoomName]
+      if (targetRoom != null && targetRoom.controller?.my === true) {
+        const sign = args.string("sign").parseOptional()
+        if (sign != null) {
+          return {
+            case: "my room",
+            sign,
+          }
+        }
+        return {
+          case: "my room",
+        }
+      }
+
+      const sign = args.string("sign").parse()
+      return {
+        case: "normal",
+        sign,
+      }
+    })()
+
+    return Result.Succeeded((processId) => SignProcess.create(processId, roomName, targetRoomName, sign))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("AttackRoomProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+      const calculated = GameMap.calculateSafeWaypoints(roomName, targetRoomName)
+      if (calculated == null) {
+        throw `waypoint not set between ${roomLink(roomName)} to ${roomLink(targetRoomName)}`
+      }
+      GameMap.setWaypoints(roomName, targetRoomName, calculated)
+    }
+
+    return Result.Succeeded((processId) => AttackRoomProcess.create(processId, roomName, targetRoomName))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DraftingRoomProcess", args => {
+  try {
+    const observer = args.visibleGameObject("observer_id").parse()
+    if (!(observer instanceof StructureObserver)) {
+      throw `${observer} is not StructureObserver`
+    }
+    const roomCoordinate = observer.room.coordinate
+    const dryRun = args.boolean("dry_run").parseOptional() ?? true
+
+    return Result.Succeeded((processId) => DraftingRoomProcess.create(processId, observer, roomCoordinate, dryRun))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("AggressiveClaimProcess", args => {
+  try {
+    const claimableRoomCount = RoomResources.getClaimableRoomCount()
+    if (claimableRoomCount <= 0) {
+      throw `${Environment.description} no claimable rooms`
+    }
+
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const blockingWallIds = args.list("blocking_wall_ids", "object_id").parse() as Id<StructureWall | StructureRampart>[]
+    const excludeStructureIds = args.list("excluded_structure_ids", "object_id").parse() as Id<AnyStructure>[]
+
+    return Result.Succeeded((processId) => AggressiveClaimProcess.create(processId, roomName, targetRoomName, blockingWallIds, excludeStructureIds))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("ProblemSolver", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const problem = ProblemSolverV1.createTestProblem()
+
+    return Result.Succeeded((processId) => ProblemSolverV1Process.create(processId, roomName, problem))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season1244215GenericDismantleProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    const waypoints = ((): RoomName[] => {
+      const waypointsArgument = args.roomNameList("waypoints").parseOptional()
+      if (waypointsArgument != null) {
+        if (GameMap.hasWaypoints(roomName, targetRoomName) !== true) {
+          GameMap.setWaypoints(roomName, targetRoomName, waypointsArgument)
+        }
+        return waypointsArgument
+      }
+      const stored = GameMap.getWaypoints(roomName, targetRoomName, { ignoreMissingWaypoints: true })
+      if (stored == null) {
+        throw `waypoints not given and waypoints from ${roomLink(roomName)} to ${roomLink(targetRoomName)} is not stored`
+      }
+      return stored
+    })()
+
+    const targetId = args.gameObjectId("target_id").parse()
+    const maxBodyCount = args.int("max_body_count").parse({min: 1, max: GameConstants.creep.body.bodyPartMaxCount})
+
+    return Result.Succeeded((processId) => Season1244215GenericDismantleProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      targetId as Id<AnyStructure>,
+      maxBodyCount
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SendEnergyToAllyProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+    const numberOfCreeps = args.int("creep_count").parse({min: 1})
+    const allyRoomEntrancePosition = args.localPosition("room_entrance_position").parse()
+
+    return Result.Succeeded((processId) => SendEnergyToAllyProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      finishWorking,
+      numberOfCreeps,
+      allyRoomEntrancePosition
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season1521073SendResourceProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const finishWorking = args.int("finish_working").parse({ min: 0, max: GameConstants.creep.life.lifeTime })
+    const numberOfCreeps = args.int("creep_count").parse({ min: 1 })
+
+    return Result.Succeeded((processId) => Season1521073SendResourceProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      finishWorking,
+      numberOfCreeps,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+

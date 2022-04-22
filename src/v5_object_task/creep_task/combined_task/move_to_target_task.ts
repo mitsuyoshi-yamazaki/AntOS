@@ -7,12 +7,33 @@ import { CreepTaskState } from "../creep_task_state"
 import { decodeRoomPosition, RoomPositionId, RoomPositionState } from "prototype/room_position"
 import { Timestamp } from "utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { DirectionConstants } from "utility/direction"
+import { GameConstants } from "utility/constants"
+import { avoidConstructionSitesCostCallback } from "../meta_task/move_to_task"
 
 const noPathPositions: string[] = []
 const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition): string => {
   return `${fromPosition.id}_${toPosition.id}`
+}
+
+const Logger = {
+  lastLog: 0,
+  logCount: 0,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  log(message: string): void {
+    this.logCount += 1
+
+    const interval = 500
+    if ((Game.time - this.lastLog) >= interval) {
+      if (this.logCount > 0) {
+        PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.logCount} path errors in this ${interval} ticks`)
+      }
+
+      this.logCount = 0
+      this.lastLog = Game.time
+    }
+  },
 }
 
 export type MoveToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper
@@ -29,6 +50,8 @@ type MoveToTargetTaskFixedOptions = {
   ignoreSwamp: boolean
   reusePath: number | null
   fallbackEnabled: boolean
+  ignoreCreepsInRemote: boolean
+  isAllyRoom: boolean
 }
 
 export type MoveToTargetTaskOptions = Partial<MoveToTargetTaskFixedOptions>
@@ -43,6 +66,8 @@ export interface MoveToTargetTaskState extends CreepTaskState {
   lastPosition: PositionState | null
   reusePath: number | null
   fallbackEnabled: boolean
+  ignoreCreepsInRemote: boolean
+  isAllyRoom: boolean
 }
 
 export class MoveToTargetTask implements CreepTask {
@@ -77,6 +102,8 @@ export class MoveToTargetTask implements CreepTask {
         }
       })(),
       fallbackEnabled: this.options.fallbackEnabled,
+      ignoreCreepsInRemote: this.options.ignoreCreepsInRemote,
+      isAllyRoom: this.options.isAllyRoom,
     }
   }
 
@@ -89,6 +116,8 @@ export class MoveToTargetTask implements CreepTask {
       ignoreSwamp: state.is,
       reusePath: state.reusePath,
       fallbackEnabled: state.fallbackEnabled ?? false,
+      ignoreCreepsInRemote: state.ignoreCreepsInRemote ?? false,
+      isAllyRoom: state.isAllyRoom ?? false,
     }
     const lastPosition = ((): Position | null => {
       if (state.lastPosition == null) {
@@ -108,6 +137,8 @@ export class MoveToTargetTask implements CreepTask {
         ignoreSwamp: options?.ignoreSwamp ?? false,
         reusePath: options?.reusePath ?? null,
         fallbackEnabled: options?.fallbackEnabled ?? false,
+        ignoreCreepsInRemote: options?.ignoreCreepsInRemote ?? false,
+        isAllyRoom: options?.isAllyRoom ?? false,
       }
     })()
     return new MoveToTargetTask(Game.time, apiWrapper, opt, null)
@@ -126,15 +157,29 @@ export class MoveToTargetTask implements CreepTask {
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE: {
       const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
+      if (this.options.isAllyRoom === true) {
+        moveToOps.ignoreCreeps = false
+        moveToOps.costCallback = avoidConstructionSitesCostCallback
+      }
+
       const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
       if (moveToResult === ERR_NO_PATH && this.options.fallbackEnabled === true) {
         const routeIdentifier = getRouteIdentifier(creep.pos, this.apiWrapper.target.pos)
-        if (noPathPositions.includes(routeIdentifier) !== true) {
-          if (creep.room.controller == null || creep.room.controller.my !== true) {
+        // if (noPathPositions.includes(routeIdentifier) !== true) {
+        if (creep.room.controller == null || creep.room.controller.my !== true) {
+          const range = 5
+          const isEdge = (): boolean => {
+            const { min, max } = GameConstants.room.edgePosition
+            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+              return true
+            }
+            return false
+          }
+          if (creep.pos.getRangeTo(this.apiWrapper.target.pos) > range || isEdge() === true) {
             moveToOps.maxOps = 3000
-            moveToOps.maxRooms = 16
-            // moveToOps.ignoreCreeps = false
-            moveToOps.range = 5
+            moveToOps.maxRooms = 5
+            moveToOps.ignoreCreeps = true
+            moveToOps.range = range
             moveToOps.reusePath = 0
             const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
             if (retryResult !== ERR_NO_PATH) {
@@ -143,15 +188,16 @@ export class MoveToTargetTask implements CreepTask {
 
             noPathPositions.push(routeIdentifier)
             const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
-            PrimitiveLogger.log(error)
+            Logger.log(error)
           }
         }
+        // }
 
-        const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
-        if (emptyPositionDirection != null) {
-          creep.move(emptyPositionDirection)
-          return TaskProgressType.InProgress
-        }
+        // const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
+        // if (emptyPositionDirection != null) {
+        //   creep.move(emptyPositionDirection)
+        //   return TaskProgressType.InProgress
+        // }
       }
       return TaskProgressType.InProgress
     }
@@ -215,31 +261,17 @@ export class MoveToTargetTask implements CreepTask {
     })()
 
     const ignoreCreeps = ((): boolean => {
+      if (this.options.ignoreCreepsInRemote === true) {
+        return true
+      }
       if (inEconomicArea !== true) {
         return false
       }
-      if (this.options.reusePath != null) {
-        return false
-      }
+      // if (this.options.reusePath != null) {
+      //   return false
+      // }
       return true
     })()
-
-    if (["W1S25", "W2S25", "W27S25"].includes(creep.room.name)) { // FixMe:
-      const maxRooms = creep.pos.roomName === targetPosition.roomName ? 1 : 3
-      const reusePath = ((): number => {
-        if (this.options.reusePath != null) {
-          return this.options.reusePath
-        }
-        return inEconomicArea === true ? 100 : 3
-      })()
-      return {
-        maxRooms,
-        reusePath,
-        maxOps: 4000,
-        range,
-        ignoreCreeps,
-      }
-    }
 
     const reusePath = ((): number => {
       if (this.options.reusePath != null) {

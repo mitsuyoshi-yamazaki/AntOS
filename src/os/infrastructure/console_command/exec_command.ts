@@ -3,14 +3,14 @@ import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPo
 import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, coloredText, roomLink, Tab, tab } from "utility/log"
+import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { isRoomName, RoomName } from "utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
 import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
-import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { DistributorProcess } from "process/process/distributor_process"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
@@ -25,6 +25,15 @@ import { ListArguments } from "./utility/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { execCreepCommand } from "./exec_commands/creep_command"
+import { CronProcess } from "process/onetime/cron_process"
+import { AttackPlanner } from "process/onetime/attack/attack_planner"
+import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
+import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
+import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
+import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
+import { } from "../../../../submodules/private/attack/planning/attack_plan"
+import { } from "../../../../submodules/private/attack/platoon/platoon"
+import { SwcAllyRequest } from "script/swc_ally_request"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -70,6 +79,16 @@ export class ExecCommand implements ConsoleCommand {
         return this.powerCreep(args)
       case "room_path_finding":
         return this.roomPathFinding(args)
+      case "attack_plan":
+        return this.attackPlan(args)
+      case "interpret_room":
+        return this.interpretRoom(args)
+      case "cron":
+        return this.cron(args)
+      case "enable_swc_ally_request":
+        return this.enableSwcAllyRequest()
+      case "show_swc_ally_requests":
+        return this.showSwcAllyRequests()
       case "script":
         return this.runScript()
       default:
@@ -475,6 +494,9 @@ export class ExecCommand implements ConsoleCommand {
     const LOANdata = JSON.parse(RawMemory.foreignSegment.data) as { [index: string]: string[] }
     for (const [alliance, usernames] of Object.entries(LOANdata)) {
       if (usernames.includes(playerName) === true) {
+        if (Memory.napAlliances.includes(alliance) === true) {
+          return `${playerName} found in alliance ${alliance} (Non-Aggression Pacts)`
+        }
         return `${playerName} found in alliance ${alliance}`
       }
     }
@@ -491,8 +513,8 @@ export class ExecCommand implements ConsoleCommand {
     const dryRun = (args.get("dry_run") === "0") !== true
 
     const room = Game.rooms[roomName]
-    if (room == null || room.controller == null || room.controller.my !== true) {
-      return `${roomLink(roomName)} is not owned`
+    if (room == null) {
+      return `no visible ${roomLink(roomName)}`
     }
 
     return this.unclaimRoom(room, dryRun)
@@ -513,7 +535,7 @@ export class ExecCommand implements ConsoleCommand {
         }
         return []
       }
-      if (process instanceof Season1838855DistributorProcess) {
+      if (process instanceof DistributorProcess) {
         if (process.parentRoomName === room.name) {
           return process
         }
@@ -544,6 +566,18 @@ export class ExecCommand implements ConsoleCommand {
         return []
       }
       if (process instanceof World35587255ScoutRoomProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof PowerProcessProcess) {
+        if (process.parentRoomName === room.name) {
+          return process
+        }
+        return []
+      }
+      if (process instanceof PowerCreepProcess) {
         if (process.parentRoomName === room.name) {
           return process
         }
@@ -585,13 +619,15 @@ export class ExecCommand implements ConsoleCommand {
     if (dryRun === true) {
       messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
     } else {
-      const result = room.controller?.unclaim()
-      switch (result) {
-      case OK:
-        break
-      default:
-        messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
-        return messages.join("\n")
+      if (room.controller != null && room.controller.my === true) {
+        const result = room.controller?.unclaim()
+        switch (result) {
+        case OK:
+          break
+        default:
+          messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
+          return messages.join("\n")
+        }
       }
 
       messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
@@ -615,13 +651,16 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private prepareUnclaim(args: string[]): CommandExecutionResult {
     const keywordArguments = new KeywordArguments(args)
-    const roomName = keywordArguments.roomName("room_name").parse({my: true})
+    const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
     const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
     const excludedResourceTypes = keywordArguments.list("excluded_resource_types", "resource").parseOptional() ?? []
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
     })
+
+    roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
 
     return `send resource process ${process.processId} launched`
   }
@@ -645,6 +684,144 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private roomPathFinding(args: string[]): CommandExecutionResult {
     return execRoomPathfindingCommand(args)
+  }
+
+  /** @throws */
+  private attackPlan(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const targetRoomName = listArguments.roomName(0, "target room name").parse()
+    const targetRoom = Game.rooms[targetRoomName]
+
+    if (targetRoom == null) {
+      const observer = listArguments.visibleGameObject(1, "observer id").parse()
+      if (!(observer instanceof StructureObserver)) {
+        throw `${observer} is not StructureObserver`
+      }
+      const observeResult = observer.observeRoom(targetRoomName)
+      if (observeResult !== OK) {
+        throw `observing ${roomLink(targetRoomName)} from ${roomLink(observer.room.name)} failed with ${observeResult}`
+      }
+
+      OperatingSystem.os.addProcess(null, processId => {
+        return OnHeapDelayProcess.create(
+          processId,
+          `observe ${roomLink(targetRoomName)} for planning attack`,
+          1,
+          (): string => {
+            const observedTargetRoom = Game.rooms[targetRoomName]
+            if (observedTargetRoom == null) {
+              throw `observing ${roomLink(targetRoomName)} failed`
+            }
+            return this.attackPlanFor(observedTargetRoom)
+          }
+        )
+      })
+      return `reserved attack planning for ${roomLink(targetRoomName)}`
+    }
+
+    return this.attackPlanFor(targetRoom)
+  }
+
+  /** @throws */
+  private attackPlanFor(targetRoom: Room): string {
+    const attackPlanner = new AttackPlanner.Planner(targetRoom)
+    const targetRoomPlan = attackPlanner.targetRoomPlan
+    return AttackPlanner.describeTargetRoomPlan(targetRoomPlan)
+  }
+
+  /** @throws */
+  private interpretRoom(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const targetRoomName = listArguments.roomName(0, "target room name").parse()
+    const targetRoom = Game.rooms[targetRoomName]
+
+    if (targetRoom == null) {
+      const observer = listArguments.visibleGameObject(1, "observer id").parse()
+      if (!(observer instanceof StructureObserver)) {
+        throw `${observer} is not StructureObserver`
+      }
+      const observeResult = observer.observeRoom(targetRoomName)
+      if (observeResult !== OK) {
+        throw `observing ${roomLink(targetRoomName)} from ${roomLink(observer.room.name)} failed with ${observeResult}`
+      }
+
+      OperatingSystem.os.addProcess(null, processId => {
+        return OnHeapDelayProcess.create(
+          processId,
+          `observe ${roomLink(targetRoomName)} for interpreting room plan`,
+          1,
+          (): string => {
+            const observedTargetRoom = Game.rooms[targetRoomName]
+            if (observedTargetRoom == null) {
+              throw `observing ${roomLink(targetRoomName)} failed`
+            }
+            return this.interpretRoomFor(observedTargetRoom)
+          }
+        )
+      })
+      return `reserved interpreting for ${roomLink(targetRoomName)}`
+    }
+
+    return this.interpretRoomFor(targetRoom)
+  }
+
+  private interpretRoomFor(targetRoom: Room): string {
+    RoomInterpreter.interpret(targetRoom)
+    return "ok"
+  }
+
+  // Game.io("exec cron 1000 command=exec script collect_power dry_run=0")  // 実装上execを指定しているが、他のosコマンドは実行されない
+  /** @throws */
+  private cron(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const interval = listArguments.int(0, "interval").parse({ min: 1 })
+    const command = this.rawCommand.split("command=")[1]  // LaunchCommandでこれを行うのがだるいため
+    if (command == null || command.length <= 0) {
+      throw "missing command argument"
+    }
+
+    const process = OperatingSystem.os.addProcess(null, processId => {
+      return CronProcess.create(processId, interval, command)
+    })
+    Memory.os.logger.filteringProcessIds.push(process.processId)
+    return "ok"
+  }
+
+  private enableSwcAllyRequest(): CommandExecutionResult {
+    Memory.os.enabledDrivers.swcAllyRequest = true
+
+    return "ok"
+  }
+
+  private showSwcAllyRequests(): CommandExecutionResult {
+    const requests = SwcAllyRequest.getRequests()
+    requests.sort((lhs, rhs) => rhs.request.priority - lhs.request.priority)
+
+    const invalidRequests: string[] = Array.from(SwcAllyRequest.getInvalidRequests().entries()).flatMap(([allyName, value]) => {
+      if (value.length <= 0) {
+        return []
+      }
+      return [
+        `- ${profileLink(allyName)}:`,
+        ...value.map(invalidRequest => `  - ${invalidRequest.reason}, ${JSON.stringify(invalidRequest.request)}`),
+      ]
+    })
+
+    const results: string[] = []
+
+    if (requests.length > 0) {
+      results.push("requests:")
+      results.push(...requests.map(request => `- ${profileLink(request.allyName)}: ${SwcAllyRequest.describeRequest(request.request)}`))
+    }
+    if (invalidRequests.length > 0) {
+      results.push("invalid requests:")
+      results.push(...invalidRequests)
+    }
+    if (results.length <= 0) {
+      return "no requests"
+    }
+
+    return results.join("\n")
   }
 
   private runScript(): CommandExecutionResult {

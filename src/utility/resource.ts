@@ -1,4 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { coloredResourceType } from "./log"
 
 export const MineralBaseCompoundsConstant: MineralBaseCompoundsConstant[] = [
   RESOURCE_HYDROXIDE,
@@ -209,6 +210,64 @@ export function boostableCreepBody(boost: MineralBoostConstant): BodyPartConstan
   return boostableCreepBodyMap[boost]
 }
 
+export const boostTiers = [
+  0,
+  1,
+  2,
+  3,
+] as const
+export type BoostTier = typeof boostTiers[number]
+export function getBoostTier(boost: MineralBoostConstant): BoostTier {
+  if ((Tier1BoostConstants as MineralBoostConstant[]).includes(boost) === true) {
+    return 1
+  }
+  if ((Tier2BoostConstants as MineralBoostConstant[]).includes(boost) === true) {
+    return 2
+  }
+  if ((Tier3BoostConstants as MineralBoostConstant[]).includes(boost) === true) {
+    return 3
+  }
+  PrimitiveLogger.programError(`getBoostTier() cannot determine boost tier of${coloredResourceType(boost)}`)
+  return 0
+}
+
+export const Tier1BoostConstants = [
+  RESOURCE_UTRIUM_HYDRIDE,
+  RESOURCE_UTRIUM_OXIDE,
+  RESOURCE_LEMERGIUM_HYDRIDE,
+  RESOURCE_LEMERGIUM_OXIDE,
+  RESOURCE_KEANIUM_HYDRIDE,
+  RESOURCE_KEANIUM_OXIDE,
+  RESOURCE_ZYNTHIUM_HYDRIDE,
+  RESOURCE_ZYNTHIUM_OXIDE,
+  RESOURCE_GHODIUM_HYDRIDE,
+  RESOURCE_GHODIUM_OXIDE,
+]
+export const Tier2BoostConstants = [
+  RESOURCE_UTRIUM_ACID,
+  RESOURCE_UTRIUM_ALKALIDE,
+  RESOURCE_LEMERGIUM_ACID,
+  RESOURCE_LEMERGIUM_ALKALIDE,
+  RESOURCE_KEANIUM_ACID,
+  RESOURCE_KEANIUM_ALKALIDE,
+  RESOURCE_ZYNTHIUM_ACID,
+  RESOURCE_ZYNTHIUM_ALKALIDE,
+  RESOURCE_GHODIUM_ACID,
+  RESOURCE_GHODIUM_ALKALIDE,
+]
+export const Tier3BoostConstants = [
+  RESOURCE_CATALYZED_UTRIUM_ACID,
+  RESOURCE_CATALYZED_UTRIUM_ALKALIDE,
+  RESOURCE_CATALYZED_LEMERGIUM_ACID,
+  RESOURCE_CATALYZED_LEMERGIUM_ALKALIDE,
+  RESOURCE_CATALYZED_KEANIUM_ACID,
+  RESOURCE_CATALYZED_KEANIUM_ALKALIDE,
+  RESOURCE_CATALYZED_ZYNTHIUM_ACID,
+  RESOURCE_CATALYZED_ZYNTHIUM_ALKALIDE,
+  RESOURCE_CATALYZED_GHODIUM_ACID,
+  RESOURCE_CATALYZED_GHODIUM_ALKALIDE,
+]
+
 export type CommodityIngredient = DepositConstant | CommodityConstant | MineralConstant | RESOURCE_ENERGY | RESOURCE_GHODIUM
 
 export const commodityTiers = [
@@ -231,7 +290,7 @@ export function getCommodityTier(commodityType: CommodityConstant): CommodityTie
     return 2
   }
   if ((Tier3CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
-    return 4
+    return 3
   }
   if ((Tier4CommodityConstants as CommodityConstant[]).includes(commodityType) === true) {
     return 4

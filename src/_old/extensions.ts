@@ -1,6 +1,6 @@
 import { OSMemory } from "../os/os"
 
-import { populateLOANlist } from "./loanUserList"
+import { LeagueOfAutomatedNations } from "./loanUserList"
 import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
@@ -11,28 +11,25 @@ import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
-
-export interface SectorMemory {
-  name: string
-  regions: string[]
-}
+import { StandardInput as v8StandardInput } from "v8/operating_system/system_call/standard_input"
+import { UniqueIdMemory } from "utility/unique_id"
+import { RoomName } from "utility/room_name"
 
 declare global {
   interface Game {
     io: (message: string) => string
+    v8: (message: string) => string // TODO: Game.ioに置き換える
 
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
     environment: string
 
     // Alliance
-    LOANlist: string[]
     whitelist: string[]
     isEnemy(player: Owner): boolean
   }
 
   interface Memory {
-    last_tick: number
     os: OSMemory
     versions: string[]
     cpu_usages: number[]
@@ -40,25 +37,26 @@ declare global {
       last_bucket: number
     }
 
+    uniqueId: UniqueIdMemory
     gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
     eventMemory: EventMemory
     gameMap: GameMapMemory
     gclFarm: GclFarmMemory
+    ignoreRooms: RoomName[]
     pathCache: PathCacheMemory
 
-    lastLOANtime: number | undefined
     LOANalliance: string | undefined
+    napAlliances: string[]
   }
-}
-
-export function init() {
 }
 
 export function tick(): void {
   // Gameオブジェクトは毎tick更新されるため
   Game.io = standardInput
+
+  Game.v8 = v8StandardInput.input
 
   Game.user = {
     name: 'Mitsuyoshi',
@@ -73,6 +71,6 @@ export function tick(): void {
     return Game.whitelist.includes(player.username) !== true
   }
 
-  populateLOANlist()
-  Game.whitelist = [...Game.LOANlist].concat(Memory.gameInfo.whitelist)
+  LeagueOfAutomatedNations.populate()
+  Game.whitelist = [...LeagueOfAutomatedNations.LOANlist].concat(Memory.gameInfo.whitelist)
 }

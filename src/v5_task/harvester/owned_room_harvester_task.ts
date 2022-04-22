@@ -11,20 +11,23 @@ import { generateCodename } from "utility/unique_id"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
-import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { EnergySource } from "prototype/room_object"
-import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { BuildContainerTask } from "v5_task/build/build_container_task"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { TaskState } from "v5_task/task_state"
 import { placeRoadConstructionMarks } from "script/pathfinder"
 import { bodyCost } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { ContinuousRunApiTask } from "v5_object_task/creep_task/combined_task/continuous_run_apis_task"
+import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
+import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
+import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -38,6 +41,8 @@ export interface OwnedRoomHarvesterTaskState extends TaskState {
     /** id */
     i: Id<StructureContainer> | null
   }
+
+  canPlaceLink: boolean | null
 }
 
 export class OwnedRoomHarvesterTask extends EnergySourceTask {
@@ -59,6 +64,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     public readonly roomName: RoomName,
     public readonly sourceId: Id<Source>,
     private containerId: Id<StructureContainer> | null,
+    private canPlaceLink: boolean | null,
   ) {
     super(startTime, children)
 
@@ -75,15 +81,16 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       co: {
         i: this.containerId ?? null,
       },
+      canPlaceLink: this.canPlaceLink,
     }
   }
 
   public static decode(state: OwnedRoomHarvesterTaskState, children: Task[]): OwnedRoomHarvesterTask | null {
-    return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.i)
+    return new OwnedRoomHarvesterTask(state.s, children, state.r, state.i, state.co.i, state.canPlaceLink)
   }
 
   public static create(roomName: RoomName, source: Source): OwnedRoomHarvesterTask {
-    return new OwnedRoomHarvesterTask(Game.time, [], roomName, source.id, null)
+    return new OwnedRoomHarvesterTask(Game.time, [], roomName, source.id, null, null)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -205,13 +212,20 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
 
     const moveSpeed = 0.5
     const maximumWorkCount = Math.ceil((sourceCapacity / 300) / HARVEST_POWER) + 1
+    const carryCount = ((): number => {
+      const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+      if (roomResource?.roomInfoAccessor.sourceEnergyTransferType.case === "link") {
+        return Math.ceil(maximumWorkCount / 6)
+      }
+      return 1
+    })()
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
       for (let i = 0; i < workCount; i += 1) {
         result.push(WORK)
       }
-      result.push(CARRY)
+      result.push(...Array<BodyPartConstant>(carryCount).fill(CARRY))
       const moveCount = Math.ceil((result.length / 2) * moveSpeed)
       for (let i = 0; i < moveCount; i += 1) {
         result.unshift(MOVE)
@@ -236,20 +250,140 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     source: Source,
     container: StructureContainer,
   ): CreepTask | null {
-    const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
-
-    if (noEnergy) {
-      const harvestPosition = container.pos
-      if (creep.pos.isEqualTo(harvestPosition) === true) {
-        return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
-      }
+    const harvestPosition = container.pos
+    if (creep.pos.isEqualTo(harvestPosition) !== true) {
       return MoveToTask.create(harvestPosition, 0)
     }
 
-    if (container.hits < container.hitsMax * 0.8) {
-      return RunApiTask.create(RepairApiWrapper.create(container))
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    let link = ((): StructureLink | null => {
+      if (roomResource == null) {
+        return null
+      }
+      return roomResource.roomInfoAccessor.links.sources.get(this.sourceId) ?? null
+    })()
+
+    if (link == null && roomResource != null && roomResource.controller.level >= 7) {
+      link = this.checkLink(source, container.pos, roomResource)
     }
-    return RunApiTask.create(HarvestEnergyApiWrapper.create(source, true))
+
+    const apiWrappers: AnyCreepApiWrapper[] = [
+      HarvestEnergyApiWrapper.create(source, true),
+    ]
+    if (link != null) {
+      apiWrappers.push(FillEnergyApiWrapper.create(link))
+    }
+    return ContinuousRunApiTask.create(apiWrappers)
+  }
+
+  private checkLink(source: Source, harvesterPosition: RoomPosition, roomResource: OwnedRoomResource): StructureLink | null {
+    if (roomResource.hostiles.creeps.length > 0) {
+      return null
+    }
+    if (harvesterPosition.findInRange(FIND_MY_CONSTRUCTION_SITES, 1).length > 0) {
+      return null
+    }
+
+    const otherLinks: StructureLink[] = [
+      ...Array.from(roomResource.roomInfoAccessor.links.sources.values()),
+    ]
+    if (roomResource.roomInfoAccessor.links.core) {
+      otherLinks.push(roomResource.roomInfoAccessor.links.core)
+    }
+    if (roomResource.roomInfoAccessor.links.upgrader) {
+      otherLinks.push(roomResource.roomInfoAccessor.links.upgrader)
+    }
+    const otherLinkIds = otherLinks.map(otherLink => otherLink.id)
+
+    const targetLink = (harvesterPosition.findInRange(FIND_MY_STRUCTURES, 1, { filter: { structureType: STRUCTURE_LINK } }) as StructureLink[])
+      .filter(link => {
+        if (otherLinkIds.includes(link.id) === true) {
+          return false
+        }
+        return true
+      })[0]
+
+    if (targetLink != null) {
+      roomResource.roomInfoAccessor.setLinkId(targetLink.id, source.id)
+      return targetLink
+    }
+
+    const logNoLinkPlaceError = (message: string): void => {
+      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.taskIdentifier} no place for link ${source}, ${source.pos} in ${roomLink(this.roomName)} ${message}`)
+    }
+
+    if (this.canPlaceLink == null) {
+      this.canPlaceLink = ((): boolean => {
+        if (harvesterPosition.findInRange(FIND_SOURCES, 2).length >= 2) {
+          logNoLinkPlaceError("other source too close")
+          return false
+        }
+        const coreLink = roomResource.roomInfoAccessor.links.core
+        if (coreLink != null && harvesterPosition.getRangeTo(coreLink.pos) <= 1) {
+          logNoLinkPlaceError("core link too close")
+          return false
+        }
+        const upgraderLink = roomResource.roomInfoAccessor.links.upgrader
+        if (upgraderLink != null && harvesterPosition.getRangeTo(upgraderLink.pos) <= 1) {
+          logNoLinkPlaceError("too close upgrader link")
+          return false
+        }
+        if (harvesterPosition.getRangeTo(roomResource.controller.pos) <= 4) {
+          logNoLinkPlaceError("too close controller")
+          return false
+        }
+        return true
+      })()
+    }
+
+    if (this.canPlaceLink !== true) {
+      return null
+    }
+
+    const coreLinkPosition = roomResource.roomInfoAccessor.links.core?.pos ?? null
+    const options: RoomPositionFilteringOptions = {
+      excludeItself: true,
+      excludeStructures: true,
+      excludeWalkableStructures: true,
+      excludeTerrainWalls: true,
+      allowedStructureTypes: [STRUCTURE_RAMPART],
+    }
+    const positions = harvesterPosition.positionsInRange(1, options).map(position => {
+      const distance = ((): number => {
+        if (coreLinkPosition == null) {
+          return 0
+        }
+        return position.getRangeTo(coreLinkPosition)
+      })()
+      return {
+        position,
+        distance,
+      }
+    })
+
+    positions.sort((lhs, rhs) => lhs.distance - rhs.distance)
+    const linkPosition = positions[0]
+
+    if (linkPosition == null) {
+      this.canPlaceLink = false
+      logNoLinkPlaceError("")
+      return null
+    }
+
+    const result = roomResource.room.createConstructionSite(linkPosition.position.x, linkPosition.position.y, STRUCTURE_LINK)
+    switch (result) {
+    case OK:
+    case ERR_FULL:
+      break
+
+    case ERR_NOT_OWNER:
+    case ERR_INVALID_TARGET:
+    case ERR_INVALID_ARGS:
+    case ERR_RCL_NOT_ENOUGH:
+      PrimitiveLogger.fatal(`${this.taskIdentifier} createConstructionSite() failed with ${result} in ${roomLink(this.roomName)} ${source}, ${linkPosition.position}`)
+      break
+    }
+    return null
   }
 
   // ---- Build Container ---- //

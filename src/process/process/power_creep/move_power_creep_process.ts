@@ -5,13 +5,14 @@ import { RoomName } from "utility/room_name"
 import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
-import { PowerCreepName } from "prototype/power_creep"
+import { DeployedPowerCreep, isDeployedPowerCreep, PowerCreepName } from "prototype/power_creep"
 import { defaultMoveToOptions } from "prototype/creep"
 import { processLog } from "os/infrastructure/logger"
 import { PowerCreepProcess } from "./power_creep_process"
 import { OperatingSystem } from "os/os"
 import { moveToRoom } from "script/move_to_room"
 import { ProcessDecoder } from "process/process_decoder"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("MovePowerCreepProcess", state => {
   return MovePowerCreepProcess.decode(state as MovePowerCreepProcessState)
@@ -23,6 +24,7 @@ export interface MovePowerCreepProcessState extends ProcessState {
   waypoints: RoomName[]
   powerCreepName: PowerCreepName
   renewed: boolean
+  currentRoomName: RoomName
 }
 
 export class MovePowerCreepProcess implements Process, Procedural {
@@ -40,6 +42,7 @@ export class MovePowerCreepProcess implements Process, Procedural {
     public readonly waypoints: RoomName[],
     private readonly powerCreepName: PowerCreepName,
     private renewed: boolean,
+    private currentRoomName: RoomName,
   ) {
     this.identifier = `${this.constructor.name}_${this.fromRoomName}_${this.toRoomName}_${this.powerCreepName}`
   }
@@ -54,36 +57,42 @@ export class MovePowerCreepProcess implements Process, Procedural {
       waypoints: this.waypoints,
       powerCreepName: this.powerCreepName,
       renewed: this.renewed,
+      currentRoomName: this.currentRoomName,
     }
   }
 
   public static decode(state: MovePowerCreepProcessState): MovePowerCreepProcess | null {
-    return new MovePowerCreepProcess(state.l, state.i, state.fromRoomName, state.toRoomName, state.waypoints, state.powerCreepName, state.renewed)
+    return new MovePowerCreepProcess(state.l, state.i, state.fromRoomName, state.toRoomName, state.waypoints, state.powerCreepName, state.renewed, state.currentRoomName)
   }
 
   public static create(processId: ProcessId, fromRoomName: RoomName, toRoomName: RoomName, waypoints: RoomName[], powerCreepName: PowerCreepName): MovePowerCreepProcess {
-    return new MovePowerCreepProcess(Game.time, processId, fromRoomName, toRoomName, waypoints, powerCreepName, false)
+    return new MovePowerCreepProcess(Game.time, processId, fromRoomName, toRoomName, waypoints, powerCreepName, false, fromRoomName)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.fromRoomName)} to ${roomLink(this.toRoomName)} ${this.powerCreepName}`
+    return `${roomLink(this.fromRoomName)} to ${roomLink(this.toRoomName)} ${this.powerCreepName} in ${roomLink(this.currentRoomName)}`
   }
 
   public runOnTick(): void {
     const powerCreep = Game.powerCreeps[this.powerCreepName]
     if (powerCreep == null) {
-      PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost between ${roomLink(this.fromRoomName)} and ${roomLink(this.toRoomName)}`)
+      PrimitiveLogger.programError(`Power creep ${this.powerCreepName} is deleted`)
+      OperatingSystem.os.suspendProcess(this.processId)
       return
+    }
+    if (!isDeployedPowerCreep(powerCreep)) {
+      PrimitiveLogger.fatal(`Power creep ${this.powerCreepName} lost in ${roomLink(this.currentRoomName)}`)
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+    if (powerCreep.room.name !== this.currentRoomName) {
+      processLog(this, `Power creep ${this.powerCreepName} in ${roomLink(powerCreep.room.name)}`)
+      this.currentRoomName = powerCreep.room.name
     }
     this.runPowerCreep(powerCreep)
   }
 
-  private runPowerCreep(powerCreep: PowerCreep): void {
-    if (powerCreep.room == null) {
-      PrimitiveLogger.fatal(`${this.constructor.name} Power creep ${this.powerCreepName} is not deployed`)
-      return
-    }
-
+  private runPowerCreep(powerCreep: DeployedPowerCreep): void {
     this.runGenerateOps(powerCreep)
 
     if (this.renewed !== true) {
@@ -106,25 +115,78 @@ export class MovePowerCreepProcess implements Process, Procedural {
       return
     }
 
-    if (powerCreep.room.roomType !== "source_keeper") {
-      const hostileAttacker = powerCreep.pos.findClosestByRange(powerCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)))
-      if (hostileAttacker != null) {
-        this.fleeFrom(hostileAttacker.pos, powerCreep, 7)
-        return
-      }
-    }
+    // if (powerCreep.room.roomType !== "source_keeper") {
+    //   const hostileAttacker = powerCreep.pos.findClosestByRange(powerCreep.pos.findInRange(FIND_HOSTILE_CREEPS, 6).filter(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0)))
+    //   if (hostileAttacker != null) {
+    //     this.fleeFrom(hostileAttacker.pos, powerCreep, 7)
+    //     return
+    //   }
+    // }
     this.moveToRoom(powerCreep)
   }
 
-  private moveToRoom(powerCreep: PowerCreep): void {
+  private moveToRoom(powerCreep: DeployedPowerCreep): void {
+    const roomResource = RoomResources.getNormalRoomResource(powerCreep.room.name)
+    if (roomResource == null) {
+      if (this.flee(powerCreep, powerCreep.room.find(FIND_HOSTILE_CREEPS).filter(creep => Game.isEnemy(creep.owner) === true)) === true) {
+        return
+      }
+    } else if (roomResource.hostiles.creeps.length > 0) {
+      if (this.flee(powerCreep, roomResource.hostiles.creeps) === true) {
+        return
+      }
+    }
     moveToRoom(powerCreep, this.toRoomName, this.waypoints)
   }
 
-  private runGenerateOps(powerCreep: PowerCreep): void {
-    powerCreep.usePower(PWR_GENERATE_OPS)
+  private flee(powerCreep: DeployedPowerCreep, hostileCreeps: Creep[]): boolean {
+    const hostileAttackers = hostileCreeps.filter(creep => {
+      if (creep.getActiveBodyparts(ATTACK) > 0) {
+        return true
+      }
+      if (creep.getActiveBodyparts(RANGED_ATTACK) > 0) {
+        return true
+      }
+      return false
+    })
+    const closestHostileCreep = powerCreep.pos.findClosestByRange(hostileAttackers)
+    if (closestHostileCreep == null) {
+      return false
+    }
+    if (closestHostileCreep.pos.getRangeTo(powerCreep.pos) > 5) {
+      return false
+    }
+
+    this.fleeFrom(closestHostileCreep.pos, powerCreep, 7)
+    return true
   }
 
-  private renewPowerCreep(powerCreep: PowerCreep, powerSpawn: StructurePowerSpawn): void {
+  private runGenerateOps(powerCreep: DeployedPowerCreep): void {
+    const result = powerCreep.usePower(PWR_GENERATE_OPS)
+    switch (result) {
+    case OK:
+      return
+
+    case ERR_TIRED:
+      return
+
+    case ERR_INVALID_ARGS:
+      return  // 通過中の部屋はPowerが有効化されていない場合がある
+
+    case ERR_NOT_IN_RANGE:
+    case ERR_NOT_ENOUGH_RESOURCES:
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_INVALID_TARGET:
+    case ERR_FULL:
+    case ERR_NO_BODYPART:
+    default:
+      PrimitiveLogger.fatal(`${this.identifier} powerCreep.usePower(PWR_GENERATE_OPS) failed ${result}`)
+      return
+    }
+  }
+
+  private renewPowerCreep(powerCreep: DeployedPowerCreep, powerSpawn: StructurePowerSpawn): void {
     const result = powerCreep.renew(powerSpawn)
     switch (result) {
     case OK:

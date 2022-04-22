@@ -47,6 +47,10 @@ export class HarvestEnergyApiWrapper implements ApiWrapper<Creep, HarvestEnergyA
   }
 
   public run(creep: Creep): HarvestEnergyApiWrapperResult {
+    if (this.shouldKeepHarvesting === true && this.source.energy <= 0) {
+      return IN_PROGRESS
+    }
+
     const result = creep.harvest(this.source)
 
     switch (result) {

@@ -206,7 +206,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       state.talkingTo,
       state.safemodeCooldown,
       state.finishCondition,
-      state.stopSpawningReasons
+      state.stopSpawningReasons,
     )
   }
 
@@ -214,7 +214,21 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const defaultFinishCondition: FinishConditionNever = {
       case: "never"
     }
-    return new GuardRemoteRoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepType, numberOfCreeps, null, [], {}, 500, defaultFinishCondition, [])
+    return new GuardRemoteRoomProcess(
+      Game.time,
+      processId,
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      creepType,
+      numberOfCreeps,
+      null,
+      [],
+      {},
+      500,
+      defaultFinishCondition,
+      [],
+    )
   }
 
   public processShortDescription(): string {
@@ -366,7 +380,11 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.talkingTo = {}
     }
 
-    const whitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
+    const sourceHarvestWhitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
+    const whitelist: string[] = [
+      ...Memory.gameInfo.whitelist,
+      ...sourceHarvestWhitelist,
+    ]
 
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > this.safemodeCooldown) {
@@ -434,7 +452,6 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   private checkFinishCondition(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      this.addStopSpawningReason("no parent room")
       return
     }
     const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
@@ -657,12 +674,38 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.rangedAttack(creep, closestHostile)
       attackedTarget = closestHostile
 
-      if (closestHostile.getActiveBodyparts(ATTACK) > 0) {
+      const hasAttackPart = closestHostile.getActiveBodyparts(ATTACK) > 0
+      const shouldFlee = ((): boolean => {
+        if ((creep.hitsMax - creep.hits) < 300) {
+          return false
+        }
+
+        if (hasAttackPart !== true && closestHostile.getActiveBodyparts(RANGED_ATTACK) <= 5) {
+          return false
+        }
+
+        const minimumMoveCount = ((): number => {
+          const totalBodyCount = creep.body.length
+          return Math.ceil(totalBodyCount / 3)
+        })()
+
+        return (creep.getActiveBodyparts(MOVE) - 6) < minimumMoveCount
+      })()
+
+      if (shouldFlee === true) {
+        creep.say("flee")
+        this.fleeFrom(closestHostile.pos, creep, 8)
+        moved = true
+      } else {
         const range = closestHostile.pos.getRangeTo(creep)
-        if (range <= 2) {
-          this.fleeFrom(closestHostile.pos, creep, 4)
-        } else if (range === 3) {
-          // do nothing
+        if (hasAttackPart === true) {
+          if (range <= 2) {
+            this.fleeFrom(closestHostile.pos, creep, 4)
+          } else if (range === 3) {
+            // do nothing
+          } else {
+            creep.moveTo(closestHostile)
+          }
         } else {
           creep.moveTo(closestHostile)
         }

@@ -17,6 +17,8 @@ import { GameMap } from "game/game_map"
 import { GameRecord } from "game/game_record"
 import { Season4ObserverManager } from "process/temporary/season4_observer_manager"
 import { emptyPositionCache } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { UniqueId } from "utility/unique_id"
+import { SwcAllyRequest } from "script/swc_ally_request"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
@@ -27,9 +29,16 @@ export class RootProcess {
 
   /** デプロイ時、サーバーリセット時に呼び出される */
   public setup(): void {
+    ErrorMapper.wrapLoop((): void => {
+      UniqueId.load()
+    }, "UniqueId.load()")()
   }
 
   public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {
+    ErrorMapper.wrapLoop((): void => {
+      UniqueId.beforeTick()
+    }, "UniqueId.beforeTick()")()
+
     ErrorMapper.wrapLoop((): void => {
       V5TaskTargetCache.clearCache()
     }, "V5TaskTargetCache.clearCache()")()
@@ -81,6 +90,12 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       emptyPositionCache.beforeTick()
     }, "emptyPositionCache.beforeTick()")()
+
+    if (Memory.os.enabledDrivers.swcAllyRequest === true) {
+      ErrorMapper.wrapLoop((): void => {
+        SwcAllyRequest.beforeTick()
+      }, "SwcAllyRequest.beforeTick()")()
+    }
   }
 
   public runAfterTick(): void {
@@ -127,6 +142,16 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       emptyPositionCache.afterTick()
     }, "emptyPositionCache.afterTick()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      UniqueId.afterTick()
+    }, "UniqueId.afterTick()")()
+
+    if (Memory.os.enabledDrivers.swcAllyRequest === true) {
+      ErrorMapper.wrapLoop((): void => {
+        SwcAllyRequest.afterTick()
+      }, "SwcAllyRequest.afterTick()")()
+    }
   }
 
   // ---- Private ---- //

@@ -103,10 +103,11 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       if (this.creepName == null) {
         return "not spawned"
       }
-      if (Game.creeps[this.creepName] == null) {
+      const creep = Game.creeps[this.creepName]
+      if (creep == null) {
         return "creep dead"
       }
-      return "running"
+      return `creep in ${roomLink(creep.room.name)}`
     })()
     return `${roomLink(this.targetRoomName)} ${creepDescription}`
   }
@@ -323,6 +324,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
       STRUCTURE_EXTRACTOR,
       STRUCTURE_STORAGE,
       STRUCTURE_POWER_SPAWN,
+      STRUCTURE_LAB,
       STRUCTURE_TERMINAL,
       STRUCTURE_EXTENSION,
       STRUCTURE_SPAWN,

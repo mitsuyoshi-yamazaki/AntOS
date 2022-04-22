@@ -42,46 +42,52 @@ export function tab(text: string, tabs: Tab): string {
   return `${text}${spacer}`
 }
 
-export function describeTime(ticks: Timestamp): string {
-  if (ticks < 1000) {
-    return `${ticks} ticks`
+export function shortenedNumber(num: number): string {
+  if (num < 1000) {
+    return `${num}`
   }
-  return `${Math.floor(ticks / 1000)}k ticks`
+  if (num < 1000000) {
+    return `${Math.floor(num / 1000)}k`
+  }
+  return `${Math.floor(num / 1000000)}M`
 }
 
-function baseUrl(): string {
-  const path = ((): string => {
-    switch (Environment.world) {
-    case "persistent world":
-    case "simulation":
-    case "botarena":
-      return "a"
-    case "season 4":
-      return "season"
-    }
-  })()
-  return `https://screeps.com/${path}/#!`
+export function describeTime(ticks: Timestamp): string {
+  return `${shortenedNumber(ticks)} ticks`
 }
+
+const baseUrl = ((): string => {
+  switch (Environment.world) {
+  case "persistent world":
+  case "simulation":
+  case "botarena":
+    return "https://screeps.com/a/#!"
+  case "season 4":
+    return "https://screeps.com/season/#!"
+  case "swc":
+    return "http://swc.screepspl.us/#!"
+  }
+})()
 
 export function roomLink(roomName: string, opts?: { text?: string, color?: string }): string {
   opts = opts || {}
   const color = opts.color ?? "#FFFFFF"
   const text = opts.text ?? roomName
-  return `<a href="${baseUrl()}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
+  return `<a href="${baseUrl}/room/${Game.shard.name}/${roomName}", style='color:${color}'>${text}</a>`
 }
 
 export function roomHistoryLink(roomName: string, ticks?: number): string {
   const color = "#FFFFFF"
-  return `<a href="${baseUrl()}/history/${Game.shard.name}/${roomName}?t=${ticks ?? Game.time}", style='color:${color}'>${roomName}</a>`
+  return `<a href="${baseUrl}/history/${Game.shard.name}/${roomName}?t=${ticks ?? Game.time}", style='color:${color}'>${roomName}</a>`
 }
 
 export function profileLink(username: string, colorCode?: string): string {
   const color = colorCode ?? "#FFFFFF"
-  return `<a href="${baseUrl()}/profile/${username}", style='color:${color}'>${username}</a>`
+  return `<a href="${baseUrl}/profile/${username}", style='color:${color}'>${username}</a>`
 }
 
 export function managePowerCreepLink(): string {
-  return `<a href="${baseUrl()}/overview/power", style='color:#FFFFFF'>Manage Power Creep</a>`
+  return `<a href="${baseUrl}/overview/power", style='color:#FFFFFF'>Manage Power Creep</a>`
 }
 
 export function coloredResourceType(resourceType: ResourceConstant): string {

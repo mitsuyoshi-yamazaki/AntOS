@@ -1,5 +1,6 @@
 import { Timestamp } from "utility/timestamp"
 import { TaskProgressType } from "v5_object_task/object_task"
+import { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
@@ -10,6 +11,10 @@ export interface Run1TickTaskState extends CreepTaskState {
 
 export class Run1TickTask implements CreepTask {
   public readonly shortDescription: string | undefined
+
+  public get targetId(): TaskTargetTypeId | undefined {
+    return this.childTask.targetId
+  }
 
   private constructor(
     public readonly startTime: number,

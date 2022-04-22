@@ -14,4 +14,5 @@ export interface Process extends Stateful, Procedural {
   processShortDescription?(): string
   processDescription?(): string
   encode(): ProcessState
+  deinit?(): void
 }

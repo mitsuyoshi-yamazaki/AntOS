@@ -1,13 +1,69 @@
-let uniqueIdIndex = 0
+import { GameConstants } from "./constants"
+
+export type UniqueIdMemory = {
+  creepNameIndex: number
+}
+
+const radix = 36
+let uniqueIdIndex = 0 // TODO: Game.timeとconcatしているのでafterTickで初期化できる
+let creepNameIndex = 0
+let creepNameIndexResetTimestamp = Game.time
+const creepNameIndexResetInterval = GameConstants.creep.life.lifeTime + 200
+
+export const UniqueId = {
+  load(): void {
+    creepNameIndex = Memory.uniqueId.creepNameIndex
+  },
+
+  beforeTick(): void {
+    uniqueIdIndex = 0
+
+    if (Game.time >= creepNameIndexResetTimestamp + creepNameIndexResetInterval) {
+      creepNameIndex = 0
+      creepNameIndexResetTimestamp = Game.time
+    }
+  },
+
+  afterTick(): void {
+    Memory.uniqueId.creepNameIndex = creepNameIndex
+  },
+
+  generate(prefix?: string): string {
+    return generateUniqueId(prefix)
+  },
+
+  generateCodename(fixedParameter: string, flexibleParameter: number): string {
+    return generateCodename(fixedParameter, flexibleParameter)
+  },
+
+  generateSweetName(fixedParameter: string, flexibleParameter: number): string {
+    return generateSweetName(fixedParameter, flexibleParameter)
+  },
+
+  generateCreepName(prefix: string): string {
+    const index = creepNameIndex
+    creepNameIndex += 1
+    const shortName = `${prefix}${index.toString(radix)}`
+
+    const creep = Game.creeps[shortName]
+    if (creep != null) {
+      // PrimitiveLogger.programError(`UniqueId.generateCreepName() duplicated name ${shortName} (${(creep.memory as {i?: string}).i})`)
+      return this.generate(prefix)
+    }
+    return shortName
+  },
+}
+
+/** @deprecated UniqueId.generate()を使用 */
 export function generateUniqueId(prefix?: string): string {
   uniqueIdIndex += 1
   const components: string[] = [
-    `${Game.time.toString(16)}${uniqueIdIndex.toString(16)}`,
+    `${Game.time.toString(radix)}${uniqueIdIndex.toString(radix)}`,
   ]
   if (prefix != null) {
     components.unshift(prefix)
   }
-  return components.join("_")
+  return components.join("")
 }
 
 const adjectives: string[] = [
@@ -34,8 +90,15 @@ const sweets: string[] = [
   "beer", // 🍻
 ]
 
-export function generateCodename(fixedParameter: string, flexibleParameter: number): string {
+export function generateSweetName(fixedParameter: string, flexibleParameter: number): string {
   const adjectiveIndex = (fixedParameter.charCodeAt(0) + fixedParameter.length) % adjectives.length
   const sweetIndex = flexibleParameter % sweets.length
   return `${adjectives[adjectiveIndex]}_${sweets[sweetIndex]}`
+}
+
+/** @deprecated UniqueId.generateCodename()を使用 */
+export function generateCodename(fixedParameter: string, flexibleParameter: number): string {
+  const firstIndex = ((fixedParameter.charCodeAt(0) + fixedParameter.length) % (radix - 10)) + 10 // 数字から始まらないように
+  const secondIndex = flexibleParameter % radix
+  return `${firstIndex.toString(radix)}${secondIndex.toString(radix)}`
 }

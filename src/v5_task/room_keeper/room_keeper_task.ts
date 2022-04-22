@@ -13,7 +13,7 @@ import { OwnedRoomDamagedCreepProblemFinder } from "v5_problem/damaged_creep/own
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
-import { Season1838855DistributorProcess } from "process/temporary/season_1838855_distributor_process"
+import { DistributorProcess } from "process/process/distributor_process"
 import { OperatingSystem } from "os/os"
 import { RoomPlanner } from "room_plan/room_planner"
 import { Environment } from "utility/environment"
@@ -89,7 +89,7 @@ export class RoomKeeperTask extends Task {
               y: result.value.center.y,
             }
           }
-          OperatingSystem.os.addProcess(null, processId => Season1838855DistributorProcess.create(processId, this.roomName))
+          OperatingSystem.os.addProcess(null, processId => DistributorProcess.create(processId, this.roomName))
 
           switch (Environment.world) {
           case "persistent world":
@@ -97,6 +97,7 @@ export class RoomKeeperTask extends Task {
             break
           case "season 4":
           case "botarena":
+          case "swc":
             OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
             break
           }

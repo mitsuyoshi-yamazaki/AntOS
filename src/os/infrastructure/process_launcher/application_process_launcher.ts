@@ -85,10 +85,13 @@ export class ApplicationProcessLauncher {
     const roomsWithV5KeeperProcess = roomKeeperMap.get(ShortVersion.v5) ?? []
     const roomsWithV6KeeperProcess = roomKeeperMap.get(ShortVersion.v6) ?? []
 
-    const gclFarmRoomNames = GclFarmResources.gclFarmRoomNames()
+    const ignoreRoomNames: RoomName[] = [
+      ...GclFarmResources.gclFarmRoomNames(),
+      ...Memory.ignoreRooms,
+    ]
 
     World.rooms.getAllOwnedRooms().forEach(room => {
-      if (gclFarmRoomNames.includes(room.name) === true) {
+      if (ignoreRoomNames.includes(room.name) === true) {
         return
       }
       switch (Migration.roomVersion(room.name)) {

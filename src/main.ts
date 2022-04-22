@@ -1,22 +1,27 @@
 import "ts-polyfill/lib/es2019-array"
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
+import { memhack } from "./memory_hack"
+// import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
-import * as Initializer from "_old/init"
+import { init as initializerInit, tick as initializerTick } from "_old/init"
 import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { SystemInfo } from "utility/system_info"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
+// import { Environment } from "utility/environment"
+// import { BootLoader } from "v8/operating_system/boot_loader"
 
-Initializer.init()
+memhack.load()
+
+initializerInit()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
 console.log(leveled_colored_text(initializing_message, "warn"))
 
 const mainLoop = () => {
   ErrorMapper.wrapLoop(() => {
-    Initializer.tick()
-  }, "Initializer.tick")()
+    initializerTick()
+  }, "initializerTick")()
 
   ErrorMapper.wrapLoop((): void => {
     if (isRespawned() === true) {
@@ -24,18 +29,30 @@ const mainLoop = () => {
     }
   }, "Respawn")()
 
-  OperatingSystem.os.run()
+  ErrorMapper.wrapLoop((): void => {
+    OperatingSystem.os.run()
+  }, "OS")()
+
+  // if (Environment.shard === "shard3") { // TODO:
+  //   ErrorMapper.wrapLoop((): void => {
+  //     const v8Kernel = BootLoader.loadKernel()
+  //     v8Kernel.run()
+  //   }, "v8 OS")()
+  // }
 
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
 }
 
-ScreepsProfiler.enable()  // TODO: 普段はオフに
+// ScreepsProfiler.enable()  // TODO: 普段はオフに
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  ScreepsProfiler.wrap(mainLoop)
+  memhack.beforeTick()
+  // ScreepsProfiler.wrap(mainLoop)
+  mainLoop()
+  memhack.afterTick()
 }, "Main")
 
 /**

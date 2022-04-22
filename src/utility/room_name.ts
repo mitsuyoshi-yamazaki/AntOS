@@ -1,3 +1,6 @@
+import { State, Stateful } from "os/infrastructure/state"
+import { Position } from "prototype/room_position"
+
 export type RoomName = string
 
 export type RoomTypeNormal = "normal"
@@ -68,7 +71,15 @@ export const isHighwayRoom = (roomType: RoomType): boolean => {
   }
 }
 
-export class RoomCoordinate {
+export interface RoomCoordinateState extends State {
+  readonly t: "RoomCoordinate"
+  readonly roomName: RoomName
+  readonly direction: RoomCoordinateDirection
+  readonly x: number
+  readonly y: number
+}
+
+export class RoomCoordinate implements Stateful {
   public get roomType(): RoomType {
     return roomTypeFromCoordinate(this)
   }
@@ -87,6 +98,20 @@ export class RoomCoordinate {
     public readonly x: number,
     public readonly y: number,
   ) {
+  }
+
+  public encode(): RoomCoordinateState {
+    return {
+      t: "RoomCoordinate",
+      roomName: this.roomName,
+      direction: this.direction,
+      x: this.x,
+      y: this.y,
+    }
+  }
+
+  public static decode(state: RoomCoordinateState): RoomCoordinate {
+    return new RoomCoordinate(state.roomName, state.direction, state.x, state.y)
   }
 
   // TODO: directionを超える場合を計算する
@@ -217,7 +242,23 @@ export class RoomCoordinate {
     return RoomCoordinate.create(this.direction, x, y).roomName
   }
 
-  public getRoomCoordinateTo(dx: number, dy: number): RoomCoordinate {
+  public getRoomCoordinateTo(relativePosition: Position): RoomCoordinate
+  public getRoomCoordinateTo(dx: number, dy: number): RoomCoordinate
+  public getRoomCoordinateTo(...args: [Position] | [number, number]): RoomCoordinate {
+    const { dx, dy } = ((): { dx: number, dy: number } => {
+      if (typeof args[0] === "number") {
+        const numberArgs = args as [number, number]
+        return {
+          dx: numberArgs[0],
+          dy: numberArgs[1],
+        }
+      }
+      return {
+        dx: args[0].x,
+        dy: args[0].y,
+      }
+    })()
+
     const rawX = this.x + dx
     const rawY = this.y + dy
 

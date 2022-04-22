@@ -106,11 +106,6 @@ export class RemoteRoomKeeperTask extends Task {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null && targetRoomInfo != null && targetRoomInfo.roomType === "normal") {
       const shouldLaunchRemoteRoomWorker = ((): boolean => {
-        const resources = RoomResources.getOwnedRoomResource(this.roomName)
-        const excludedRemotes = resources?.roomInfo.config?.excludedRemotes
-        if (excludedRemotes != null && excludedRemotes.includes(this.targetRoomName) === true) {
-          return false
-        }
         if (this.children.some(task => task instanceof RemoteRoomWorkerTask) === true) {
           return false
         }

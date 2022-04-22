@@ -10,7 +10,6 @@ import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsuffi
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Environment } from "utility/environment"
-import { GclFarmResources } from "./gcl_farm_resources"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -132,13 +131,15 @@ export const RoomResources: RoomResourcesInterface = {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
     }
 
-    const numberOfRoomsInShard3 = 3
+    const numberOfRoomsInShard3 = 4
     switch (Environment.shard) {  // TODO:
     case "shard2":
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
     case "shard3":
-    default:
       PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() counting claimable rooms in ${Environment.shard} not supported`)
+      return 0
+    default:
+      PrimitiveLogger.programError(`RoomResources.getClaimableRoomCount() unknown shard: ${Environment.shard}`)
       return 0
     }
   },
@@ -172,7 +173,10 @@ function enumerateCreeps(): void {
 
 function updateRoomInfo(room: Room): void {
   const storedRoomInfo = RoomResources.getRoomInfo(room.name)
-  if(storedRoomInfo == null) {
+  if (storedRoomInfo == null) {
+    if (room.roomType === "highway" || room.roomType === "highway_crossing") {
+      return
+    }
     Memory.v6RoomInfo[room.name] = createRoomInfo(room)
     return
   }
@@ -198,8 +202,12 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
       if (stored.roomType === "owned") {
 
         // FixMe: Migration: 消す
-        if (stored.remoteRoomInfo == null) {
-          stored.remoteRoomInfo = {}
+        if (stored.links == null) {
+          stored.links = {
+            coreLinkId: null,
+            upgraderLinkId: null,
+            sourceLinkIds: {},
+          }
         }
 
         return stored
@@ -210,16 +218,11 @@ function buildOwnedRoomResource(controller: StructureController, creepInfo: Owne
   })()
 
   // FixMe: Migration
-  const remoteRoomNames = Array.from(Object.keys(roomInfo.remoteRoomInfo))
-  remoteRoomNames.forEach(remoteRoomName => {
-    const remoteInfo = roomInfo.remoteRoomInfo[remoteRoomName]
-    if (remoteInfo == null) {
-      return
-    }
-    if (typeof remoteInfo.routeCalculatedTimestamp === "number") {
-      remoteInfo.routeCalculatedTimestamp = {}
-    }
-  })
+  // if (roomInfo.ownedRoomType == null) {
+  //   roomInfo.ownedRoomType = {
+  //     case: "normal",
+  //   }
+  // }
 
   return new OwnedRoomResource(controller, creepInfo, roomInfo)
 }

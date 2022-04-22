@@ -7,7 +7,11 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { generateUniqueId } from "utility/unique_id"
 
-export class RoomPlanner {
+export interface RoomPlannerInterface {
+  run(): Result<{ center: RoomPosition }, string>
+}
+
+export class RoomPlanner implements RoomPlannerInterface {
   private executed = false
   private flaggedPoints = new ValuedArrayMap<number, number>() // {[y]: x[]}
   private dryRun: boolean
@@ -38,10 +42,10 @@ export class RoomPlanner {
     const room = controller.room
 
     const result = ((): Result<{ center: RoomPosition }, string> | null => {
-      if (firstSpawnPositions.roomCenter != null) {
-        this.placeExtensionFlags(room, firstSpawnPositions.roomCenter)
-        return Result.Succeeded({ center: firstSpawnPositions.roomCenter })
-      }
+      // if (firstSpawnPositions.roomCenter != null) {
+      //   this.placeExtensionFlags(room, firstSpawnPositions.roomCenter)
+      //   return Result.Succeeded({ center: firstSpawnPositions.roomCenter })
+      // }
 
       return ErrorMapper.wrapLoop((): Result<{ center: RoomPosition }, string> => {
         return this.placeFlags(firstSpawnPositions.firstSpawnPosition)
@@ -333,6 +337,7 @@ export class RoomPlanner {
     })
   }
 
+  /// 極端に狭い地形ではRoadの周囲にExtensionを置く
   private placeExtensionFlags(room: Room, centerPosition: RoomPosition): void {
     const checkedPositions: RoomPosition[] = [
       centerPosition,
@@ -390,7 +395,7 @@ type LayoutMarkTower = "o"
 type LayoutMarkSpawn = "6"
 type LayoutMarkNuker = "n"
 type LayoutMarkExtension = "x"
-type LayoutMark = LayoutMarkBlank
+export type LayoutMark = LayoutMarkBlank
   | LayoutMarkRoad
   | LayoutMarkStorage
   | LayoutMarkTerminal
@@ -402,8 +407,8 @@ type LayoutMark = LayoutMarkBlank
   | LayoutMarkNuker
   | LayoutMarkExtension
 
-type LayoutMarkKey = "Blank" | "Road" | "Storage" | "Terminal" | "Link" | "Lab" | "Container" | "Tower" | "Spawn" | "Nuker" | "Extension"
-const LayoutMark: { [index in LayoutMarkKey]: LayoutMark } = {
+export type LayoutMarkKey = "Blank" | "Road" | "Storage" | "Terminal" | "Link" | "Lab" | "Container" | "Tower" | "Spawn" | "Nuker" | "Extension"
+export const LayoutMark: { [index in LayoutMarkKey]: LayoutMark } = {
   Blank: ".",
   Road: "-",
   Storage: "s",
@@ -417,7 +422,7 @@ const LayoutMark: { [index in LayoutMarkKey]: LayoutMark } = {
   Extension: "x",
 }
 
-const flagColors: { [mark in LayoutMark]?: ColorConstant } = {
+export const flagColors: { [mark in LayoutMark]?: ColorConstant } = {
   // ".": null
   "-": COLOR_BROWN,
   "s": COLOR_GREEN,

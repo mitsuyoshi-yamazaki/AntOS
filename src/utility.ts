@@ -50,10 +50,12 @@ export function room_history_link(room_name: string, ticks: number, opts?: {text
   return roomHistoryLink(room_name, ticks)
 }
 
+/** @deprecated use profileLink */
 export function profile_link(username: string, opts?: {color?: string}) {
   return profileLink(username, opts?.color)
 }
 
+/** @deprecated use coloredResourceType */
 export function colored_resource_type(resource_type: ResourceConstant): string {
   return coloredResourceType(resource_type)
 }

@@ -23,6 +23,9 @@ export interface RunningCreepInfo {
   creepIdentifier: string | null
 }
 
+/**
+ * 寿命は1tick
+ */
 export class OwnedRoomResource extends NormalRoomResource {
   /** Decayed structureは含めない */
   public readonly damagedStructures: AnyStructure[]
@@ -56,7 +59,7 @@ export class OwnedRoomResource extends NormalRoomResource {
   ) {
     super(controller, roomInfo)
 
-    this.roomInfoAccessor = new OwnedRoomInfoAccessor(controller.room, roomInfo)
+    this.roomInfoAccessor = new OwnedRoomInfoAccessor(controller.room, roomInfo, controller, this.sources, this.mineral?.mineralType ?? null)
 
     if (roomInfo.highestRcl < this.controller.level) {
       roomInfo.highestRcl = this.controller.level

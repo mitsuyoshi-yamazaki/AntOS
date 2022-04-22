@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { init as extensionInit, tick as extensionTick } from "_old/extensions"
+import { tick as extensionTick } from "_old/extensions"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
 import { SystemInfo } from "utility/system_info"
@@ -7,17 +7,25 @@ import { SystemInfo } from "utility/system_info"
 export function init(): void {
   const now = Game.time
 
-  Memory.last_tick = now
-
   if (!Memory.versions) {
     Memory.versions = []
   }
   const version = SystemInfo.application.version
   if (Memory.versions.indexOf(version) < 0) {
+    const removeCount = 10
+    if (Memory.versions.length > (removeCount * 2)) {
+      Memory.versions.splice(removeCount, Memory.versions.length - removeCount)
+    }
+
     Memory.versions.push(version)
     console.log(`Updated v${version}`)
   }
 
+  if (Memory.uniqueId == null) {
+    Memory.uniqueId = {
+      creepNameIndex: 0,
+    }
+  }
   if (Memory.gameInfo == null) {
     Memory.gameInfo = {
       whitelist: [],
@@ -65,6 +73,10 @@ export function init(): void {
     }
   }
 
+  if (Memory.ignoreRooms == null) {
+    Memory.ignoreRooms = []
+  }
+
   if (Memory.pathCache == null) {
     Memory.pathCache = {
       paths: {}
@@ -85,7 +97,9 @@ export function init(): void {
     Memory.cpu_usages = []
   }
 
-  extensionInit()
+  if (Memory.napAlliances == null) {
+    Memory.napAlliances = []
+  }
 }
 
 export function tick(): void {

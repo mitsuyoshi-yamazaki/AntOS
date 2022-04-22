@@ -3,7 +3,7 @@ import { V5CreepMemory } from "prototype/creep"
 import { bodyCost } from "utility/creep_body"
 import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
-import { generateUniqueId } from "utility/unique_id"
+import { generateUniqueId, UniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
 import { ResourcePoolType } from "./resource_pool"
 
@@ -48,7 +48,7 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         PrimitiveLogger.programError(`SpawnPool.spawnCreeps() request.role is null ${request.roles}, task id: ${request.taskIdentifier}, ${roomLink(spawn.room.name)}`)
         continue
       }
-      const creepName = request.name ?? generateUniqueId(request.codename)
+      const creepName = request.name ?? UniqueId.generateCreepName(request.codename)
       const body = request.body ?? createBodyFrom(request.roles, spawn.room.energyCapacityAvailable)
       const cost = bodyCost(body)
       if (cost > spawn.room.energyCapacityAvailable) {

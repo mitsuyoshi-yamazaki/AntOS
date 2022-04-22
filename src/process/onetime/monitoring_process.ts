@@ -143,7 +143,7 @@ export class MonitoringProcess implements Process, Procedural, MessageObserver {
     }
 
     const info: string[] = [
-      coloredText("[TRIGGERED]", "high"),
+      coloredText("[MONITOR TRIGGERED]", "high"),
       this.monitorName,
       targetState,
     ]

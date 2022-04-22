@@ -25,15 +25,20 @@ ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
 })
 
 let errorMessages: string[] = []
-const raiseError = (errorMessage: string): void => {
+const raiseError = (errorMessage: string, notify?: boolean): void => {
   if (errorMessages.includes(errorMessage) === true) {
     return
   }
-  if (errorMessages.length > 200) {
+  if (errorMessages.length > 100) {
     errorMessages = []
   }
   errorMessages.push(errorMessage)
-  PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${errorMessage}`)
+
+  if (notify === true) {
+    PrimitiveLogger.fatal(`${coloredText("[Error]", "error")} ${errorMessage}`)
+  } else {
+    PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${errorMessage}`)
+  }
 }
 
 const rangedAttackRange = GameConstants.creep.actionRange.rangedAttack
@@ -197,16 +202,27 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     }
 
     const targetRooms = [...this.targetRooms]
+    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
 
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}
       this.checkRemoteRooms(targetRooms)
+      intercepters.forEach(creep => {
+        if (creep.hits < creep.hitsMax) {
+          creep.heal(creep)
+        }
+      })
       return
     }
 
     const currentTarget = this.currentTarget
     if (targetRooms.every(roomInfo => roomInfo.name !== currentTarget.roomName) === true) { // 手動でRemoteRoomが無効化された場合
       this.currentTarget = null
+      intercepters.forEach(creep => {
+        if (creep.hits < creep.hitsMax) {
+          creep.heal(creep)
+        }
+      })
       return
     }
 
@@ -224,7 +240,6 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     const target = this.currentTarget
 
     const creepMaxCount = 1
-    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
     Array.from(Object.entries(this.intercepterCreepNames)).forEach(([roomName, intercepterName]) => {
       const creep = Game.creeps[intercepterName]
       if (creep == null) {
@@ -356,9 +371,31 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       MOVE, MOVE,
     ]
 
-    if (CreepBody.cost(body) > roomResource.room.energyCapacityAvailable || body.length > GameConstants.creep.body.bodyPartMaxCount) {
-      raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`)
+    const bodyCost = CreepBody.cost(body)
+    const energyCapacity = roomResource.room.energyCapacityAvailable
+    const bodyPartMaxCount = GameConstants.creep.body.bodyPartMaxCount
+    if (bodyCost > energyCapacity || body.length > bodyPartMaxCount) {
+      const shouldNotify = target.attacker.onlyNpc !== true
+      raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
       return
+    }
+
+    if (target.attacker.onlyNpc !== true) { // TODO: 相手をコピーすれば良いのでは
+      const rangedAttackIndex = body.indexOf(RANGED_ATTACK)
+      if (rangedAttackIndex >= 0) {
+        const moveIndex = 0
+        const availableEnergy = energyCapacity - bodyCost
+        const rangedAttackUnit = [MOVE, RANGED_ATTACK]
+        const rangedAttackUnitCost = CreepBody.cost(rangedAttackUnit)
+        const additionalRangedAttackMaxCount = Math.floor(Math.min((bodyPartMaxCount - body.length), Math.floor(availableEnergy / rangedAttackUnitCost)) / rangedAttackUnit.length)
+        const rangedAttackIdealCount = Math.ceil((target.totalPower.heal * 2.5) / GameConstants.creep.actionPower.rangedAttack)
+        const additionalRangedAttackCount = Math.min(additionalRangedAttackMaxCount, rangedAttackIdealCount)
+
+        if (additionalRangedAttackCount > 0) {
+          body.splice(rangedAttackIndex, 0, ...Array(additionalRangedAttackCount).fill(RANGED_ATTACK))
+          body.splice(moveIndex, 0, ...Array(additionalRangedAttackCount).fill(MOVE))
+        }
+      }
     }
 
     World.resourcePools.addSpawnCreepRequest(this.roomName, {

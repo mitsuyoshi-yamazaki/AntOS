@@ -1,6 +1,7 @@
 import { RoomResources } from "room_resource/room_resources"
 import { randomDirection } from "utility/constants"
 import { TaskProgressType } from "v5_object_task/object_task"
+import { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
@@ -12,6 +13,10 @@ export interface FleeFromAttackerTaskState extends CreepTaskState {
 }
 
 export class FleeFromAttackerTask implements CreepTask {
+  public get targetId(): TaskTargetTypeId | undefined {
+    return this.childTask.targetId
+  }
+
   private constructor(
     public readonly startTime: number,
     public readonly childTask: CreepTask,
@@ -42,10 +47,13 @@ export class FleeFromAttackerTask implements CreepTask {
 
   public run(creep: Creep): TaskProgressType {
     const roomResource = RoomResources.getNormalRoomResource(creep.room.name)
-    if (roomResource == null || roomResource.hostiles.creeps.length > 0) {
+    if (roomResource == null || (roomResource.hostiles.creeps.length > 0 && roomResource.controller.safeMode == null)) {
       const whitelist = Memory.gameInfo.sourceHarvestWhitelist ?? []
       const hostileAttacker = creep.pos.findClosestByRange(creep.room.find(FIND_HOSTILE_CREEPS)
         .filter(creep => {
+          if (Game.isEnemy(creep.owner) !== true) {
+            return false
+          }
           if (whitelist.includes(creep.owner.username) === true) {
             return false
           }

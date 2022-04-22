@@ -22,6 +22,30 @@ export type RemoteRoomInfo = {
 export type BoostLabInfo = {
   readonly labId: Id<StructureLab>
   readonly boost: MineralBoostConstant
+  requiredAmount: number
+}
+
+type LinkInfo = {
+  coreLinkId: Id<StructureLink> | null
+  upgraderLinkId: Id<StructureLink> | null
+  sourceLinkIds: { [sourceId: string]: Id<StructureLink> }
+}
+
+type OwnedRoomTypeNormal = {
+  readonly case: "normal"
+}
+type OwnedRoomTypeMinimumCpuUse = {
+  readonly case: "minimum-cpu-use"
+}
+
+type OwnedRoomType = OwnedRoomTypeNormal | OwnedRoomTypeMinimumCpuUse
+type OwnedRoomCase = OwnedRoomType["case"]
+
+export function isOwnedRoomTypes(arg: string): arg is OwnedRoomCase {
+  if (arg === "normal" || arg === "minimum-cpu-use") {
+    return true
+  }
+  return false
 }
 
 export interface BasicRoomInfo {
@@ -37,9 +61,12 @@ export interface BasicRoomInfo {
   readonly energyStoreStructureIds: Id<EnergyStore>[]
 
   reachable: boolean
+
+  readonly localWhitelistedUsers?: string[]
 }
 
-type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean } | { ownerType: "reserve", username: string }
+type RoomOwner = { ownerType: "claim", username: string, isAlive: boolean, safemodeEnabled: boolean, upgradeBlockedUntil: Timestamp | null }
+  | { ownerType: "reserve", username: string }
 
 export interface NormalRoomInfo extends BasicRoomInfo {
   readonly roomType: "normal"
@@ -55,7 +82,6 @@ export type OwnedRoomConfig = {
   disableUnnecessaryTasks?: boolean
   researchCompounds?: { [index in MineralCompoundConstant]?: number }
   collectResources?: boolean
-  excludedRemotes?: RoomName[]
   waitingPosition?: Position
   genericWaitingPositions?: Position[]
   enableAutoAttack?: boolean
@@ -66,6 +92,8 @@ export type OwnedRoomConfig = {
   powers?: PowerConstant[]
   wallMaxHits?: number
   extraLinkIds?: Id<StructureLink>[]
+
+  /// bootstrap中だけではなく、リスポーン後の最初の部屋にも適用される
   useSafemodeInBoostrap?: boolean
   bootstrapUntilRcl5?: boolean
   forceAttack?: boolean
@@ -93,6 +121,7 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
     /** @deprecated */
     wallPositions?: WallPosition[]
   } | null
+  links: LinkInfo // TODO: readonlyにする
 
   // ---- Remote Room ---- //
   remoteRoomInfo: { [roomName: string]: RemoteRoomInfo}
@@ -100,6 +129,8 @@ export interface OwnedRoomInfo extends BasicRoomInfo {
   // ---- Inter Room ---- //
   // TODO: 同様にCreepも送れるようにする
   readonly resourceInsufficiencies: { [K in ResourceConstant]?: ResourceInsufficiency }
+
+  ownedRoomType: OwnedRoomType
 
   /** @deprecated use OwnedRoomInfoAccessor.config instead */
   config?: OwnedRoomConfig
@@ -118,11 +149,18 @@ function getOwnerInfo(room: Room): RoomOwner | null {
       }
       return false
     })()
+    const upgradeBlockedUntil = ((): Timestamp | null => {
+      if (room.controller.upgradeBlocked == null) {
+        return null
+      }
+      return Game.time + room.controller.upgradeBlocked
+    })()
     return {
       ownerType: "claim",
       isAlive,
       safemodeEnabled: room.controller.safeMode != null,
-      username: room.controller.owner.username
+      username: room.controller.owner.username,
+      upgradeBlockedUntil,
     }
   }
   if (room.controller.reservation != null) {
@@ -170,6 +208,13 @@ export function buildOwnedRoomInfo(arg: NormalRoomInfo | Room): OwnedRoomInfo {
 }
 
 function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
+  const useSafemodeInBoostrap = ((): boolean | undefined => {
+    const numberOfOwnedRooms = Array.from(Object.values(Game.rooms)).filter(room => room.controller != null && room.controller.my === true).length
+    if (numberOfOwnedRooms <= 1) {
+      return true
+    }
+    return undefined
+  })()
   return {
     v: ShortVersion.v6,
     roomType: "owned",
@@ -181,9 +226,20 @@ function createOwnedRoomInfo(room: Room): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    links: {
+      coreLinkId: null,
+      upgraderLinkId: null,
+      sourceLinkIds: {},
+    },
     reachable: true,
     remoteRoomInfo: {},
     boostLabs: [],
+    ownedRoomType: {
+      case: "normal",
+    },
+    config: {
+      useSafemodeInBoostrap,
+    }
   }
 }
 
@@ -200,8 +256,16 @@ function buildOwnedRoomInfoFrom(normalRoomInfo: NormalRoomInfo): OwnedRoomInfo {
     resourceInsufficiencies: {},
     highestRcl: 1,
     roomPlan: null,
+    links: {
+      coreLinkId: null,
+      upgraderLinkId: null,
+      sourceLinkIds: {},
+    },
     reachable: normalRoomInfo.reachable,
     remoteRoomInfo: {},
     boostLabs: [],
+    ownedRoomType: {
+      case: "normal",
+    },
   }
 }

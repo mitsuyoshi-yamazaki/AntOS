@@ -2,8 +2,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ERR_DAMAGED, ERR_PROGRAMMING_ERROR, FINISHED, FINISHED_AND_RAN, IN_PROGRESS } from "prototype/creep"
 import { ApiWrapper } from "v5_object_task/api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
+import { RoomPositionFilteringOptions } from "prototype/room_position"
 
 type BuildApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
@@ -63,11 +64,51 @@ export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>
     case ERR_NO_BODYPART:
       return ERR_DAMAGED
 
+    case ERR_INVALID_TARGET: {
+      const moveCreepResult = this.moveCreepAt(this.target.pos)
+      if (moveCreepResult.creep != null) {
+        PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}, creep ${moveCreepResult.creep} moved`)
+        return IN_PROGRESS
+      }
+
+      PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
+      return ERR_PROGRAMMING_ERROR
+    }
+
     case ERR_NOT_OWNER:
-    case ERR_INVALID_TARGET:
     default:
       PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
       return ERR_PROGRAMMING_ERROR
+    }
+  }
+
+  private moveCreepAt(position: RoomPosition): { creep: Creep | null } {
+    const creep = position.findInRange(FIND_MY_CREEPS, 0)[0]
+    if (creep == null) {
+      return {
+        creep: creep ?? null,
+      }
+    }
+    const options: RoomPositionFilteringOptions = {
+      excludeItself: true,
+      excludeStructures: true,
+      excludeTerrainWalls: true,
+      excludeWalkableStructures: false,
+    }
+    const emptyPosition = position.positionsInRange(1, options).find(neighbourPosition => {
+      if (neighbourPosition.findInRange(FIND_CREEPS, 0).length > 0) {
+        return false
+      }
+      return true
+    })
+    if (emptyPosition == null) {
+      return {
+        creep: creep ?? null,
+      }
+    }
+    creep.moveTo(emptyPosition)
+    return {
+      creep,
     }
   }
 }

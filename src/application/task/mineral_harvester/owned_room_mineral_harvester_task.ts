@@ -76,8 +76,9 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     const disableMineralHarvesting = ((): boolean => {
       switch (Environment.world) {
       case "season 4":
-        return false
       case "persistent world":
+      case "swc":
+        return false
       case "simulation":
       case "botarena":
         return true
@@ -105,8 +106,11 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       if (roomResource.activeStructures.terminal == null) {
         return false
       }
+      if (roomResource.hostiles.creeps.length > 0) {
+        return false
+      }
       const mineralMaxAmount = roomResource.roomInfoAccessor.config.mineralMaxAmount
-      if (mineralAmount > mineralMaxAmount) {
+      if (mineralAmount >= mineralMaxAmount) {
         return false
       }
       if (roomResource.activeStructures.terminal.store.getFreeCapacity(mineralType) <= 20000) {
@@ -115,7 +119,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       return true
     })()
 
-    if (canHarvestMineral) {
+    if (canHarvestMineral === true) {
       const creepCount = roomResource.runningCreepInfo(this.identifier).length
       if (creepCount < 1) {
         taskOutputs.spawnRequests.push(this.mineralHarvesterRequest(roomResource))
