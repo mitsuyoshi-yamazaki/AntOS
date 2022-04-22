@@ -121,11 +121,11 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
 
   private sendResource(resourceType: ResourceConstant, terminal: StructureTerminal): void {
     const resourceAmount = ((): number => {
+      const maximumTransferCost = Math.floor(terminal.store.getUsedCapacity(RESOURCE_ENERGY) / 2)
       if (resourceType !== RESOURCE_ENERGY) {
-        return terminal.store.getUsedCapacity(resourceType)
+        return Math.min(terminal.store.getUsedCapacity(resourceType), maximumTransferCost)
       }
-      const energyAmount = terminal.store.getUsedCapacity(RESOURCE_ENERGY)
-      return energyAmount / 2
+      return maximumTransferCost
     })()
     if (resourceAmount <= 0) {
       PrimitiveLogger.programError(`${this.identifier} no ${coloredResourceType(resourceType)} in ${terminal} ${roomLink(this.parentRoomName)}`)
