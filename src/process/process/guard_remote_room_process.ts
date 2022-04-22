@@ -380,7 +380,11 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.talkingTo = {}
     }
 
-    const whitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
+    const sourceHarvestWhitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
+    const whitelist: string[] = [
+      ...Memory.gameInfo.whitelist,
+      ...sourceHarvestWhitelist,
+    ]
 
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom != null && targetRoom.controller != null && targetRoom.controller.safeMode != null && targetRoom.controller.safeMode > this.safemodeCooldown) {
