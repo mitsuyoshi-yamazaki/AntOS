@@ -1,30 +1,95 @@
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { ProcessScheduler } from "./process_scheduler"
-import { } from "../game_driver/transfer_request_cache"
-import { Logger } from "./system_call/logger"
-import { ProcessAccessor } from "./system_call/process_accessor"
-import { IndependentDriver } from "./driver"
-import { IndependentGameDriver } from "./game_driver"
+import { Driver } from "./driver"
 
-type SystemCalls = {
-  logger: Logger
-  // standardInput: StandardInput // TODO: Gameに直接接続するのではなくkernelを通す
-  processAccessor: ProcessAccessor
+type LifecycleEventLoad = "load"
+type LifecycleEventStartOfTick = "start_of_tick"
+type LifecycleEventEndOfTick = "end_of_tick"
+export type LifecycleEvent = LifecycleEventLoad | LifecycleEventStartOfTick | LifecycleEventEndOfTick
+export const LifecycleEvent = {
+  LifecycleEventLoad: "load" as LifecycleEventLoad,
+  LifecycleEventStartOfTick: "start_of_tick" as LifecycleEventStartOfTick,
+  LifecycleEventEndOfTick: "end_of_tick" as LifecycleEventEndOfTick,
 }
 
-export class Kernel {
-  private processSchedular = new ProcessScheduler()
+const kernelConstants = {
+  driverMaxLoadCpu: 10,
+}
 
-  public constructor(
-    private readonly systemCalls: SystemCalls,
-    private readonly drivers: IndependentDriver[],
-    private readonly gameDrivers: IndependentGameDriver[],
-  ) {
-  }
+interface KernelInterface {
+  registerDriverCall(events: LifecycleEvent[], driver: Driver): void
 
-  public run(): void {
+  run(): void
+}
+
+type DriverEventCall = () => void
+const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
+  load: [],
+  start_of_tick: [],
+  end_of_tick: [],
+}
+
+export const Kernel: KernelInterface = {
+  registerDriverCall(events: LifecycleEvent[], driver: Driver): void {
+    const register = (call: DriverEventCall | undefined, list: DriverEventCall[], description: string, reversed?: boolean): void => {
+      if (call == null) {
+        PrimitiveLogger.fatal(`${description} not implemented`)
+        return
+      }
+      if (reversed === true) {
+        list.unshift(call)
+      } else {
+        list.push(call)
+      }
+    }
+
+    events.forEach(event => {
+      const description = `${driver.description}.${event}`
+      switch (event) {
+      case LifecycleEvent.LifecycleEventLoad:
+        register(driver.load, driverCalls.load, description)
+        break
+      case LifecycleEvent.LifecycleEventStartOfTick:
+        register(driver.startOfTick, driverCalls.start_of_tick, description)
+        break
+      case LifecycleEvent.LifecycleEventEndOfTick:
+        register(driver.endOfTick, driverCalls.end_of_tick, description, true)
+        break
+      }
+    })
+  },
+
+  run(): void {
+    if (driverCalls.load.length > 0) {
+      loadDrivers()
+    }
+
+    driverCalls.start_of_tick.forEach(call => {
+      ErrorMapper.wrapLoop((): void => {
+        call()
+      })()
+    })
+
     if (Game.time % 100 === 0) {
       PrimitiveLogger.log("v8 kernel.run()")
+    }
+
+    driverCalls.end_of_tick.forEach(call => {
+      ErrorMapper.wrapLoop((): void => {
+        call()
+      })()
+    })
+  },
+}
+
+const loadDrivers = (): void => {
+  const maxCpu = 10
+  const cpu = kernelConstants.driverMaxLoadCpu
+
+  for (const load of driverCalls.load) {
+    load()
+    if (Game.cpu.getUsed() - cpu > maxCpu) {
+      break
     }
   }
 }
