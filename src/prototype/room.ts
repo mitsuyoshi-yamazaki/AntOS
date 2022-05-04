@@ -30,7 +30,7 @@ declare global {
   }
 }
 
-// 毎tick呼び出すこと
+// サーバーリセット時のみ呼び出し
 export function init(): void {
   Object.defineProperty(Room.prototype, "roomType", {
     get(): RoomType {

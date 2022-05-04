@@ -45,22 +45,18 @@ declare global {
   }
 }
 
-// 毎tick呼び出すこと
+// サーバーリセット時のみ呼び出し
 export function init(): void {
-  try {
-    Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
-      get(): V5TaskRunnerId[] {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const id = (this as any).id // FlagにはIDがない
-        if (id == null) {
-          return []
-        }
-        return V5TaskTargetCache.targetingTaskRunnerIds(id)
-      },
-    })
-  } catch (error) {
-    PrimitiveLogger.programError(`RoomObject.init() ${error}`)
-  }
+  Object.defineProperty(RoomObject.prototype, "v5TargetedBy", {
+    get(): V5TaskRunnerId[] {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const id = (this as any).id // FlagにはIDがない
+      if (id == null) {
+        return []
+      }
+      return V5TaskTargetCache.targetingTaskRunnerIds(id)
+    },
+  })
 }
 
 export function parseId<T>(id: Id<T> | null): T | null {
