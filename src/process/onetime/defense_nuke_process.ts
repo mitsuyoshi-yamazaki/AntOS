@@ -8,7 +8,8 @@ import { Timestamp } from "utility/timestamp"
 import { Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)
@@ -35,7 +36,7 @@ interface DefenseNukeProcessState extends ProcessState {
   readonly defenseInfo: DefenseInfo
 }
 
-export class DefenseNukeProcess implements Process, Procedural {
+export class DefenseNukeProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -80,6 +81,48 @@ export class DefenseNukeProcess implements Process, Procedural {
     ]
 
     return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "status", "show_visual"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "status":
+        return this.processShortDescription()
+
+      case "show_visual":
+        this.showDefensePositions()
+        return `${this.defenseInfo.guardPositions.length} positions to defense`
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private showDefensePositions(): void {
+    const room = Game.rooms[this.roomName]
+    if (room == null) {
+      throw `${roomLink(this.roomName)} invisible`
+    }
+
+    const color = "#FF00FF"
+    const text = (requiredHits: number): string => {
+      return Math.max(Math.ceil(requiredHits / 1000000), 1).toFixed(0)
+    }
+
+    this.defenseInfo.guardPositions.forEach(position => {
+      room.visual.text(text(position.minimumHits), position.position.x, position.position.y, {color})
+    })
   }
 
   public runOnTick(): void {
