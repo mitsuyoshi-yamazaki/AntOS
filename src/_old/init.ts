@@ -38,6 +38,14 @@ export function init(): void {
   if (Memory.gameInfo.sourceHarvestWhitelist == null) {
     Memory.gameInfo.sourceHarvestWhitelist = []
   }
+  if (Memory.v8 == null) {
+    Memory.v8 = {
+      process: {
+        processIdIndex: 0,
+        processInfo: {},
+      }
+    }
+  }
 
   if (Memory.room_info == null) {
     Memory.room_info = {}

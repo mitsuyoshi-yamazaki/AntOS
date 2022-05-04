@@ -32,6 +32,10 @@ export const UniqueId = {
     return generateUniqueId(prefix)
   },
 
+  generateFromInteger(index: number): string {
+    return index.toString(radix)
+  },
+
   generateCodename(fixedParameter: string, flexibleParameter: number): string {
     return generateCodename(fixedParameter, flexibleParameter)
   },

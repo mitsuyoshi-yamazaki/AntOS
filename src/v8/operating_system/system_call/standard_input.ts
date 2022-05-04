@@ -1,49 +1,30 @@
 import { coloredText } from "utility/log"
-// import { LaunchProcessCommand } from "../../command/launch_process_command"
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { StandardInputCommand } from "./standard_input_command"
 
-const commandList = [
-  "help",
-  "launch",
-] as const
-type Command = typeof commandList[number]
-
-function isCommand(arg: string): arg is Command {
-  return (commandList as (readonly string[])).includes(arg)
-}
-
-export const StandardInput = {
-  input(message: string): string {
+export const standardInput = (commands: StandardInputCommand[]): (message: string) => string => {
+  return message => {
     const args = message.split(" ")
-    const command = args.shift()
+    const commandType = args.shift()
+
+    const commandList = commands.map(command => command.command)
 
     try {
-      if (command == null) {
+      if (commandType == null) {
         throw "empty input"
       }
-      if (!isCommand(command)) {
-        throw `invalid command ${command}. see: "help"`
+
+      if (commandType === "help") {
+        return `available commands: ${commandList.join(", ")}`
       }
 
-      switch (command) {
-        case "help":
-          return `available commands: ${commandList.join(", ")}`
-
-        case "launch":
-          return launch(args)
+      const command = commands.find(command => command.command === commandType)
+      if (command == null) {
+        throw `invalid command ${commandType}`
       }
+      return command.run(args)
 
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
     }
-  },
-}
-
-/** @throws */
-function launch(args: string[]): string {
-  // const parser = new ArgumentParser(args)
-  // const processType = parser.list.string(0, "process type").parse()
-
-  // LaunchProcessCommand.launch(processType, )
-  return "not implemented yet"
+  }
 }

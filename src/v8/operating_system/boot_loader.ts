@@ -1,12 +1,15 @@
-import { Kernel } from "./kernel"
+import { Kernel, KernelMemory } from "./kernel"
 
 export const BootLoader = {
-  load(): void {
-    registerDrivers()
+  load(kernelMemory: KernelMemory): Kernel {
+    const kernel = new Kernel(kernelMemory)
+    registerDrivers(kernel)
+
+    return kernel
   },
 }
 
 /// Driverの呼び出し順は依存があるためここ一箇所で登録する
-const registerDrivers = (): void => {
+const registerDrivers = (kernel: Kernel): void => {
   // TODO:
 }
