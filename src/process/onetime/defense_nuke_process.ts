@@ -48,7 +48,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
-    private readonly defenseInfo: DefenseInfo,
+    private defenseInfo: DefenseInfo,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = UniqueId.generateCodename(this.identifier, this.launchTime)
@@ -84,7 +84,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "show_visual"]
+    const commandList = ["help", "status", "show_visual", "recalculate"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -100,6 +100,9 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
         this.showDefensePositions()
         return `${this.defenseInfo.guardPositions.length} positions to defense`
 
+      case "recalculate":
+        return this.recalculate()
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
@@ -109,10 +112,23 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   /** @throws */
+  private recalculate(): string {
+    const room = Game.rooms[this.roomName]
+    if (room == null) {
+      throw `no visible for ${roomLink(this.roomName)}`
+    }
+
+    const nukes = room.find(FIND_NUKES)
+    this.defenseInfo = addNukes(nukes, { guardPositions: [], nukes: [] })
+
+    return this.processShortDescription()
+  }
+
+  /** @throws */
   private showDefensePositions(): void {
     const room = Game.rooms[this.roomName]
     if (room == null) {
-      throw `${roomLink(this.roomName)} invisible`
+      throw `no visible for ${roomLink(this.roomName)}`
     }
 
     const color = "#FF00FF"
@@ -150,12 +166,6 @@ const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo): DefenseInfo => {
   const wallMinimumHits = 2000000
 
   nukes.forEach(nuke => {
-    const room = nuke.room
-    if (room == null) {
-      PrimitiveLogger.programError(`DefenseNukeProcess nuke.room is undefined (${nuke} at ${roomLink(nuke.pos.roomName)})`)
-      return
-    }
-
     for (let j = -nukeDamageRange; j <= nukeDamageRange; j += 1) {
       for (let i = -nukeDamageRange; i <= nukeDamageRange; i += 1) {
         const x = nuke.pos.x + i
@@ -164,37 +174,44 @@ const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo): DefenseInfo => {
           continue
         }
 
-        const ownedStructures = room.find(FIND_MY_STRUCTURES)
-        const anyStructure = ownedStructures[0]
-        if (anyStructure == null) {
-          continue
-        }
-
-        if (ownedStructures.length <= 1 && excludedOwnedStructureTypes.includes(anyStructure.structureType) === true) {
-          continue
-        }
-
-        const position = ((): GuardPosition => {
-          const stored = defenseInfo.guardPositions.find(pos => pos.position.x === x && pos.position.y === y)
-          if (stored != null) {
-            return stored
+        try {
+          const roomPosition = new RoomPosition(x, y, nuke.pos.roomName)
+          const ownedStructures = roomPosition.findInRange(FIND_MY_STRUCTURES, 0)
+          const anyStructure = ownedStructures[0]
+          if (anyStructure == null) {
+            continue
           }
 
-          const rampartId = ((): Id<StructureRampart> | null => {
-            return (ownedStructures.find(structure => structure.structureType === STRUCTURE_RAMPART) as StructureRampart | undefined)?.id ?? null
+          if (ownedStructures.length <= 1 && excludedOwnedStructureTypes.includes(anyStructure.structureType) === true) {
+            continue
+          }
+
+          const position = ((): GuardPosition => {
+            const stored = defenseInfo.guardPositions.find(pos => pos.position.x === x && pos.position.y === y)
+            if (stored != null) {
+              return stored
+            }
+
+            const rampartId = ((): Id<StructureRampart> | null => {
+              return (ownedStructures.find(structure => structure.structureType === STRUCTURE_RAMPART) as StructureRampart | undefined)?.id ?? null
+            })()
+            const newPosition: GuardPosition = {
+              position: { x, y },
+              rampartId,
+              minimumHits: wallMinimumHits,
+            }
+            defenseInfo.guardPositions.push(newPosition)
+            return newPosition
           })()
-          const newPosition: GuardPosition = {
-            position: { x, y },
-            rampartId,
-            minimumHits: wallMinimumHits,
-          }
-          defenseInfo.guardPositions.push(newPosition)
-          return newPosition
-        })()
 
-        const range = Math.min(i, j)
-        const estimatedDamage = GameConstants.nuke.damage(range)
-        position.minimumHits += estimatedDamage
+          const range = Math.max(Math.abs(i), Math.abs(j))
+          const estimatedDamage = GameConstants.nuke.damage(range)
+          position.minimumHits += estimatedDamage
+
+        } catch (error) {
+          PrimitiveLogger.programError(`DefenseNukeProcess ${error}`)
+          continue
+        }
       }
     }
   })
