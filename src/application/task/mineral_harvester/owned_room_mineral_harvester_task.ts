@@ -78,6 +78,8 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       case "season 4":
       case "persistent world":
       case "swc":
+      case "private":
+      case "unknown":
         return false
       case "simulation":
       case "botarena":

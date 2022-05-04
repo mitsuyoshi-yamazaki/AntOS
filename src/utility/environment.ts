@@ -1,10 +1,14 @@
+import { isPrivateEnvironment } from "../../submodules/private/constants"
+
 type PersistentWorld = "persistent world"
 type SimulationWorld = "simulation"
 type Season4 = "season 4"
 type BotArena = "botarena"
 type Swc = "swc"
+type PrivateEnvironment = "private"
+type UnknownEnvironment = "unknown"
 
-type World = PersistentWorld | SimulationWorld | Season4 | BotArena | Swc
+type World = PersistentWorld | SimulationWorld | Season4 | BotArena | Swc | PrivateEnvironment | UnknownEnvironment
 type ShardName = string
 
 export interface Environment {
@@ -18,7 +22,8 @@ export interface Environment {
 }
 
 const world = ((): World => {
-  switch (Game.shard.name) {
+  const shardName = Game.shard.name
+  switch (shardName) {
   case "sim":
     return "simulation"
   case "shardSeason":
@@ -31,8 +36,12 @@ const world = ((): World => {
   case "swc":
     return "swc"
   case "botarena":
-  default:
     return "botarena"
+  default:
+    if (isPrivateEnvironment(shardName) === true) {
+      return "private"
+    }
+    return "unknown"
   }
 })()
 
@@ -44,6 +53,8 @@ const hasMultipleShards = ((): boolean => {
   case "botarena":
   case "swc":
   case "simulation":
+  case "private":
+  case "unknown":
     return false
   }
 })()
@@ -62,6 +73,8 @@ export const Environment: Environment = {
     case "simulation":
       return false
     case "botarena":
+    case "private":
+    case "unknown":
       return true
     }
   },
@@ -72,6 +85,8 @@ export const Environment: Environment = {
     case "season 4":
     case "simulation":
     case "botarena":
+    case "private":
+    case "unknown":
       return false
     case "swc":
       return true
