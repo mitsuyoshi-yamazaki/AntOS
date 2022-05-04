@@ -10,6 +10,18 @@ import { GameConstants } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { World } from "world_info/world_info"
+import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
+import { CreepRole } from "prototype/creep_role"
+import { CreepBody } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
+import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 
 ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)
@@ -43,6 +55,8 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   private readonly codename: string
+  // private rampartsToRepair: (ConstructionSite<STRUCTURE_RAMPART> | StructureRampart)[] = []
+  private rampartsToRepair: StructureRampart[] | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -142,7 +156,114 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   public runOnTick(): void {
+    this.rampartsToRepair = null
 
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+
+    const shouldSpawn = ((): boolean => {
+      const creepMaxCount = 3
+      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+
+      if (creepCount >= creepMaxCount) {
+        return false
+      }
+
+      this.rampartsToRepair = this.calculateRampartsToRepair()
+      if (this.rampartsToRepair.length <= 0) {
+        return false
+      }
+
+      return true
+    })()
+
+    if (shouldSpawn === true) {
+      this.spawnRepairer(roomResource.room.energyCapacityAvailable)
+    }
+
+    World.resourcePools.assignTasks(
+      this.roomName,
+      this.taskIdentifier,
+      CreepPoolAssignPriority.Low,
+      creep => this.newTaskFor(creep, roomResource),
+      () => true,
+    )
+  }
+
+  private newTaskFor(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const energySource = ((): StructureStorage | StructureTerminal | null => {
+        if ((roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
+          return roomResource.activeStructures.storage
+        }
+        if ((roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
+          return roomResource.activeStructures.terminal
+        }
+        return null
+      })()
+
+      if (energySource == null) {
+        return null
+      }
+      return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energySource, RESOURCE_ENERGY)))
+    }
+
+    if (this.rampartsToRepair == null) {
+      this.rampartsToRepair = this.calculateRampartsToRepair()
+    }
+
+    const rampartToRepair = this.rampartsToRepair.shift()
+    if (rampartToRepair == null) {
+      return null
+    }
+
+    return FleeFromAttackerTask.create(MoveToTargetTask.create(RepairApiWrapper.create(rampartToRepair)))
+  }
+
+  private calculateRampartsToRepair(): StructureRampart[] {
+    const rampartsToRepair = this.defenseInfo.guardPositions.flatMap((position): {rampart: StructureRampart, hitsToRepair: number}[] => {
+      if (position.rampartId == null) {
+        return [] // TODO: construction siteを生成する
+      }
+      const rampart = Game.getObjectById(position.rampartId)
+      if (rampart == null) {
+        return []
+      }
+      const hitsToRepair = position.minimumHits - rampart.hits
+      if (hitsToRepair < 0) {
+        return []
+      }
+      return [{
+        rampart,
+        hitsToRepair,
+      }]
+    })
+
+    rampartsToRepair.sort((lhs, rhs) => rhs.hitsToRepair - lhs.hitsToRepair)
+
+    return rampartsToRepair.map(info => info.rampart)
+  }
+
+  private spawnRepairer(energyCapacity: number): void {
+    const bodyUnit: BodyPartConstant[] = [
+      CARRY, CARRY,
+      WORK, WORK, WORK, WORK,
+      MOVE, MOVE, MOVE,
+    ]
+    const body = CreepBody.create([], bodyUnit, energyCapacity, 5)
+
+    World.resourcePools.addSpawnCreepRequest(this.roomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [CreepRole.Worker],
+      body,
+      initialTask: null,
+      taskIdentifier: this.taskIdentifier,
+      parentRoomName: null,
+    })
   }
 }
 
