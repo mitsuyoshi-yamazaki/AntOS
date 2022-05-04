@@ -68,6 +68,7 @@ import {} from "process/onetime/self_aware_creep_process"
 import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem_solver_v1_process"
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
+import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1210,4 +1211,18 @@ ProcessLauncher.register("Season1521073SendResourceProcess", args => {
   }
 })
 
+ProcessLauncher.register("DefenseNukeProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    const nukes = roomResource.room.find(FIND_NUKES)
 
+    return Result.Succeeded((processId) => DefenseNukeProcess.create(
+      processId,
+      roomName,
+      nukes,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})

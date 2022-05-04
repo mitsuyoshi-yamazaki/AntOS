@@ -104,6 +104,20 @@ export const GameConstants = {
   },
   power: PowerGameConstants,
   structure: StructureGameConstants,
+  nuke: {
+    damageRange: 2,  // radius
+    damage(range: number): number {
+      switch (range) {
+      case 0:
+        return NUKE_DAMAGE[0]
+      case 1:
+      case 2:
+        return 5000000 //NUKE_DAMAGE[2]
+      default:
+        return 0
+      }
+    },
+  },
 } as const
 
 export const ApplicationConstants = {
