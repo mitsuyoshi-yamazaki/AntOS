@@ -32,6 +32,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "toggle_remote",
     "toggle_auto_attack",
     "show_labs",
+    "no_repair_walls",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -61,6 +62,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleAutoAttack(roomResource, args)
   case "show_labs":
     return showLabs(roomResource)
+  case "no_repair_walls":
+    return noRepairWalls(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -81,6 +84,51 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
   }
 }
 
+/** @throws */
+function noRepairWalls(roomResource: OwnedRoomResource, args: string[]): string {
+  const listArguments = new ListArguments(args)
+  const command = listArguments.string(0, "command").parse()
+
+  switch (command) {
+  case "add":
+    return addNoRepairWalls(roomResource, listArguments.list(1, "wall IDs", "object_id").parse())
+
+  case "show":
+    showNoRepairWalls(roomResource)
+    return `no repair wall IDs:\n${roomResource.roomInfoAccessor.config.getNoRepairWallIds().join("\n")}`
+
+  default:
+    throw `invalid command ${command}, available commands: add, show`
+  }
+}
+
+/** @throws */
+const addNoRepairWalls = (roomResource: OwnedRoomResource, rawWallIds: string[]): string => {
+  const wallIds = rawWallIds.flatMap((rawId): Id<StructureWall | StructureRampart>[] => {
+    const wall = Game.getObjectById(rawId)
+    if (!(wall instanceof StructureWall) && !(wall instanceof StructureRampart)) {
+      throw `${wall} is not wall or rampart`
+    }
+    return [wall.id]
+  })
+
+  roomResource.roomInfoAccessor.config.addNoRepairWallIds(wallIds)
+
+  return `${wallIds.length} walls excluded`
+}
+
+const showNoRepairWalls = (roomResource: OwnedRoomResource): void => {
+  const walls = roomResource.roomInfoAccessor.config.getNoRepairWallIds().flatMap((id): (StructureWall | StructureRampart)[] => {
+    const wall = Game.getObjectById(id)
+    if (wall == null) {
+      return []
+    }
+    return [wall]
+  })
+  walls.forEach(wall => {
+    roomResource.room.visual.text("@", wall.pos.x, wall.pos.y, {color: "#FF0000"})
+  })
+}
 
 /** @throws */
 function showLabs(roomResource: OwnedRoomResource): string {
