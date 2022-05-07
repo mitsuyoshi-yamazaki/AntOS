@@ -10,7 +10,6 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { CreepBody } from "utility/creep_body"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
@@ -25,6 +24,8 @@ import { ProcessDecoder } from "process/process_decoder"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
@@ -58,6 +59,7 @@ export interface StealResourceProcessState extends ProcessState {
   takeAll: boolean
   creepCount: number
   finishWorking: number
+  storeId: Id<StructureStorage | StructureTerminal> | null
   stopSpawningReasons: string[]
 }
 
@@ -80,6 +82,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
     private readonly takeAll: boolean,
     private creepCount: number,
     private readonly finishWorking: number,
+    private readonly storeId: Id<StructureStorage | StructureTerminal> | null,
     private stopSpawningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
@@ -99,16 +102,30 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       takeAll: this.takeAll,
       creepCount: this.creepCount,
       finishWorking: this.finishWorking,
+      storeId: this.storeId,
       stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: StealResourceProcessState): StealResourceProcess {
-    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount, state.finishWorking, state.stopSpawningReasons ?? [])
+    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount, state.finishWorking, state.storeId, state.stopSpawningReasons ?? [])
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean, creepCount: number, finishWorkig: number): StealResourceProcess {
-    return new StealResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, targetId, "in progress", takeAll, creepCount, finishWorkig, [])
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean, creepCount: number, finishWorkig: number, options?: {storeId?: Id<StructureStorage | StructureTerminal>}): StealResourceProcess {
+    return new StealResourceProcess(
+      Game.time,
+      processId,
+      parentRoomName,
+      targetRoomName,
+      waypoints,
+      targetId,
+      "in progress",
+      takeAll,
+      creepCount,
+      finishWorkig,
+      options?.storeId ?? null,
+      [],
+    )
   }
 
   public processShortDescription(): string {
@@ -144,6 +161,9 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       case "resume": {
         const oldValues = [...this.stopSpawningReasons]
         this.stopSpawningReasons = []
+        if (this.state === "stop_spawning") {
+          this.state = "in progress"
+        }
         return `resumed (stopped reasons: ${oldValues.join(", ")})`
       }
 
@@ -160,18 +180,25 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
   }
 
   public runOnTick(): void {
-    const objects = World.rooms.getOwnedRoomObjects(this.parentRoomName)
-    if (objects == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
 
     const resourceStore = ((): StructureTerminal | StructureStorage | null => {
-      if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.my === true) {
-        return objects.activeStructures.terminal
+      if (this.storeId != null) {
+        const store = Game.getObjectById(this.storeId)
+        if (store != null) {
+          return store
+        }
       }
-      if (objects.activeStructures.storage != null && objects.activeStructures.storage.my === true) {
-        return objects.activeStructures.storage
+
+      if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.my === true) {
+        return roomResource.activeStructures.terminal
+      }
+      if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.my === true) {
+        return roomResource.activeStructures.storage
       }
       return null
     } )()
@@ -191,10 +218,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       }
       const targetRoom = Game.rooms[this.targetRoomName]
       if (targetRoom?.controller != null) {
-        if (targetRoom.controller.my === true) {
-          return 1
-        }
-        if (targetRoom.controller.safeMode != null) {
+        if (this.targetRoomName !== this.parentRoomName && targetRoom.controller.safeMode != null) {
           this.state = "stop_spawning"
           return 0
         }
@@ -202,7 +226,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       return this.creepCount
     })()
     if (this.state !== "finished" && creepCount < numberOfCreeps && this.stopSpawningReasons.length <= 0) {
-      this.requestHauler(objects.controller.room.energyCapacityAvailable)
+      this.requestHauler(roomResource)
     }
 
     World.resourcePools.assignTasks(
@@ -214,10 +238,14 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
     )
   }
 
-  private requestHauler(energyCapacity: number): void {
+  private requestHauler(roomResource: OwnedRoomResource): void {
+    const energyCapacity = roomResource.room.energyCapacityAvailable
     const body = ((): BodyPartConstant[] => {
       if (this.targetRoomName === this.parentRoomName) {
-        return CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 6)
+        if (roomResource.controller.level < 7) {
+          return CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 6)
+        }
+        return CreepBody.create([], [CARRY, CARRY, MOVE], energyCapacity, 16)
       } else {
         return CreepBody.create([], [CARRY, MOVE], energyCapacity, 25)
       }

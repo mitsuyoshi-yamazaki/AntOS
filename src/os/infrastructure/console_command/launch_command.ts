@@ -69,6 +69,8 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
+// import { } from "process/onetime/intershard_resource_transfer_process"
+// import { } from "process/onetime/intershard_resource_receiver_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -115,8 +117,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason4332399SKMineralHarvestProcess()
       case "DistributorProcess":
         return this.launchDistributorProcess()
-      case "StealResourceProcess":
-        return this.launchStealResourceProcess()
       case "Season2055924SendResourcesProcess":
         return this.launchSeason2055924SendResourcesProcess()
       case "InterRoomResourceManagementProcess":
@@ -421,64 +421,6 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const process = OperatingSystem.os.addProcess(null, processId => {
       return DistributorProcess.create(processId, roomName)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchStealResourceProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const targetId = args.get("target_id")
-    if (targetId == null) {
-      return this.missingArgumentError("target_id")
-    }
-    const rawFinishWorking = args.get("finish_working")
-    if (rawFinishWorking == null) {
-      return this.missingArgumentError("finish_working")
-    }
-    const finishWorking = parseInt(rawFinishWorking, 10)
-    if (isNaN(finishWorking) === true) {
-      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
-    }
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    const waypoints: RoomName[] = []
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
-      if (storedValue == null) {
-        return this.missingArgumentError("waypoints")
-      }
-      waypoints.push(...storedValue)
-
-    } else {
-      const parsedValue = rawWaypoints.split(",")
-
-      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
-      if (result.resultType === "failed") {
-        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-      }
-
-      waypoints.push(...parsedValue)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true, numberOfCreeps, finishWorking)
     })
     return Result.Succeeded(process)
   }
@@ -1221,6 +1163,43 @@ ProcessLauncher.register("DefenseNukeProcess", args => {
       processId,
       roomName,
       nukes,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("StealResourceProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomName = args.roomName("target_room_name").parseOptional() ?? roomName
+    const targetId = args.gameObjectId("target_id").parse()
+    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+    const numberOfCreeps = args.int("creeps").parse({min: 1})
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const options = ((): { storeId?: Id<StructureStorage | StructureTerminal> } => {
+      const store = args.visibleGameObject("store_id").parseOptional({ inRoomName: roomName })
+      if (store == null) {
+        return {}
+      }
+      if (!(store instanceof StructureStorage) && !(store instanceof StructureTerminal)) {
+        throw `store_id is not storage or terminal (${store})`
+      }
+      return {
+        storeId: store.id,
+      }
+    })()
+
+    return Result.Succeeded((processId) => StealResourceProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      targetId as Id<StructureStorage>,
+      true,
+      numberOfCreeps,
+      finishWorking,
+      options,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
