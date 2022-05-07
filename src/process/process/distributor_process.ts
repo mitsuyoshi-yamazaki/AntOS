@@ -275,10 +275,27 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
 
     const storage = resources.activeStructures.storage
     const terminal = resources.activeStructures.terminal
-    if (terminal == null && storage != null && link != null) {
+    if ((terminal == null || creep.pos.isNearTo(terminal.pos) !== true) && storage != null && link != null) {
+      if (this.shouldWithdrawLink === true) {
+        if (creep.store.getUsedCapacity() <= 0) {
+          return RunApiTask.create(WithdrawResourceApiWrapper.create(link, RESOURCE_ENERGY))
+        }
+        return RunApiTask.create(TransferEnergyApiWrapper.create(storage))
+      }
       return this.transferEnergyToLinkTask(creep, storage, link)
     }
     if (storage == null || terminal == null) {
+      if (terminal != null && link != null) {
+        if (creep.store.getUsedCapacity() <= 0) {
+          if (this.shouldWithdrawLink === true && link != null && link.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+            return RunApiTask.create(WithdrawResourceApiWrapper.create(link, RESOURCE_ENERGY))
+          }
+          return null
+        }
+        if (this.shouldWithdrawLink === true) {
+          return RunApiTask.create(TransferEnergyApiWrapper.create(terminal))
+        }
+      }
       return null
     }
 
