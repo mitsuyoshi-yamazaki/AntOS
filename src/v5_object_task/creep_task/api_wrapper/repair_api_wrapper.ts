@@ -4,6 +4,7 @@ import { ApiWrapper } from "v5_object_task/api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
+import { GameConstants } from "utility/constants"
 
 type RepairApiWrapperResult = FINISHED | FINISHED_AND_RAN | IN_PROGRESS | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_DAMAGED | ERR_PROGRAMMING_ERROR
 
@@ -44,7 +45,7 @@ export class RepairApiWrapper implements ApiWrapper<Creep, RepairApiWrapperResul
 
     switch (result) {
     case OK: {
-      const consumeAmount = creep.body.filter(b => b.type === WORK).length * REPAIR_POWER
+      const consumeAmount = creep.body.filter(b => b.type === WORK).length * GameConstants.creep.actionCost.repair
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= consumeAmount) {
         return FINISHED_AND_RAN
       }
