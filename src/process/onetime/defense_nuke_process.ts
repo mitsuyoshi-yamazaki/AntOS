@@ -56,7 +56,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
 
   private readonly codename: string
   // private rampartsToRepair: (ConstructionSite<STRUCTURE_RAMPART> | StructureRampart)[] = []
-  private rampartsToRepair: StructureRampart[] | null = null
+  private ramparts: { all: StructureRampart[], rampartsToRepair: StructureRampart[] } | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -156,7 +156,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   public runOnTick(): void {
-    this.rampartsToRepair = null
+    this.ramparts = null
 
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
@@ -171,8 +171,12 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
         return false
       }
 
-      this.rampartsToRepair = this.calculateRampartsToRepair()
-      if (this.rampartsToRepair.length <= 0) {
+      if (roomResource.getResourceAmount(RESOURCE_ENERGY) < 20000) {
+        return false
+      }
+
+      this.ramparts = this.calculateRampartsToRepair()
+      if (this.ramparts.rampartsToRepair.length <= 0) {
         return false
       }
 
@@ -195,11 +199,11 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   private newTaskFor(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       const energySource = ((): StructureStorage | StructureTerminal | null => {
-        if ((roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
-          return roomResource.activeStructures.storage
-        }
         if ((roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
           return roomResource.activeStructures.terminal
+        }
+        if ((roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > 0) {
+          return roomResource.activeStructures.storage
         }
         return null
       })()
@@ -210,40 +214,52 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(energySource, RESOURCE_ENERGY)))
     }
 
-    if (this.rampartsToRepair == null) {
-      this.rampartsToRepair = this.calculateRampartsToRepair()
+    if (this.ramparts == null) {
+      this.ramparts = this.calculateRampartsToRepair()
     }
 
-    const rampartToRepair = this.rampartsToRepair.shift()
-    if (rampartToRepair == null) {
+    const target = ((): StructureRampart | null => {
+      const rampartToRepair = this.ramparts.rampartsToRepair.shift()
+      if (rampartToRepair != null) {
+        return rampartToRepair
+      }
+      return this.ramparts.all.shift() ?? null
+    })()
+    if (target == null) {
       return null
     }
 
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(RepairApiWrapper.create(rampartToRepair)))
+    return FleeFromAttackerTask.create(MoveToTargetTask.create(RepairApiWrapper.create(target)))
   }
 
-  private calculateRampartsToRepair(): StructureRampart[] {
-    const rampartsToRepair = this.defenseInfo.guardPositions.flatMap((position): {rampart: StructureRampart, hitsToRepair: number}[] => {
+  private calculateRampartsToRepair(): { all: StructureRampart[], rampartsToRepair: StructureRampart[] } {
+    const targetRamparts: { rampart: StructureRampart, hitsToRepair: number }[] = []
+
+    this.defenseInfo.guardPositions.forEach(position => {
       if (position.rampartId == null) {
-        return [] // TODO: construction siteを生成する
+        return // TODO: construction siteを生成する
       }
       const rampart = Game.getObjectById(position.rampartId)
       if (rampart == null) {
-        return []
+        return
       }
+
       const hitsToRepair = position.minimumHits - rampart.hits
-      if (hitsToRepair < 0) {
-        return []
-      }
-      return [{
+      targetRamparts.push({
         rampart,
         hitsToRepair,
-      }]
+      })
     })
 
-    rampartsToRepair.sort((lhs, rhs) => rhs.hitsToRepair - lhs.hitsToRepair)
+    targetRamparts.sort((lhs, rhs) => rhs.hitsToRepair - lhs.hitsToRepair)
 
-    return rampartsToRepair.map(info => info.rampart)
+    const all = targetRamparts.map(info => info.rampart)
+    const rampartsToRepair = targetRamparts.filter(info => info.hitsToRepair > 0).map(info => info.rampart)
+
+    return {
+      all,
+      rampartsToRepair,
+    }
   }
 
   private spawnRepairer(energyCapacity: number): void {
