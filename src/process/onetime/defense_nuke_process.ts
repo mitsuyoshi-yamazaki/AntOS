@@ -22,6 +22,8 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { ResourceManager } from "utility/resource_manager"
+import { processLog } from "os/infrastructure/logger"
 
 ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)
@@ -43,9 +45,14 @@ type DefenseInfo = {
   readonly nukes: NukeInfo[]
 }
 
+type CalculateInfo = {
+  readonly excludedStructureIds: Id<AnyOwnedStructure>[]
+}
+
 interface DefenseNukeProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly defenseInfo: DefenseInfo
+  readonly calculateInfo: CalculateInfo
 }
 
 export class DefenseNukeProcess implements Process, Procedural, MessageObserver {
@@ -63,6 +70,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private defenseInfo: DefenseInfo,
+    private readonly calculateInfo: CalculateInfo,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = UniqueId.generateCodename(this.identifier, this.launchTime)
@@ -75,16 +83,20 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       i: this.processId,
       roomName: this.roomName,
       defenseInfo: this.defenseInfo,
+      calculateInfo: this.calculateInfo,
     }
   }
 
   public static decode(state: DefenseNukeProcessState): DefenseNukeProcess {
-    return new DefenseNukeProcess(state.l, state.i, state.roomName, state.defenseInfo)
+    return new DefenseNukeProcess(state.l, state.i, state.roomName, state.defenseInfo, state.calculateInfo)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, nukes: Nuke[]): DefenseNukeProcess {
-    const defenseInfo = addNukes(nukes, {guardPositions: [], nukes: []})
-    return new DefenseNukeProcess(Game.time, processId, roomName, defenseInfo)
+  public static create(processId: ProcessId, roomName: RoomName, nukes: Nuke[], excludedStructureIds: Id<AnyOwnedStructure>[]): DefenseNukeProcess {
+    const calculateInfo: CalculateInfo = {
+      excludedStructureIds,
+    }
+    const defenseInfo = addNukes(nukes, { guardPositions: [], nukes: [] }, calculateInfo)
+    return new DefenseNukeProcess(Game.time, processId, roomName, defenseInfo, calculateInfo)
   }
 
   public processShortDescription(): string {
@@ -133,7 +145,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
     }
 
     const nukes = room.find(FIND_NUKES)
-    this.defenseInfo = addNukes(nukes, { guardPositions: [], nukes: [] })
+    this.defenseInfo = addNukes(nukes, { guardPositions: [], nukes: [] }, this.calculateInfo)
 
     return this.processShortDescription()
   }
@@ -163,6 +175,23 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       return
     }
 
+    if ((Game.time % 977) === 0) {
+      if (this.ramparts == null) {
+        this.ramparts = this.calculateRampartsToRepair()
+      }
+      if (this.ramparts.rampartsToRepair.length > 0 && roomResource.getResourceAmount(RESOURCE_ENERGY) < 100000) {
+        const collectAmount = 50000
+        const result = ResourceManager.collect(RESOURCE_ENERGY, this.roomName, collectAmount)
+        switch (result.resultType) {
+        case "succeeded":
+          break
+        case "failed":
+          processLog(this, `collecting energy failed (${result.reason.sentAmount}/${collectAmount}), ${result.reason.errorMessage}`)
+          break
+        }
+      }
+    }
+
     const shouldSpawn = ((): boolean => {
       const creepMaxCount = 3
       const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
@@ -175,7 +204,9 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
         return false
       }
 
-      this.ramparts = this.calculateRampartsToRepair()
+      if (this.ramparts == null) {
+        this.ramparts = this.calculateRampartsToRepair()
+      }
       if (this.ramparts.rampartsToRepair.length <= 0) {
         return false
       }
@@ -251,7 +282,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       })
     })
 
-    targetRamparts.sort((lhs, rhs) => rhs.hitsToRepair - lhs.hitsToRepair)
+    targetRamparts.sort((lhs, rhs) => lhs.hitsToRepair - rhs.hitsToRepair)
 
     const all = targetRamparts.map(info => info.rampart)
     const rampartsToRepair = targetRamparts.filter(info => info.hitsToRepair > 0).map(info => info.rampart)
@@ -283,7 +314,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 }
 
-const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo): DefenseInfo => {
+const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo, calculateInfo: CalculateInfo): DefenseInfo => {
   defenseInfo.nukes.push(...nukes.map(nuke => {
     const nukeInfo: NukeInfo = {
       nukeId: nuke.id,
@@ -299,6 +330,7 @@ const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo): DefenseInfo => {
     STRUCTURE_EXTENSION,
     STRUCTURE_EXTRACTOR,
     STRUCTURE_CONTROLLER,
+    STRUCTURE_LAB,
   ]
   const wallMinimumHits = 2000000
 
@@ -320,6 +352,10 @@ const addNukes = (nukes: Nuke[], defenseInfo: DefenseInfo): DefenseInfo => {
           }
 
           if (ownedStructures.length <= 1 && excludedOwnedStructureTypes.includes(anyStructure.structureType) === true) {
+            continue
+          }
+
+          if (ownedStructures.some(structure => calculateInfo.excludedStructureIds.includes(structure.id) === true) === true) {
             continue
           }
 
