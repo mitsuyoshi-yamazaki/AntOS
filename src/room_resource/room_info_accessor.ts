@@ -170,6 +170,9 @@ class Config {
     }
     return [...this.config.noRepairWallIds]
   }
+  public removeNoRepairWallIds(): void {
+    this.config.noRepairWallIds = []
+  }
 
   public addResearchCompounds(compound: MineralCompoundConstant, amount: number): void {
     if (this.config?.researchCompounds == null) {

@@ -97,9 +97,28 @@ function noRepairWalls(roomResource: OwnedRoomResource, args: string[]): string 
     showNoRepairWalls(roomResource)
     return `no repair wall IDs:\n${roomResource.roomInfoAccessor.config.getNoRepairWallIds().join("\n")}`
 
+  case "refresh":
+    return refreshNoRepairWalls(roomResource)
+
   default:
-    throw `invalid command ${command}, available commands: add, show`
+    throw `invalid command ${command}, available commands: add, show, refresh`
   }
+}
+
+const refreshNoRepairWalls = (roomResource: OwnedRoomResource): string => {
+  const ids = [...roomResource.roomInfoAccessor.config.getNoRepairWallIds()]
+  roomResource.roomInfoAccessor.config.removeNoRepairWallIds()
+
+  const existingIds = ids.filter(id => {
+    const wall = Game.getObjectById(id)
+    if (wall == null) {
+      return false
+    }
+    return true
+  })
+  roomResource.roomInfoAccessor.config.addNoRepairWallIds(existingIds)
+
+  return `removed ${ids.length - existingIds.length} ids`
 }
 
 /** @throws */
