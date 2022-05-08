@@ -69,8 +69,8 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
-// import { } from "process/onetime/intershard_resource_transfer_process"
-// import { } from "process/onetime/intershard_resource_receiver_process"
+import { } from "process/onetime/intershard_resource_transfer_process"
+import { } from "process/onetime/intershard_resource_receiver_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -888,7 +888,12 @@ ProcessLauncher.register("ContinuouslyProduceCommodityProcess", args => {
       throw `no factory in ${roomLink(roomName)}`
     }
 
-    return Result.Succeeded((processId) => ContinuouslyProduceCommodityProcess.create(processId, roomName, factory))
+    const products = args.list("products", "commodity").parseOptional()
+    const options = {
+      products: products ?? undefined,
+    }
+
+    return Result.Succeeded((processId) => ContinuouslyProduceCommodityProcess.create(processId, roomName, factory, options))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -1158,11 +1163,13 @@ ProcessLauncher.register("DefenseNukeProcess", args => {
     const roomResource = args.ownedRoomResource("room_name").parse()
     const roomName = roomResource.room.name
     const nukes = roomResource.room.find(FIND_NUKES)
+    const excludedStructureIds = (args.list("excluded_structure_ids", "object_id").parseOptional() ?? []) as Id<AnyOwnedStructure>[]
 
     return Result.Succeeded((processId) => DefenseNukeProcess.create(
       processId,
       roomName,
       nukes,
+      excludedStructureIds,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
