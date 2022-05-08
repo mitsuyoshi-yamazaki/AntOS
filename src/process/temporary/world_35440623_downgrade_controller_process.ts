@@ -13,13 +13,13 @@ import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { Timestamp } from "utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -85,7 +85,23 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
 
   public processShortDescription(): string {
     const ticksToSpawn = Math.max(attackControllerInterval - (Game.time - this.lastSpawnTime), 0)
-    return `${ticksToSpawn} to go, ${this.targetRoomNames.map(roomName => roomLink(roomName)).join(",")}`
+    const descriptions: string[] = [
+      `${ticksToSpawn} to go`,
+      this.targetRoomNames.map(roomName => roomLink(roomName)).join(","),
+    ]
+
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier, () => true)
+    if (creeps.length > 0) {
+      descriptions.push(`creep in ${creeps.map(creep => roomLink(creep.room.name)).join(",")}`)
+    } else {
+      descriptions.push("no creeps")
+    }
+
+    if (this.spawnStopReasons.length > 0) {
+      descriptions.push(`stopped by: ${this.spawnStopReasons.join(",")}`)
+    }
+
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -121,7 +137,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   public runOnTick(): void {
     const resources = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (resources == null) {
-      PrimitiveLogger.fatal(`${roomLink(this.parentRoomName)} lost`)
+      OperatingSystem.os.suspendProcess(this.processId)
       return
     }
 
