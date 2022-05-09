@@ -57,6 +57,12 @@ export class WithdrawApiWrapper implements ApiWrapper<Creep, WithdrawApiWrapperR
       if (this.target instanceof Resource) {
         return creep.pickup(this.target)
       }
+      if (this.target instanceof StructureLab) {
+        if (this.target.mineralType == null) {
+          return creep.withdraw(this.target, RESOURCE_ENERGY)
+        }
+        return creep.withdraw(this.target, this.target.mineralType)
+      }
       const resourceType = Object.keys(this.target.store)[0]
       if (resourceType == null || !isResourceConstant(resourceType)) {
         return ERR_NOT_ENOUGH_RESOURCES
