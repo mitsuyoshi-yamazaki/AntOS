@@ -18,6 +18,7 @@ import { ListArguments } from "os/infrastructure/console_command/utility/list_ar
 import { RoomResources } from "room_resource/room_resources"
 import { Timestamp } from "utility/timestamp"
 import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { Position } from "prototype/room_position"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -137,6 +138,7 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   finishCondition: FinishCondition
   safemodeCooldown: number
   stopSpawningReasons: string[]
+  waitingPosition: Position | null
 }
 
 export class GuardRemoteRoomProcess implements Process, Procedural, MessageObserver {
@@ -164,6 +166,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     private safemodeCooldown: number,
     private finishCondition: FinishCondition,
     private stopSpawningReasons: string[],
+    private waitingPosition: Position | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -189,6 +192,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       safemodeCooldown: this.safemodeCooldown,
       finishCondition: this.finishCondition,
       stopSpawningReasons: this.stopSpawningReasons,
+      waitingPosition: this.waitingPosition,
     }
   }
 
@@ -207,6 +211,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       state.safemodeCooldown,
       state.finishCondition,
       state.stopSpawningReasons,
+      state.waitingPosition,
     )
   }
 
@@ -228,6 +233,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       500,
       defaultFinishCondition,
       [],
+      null,
     )
   }
 
@@ -246,7 +252,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "add_ignore_user", "set_creep_count", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "resume", "stop"]
+    const commandList = ["help", "add_ignore_user", "set_creep_count", "change_creep_type", "change_finish_condition", "change_safemode_cooldown", "waiting_position", "resume", "stop"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -264,6 +270,8 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         return this.changeFinishCondition(components)
       case "change_safemode_cooldown":
         return this.changeSafemodeCooldown(components)
+      case "waiting_position":
+        return this.setWaitingPosition(components)
       case "resume":
         this.stopSpawningReasons = []
         return "ok"
@@ -275,6 +283,25 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private setWaitingPosition(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const command = listArguments.string(0, "command").parse()
+
+    switch (command) {
+    case "set":
+      this.waitingPosition = listArguments.localPosition(1, "position").parse()
+      return "ok"
+
+    case "remove":
+      this.waitingPosition = null
+      return "ok"
+
+    default:
+      throw `invalid command ${command}, available commands: set, remove`
     }
   }
 
@@ -619,6 +646,21 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         creep.rangedHeal(damagedCreep)
       }
       creep.moveTo(damagedCreep)
+      this.talk(creep)
+      return
+    }
+
+    if (this.waitingPosition != null) {
+      if (creep.pos.isEqualTo(this.waitingPosition.x, this.waitingPosition.y) === true) {
+        if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
+          creep.move(randomDirection(this.launchTime))
+        }
+        this.talk(creep)
+        return
+      }
+      const moveToOptions = defaultMoveToOptions()
+      moveToOptions.range = 0
+      creep.moveTo(this.waitingPosition.x, this.waitingPosition.y, moveToOptions)
       this.talk(creep)
       return
     }
