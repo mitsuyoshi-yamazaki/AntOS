@@ -1,4 +1,3 @@
-
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
@@ -28,11 +27,11 @@ import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 
-ProcessDecoder.register("Season1521073SendResourceProcess", state => {
-  return Season1521073SendResourceProcess.decode(state as Season1521073SendResourceProcessState)
+ProcessDecoder.register("HaulEnergyProcess", state => {
+  return HaulEnergyProcess.decode(state as HaulEnergyProcessState)
 })
 
-export interface Season1521073SendResourceProcessState extends ProcessState {
+export interface HaulEnergyProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
@@ -46,7 +45,7 @@ export interface Season1521073SendResourceProcessState extends ProcessState {
 }
 
 /** Haulerによる輸送 */
-export class Season1521073SendResourceProcess implements Process, Procedural, MessageObserver {
+export class HaulEnergyProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -68,9 +67,9 @@ export class Season1521073SendResourceProcess implements Process, Procedural, Me
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season1521073SendResourceProcessState {
+  public encode(): HaulEnergyProcessState {
     return {
-      t: "Season1521073SendResourceProcess",
+      t: "HaulEnergyProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -82,17 +81,24 @@ export class Season1521073SendResourceProcess implements Process, Procedural, Me
     }
   }
 
-  public static decode(state: Season1521073SendResourceProcessState): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(state.l, state.i, state.p, state.targetRoomName, state.w, state.finishWorking, state.maxNumberOfCreeps, state.stopSpawning ?? false)
+  public static decode(state: HaulEnergyProcessState): HaulEnergyProcess {
+    return new HaulEnergyProcess(state.l, state.i, state.p, state.targetRoomName, state.w, state.finishWorking, state.maxNumberOfCreeps, state.stopSpawning ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], finishWorking: number, maxNumberOfCreeps: number): Season1521073SendResourceProcess {
-    return new Season1521073SendResourceProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, finishWorking, maxNumberOfCreeps, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], finishWorking: number, maxNumberOfCreeps: number): HaulEnergyProcess {
+    return new HaulEnergyProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, finishWorking, maxNumberOfCreeps, false)
   }
 
   public processShortDescription(): string {
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    return `${creepCount}cr, ${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`
+    const descriptions: string[] = [
+      `${creepCount}cr`,
+      `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`,
+    ]
+    if (this.stopSpawning === true) {
+      descriptions.push("spawn stopped")
+    }
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {

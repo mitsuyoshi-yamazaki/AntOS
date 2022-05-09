@@ -15,7 +15,6 @@ import { Season1200082SendMineralProcess } from "process/temporary/season_120008
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
-import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
 import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
@@ -69,8 +68,9 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
-import { } from "process/onetime/intershard_resource_transfer_process"
+import { IntershardResourceTransferProcess } from "process/onetime/intershard_resource_transfer_process"
 import { } from "process/onetime/intershard_resource_receiver_process"
+import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1137,7 +1137,7 @@ ProcessLauncher.register("SendEnergyToAllyProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season1521073SendResourceProcess", args => {
+ProcessLauncher.register("HaulEnergyProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -1145,7 +1145,7 @@ ProcessLauncher.register("Season1521073SendResourceProcess", args => {
     const finishWorking = args.int("finish_working").parse({ min: 0, max: GameConstants.creep.life.lifeTime })
     const numberOfCreeps = args.int("creep_count").parse({ min: 1 })
 
-    return Result.Succeeded((processId) => Season1521073SendResourceProcess.create(
+    return Result.Succeeded((processId) => HaulEnergyProcess.create(
       processId,
       roomName,
       targetRoomName,
@@ -1207,6 +1207,25 @@ ProcessLauncher.register("StealResourceProcess", args => {
       numberOfCreeps,
       finishWorking,
       options,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("IntershardResourceTransferProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const portalRoomName = args.roomName("portal_room_name").parse()
+    const targetShardName = args.string("target_shard_name").parse()
+    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+
+    return Result.Succeeded((processId) => IntershardResourceTransferProcess.create(
+      processId,
+      roomName,
+      portalRoomName,
+      targetShardName,
+      finishWorking,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
