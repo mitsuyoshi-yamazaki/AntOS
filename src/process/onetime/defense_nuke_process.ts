@@ -30,6 +30,11 @@ ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)
 })
 
+const StopSpawningReason = {
+  manually: "manually",
+  noNukes: "no nukes",
+}
+
 type NukeInfo = {
   readonly nukeId: Id<Nuke>
   readonly landAt: Timestamp
@@ -54,6 +59,7 @@ interface DefenseNukeProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly defenseInfo: DefenseInfo
   readonly calculateInfo: CalculateInfo
+  readonly stopSpawningReasons: string[]
 }
 
 export class DefenseNukeProcess implements Process, Procedural, MessageObserver {
@@ -72,6 +78,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
     private readonly roomName: RoomName,
     private defenseInfo: DefenseInfo,
     private readonly calculateInfo: CalculateInfo,
+    private stopSpawningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
     this.codename = UniqueId.generateCodename(this.identifier, this.launchTime)
@@ -85,11 +92,19 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       roomName: this.roomName,
       defenseInfo: this.defenseInfo,
       calculateInfo: this.calculateInfo,
+      stopSpawningReasons: this.stopSpawningReasons,
     }
   }
 
   public static decode(state: DefenseNukeProcessState): DefenseNukeProcess {
-    return new DefenseNukeProcess(state.l, state.i, state.roomName, state.defenseInfo, state.calculateInfo)
+    return new DefenseNukeProcess(
+      state.l,
+      state.i,
+      state.roomName,
+      state.defenseInfo,
+      state.calculateInfo,
+      state.stopSpawningReasons ?? [], // FixMe: Migration
+    )
   }
 
   public static create(processId: ProcessId, roomName: RoomName, nukes: Nuke[], excludedStructureIds: Id<AnyOwnedStructure>[]): DefenseNukeProcess {
@@ -97,7 +112,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       excludedStructureIds,
     }
     const defenseInfo = addNukes(nukes, { guardPositions: [], nukes: [] }, calculateInfo)
-    return new DefenseNukeProcess(Game.time, processId, roomName, defenseInfo, calculateInfo)
+    return new DefenseNukeProcess(Game.time, processId, roomName, defenseInfo, calculateInfo, [])
   }
 
   public processShortDescription(): string {
@@ -111,7 +126,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "show_visual", "recalculate", "excluded"]
+    const commandList = ["help", "status", "stop", "resume", "show_visual", "recalculate", "excluded"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -122,6 +137,16 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
 
       case "status":
         return this.processShortDescription()
+
+      case "stop":
+        this.addStopSpawningReason(StopSpawningReason.manually)
+        return "ok"
+
+      case "resume": {
+        const oldValues = this.stopSpawningReasons
+        this.stopSpawningReasons = []
+        return `resumed (from: ${oldValues.join(", ")})`
+      }
 
       case "show_visual":
         this.showDefensePositions()
@@ -215,6 +240,16 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       return
     }
 
+    if (this.defenseInfo.nukes.some(nukeInfo => Game.getObjectById(nukeInfo.nukeId) == null) === true) {
+      this.defenseInfo = addNukes(roomResource.nukes, { guardPositions: [], nukes: [] }, this.calculateInfo)
+      PrimitiveLogger.notice(`${coloredText("[Warning]", "warn")} Nuke landed in ${roomLink(this.roomName)}, recalculate defense info`)
+
+      if (roomResource.nukes.length <= 0) {
+        this.addStopSpawningReason(StopSpawningReason.noNukes)
+        processLog(this, `No more nukes in ${roomLink(this.roomName)}`)
+      }
+    }
+
     if ((Game.time % 977) === 0) {
       if (this.ramparts == null) {
         this.ramparts = this.calculateRampartsToRepair()
@@ -233,6 +268,10 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
     }
 
     const shouldSpawn = ((): boolean => {
+      if (this.stopSpawningReasons.length > 0) {
+        return false
+      }
+
       const creepMaxCount = 3
       const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
 
@@ -351,6 +390,13 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       taskIdentifier: this.taskIdentifier,
       parentRoomName: null,
     })
+  }
+
+  private addStopSpawningReason(reason: string): void {
+    if (this.stopSpawningReasons.includes(reason) === true) {
+      return
+    }
+    this.stopSpawningReasons.push(reason)
   }
 }
 
