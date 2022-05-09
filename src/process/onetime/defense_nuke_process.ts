@@ -24,6 +24,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { ResourceManager } from "utility/resource_manager"
 import { processLog } from "os/infrastructure/logger"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)
@@ -110,7 +111,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "show_visual", "recalculate"]
+    const commandList = ["help", "status", "show_visual", "recalculate", "excluded"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -129,11 +130,50 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       case "recalculate":
         return this.recalculate()
 
+      case "excluded":
+        return this.excluded(components)
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private excluded(args: string[]): string {
+    const listArguments = new ListArguments(args)
+    const command = listArguments.string(0, "command").parse()
+
+    switch (command) {
+    case "add": {
+      const obj = listArguments.visibleGameObject(1, "structure ID").parse({ inRoomName: this.roomName }) as {id?: Id<AnyOwnedStructure>}
+      if (obj.id == null) {
+        throw `${obj} is not a structure`
+      }
+      if (this.calculateInfo.excludedStructureIds.includes(obj.id) === true) {
+        throw `${obj} is already excluded`
+      }
+      this.calculateInfo.excludedStructureIds.push(obj.id)
+      return "ok"
+    }
+
+    case "remove": {
+      const obj = listArguments.visibleGameObject(1, "structure ID").parse({ inRoomName: this.roomName }) as { id?: Id<AnyOwnedStructure> }
+      if (obj.id == null) {
+        throw `${obj} is not a structure`
+      }
+      const index = this.calculateInfo.excludedStructureIds.indexOf(obj.id)
+      if (index < 0) {
+        throw `${obj} is not excluded`
+      }
+      this.calculateInfo.excludedStructureIds.splice(index, 1)
+      return "ok"
+    }
+
+    default:
+      throw `invalid command ${command}, available commands: add, remove`
     }
   }
 
