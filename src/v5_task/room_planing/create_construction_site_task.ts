@@ -33,6 +33,23 @@ const structurePriority: StructureConstant[] = [
   STRUCTURE_LAB,
   STRUCTURE_NUKER,
 ]
+const structurePriorityForRcl8: StructureConstant[] = [
+  STRUCTURE_TOWER,
+  STRUCTURE_SPAWN,
+  STRUCTURE_LINK,
+  STRUCTURE_ROAD,
+  STRUCTURE_STORAGE,
+  STRUCTURE_TERMINAL,
+  STRUCTURE_EXTENSION,
+  STRUCTURE_CONTAINER,
+  STRUCTURE_LAB,
+  STRUCTURE_NUKER,
+]
+
+const wallTypes: StructureConstant[] = [
+  STRUCTURE_RAMPART,
+  STRUCTURE_WALL,
+]
 
 export interface CreateConstructionSiteTaskState extends TaskState {
   /** room name */
@@ -70,18 +87,8 @@ export class CreateConstructionSiteTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const wallTypes: StructureConstant[] = [
-      STRUCTURE_RAMPART,
-      STRUCTURE_WALL,
-    ]
-
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      return TaskStatus.InProgress
-    }
-    const concurrentConstructionSites = roomResource.roomInfoAccessor.config.concurrentConstructionSites
-
-    if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length >= concurrentConstructionSites) {
       return TaskStatus.InProgress
     }
 
@@ -89,6 +96,19 @@ export class CreateConstructionSiteTask extends Task {
     if (interval == null || (Game.time % interval) !== 0) {
       return TaskStatus.InProgress
     }
+
+    if (roomResource.nukes.length > 0) {
+      if (roomResource.nukes.some(nuke => nuke.timeToLand < 1000)) {
+        return TaskStatus.InProgress
+      }
+    }
+
+    const concurrentConstructionSites = roomResource.roomInfoAccessor.config.concurrentConstructionSites
+
+    if (objects.constructionSites.filter(site => wallTypes.includes(site.structureType) !== true).length >= concurrentConstructionSites) {
+      return TaskStatus.InProgress
+    }
+
     const centerPosition = ((): RoomPosition => {
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources != null && resources.roomInfo.roomPlan != null) {
@@ -133,6 +153,8 @@ export class CreateConstructionSiteTask extends Task {
     const shouldPlaceContainer = room.controller.level >= 4
     const shouldPlaceLab = availableEnergy > 80000
 
+    const priority = roomResource.controller.level >= 8 ? structurePriorityForRcl8 : structurePriority
+
     const sortedFlags = flags.sort((lhs, rhs) => {
       const lStructureType = constructionSiteFlagColorMap.get(lhs.color)
       if (lStructureType == null) {
@@ -142,11 +164,11 @@ export class CreateConstructionSiteTask extends Task {
       if (rStructureType == null) {
         return -1
       }
-      const lPriority = structurePriority.indexOf(lStructureType)
+      const lPriority = priority.indexOf(lStructureType)
       if (lPriority < 0) {
         return 1
       }
-      const rPriority = structurePriority.indexOf(rStructureType)
+      const rPriority = priority.indexOf(rStructureType)
       if (rPriority < 0) {
         return -1
       }
