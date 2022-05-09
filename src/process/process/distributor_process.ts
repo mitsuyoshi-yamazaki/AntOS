@@ -128,7 +128,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     }
     const distributorRoomPosition = decodeRoomPosition(distributorPosition, this.parentRoomName)
 
-    if ((Game.time % 263) === 13) {
+    if ((Game.time % 29) === 13) {
       this.checkLink(resources)
     }
 
