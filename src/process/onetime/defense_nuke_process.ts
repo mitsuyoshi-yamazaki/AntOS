@@ -8,7 +8,7 @@ import { Timestamp } from "utility/timestamp"
 import { Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { coloredText, roomLink } from "utility/log"
+import { coloredText, roomLink, shortenedNumber } from "utility/log"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { World } from "world_info/world_info"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
@@ -122,11 +122,15 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       `${this.defenseInfo.guardPositions.length} positions to defense`,
     ]
 
+    if (this.stopSpawningReasons.length > 0) {
+      descriptions.push(`spawn stopped by: ${this.stopSpawningReasons.join(",")}`)
+    }
+
     return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "stop", "resume", "show_visual", "recalculate", "excluded"]
+    const commandList = ["help", "status", "stop", "resume", "show_visual", "recalculate", "excluded", "add_guard_positions"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -158,12 +162,68 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       case "excluded":
         return this.excluded(components)
 
+      case "add_guard_positions":
+        return this.addGuardPositions(components)
+
       default:
         throw `Invalid command ${commandList}. see "help"`
       }
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  /** @throws */
+  private addGuardPositions(args: string[]): string {
+    // recalculateでリセットされる
+    const listArguments = new ListArguments(args)
+    const hits = listArguments.int(0, "hits").parse({ min: 1, max: 300000000 })
+    const rampartIds = listArguments.list(1, "rampart IDs", "string").parse() as Id<StructureRampart>[]
+
+    rampartIds.forEach(rampartId => {
+      const stored = this.defenseInfo.guardPositions.find(position => position.rampartId === rampartId)
+      if (stored != null) {
+        if (stored.minimumHits < hits) {
+          stored.minimumHits = hits
+        }
+        return
+      }
+
+      const rampart = Game.getObjectById(rampartId)
+      if (rampart == null) {
+        throw `no rampart with ID ${rampartId}`
+      }
+      if (!(rampart instanceof StructureRampart)) {
+        throw `${rampart} is not a rampart`
+      }
+      this.defenseInfo.guardPositions.push({
+        position: { x: rampart.pos.x, y: rampart.pos.y },
+        rampartId,
+        minimumHits: hits,
+      })
+    })
+
+    const totalHits = this.defenseInfo.guardPositions.reduce((result, position) => {
+      if (position.rampartId == null) {
+        return result + position.minimumHits
+      }
+      const rampart = Game.getObjectById(position.rampartId)
+      if (rampart == null) {
+        return result + position.minimumHits
+      }
+      return result + Math.max(position.minimumHits - rampart.hits, 0)
+    }, 0)
+
+    const results: string[] = [
+      `${rampartIds.length} ramparts added to guard positions`,
+      `(${this.defenseInfo.guardPositions.length} total, total hits: ${shortenedNumber(totalHits)})`,
+    ]
+
+    if (this.stopSpawningReasons.length > 0) {
+      results.push(`${coloredText("make sure resume spawning!", "warn")}`)
+    }
+
+    return results.join(" ")
   }
 
   /** @throws */
@@ -250,7 +310,13 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       }
     }
 
-    if ((Game.time % 977) === 0) {
+    if (this.defenseInfo.nukes.length <= 0 && roomResource.nukes.length > 0) {
+      this.removeStopSpawningReason(StopSpawningReason.noNukes)
+      this.defenseInfo = addNukes(roomResource.nukes, { guardPositions: [], nukes: [] }, this.calculateInfo)
+      PrimitiveLogger.fatal(`${coloredText("[Warning]", "error")} Nuke launch detected in ${roomLink(this.roomName)}, recalculate defense info`)
+    }
+
+    if ((Game.time % 503) === 0 && this.stopSpawningReasons.length <= 0) {
       if (this.ramparts == null) {
         this.ramparts = this.calculateRampartsToRepair()
       }
@@ -397,6 +463,14 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       return
     }
     this.stopSpawningReasons.push(reason)
+  }
+
+  private removeStopSpawningReason(reason: string): void {
+    const index = this.stopSpawningReasons.indexOf(reason)
+    if (index < 0) {
+      return
+    }
+    this.stopSpawningReasons.splice(index, 1)
   }
 }
 
