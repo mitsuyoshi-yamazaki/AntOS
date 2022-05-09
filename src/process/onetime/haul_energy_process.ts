@@ -160,7 +160,7 @@ export class HaulEnergyProcess implements Process, Procedural, MessageObserver {
       return this.maxNumberOfCreeps
     })()
     if (creeps.length < numberOfCreeps && this.stopSpawning !== true) {
-      const body = CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 20)
+      const body = CreepBody.create([], [CARRY, MOVE], objects.controller.room.energyCapacityAvailable, 25)
       body.sort((lhs, rhs) => lhs === rhs ? 0 : lhs === MOVE ? 1 : -1)
       this.requestCreep(body)
     }
