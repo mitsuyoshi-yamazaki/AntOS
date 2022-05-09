@@ -47,6 +47,8 @@ export class OwnedRoomResource extends NormalRoomResource {
   public readonly walls: StructureWall[]
   public readonly ramparts: StructureRampart[]
 
+  public readonly nukes: Nuke[]
+
   public roomInfoAccessor: OwnedRoomInfoAccessor
 
   public constructor(
@@ -111,6 +113,7 @@ export class OwnedRoomResource extends NormalRoomResource {
 
     this.walls = []
     this.ramparts = []
+    this.nukes = this.room.find(FIND_NUKES)
 
     const excludedDamagedStructureTypes: StructureConstant[] = [
       STRUCTURE_WALL,

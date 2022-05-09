@@ -1,3 +1,4 @@
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
@@ -187,10 +188,18 @@ class Config {
     }
   }
   public researchingCompounds(): MineralCompoundConstant[] {
-    if (this.config?.researchCompounds == null) {
+    if (this.config.researchCompounds == null) {
       return []
     }
     return Array.from(Object.keys(this.config.researchCompounds)) as MineralCompoundConstant[]
+  }
+
+  /// see: OwnedRoomInfoAccessor.evacuateDestination()
+  public evacuationDestinations(): RoomName[] {
+    if (this.config.evacuationDestinations == null) {
+      return []
+    }
+    return [...this.config.evacuationDestinations]
   }
 }
 
@@ -601,6 +610,20 @@ export class OwnedRoomInfoAccessor {
         }
         return true
       })
+  }
+
+  public evacuateDestination(): RoomName {
+    const configuredDestination = this.config.evacuationDestinations()[0]
+    if (configuredDestination != null) {
+      return configuredDestination
+    }
+    const preSetNeighbour = this.roomInfo.neighbourRoomNames[0]
+    if (preSetNeighbour != null) {
+      return preSetNeighbour
+    }
+    PrimitiveLogger.programError(`OwnedRoomInfoAccessor ${roomLink(this.room.name)} doesn't have config.evacuationDestinations or neighbourRoomNames`)
+
+    return this.room.name
   }
 }
 
