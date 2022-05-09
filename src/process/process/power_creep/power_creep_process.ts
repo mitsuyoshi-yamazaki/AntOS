@@ -58,6 +58,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
 
   private operateSpawnTargetId: Id<StructureSpawn> | null = null
   private operateFactoryTargetId: Id<StructureFactory> | null = null
+  private operateExtensionTargetStoreId: Id<StructureStorage | StructureTerminal> | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -92,6 +93,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     const descriptions: string[] = [
       roomLink(this.parentRoomName),
       this.powerCreepName,
+      this.runningState,
     ]
     const powerCreep = Game.powerCreeps[this.powerCreepName]
     if (powerCreep == null) {
@@ -205,6 +207,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       PWR_GENERATE_OPS,
       PWR_REGEN_SOURCE,
       PWR_OPERATE_SPAWN,
+      PWR_OPERATE_EXTENSION,
       PWR_OPERATE_FACTORY,
     ]
     const { executed } = this.operatePowers(powerCreep, powerOperationPriority, roomResource)
@@ -249,7 +252,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     if (roomResource.nukes.length <= 0) {
       return false
     }
-    if (roomResource.nukes.every(nuke => nuke.timeToLand > 40) === true) {
+    if (roomResource.nukes.every(nuke => nuke.timeToLand > 50) === true) {
       return false
     }
     return true
@@ -302,7 +305,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   private operatePowers(powerCreep: DeployedPowerCreep, powers: PowerConstant[], roomResource: OwnedRoomResource): {executed: boolean} {
     for (const power of powers) {
       const operationResult = this.operate(powerCreep, power, roomResource)
-      if (operationResult.blocksFurtherOperations) {
+      if (operationResult.blocksFurtherOperations === true) {
         return {
           executed: true,
         }
@@ -343,10 +346,13 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     case PWR_REGEN_SOURCE:
       return this.regenSource(powerCreep, roomResource)
 
+    case PWR_OPERATE_EXTENSION:
+      return this.operateExtension(powerCreep, roomResource)
+
+    // Power追加時にはoperatePowers()の第二引数にも追加する必要がある
     case PWR_OPERATE_TOWER:
     case PWR_OPERATE_STORAGE:
     case PWR_OPERATE_LAB:
-    case PWR_OPERATE_EXTENSION:
     case PWR_OPERATE_OBSERVER:
     case PWR_OPERATE_TERMINAL:
     case PWR_DISRUPT_SPAWN:
@@ -366,6 +372,62 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   }
 
   // ---- Operations ---- //
+  private operateExtension(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): OperationResult {
+    const threshold = 0.6
+    const energyCapacityAvailable = roomResource.room.energyCapacityAvailable
+    const requiredEnergy = energyCapacityAvailable - roomResource.room.energyAvailable
+    const energyNeeded = requiredEnergy > (energyCapacityAvailable * threshold)
+    if (energyNeeded !== true) {
+      this.operateExtensionTargetStoreId = null
+      return {
+        blocksFurtherOperations: false,
+      }
+    }
+
+    const targetStore = ((): StructureStorage | StructureTerminal | null => {
+      if (this.operateExtensionTargetStoreId != null) {
+        const obj = Game.getObjectById(this.operateExtensionTargetStoreId)
+        if (obj != null) {
+          return obj
+        }
+      }
+
+      const requiredEnergyStore = requiredEnergy * 3
+      if ((roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > requiredEnergyStore) {
+        return roomResource.activeStructures.storage
+      }
+      if ((roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) > requiredEnergyStore) {
+        return roomResource.activeStructures.terminal
+      }
+      return null
+    })()
+
+
+    if (targetStore == null) {
+      this.operateExtensionTargetStoreId = null
+      return {
+        blocksFurtherOperations: false,
+      }
+    }
+
+    this.operateExtensionTargetStoreId = targetStore.id
+
+    const operateExtension = GameConstants.power.operateExtension
+    if (powerCreep.store.getUsedCapacity(RESOURCE_OPS) < operateExtension.opsCost) {
+      return this.withdrawOps(powerCreep, roomResource, operateExtension.opsCost)
+    }
+
+    const { executed } = this.usePower(powerCreep, PWR_OPERATE_EXTENSION, targetStore)
+    if (executed) {
+      return {
+        blocksFurtherOperations: true,
+      }
+    }
+    return {
+      blocksFurtherOperations: false,
+    }
+  }
+
   private operateGenerateOps(powerCreep: DeployedPowerCreep): OperationResult {
     switch (this.powerStatus(powerCreep, PWR_GENERATE_OPS)) { // operate()以外からも呼び出されるため
     case "unavailable":
@@ -467,7 +529,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   }
 
   // ---- Power Creep Actions ---- //
-  private usePower(powerCreep: DeployedPowerCreep, power: PowerConstant, target?: StructureSpawn | StructureFactory | Source): { executed: boolean } {
+  private usePower(powerCreep: DeployedPowerCreep, power: PowerConstant, target?: StructureSpawn | StructureFactory | StructureStorage | StructureTerminal | Source): { executed: boolean } {
     const result = powerCreep.usePower(power, target)
 
     switch (result) {
