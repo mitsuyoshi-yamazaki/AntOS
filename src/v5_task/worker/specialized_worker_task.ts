@@ -188,6 +188,10 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   private evacuateTask(creep: Creep): CreepTask | null {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      creep.drop(RESOURCE_ENERGY)
+    }
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
       return null
