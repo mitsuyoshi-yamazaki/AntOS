@@ -19,6 +19,7 @@ import { Season4ObserverManager } from "process/temporary/season4_observer_manag
 import { emptyPositionCache } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { UniqueId } from "utility/unique_id"
 import { SwcAllyRequest } from "script/swc_ally_request"
+// import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()
@@ -38,6 +39,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       UniqueId.beforeTick()
     }, "UniqueId.beforeTick()")()
+
+    // ErrorMapper.wrapLoop((): void => {
+    //   InterShardMemoryWatcher?.startOfTick()
+    // }, "InterShardMemoryWatcher.startOfTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       V5TaskTargetCache.clearCache()
@@ -142,6 +147,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       emptyPositionCache.afterTick()
     }, "emptyPositionCache.afterTick()")()
+
+    // ErrorMapper.wrapLoop((): void => {
+    //   InterShardMemoryWatcher?.endOfTick()
+    // }, "InterShardMemoryWatcher.endOfTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       UniqueId.afterTick()

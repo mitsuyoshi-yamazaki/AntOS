@@ -68,9 +68,10 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
-import { IntershardResourceTransferProcess } from "process/onetime/intershard_resource_transfer_process"
-import { } from "process/onetime/intershard_resource_receiver_process"
+import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
+// import { IntershardResourceReceiverProcess } from "process/onetime/intershard/intershard_resource_receiver_process"
 import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
+// import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1213,21 +1214,56 @@ ProcessLauncher.register("StealResourceProcess", args => {
   }
 })
 
-ProcessLauncher.register("IntershardResourceTransferProcess", args => {
-  try {
-    const roomName = args.roomName("room_name").parse({my: true})
-    const portalRoomName = args.roomName("portal_room_name").parse()
-    const targetShardName = args.string("target_shard_name").parse()
-    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+// ProcessLauncher.register("IntershardResourceTransferProcess", args => {
+//   try {
+//     if (Environment.hasMultipleShards !== true) {
+//       throw `${Environment.world} doesn't have multiple shards`
+//     }
+//     // if (InterShardMemoryWatcher == null) {
+//       throw "missing InterShardMemoryWatcher"
+//     // }
 
-    return Result.Succeeded((processId) => IntershardResourceTransferProcess.create(
-      processId,
-      roomName,
-      portalRoomName,
-      targetShardName,
-      finishWorking,
-    ))
-  } catch (error) {
-    return Result.Failed(`${error}`)
-  }
-})
+//     const roomName = args.roomName("room_name").parse({my: true})
+//     const portalRoomName = args.roomName("portal_room_name").parse()
+//     const targetShardName = args.string("target_shard_name").parse()
+//     const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+//     const creepCount = args.int("creep_count").parse({ min: 1 })
+
+//     return Result.Succeeded((processId) => IntershardResourceTransferProcess.create(
+//       processId,
+//       roomName,
+//       portalRoomName,
+//       targetShardName,
+//       finishWorking,
+//       creepCount,
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })
+
+// ProcessLauncher.register("IntershardResourceReceiverProcess", args => {
+//   try {
+//     if (Environment.hasMultipleShards !== true) {
+//       throw `${Environment.world} doesn't have multiple shards`
+//     }
+//     if (InterShardMemoryWatcher == null) {
+//       throw "missing InterShardMemoryWatcher"
+//     }
+
+//     const transferProcessIdentifier = args.string("transfer_process_identifier").parse()
+//     const roomName = args.roomName("room_name").parse({ my: true })
+//     const portalRoomName = args.roomName("portal_room_name").parse()
+//     const targetShardName = args.string("target_shard_name").parse()
+
+//     return Result.Succeeded((processId) => IntershardResourceReceiverProcess.create(
+//       processId,
+//       transferProcessIdentifier,
+//       roomName,
+//       portalRoomName,
+//       targetShardName,
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })
