@@ -399,7 +399,9 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       if (rampartToRepair != null) {
         return rampartToRepair
       }
-      return this.ramparts.all.shift() ?? null
+      const ramparts = this.ramparts.all
+      ramparts.sort((lhs, rhs) => lhs.hits - rhs.hits)
+      return ramparts.shift() ?? null
     })()
     if (target == null) {
       return null
