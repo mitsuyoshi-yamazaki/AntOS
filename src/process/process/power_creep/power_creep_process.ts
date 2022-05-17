@@ -150,6 +150,11 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     }
 
     if (!isDeployedPowerCreep(powerCreep)) {
+      if (this.runningState === "suicide") {
+        OperatingSystem.os.killProcess(this.processId)
+        return
+      }
+
       if (powerCreep.spawnCooldownTime != null) {
         return
       }
