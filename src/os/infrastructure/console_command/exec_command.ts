@@ -595,6 +595,7 @@ export class ExecCommand implements ConsoleCommand {
     })
 
     const flags = room.find(FIND_FLAGS)
+    const ownedStructures = room.find(FIND_MY_STRUCTURES)
 
     const messages: string[] = []
 
@@ -614,6 +615,9 @@ export class ExecCommand implements ConsoleCommand {
     }
     if (flags.length > 0) {
       messages.push(coloredText(`${flags.length} flags`, "info"))
+    }
+    if (ownedStructures.length > 0) {
+      messages.push(coloredText(`${ownedStructures.length} owned structures`, "info"))
     }
 
     if (dryRun === true) {
@@ -640,6 +644,9 @@ export class ExecCommand implements ConsoleCommand {
       })
       flags.forEach(flag => {
         flag.remove()
+      })
+      ownedStructures.forEach(structure => {
+        structure.notifyWhenAttacked(false)
       })
 
       RoomResources.removeRoomInfo(room.name)

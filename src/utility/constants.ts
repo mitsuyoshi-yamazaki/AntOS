@@ -43,7 +43,8 @@ const creepActionEnergyCost: { [Action in CreepBodyEnergyConsumeActionType]: num
 export const GameConstants = {
   game: {
     cpu: {
-      bucketAmountForGeneratingPixel: 10000,
+      bucketAmountForGeneratingPixel: PIXEL_CPU_COST,
+      limit: 500,
     },
   },
   pathFinder: {

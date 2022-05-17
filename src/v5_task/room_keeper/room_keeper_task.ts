@@ -101,6 +101,7 @@ export class RoomKeeperTask extends Task {
             OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
             break
           }
+          this.turnAttackNotificationOn(objects.controller.room)
           this.removeLeftoverFlags(objects.controller.room)
           this.removeLeftoverStructures(objects.controller.room)
           break
@@ -112,6 +113,12 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private turnAttackNotificationOn(room: Room): void {
+    room.find(FIND_MY_STRUCTURES).forEach(structure => {
+      structure.notifyWhenAttacked(true)
+    })
   }
 
   private removeLeftoverFlags(room: Room): void {
