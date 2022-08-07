@@ -512,90 +512,74 @@ export class ExecCommand implements ConsoleCommand {
     }
     const dryRun = (args.get("dry_run") === "0") !== true
 
-    const room = Game.rooms[roomName]
-    if (room == null) {
-      return `no visible ${roomLink(roomName)}`
-    }
-
-    return this.unclaimRoom(room, dryRun)
+    return this.unclaimRoom(roomName, dryRun)
   }
 
-  private unclaimRoom(room: Room, dryRun: boolean): CommandExecutionResult {
+  private unclaimRoom(roomName: RoomName, dryRun: boolean): CommandExecutionResult {
     const processes: Process[] = OperatingSystem.os.listAllProcesses().flatMap(processInfo => {
       const process = processInfo.process
       if (process instanceof RoomKeeperProcess) {
-        if (process.roomName === room.name) {
+        if (process.roomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof V6RoomKeeperProcess) {
-        if (process.roomName === room.name) {
+        if (process.roomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof DistributorProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof Season2055924SendResourcesProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof BoostLabChargerProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof DefenseRoomProcess) {
-        if (process.roomName === room.name) {
+        if (process.roomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof DefenseRemoteRoomProcess) {
-        if (process.roomName === room.name) {
+        if (process.roomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof World35587255ScoutRoomProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof PowerProcessProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       if (process instanceof PowerCreepProcess) {
-        if (process.parentRoomName === room.name) {
+        if (process.parentRoomName === roomName) {
           return process
         }
         return []
       }
       return []
     })
-
-    const constructionSiteCounts = new Map<StructureConstant, number>()
-    const constructionSites = room.find(FIND_CONSTRUCTION_SITES)
-    constructionSites.forEach(constructionSite => {
-      const structureType = constructionSite.structureType
-      const count = constructionSiteCounts.get(structureType) ?? 0
-      constructionSiteCounts.set(structureType, count + 1)
-    })
-
-    const flags = room.find(FIND_FLAGS)
-    const ownedStructures = room.find(FIND_MY_STRUCTURES)
 
     const messages: string[] = []
 
@@ -606,6 +590,26 @@ export class ExecCommand implements ConsoleCommand {
     messages.push(coloredText(`${processes.length} processes to remove:`, "info"))
     messages.push(...processDescriptions)
 
+    const room = Game.rooms[roomName]
+    const flags: Flag[] = []
+    const constructionSiteCounts = new Map<StructureConstant, number>()
+    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = []
+    const ownedStructures: AnyOwnedStructure[] = []
+
+    if (room != null) {
+      constructionSites.push(...room.find(FIND_CONSTRUCTION_SITES))
+      ownedStructures.push(...room.find(FIND_MY_STRUCTURES))
+      flags.push(...room.find(FIND_FLAGS))
+    } else {
+      flags.push(...Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === roomName))
+    }
+
+    constructionSites.forEach(constructionSite => {
+      const structureType = constructionSite.structureType
+      const count = constructionSiteCounts.get(structureType) ?? 0
+      constructionSiteCounts.set(structureType, count + 1)
+    })
+
     if (constructionSiteCounts.size > 0) {
       const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
         return `- ${tab(structureType, Tab.medium)}: ${count}`
@@ -613,18 +617,20 @@ export class ExecCommand implements ConsoleCommand {
       messages.push(coloredText("Construction sites to remove:", "info"))
       messages.push(...constructionSiteDescriptions)
     }
-    if (flags.length > 0) {
-      messages.push(coloredText(`${flags.length} flags`, "info"))
-    }
+
     if (ownedStructures.length > 0) {
       messages.push(coloredText(`${ownedStructures.length} owned structures`, "info"))
+    }
+
+    if (flags.length > 0) {
+      messages.push(coloredText(`${flags.length} flags`, "info"))
     }
 
     if (dryRun === true) {
       messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
     } else {
-      if (room.controller != null && room.controller.my === true) {
-        const result = room.controller?.unclaim()
+      if (room != null && room.controller != null && room.controller.my === true) {
+        const result = room.controller.unclaim()
         switch (result) {
         case OK:
           break
@@ -649,7 +655,7 @@ export class ExecCommand implements ConsoleCommand {
         structure.notifyWhenAttacked(false)
       })
 
-      RoomResources.removeRoomInfo(room.name)
+      RoomResources.removeRoomInfo(roomName)
     }
 
     return messages.join("\n")
