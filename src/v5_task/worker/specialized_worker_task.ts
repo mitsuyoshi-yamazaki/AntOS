@@ -184,7 +184,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     if (task == null) {
       return null
     }
-    return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
+    return FleeFromAttackerTask.create(task, 4, {failOnFlee: true})
   }
 
   private evacuateTask(creep: Creep): CreepTask | null {
