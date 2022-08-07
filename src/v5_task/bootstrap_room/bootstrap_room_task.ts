@@ -42,8 +42,9 @@ export class BootstrapRoomTask extends Task {
   }
 
   public static create(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimParentRoomName: RoomName, claimWaypoints: RoomName[], requiredEnergy: number): BootstrapRoomTask {
+    const onlySpawnClaimer = claimParentRoomName !== parentRoomName
     const children: Task[] = [
-      ClaimRoomTask.create(claimParentRoomName, targetRoomName, claimWaypoints),
+      ClaimRoomTask.create(claimParentRoomName, targetRoomName, claimWaypoints, onlySpawnClaimer),
       UpgradeToRcl3Task.create(parentRoomName, targetRoomName, waypoints, requiredEnergy),
     ]
     return new BootstrapRoomTask(Game.time, children, parentRoomName, targetRoomName)
