@@ -74,6 +74,13 @@ class Config {
     return this.config.wallMaxHits ?? defaultMaxWallHits
   }
 
+  public get nonHidableRampartIds(): Id<StructureRampart>[] {
+    if (this.config.nonHidableRampartIds == null) {
+      this.config.nonHidableRampartIds = []
+    }
+    return this.config.nonHidableRampartIds
+  }
+
   private config: OwnedRoomConfig
 
   public constructor(
