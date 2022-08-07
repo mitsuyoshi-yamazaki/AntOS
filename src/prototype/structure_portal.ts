@@ -49,3 +49,14 @@ function aaaa(portal: StructurePortal): void {
 //     hoge.
 //   }
 // }
+
+function isInterShardPortal(portalDestination: StructurePortal["destination"]): portalDestination is { shard: string; room: string } {
+  return portalDestination instanceof RoomPosition;
+}
+
+const portal: StructurePortal = undefined as any;
+if (isInterShardPortal(portal.destination)) {
+  const { shard, room } = portal.destination;
+} else {
+  const destination: RoomPosition = portal.destination;
+}

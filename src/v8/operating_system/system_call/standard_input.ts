@@ -6,14 +6,13 @@ export const standardInput = (commands: StandardInputCommand[]): (message: strin
     const args = message.split(" ")
     const commandType = args.shift()
 
-    const commandList = commands.map(command => command.command)
-
     try {
       if (commandType == null) {
         throw "empty input"
       }
 
       if (commandType === "help") {
+        const commandList = commands.map(command => command.command)
         return `available commands: ${commandList.join(", ")}`
       }
 

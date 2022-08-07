@@ -13,7 +13,7 @@ import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
 import { RoomName } from "utility/room_name"
-import { KernelMemory } from "v8/operating_system/kernel"
+import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {
   interface Game {

@@ -34,6 +34,7 @@ export type ProcessSchedulerMemory = {
 export class ProcessScheduler {
   private readonly rootProcess = new RootProcess()
   private readonly processInfoByProcessId = (new Map<ProcessId, ProcessInfo>())
+  private readonly processInfoByType = (new ValuedArrayMap<ProcessType, ProcessInfo>())
   private readonly processInfoByParentProcessId = (new ValuedArrayMap<ParentProcessId, ProcessInfo>())
   private processIdIndex: number
 
@@ -56,6 +57,7 @@ export class ProcessScheduler {
         return
       }
       this.processInfoByParentProcessId.getValueFor(parentProcessId).push(processInfo)
+      this.processInfoByType.getValueFor(processInfo.process.processType).push(processInfo)
       this.processInfoByProcessId.set(processInfo.process.processId, processInfo)
     })
   }

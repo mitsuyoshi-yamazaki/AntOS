@@ -1,4 +1,4 @@
-type Command = "launch"
+type Command = "launch" | "process"
 
 export interface StandardInputCommand {
   readonly command: Command

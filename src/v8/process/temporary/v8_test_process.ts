@@ -7,6 +7,8 @@ export interface V8TestProcessState extends ProcessState {
 }
 
 export class V8TestProcess implements Process<void, void, void, void> {
+  public readonly processType = "V8TestProcess"
+
   private constructor(
     public readonly processId: ProcessId,
   ) {

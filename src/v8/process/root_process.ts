@@ -7,6 +7,7 @@ import { AnyProcess } from "./any_process"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 export class RootProcess implements LaunchMessageObserver {
+  public readonly processType = "RootProcess"
   public readonly processId: ProcessId = rootProcessId
 
   /** @throws */

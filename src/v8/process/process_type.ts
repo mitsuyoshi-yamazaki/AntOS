@@ -1,9 +1,9 @@
-import { fromEntries } from "utility"
 import { MemoryIdentifierConverter  } from "../utility/memory_identifier_converter/memory_identifier_converter"
 
 export const rootProcessId = "root"
 
 export const processTypes = [
+  "RootProcess",
   "V8TestProcess",
 ] as const
 export type ProcessType = typeof processTypes[number]
