@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-// 毎tick呼び出すこと
+// サーバーリセット時のみ呼び出し
 export function init(): void {
   PowerCreep.prototype.targetedBy = function (taskType: TaskTargetCacheTaskType): TaskRunnerInfo[] {
     return TaskTargetCache.creepTargetingTaskRunnerInfo(this.id, taskType)

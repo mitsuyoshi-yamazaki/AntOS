@@ -139,7 +139,7 @@ export function isV5CreepMemory(memory: globalThis.CreepMemory): memory is V5Cre
   return (memory as {v: ShortVersion}).v === ShortVersion.v5
 }
 
-// 毎tick呼び出すこと
+// サーバーリセット時のみ呼び出し
 export function init(): void {
   Object.defineProperty(Creep.prototype, "v5task", {
     get(): V5CreepTask | null {

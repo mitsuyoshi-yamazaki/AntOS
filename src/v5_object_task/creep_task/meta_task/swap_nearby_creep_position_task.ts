@@ -37,7 +37,7 @@ export class SwapNearbyCreepPositionTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
-    const nearbyCreep = creep.pos.findInRange(FIND_MY_CREEPS, 1).find(c => c.name !== creep.name)
+    const nearbyCreep = creep.pos.findInRange(FIND_MY_CREEPS, 1).find(c => c.name !== creep.name && c.getActiveBodyparts(MOVE) > 1)
     if (nearbyCreep == null) {
       return TaskProgressType.Finished
     }
@@ -52,7 +52,16 @@ export class SwapNearbyCreepPositionTask implements CreepTask {
       return TaskProgressType.FinishedAndRan
     }
 
-    creep.move(creep.pos.getDirectionTo(nearbyCreep.pos))
+    this.fleeFrom(creep.pos, creep, 1)
+    // creep.move(creep.pos.getDirectionTo(nearbyCreep.pos))
     return TaskProgressType.FinishedAndRan
+  }
+
+  private fleeFrom(position: RoomPosition, creep: Creep, range: number): void {
+    const path = PathFinder.search(creep.pos, { pos: position, range }, {
+      flee: true,
+      maxRooms: 1,
+    })
+    creep.moveByPath(path.path)
   }
 }

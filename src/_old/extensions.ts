@@ -11,9 +11,9 @@ import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
-import { StandardInput as v8StandardInput } from "v8/operating_system/system_call/standard_input"
 import { UniqueIdMemory } from "utility/unique_id"
 import { RoomName } from "utility/room_name"
+import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {
   interface Game {
@@ -31,6 +31,7 @@ declare global {
 
   interface Memory {
     os: OSMemory
+    v8: KernelMemory
     versions: string[]
     cpu_usages: number[]
     cpu: {
@@ -55,8 +56,6 @@ declare global {
 export function tick(): void {
   // Gameオブジェクトは毎tick更新されるため
   Game.io = standardInput
-
-  Game.v8 = v8StandardInput.input
 
   Game.user = {
     name: 'Mitsuyoshi',

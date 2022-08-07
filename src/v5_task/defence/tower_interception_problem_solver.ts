@@ -78,7 +78,16 @@ export class TowerInterceptionProblemSolver extends ProblemSolver {
     })()
 
     this.targetId = targetInfo.target.id
-    World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(targetInfo.target, TowerPoolTaskPriority.Urgent))
+    const needsAllTowers = ((): boolean => {
+      if (!(targetInfo.target instanceof Creep)) {
+        return true
+      }
+      if (targetInfo.target.body.length <= 1) {
+        return false
+      }
+      return true
+    })()
+    World.resourcePools.addTowerTask(this.roomName, TowerTask.Attack(targetInfo.target, TowerPoolTaskPriority.Urgent, {needsAllTowers}))
 
     const text = `${targetInfo.maxTicksToKill}|${targetInfo.minimumTicksToEscape}`
     objects.controller.room.visual.text(text, targetInfo.target.pos, {color: "#FFFFFF"})

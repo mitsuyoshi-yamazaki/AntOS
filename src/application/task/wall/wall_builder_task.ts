@@ -131,7 +131,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     }
 
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
-    if (creepInfo.length < 1) {
+    if (creepInfo.length < 1 && roomResource.hostiles.creeps.length <= 0) {
       const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
         + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
 

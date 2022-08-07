@@ -33,7 +33,7 @@ ProcessDecoder.register("ContinuouslyProduceCommodityProcess", state => {
 const noProduct = "no products"
 const notOperating = "not operating"
 
-const finished = true as boolean
+const finished = false as boolean // Season4終了時の条件と思われ
 
 type IngredientMinimumAmounts = {[resourceType: string]: number}
 
@@ -89,9 +89,23 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
     return new ContinuouslyProduceCommodityProcess(state.l, state.i, state.roomName, state.factoryId, state.products, state.excludedProducts, state.ingredientMinimumAmounts, state.stopSpawningReasons)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, factory: StructureFactory): ContinuouslyProduceCommodityProcess {
-    const defaultExcludedProducts: CommodityConstant[] = [RESOURCE_BATTERY]
-    const products = productsForFactory(factory, defaultExcludedProducts)
+  public static create(processId: ProcessId, roomName: RoomName, factory: StructureFactory, options?: { products?: CommodityConstant[] }): ContinuouslyProduceCommodityProcess {
+    const [excludedProducts, products] = ((): [CommodityConstant[], CommodityConstant[]] => {
+      if (options?.products != null) {
+        const givenProducts = options?.products
+        const excluded = productsForFactory(factory, []).filter(product => givenProducts.includes(product) !== true)
+        return [
+          excluded,
+          givenProducts,
+        ]
+      }
+      const defaultExcludedProducts: CommodityConstant[] = [RESOURCE_BATTERY]
+      return [
+        defaultExcludedProducts,
+        productsForFactory(factory, defaultExcludedProducts),
+      ]
+    })()
+
     const ingredientMinimumAmounts: IngredientMinimumAmounts = {}
     const stopSpawningReasons: string[] = []
 
@@ -101,7 +115,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
       roomName,
       factory.id,
       products,
-      defaultExcludedProducts,
+      excludedProducts,
       ingredientMinimumAmounts,
       stopSpawningReasons,
     )

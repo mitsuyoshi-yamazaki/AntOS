@@ -4,6 +4,7 @@ const powerTypes = [
   "regenSource",
   "operateSpawn",
   "operateFactory",
+  "operateExtension",
 ] as const
 type PowerType = typeof powerTypes[number]
 
@@ -39,4 +40,11 @@ export const PowerGameConstants: PowerConstantsInterface = {
     cooldown: 800,
     range: 3,
   },
+  operateExtension: {
+    value: [20, 40, 60, 80, 100],  // instantlly fill extensions
+    duration: 0,
+    opsCost: 2,
+    cooldown: 50,
+    range: 3,
+  }
 }

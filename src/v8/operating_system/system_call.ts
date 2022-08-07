@@ -1,6 +1,9 @@
-export interface SystemCall<T> {
-  beforeTick(args: T): void
-  afterTick(): void
+type SystemCallDefaultInterface = {
+  load(): void
+  startOfTick(): void
+  endOfTick(): void
 }
 
-export type IndependentSystemCall = SystemCall<void>
+export type SystemCall = Partial<SystemCallDefaultInterface> & {
+  readonly description: string
+}

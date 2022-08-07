@@ -1,5 +1,5 @@
 import { RoomName } from "utility/room_name"
-import { Task, TaskIdentifier } from "v5_task/task"
+import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole } from "prototype/creep_role"
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
@@ -25,6 +25,9 @@ import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_a
 import { Environment } from "utility/environment"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 export interface SpecializedWorkerTaskState extends TaskState {
   /** room name */
@@ -39,6 +42,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
   private readonly codename: string
   private saying = 0
+  private shouldEvacuate = false
 
   private constructor(
     public readonly startTime: number,
@@ -78,6 +82,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
     const lackOfEnergy = energyAmount < 10000
 
+    const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
+    const needBuild = objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true))
+
     const numberOfCreeps = ((): number => {
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
@@ -87,6 +94,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
         return 3
       }
       if (resources.controller.level >= 6) {
+        if (needBuild === true) {
+          return 4
+        }
         return 3
       }
       const center = resources.roomInfo.roomPlan.centerPosition
@@ -101,6 +111,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
       return requiredCount
     })()
+
     if (creepCount < 2) {
       const body = ((): BodyPartConstant[] => {
         if (lackOfEnergy !== true) {
@@ -136,9 +147,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       // if (lackOfEnergy === true) {
       //   return true
       // }
-      const wallTypes: StructureConstant[] = [STRUCTURE_WALL, STRUCTURE_RAMPART]
       const needRepair = objects.damagedStructures.length > 0
-      const needBuild = objects.constructionSites.some(site => (wallTypes.includes(site.structureType) !== true))
       if (needRepair !== true && needBuild !== true) {
         return false
       }
@@ -155,15 +164,61 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
   }
 
+  public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      this.shouldEvacuate = false
+    } else {
+      if (roomResource.nukes.some(nuke => nuke.timeToLand < 40) === true) {
+        this.shouldEvacuate = true
+      } else {
+        this.shouldEvacuate = false
+      }
+    }
+
+    return super.runTask(objects, childTaskResults)
+  }
+
   public newTaskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
     const task = this.taskFor(creep, objects)
     if (task == null) {
       return null
     }
-    return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
+    return FleeFromAttackerTask.create(task, 4, {failOnFlee: true})
+  }
+
+  private evacuateTask(creep: Creep): CreepTask | null {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      creep.drop(RESOURCE_ENERGY)
+    }
+
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return null
+    }
+    if (creep.room.name !== this.roomName) {
+      try {
+        const roomCenter = new RoomPosition(25, 25, creep.room.name)
+        const range = 20
+        if (creep.pos.getRangeTo(roomCenter) <= range) {
+          return null
+        }
+        return MoveToTask.create(roomCenter, range)
+
+      } catch (error) {
+        PrimitiveLogger.programError(`${this.constructor.name} ${this.taskIdentifier} ${error}`)
+      }
+    }
+
+    const evacuateDestination = roomResource.roomInfoAccessor.evacuateDestination()
+    return MoveToRoomTask.create(evacuateDestination, [])
   }
 
   private taskFor(creep: Creep, objects: OwnedRoomObjects): CreepTask | null {
+    if (this.shouldEvacuate === true && (creep.ticksToLive != null && creep.ticksToLive > 40)) {
+      return this.evacuateTask(creep)
+    }
+
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
       if (creep.store.getFreeCapacity() > 0) {
         const collectDroppedResourceTask = this.collectDroppedResourceTask(creep, objects)
@@ -325,6 +380,11 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       return objects.droppedResources.filter(resource => {
         if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
           if (resource.pos.x <= 1) {
+            return false
+          }
+        }
+        if (this.roomName === "W48N46" && Environment.world === "persistent world" && Environment.shard === "shard3") { // FixMe:
+          if (resource.resourceType === RESOURCE_KEANIUM) {
             return false
           }
         }

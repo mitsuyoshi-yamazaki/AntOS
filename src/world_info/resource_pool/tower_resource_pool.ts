@@ -23,38 +23,44 @@ export interface TowerAttackTask {
   towerTaskType: "attack"
   target: AnyCreep
   priority: TowerPoolTaskPriority
+  needsAllTowers: boolean
 }
 export interface TowerHealTask {
   towerTaskType: "heal"
   target: AnyCreep
   priority: TowerPoolTaskPriority
+  needsAllTowers: boolean
 }
 export interface TowerRepairTask {
   towerTaskType: "repair"
   target: AnyStructure
   priority: TowerPoolTaskPriority
+  needsAllTowers: boolean
 }
 export type TowerTask = TowerAttackTask | TowerHealTask | TowerRepairTask
 export const TowerTask = {
-  Attack: function (target: AnyCreep, priority: TowerPoolTaskPriority): TowerAttackTask {
+  Attack: function (target: AnyCreep, priority: TowerPoolTaskPriority, options?: {needsAllTowers?: boolean}): TowerAttackTask {
     return {
       towerTaskType: "attack",
       target,
       priority,
+      needsAllTowers: options?.needsAllTowers ?? true,
     }
   },
-  Heal: function (target: AnyCreep, priority: TowerPoolTaskPriority): TowerHealTask {
+  Heal: function (target: AnyCreep, priority: TowerPoolTaskPriority, options?: { needsAllTowers?: boolean }): TowerHealTask {
     return {
       towerTaskType: "heal",
       target,
       priority,
+      needsAllTowers: options?.needsAllTowers ?? true,
     }
   },
-  Repair: function (target: AnyStructure, priority: TowerPoolTaskPriority): TowerRepairTask {
+  Repair: function (target: AnyStructure, priority: TowerPoolTaskPriority, options?: { needsAllTowers?: boolean }): TowerRepairTask {
     return {
       towerTaskType: "repair",
       target,
       priority,
+      needsAllTowers: options?.needsAllTowers ?? true,
     }
   },
 }
@@ -108,9 +114,30 @@ export class TowerPool implements ResourcePoolType<StructureTower> {
         }
       }
     }
-    this.towers.forEach(tower => {
-      runTask(task, tower)
+
+    if (task.needsAllTowers === true) {
+      this.towers.forEach(tower => {
+        runTask(task, tower)
+      })
+      return
+    }
+
+    const towers = this.towers.map(tower => {
+      return {
+        tower,
+        range: tower.pos.getRangeTo(task.target),
+      }
     })
+    towers.sort((lhs, rhs) => {
+      if (lhs.range !== rhs.range) {
+        return lhs.range - rhs.range
+      }
+      return rhs.tower.store.getUsedCapacity(RESOURCE_ENERGY) - lhs.tower.store.getUsedCapacity(RESOURCE_ENERGY)
+    })
+    const tower = towers[0]
+    if (tower != null) {
+      runTask(task, tower.tower)
+    }
   }
 }
 

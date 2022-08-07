@@ -35,7 +35,7 @@ export function execCreepCommand(creep: Creep, args: string[]): string {
   }
 }
 
-type PickupTargetType = Tombstone | Ruin | StructureContainer | StructureTower
+type PickupTargetType = Tombstone | Ruin | StructureContainer | StructureTower | StructureLab
 function isPickupTargetType(roomObject: RoomObject): roomObject is PickupTargetType {
   if (roomObject instanceof Tombstone) {
     return true
@@ -47,6 +47,9 @@ function isPickupTargetType(roomObject: RoomObject): roomObject is PickupTargetT
     return true
   }
   if (roomObject instanceof StructureTower) {
+    return true
+  }
+  if (roomObject instanceof StructureLab) {
     return true
   }
   return false

@@ -15,7 +15,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { GameConstants } from "utility/constants"
 
-function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName): boolean {
+function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName, onlySpawnClaimer: boolean): boolean {
   const targetRoomInfo = RoomResources.getRoomInfo(targetRoomName)
   if (targetRoomInfo == null) {
     return true
@@ -39,6 +39,11 @@ function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName
       return false
     }
   }
+
+  if (onlySpawnClaimer === true) {
+    return true
+  }
+
   const availableEnergy = ((): number => {
     const roomResource = RoomResources.getOwnedRoomResource(roomName)
     if (roomResource == null) {
@@ -69,6 +74,8 @@ export interface ClaimRoomTaskState extends GeneralCreepWorkerTaskState {
 
   /** waypoints */
   w: RoomName[]
+
+  onlySpawnClaimer: boolean
 }
 
 export class ClaimRoomTask extends GeneralCreepWorkerTask {
@@ -81,7 +88,8 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
     public readonly children: Task[],
     public readonly roomName: RoomName,
     public readonly targetRoomName: RoomName,
-    private readonly waypoints: RoomName[]
+    private readonly waypoints: RoomName[],
+    private readonly onlySpawnClaimer: boolean,
   ) {
     super(startTime, children, roomName)
 
@@ -96,16 +104,17 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       c: this.children.map(task => task.encode()),
       r: this.roomName,
       tr: this.targetRoomName,
-      w: this.waypoints
+      w: this.waypoints,
+      onlySpawnClaimer: this.onlySpawnClaimer,
     }
   }
 
   public static decode(state: ClaimRoomTaskState, children: Task[]): ClaimRoomTask {
-    return new ClaimRoomTask(state.s, children, state.r, state.tr, state.w)
+    return new ClaimRoomTask(state.s, children, state.r, state.tr, state.w, state.onlySpawnClaimer ?? false)
   }
 
-  public static create(roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[]): ClaimRoomTask {
-    return new ClaimRoomTask(Game.time, [], roomName, targetRoomName, [...waypoints])
+  public static create(roomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], onlySpawnClaimer: boolean): ClaimRoomTask {
+    return new ClaimRoomTask(Game.time, [], roomName, targetRoomName, [...waypoints], onlySpawnClaimer)
   }
 
   public runTask(objects: OwnedRoomObjects, childTaskResults: ChildTaskExecutionResults): TaskStatus {
@@ -128,7 +137,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {
-    if (shouldSpawnBootstrapCreeps(this.roomName, this.targetRoomName) !== true) {
+    if (shouldSpawnBootstrapCreeps(this.roomName, this.targetRoomName, this.onlySpawnClaimer) !== true) {
       return null
     }
 
@@ -139,6 +148,9 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
         return defaultBody
+      }
+      if (CreepBody.cost(defaultBody) > resources.room.energyCapacityAvailable) {
+        return minimumBody
       }
       if (resources.getResourceAmount(RESOURCE_ENERGY) < 40000) {
         return defaultBody
@@ -183,9 +195,6 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
         return attackerBody
       }
 
-      if (CreepBody.cost(defaultBody) > resources.room.energyCapacityAvailable) {
-        return minimumBody
-      }
       return defaultBody
     })()
 

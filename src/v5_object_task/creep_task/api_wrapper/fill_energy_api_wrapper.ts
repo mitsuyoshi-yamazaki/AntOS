@@ -42,7 +42,7 @@ export class FillEnergyApiWrapper implements ApiWrapper<Creep, FillEnergyApiWrap
   }
 
   public run(creep: Creep): FillEnergyApiWrapperResult {
-    if (this.target.store.getFreeCapacity(RESOURCE_ENERGY) < (creep.store.getCapacity() * 0.5)) {
+    if (this.target.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
       return IN_PROGRESS
     }
 

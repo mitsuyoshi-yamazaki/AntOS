@@ -33,19 +33,19 @@ export const TowerInterception = {
     const target = targetInfo.target
 
     if (roomResource.controller.safeMode == null) {
-      if ((target instanceof Creep) && roomResource.hostiles.creeps.length > 1) {
+      if ((target.target instanceof Creep) && roomResource.hostiles.creeps.length > 1) {
         const shouldStopAttacking = ((): boolean => {
           const damage = towerPositions.reduce((result, current) => {
-            return result + calculateTowerDamage(current.getRangeTo(target.pos))
+            return result + calculateTowerDamage(current.getRangeTo(target.target.pos))
           }, 0)
-          const healPower = target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
+          const healPower = target.target.pos.findInRange(FIND_HOSTILE_CREEPS, 1).reduce((result, current) => {
             return result + CreepBody.power(current.body, "heal")
           }, 0)
 
-          if (healPower < damage) {
+          if (healPower < damage && target.target.getActiveBodyparts(TOUGH) < 3) {
             return false
           }
-          const hasAttacker = target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
+          const hasAttacker = target.target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
           if (hasAttacker !== true) {
             return true
           }

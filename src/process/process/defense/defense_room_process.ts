@@ -291,7 +291,11 @@ export class DefenseRoomProcess implements Process, Procedural {
       if (this.excludedRampartIds != null) {
         return this.excludedRampartIds
       }
+      const excluded = roomResource.roomInfoAccessor.config.nonHidableRampartIds
       this.excludedRampartIds = allRamparts.flatMap((rampart): Id<StructureRampart>[] => {
+        if (excluded.includes(rampart.id) === true) {
+          return [rampart.id]
+        }
         if (rampart.pos.findInRange(FIND_MY_STRUCTURES, 0).length > 1) {
           return [rampart.id]
         }
@@ -662,7 +666,9 @@ export class DefenseRoomProcess implements Process, Procedural {
       return
     }
     creep.say(`${closestRampart.pos.x},${closestRampart.pos.y}`)
-    creep.moveTo(closestRampart.pos, defaultMoveToOptions())
+    if (creep.pos.isEqualTo(closestRampart.pos) !== true) {
+      creep.moveTo(closestRampart.pos, defaultMoveToOptions())
+    }
   }
 
   private unboostIntercepter(creep: Creep, lab: StructureLab): void {
@@ -684,6 +690,12 @@ export class DefenseRoomProcess implements Process, Procedural {
       return Math.floor(50 / bodyUnit.length)
     })()
     const body = CreepBody.create([], bodyUnit, energyCapacity, unitMaxCount)
+    body.sort((lhs, rhs) => {
+      if (lhs === rhs) {
+        return 0
+      }
+      return lhs === ATTACK ? -1 : 1
+    })
 
     World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority: CreepSpawnRequestPriority.Urgent,

@@ -15,7 +15,6 @@ import { Season1200082SendMineralProcess } from "process/temporary/season_120008
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
-import { Season1521073SendResourceProcess } from "process/temporary/season_1521073_send_resource_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
 import { isResourceConstant } from "utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
@@ -68,6 +67,11 @@ import {} from "process/onetime/self_aware_creep_process"
 import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem_solver_v1_process"
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
+import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
+import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
+// import { IntershardResourceReceiverProcess } from "process/onetime/intershard/intershard_resource_receiver_process"
+import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
+// import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -114,8 +118,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchSeason4332399SKMineralHarvestProcess()
       case "DistributorProcess":
         return this.launchDistributorProcess()
-      case "StealResourceProcess":
-        return this.launchStealResourceProcess()
       case "Season2055924SendResourcesProcess":
         return this.launchSeason2055924SendResourcesProcess()
       case "InterRoomResourceManagementProcess":
@@ -420,64 +422,6 @@ export class LaunchCommand implements ConsoleCommand {
     }
     const process = OperatingSystem.os.addProcess(null, processId => {
       return DistributorProcess.create(processId, roomName)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchStealResourceProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const targetId = args.get("target_id")
-    if (targetId == null) {
-      return this.missingArgumentError("target_id")
-    }
-    const rawFinishWorking = args.get("finish_working")
-    if (rawFinishWorking == null) {
-      return this.missingArgumentError("finish_working")
-    }
-    const finishWorking = parseInt(rawFinishWorking, 10)
-    if (isNaN(finishWorking) === true) {
-      return Result.Failed(`finish_working is not a number ${rawFinishWorking}`)
-    }
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    const waypoints: RoomName[] = []
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
-      if (storedValue == null) {
-        return this.missingArgumentError("waypoints")
-      }
-      waypoints.push(...storedValue)
-
-    } else {
-      const parsedValue = rawWaypoints.split(",")
-
-      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
-      if (result.resultType === "failed") {
-        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-      }
-
-      waypoints.push(...parsedValue)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return StealResourceProcess.create(processId, roomName, targetRoomName, waypoints, targetId as Id<StructureStorage>, true, numberOfCreeps, finishWorking)
     })
     return Result.Succeeded(process)
   }
@@ -945,7 +889,12 @@ ProcessLauncher.register("ContinuouslyProduceCommodityProcess", args => {
       throw `no factory in ${roomLink(roomName)}`
     }
 
-    return Result.Succeeded((processId) => ContinuouslyProduceCommodityProcess.create(processId, roomName, factory))
+    const products = args.list("products", "commodity").parseOptional()
+    const options = {
+      products: products ?? undefined,
+    }
+
+    return Result.Succeeded((processId) => ContinuouslyProduceCommodityProcess.create(processId, roomName, factory, options))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
@@ -1189,7 +1138,7 @@ ProcessLauncher.register("SendEnergyToAllyProcess", args => {
   }
 })
 
-ProcessLauncher.register("Season1521073SendResourceProcess", args => {
+ProcessLauncher.register("HaulEnergyProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
@@ -1197,7 +1146,7 @@ ProcessLauncher.register("Season1521073SendResourceProcess", args => {
     const finishWorking = args.int("finish_working").parse({ min: 0, max: GameConstants.creep.life.lifeTime })
     const numberOfCreeps = args.int("creep_count").parse({ min: 1 })
 
-    return Result.Succeeded((processId) => Season1521073SendResourceProcess.create(
+    return Result.Succeeded((processId) => HaulEnergyProcess.create(
       processId,
       roomName,
       targetRoomName,
@@ -1210,4 +1159,111 @@ ProcessLauncher.register("Season1521073SendResourceProcess", args => {
   }
 })
 
+ProcessLauncher.register("DefenseNukeProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    const nukes = roomResource.room.find(FIND_NUKES)
+    const excludedStructureIds = (args.list("excluded_structure_ids", "object_id").parseOptional() ?? []) as Id<AnyOwnedStructure>[]
 
+    return Result.Succeeded((processId) => DefenseNukeProcess.create(
+      processId,
+      roomName,
+      nukes,
+      excludedStructureIds,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("StealResourceProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomName = args.roomName("target_room_name").parseOptional() ?? roomName
+    const targetId = args.gameObjectId("target_id").parse()
+    const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+    const numberOfCreeps = args.int("creeps").parse({min: 1})
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    const options = ((): { storeId?: Id<StructureStorage | StructureTerminal> } => {
+      const store = args.visibleGameObject("store_id").parseOptional({ inRoomName: roomName })
+      if (store == null) {
+        return {}
+      }
+      if (!(store instanceof StructureStorage) && !(store instanceof StructureTerminal)) {
+        throw `store_id is not storage or terminal (${store})`
+      }
+      return {
+        storeId: store.id,
+      }
+    })()
+
+    return Result.Succeeded((processId) => StealResourceProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      targetId as Id<StructureStorage>,
+      true,
+      numberOfCreeps,
+      finishWorking,
+      options,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+// ProcessLauncher.register("IntershardResourceTransferProcess", args => {
+//   try {
+//     if (Environment.hasMultipleShards !== true) {
+//       throw `${Environment.world} doesn't have multiple shards`
+//     }
+//     // if (InterShardMemoryWatcher == null) {
+//       throw "missing InterShardMemoryWatcher"
+//     // }
+
+//     const roomName = args.roomName("room_name").parse({my: true})
+//     const portalRoomName = args.roomName("portal_room_name").parse()
+//     const targetShardName = args.string("target_shard_name").parse()
+//     const finishWorking = args.int("finish_working").parse({min: 0, max: GameConstants.creep.life.lifeTime})
+//     const creepCount = args.int("creep_count").parse({ min: 1 })
+
+//     return Result.Succeeded((processId) => IntershardResourceTransferProcess.create(
+//       processId,
+//       roomName,
+//       portalRoomName,
+//       targetShardName,
+//       finishWorking,
+//       creepCount,
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })
+
+// ProcessLauncher.register("IntershardResourceReceiverProcess", args => {
+//   try {
+//     if (Environment.hasMultipleShards !== true) {
+//       throw `${Environment.world} doesn't have multiple shards`
+//     }
+//     if (InterShardMemoryWatcher == null) {
+//       throw "missing InterShardMemoryWatcher"
+//     }
+
+//     const transferProcessIdentifier = args.string("transfer_process_identifier").parse()
+//     const roomName = args.roomName("room_name").parse({ my: true })
+//     const portalRoomName = args.roomName("portal_room_name").parse()
+//     const targetShardName = args.string("target_shard_name").parse()
+
+//     return Result.Succeeded((processId) => IntershardResourceReceiverProcess.create(
+//       processId,
+//       transferProcessIdentifier,
+//       roomName,
+//       portalRoomName,
+//       targetShardName,
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })

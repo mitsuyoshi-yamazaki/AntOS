@@ -97,6 +97,10 @@ export type OwnedRoomConfig = {
   useSafemodeInBoostrap?: boolean
   bootstrapUntilRcl5?: boolean
   forceAttack?: boolean
+
+  /// nuke, low RCL invasion
+  evacuationDestinations?: RoomName[]
+  nonHidableRampartIds?: Id<StructureRampart>[]
 }
 
 export interface OwnedRoomInfo extends BasicRoomInfo {

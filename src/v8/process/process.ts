@@ -1,20 +1,17 @@
 import { State, Stateful } from "os/infrastructure/state"
+import type { CompressedProcessType, ProcessType } from "./process_type"
 
 export type ProcessId = string
-export type ProcessType = string
 
 export interface ProcessState extends State {
   readonly i: ProcessId
-  readonly t: ProcessType
+  readonly t: CompressedProcessType
 }
 
-export interface Process<T> extends Stateful {
+export interface Process<T, S, U, R> extends Stateful {
   readonly processId: ProcessId
+  readonly processType: ProcessType
 
-  run(args: T): void
+  run(args: T): S
+  handleSubprocesses?(result: U): R
 }
-
-/**
- * - run時にdriver詰め合わせを引数に入れる
- * - 上流のprocessは下流のprocessに対してdriverを組み替えて渡し、実行後に内容を改める
- */

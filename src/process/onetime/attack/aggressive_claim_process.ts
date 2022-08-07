@@ -73,8 +73,8 @@ export class AggressiveClaimProcess implements Process, Procedural {
     blockingWallIds: Id<StructureWall | StructureRampart>[],
     excludeStructureIds: Id<AnyStructure>[],
   ): AggressiveClaimProcess {
-    if (Memory.ignoreRooms.includes(roomName) !== true) {
-      Memory.ignoreRooms.push(roomName)
+    if (Memory.ignoreRooms.includes(targetRoomName) !== true) {
+      Memory.ignoreRooms.push(targetRoomName)
     }
     return new AggressiveClaimProcess(Game.time, processId, roomName, targetRoomName, "occupied", blockingWallIds, excludeStructureIds)
   }
@@ -84,7 +84,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
   }
 
   public deinit(): void {
-    const index = Memory.ignoreRooms.indexOf(this.roomName)
+    const index = Memory.ignoreRooms.indexOf(this.targetRoomName)
     if (index >= 0) {
       Memory.ignoreRooms.splice(index, 1)
     }
@@ -180,6 +180,10 @@ export class AggressiveClaimProcess implements Process, Procedural {
   }
 
   private destroyStructures(targetRoom: Room): boolean {
+    if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
+      return false
+    }
+
     try {
       const destroyStructure = (structure: AnyStructure): void => {
         const result = structure.destroy()
@@ -262,7 +266,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Claimer],
-      body: [MOVE, CLAIM, MOVE],
+      body: [MOVE, MOVE, MOVE, MOVE, CLAIM, MOVE],
       initialTask: null,
       taskIdentifier: this.taskIdentifier,
       parentRoomName: null,

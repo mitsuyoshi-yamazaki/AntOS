@@ -1,10 +1,9 @@
-import { SystemCall } from "../system_call"
+import { Driver } from "../driver"
 
-export type Logger = SystemCall<void, void>
-export const Logger: Logger = {
-  beforeTick(): void {
-  },
+export class Logger implements Driver<void> {
+  public startOfTick(): void {
+  }
 
-  afterTick(): void {
-  },
+  public endOfTick(): void {
+  }
 }
