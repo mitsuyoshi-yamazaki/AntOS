@@ -190,7 +190,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
 
     if (powerCreep.room.name !== this.parentRoomName) {
       moveToRoom(powerCreep, this.parentRoomName, [])
-      this.operateGenerateOps(powerCreep)
+      this.operateGenerateOps(powerCreep, roomResource)
       return
     }
 
@@ -203,7 +203,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     if (powerCreep.ticksToLive != null && powerCreep.ticksToLive < 1000) {
       if (roomResource.activeStructures.powerSpawn != null) {
         this.renewPowerCreep(powerCreep, roomResource.activeStructures.powerSpawn)
-        this.operateGenerateOps(powerCreep)
+        this.operateGenerateOps(powerCreep, roomResource)
         return
       }
     }
@@ -233,7 +233,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
 
   private evacuate(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): void {
     powerCreep.say("evac")
-    this.operateGenerateOps(powerCreep)
+    this.operateGenerateOps(powerCreep, roomResource)
 
     if (powerCreep.room.name !== this.parentRoomName) {
       try {
@@ -340,7 +340,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
 
     switch (power) {
     case PWR_GENERATE_OPS:
-      return this.operateGenerateOps(powerCreep)
+      return this.operateGenerateOps(powerCreep, roomResource)
 
     case PWR_OPERATE_SPAWN:
       return this.operateSpawn(powerCreep, roomResource)
@@ -422,7 +422,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       return this.withdrawOps(powerCreep, roomResource, operateExtension.opsCost)
     }
 
-    const { executed } = this.usePower(powerCreep, PWR_OPERATE_EXTENSION, targetStore)
+    const { executed } = this.usePower(powerCreep, roomResource, PWR_OPERATE_EXTENSION, targetStore)
     if (executed) {
       return {
         blocksFurtherOperations: true,
@@ -433,7 +433,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     }
   }
 
-  private operateGenerateOps(powerCreep: DeployedPowerCreep): OperationResult {
+  private operateGenerateOps(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): OperationResult {
     switch (this.powerStatus(powerCreep, PWR_GENERATE_OPS)) { // operate()以外からも呼び出されるため
     case "unavailable":
     case "cooling down":
@@ -444,7 +444,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       break
     }
 
-    this.usePower(powerCreep, PWR_GENERATE_OPS)
+    this.usePower(powerCreep, roomResource, PWR_GENERATE_OPS)
     return {
       blocksFurtherOperations: false,
     }
@@ -466,7 +466,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       return this.withdrawOps(powerCreep, roomResource, operateSpawn.opsCost)
     }
 
-    const { executed } = this.usePower(powerCreep, PWR_OPERATE_SPAWN, targetSpawn)
+    const { executed } = this.usePower(powerCreep, roomResource, PWR_OPERATE_SPAWN, targetSpawn)
     if (executed) {
       return {
         blocksFurtherOperations: true,
@@ -498,7 +498,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       return this.withdrawOps(powerCreep, roomResource, operateFactory.opsCost)
     }
 
-    const { executed } = this.usePower(powerCreep, PWR_OPERATE_FACTORY, targetFactory)
+    const { executed } = this.usePower(powerCreep, roomResource, PWR_OPERATE_FACTORY, targetFactory)
     if (executed) {
       return {
         blocksFurtherOperations: true,
@@ -510,19 +510,32 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   }
 
   private regenSource(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): OperationResult {
-    const targetSource = roomResource.sources.find(source => {
-      if (source.effects == null) {
-        return true
+    const targetSource = ((): Source | null => {
+      if (roomResource.hostiles.creeps.length > 0) {
+        return roomResource.sources.find(source => {
+          if (source.effects == null) {
+            if (source.pos.findInRange(FIND_HOSTILE_CREEPS, 5).length > 0) {
+              return false
+            }
+            return true
+          }
+          return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+        }) ?? null
       }
-      return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
-    })
+      return roomResource.sources.find(source => {
+        if (source.effects == null) {
+          return true
+        }
+        return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+      }) ?? null
+    })()
     if (targetSource == null) {
       return {
         blocksFurtherOperations: false,
       }
     }
 
-    const { executed } = this.usePower(powerCreep, PWR_REGEN_SOURCE, targetSource)
+    const { executed } = this.usePower(powerCreep, roomResource, PWR_REGEN_SOURCE, targetSource)
     if (executed) {
       return {
         blocksFurtherOperations: true,
@@ -534,7 +547,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
   }
 
   // ---- Power Creep Actions ---- //
-  private usePower(powerCreep: DeployedPowerCreep, power: PowerConstant, target?: StructureSpawn | StructureFactory | StructureStorage | StructureTerminal | Source): { executed: boolean } {
+  private usePower(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource, power: PowerConstant, target?: StructureSpawn | StructureFactory | StructureStorage | StructureTerminal | Source): { executed: boolean } {
     const result = powerCreep.usePower(power, target)
 
     switch (result) {
