@@ -40,6 +40,7 @@ export function init(): void {
   }
   if (Memory.v8 == null) {
     Memory.v8 = {
+      enabled: false,
       process: {
         processIdIndex: 0,
         processInfo: {},

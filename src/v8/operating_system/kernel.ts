@@ -1,5 +1,28 @@
+/**
+ # Kernel
+ ## 概要
+ OSのコア機能を司る
+
+ ## 機能
+ - ドライバ管理
+ - プロセス管理
+ - Kernel管理下のsystem callのインターフェース提供
+
+ ## プロセス管理
+ プロセスは動的に起動される処理の単位
+
+ ## ドライバ管理
+ ドライバは将来的に動的に有効化することを見据えてKernelとは互いに依存（TSのimportを）しない実装
+
+ ## Kernel管理下のsystem callのインターフェース提供
+ Kernel管理下のsystem callのインターフェース `SystemCallInterface` を提供する
+
+ - ProcessAccessor
+ */
+
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { EnvironmentalVariables } from "./environmental_variables"
 import { } from "./kernel_memory"
 import { Driver } from "./driver"
 import { ProcessScheduler } from "./process_scheduler"
@@ -28,7 +51,7 @@ type KernelInterface = {
 }
 
 type ProcessAccessor = {
-  //
+  // TODO:
 }
 
 type SystemCallInterface = {
@@ -37,8 +60,7 @@ type SystemCallInterface = {
 
 type DriverEventCall = () => void
 
-const kernelMemory = Memory.v8
-const processScheduler = new ProcessScheduler(kernelMemory.process)
+const processScheduler = new ProcessScheduler(EnvironmentalVariables.kernelMemory.process)
 let lastCpuUse: number | null = null
 const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
   load: [],
@@ -50,6 +72,9 @@ const standardInputCommands = [
 ]
 
 export const Kernel: KernelInterface & SystemCallInterface = {
+  process: {
+  },
+
   registerDriverCall(events: LifecycleEvent[], driver: Driver): void {
     const register = (call: DriverEventCall | undefined, list: DriverEventCall[], description: string, reversed?: boolean): void => {
       if (call == null) {

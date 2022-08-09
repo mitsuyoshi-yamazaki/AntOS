@@ -1,3 +1,12 @@
+/**
+ # ProcessScheduler
+ ## 概要
+ Processの管理を行い、対外的にprocess全体に対する操作インターフェースを提供する
+
+ ## TODO
+ Process schedularは使えるCPU時間をprocessに通知し、超過した場合の処理を行い、逆にprocessから通知された優先順位に基づいてprocess実行順を入れ替えたりするものになる
+ */
+
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { UniqueId } from "utility/unique_id"
@@ -28,9 +37,6 @@ export type ProcessSchedulerMemory = {
   processInfo: { [P: ParentProcessId]: ProcessInfoState }
 }
 
-/**
- * process schedularは使えるCPU時間をprocessに通知し、超過した場合の処理を行い、逆にprocessから通知された優先順位に基づいてprocess実行順を入れ替えたりするものになる
- */
 export class ProcessScheduler {
   private readonly rootProcess = new RootProcess()
   private readonly processInfoByProcessId = (new Map<ProcessId, ProcessInfo>())
