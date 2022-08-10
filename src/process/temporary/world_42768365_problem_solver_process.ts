@@ -12,11 +12,10 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepBody } from "utility/creep_body"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
-import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
+import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 
 ProcessDecoder.register("World42768365ProblemSolverProcess", state => {
   return World42768365ProblemSolverProcess.decode(state as World42768365ProblemSolverProcessState)
@@ -78,21 +77,18 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
       return
     }
 
-    if (roomResource.activeStructures.spawns.length <= 0) {
-      this.buildSpawn(roomResource, "W45S9") // FixMe: 終わったら消す
-      return
-    }
+    this.keepUpgrading(roomResource)
   }
 
-  private buildSpawn(roomResource: OwnedRoomResource, parentRoomName: RoomName): void {
-    const creepCount = World.resourcePools.countCreeps(parentRoomName, this.taskIdentifier, () => true)
-    if (creepCount < 2) {
-      World.resourcePools.addSpawnCreepRequest(parentRoomName, {
+  private keepUpgrading(roomResource: OwnedRoomResource): void {
+    const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+    if (creepCount < 4) {
+      World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,
         numberOfCreeps: 1,
         codename: this.codename,
         roles: [],
-        body: CreepBody.create([], [MOVE, MOVE, MOVE, CARRY, WORK, WORK], 10000, 4),
+        body: CreepBody.create([], [MOVE, CARRY, WORK], roomResource.room.energyCapacityAvailable, 4),
         initialTask: null,
         taskIdentifier: this.taskIdentifier,
         parentRoomName: null,
@@ -100,29 +96,17 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
     }
 
     World.resourcePools.assignTasks(
-      parentRoomName,
+      this.roomName,
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
-      creep => {
-        const task = this.builderTask(creep, roomResource)
-        if (task == null) {
-          return null
-        }
-        return FleeFromAttackerTask.create(task)
-      },
+      creep => this.upgradeTask(creep, roomResource),
       () => true,
     )
   }
 
-  private builderTask(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
+  private upgradeTask(creep: Creep, roomResource: OwnedRoomResource): CreepTask | null {
     if (creep.store.getFreeCapacity() <= 0) {
-      const constructionSite = creep.room.find(FIND_MY_CONSTRUCTION_SITES)[0]
-      if (constructionSite == null) {
-        creep.say("no task")
-        return null
-      }
-
-      return MoveToTargetTask.create(BuildApiWrapper.create(constructionSite))
+      return MoveToTargetTask.create(UpgradeControllerApiWrapper.create(roomResource.controller))
     }
 
     const source = roomResource.sources[0]
