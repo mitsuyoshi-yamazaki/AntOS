@@ -18,6 +18,12 @@
  Kernel管理下のsystem callのインターフェース `SystemCallInterface` を提供する
 
  - ProcessAccessor
+
+ ## Discussion
+ 環境からの独立性
+ 仕組み上独立にできない項目
+ - tick単位の計算
+ - CPU usage
  */
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
