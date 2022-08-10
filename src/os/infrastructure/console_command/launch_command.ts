@@ -68,10 +68,11 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
-import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
+import { } from "process/onetime/intershard/intershard_resource_transfer_process"
 // import { IntershardResourceReceiverProcess } from "process/onetime/intershard/intershard_resource_receiver_process"
 import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
 // import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
+import { World42768365ProblemSolverProcess } from "process/temporary/world_42768365_problem_solver_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1208,6 +1209,19 @@ ProcessLauncher.register("StealResourceProcess", args => {
       numberOfCreeps,
       finishWorking,
       options,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("World42768365ProblemSolverProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => World42768365ProblemSolverProcess.create(
+      processId,
+      roomName,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
