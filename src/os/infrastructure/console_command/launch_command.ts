@@ -1218,7 +1218,7 @@ ProcessLauncher.register("StealResourceProcess", args => {
 
 ProcessLauncher.register("World42768365ProblemSolverProcess", args => {
   try {
-    const roomName = args.roomName("room_name").parse({my: true})
+    const roomName = args.roomName("room_name").parse()
 
     return Result.Succeeded((processId) => World42768365ProblemSolverProcess.create(
       processId,
