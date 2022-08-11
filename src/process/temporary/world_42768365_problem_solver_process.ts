@@ -21,8 +21,11 @@ ProcessDecoder.register("World42768365ProblemSolverProcess", state => {
   return World42768365ProblemSolverProcess.decode(state as World42768365ProblemSolverProcessState)
 })
 
+type Problem = string
+
 export interface World42768365ProblemSolverProcessState extends ProcessState {
   readonly roomName: RoomName
+  readonly problems: Problem[]
 }
 
 export class World42768365ProblemSolverProcess implements Process, Procedural {
@@ -33,7 +36,8 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    public readonly roomName: RoomName,
+    private readonly roomName: RoomName,
+    private readonly problems: Problem[]
   ) {
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
     this.codename = UniqueId.generateCodename(this.taskIdentifier, this.launchTime)
@@ -45,11 +49,12 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       roomName: this.roomName,
+      problems: this.problems,
     }
   }
 
   public static decode(state: World42768365ProblemSolverProcessState): World42768365ProblemSolverProcess {
-    return new World42768365ProblemSolverProcess(state.l, state.i, state.roomName)
+    return new World42768365ProblemSolverProcess(state.l, state.i, state.roomName, state.problems ?? [])
   }
 
   public static create(processId: ProcessId, roomName: RoomName): World42768365ProblemSolverProcess {
@@ -57,7 +62,7 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
       Memory.ignoreRooms.push(roomName)
       PrimitiveLogger.log(`${coloredText(`Added ${roomLink(roomName)} to ignore rooms`, "warn")}`)
     }
-    return new World42768365ProblemSolverProcess(Game.time, processId, roomName)
+    return new World42768365ProblemSolverProcess(Game.time, processId, roomName, [])
   }
 
   public deinit(): void {
@@ -71,13 +76,29 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
     return `${roomLink(this.roomName)}`
   }
 
+  public processDescription(): string {
+    const descriptions: string[] = [
+      roomLink(this.roomName),
+      "problems:",
+      ...this.problems,
+    ]
+    return descriptions.join("\n")
+  }
+
   public runOnTick(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
       return
     }
 
+    const problemMaxCount = 50
+    const deleteCount = this.problems.length - problemMaxCount
+    if (deleteCount > 0) {
+      this.problems.splice(50, deleteCount)
+    }
+
     this.keepUpgrading(roomResource)
+    this.watchDog(roomResource)
   }
 
   private keepUpgrading(roomResource: OwnedRoomResource): void {
@@ -115,5 +136,22 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
       return null
     }
     return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
+  }
+
+  private watchDog(roomResource: OwnedRoomResource): void {
+    roomResource.sources.forEach(source => {
+      if (source.ticksToRegeneration == null || source.ticksToRegeneration > 1) {
+        return
+      }
+      this.assert(source.energy > 50, `source ${source.id} energy ${source.energy}`)
+    })
+  }
+
+  private assert(condition: boolean, problem: Problem): void {
+    if (condition === true) {
+      return
+    }
+
+    this.problems.unshift(problem)
   }
 }
