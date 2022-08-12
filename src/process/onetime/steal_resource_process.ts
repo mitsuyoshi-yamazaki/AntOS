@@ -194,7 +194,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
         }
       }
 
-      if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.my === true) {
+      if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.my === true && roomResource.activeStructures.terminal.store.getFreeCapacity() > 1500) {
         return roomResource.activeStructures.terminal
       }
       if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.my === true) {
