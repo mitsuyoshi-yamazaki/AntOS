@@ -69,7 +69,7 @@ export const Rooms: RoomsInterface = {
     ownedRooms.splice(0, ownedRooms.length)
     ownedRoomObjects.clear()
 
-    const roomVersions = new Map<ShortVersion, RoomName[]>()
+    const roomVersions = new Map<ShortVersion, StructureController[]>()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
       allVisibleRooms.push(room)
@@ -79,35 +79,43 @@ export const Rooms: RoomsInterface = {
         ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
 
         const controlVersion = Migration.roomVersion(room.name)
-        const roomNames = ((): RoomName[] => {
+        const rooms = ((): StructureController[] => {
           const stored = roomVersions.get(controlVersion)
           if (stored != null) {
             return stored
           }
-          const newRoomNames: RoomName[] = []
-          roomVersions.set(controlVersion, newRoomNames)
-          return newRoomNames
+          const newRooms: StructureController[] = []
+          roomVersions.set(controlVersion, newRooms)
+          return newRooms
         })()
-        roomNames.push(roomName)
+        rooms.push(room.controller)
       }
     })
 
     if (Game.time % 107 === 13) {
-      roomVersions.forEach((roomNames, version) => {
-        if (roomNames.length <= 6) {
-          PrimitiveLogger.log(`${roomNames.length} ${version} rooms: ${roomNames.map(name => roomLink(name)).join(", ")}`)
+      const detailedRoomLink = ((controller: StructureController): string => {
+        if (controller.level >= 8) {
+          return roomLink(controller.room.name)
+        }
+        return `${roomLink(controller.room.name)}(${controller.level})`
+      })
+
+      roomVersions.forEach((controllers, version) => {
+        if (controllers.length <= 6) {
+          PrimitiveLogger.log(`${controllers.length} ${version} rooms: ${controllers.map(controller => detailedRoomLink(controller)).join(", ")}`)
           return
         }
-        const sectors = new ValuedArrayMap<string, RoomName>()
-        roomNames.forEach(roomName => {
+        const sectors = new ValuedArrayMap<string, StructureController>()
+        controllers.forEach(controller => {
+          const roomName = controller.room.name
           const sectorName = roomSectorNameOf(roomName)
           if (sectorName == null) {
             PrimitiveLogger.programError(`Cannot get sector name of ${roomLink(roomName)}`)
             return
           }
-          sectors.getValueFor(sectorName).push(roomName)
+          sectors.getValueFor(sectorName).push(controller)
         })
-        PrimitiveLogger.log(`${roomNames.length} ${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, roomNames]) => `- ${sectorName}: ${roomNames.map(r => roomLink(r)).join(", ")}`).join("\n")}`)
+        PrimitiveLogger.log(`${controllers.length} ${version} rooms:\n${Array.from(sectors.entries()).map(([sectorName, controllersInSector]) => `- ${sectorName}: ${controllersInSector.map(controller => detailedRoomLink(controller)).join(", ")}`).join("\n")}`)
       })
     }
 
