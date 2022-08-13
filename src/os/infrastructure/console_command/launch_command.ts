@@ -1259,7 +1259,7 @@ ProcessLauncher.register("ClaimProcess", args => {
   }
 })
 
-ProcessLauncher.register("IntrashardResourceWatchdogProcess", args => {
+ProcessLauncher.register("IntrashardResourceWatchdogProcess", () => {
   try {
     return Result.Succeeded((processId) => IntrashardResourceWatchdogProcess.create(
       processId,

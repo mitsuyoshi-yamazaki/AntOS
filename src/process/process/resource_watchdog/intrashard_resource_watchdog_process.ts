@@ -31,7 +31,8 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
 import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
-import { coloredText } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
+import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("IntrashardResourceWatchdogProcess", state => {
   return IntrashardResourceWatchdogProcess.decode(state as IntrashardResourceWatchdogProcessState)
@@ -96,11 +97,15 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
 
   public processShortDescription(): string {
     const description: string[] = []
-    if (this.running === true && this.canRunWatchDog() === true) {
-      description.push("running")
-    } else {
-      description.push("stopped")
+
+    const runningState: string[] = [
+      this.running === true ? "running" : "stopped",
+    ]
+    if (this.canRunWatchDog() === true) {
+      runningState.push("(exclusive process running)")
     }
+
+    description.push(runningState.join(""))
 
     return description.join(" ")
   }
@@ -116,7 +121,7 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
         return `Commands: ${commandList}`
 
       case "status":
-        return this.intrashardResourceWatchDog.explainCurrentState()
+        return this.showStatus()
 
       case "resume":
         this.running = true
@@ -135,6 +140,41 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  private showStatus(): string {
+    const status = this.intrashardResourceWatchDog.getCurrentState()
+    const errors = new ValuedArrayMap<string, string>() // error name, room error description
+
+    status.errors.forEach((roomErrors, roomName) => {
+      roomErrors.forEach(error => {
+        switch (error.case) {
+        case "lack of terminal space":
+          errors.getValueFor(error.case).push(`${roomLink(roomName)}, ${error.freeSpace}`)
+          break
+        case "lack of energy":
+          errors.getValueFor(error.case).push(`${roomLink(roomName)}, ${error.totalEnergyAmount}`)
+          break
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = error
+          break
+        }
+        }
+      })
+    })
+
+    const description: string[] = [
+      `${status.roomCount} rooms total`,
+      ...Array.from(errors.entries()).flatMap(([errorName, errorDescriptions]): string[] => {
+        return [
+          `${errorDescriptions.length} ${errorName}:`,
+          ...errorDescriptions.map(errorDescription => `- ${errorDescription}`),
+        ]
+      }),
+    ]
+
+    return description.join("\n")
   }
 
   public runOnTick(): void {
