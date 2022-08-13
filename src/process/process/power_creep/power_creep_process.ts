@@ -657,7 +657,6 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
       return {
         blocksFurtherOperations: false,
       }
-
     }
     const withdrawAmount = opsAmount - powerCreep.store.getUsedCapacity(RESOURCE_POWER)
     if (powerCreep.withdraw(opsStore, RESOURCE_OPS, withdrawAmount) === ERR_NOT_IN_RANGE) {

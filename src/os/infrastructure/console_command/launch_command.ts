@@ -75,6 +75,7 @@ import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
 import { World42768365ProblemSolverProcess } from "process/temporary/world_42768365_problem_solver_process"
 import { ClaimProcess } from "process/onetime/claim_process"
 import { World42791528ProblemFinderProcess } from "process/temporary/world_42791528_problem_finder_process"
+import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1252,6 +1253,16 @@ ProcessLauncher.register("ClaimProcess", args => {
       processId,
       roomName,
       targetRoomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("IntrashardResourceWatchdogProcess", args => {
+  try {
+    return Result.Succeeded((processId) => IntrashardResourceWatchdogProcess.create(
+      processId,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
