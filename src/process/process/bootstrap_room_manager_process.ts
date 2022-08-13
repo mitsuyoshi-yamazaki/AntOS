@@ -161,8 +161,8 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       const parentRoomName = keywordArguments.roomName("parent_room_name").parse({ my: true })
       const targetRoomName = keywordArguments.roomName("target_room_name").parse()
 
-      const getWaypoints = (fromRoomName: RoomName): RoomName[] => {
-        const waypointsArgument = keywordArguments.roomNameList("waypoints").parseOptional()
+      const getWaypoints = (fromRoomName: RoomName, argName: string): RoomName[] => {
+        const waypointsArgument = keywordArguments.roomNameList(argName).parseOptional()
         if (waypointsArgument != null) {
           if (GameMap.hasWaypoints(fromRoomName, targetRoomName) !== true) {
             GameMap.setWaypoints(fromRoomName, targetRoomName, waypointsArgument)
@@ -176,7 +176,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
         return stored
       }
 
-      const waypoints = getWaypoints(parentRoomName)
+      const waypoints = getWaypoints(parentRoomName, "waypoints")
       const claimInfo = ((): { parentRoomName: RoomName, waypoints: RoomName[] } | string => {
         const claimParentRoomName = keywordArguments.roomName("claim_parent_room_name").parseOptional({ my: true })
         if (claimParentRoomName == null) {
@@ -185,7 +185,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
             waypoints: [...waypoints],
           }
         }
-        const claimWaypoints = getWaypoints(claimParentRoomName)
+        const claimWaypoints = getWaypoints(claimParentRoomName, "claim_parent_waypoints")
         return {
           parentRoomName: claimParentRoomName,
           waypoints: claimWaypoints,
