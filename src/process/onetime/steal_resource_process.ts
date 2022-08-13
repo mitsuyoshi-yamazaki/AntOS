@@ -319,7 +319,6 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
 
     if (creep.room.name === this.targetRoomName) {
       if (creep.store.getFreeCapacity() > 0) {
-
         const droppedResource = creep.room.find(FIND_DROPPED_RESOURCES).find(resource => resourcePriority.includes(resource.resourceType) === true)
         if (droppedResource != null) {
           return FleeFromAttackerTask.create(MoveToTargetTask.create(PickupApiWrapper.create(droppedResource)))
@@ -344,6 +343,11 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
             return FleeFromAttackerTask.create(MoveToTargetTask.create(WithdrawResourceApiWrapper.create(target, resourceType)))
           }
         }
+        const waypoints = [...this.waypoints].reverse()
+        return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, waypoints))
+      }
+
+      if (creep.store.getCapacity() <= 0) {
         const waypoints = [...this.waypoints].reverse()
         return FleeFromAttackerTask.create(MoveToRoomTask.create(this.parentRoomName, waypoints))
       }
