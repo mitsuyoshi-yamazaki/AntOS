@@ -74,6 +74,7 @@ import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
 // import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 import { World42768365ProblemSolverProcess } from "process/temporary/world_42768365_problem_solver_process"
 import { ClaimProcess } from "process/onetime/claim_process"
+import { World42791528ProblemFinderProcess } from "process/temporary/world_42791528_problem_finder_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1221,6 +1222,19 @@ ProcessLauncher.register("World42768365ProblemSolverProcess", args => {
     const roomName = args.roomName("room_name").parse()
 
     return Result.Succeeded((processId) => World42768365ProblemSolverProcess.create(
+      processId,
+      roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("World42791528ProblemFinderProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => World42791528ProblemFinderProcess.create(
       processId,
       roomName,
     ))

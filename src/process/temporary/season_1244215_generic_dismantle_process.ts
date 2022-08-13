@@ -66,8 +66,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     private noFlee: boolean,
     private readonly maxBodyCount: number,
   ) {
-    this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
-    this.codename = generateCodename(this.identifier, this.launchTime)
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.parentRoomName}_${this.targetRoomName}`
+    this.codename = generateCodename(this.identifier, this.processId)
   }
 
   public encode(): Season1244215GenericDismantleProcessState {
