@@ -2,18 +2,28 @@
  # IntrashardResourceWatchdog
  ## 概要
  Shard内Roomの資源配分を管理する
+
+ ## WatchDog
+ ### 目的
+ - 必要な資源を利用できること
+ - 損失を最小限に抑えること
+   - Roomの喪失
+   - 転送Energy
+
+ ### 状態
+ - Terminalに常に空きがある
+ - おおよそ資源が分散管理されている
+ - その部屋が必要とする資源がある
+   - Energyはほとんど常に必要
  */
 
 import { WatchDog, WatchDogState } from "./watchdog"
-
-type Commands = "run" | "stop"
-type CommandResponse = void
 
 export interface IntrashardResourceWatchdogState extends WatchDogState {
 
 }
 
-export class IntrashardResourceWatchdog implements WatchDog<Commands, CommandResponse> {
+export class IntrashardResourceWatchdog implements WatchDog {
   private constructor(
   ) { }
 
@@ -31,18 +41,10 @@ export class IntrashardResourceWatchdog implements WatchDog<Commands, CommandRes
     return new IntrashardResourceWatchdog()
   }
 
-  public command(command: Commands): CommandResponse {
-    switch (command) {
-    case "run":
-      return
-    case "stop":
-      return
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = command
-      return
-    }
-    }
+  public explainCurrentState(): string {
+    const explanation: string[] = []
+
+    return explanation.join("\n")
   }
 
   public run(): void {

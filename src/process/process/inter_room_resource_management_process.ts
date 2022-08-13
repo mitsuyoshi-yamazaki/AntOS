@@ -18,6 +18,7 @@ ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
 export interface InterRoomResourceManagementProcessState extends ProcessState {
 }
 
+// FixMe: typo inter/intra
 export class InterRoomResourceManagementProcess implements Process, Procedural {
   public readonly taskIdentifier: string
 

@@ -27,6 +27,11 @@ import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { } from "./watchdog"
 import { IntrashardResourceWatchdog, IntrashardResourceWatchdogState } from "./intrashard_resource_watchdog"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { OperatingSystem } from "os/os"
+import { ProcessInfo } from "os/os_process_info"
+import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
+import { coloredText } from "utility/log"
 
 ProcessDecoder.register("IntrashardResourceWatchdogProcess", state => {
   return IntrashardResourceWatchdogProcess.decode(state as IntrashardResourceWatchdogProcessState)
@@ -39,17 +44,20 @@ type ActivityLog = {
 
 export interface IntrashardResourceWatchdogProcessState extends ProcessState {
   readonly intrashardResourceWatchDogState: IntrashardResourceWatchdogState
+  readonly running: boolean
 }
 
-export class IntrashardResourceWatchdogProcess implements Process, Procedural {
+export class IntrashardResourceWatchdogProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
   private readonly activityLog: ActivityLog
+  private interRoomResourceManagementProcessId: ProcessId | null = null
 
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly intrashardResourceWatchDog: IntrashardResourceWatchdog
+    private readonly intrashardResourceWatchDog: IntrashardResourceWatchdog,
+    private running: boolean,
   ) {
     this.taskIdentifier = this.constructor.name
 
@@ -64,6 +72,7 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural {
       l: this.launchTime,
       i: this.processId,
       intrashardResourceWatchDogState: this.intrashardResourceWatchDog.encode(),
+      running: this.running,
     }
   }
 
@@ -72,6 +81,7 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural {
       state.l,
       state.i,
       IntrashardResourceWatchdog.decode(state.intrashardResourceWatchDogState),
+      state.running,
     )
   }
 
@@ -80,20 +90,99 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural {
       Game.time,
       processId,
       IntrashardResourceWatchdog.create(),
+      false,
     )
   }
 
   public processShortDescription(): string {
-    return "" // TODO:
+    const description: string[] = []
+    if (this.running === true && this.canRunWatchDog() === true) {
+      description.push("running")
+    } else {
+      description.push("stopped")
+    }
+
+    return description.join(" ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "status", "stop", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "status":
+        return this.intrashardResourceWatchDog.explainCurrentState()
+
+      case "resume":
+        this.running = true
+        if (this.canRunWatchDog() === false) {
+          return "resumed"
+        }
+        return "resumed (still not running due to exclusive process)"
+
+      case "stop":
+        this.running = false
+        return "ok"
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
     const cpu = Game.cpu.getUsed()
-    // TODO:
+
+    if (this.running === true) {
+      if (this.canRunWatchDog() === true) {
+        this.intrashardResourceWatchDog.run()
+      }
+    }
 
     this.recordLogs(cpu)
   }
 
+  // ---- Check Exclusive Processes ---- //
+  private canRunWatchDog(): boolean {
+    const exclusiveProcessInfo = ((): ProcessInfo | null => {
+      if (this.interRoomResourceManagementProcessId != null) {
+        const processInfo = OperatingSystem.os.processInfoOf(this.interRoomResourceManagementProcessId)
+        if (processInfo != null) {
+          return processInfo
+        }
+        this.interRoomResourceManagementProcessId = null
+      }
+
+      const processInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+        if (processInfo.process instanceof IntershardResourceTransferProcess) {
+          return true
+        }
+        return false
+      })
+      if (processInfo != null) {
+        this.interRoomResourceManagementProcessId = processInfo.processId
+        return processInfo
+      }
+      return null
+    })()
+
+    if (exclusiveProcessInfo == null) {
+      return true
+    }
+    if (exclusiveProcessInfo.running !== true) {
+      return true
+    }
+    return false
+  }
+
+  // ---- Activity Logs ---- //
   private recordLogs(cpuUse: number): void {
     this.activityLog.cpuUse.push(cpuUse)
 
