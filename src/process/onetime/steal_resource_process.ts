@@ -43,6 +43,18 @@ const resourcePriority: ResourceConstant[] = [  // 添字の大きいほうが�
 
 type State = "stop_spawning" | "in progress" | "finished"
 type TargetType = StructureStorage | StructureTerminal | StructureFactory
+const isTargetType = (obj: unknown): obj is TargetType => {
+  if (obj instanceof StructureStorage) {
+    return true
+  }
+  if (obj instanceof StructureTerminal) {
+    return true
+  }
+  if (obj instanceof StructureFactory) {
+    return true
+  }
+  return false
+}
 
 export interface StealResourceProcessState extends ProcessState {
   /** parent room name */
@@ -77,7 +89,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private readonly targetId: Id<TargetType>,
+    private targetId: Id<TargetType>,
     private state: State,
     private readonly takeAll: boolean,
     private creepCount: number,
@@ -141,7 +153,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_creep_count", "stop", "resume"]
+    const commandList = ["help", "set_creep_count", "change_target", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -156,6 +168,26 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
         const oldValue = this.creepCount
         this.creepCount = count
         return `set creep count ${count} (from ${oldValue})`
+      }
+
+      case "change_target": {
+        const listArguments = new ListArguments(components)
+        const oldTargetId = this.targetId
+        const newTargetId = listArguments.gameObjectId(0, "target ID").parse()
+
+        const isTargetRoomVisible = Game.rooms[this.targetRoomName] != null
+        if (isTargetRoomVisible !== true) {
+          this.targetId = newTargetId as Id<TargetType>
+          return `${oldTargetId} =&gt ${this.targetId}`
+        }
+
+        const newTarget = Game.getObjectById(newTargetId)
+        if (!isTargetType(newTarget)) {
+          throw `${newTarget} with ID ${newTargetId} cannot be assigned as target`
+        }
+        this.targetId = newTarget.id
+        const oldTarget = Game.getObjectById(oldTargetId)
+        return `${oldTarget} =&gt ${newTarget}`
       }
 
       case "resume": {
