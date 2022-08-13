@@ -20,7 +20,6 @@ import { Environment } from "utility/environment"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { GameConstants } from "utility/constants"
 import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
-import { defaultMaxWallHits } from "room_resource/room_info_accessor"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -150,10 +149,6 @@ export class RoomKeeperTask extends Task {
       }
 
       if (wallTypes.includes(structure.structureType) === true) {
-        if (structure.hits >= defaultMaxWallHits) {
-          return
-        }
-
         structure.destroy()
         return
       }
