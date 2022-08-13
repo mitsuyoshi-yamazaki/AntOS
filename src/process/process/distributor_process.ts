@@ -343,13 +343,13 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
     const terminalAmount = 20000
     const excludedResourceTypes: ResourceConstant[] = [
       RESOURCE_ENERGY,
-      RESOURCE_POWER,
-      RESOURCE_OPS,
-      ...Tier1CommodityConstants,
-      ...Tier2CommodityConstants,
-      ...Tier3CommodityConstants,
-      ...Tier4CommodityConstants,
-      ...Tier5CommodityConstants,
+      // RESOURCE_POWER,
+      // RESOURCE_OPS,
+      // ...Tier1CommodityConstants,
+      // ...Tier2CommodityConstants,
+      // ...Tier3CommodityConstants,
+      // ...Tier4CommodityConstants,
+      // ...Tier5CommodityConstants,
     ]
 
     const creepResourceType = Object.keys(creep.store)[0]
