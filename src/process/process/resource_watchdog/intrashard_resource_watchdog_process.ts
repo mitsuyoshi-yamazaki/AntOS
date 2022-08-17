@@ -31,7 +31,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
 import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
-import { coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ValuedArrayMap } from "utility/valued_collection"
 
 ProcessDecoder.register("IntrashardResourceWatchdogProcess", state => {
@@ -111,7 +111,7 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status", "stop", "resume"]
+    const commandList = ["help", "status", "dry_run", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -122,6 +122,9 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
 
       case "status":
         return this.showStatus()
+
+      case "dry_run":
+        return this.dryRun()
 
       case "resume":
         this.running = true
@@ -142,6 +145,24 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
     }
   }
 
+  private dryRun(): string {
+    return this.intrashardResourceWatchDog.dryRun()
+      .map(task => {
+        switch (task.case) {
+        case "send resource":
+          return `- ${roomLink(task.from)} =&gt ${roomLink(task.to)} ${task.amount} ${coloredResourceType(task.resourceType)}`
+        case "resolve action incomplete":
+          return task.case // TODO:
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = task
+          return "never"
+        }
+        }
+      })
+      .join("\n")
+  }
+
   private showStatus(): string {
     const status = this.intrashardResourceWatchDog.getCurrentState()
     const errors = new ValuedArrayMap<string, string>() // error name, room error description
@@ -151,6 +172,9 @@ export class IntrashardResourceWatchdogProcess implements Process, Procedural, M
         switch (error.case) {
         case "lack of terminal space":
           errors.getValueFor(error.case).push(`${roomLink(roomName)}, ${error.freeSpace}`)
+          break
+        case "lack of terminal energy space":
+          errors.getValueFor(error.case).push(`${roomLink(roomName)}, ${error.energySpace - error.freeSpace}/${error.energySpace}`)
           break
         case "lack of energy":
           errors.getValueFor(error.case).push(`${roomLink(roomName)}, ${error.totalEnergyAmount}`)

@@ -18,7 +18,7 @@ import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { isResourceConstant, Tier1CommodityConstants, Tier2CommodityConstants, Tier3CommodityConstants, Tier4CommodityConstants, Tier5CommodityConstants } from "utility/resource"
+import { isResourceConstant } from "utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
