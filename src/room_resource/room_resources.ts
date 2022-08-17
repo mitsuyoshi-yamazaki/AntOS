@@ -131,7 +131,7 @@ export const RoomResources: RoomResourcesInterface = {
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount, 0)
     }
 
-    const numberOfRoomsInShard3 = 5
+    const numberOfRoomsInShard3 = 2
     switch (Environment.shard) {  // TODO:
     case "shard2":
       return Math.max(Game.gcl.level - roomCountInShard - gclFarmReservationCount - numberOfRoomsInShard3, 0)
