@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { RoomName } from "utility/room_name"
-import { coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -73,6 +73,7 @@ export interface StealResourceProcessState extends ProcessState {
   finishWorking: number
   storeId: Id<StructureStorage | StructureTerminal> | null
   stopSpawningReasons: string[]
+  prioritizedResources: ResourceConstant[]
 }
 
 export class StealResourceProcess implements Process, Procedural, MessageObserver {
@@ -82,6 +83,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
 
   public readonly identifier: string
   private readonly codename: string
+  private resourcePriority: ResourceConstant[]
 
   private constructor(
     public readonly launchTime: number,
@@ -96,9 +98,12 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
     private readonly finishWorking: number,
     private readonly storeId: Id<StructureStorage | StructureTerminal> | null,
     private stopSpawningReasons: string[],
+    private prioritizedResources: ResourceConstant[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+
+    this.resourcePriority = this.updatedResourcePriority()
   }
 
   public encode(): StealResourceProcessState {
@@ -116,11 +121,26 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       finishWorking: this.finishWorking,
       storeId: this.storeId,
       stopSpawningReasons: this.stopSpawningReasons,
+      prioritizedResources: this.prioritizedResources,
     }
   }
 
   public static decode(state: StealResourceProcessState): StealResourceProcess {
-    return new StealResourceProcess(state.l, state.i, state.p, state.tr, state.w, state.targetId, state.state, state.takeAll, state.creepCount, state.finishWorking, state.storeId, state.stopSpawningReasons ?? [])
+    return new StealResourceProcess(
+      state.l,
+      state.i,
+      state.p,
+      state.tr,
+      state.w,
+      state.targetId,
+      state.state,
+      state.takeAll,
+      state.creepCount,
+      state.finishWorking,
+      state.storeId,
+      state.stopSpawningReasons,
+      state.prioritizedResources ?? [],
+    )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], targetId: Id<TargetType>, takeAll: boolean, creepCount: number, finishWorkig: number, options?: {storeId?: Id<StructureStorage | StructureTerminal>}): StealResourceProcess {
@@ -136,6 +156,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       creepCount,
       finishWorkig,
       options?.storeId ?? null,
+      [],
       [],
     )
   }
@@ -153,7 +174,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_creep_count", "change_target", "stop", "resume"]
+    const commandList = ["help", "set_creep_count", "change_target", "prioritize", "show_priority", "reset_priority", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -190,6 +211,44 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
         return `${oldTarget} =&gt ${newTarget}`
       }
 
+      case "prioritize": {
+        const listArguments = new ListArguments(components)
+        const resourceType = listArguments.resourceType(0, "resource type").parse()
+
+        const index = this.prioritizedResources.indexOf(resourceType)
+        if (index >= 0) {
+          this.prioritizedResources.splice(index, 1)
+        }
+        this.prioritizedResources.push(resourceType)
+        this.resourcePriority = this.updatedResourcePriority()
+
+        return `prioritized ${coloredResourceType(resourceType)}`
+      }
+
+      case "show_priority": {
+        const convertToReadableOutputs = (resources: ResourceConstant[]): string[] => {
+          const converted: string[] = resources.map(resourceType => `- ${coloredResourceType(resourceType)}`)
+          converted.reverse()
+          return converted
+        }
+
+        const output: string[] = []
+        if (this.prioritizedResources.length > 0) {
+          output.push(...[
+            "manually added:",
+            ...convertToReadableOutputs(this.prioritizedResources),
+            "all:",
+          ])
+        }
+        output.push(...convertToReadableOutputs(this.resourcePriority))
+        return output.join("\n")
+      }
+
+      case "reset_priority":
+        this.prioritizedResources = []
+        this.resourcePriority = this.updatedResourcePriority()
+        return "resource priority reset"
+
       case "resume": {
         const oldValues = [...this.stopSpawningReasons]
         this.stopSpawningReasons = []
@@ -209,6 +268,14 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  private updatedResourcePriority(): ResourceConstant[] {
+    const defaultPriority = [...resourcePriority].filter(resourceType => this.prioritizedResources.includes(resourceType) !== true)
+    return [
+      ...defaultPriority,
+      ...this.prioritizedResources,
+    ]
   }
 
   public runOnTick(): void {
@@ -319,7 +386,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
 
     if (creep.room.name === this.targetRoomName) {
       if (creep.store.getFreeCapacity() > 0) {
-        const droppedResource = creep.room.find(FIND_DROPPED_RESOURCES).find(resource => resourcePriority.includes(resource.resourceType) === true)
+        const droppedResource = creep.room.find(FIND_DROPPED_RESOURCES).find(resource => this.resourcePriority.includes(resource.resourceType) === true)
         if (droppedResource != null) {
           return FleeFromAttackerTask.create(MoveToTargetTask.create(PickupApiWrapper.create(droppedResource)))
         }
@@ -331,7 +398,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
             if (resourceType == null) {
               return true
             }
-            if (this.takeAll !== true && resourcePriority.includes(resourceType) !== true) {
+            if (this.takeAll !== true && this.resourcePriority.includes(resourceType) !== true) {
               return true
             }
             return false
@@ -370,7 +437,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
   private resourceToSteal(target: TargetType): ResourceConstant | null {
     const resourceType = (Object.keys(target.store) as ResourceConstant[])
       .sort((lhs, rhs) => {
-        return resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs)
+        return this.resourcePriority.indexOf(rhs) - this.resourcePriority.indexOf(lhs)
       })[0]
     return resourceType ?? null
   }
