@@ -167,6 +167,11 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       `${roomLink(this.targetRoomName)} ${this.state}`,
       `${creepCount}cr`,
     ]
+    if (this.prioritizedResources.length > 0) {
+      const resources = [...this.prioritizedResources]
+      resources.reverse()
+      descriptions.push(`[${resources.map(resource => coloredResourceType(resource)).join(",")}]`)
+    }
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`spawn stopped due to: ${this.stopSpawningReasons.join(", ")}`)
     }
