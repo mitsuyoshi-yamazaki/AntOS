@@ -34,6 +34,9 @@ import { ProcessManager } from "./process_manager"
 import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
 import { } from "./system_call/standard_input_command/process_command"
+import type { ProcessId } from "v8/process/process"
+import type { ProcessType } from "v8/process/process_type"
+import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 
 type LifecycleEventLoad = "load"
 type LifecycleEventStartOfTick = "start_of_tick"
@@ -72,7 +75,7 @@ const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
   end_of_tick: [],
 }
 const standardInputCommands = [
-  new LaunchCommand(ProcessManager.launchProcess),
+  new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args)),
 ]
 
 export const Kernel: KernelInterface & SystemCallInterface = {
