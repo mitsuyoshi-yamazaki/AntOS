@@ -3,5 +3,6 @@ export interface GameInfoMemory {
   sourceHarvestWhitelist: string[]
   disableEnergyTransfer?: boolean
   disableResourceTransfer?: boolean
+  disableMineralHarvesting?: boolean
   activeShards?: string[]
 }
