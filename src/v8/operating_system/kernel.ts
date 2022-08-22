@@ -28,10 +28,9 @@
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { EnvironmentalVariables } from "./environmental_variables"
 import { } from "./kernel_memory"
 import { Driver } from "./driver"
-import { ProcessScheduler } from "./process_scheduler"
+import { ProcessManager } from "./process_manager"
 import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
 import { } from "./system_call/standard_input_command/process_command"
@@ -66,7 +65,6 @@ type SystemCallInterface = {
 
 type DriverEventCall = () => void
 
-const processScheduler = new ProcessScheduler(EnvironmentalVariables.kernelMemory.process)
 let lastCpuUse: number | null = null
 const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
   load: [],
@@ -74,7 +72,7 @@ const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
   end_of_tick: [],
 }
 const standardInputCommands = [
-  new LaunchCommand(processScheduler.launchWithArguments),
+  new LaunchCommand(ProcessManager.launchProcess),
 ]
 
 export const Kernel: KernelInterface & SystemCallInterface = {
@@ -127,7 +125,7 @@ export const Kernel: KernelInterface & SystemCallInterface = {
       PrimitiveLogger.log("v8 kernel.run()")  // FixMe: 消す
     }
 
-    processScheduler.run(lastCpuUse)
+    ProcessManager.runProcesses(lastCpuUse)
 
     driverCalls.end_of_tick.forEach(call => {
       ErrorMapper.wrapLoop((): void => {
@@ -155,6 +153,6 @@ const loadDrivers = (): void => {
 
 const systemCallStartOfTick = (): void => {
   ErrorMapper.wrapLoop((): void => {
-    Game.v8 = standardInput(standardInputCommands)
+    Game.v3 = standardInput(standardInputCommands)
   })()
 }

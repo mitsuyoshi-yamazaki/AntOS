@@ -9,10 +9,10 @@ import { leveled_colored_text } from "./utility"
 import { OperatingSystem } from "os/os"
 import { SystemInfo } from "utility/system_info"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
-// import { Environment } from "utility/environment"
-// import { BootLoader } from "v8/operating_system/boot_loader"
-// import { Kernel } from "v8/operating_system/kernel"
-// import { EnvironmentalVariables } from "v8/operating_system/environmental_variables"
+import { Environment } from "utility/environment"
+import { BootLoader } from "v8/operating_system/boot_loader"
+import { Kernel } from "v8/operating_system/kernel"
+import { EnvironmentalVariables } from "v8/operating_system/environmental_variables"
 
 memhack.load()
 
@@ -20,7 +20,7 @@ initializerInit()
 const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
 console.log(leveled_colored_text(initializing_message, "warn"))
 
-// BootLoader.load()
+BootLoader.load()
 
 const mainLoop = () => {
   ErrorMapper.wrapLoop(() => {
@@ -37,18 +37,18 @@ const mainLoop = () => {
     OperatingSystem.os.run()
   }, "OS")()
 
-  // if (Environment.world === "persistent world" && Environment.shard === "shard3") { // TODO: 全展開する
-  // // if (Environment.world === "private") {
-  //   if (EnvironmentalVariables.kernelMemory.enabled === true) {
-  //     ErrorMapper.wrapLoop((): void => {
-  //       Kernel.run()
-  //     }, "v8 OS")()
-  //   } else {
-  //     if (Game.time % 10 === 0) {
-  //       console.log("v8 kernel is disabled")
-  //     }
-  //   }
-  // }
+  if (Environment.world === "persistent world" && Environment.shard === "shard3") { // TODO: 全展開する
+  // if (Environment.world === "private") {
+    if (EnvironmentalVariables.kernelMemory.enabled === true) {
+      ErrorMapper.wrapLoop((): void => {
+        Kernel.run()
+      }, "v3 OS")()
+    } else {
+      if (Game.time % 10 === 0) {
+        console.log("v3 kernel is disabled")
+      }
+    }
+  }
 
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)

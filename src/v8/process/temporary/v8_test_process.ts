@@ -1,35 +1,33 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Process, ProcessId, ProcessState } from "../process"
-import { ShortV8TestProcessType } from "../process_type"
+import { Process, ProcessState } from "../process"
+import { ProcessTypeConverter } from "../process_type"
 
 export interface V8TestProcessState extends ProcessState {
-  readonly t: ShortV8TestProcessType
 }
 
-export class V8TestProcess implements Process<void, void, void, void> {
+export class V8TestProcess extends Process {
   public readonly processType = "V8TestProcess"
 
   private constructor(
-    public readonly processId: ProcessId,
   ) {
+    super()
   }
 
   public encode(): V8TestProcessState {
     return {
-      i: this.processId,
-      t: "a",
+      t: ProcessTypeConverter.convert(this.processType),
     }
   }
 
   public static decode(state: V8TestProcessState): V8TestProcess {
-    return new V8TestProcess(state.i)
+    return new V8TestProcess()
   }
 
-  public static create(processId: ProcessId): V8TestProcess {
-    return new V8TestProcess(processId)
+  public static create(): V8TestProcess {
+    return new V8TestProcess()
   }
 
-  public run(): void {
+  public run = (): void => {
     if (Game.time % 20 === 0) {
       PrimitiveLogger.log(`${this.constructor.name} run`)  // FixMe: 消す
     }

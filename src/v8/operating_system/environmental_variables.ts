@@ -11,6 +11,16 @@ type EnvironmentalVariablesInterface = {
   kernelMemory: KernelMemory
 }
 
+if (Memory.v3 == null) {
+  Memory.v3 = {
+    enabled: false,
+    process: {
+      processIdIndex: 0,
+      processInfoMemories: {},
+    },
+  }
+}
+
 export const EnvironmentalVariables: EnvironmentalVariablesInterface = {
-  kernelMemory: Memory.v8,
+  kernelMemory: Memory.v3,
 }

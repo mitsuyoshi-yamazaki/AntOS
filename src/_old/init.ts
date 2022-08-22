@@ -38,15 +38,15 @@ export function init(): void {
   if (Memory.gameInfo.sourceHarvestWhitelist == null) {
     Memory.gameInfo.sourceHarvestWhitelist = []
   }
-  if (Memory.v8 == null) {
-    Memory.v8 = {
-      enabled: false,
-      process: {
-        processIdIndex: 0,
-        processInfo: {},
-      }
-    }
-  }
+  // if (Memory.v3 == null) { // EnvironmentalVariableのロード時に存在する必要があるためそちらで行っている
+  //   Memory.v3 = {
+  //     enabled: false,
+  //     process: {
+  //       processIdIndex: 0,
+  //       processInfoMemories: {},
+  //     },
+  //   }
+  // }
 
   if (Memory.room_info == null) {
     Memory.room_info = {}

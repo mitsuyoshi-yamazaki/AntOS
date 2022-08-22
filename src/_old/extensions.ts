@@ -18,7 +18,7 @@ import { KernelMemory } from "v8/operating_system/kernel_memory"
 declare global {
   interface Game {
     io: (message: string) => string
-    v8: (message: string) => string // TODO: Game.ioに置き換える
+    v3: (message: string) => string // TODO: Game.ioに置き換える
 
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
@@ -31,7 +31,7 @@ declare global {
 
   interface Memory {
     os: OSMemory
-    v8: KernelMemory
+    v3: KernelMemory
     versions: string[]
     cpu_usages: number[]
     cpu: {
