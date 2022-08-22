@@ -2,6 +2,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ValuedArrayMap } from "utility/valued_collection"
 import { Process, ProcessId } from "v8/process/process"
 import { ProcessType } from "v8/process/process_type"
+import { RootProcess } from "v8/process/root_process"
 
 export type RunningProcess = Process & { processId: ProcessId }
 
@@ -21,6 +22,8 @@ const processesByParent = new ValuedArrayMap<ProcessId, ProcessInfo>()
 const processesByType = new ValuedArrayMap<ProcessType, ProcessInfo>()
 
 export const ProcessStore = {
+  rootProcess: new RootProcess(),
+
   processInfo(processId: ProcessId): ProcessInfo | null {
     return processes.get(processId) ?? null
   },
@@ -56,7 +59,7 @@ export const ProcessStore = {
     removeProcessInfoFrom(processesByParent.getValueFor(processInfo.parentProcessId), processInfo)
     removeProcessInfoFrom(processesByType.getValueFor(processInfo.process.processType), processInfo)
   },
-}
+} as const
 
 const removeProcessInfoFrom = (processInfoList: ProcessInfo[], processInfo: ProcessInfo): void => {
   const index = processInfoList.indexOf(processInfo)

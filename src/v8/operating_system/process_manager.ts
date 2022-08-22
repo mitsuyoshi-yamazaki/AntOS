@@ -10,15 +10,13 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { UniqueId } from "utility/unique_id"
 import { ProcessId, Process } from "../process/process"
-import { RootProcess } from "../process/root_process"
 import { SystemCall } from "./system_call"
 import { ExternalProcessInfo, ProcessInfo, ProcessStore, RunningProcess } from "./process_store"
 import { EnvironmentalVariables } from "./environmental_variables"
 import { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
-
-const rootProcess = new RootProcess()
+import { RootProcess } from "v8/process/root_process"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -94,7 +92,12 @@ export const ProcessManager: ProcessManagerInterface = {
 
   /** @throws */
   launchProcess(parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser): Process {
-    const parentProcess = ProcessStore.processInfo(parentProcessId)?.process
+    const parentProcess = ((): Process | RootProcess | null => {
+      if (parentProcessId === ProcessStore.rootProcess.processId) {
+        return ProcessStore.rootProcess
+      }
+      return ProcessStore.processInfo(parentProcessId)?.process ?? null
+    })()
     if (parentProcess == null) {
       throw `no parent process with ID ${parentProcessId}`
     }
@@ -107,7 +110,7 @@ export const ProcessManager: ProcessManagerInterface = {
     this.addProcess(process, parentProcessId)
     return process
   }
-}
+} as const
 
 const assignProcessId = (process: Process): RunningProcess => {
   (process as unknown as { _processId: ProcessId })._processId = newProcessId()
@@ -150,8 +153,8 @@ const encodeProcesses = (): void => {
 }
 
 const runProcesses = (): void => {
-  rootProcess.run()
-  const childProcesses = ProcessStore.childProcessInfo(rootProcess.processId)
+  ProcessStore.rootProcess.run()
+  const childProcesses = ProcessStore.childProcessInfo(ProcessStore.rootProcess.processId)
   if (childProcesses == null) {
     return
   }
@@ -173,94 +176,3 @@ const runProcessRecursively = (processInfo: ProcessInfo): void => {
 
   childProcesses.forEach(childProcessInfo => runProcessRecursively(childProcessInfo))
 }
-
-
-// export const ProcessScheduler = {
-
-//   private decodeProcesses(memory: ProcessSchedulerMemory): void {
-//     Array.from(Object.entries(memory.processInfo)).forEach(([parentProcessId, processInfoMemory]) => {
-//       const processInfo = this.decodeProcess(processInfoMemory)
-//       if (processInfo == null) {
-//         PrimitiveLogger.programError(`ProcessScheduler unable to decode process ${processInfoMemory.s.i} ${processInfoMemory.s.t} (${ProcessTypeConverter.revert(processInfoMemory.s.t)})`)
-//         return
-//       }
-//       this.processInfoByParentProcessId.getValueFor(parentProcessId).push(processInfo)
-//       this.processInfoByType.getValueFor(processInfo.process.processType).push(processInfo)
-//       this.processInfoByProcessId.set(processInfo.process.processId, processInfo)
-//     })
-//   }
-
-//   private decodeProcess(state: ProcessInfoState): ProcessInfo | null {
-//     const process = ProcessDecoder.decode(state.s)
-//     if (process == null) {
-//       return null
-//     }
-//     return {
-//       running: state.r,
-//       process,
-//     }
-//   }
-
-//   public run(lastCpuUse: number | null): void {
-//     // TODO: CPU time management
-//     // TODO: handle child process result
-
-//     this.rootProcess.run()
-//     this.runProcess(this.rootProcess.processId)
-//   }
-
-//   private runProcess(parentProcessId: ProcessId): void {
-//     const childProcesses = this.processInfoByParentProcessId.get(parentProcessId)
-//     if (childProcesses == null) {
-//       return
-//     }
-
-//     childProcesses.forEach(processInfo => {
-//       if (processInfo.running !== true) {
-//         return
-//       }
-//       processInfo.process.run()
-
-//       this.runProcess(processInfo.process.processId)
-//     })
-//   }
-
-//   // TODO: enableLog
-//   public launch(parentProcessId: ParentProcessId, maker: (processId: ProcessId) => Process, options?: { enableLog?: boolean }): Process {
-//     const processId = this.createProcessId()
-//     const process = maker(processId)
-//     const processInfo: ProcessInfo = {
-//       process,
-//       running: true,
-//     }
-
-//     this.processInfoByParentProcessId.getValueFor(parentProcessId).push(processInfo)
-//     this.processInfoByProcessId.set(processInfo.process.processId, processInfo)
-
-//     return process
-//   }
-
-//   private createProcessId(): ProcessId {
-//     const index = this.processIdIndex
-//     this.processIdIndex += 1
-
-//     return UniqueId.generateFromInteger(index)
-//   }
-
-//   /** @throws */
-//   public launchWithArguments(parentProcessId: ParentProcessId, processType: ProcessType, args: ArgumentParser): Process {
-//     const parentProcess = this.processInfoByProcessId.get(parentProcessId)?.process
-//     if (parentProcess == null) {
-//       throw `no parent process with ID ${parentProcessId}`
-//     }
-
-//     if (!isLauncherProcess(parentProcess)) {
-//       throw `${parentProcess.constructor.name} doesn't have child processes`
-//     }
-
-//     const processMaker = parentProcess.didReceiveLaunchMessage(processType, args)
-//     const process = this.launch(parentProcessId, processMaker)
-
-//     return process
-//   }
-// }
