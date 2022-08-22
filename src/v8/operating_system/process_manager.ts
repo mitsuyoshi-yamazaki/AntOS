@@ -123,7 +123,7 @@ const resignProcessId = (process: RunningProcess): Process => {
 }
 
 const newProcessId = (): ProcessId => {
-  const processId: ProcessId = UniqueId.generateFromInteger(EnvironmentalVariables.kernelMemory.process.processIdIndex)
+  const processId: ProcessId = `p${UniqueId.generateFromInteger(EnvironmentalVariables.kernelMemory.process.processIdIndex) }`
   EnvironmentalVariables.kernelMemory.process.processIdIndex += 1
   return processId
 }
