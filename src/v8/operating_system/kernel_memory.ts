@@ -3,10 +3,10 @@ import type { ProcessId, ProcessState } from "v8/process/process"
 export type KernelMemory = {
   enabled: boolean  // FixMe: 前バージョンの動作を妨げないためのもの：運用開始したら消す
 
-  process: ProcessSchedulerMemory
+  process: ProcessManagerMemory
 }
 
-export type ProcessSchedulerMemory = {
+type ProcessManagerMemory = {
   processIdIndex: number
   processInfoMemories: {[ParentProcessId: string]: ProcessInfoMemory[]}
 }

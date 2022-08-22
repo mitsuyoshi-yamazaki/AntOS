@@ -63,6 +63,10 @@ export const ProcessStore = {
   allProcesses(): ProcessInfo[] {
     return Array.from(processes.values())
   },
+
+  processListByParentId(): Map<ProcessId, ProcessInfo[]> {
+    return new Map(processesByParent)
+  },
 } as const
 
 const removeProcessInfoFrom = (processInfoList: ProcessInfo[], processInfo: ProcessInfo): void => {

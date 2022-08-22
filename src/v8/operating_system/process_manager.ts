@@ -17,6 +17,7 @@ import { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
 import { RootProcess } from "v8/process/root_process"
+import { ProcessInfoMemory } from "./kernel_memory"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -38,6 +39,8 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
   // ---- Standard IO ---- //
   listProcesses(): ProcessInfo[]
 }
+
+const processManagerMemory = EnvironmentalVariables.kernelMemory.process
 
 export const ProcessManager: ProcessManagerInterface = {
   // ---- Accessor ---- //
@@ -131,8 +134,8 @@ const resignProcessId = (process: RunningProcess): Process => {
 }
 
 const newProcessId = (): ProcessId => {
-  const processId: ProcessId = `p${UniqueId.generateFromInteger(EnvironmentalVariables.kernelMemory.process.processIdIndex) }`
-  EnvironmentalVariables.kernelMemory.process.processIdIndex += 1
+  const processId: ProcessId = `p${UniqueId.generateFromInteger(processManagerMemory.processIdIndex) }`
+  processManagerMemory.processIdIndex += 1
   return processId
 }
 
@@ -157,7 +160,20 @@ const decodeProcesses = (): void => {
 }
 
 const encodeProcesses = (): void => {
-  // TODO:
+  const allProcessState: { [ParentProcessId: string]: ProcessInfoMemory[] } = {}
+
+  Array.from(ProcessStore.processListByParentId().entries()).forEach(([parentProcessId, processInfoList]) => {
+    if (processInfoList.length <= 0) {
+      return
+    }
+    allProcessState[parentProcessId] = processInfoList.map(processInfo => ({
+      i: processInfo.process.processId,
+      r: processInfo.running,
+      s: processInfo.process.encode(),
+    }))
+  })
+
+  processManagerMemory.processInfoMemories = allProcessState
 }
 
 const runProcesses = (): void => {
