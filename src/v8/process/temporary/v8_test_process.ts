@@ -27,6 +27,10 @@ export class V8TestProcess extends Process {
     return new V8TestProcess()
   }
 
+  public shortDescription = (): string => {
+    return this.constructor.name
+  }
+
   public run = (): void => {
     if (Game.time % 20 === 0) {
       PrimitiveLogger.log(`${this.constructor.name} run`)  // FixMe: 消す

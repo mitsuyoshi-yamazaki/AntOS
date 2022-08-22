@@ -34,6 +34,9 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
 
   /** @throws */
   launchProcess(parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser): Process
+
+  // ---- Standard IO ---- //
+  listProcesses(): ProcessInfo[]
 }
 
 export const ProcessManager: ProcessManagerInterface = {
@@ -109,7 +112,12 @@ export const ProcessManager: ProcessManagerInterface = {
     const process = parentProcess.didReceiveLaunchMessage(processType, args)
     this.addProcess(process, parentProcessId)
     return process
-  }
+  },
+
+  // ---- Standard IO ---- //
+  listProcesses(): ProcessInfo[] {
+    return ProcessStore.allProcesses()
+  },
 } as const
 
 const assignProcessId = (process: Process): RunningProcess => {

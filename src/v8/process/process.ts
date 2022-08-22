@@ -74,13 +74,16 @@ export abstract class Process implements Stateful {
   }
   private _processId: ProcessId | null = null // この辺りを変更する場合は外部から直接変更しているProcessSchedulerの内部実装も併せて変更すること
 
-  abstract readonly processType: ProcessType
+  public abstract readonly processType: ProcessType
 
   protected constructor(
   ) {
   }
 
-  abstract encode(): ProcessState
+  public abstract encode(): ProcessState
+
+  public shortDescription?: () => string
+  public description?: () => string
 
   /**
    * 子Processの実行に引数が必要な場合、親Processが自身のrun()内で必要な引数を与えたexecutableを子Processにセットする

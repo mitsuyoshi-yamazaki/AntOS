@@ -10,7 +10,7 @@ type ProcessLauncher = (parentProcessId: ProcessId, processType: ProcessType, ar
 export class LaunchCommand implements StandardInputCommand {
   public readonly description = [
     "# launch command",
-    "&ltparent process ID&gt &ltprocess type&gt &lt...arguments&gt"
+    "- &ltparent process ID&gt &ltprocess type&gt &lt...arguments&gt"
   ].join("\n")
 
   public constructor(
