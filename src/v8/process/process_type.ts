@@ -3,7 +3,6 @@ import { MemoryIdentifierConverter  } from "../utility/memory_identifier_convert
 export const rootProcessId = "root" // TODO: 不要なら消す
 
 const processTypes = [
-  "RootProcess",
   "V8TestProcess",
 ] as const
 export type ProcessType = typeof processTypes[number]
@@ -16,7 +15,6 @@ export const isProcessType = (arg: string): arg is ProcessType => {
 }
 
 const processTypeMap = {
-  "0": "RootProcess" as const,
   "1": "V8TestProcess" as const,
 }
 export type CompressedProcessType = keyof typeof processTypeMap

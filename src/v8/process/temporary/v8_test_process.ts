@@ -1,12 +1,16 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Process, ProcessState } from "../process"
+import { ProcessDecoder } from "../process_decoder"
 import { ProcessTypeConverter } from "../process_type"
+
+const processType = "V8TestProcess"
+ProcessDecoder.register(ProcessTypeConverter.convert(processType), state => V8TestProcess.decode(state as V8TestProcessState))
 
 export interface V8TestProcessState extends ProcessState {
 }
 
 export class V8TestProcess extends Process {
-  public readonly processType = "V8TestProcess"
+  public readonly processType = processType
 
   private constructor(
   ) {

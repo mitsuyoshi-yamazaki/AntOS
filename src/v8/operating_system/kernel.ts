@@ -146,7 +146,7 @@ const loadDrivers = (): void => {
   for(const load of driverFunctions.load) {
     ErrorMapper.wrapLoop((): void => {
       load()
-    })
+    })()
     // if (Game.cpu.getUsed() - cpu > maxCpu) {
     //   break
     // }

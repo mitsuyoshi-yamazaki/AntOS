@@ -9,7 +9,7 @@
 
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { UniqueId } from "utility/unique_id"
-import { ProcessId, Process } from "../process/process"
+import { ProcessId, Process, ProcessState } from "../process/process"
 import { SystemCall } from "./system_call"
 import { ExternalProcessInfo, ProcessInfo, ProcessStore, RunningProcess } from "./process_store"
 import { EnvironmentalVariables } from "./environmental_variables"
@@ -18,6 +18,7 @@ import { ArgumentParser } from "os/infrastructure/console_command/utility/argume
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
 import { RootProcess } from "v8/process/root_process"
 import { ProcessInfoMemory } from "./kernel_memory"
+import { ProcessDecoder } from "v8/process/process_decoder"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -123,8 +124,8 @@ export const ProcessManager: ProcessManagerInterface = {
   },
 } as const
 
-const assignProcessId = (process: Process): RunningProcess => {
-  (process as unknown as { _processId: ProcessId })._processId = newProcessId()
+const assignProcessId = (process: Process, processId: ProcessId): RunningProcess => {
+  (process as unknown as { _processId: ProcessId })._processId = processId
   return process as RunningProcess
 }
 
@@ -145,7 +146,7 @@ const addProcess = (process: Process, parentProcessId: ProcessId): void => {
     return
   }
 
-  const runningProcess = assignProcessId(process)
+  const runningProcess = assignProcessId(process, newProcessId())
   const processInfo: ProcessInfo = {
     process: runningProcess,
     parentProcessId,
@@ -156,7 +157,27 @@ const addProcess = (process: Process, parentProcessId: ProcessId): void => {
 }
 
 const decodeProcesses = (): void => {
-  // TODO:
+  if (ProcessStore.allProcesses().length > 0) {
+    PrimitiveLogger.programError(`decodeProcesses ${ProcessStore.allProcesses().length} processes`)
+    return
+  }
+
+  Array.from(Object.entries(processManagerMemory.processInfoMemories)).forEach(([parentProcessId, processStateList]) => {
+    processStateList.forEach(processState => {
+      const process = ProcessDecoder.decode(processState.s)
+      if (process == null) {
+        return
+      }
+      const runningProcess = assignProcessId(process, processState.i)
+      const processInfo: ProcessInfo = {
+        process: runningProcess,
+        running: processState.r,
+        parentProcessId,
+      }
+
+      ProcessStore.addProcess(processInfo)
+    })
+  })
 }
 
 const encodeProcesses = (): void => {
