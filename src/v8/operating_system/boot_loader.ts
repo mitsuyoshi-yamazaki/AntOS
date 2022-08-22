@@ -12,13 +12,14 @@
  `BootLoader` の初期化は `Kernel` の初期化後に実行されるため、 `Kernel` 初期化時に存在する必要のある★項目は `environmental_variables.ts` に実装する
  */
 
+import type { Driver } from "./driver"
+import { Kernel } from "./kernel"
+
 export const BootLoader = {
   load(): void {
-    registerDrivers()
+    const drivers: Driver[] = [
+    ]
+    Kernel.registerDrivers(drivers)
+    Kernel.load()
   },
-}
-
-/// Driverの呼び出し順は依存があるためここ一箇所で登録する
-const registerDrivers = (): void => {
-  // TODO:
 }

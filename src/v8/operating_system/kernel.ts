@@ -33,97 +33,90 @@ import { Driver } from "./driver"
 import { ProcessManager } from "./process_manager"
 import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
-import { } from "./system_call/standard_input_command/process_command"
+import { ProcessCommand } from "./system_call/standard_input_command/process_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { StandardInputCommand } from "./system_call/standard_input_command"
+import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 
-type LifecycleEventLoad = "load"
-type LifecycleEventStartOfTick = "start_of_tick"
-type LifecycleEventEndOfTick = "end_of_tick"
-export type LifecycleEvent = LifecycleEventLoad | LifecycleEventStartOfTick | LifecycleEventEndOfTick
-export const LifecycleEvent = {
-  LifecycleEventLoad: "load" as LifecycleEventLoad,
-  LifecycleEventStartOfTick: "start_of_tick" as LifecycleEventStartOfTick,
-  LifecycleEventEndOfTick: "end_of_tick" as LifecycleEventEndOfTick,
-}
+type LifecycleEvent = keyof SystemCallDefaultInterface
 
-const kernelConstants = {
-  driverMaxLoadCpu: 10,
-}
+// const kernelConstants = {
+//   driverMaxLoadCpu: 10,
+// }
 
 type KernelInterface = {
-  registerDriverCall(events: LifecycleEvent[], driver: Driver): void
+  // ---- Boot ---- //
+  registerDrivers(drivers: Driver[]): void
+  load(): void
 
+  // ---- Every Ticks ---- //
   run(): void
 }
 
-type ProcessAccessor = {
-  // TODO:
-}
-
-type SystemCallInterface = {
-  readonly process: ProcessAccessor
-}
-
-type DriverEventCall = () => void
+type SystemCallLifecycleFunction = () => void
 
 let lastCpuUse: number | null = null
-const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
-  load: [],
-  start_of_tick: [],
-  end_of_tick: [],
-}
 const standardInputCommands = new Map<string, StandardInputCommand>([
   ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
+  ["process", new ProcessCommand()],
 ])
 
-export const Kernel: KernelInterface & SystemCallInterface = {
-  process: {
-  },
+const driverFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {
+  load: [],
+  startOfTick: [],
+  endOfTick: [],
+}
+const systemCallFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {
+  load: [],
+  startOfTick: [],
+  endOfTick: [],
+}
+const systemCalls: SystemCall[] = [
+  ProcessManager,
+]
+systemCalls.forEach(systemCall => {
+  if (systemCall.load != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.load.push(() => systemCall.load!())
+  }
+  if (systemCall.startOfTick != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.startOfTick.push(() => systemCall.startOfTick!())
+  }
+  if (systemCall.endOfTick != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.endOfTick.unshift(() => systemCall.endOfTick!())
+  }
+})
 
-  registerDriverCall(events: LifecycleEvent[], driver: Driver): void {
-    const register = (call: DriverEventCall | undefined, list: DriverEventCall[], description: string, reversed?: boolean): void => {
-      if (call == null) {
-        PrimitiveLogger.fatal(`${description} not implemented`)
-        return
+export const Kernel: KernelInterface = {
+  registerDrivers(drivers: Driver[]): void {
+    drivers.forEach(driver => {
+      if (driver.load != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.load.push(() => driver.load!())
       }
-      if (reversed === true) {
-        list.unshift(call)
-      } else {
-        list.push(call)
+      if (driver.startOfTick != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.startOfTick.push(() => driver.startOfTick!())
       }
-    }
-
-    events.forEach(event => {
-      const description = `${driver.description}.${event}`
-      switch (event) {
-      case LifecycleEvent.LifecycleEventLoad:
-        register(driver.load, driverCalls.load, description)
-        break
-      case LifecycleEvent.LifecycleEventStartOfTick:
-        register(driver.startOfTick, driverCalls.start_of_tick, description)
-        break
-      case LifecycleEvent.LifecycleEventEndOfTick:
-        register(driver.endOfTick, driverCalls.end_of_tick, description, true)
-        break
+      if (driver.endOfTick != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.endOfTick.unshift(() => driver.endOfTick!())
       }
     })
+  },
+
+  load(): void {
+    loadSystemCalls()
+    loadDrivers()
   },
 
   run(): void {
     systemCallStartOfTick()
-
-    if (driverCalls.load.length > 0) {
-      loadDrivers()
-    }
-
-    driverCalls.start_of_tick.forEach(call => {
-      ErrorMapper.wrapLoop((): void => {
-        call()
-      })()
-    })
+    driverStartOfTick()
 
     if (Game.time % 100 === 0) {
       PrimitiveLogger.log("v8 kernel.run()")  // FixMe: 消す
@@ -131,27 +124,32 @@ export const Kernel: KernelInterface & SystemCallInterface = {
 
     ProcessManager.runProcesses(lastCpuUse)
 
-    driverCalls.end_of_tick.forEach(call => {
-      ErrorMapper.wrapLoop((): void => {
-        call()
-      })()
-    })
+    driverEndOfTick()
+    systemCallEndOfTick()
 
     lastCpuUse = Game.cpu.getUsed()
   },
 }
 
-const loadDrivers = (): void => {
-  const maxCpu = 10
-  const cpu = kernelConstants.driverMaxLoadCpu
+const loadSystemCalls = (): void => {
+  systemCallFunctions.load.forEach(f => {
+    ErrorMapper.wrapLoop((): void => {
+      f()
+    })()
+  })
+}
 
-  for(const load of driverCalls.load) {
+const loadDrivers = (): void => {
+  // const maxCpu = 10  // TODO:
+  // const cpu = kernelConstants.driverMaxLoadCpu
+
+  for(const load of driverFunctions.load) {
     ErrorMapper.wrapLoop((): void => {
       load()
     })
-    if (Game.cpu.getUsed() - cpu > maxCpu) {
-      break
-    }
+    // if (Game.cpu.getUsed() - cpu > maxCpu) {
+    //   break
+    // }
   }
 }
 
@@ -159,4 +157,34 @@ const systemCallStartOfTick = (): void => {
   ErrorMapper.wrapLoop((): void => {
     Game.v3 = standardInput(standardInputCommands)
   })()
+
+  systemCallFunctions.startOfTick.forEach(f => {
+    ErrorMapper.wrapLoop((): void => {
+      f()
+    })()
+  })
+}
+
+const driverStartOfTick = (): void => {
+  driverFunctions.startOfTick.forEach(f => {
+    ErrorMapper.wrapLoop((): void => {
+      f()
+    })()
+  })
+}
+
+const systemCallEndOfTick = (): void => {
+  systemCallFunctions.endOfTick.forEach(f => {
+    ErrorMapper.wrapLoop((): void => {
+      f()
+    })()
+  })
+}
+
+const driverEndOfTick = (): void => {
+  driverFunctions.endOfTick.forEach(f => {
+    ErrorMapper.wrapLoop((): void => {
+      f()
+    })()
+  })
 }

@@ -79,8 +79,8 @@ export const ProcessManager: ProcessManagerInterface = {
     decodeProcesses()
   },
 
-  startOfTick(): void {
-  },
+  // startOfTick(): void {
+  // },
 
   endOfTick(): void {
     encodeProcesses()

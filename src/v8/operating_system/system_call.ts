@@ -9,7 +9,7 @@
    - [Optional] ProcessからはOSから使用するAPIが見えないようにしたい
  */
 
-type SystemCallDefaultInterface = {
+export type SystemCallDefaultInterface = {
   load(): void
   startOfTick(): void
   endOfTick(): void

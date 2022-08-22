@@ -2,7 +2,9 @@ import { ListArguments } from "os/infrastructure/console_command/utility/list_ar
 import { StandardInputCommand } from "../standard_input_command"
 
 export class ProcessCommand implements StandardInputCommand {
-  public readonly command = "process"
+  public readonly description = [
+    // TODO:
+  ].join("\n")
 
   public constructor(
   ) { }
