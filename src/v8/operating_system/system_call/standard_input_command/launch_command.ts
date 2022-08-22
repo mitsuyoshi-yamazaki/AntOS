@@ -8,7 +8,10 @@ import { StandardInputCommand } from "../standard_input_command"
 type ProcessLauncher = (parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => Process
 
 export class LaunchCommand implements StandardInputCommand {
-  public readonly command = "launch"
+  public readonly description = [
+    "# launch command",
+    "&ltparent process ID&gt &ltprocess type&gt &lt...arguments&gt"
+  ].join("\n")
 
   public constructor(
     /** @throws */

@@ -1,24 +1,31 @@
 import { coloredText } from "utility/log"
 import { StandardInputCommand } from "./standard_input_command"
 
-export const standardInput = (commands: StandardInputCommand[]): (message: string) => string => {
+export const standardInput = (commands: Map<string, StandardInputCommand>): (message?: string) => string => {
   return message => {
-    const args = message.split(" ")
-    const commandType = args.shift()
-
     try {
+      if (!(typeof message === "string")) {
+        throw `invalid argument ${typeof message}`
+      }
+
+      const args = message.split(" ")
+      const commandType = args.shift()
+
       if (commandType == null) {
         throw "empty input"
       }
 
       if (commandType === "help") {
-        const commandList = commands.map(command => command.command)
+        const commandList = Array.from(commands.keys())
         return `available commands: ${commandList.join(", ")}`
       }
 
-      const command = commands.find(command => command.command === commandType)
+      const command = commands.get(commandType)
       if (command == null) {
         throw `invalid command ${commandType}`
+      }
+      if (args.join("") === "help") {
+        return command.description
       }
       return command.run(args)
 

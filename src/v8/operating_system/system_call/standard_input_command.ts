@@ -1,7 +1,5 @@
-type Command = "launch" | "process"
-
 export interface StandardInputCommand {
-  readonly command: Command
+  readonly description: string
 
   /** @throws */
   run(args: string[]): string

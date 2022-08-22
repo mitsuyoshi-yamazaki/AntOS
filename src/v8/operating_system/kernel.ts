@@ -37,6 +37,7 @@ import { } from "./system_call/standard_input_command/process_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { StandardInputCommand } from "./system_call/standard_input_command"
 
 type LifecycleEventLoad = "load"
 type LifecycleEventStartOfTick = "start_of_tick"
@@ -74,9 +75,9 @@ const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
   start_of_tick: [],
   end_of_tick: [],
 }
-const standardInputCommands = [
-  new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args)),
-]
+const standardInputCommands = new Map<string, StandardInputCommand>([
+  ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
+])
 
 export const Kernel: KernelInterface & SystemCallInterface = {
   process: {
