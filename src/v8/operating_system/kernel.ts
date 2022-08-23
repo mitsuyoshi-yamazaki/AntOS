@@ -27,7 +27,6 @@
  */
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { } from "./kernel_memory"
 import { Driver } from "./driver"
 import { ProcessManager } from "./process_manager"
@@ -117,10 +116,6 @@ export const Kernel: KernelInterface = {
   run(): void {
     systemCallStartOfTick()
     driverStartOfTick()
-
-    if (Game.time % 100 === 0) {
-      PrimitiveLogger.log("v8 kernel.run()")  // FixMe: 消す
-    }
 
     ProcessManager.runProcesses(lastCpuUse)
 

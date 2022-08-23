@@ -50,22 +50,11 @@ export interface ProcessState extends State {
   readonly t: CompressedProcessType
 }
 
-export type ProcessRunner = {
-  isProcessRunning(processId: ProcessId): boolean
-  register(childProcessId: ProcessId, run: () => void): void
-}
-
 export interface Processss extends Stateful {
   readonly processId: ProcessId
   readonly processType: ProcessType
 
   encode(): ProcessState
-}
-
-type ProcessSchedulerInterface = {
-  processIdOf(process: Process): ProcessId | null
-  addProcess(process: Process, parent: Process): void
-  removeProcess(process: Process): void
 }
 
 export abstract class Process implements Stateful {

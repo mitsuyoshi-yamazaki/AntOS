@@ -9,16 +9,16 @@
 
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { UniqueId } from "utility/unique_id"
-import { ProcessId, Process, ProcessState } from "../process/process"
+import { ProcessId, Process } from "../process/process"
 import { SystemCall } from "./system_call"
 import { ExternalProcessInfo, ProcessInfo, ProcessStore, RunningProcess } from "./process_store"
 import { EnvironmentalVariables } from "./environmental_variables"
 import { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
-import { RootProcess } from "v8/process/root_process"
 import { ProcessInfoMemory } from "./kernel_memory"
 import { ProcessDecoder } from "v8/process/process_decoder"
+import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -99,21 +99,23 @@ export const ProcessManager: ProcessManagerInterface = {
 
   /** @throws */
   launchProcess(parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser): Process {
-    const parentProcess = ((): Process | RootProcess | null => {
+    const process = ((): Process => {
       if (parentProcessId === ProcessStore.rootProcess.processId) {
-        return ProcessStore.rootProcess
+        return launchProcessOnRoot(processType, args)
       }
-      return ProcessStore.processInfo(parentProcessId)?.process ?? null
+
+      const parentProcess = ProcessStore.processInfo(parentProcessId)?.process
+      if (parentProcess == null) {
+        throw `no parent process with ID ${parentProcessId}`
+      }
+
+      if (!isLauncherProcess(parentProcess)) {
+        throw `${parentProcess.constructor.name} doesn't have child processes`
+      }
+
+      return parentProcess.didReceiveLaunchMessage(processType, args)
     })()
-    if (parentProcess == null) {
-      throw `no parent process with ID ${parentProcessId}`
-    }
 
-    if (!isLauncherProcess(parentProcess)) {
-      throw `${parentProcess.constructor.name} doesn't have child processes`
-    }
-
-    const process = parentProcess.didReceiveLaunchMessage(processType, args)
     this.addProcess(process, parentProcessId)
     return process
   },
@@ -123,6 +125,11 @@ export const ProcessManager: ProcessManagerInterface = {
     return ProcessStore.allProcesses()
   },
 } as const
+
+/** @throws */
+const launchProcessOnRoot = (processType: ProcessType, args: ArgumentParser): Process => {
+  return ApplicationProcessLauncher.launch(processType, args)
+}
 
 const assignProcessId = (process: Process, processId: ProcessId): RunningProcess => {
   (process as unknown as { _processId: ProcessId })._processId = processId
