@@ -33,7 +33,7 @@ export class LaunchCommand implements StandardInputCommand {
 
     } catch (error) {
       const message = `Launching ${processType} in ${parentProcessId} failed: ${error}`
-      return `${coloredText(message, "error")}`
+      return `${coloredText("[Error]", "error")} ${message}`
     }
   }
 }

@@ -27,12 +27,12 @@
  */
 
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { } from "./kernel_memory"
 import { Driver } from "./driver"
 import { ProcessManager } from "./process_manager"
 import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
 import { ProcessCommand } from "./system_call/standard_input_command/process_command"
+import { KillCommand } from "./system_call/standard_input_command/kill_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
@@ -60,6 +60,7 @@ let lastCpuUse: number | null = null
 const standardInputCommands = new Map<string, StandardInputCommand>([
   ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
   ["process", new ProcessCommand()],
+  ["kill", new KillCommand()],
 ])
 
 const driverFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {

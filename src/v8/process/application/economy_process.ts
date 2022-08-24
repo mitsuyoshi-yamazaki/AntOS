@@ -58,8 +58,5 @@ export class EconomyProcess extends Process implements LaunchMessageObserver {
   }
 
   public run = (): void => {
-    if (Game.time % 10 === 0) {
-      console.log(`${this.constructor.name} ${this.processId}`)
-    }
   }
 }

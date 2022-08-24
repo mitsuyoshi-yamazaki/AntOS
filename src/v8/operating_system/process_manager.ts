@@ -19,6 +19,7 @@ import { isLauncherProcess } from "v8/process/message_observer/launch_message_ob
 import { ProcessInfoMemory } from "./kernel_memory"
 import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
 import { ApplicationProcessDecoder } from "v8/process/application_process_decoder"
+import { coloredText } from "utility/log"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -39,7 +40,7 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
   launchProcess(parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser): Process
 
   // ---- Standard IO ---- //
-  listProcesses(): ProcessInfo[]
+  listProcesses(): ExternalProcessInfo[]
 }
 
 const processManagerMemory = EnvironmentalVariables.kernelMemory.process
@@ -77,12 +78,7 @@ export const ProcessManager: ProcessManagerInterface = {
   },
 
   removeProcess(processId: ProcessId): void {
-    const processInfo = ProcessStore.processInfo(processId)
-    if (processInfo == null) {
-      return
-    }
-    ProcessStore.removeProcess(processInfo)
-    resignProcessId(processInfo.process)
+    removeProcess(processId)
   },
 
   // ---- OS API ---- //
@@ -127,7 +123,7 @@ export const ProcessManager: ProcessManagerInterface = {
   },
 
   // ---- Standard IO ---- //
-  listProcesses(): ProcessInfo[] {
+  listProcesses(): ExternalProcessInfo[] {
     return ProcessStore.allProcesses()
   },
 } as const
@@ -139,10 +135,12 @@ const launchProcessOnRoot = (processType: ProcessType, args: ArgumentParser): Pr
 
 const assignProcessId = (process: Process, processId: ProcessId): RunningProcess => {
   (process as unknown as { _processId: ProcessId })._processId = processId
+  PrimitiveLogger.log(`${coloredText("[Info]", "info")} assign process ${process.constructor.name} ${process.processId}`)
   return process as RunningProcess
 }
 
 const resignProcessId = (process: RunningProcess): Process => {
+  PrimitiveLogger.log(`${coloredText("[Info]", "info")} resign process ${process.constructor.name} ${process.processId}`);
   (process as unknown as { _processId: ProcessId | null })._processId = null
   return process
 }
@@ -167,6 +165,35 @@ const addProcess = (process: Process, parentProcessId: ProcessId): void => {
   }
 
   ProcessStore.addProcess(processInfo)
+}
+
+const removeProcess = (processId: ProcessId): void => {
+  const processInfo = ProcessStore.processInfo(processId)
+  if (processInfo == null) {
+    return
+  }
+  unloadRecursively(processInfo)
+  removeProcessRecursively(processInfo)
+}
+
+const unloadRecursively = (processInfo: ProcessInfo): void => {
+  const process = processInfo.process
+  if (process.unload != null) {
+    process.unload(process.processId)
+  }
+
+  (ProcessStore.childProcessInfo(process.processId) ?? []).forEach(childProcessInfo => {
+    unloadRecursively(childProcessInfo)
+  })
+}
+
+const removeProcessRecursively = (processInfo: ProcessInfo): void => {
+  (ProcessStore.childProcessInfo(processInfo.process.processId) ?? []).forEach(childProcessInfo => {
+    removeProcessRecursively(childProcessInfo)
+  })
+
+  ProcessStore.removeProcess(processInfo)
+  resignProcessId(processInfo.process)
 }
 
 const decodeProcesses = (): void => {

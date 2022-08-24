@@ -9,6 +9,7 @@ export type RunningProcess = Process & { processId: ProcessId }
 export type ExternalProcessInfo = {
   readonly parentProcessId: ProcessId
   readonly running: boolean
+  readonly process: RunningProcess
 }
 
 export type ProcessInfo = {
