@@ -242,7 +242,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
           solver.priority = CreepSpawnRequestPriority.Medium
 
           const energyCapacity = objects.controller.room.energyCapacityAvailable
-          solver.body = isConstructing ? this.builderBody(energyCapacity) : this.harvesterBody(source, energyCapacity)
+          solver.body = isConstructing ? this.builderBody(energyCapacity) : this.harvesterBody(source, energyCapacity, objects.controller.level)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -269,11 +269,17 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     return body
   }
 
-  private harvesterBody(source: Source, energyCapacity: number): BodyPartConstant[] {
+  private harvesterBody(source: Source, energyCapacity: number, rcl: number): BodyPartConstant[] {
     const moveSpeed = 1.0
     const terrainCost = 1
     const sourceEnergyCapacity = source.energyCapacity
-    const maximumWorkCount = Math.ceil((sourceEnergyCapacity / 300) / HARVEST_POWER) + 1
+    const maximumWorkCount = ((): number => {
+      const defaultCount = (sourceEnergyCapacity / 300) / HARVEST_POWER
+      if (rcl < 8 || Memory.gameInfo.enableCpuOptimization !== true) {
+        return Math.ceil(defaultCount) + 1
+      }
+      return Math.ceil(defaultCount * 2) + 1
+    })()
 
     const constructBody = ((workCount: number): BodyPartConstant[] => {
       const result: BodyPartConstant[] = []
