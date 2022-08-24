@@ -30,6 +30,7 @@ export function anyColoredText(text: string, color: string): string {
 export type Tab = number
 export const Tab = {
   veryLarge: 50,
+  large: 30,
   medium: 20,
   small: 10,
 }

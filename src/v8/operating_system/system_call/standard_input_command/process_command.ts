@@ -4,10 +4,6 @@ import { ProcessManager } from "v8/operating_system/process_manager"
 import { ProcessInfo } from "v8/operating_system/process_store"
 import { StandardInputCommand } from "../standard_input_command"
 
-const veryLargeTab = Tab.veryLarge
-const mediumTab = Tab.medium
-const smallTab = Tab.small
-
 export class ProcessCommand implements StandardInputCommand {
   public readonly description = [
     "# show process info",
@@ -34,7 +30,7 @@ export class ProcessCommand implements StandardInputCommand {
     const processes = ProcessManager.listProcesses()
 
     const getAlignedText = (processId: string, typeIdentifier: string, runningState: string, description: string): string => {
-      return `${tab(processId, smallTab)}${tab(typeIdentifier, veryLargeTab)}${tab(runningState, smallTab)}${tab(description, mediumTab)}`
+      return `${tab(processId, Tab.small)}${tab(typeIdentifier, Tab.large)}${tab(runningState, Tab.small)}${tab(description, Tab.medium)}`
     }
 
     const getDescription = (processInfo: ProcessInfo): string => {
