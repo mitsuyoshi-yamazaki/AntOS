@@ -8,16 +8,21 @@ export type KernelMemory = {
 
 type ProcessManagerMemory = {
   processIdIndex: number
-  processInfoMemories: {[ParentProcessId: string]: ProcessInfoMemory[]}
+
+  /** 最上位のProcessInfoMemoryはroot配下（Application Process） */
+  processInfoMemories: ProcessInfoMemory[]
 }
 
 export type ProcessInfoMemory = {
-  /// process ID
+  /** process ID */
   readonly i: ProcessId
 
-  /// running
+  /** running */
   readonly r: boolean
 
-  /// process state
+  /** process state */
   readonly s: ProcessState
+
+  /** child process info */
+  readonly c: ProcessInfoMemory[]
 }

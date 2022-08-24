@@ -16,7 +16,7 @@ if (Memory.v3 == null) {
     enabled: false,
     process: {
       processIdIndex: 0,
-      processInfoMemories: {},
+      processInfoMemories: [],
     },
   }
 }

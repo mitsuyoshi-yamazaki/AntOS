@@ -13,15 +13,16 @@ import { ProcessId, Process } from "../process/process"
 import { SystemCall } from "./system_call"
 import { ExternalProcessInfo, ProcessInfo, ProcessStore, RunningProcess } from "./process_store"
 import { EnvironmentalVariables } from "./environmental_variables"
-import { ProcessType } from "v8/process/process_type"
+import { ProcessType, ProcessTypeConverter, rootProcessId } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
 import { ProcessInfoMemory } from "./kernel_memory"
-import { ProcessDecoder } from "v8/process/process_decoder"
 import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
+import { ApplicationProcessDecoder } from "v8/process/application_process_decoder"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
+  getChildProcesses(processId: ProcessId): RunningProcess[]
   processInfoOf(processId: ProcessId): { parentProcessId: ProcessId, running: boolean } | null
   pauseProcess(processId: ProcessId): void
   resumeProcess(processId: ProcessId): void
@@ -45,6 +46,11 @@ const processManagerMemory = EnvironmentalVariables.kernelMemory.process
 
 export const ProcessManager: ProcessManagerInterface = {
   // ---- Accessor ---- //
+  getChildProcesses(processId: ProcessId): RunningProcess[] {
+    const childProcessInfo = ProcessStore.childProcessInfo(processId) ?? []
+    return childProcessInfo.map(processInfo => processInfo.process)
+  },
+
   processInfoOf(processId: ProcessId): ExternalProcessInfo | null {
     return ProcessStore.processInfo(processId)
   },
@@ -169,39 +175,65 @@ const decodeProcesses = (): void => {
     return
   }
 
-  Array.from(Object.entries(processManagerMemory.processInfoMemories)).forEach(([parentProcessId, processStateList]) => {
-    processStateList.forEach(processState => {
-      const process = ProcessDecoder.decode(processState.s)
-      if (process == null) {
-        return
-      }
-      const runningProcess = assignProcessId(process, processState.i)
-      const processInfo: ProcessInfo = {
-        process: runningProcess,
-        running: processState.r,
-        parentProcessId,
-      }
+  processManagerMemory.processInfoMemories.forEach(processInfoMemory => {
+    const process = ApplicationProcessDecoder.decode(processInfoMemory.s)
+    if (process == null) {
+      return
+    }
+    const runningProcess = assignProcessId(process, processInfoMemory.i)
+    const processInfo: ProcessInfo = {
+      process: runningProcess,
+      running: processInfoMemory.r,
+      parentProcessId: rootProcessId,
+    }
 
-      ProcessStore.addProcess(processInfo)
-    })
+    ProcessStore.addProcess(processInfo)
+
+    recursivelyDecodeProcesses(runningProcess, processInfoMemory.c)
+  })
+
+  ProcessStore.allProcesses().forEach(processInfo => {
+    const process = processInfo.process
+    if (process.load == null) {
+      return
+    }
+    process.load(process.processId)
+  })
+}
+
+const recursivelyDecodeProcesses = (parentProcess: RunningProcess, childProcessInfoMemories: ProcessInfoMemory[]): void => {
+  childProcessInfoMemories.forEach(processInfoMemory => {
+    const processType = ProcessTypeConverter.revert(processInfoMemory.s.t)
+    const process = parentProcess.decodeChildProcess(processType, processInfoMemory.s)
+    if (process == null) {
+      PrimitiveLogger.programError(`${parentProcess.processId} ${parentProcess.constructor.name} cannot decode ${processType}`)
+      return
+    }
+    const runningProcess = assignProcessId(process, processInfoMemory.i)
+    const processInfo: ProcessInfo = {
+      process: runningProcess,
+      running: processInfoMemory.r,
+      parentProcessId: parentProcess.processId,
+    }
+
+    ProcessStore.addProcess(processInfo)
+
+    recursivelyDecodeProcesses(runningProcess, processInfoMemory.c)
   })
 }
 
 const encodeProcesses = (): void => {
-  const allProcessState: { [ParentProcessId: string]: ProcessInfoMemory[] } = {}
+  const applicationProcesses = ProcessStore.childProcessInfo(rootProcessId) ?? []
+  processManagerMemory.processInfoMemories = recursivelyEncodeProcess(applicationProcesses)
+}
 
-  Array.from(ProcessStore.processListByParentId().entries()).forEach(([parentProcessId, processInfoList]) => {
-    if (processInfoList.length <= 0) {
-      return
-    }
-    allProcessState[parentProcessId] = processInfoList.map(processInfo => ({
-      i: processInfo.process.processId,
-      r: processInfo.running,
-      s: processInfo.process.encode(),
-    }))
-  })
-
-  processManagerMemory.processInfoMemories = allProcessState
+const recursivelyEncodeProcess = (processInfo: ProcessInfo[]): ProcessInfoMemory[] => {
+  return processInfo.map(info => ({
+    i: info.process.processId,
+    r: info.running,
+    s: info.process.encode(),
+    c: recursivelyEncodeProcess(ProcessStore.childProcessInfo(info.process.processId) ?? []),
+  }))
 }
 
 const runProcesses = (): void => {
@@ -220,8 +252,9 @@ const runProcessRecursively = (processInfo: ProcessInfo): void => {
     return
   }
 
-  processInfo.process.run()
-  const childProcesses = ProcessStore.childProcessInfo(processInfo.process.processId)
+  const processId = processInfo.process.processId
+  processInfo.process.run(processId)
+  const childProcesses = ProcessStore.childProcessInfo(processId)
   if (childProcesses == null) {
     return
   }

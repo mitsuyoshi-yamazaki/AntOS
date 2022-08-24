@@ -41,6 +41,7 @@
    - メッセージは送れる必要がある
  */
 
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import type { CompressedProcessType, ProcessType } from "./process_type"
 
@@ -71,13 +72,22 @@ export abstract class Process implements Stateful {
 
   public abstract encode(): ProcessState
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public decodeChildProcess(processType: ProcessType, state: ProcessState): Process | null {
+    PrimitiveLogger.programError(`${this.processId} ${this.constructor.name}.decodeChildProcesses() not implemented for ${processType}`)
+    return null
+  }
+
   public shortDescription?: () => string
   public description?: () => string
+
+  /** 全てのProcessのDecode後に呼び出される ※インスタンス化時には呼び出されない */
+  public load?(processId: ProcessId): void
+  public unload?(processId: ProcessId): void  // TODO: 呼び出す
 
   /**
    * 子Processの実行に引数が必要な場合、親Processが自身のrun()内で必要な引数を与えたexecutableを子Processにセットする
    */
-  public run = (): void => { }
-
-  public deinit?(): void  // TODO: 呼び出す
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public run = (processId: ProcessId): void => { }
 }

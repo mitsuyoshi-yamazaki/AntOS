@@ -5,6 +5,8 @@ export const rootProcessId = "root" // TODO: 不要なら消す
 const processTypes = [
   "V8TestProcess",
   "EconomyProcess",
+  "OwnedRoomProcess",
+  "OwnedRoomTestProcess",
 ] as const
 export type ProcessType = typeof processTypes[number]
 
@@ -18,6 +20,8 @@ export const isProcessType = (arg: string): arg is ProcessType => {
 const processTypeMap = {
   "1": "V8TestProcess",
   "2": "EconomyProcess",
+  "3": "OwnedRoomProcess",
+  "4": "OwnedRoomTestProcess",
 } as const
 export type CompressedProcessType = keyof typeof processTypeMap
 
