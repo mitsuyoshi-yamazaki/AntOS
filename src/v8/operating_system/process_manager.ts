@@ -133,9 +133,11 @@ const launchProcessOnRoot = (processType: ProcessType, args: ArgumentParser): Pr
   return ApplicationProcessLauncher.launch(processType, args)
 }
 
-const assignProcessId = (process: Process, processId: ProcessId): RunningProcess => {
+const assignProcessId = (process: Process, processId: ProcessId, options?: {noLog?: boolean}): RunningProcess => {
   (process as unknown as { _processId: ProcessId })._processId = processId
-  PrimitiveLogger.log(`${coloredText("[Info]", "info")} assign process ${process.constructor.name} ${process.processId}`)
+  if (options?.noLog !== true) {
+    PrimitiveLogger.log(`${coloredText("[Info]", "info")} assign process ${process.constructor.name} ${process.processId}`)
+  }
   return process as RunningProcess
 }
 
@@ -207,7 +209,7 @@ const decodeProcesses = (): void => {
     if (process == null) {
       return
     }
-    const runningProcess = assignProcessId(process, processInfoMemory.i)
+    const runningProcess = assignProcessId(process, processInfoMemory.i, {noLog: true})
     const processInfo: ProcessInfo = {
       process: runningProcess,
       running: processInfoMemory.r,
@@ -236,7 +238,7 @@ const recursivelyDecodeProcesses = (parentProcess: RunningProcess, childProcessI
       PrimitiveLogger.programError(`${parentProcess.processId} ${parentProcess.constructor.name} cannot decode ${processType}`)
       return
     }
-    const runningProcess = assignProcessId(process, processInfoMemory.i)
+    const runningProcess = assignProcessId(process, processInfoMemory.i, {noLog: true})
     const processInfo: ProcessInfo = {
       process: runningProcess,
       running: processInfoMemory.r,
