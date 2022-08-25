@@ -56,7 +56,7 @@ export class OwnedRoomProcess extends Process implements LaunchMessageObserver {
     )
   }
 
-  public shortDescription(): string {
+  public shortDescription = (): string => {
     return roomLink(this.roomName)
   }
 
@@ -84,6 +84,7 @@ export class OwnedRoomProcess extends Process implements LaunchMessageObserver {
 
   public run = (processId: ProcessId): void => {
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+
     if (roomResource == null) {
       PrimitiveLogger.fatal(`${processId} ${roomLink(this.roomName)} is lost`)
       return

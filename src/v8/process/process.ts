@@ -44,6 +44,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import type { CompressedProcessType, ProcessType } from "./process_type"
+import type { ProcessStateDescription } from "./process_state_description"
 
 export type ProcessId = string
 
@@ -79,11 +80,23 @@ export abstract class Process implements Stateful {
     return null
   }
 
-  /** ProcessCommand経由で表示される説明 */
-  public shortDescription?(): string
+  /**
+   * ProcessCommand経由で表示される説明
+   * 実行に必須の引数がある場合はrun()内で置き換える
+   */
+  public shortDescription?: () => string
 
-  /** ProcessCommand経由で表示される説明 */
-  public description?(): string
+  /**
+   * ProcessCommand経由で表示される説明
+   * 実行に必須の引数がある場合はrun()内で置き換える
+   */
+  public description?: () => string
+
+  /** // TODO: この仕組みが良いのか考え中s
+   * 自身と子Processの状態を親に伝える
+   * 実行に必須の引数がある場合はrun()内で置き換える
+   */
+  public describe = (): ProcessStateDescription => ({description: `${this.constructor.name}.describe() not implemented yet`})
 
   /** 全てのProcessのDecode後に呼び出される ※インスタンス化時には呼び出されない */
   public load?(processId: ProcessId): void
