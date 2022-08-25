@@ -17,12 +17,14 @@ import type { Driver } from "./driver"
 import { Kernel } from "./kernel"
 import { loadApplicationProcesses } from "v8/process/application_process_loader"
 import { } from "./driver/traffic_driver"
+import { CpuTimeProfiler } from "./driver/cpu_time_profiler"
 
 export const BootLoader = {
   load(): void {
     loadApplicationProcesses()
 
     const drivers: Driver[] = [
+      CpuTimeProfiler,
     ]
     Kernel.registerDrivers(drivers)
     Kernel.load()
