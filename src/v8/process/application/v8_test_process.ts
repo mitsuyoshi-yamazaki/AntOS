@@ -30,7 +30,7 @@ export class V8TestProcess extends Process {
     return new V8TestProcess()
   }
 
-  public shortDescription = (): string => {
+  public shortDescription(): string {
     return ""
   }
 

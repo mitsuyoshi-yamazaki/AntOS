@@ -8,7 +8,7 @@ export abstract class OwnedRoomChildProcess extends Process {
 
   public abstract runWith(roomResource: OwnedRoomResource): void
 
-  public shortDescription = (): string => {
+  public shortDescription(): string {
     return roomLink(this.roomName)
   }
 }

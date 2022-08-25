@@ -38,7 +38,7 @@ export class OwnedRoomTestProcess extends OwnedRoomChildProcess {
     )
   }
 
-  public shortDescription = (): string => {
+  public shortDescription(): string {
     return roomLink(this.roomName)
   }
 

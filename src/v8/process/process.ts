@@ -72,14 +72,18 @@ export abstract class Process implements Stateful {
 
   public abstract encode(): ProcessState
 
+  // 子Processのデコード時に必要とされる自身の情報を引き渡すため
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public decodeChildProcess(processType: ProcessType, state: ProcessState): Process | null {
     PrimitiveLogger.programError(`${this.processId} ${this.constructor.name}.decodeChildProcesses() not implemented for ${processType}`)
     return null
   }
 
-  public shortDescription?: () => string
-  public description?: () => string
+  /** ProcessCommand経由で表示される説明 */
+  public shortDescription?(): string
+
+  /** ProcessCommand経由で表示される説明 */
+  public description?(): string
 
   /** 全てのProcessのDecode後に呼び出される ※インスタンス化時には呼び出されない */
   public load?(processId: ProcessId): void

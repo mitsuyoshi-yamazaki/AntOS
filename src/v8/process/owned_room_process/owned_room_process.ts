@@ -56,7 +56,7 @@ export class OwnedRoomProcess extends Process implements LaunchMessageObserver {
     )
   }
 
-  public shortDescription = (): string => {
+  public shortDescription(): string {
     return roomLink(this.roomName)
   }
 

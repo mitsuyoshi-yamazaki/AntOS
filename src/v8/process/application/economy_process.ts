@@ -41,7 +41,7 @@ export class EconomyProcess extends Process implements LaunchMessageObserver {
     return new EconomyProcess()
   }
 
-  public shortDescription = (): string => {
+  public shortDescription(): string {
     return ""
   }
 
