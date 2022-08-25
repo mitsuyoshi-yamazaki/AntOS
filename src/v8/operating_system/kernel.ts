@@ -1,12 +1,17 @@
 /**
  # Kernel
  ## 概要
- OSのコア機能を司る
+ OSのコア機能である以下の機能を司る
 
- ## 機能
- - ドライバ管理
- - プロセス管理
- - Kernel管理下のsystem callのインターフェース提供
+ ### 機能
+ - SystemCallとDriverのライフサイクルの管理
+ - プロセスの実行
+
+ ## SystemCallとDriver
+ プロセスが任意に使用できる、メソッドをもつシングルトンオブジェクト
+ 以下のライフサイクルメソッドがKernelから呼び出される
+
+ - load: OSのロード時（サーバーリセット）
 
  ## プロセス管理
  プロセスは動的に起動される処理の単位
@@ -110,77 +115,32 @@ export const Kernel: KernelInterface = {
   },
 
   load(): void {
-    loadSystemCalls()
-    loadDrivers()
+    callSystemCallFunctions(systemCallFunctions.load)
+    callSystemCallFunctions(driverFunctions.load)
   },
 
   run(): void {
-    systemCallStartOfTick()
-    driverStartOfTick()
+    ErrorMapper.wrapLoop((): void => {
+      Game.v3 = standardInput(standardInputCommands)
+    })()
+    callSystemCallFunctions(systemCallFunctions.startOfTick)
+    callSystemCallFunctions(driverFunctions.startOfTick)
 
+    // Process実行時には全てのSystemCall, Driverが準備完了している必要がある
     ProcessManager.runProcesses(lastCpuUse)
 
-    driverEndOfTick()
-    systemCallEndOfTick()
+    callSystemCallFunctions(driverFunctions.endOfTick)
+    callSystemCallFunctions(systemCallFunctions.endOfTick)
 
     lastCpuUse = Game.cpu.getUsed()
   },
 }
 
-const loadSystemCalls = (): void => {
-  systemCallFunctions.load.forEach(f => {
+const callSystemCallFunctions = (functions: (() => void)[]): void => {
+  functions.forEach(f => {
     ErrorMapper.wrapLoop((): void => {
       f()
     })()
   })
 }
 
-const loadDrivers = (): void => {
-  // const maxCpu = 10  // TODO:
-  // const cpu = kernelConstants.driverMaxLoadCpu
-
-  for(const load of driverFunctions.load) {
-    ErrorMapper.wrapLoop((): void => {
-      load()
-    })()
-    // if (Game.cpu.getUsed() - cpu > maxCpu) {
-    //   break
-    // }
-  }
-}
-
-const systemCallStartOfTick = (): void => {
-  ErrorMapper.wrapLoop((): void => {
-    Game.v3 = standardInput(standardInputCommands)
-  })()
-
-  systemCallFunctions.startOfTick.forEach(f => {
-    ErrorMapper.wrapLoop((): void => {
-      f()
-    })()
-  })
-}
-
-const driverStartOfTick = (): void => {
-  driverFunctions.startOfTick.forEach(f => {
-    ErrorMapper.wrapLoop((): void => {
-      f()
-    })()
-  })
-}
-
-const systemCallEndOfTick = (): void => {
-  systemCallFunctions.endOfTick.forEach(f => {
-    ErrorMapper.wrapLoop((): void => {
-      f()
-    })()
-  })
-}
-
-const driverEndOfTick = (): void => {
-  driverFunctions.endOfTick.forEach(f => {
-    ErrorMapper.wrapLoop((): void => {
-      f()
-    })()
-  })
-}
