@@ -43,6 +43,7 @@ import type { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
 import { StandardInputCommand } from "./system_call/standard_input_command"
 import { SystemCall, SystemCallDefaultInterface } from "./system_call"
+import { GameConstants } from "utility/constants"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
@@ -61,7 +62,6 @@ type KernelInterface = {
 
 type SystemCallLifecycleFunction = () => void
 
-let lastCpuUse: number | null = null
 const standardInputCommands = new Map<string, StandardInputCommand>([
   ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
   ["process", new ProcessCommand()],
@@ -127,12 +127,10 @@ export const Kernel: KernelInterface = {
     callSystemCallFunctions(driverFunctions.startOfTick)
 
     // Process実行時には全てのSystemCall, Driverが準備完了している必要がある
-    ProcessManager.runProcesses(lastCpuUse)
+    ProcessManager.runProcesses(getProcessCpuLimit())
 
     callSystemCallFunctions(driverFunctions.endOfTick)
     callSystemCallFunctions(systemCallFunctions.endOfTick)
-
-    lastCpuUse = Game.cpu.getUsed()
   },
 }
 
@@ -144,3 +142,17 @@ const callSystemCallFunctions = (functions: (() => void)[]): void => {
   })
 }
 
+const getProcessCpuLimit = (): number => {
+  const usableBucket = Math.min(Game.cpu.bucket, GameConstants.game.cpu.limit)
+  const estimatedSystemCallEndOfTick = 10
+  const remainingCpu = Math.max(Game.cpu.limit - Game.cpu.getUsed() - estimatedSystemCallEndOfTick, 0)
+
+  if (remainingCpu > 0) {
+    return remainingCpu
+  }
+
+  if (usableBucket < 400) {
+    return Math.min(remainingCpu, 5)
+  }
+  return remainingCpu
+}

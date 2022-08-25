@@ -34,7 +34,10 @@ interface ProcessManagerExternal {
 }
 
 interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
-  runProcesses(lastCpuUse: number | null): void
+  /**
+   * @param cpuLimit 今tickで使用可能なCPU時間の上限
+   */
+  runProcesses(cpuLimit: number): void
 
   /** @throws */
   launchProcess(parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser): Process
@@ -93,7 +96,7 @@ export const ProcessManager: ProcessManagerInterface = {
     encodeProcesses()
   },
 
-  runProcesses(lastCpuUse: number | null): void { // TODO:
+  runProcesses(cpuLimit: number): void {
     runProcesses()
   },
 
