@@ -76,6 +76,7 @@ import { World42768365ProblemSolverProcess } from "process/temporary/world_42768
 import { ClaimProcess } from "process/onetime/claim_process"
 import { World42791528ProblemFinderProcess } from "process/temporary/world_42791528_problem_finder_process"
 // import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
+import { MapVisualProcess } from "process/onetime/map_visual_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1253,6 +1254,19 @@ ProcessLauncher.register("ClaimProcess", args => {
       processId,
       roomName,
       targetRoomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("MapVisualProcess", args => {
+  try {
+    const duration = args.int("duration").parse({min: 1})
+
+    return Result.Succeeded((processId) => MapVisualProcess.create(
+      processId,
+      duration,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
