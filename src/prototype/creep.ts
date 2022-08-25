@@ -49,6 +49,10 @@ export interface V6Creep extends Creep {
   memory: V6CreepMemory
 }
 
+export interface V8Creep extends Creep {
+
+}
+
 // ---- Prototype ---- //
 declare global {
   interface Creep {
