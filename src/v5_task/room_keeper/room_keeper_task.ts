@@ -103,6 +103,7 @@ export class RoomKeeperTask extends Task {
           this.turnAttackNotificationOn(objects.controller.room)
           this.removeLeftoverFlags(objects.controller.room)
           this.removeLeftoverStructures(objects.controller.room)
+          this.removeConstructionSites(objects.controller.room)
           break
         case "failed":
           PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
@@ -112,6 +113,12 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private removeConstructionSites(room: Room): void {
+    room.find(FIND_CONSTRUCTION_SITES)
+      .filter(constructionSite => constructionSite.my !== true)
+      .forEach(constructionSite => constructionSite.remove())
   }
 
   private turnAttackNotificationOn(room: Room): void {
