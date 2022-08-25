@@ -82,8 +82,6 @@ export const ProcessManager: ProcessManagerInterface = {
   },
 
   // ---- OS API ---- //
-  description: "manages process lifecycle and execution",
-
   load(): void {
     decodeProcesses()
   },

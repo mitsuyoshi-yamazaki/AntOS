@@ -15,6 +15,4 @@ export type SystemCallDefaultInterface = {
   endOfTick(): void
 }
 
-export type SystemCall = Partial<SystemCallDefaultInterface> & {
-  readonly description: string
-}
+export type SystemCall = Partial<SystemCallDefaultInterface>
