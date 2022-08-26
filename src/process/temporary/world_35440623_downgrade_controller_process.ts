@@ -20,6 +20,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { OperatingSystem } from "os/os"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -198,7 +199,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
 
     const controller = creep.room.controller
     if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > creep.pos.getRangeTo(controller.pos)) {
-      const moveToNextRoomTask = this.moveToNextRoomTask()
+      const moveToNextRoomTask = this.moveToNextRoomTask(creep)
       if (moveToNextRoomTask == null) {
         creep.say("finished")
       }
@@ -207,12 +208,13 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(controller), { ignoreSwamp: false, reusePath: 0 }))
   }
 
-  private moveToNextRoomTask(): CreepTask | null {
+  private moveToNextRoomTask(creep: Creep): CreepTask | null {
     const nextRoomName = this.nextRoomName()
     if (nextRoomName == null) {
       return null
     }
-    return FleeFromAttackerTask.create(MoveToRoomTask.create(nextRoomName, []))
+    const waypoints = GameMap.getWaypoints(creep.room.name, nextRoomName, {ignoreMissingWaypoints: true}) ?? []
+    return FleeFromAttackerTask.create(MoveToRoomTask.create(nextRoomName, waypoints))
   }
 
   private nextRoomName(): RoomName | null {
