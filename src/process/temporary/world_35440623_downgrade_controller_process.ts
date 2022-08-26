@@ -21,13 +21,14 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
 })
 
 const attackControllerCooldownTime = 1000
-const attackControllerInterval = attackControllerCooldownTime + 100
+const defaultAttackControllerInterval = attackControllerCooldownTime + 100
 
 export interface World35440623DowngradeControllerProcessState extends ProcessState {
   /** parent room name */
@@ -38,6 +39,7 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   lastSpawnTime: Timestamp
   maxClaimSize: number
   spawnStopReasons: string[]
+  attackControllerInterval: number
 }
 
 export class World35440623DowngradeControllerProcess implements Process, Procedural, MessageObserver {
@@ -57,6 +59,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     private lastSpawnTime: Timestamp,
     private readonly maxClaimSize: number,
     private spawnStopReasons: string[],
+    private attackControllerInterval: number,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomNames}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -73,21 +76,41 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       lastSpawnTime: this.lastSpawnTime,
       maxClaimSize: this.maxClaimSize,
       spawnStopReasons: this.spawnStopReasons,
+      attackControllerInterval: this.attackControllerInterval,
     }
   }
 
   public static decode(state: World35440623DowngradeControllerProcessState): World35440623DowngradeControllerProcess {
-    return new World35440623DowngradeControllerProcess(state.l, state.i, state.p, state.targetRoomNames, state.currentTargetRoomNames, state.lastSpawnTime, state.maxClaimSize, state.spawnStopReasons ?? [])
+    return new World35440623DowngradeControllerProcess(
+      state.l,
+      state.i,
+      state.p,
+      state.targetRoomNames,
+      state.currentTargetRoomNames,
+      state.lastSpawnTime,
+      state.maxClaimSize,
+      state.spawnStopReasons,
+      state.attackControllerInterval,
+    )
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomNames: RoomName[], maxClaimSize: number): World35440623DowngradeControllerProcess {
-    return new World35440623DowngradeControllerProcess(Game.time, processId, parentRoomName, targetRoomNames, [...targetRoomNames], 0, maxClaimSize, [])
+    return new World35440623DowngradeControllerProcess(Game.time,
+      processId,
+      parentRoomName,
+      targetRoomNames,
+      [...targetRoomNames],
+      0,
+      maxClaimSize,
+      [],
+      defaultAttackControllerInterval,
+    )
   }
 
   public processShortDescription(): string {
-    const ticksToSpawn = Math.max(attackControllerInterval - (Game.time - this.lastSpawnTime), 0)
+    const ticksToSpawn = Math.max(this.attackControllerInterval - (Game.time - this.lastSpawnTime), 0)
     const descriptions: string[] = [
-      `${ticksToSpawn} to go`,
+      `${ticksToSpawn} to go (interval: ${this.attackControllerInterval})`,
       this.targetRoomNames.map(roomName => roomLink(roomName)).join(","),
     ]
 
@@ -106,7 +129,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop", "resume", "reset_timer"]
+    const commandList = ["help", "stop", "resume", "reset_timer", "change_interval"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -127,7 +150,15 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     case "reset_timer": {
       const oldValue = this.lastSpawnTime
       this.lastSpawnTime = 0
-      return `timer (${Math.max(attackControllerInterval - (Game.time - oldValue), 0)} to go) reset`
+      return `timer (${Math.max(this.attackControllerInterval - (Game.time - oldValue), 0)} to go) reset`
+    }
+
+    case "change_interval": {
+      const listArguments = new ListArguments(components)
+      const oldValue = this.attackControllerInterval
+      const interval = listArguments.int(0, "interval").parse({min: 100})
+      this.attackControllerInterval = interval
+      return `changed interval ${oldValue} =&gt ${this.attackControllerInterval}`
     }
 
     default:
@@ -143,7 +174,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    if (creepCount < 1 && (Game.time - attackControllerInterval) > this.lastSpawnTime) {
+    if (creepCount < 1 && (Game.time - this.attackControllerInterval) > this.lastSpawnTime) {
       if (this.spawnStopReasons.length <= 0) {
         this.spawnDowngrader(resources)
       }
