@@ -25,10 +25,10 @@ ProcessDecoder.register("GuardRemoteRoomProcess", state => {
 })
 
 const guardRemoteRoomProcessCreepType = [
-  "small-ranged-attacker",
-  "ranged-attacker",
-  "high-speed-ranged-attacker",
-  "heavy-ranged-attacker",
+  "small-ranged-attacker",       // RCL6
+  "ranged-attacker",             // RCL7
+  "high-speed-ranged-attacker",  // RCL8
+  "heavy-ranged-attacker",       // RCL8
 ] as const
 export type GuardRemoteRoomProcessCreepType = typeof guardRemoteRoomProcessCreepType[number]
 
@@ -71,7 +71,7 @@ type TalkingInfo = {
 }
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
-const smallRangedAttackerBody: BodyPartConstant[] = [  // RCL6
+const smallRangedAttackerBody: BodyPartConstant[] = [
   TOUGH,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -80,7 +80,7 @@ const smallRangedAttackerBody: BodyPartConstant[] = [  // RCL6
   HEAL, HEAL,
   MOVE,
 ]
-const rangedAttackerBody: BodyPartConstant[] = [  // RCL7
+const rangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
@@ -92,7 +92,7 @@ const rangedAttackerBody: BodyPartConstant[] = [  // RCL7
   HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
 ]
-const highSpeedangedAttackerBody: BodyPartConstant[] = [  // RCL8
+const highSpeedangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,

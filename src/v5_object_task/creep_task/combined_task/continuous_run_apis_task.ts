@@ -70,7 +70,7 @@ export class ContinuousRunApiTask implements CreepTask {
     switch (result) {
     case FINISHED:
     case FINISHED_AND_RAN:
-      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.constructor.name} ${creep.name} ${creep.pos} at ${roomLink(creep.room.name)} api wrapper execution finished ${result}`)
+      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.constructor.name} ${creep.name} ${creep.pos} at ${roomLink(creep.room.name)} api wrapper ${apiWrapper.constructor.name} execution finished ${result}`)
       return "failed" // このタスクは継続利用を想定しているため失敗扱い
 
     case IN_PROGRESS:
@@ -81,7 +81,7 @@ export class ContinuousRunApiTask implements CreepTask {
     case ERR_NOT_ENOUGH_RESOURCES:
     case ERR_DAMAGED:
     case ERR_PROGRAMMING_ERROR:
-      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.constructor.name} ${creep.name} ${creep.pos} at ${roomLink(creep.room.name)} api wrapper execution failed ${result}`)
+      PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${this.constructor.name} ${creep.name} ${creep.pos} at ${roomLink(creep.room.name)} api wrapper ${apiWrapper.constructor.name} execution failed ${result}`)
       return "failed"
     }
   }
