@@ -18,7 +18,10 @@ export function textColor(color: TextColor): string {
   return textColors[color] ?? "white"
 }
 
-export function coloredText(text: string, color: TextColor): string {
+export function coloredText(text: string, color: TextColor | "none"): string {
+  if (color === "none") {
+    return text
+  }
   const colorValue = textColor(color)
   return anyColoredText(text, colorValue)
 }
