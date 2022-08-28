@@ -219,7 +219,8 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       return this.evacuateTask(creep)
     }
 
-    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+    const energyAmount = creep.store.getUsedCapacity(RESOURCE_ENERGY)
+    if (energyAmount <= 0) {
       if (creep.store.getFreeCapacity() > 0) {
         const collectDroppedResourceTask = this.collectDroppedResourceTask(creep, objects)
         if (collectDroppedResourceTask != null) {
@@ -269,7 +270,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
     }
 
     if (creep.roles.includes(CreepRole.Worker) === true) {
-      const skipCharging = (Game.time % 2 === 0)
+      const skipCharging = (energyAmount > (creep.store.getCapacity() * 0.7)) && (Game.time % 2 === 0)
       if (skipCharging !== true) {
         const structureToCharge = objects.getStructureToCharge(creep.pos)
         if (structureToCharge != null) {
