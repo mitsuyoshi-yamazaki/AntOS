@@ -22,7 +22,22 @@ const processes = new Map<ProcessId, ProcessInfo>()
 const processesByParent = new ValuedArrayMap<ProcessId, ProcessInfo>()
 const processesByType = new ValuedArrayMap<ProcessType, ProcessInfo>()
 
-export const ProcessStore = {
+interface ProcessStoreInterface {
+  rootProcess: RootProcess
+
+  processInfo(processId: ProcessId): ProcessInfo | null
+
+  /** executionOrderの若い順 */
+  childProcessInfo(parentProcessId: ProcessId): ProcessInfo[] | null
+  addProcess(processInfo: ProcessInfo): void
+  removeProcess(processInfo: ProcessInfo): void
+  allProcesses(): ProcessInfo[]
+  processListByParentId(): Map<ProcessId, ProcessInfo[]>
+
+
+}
+
+export const ProcessStore: ProcessStoreInterface = {
   rootProcess: new RootProcess(),
 
   processInfo(processId: ProcessId): ProcessInfo | null {
@@ -45,8 +60,13 @@ export const ProcessStore = {
     }
 
     processes.set(processId, processInfo)
-    processesByParent.getValueFor(processInfo.parentProcessId).push(processInfo)
     processesByType.getValueFor(processInfo.process.processType).push(processInfo)
+
+    const childProcesses = processesByParent.getValueFor(processInfo.parentProcessId)
+    childProcesses.push(processInfo)
+    childProcesses.sort((lhs, rhs) => {
+      return lhs.process.executionSpec().executionOrder - rhs.process.executionSpec().executionOrder
+    })
   },
 
   removeProcess(processInfo: ProcessInfo): void {
