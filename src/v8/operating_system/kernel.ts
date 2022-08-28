@@ -44,6 +44,7 @@ import { ArgumentParser } from "os/infrastructure/console_command/utility/argume
 import { StandardInputCommand } from "./system_call/standard_input_command"
 import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 import { GameConstants } from "utility/constants"
+import { ProcessLogger } from "./system_call/process_logger"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
@@ -80,6 +81,7 @@ const systemCallFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[
 }
 const systemCalls: SystemCall[] = [
   ProcessManager,
+  ProcessLogger,
 ]
 systemCalls.forEach(systemCall => {
   if (systemCall.load != null) {
