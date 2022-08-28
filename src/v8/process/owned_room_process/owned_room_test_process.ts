@@ -1,10 +1,10 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
-import { ProcessState } from "../process"
+import { ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 import { OwnedRoomChildProcess } from "./owned_room_child_process"
+import { OwnedRoomResource } from "./owned_room_resource/owned_room_resource"
 
 const processType = "OwnedRoomTestProcess"
 
@@ -40,6 +40,14 @@ export class OwnedRoomTestProcess extends OwnedRoomChildProcess {
 
   public shortDescription = (): string => {
     return roomLink(this.roomName)
+  }
+
+  public executionSpec(): ProcessExecutionSpec {
+    return {
+      executionPriority: ProcessExecutionPriority.medium,
+      executionOrder: ProcessExecutionOrder.normal,
+      interval: 1,
+    }
   }
 
   public run = (): void => {

@@ -1,14 +1,14 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { RoomResources } from "room_resource/room_resources"
 import { roomLink } from "utility/log"
 import { RoomName } from "utility/room_name"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
-import { Process, ProcessId, ProcessState } from "../process"
+import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessId, ProcessState } from "../process"
 import { ProcessType, ProcessTypeConverter } from "../process_type"
 import { OwnedRoomChildProcess } from "./owned_room_child_process"
 import { OwnedRoomTestProcess } from "./owned_room_test_process"
+import { OwnedRoomResource } from "./owned_room_resource/owned_room_resource"
+import { OwnedRoomProcessRequest } from "./owned_room_process_request"
+import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
 
 const processType = "OwnedRoomProcess"
 
@@ -73,20 +73,34 @@ export class OwnedRoomProcess extends Process implements LaunchMessageObserver {
     }
   }
 
+  public executionSpec(): ProcessExecutionSpec {
+    return {
+      executionPriority: ProcessExecutionPriority.top,
+      executionOrder: ProcessExecutionOrder.normal,
+      interval: 1,
+    }
+  }
+
   public load(processId: ProcessId): void {
     this.childProcesses = []
     ProcessManager.getChildProcesses(processId).forEach(childProcess => {
       if (childProcess instanceof OwnedRoomChildProcess) {
         this.childProcesses.push(childProcess)
+        return
       }
     })
   }
 
-  public run = (processId: ProcessId): void => {
-    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+  public runWith(processId: ProcessId, requests: OwnedRoomProcessRequest): void {
+    const room = Game.rooms[this.roomName]
+    if (room == null) {
+      ProcessLogger.error(this, `${roomLink(this.roomName)} is lost`)
+      return  // TODO: unclaim等
+    }
+
+    const roomResource = new OwnedRoomResource(room)
 
     if (roomResource == null) {
-      PrimitiveLogger.fatal(`${processId} ${roomLink(this.roomName)} is lost`)
       return
     }
 

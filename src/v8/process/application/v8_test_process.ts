@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Process, ProcessState } from "../process"
+import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 
 const processType = "V8TestProcess"
@@ -32,6 +32,14 @@ export class V8TestProcess extends Process {
 
   public shortDescription = (): string => {
     return ""
+  }
+
+  public executionSpec(): ProcessExecutionSpec {
+    return {
+      executionPriority: ProcessExecutionPriority.low + 100,
+      executionOrder: ProcessExecutionOrder.normal,
+      interval: 3,
+    }
   }
 
   public run = (): void => {
