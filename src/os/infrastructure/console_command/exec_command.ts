@@ -667,7 +667,18 @@ export class ExecCommand implements ConsoleCommand {
     const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
     const roomName = roomResource.room.name
     const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
-    const excludedResourceTypes = keywordArguments.list("excluded_resource_types", "resource").parseOptional() ?? []
+    const excludedResourceTypes = ((): ResourceConstant[] => {
+      const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
+      if (given != null) {
+        return given
+      }
+      return [
+        RESOURCE_KEANIUM,
+        RESOURCE_LEMERGIUM,
+        RESOURCE_UTRIUM,
+        RESOURCE_ZYNTHIUM,
+      ]
+    })()
 
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
