@@ -1249,11 +1249,13 @@ ProcessLauncher.register("ClaimProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
+    const maxClaimSize = args.int("max_claim_size").parseOptional({min: 1})
 
     return Result.Succeeded((processId) => ClaimProcess.create(
       processId,
       roomName,
       targetRoomName,
+      maxClaimSize,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)

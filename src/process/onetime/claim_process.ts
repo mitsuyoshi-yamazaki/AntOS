@@ -13,6 +13,8 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveClaimControllerTask } from "v5_object_task/creep_task/combined_task/move_claim_controller_task"
 import { GameMap } from "game/game_map"
+import { CreepBody } from "utility/creep_body"
+import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("ClaimProcess", state => {
   return ClaimProcess.decode(state as ClaimProcessState)
@@ -21,6 +23,7 @@ ProcessDecoder.register("ClaimProcess", state => {
 export interface ClaimProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly targetRoomName: RoomName
+  readonly maxClaimSize: number
 }
 
 export class ClaimProcess implements Process, Procedural {
@@ -33,6 +36,7 @@ export class ClaimProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly roomName: RoomName,
     public readonly targetRoomName: RoomName,
+    private readonly maxClaimSize: number,
   ) {
     this.taskIdentifier = `${this.processId}_${this.constructor.name}_${this.targetRoomName}`
     this.codename = UniqueId.generateCodename(this.taskIdentifier, this.launchTime)
@@ -45,15 +49,16 @@ export class ClaimProcess implements Process, Procedural {
       i: this.processId,
       roomName: this.roomName,
       targetRoomName: this.targetRoomName,
+      maxClaimSize: this.maxClaimSize,
     }
   }
 
   public static decode(state: ClaimProcessState): ClaimProcess {
-    return new ClaimProcess(state.l, state.i, state.roomName, state.targetRoomName)
+    return new ClaimProcess(state.l, state.i, state.roomName, state.targetRoomName, state.maxClaimSize)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName): ClaimProcess {
-    return new ClaimProcess(Game.time, processId, roomName, targetRoomName)
+  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, maxClaimSize: number | null): ClaimProcess {
+    return new ClaimProcess(Game.time, processId, roomName, targetRoomName, maxClaimSize ?? 1)
   }
 
   public processShortDescription(): string {
@@ -61,6 +66,12 @@ export class ClaimProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      OperatingSystem.os.suspendProcess(this.processId)
+      return
+    }
+
     const shouldQuit = ((): boolean => {
       const targetRoom = Game.rooms[this.targetRoomName]
       if (targetRoom == null) {
@@ -82,12 +93,14 @@ export class ClaimProcess implements Process, Procedural {
 
     const claimerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
     if (claimerCount <= 0) {
+      const body = CreepBody.create([], [MOVE, CLAIM], roomResource.room.energyCapacityAvailable, this.maxClaimSize)
+
       World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,
         numberOfCreeps: 1,
         codename: this.codename,
         roles: [],
-        body: [MOVE, CLAIM],
+        body,
         initialTask: null,
         taskIdentifier: this.taskIdentifier,
         parentRoomName: null,
