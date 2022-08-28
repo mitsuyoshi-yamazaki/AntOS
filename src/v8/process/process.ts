@@ -39,24 +39,39 @@
  - 子ProcessがKernelから見えるのであれば手動の操作と干渉する
    - 見えないのであればProcessのインターフェースを取る必要はない
    - メッセージは送れる必要がある
+
+ ## Process間通信
+ - 共有メモリ（実体はなんらかのインスタンス）とProcess実行順
  */
 
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { State, Stateful } from "os/infrastructure/state"
 import type { CompressedProcessType, ProcessType } from "./process_type"
-import type { ProcessStateDescription } from "./process_state_description"
 
 export type ProcessId = string
 
-export interface ProcessState extends State {
-  readonly t: CompressedProcessType
+export const ProcessExecutionPriority = {
+  top: 10,
+  high: 50,
+  medium: 100,
+  low: 1000,
+} as const
+export const ProcessExecutionOrder = {
+  first: 100,
+  normal: 500,
+  last: 1000,
+} as const
+export type ProcessExecutionSpec = {
+  /** ProcessExecutionPriorityを基準に値を設定する */
+  readonly executionPriority: number
+
+  /** ProcessExecutionOrderを基準に値を設定する */
+  readonly executionOrder: number
+  readonly interval: 1 | 2 | 3 | 5 | 10 | 30 | 100 | 500 | 1000 | 1500 | 3000 | 10000
 }
 
-export interface Processss extends Stateful {
-  readonly processId: ProcessId
-  readonly processType: ProcessType
-
-  encode(): ProcessState
+export interface ProcessState extends State {
+  readonly t: CompressedProcessType
 }
 
 export abstract class Process implements Stateful {
@@ -92,11 +107,8 @@ export abstract class Process implements Stateful {
    */
   public description?: () => string
 
-  /** // TODO: この仕組みが良いのか考え中s
-   * 自身と子Processの状態を親に伝える
-   * 実行に必須の引数がある場合はrun()内で置き換える
-   */
-  public describe = (): ProcessStateDescription => ({description: `${this.constructor.name}.describe() not implemented yet`})
+  /** 自身で設定する（親は別経路から制御できる） */
+  public abstract executionSpec(): ProcessExecutionSpec
 
   /** 全てのProcessのDecode後に呼び出される ※インスタンス化時には呼び出されない */
   public load?(processId: ProcessId): void
