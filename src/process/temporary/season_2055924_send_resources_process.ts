@@ -12,6 +12,8 @@ import { DistributorProcess } from "../process/distributor_process"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
 import { SectorName } from "utility/room_sector"
+import { MessageObserver } from "os/infrastructure/message_observer"
+import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)
@@ -25,7 +27,7 @@ export interface Season2055924SendResourcesProcessState extends ProcessState {
   readonly excludes: ResourceConstant[]
 }
 
-export class Season2055924SendResourcesProcess implements Process, Procedural {
+export class Season2055924SendResourcesProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
@@ -38,7 +40,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     private readonly targetSectorNames: SectorName[] | null,
-    private readonly excludes: ResourceConstant[],
+    private excludes: ResourceConstant[],
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -56,7 +58,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
   }
 
   public static decode(state: Season2055924SendResourcesProcessState): Season2055924SendResourcesProcess {
-    return new Season2055924SendResourcesProcess(state.l, state.i, state.p, state.targetSectorNames, state.excludes ?? [])
+    return new Season2055924SendResourcesProcess(state.l, state.i, state.p, state.targetSectorNames, state.excludes)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetSectorNames: SectorName[] | null, excludedResourceTypes: ResourceConstant[]): Season2055924SendResourcesProcess {
@@ -87,7 +89,37 @@ export class Season2055924SendResourcesProcess implements Process, Procedural {
     if (this.targetSectorNames != null) {
       descriptions.push(`target sectors: ${this.targetSectorNames.join(",")}`)
     }
-    return descriptions.join(",")
+    return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "exclude", "clear_excluded_resource"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+      case "exclude": {
+        const listArguments = new ListArguments(components)
+        const resourceType = listArguments.resourceType(0, "resource type").parse()
+        this.excludes.push(resourceType)
+        return `excluded resources: ${this.excludes.map(resource => coloredResourceType(resource)).join(",")}`
+      }
+
+      case "clear_excluded_resource": {
+        const oldValues = [...this.excludes]
+        this.excludes = []
+        return `cleared excluded resources: ${oldValues.map(resource => coloredResourceType(resource)).join(",")}`
+      }
+
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
