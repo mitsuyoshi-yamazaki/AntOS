@@ -34,6 +34,13 @@ import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 import { } from "../../../../submodules/private/attack/planning/attack_plan"
 import { } from "../../../../submodules/private/attack/platoon/platoon"
 import { SwcAllyRequest } from "script/swc_ally_request"
+import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
+import { StealResourceProcess } from "process/onetime/steal_resource_process"
+import { GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
+import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
+import { LaunchQuadProcess } from "process/onetime/quad_maker/launch_quad_process"
+import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
+import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -516,78 +523,115 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   private unclaimRoom(roomName: RoomName, dryRun: boolean): CommandExecutionResult {
-    const processes: Process[] = OperatingSystem.os.listAllProcesses().flatMap(processInfo => {
+    const processesToKill: Process[] = []
+
+    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
       const process = processInfo.process
       if (process instanceof RoomKeeperProcess) {
         if (process.roomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof V6RoomKeeperProcess) {
         if (process.roomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof DistributorProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof Season2055924SendResourcesProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof BoostLabChargerProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof DefenseRoomProcess) {
         if (process.roomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof DefenseRemoteRoomProcess) {
         if (process.roomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof World35587255ScoutRoomProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof PowerProcessProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
       if (process instanceof PowerCreepProcess) {
         if (process.parentRoomName === roomName) {
-          return process
+          processesToKill.push(process)
         }
-        return []
+        return
       }
-      return []
+      if (process instanceof StealResourceProcess) {
+        if (process.parentRoomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof GuardRemoteRoomProcess) {
+        if (process.parentRoomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof QuadMakerProcess) {
+        if (process.roomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof LaunchQuadProcess) {
+        if (process.roomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof HarvestPowerProcess) {
+        if (process.parentRoomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof HarvestCommodityProcess) {
+        if (process.parentRoomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
     })
 
     const messages: string[] = []
 
-    const processDescriptions = processes.map(process => {
+    const processDescriptions = processesToKill.map(process => {
       const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
       return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
     })
-    messages.push(coloredText(`${processes.length} processes to remove:`, "info"))
+    messages.push(coloredText(`${processesToKill.length} processes to remove:`, "info"))
     messages.push(...processDescriptions)
 
     const room = Game.rooms[roomName]
@@ -642,7 +686,7 @@ export class ExecCommand implements ConsoleCommand {
 
       messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
 
-      processes.forEach(process => {
+      processesToKill.forEach(process => {
         OperatingSystem.os.killProcess(process.processId)
       })
       constructionSites.forEach(constructionSite => {
@@ -663,9 +707,13 @@ export class ExecCommand implements ConsoleCommand {
 
   /** @throws */
   private prepareUnclaim(args: string[]): CommandExecutionResult {
+    const results: string[] = []
+
     const keywordArguments = new KeywordArguments(args)
     const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
     const roomName = roomResource.room.name
+
+    // Send Resource
     const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
     const excludedResourceTypes = ((): ResourceConstant[] => {
       const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
@@ -683,10 +731,43 @@ export class ExecCommand implements ConsoleCommand {
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
     })
+    results.push(`send resource process ${process.processId} launched`)
 
+    // Stop Mineral Harvesting
     roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
+    results.push("stopped mineral harvesting")
 
-    return `send resource process ${process.processId} launched`
+    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
+      const process = processInfo.process
+      if (process instanceof HighwayProcessLauncherProcess) {
+        const baseRemovalResult = process.removeBase(roomName)
+        switch (baseRemovalResult) {
+        case "removed":
+          results.push(`base removed from ${process.constructor.name}`)
+          break
+        case "no base":
+          break
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = baseRemovalResult
+          break
+        }
+        }
+        return
+      }
+      if (process instanceof PowerCreepProcess) {
+        if (process.parentRoomName === roomName) {
+          process.suicidePowerCreep()
+          results.push(`commanded suicide PowerCreep ${process.powerCreepName}`)
+        }
+        return
+      }
+    })
+
+    return [
+      `preparing unclaim ${roomLink(roomName)}`,
+      ...results.map(r => `- ${r}`),
+    ].join("\n")
   }
 
   /** @throws */
