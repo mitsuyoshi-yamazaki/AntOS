@@ -714,24 +714,26 @@ export class ExecCommand implements ConsoleCommand {
     const roomName = roomResource.room.name
 
     // Send Resource
-    const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
-    const excludedResourceTypes = ((): ResourceConstant[] => {
-      const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
-      if (given != null) {
-        return given
-      }
-      return [
-        RESOURCE_KEANIUM,
-        RESOURCE_LEMERGIUM,
-        RESOURCE_UTRIUM,
-        RESOURCE_ZYNTHIUM,
-      ]
-    })()
+    if (roomResource.activeStructures.terminal != null) {
+      const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
+      const excludedResourceTypes = ((): ResourceConstant[] => {
+        const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
+        if (given != null) {
+          return given
+        }
+        return [
+          RESOURCE_KEANIUM,
+          RESOURCE_LEMERGIUM,
+          RESOURCE_UTRIUM,
+          RESOURCE_ZYNTHIUM,
+        ]
+      })()
 
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
-    })
-    results.push(`send resource process ${process.processId} launched`)
+      const process = OperatingSystem.os.addProcess(null, processId => {
+        return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
+      })
+      results.push(`send resource process ${process.processId} launched`)
+    }
 
     // Stop Mineral Harvesting
     roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
