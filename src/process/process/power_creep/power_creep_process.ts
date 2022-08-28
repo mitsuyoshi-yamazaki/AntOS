@@ -123,7 +123,7 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
         return `Commands: ${commandList}`
 
       case "suicide":
-        this.runningState = "suicide"
+        this.suicidePowerCreep()
         return "ok"
 
       default:
@@ -132,6 +132,10 @@ export class PowerCreepProcess implements Process, Procedural, MessageObserver {
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  public suicidePowerCreep(): void {
+    this.runningState = "suicide"
   }
 
   public runOnTick(): void {

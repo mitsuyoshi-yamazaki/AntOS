@@ -28,6 +28,9 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
   }
+  public get roomName(): RoomName {
+    return this.quadMaker.roomName
+  }
 
   private constructor(
     public readonly launchTime: number,
