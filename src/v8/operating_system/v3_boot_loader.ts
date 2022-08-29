@@ -11,6 +11,10 @@
 
  ## 実装
  `BootLoader` の初期化は `Kernel` の初期化後に実行されるため、 `Kernel` 初期化時に存在する必要のある★項目は `environmental_variables.ts` に実装する
+
+ ## TODO
+ - BootLoaderが環境を見て実行OSを返却するようにし、mainループではそれを実行するようにする
+ - init, extensionなどもどうにかする
  */
 
 import type { Driver } from "./driver"
@@ -19,6 +23,7 @@ import { loadApplicationProcesses } from "v8/process/application_process_loader"
 // import { } from "./driver/traffic_driver"
 // import { CpuTimeProfiler } from "./driver/cpu_time_profiler"
 // import {  } from "./driver/hostile_creep_predictor"
+// import { } from "./driver/terminal_network_manager"
 
 export const BootLoader = {
   load(): void {
