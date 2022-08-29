@@ -15,8 +15,7 @@ export const BootLoader = {
   load(): RootFunctions {
     switch (Environment.world) {
     case "private":
-      // return v3Functions()
-      return v2Functions()
+      return v3Functions()
     case "botarena":
     case "persistent world":
     case "season 4":
