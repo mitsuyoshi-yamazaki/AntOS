@@ -90,8 +90,14 @@ export class WithdrawApiWrapper implements ApiWrapper<Creep, WithdrawApiWrapperR
     case ERR_BUSY:
       return ERR_BUSY
 
-    case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
+      if ((this.target instanceof Ruin) && this.target.structure.structureType === STRUCTURE_POWER_BANK) {
+        return FINISHED // 対処療法
+      }
+      PrimitiveLogger.fatal(`WithdrawApiWrapper received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
+      return ERR_PROGRAMMING_ERROR
+
+    case ERR_NOT_OWNER:
     case ERR_INVALID_ARGS:
     default:
       PrimitiveLogger.fatal(`WithdrawApiWrapper received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
