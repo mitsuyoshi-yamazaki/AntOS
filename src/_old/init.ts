@@ -115,8 +115,9 @@ export function tick(): void {
   const time = Game.time
 
   const cpu_ticks = 20
-  if (Memory.cpu_usages.length > cpu_ticks) {
-    Memory.cpu_usages.shift()
+  const deletionCount = Memory.cpu_usages.length - cpu_ticks
+  if (deletionCount > 0) {
+    Memory.cpu_usages.splice(0, deletionCount)
   }
 
   const current_bucket = Game.cpu.bucket
