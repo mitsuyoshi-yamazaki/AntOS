@@ -355,18 +355,22 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       excludeTerrainWalls: true,
       allowedStructureTypes: [STRUCTURE_RAMPART],
     }
-    const positions = harvesterPosition.positionsInRange(1, options).map(position => {
-      const distance = ((): number => {
-        if (coreLinkPosition == null) {
-          return 0
+    const positions = harvesterPosition.positionsInRange(1, options)
+      .filter(position => {
+        return position.canConstruct()
+      })
+      .map(position => {
+        const distance = ((): number => {
+          if (coreLinkPosition == null) {
+            return 0
+          }
+          return position.getRangeTo(coreLinkPosition)
+        })()
+        return {
+          position,
+          distance,
         }
-        return position.getRangeTo(coreLinkPosition)
-      })()
-      return {
-        position,
-        distance,
-      }
-    })
+      })
 
     positions.sort((lhs, rhs) => lhs.distance - rhs.distance)
     const linkPosition = positions[0]
