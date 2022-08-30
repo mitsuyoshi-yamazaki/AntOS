@@ -1,4 +1,3 @@
-import { sanitizeLogMessage } from "os/infrastructure/primitive_logger"
 import { Process } from "v8/process/process"
 import { SystemCall } from "../system_call"
 import { LogLevel, LogOptions, PrimitiveLogger, UrgentLogOptions } from "../primitive_logger"
@@ -36,7 +35,7 @@ export const ProcessLogger: ProcessLoggerInterface = {
   },
 
   log(process: Process, message: string, logLevel: LogLevel, options?: LogOptions): void {
-    const logMessage = `${process.processId}: ${process.constructor.name} ${sanitizeLogMessage(message)}`
+    const logMessage = `${process.processId}: ${process.constructor.name} ${message}`
     PrimitiveLogger.log(logMessage, logLevel, options)  // TODO: 適当に通知を間引く
   },
 }
