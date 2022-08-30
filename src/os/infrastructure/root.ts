@@ -12,7 +12,6 @@ import { TaskTargetCache } from "object_task/object_task_target_cache"
 import { ResourceManager } from "utility/resource_manager"
 import { Logger } from "./logger"
 import { ProcessRequestStore } from "os/process_request_store"
-import { EventManager } from "event_handler/event_manager"
 import { GameMap } from "game/game_map"
 import { GameRecord } from "game/game_record"
 import { Season4ObserverManager } from "process/temporary/season4_observer_manager"
@@ -73,10 +72,6 @@ export class RootProcess {
     }, "RootProcess.restoreTasks()")()
 
     ErrorMapper.wrapLoop((): void => {
-      EventManager.beforeTick()
-    }, "EventManager.beforeTick()")()
-
-    ErrorMapper.wrapLoop((): void => {
       ProcessRequestStore.beforeTick()
     }, "ProcessRequestStore.beforeTick()")()
 
@@ -123,10 +118,6 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       ResourceManager.afterTick()
     }, "ResourceManager.afterTick()")()
-
-    ErrorMapper.wrapLoop((): void => {
-      EventManager.afterTick()
-    }, "EventManager.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       ProcessRequestStore.afterTick()
