@@ -15,6 +15,9 @@
  ## 仕様
  - ProcessもしくはCreepTask（未定）はTrafficDriverへCreepがどのような移動を行いたいかリクエストを挙げる
  - TrafficDriverはリクエストの優先順位にもとづきCreep.move()を呼び出す
+
+ ## TODO
+ - Resource Transfer Managerも作る
  */
 
 import { V9Creep } from "prototype/creep"
