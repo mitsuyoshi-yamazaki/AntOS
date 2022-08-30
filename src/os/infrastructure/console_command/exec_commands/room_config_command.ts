@@ -7,8 +7,8 @@ import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { powerName } from "utility/power"
 import { isMineralBoostConstant, isMineralCompoundConstant } from "utility/resource"
 import { RoomName } from "utility/room_name"
-import { KeywordArguments } from "../utility/keyword_argument_parser"
-import { ListArguments } from "../utility/list_argument_parser"
+import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 const numberAccessorCommands = [
   "mineral_max_amount",

@@ -23,7 +23,7 @@ import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
 

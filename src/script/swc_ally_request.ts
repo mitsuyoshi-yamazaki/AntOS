@@ -1,5 +1,5 @@
-import { validateRoomNameArgument } from "os/infrastructure/console_command/utility/string_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { validateRoomNameArgument } from "shared/utility/argument_parser/string_parser"
 import { coloredResourceType, profileLink, roomLink } from "utility/log"
 import { isResourceConstant } from "utility/resource"
 import { RoomName } from "utility/room_name"

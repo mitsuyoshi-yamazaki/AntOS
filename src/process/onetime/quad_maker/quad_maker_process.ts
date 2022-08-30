@@ -8,8 +8,8 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { QuadCreepSpec, QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
 import { isMineralBoostConstant } from "utility/resource"
 import { CreepBody, isBodyPartConstant } from "utility/creep_body"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { QuadMaker, QuadMakerState } from "./quad_maker"
 
 ProcessDecoder.register("QuadMakerProcess", state => {

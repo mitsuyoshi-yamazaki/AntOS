@@ -13,7 +13,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
 import { SectorName } from "utility/room_sector"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)

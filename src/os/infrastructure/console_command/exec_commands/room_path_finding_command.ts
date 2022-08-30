@@ -1,4 +1,4 @@
-import { ListArguments } from "../utility/list_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 import { RoomCoordinate } from "utility/room_name"
 import { roomLink } from "utility/log"
 import { RoomSector } from "utility/room_sector"

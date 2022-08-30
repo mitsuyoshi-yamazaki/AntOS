@@ -14,10 +14,10 @@ import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { RoomResources } from "room_resource/room_resources"
 import { Timestamp } from "utility/timestamp"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { Position } from "prototype/room_position"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {

@@ -1,5 +1,5 @@
 import { Invader } from "game/invader"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"

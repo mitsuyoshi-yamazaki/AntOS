@@ -1,5 +1,5 @@
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { coloredText } from "utility/log"
 import { Process, ProcessId } from "v8/process/process"
 import { isProcessType, ProcessType } from "v8/process/process_type"

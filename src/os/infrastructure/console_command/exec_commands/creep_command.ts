@@ -8,7 +8,7 @@ import { MoveToInvisibleTargetTask } from "v5_object_task/creep_task/combined_ta
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { ListArguments } from "../utility/list_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 /** @throws */
 export function execCreepCommand(creep: Creep, args: string[]): string {

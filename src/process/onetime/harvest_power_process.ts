@@ -34,7 +34,7 @@ import { CreepName, defaultMoveToOptions, isV5CreepMemory } from "prototype/cree
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 import { RoomResources } from "room_resource/room_resources"

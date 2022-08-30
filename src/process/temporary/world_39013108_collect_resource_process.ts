@@ -8,7 +8,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { ResourceManager } from "utility/resource_manager"
 import { Timestamp } from "utility/timestamp"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 
 ProcessDecoder.register("World39013108CollectResourceProcess", state => {

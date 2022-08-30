@@ -39,7 +39,7 @@ import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_
 import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import { ProduceCommodityProcess } from "process/process/produce_commodity_process"
 import { ProcessLauncher } from "process/process_launcher"
-import { KeywordArguments } from "./utility/keyword_argument_parser"
+import { KeywordArguments } from "../../../shared/utility/argument_parser/keyword_argument_parser"
 import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
 import { GclFarmManagerProcess } from "process/process/gcl_farm/gcl_farm_manager_process"
 import { Season4784484ScoreProcess } from "process/temporary/season4_784484_score_process"

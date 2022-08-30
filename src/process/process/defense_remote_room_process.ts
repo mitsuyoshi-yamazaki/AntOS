@@ -18,7 +18,7 @@ import { moveToRoom } from "script/move_to_room"
 import { GameMap } from "game/game_map"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)

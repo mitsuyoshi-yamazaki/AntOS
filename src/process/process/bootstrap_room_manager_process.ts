@@ -12,7 +12,7 @@ import { isRoomName, RoomName } from "utility/room_name"
 import { Result } from "utility/result"
 import { ProcessDecoder } from "../process_decoder"
 import { RoomResources } from "room_resource/room_resources"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { GameMap } from "game/game_map"
 
 type TargetRoom = {

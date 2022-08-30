@@ -1,6 +1,6 @@
 import { OperatingSystem } from "os/os"
 import { isMessageObserver } from "os/infrastructure/message_observer"
-import { parseProcessId } from "./utility/command_utility"
+import { parseProcessId } from "../../../shared/utility/argument_parser/command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class MessageCommand implements ConsoleCommand {

@@ -24,7 +24,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
 import { ResourceManager } from "utility/resource_manager"
 import { processLog } from "os/infrastructure/logger"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("DefenseNukeProcess", state => {
   return DefenseNukeProcess.decode(state as DefenseNukeProcessState)

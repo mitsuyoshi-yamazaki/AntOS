@@ -1,6 +1,6 @@
 import { GameMap } from "game/game_map"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"

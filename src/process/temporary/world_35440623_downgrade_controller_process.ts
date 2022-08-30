@@ -21,7 +21,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)

@@ -12,7 +12,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { OperatingSystem } from "os/os"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { processLog } from "os/infrastructure/logger"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { ContinuouslyProduceCommodityProcess } from "process/process/continuously_produce_commodity_process"
 import { Season4332399SKMineralHarvestProcess } from "./season4_332399_sk_mineral_harvest_process"
 import { CommodityIngredient, getCommodityTier, isCommodityConstant, isDepositConstant } from "utility/resource"

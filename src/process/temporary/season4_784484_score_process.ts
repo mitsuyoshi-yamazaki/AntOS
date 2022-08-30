@@ -28,7 +28,7 @@ import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide
 import { Timestamp } from "utility/timestamp"
 import { Position } from "prototype/room_position"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { ResourceManager } from "utility/resource_manager"
 
 ProcessDecoder.register("Season4784484ScoreProcess", state => {
