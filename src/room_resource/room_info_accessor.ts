@@ -3,9 +3,9 @@ import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { coloredResourceType, roomLink } from "utility/log"
-import { MineralCompoundIngredients, ResourceConstant } from "utility/resource"
-import { Result } from "utility/result"
-import { RoomName } from "utility/room_name"
+import { MineralCompoundIngredients, ResourceConstant } from "shared/utility/resource"
+import { Result } from "shared/utility/result"
+import { RoomName } from "shared/utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
 
 export const defaultMaxWallHits = 10000000

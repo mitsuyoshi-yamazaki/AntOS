@@ -2,10 +2,10 @@ import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
-import { isDirectionConstant } from "utility/direction"
+import { isDirectionConstant } from "shared/utility/direction"
 import { roomLink } from "utility/log"
-import { isPowerConstant } from "utility/power"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { isPowerConstant } from "shared/utility/power"
+import { RoomCoordinate, RoomName } from "shared/utility/room_name"
 
 export type ArgumentParsingOptions = {
   missingArgumentErrorMessage?: string

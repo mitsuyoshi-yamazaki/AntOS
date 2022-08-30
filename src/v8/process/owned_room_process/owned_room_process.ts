@@ -1,5 +1,5 @@
 import { roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessId, ProcessState } from "../process"

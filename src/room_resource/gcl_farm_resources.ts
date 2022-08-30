@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Position } from "prototype/room_position"
 import { roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 
 export type GclFarmMemory = {
   roomNames: RoomName[]

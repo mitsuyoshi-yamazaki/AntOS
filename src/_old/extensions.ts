@@ -2,17 +2,16 @@ import { OSMemory } from "../os/os"
 
 import { LeagueOfAutomatedNations } from "./loanUserList"
 import { standardInput } from "../os/infrastructure/standard_input"
-import { SystemInfo } from "utility/system_info"
+import { SystemInfo } from "shared/utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
 import type { RoomInfoType } from "room_resource/room_info"
 import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
-import { EventMemory } from "event_handler/event_memory"
 import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {
@@ -42,7 +41,6 @@ declare global {
     gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
-    eventMemory: EventMemory
     gameMap: GameMapMemory
     gclFarm: GclFarmMemory
     ignoreRooms: RoomName[]

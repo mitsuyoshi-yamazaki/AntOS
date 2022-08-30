@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { UniqueId } from "utility/unique_id"
@@ -23,7 +23,7 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { CreepName } from "prototype/creep"
 // import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 

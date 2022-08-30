@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { coloredText } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"

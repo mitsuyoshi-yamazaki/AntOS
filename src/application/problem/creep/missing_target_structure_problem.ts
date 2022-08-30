@@ -1,7 +1,7 @@
 import { Problem } from "application/problem"
 import type { ProblemIdentifier } from "application/problem"
 import { CreepApiWrapperType } from "object_task/creep_task/creep_api_wrapper_decoder"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 
 export class MissingTargetStructureProblem implements Problem {
   public readonly identifier: ProblemIdentifier

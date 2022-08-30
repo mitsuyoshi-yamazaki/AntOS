@@ -1,6 +1,6 @@
 import { Problem } from "application/problem"
 import type { ProblemIdentifier } from "application/problem"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 
 export class MissingActiveStructureProblem implements Problem {
   public readonly identifier: ProblemIdentifier

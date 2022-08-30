@@ -5,7 +5,7 @@ import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromStat
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { travelTo, TravelToOptions } from "prototype/travel_to"
 
 type TravelToTargetTaskApiWrapper = AnyCreepApiWrapper & TargetingApiWrapper

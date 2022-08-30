@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { coloredCreepBody, coloredText, profileLink, roomHistoryLink, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
@@ -18,7 +18,7 @@ import { moveToRoom } from "script/move_to_room"
 import { GameMap } from "game/game_map"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)

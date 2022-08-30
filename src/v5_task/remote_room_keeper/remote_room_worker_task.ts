@@ -1,4 +1,4 @@
-import { RoomName, roomTypeOf } from "utility/room_name"
+import { RoomName, roomTypeOf } from "shared/utility/room_name"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"

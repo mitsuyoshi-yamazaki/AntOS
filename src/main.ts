@@ -6,7 +6,7 @@ import { memhack } from "./memory_hack"
 
 import { init as initializerInit } from "_old/init"
 import { leveled_colored_text } from "./utility"
-import { SystemInfo } from "utility/system_info"
+import { SystemInfo } from "shared/utility/system_info"
 import { BootLoader } from "./boot_loader"
 
 memhack.load()

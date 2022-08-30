@@ -1,4 +1,4 @@
-import type { Timestamp } from "./timestamp"
+import type { Timestamp } from "../shared/utility/timestamp"
 
 const powerTypes = [
   "regenSource",

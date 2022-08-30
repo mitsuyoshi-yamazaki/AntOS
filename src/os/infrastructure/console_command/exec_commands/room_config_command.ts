@@ -4,11 +4,11 @@ import { describePosition } from "prototype/room_position"
 import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { powerName } from "utility/power"
-import { isMineralBoostConstant, isMineralCompoundConstant } from "utility/resource"
-import { RoomName } from "utility/room_name"
-import { KeywordArguments } from "../utility/keyword_argument_parser"
-import { ListArguments } from "../utility/list_argument_parser"
+import { powerName } from "shared/utility/power"
+import { isMineralBoostConstant, isMineralCompoundConstant } from "shared/utility/resource"
+import { RoomName } from "shared/utility/room_name"
+import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 const numberAccessorCommands = [
   "mineral_max_amount",

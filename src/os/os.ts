@@ -1,4 +1,4 @@
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import type { Process, ProcessId } from "process/process"
 import { RootProcess } from "./infrastructure/root"
@@ -14,9 +14,6 @@ import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
 import { LoggerMemory } from "./infrastructure/logger"
 import { PrimitiveLogger } from "./infrastructure/primitive_logger"
-import { AsynchronousTask, AsynchronousTaskIdentifier, AsynchronousTaskState } from "asynchronous_task/asynchronous_task"
-import { decodeAsynchronousTaskFrom } from "asynchronous_task/asynchronous_task_decoder"
-import { } from "./infrastructure/notification/notification_manager"
 
 interface ProcessMemory {
   /** running */
@@ -40,7 +37,6 @@ interface InternalProcessInfo {
 
 export interface OSMemory {
   p: ProcessMemory[]  // processes (stateless)
-  asynchronousTasks: AsynchronousTaskState[]
   config: {
     /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
     shouldReadMemory?: boolean
@@ -308,10 +304,6 @@ export class OperatingSystem {
     }, "OperatingSystem.runProceduralProcesses()")()
 
     ErrorMapper.wrapLoop(() => {
-      this.executeAsynchronousTasks()
-    }, "OperatingSystem.executeAsynchronousTasks()")()
-
-    ErrorMapper.wrapLoop(() => {
       this.suspendQueuedProcesses()
     }, "OperatingSystem.suspendQueuedProcesses()")()
 
@@ -334,7 +326,6 @@ export class OperatingSystem {
     if (Memory.os == null) {
       Memory.os = {
         p: [],
-        asynchronousTasks: [],
         config: {},
         logger: {
           filteringProcessIds: [],
@@ -346,9 +337,6 @@ export class OperatingSystem {
     }
     if (Memory.os.p == null) {
       Memory.os.p = []
-    }
-    if (Memory.os.asynchronousTasks == null) {
-      Memory.os.asynchronousTasks = []
     }
     if (Memory.os.config == null) {
       Memory.os.config = {}
@@ -531,43 +519,5 @@ export class OperatingSystem {
     }
 
     this.storeProcesses()
-  }
-
-  // ---- Asynchronous Tasks ---- //
-  public addAsynchronousTask(task: AsynchronousTask): void {
-    Memory.os.asynchronousTasks.push(task.encode())
-  }
-
-  public hasAsynchronousTask(taskIdentifier: AsynchronousTaskIdentifier): boolean {
-    return Memory.os.asynchronousTasks.some(taskState => taskState.taskIdentifier === taskIdentifier)
-  }
-
-  private executeAsynchronousTasks(): void {
-    const cpuAvailable = (): boolean => {
-      if (Game.cpu.bucket < 5000) {
-        return false
-      }
-      if (Game.cpu.limit - Game.cpu.getUsed() <= 0) {
-        return false
-      }
-      return true
-    }
-
-    const numberOfTasks = Memory.os.asynchronousTasks.length
-    for (let i = 0; i < numberOfTasks; i += 1) {
-      if (cpuAvailable() !== true) {
-        return
-      }
-      const taskState = Memory.os.asynchronousTasks.shift()
-      if (taskState == null) {
-        return
-      }
-      const task = decodeAsynchronousTaskFrom(taskState)
-      if (task == null) {
-        this.sendOSError(`Failed to restore asynchronous task ${taskState.taskIdentifier}`)
-        continue
-      }
-      task.run()
-    }
   }
 }

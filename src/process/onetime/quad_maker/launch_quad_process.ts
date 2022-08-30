@@ -3,11 +3,11 @@ import { Process, ProcessId } from "process/process"
 import { OperatingSystem } from "os/os"
 import { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
 import { processLog } from "os/infrastructure/logger"
 import { QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)

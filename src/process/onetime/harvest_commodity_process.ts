@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
@@ -25,7 +25,7 @@ import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("HarvestCommodityProcess", state => {

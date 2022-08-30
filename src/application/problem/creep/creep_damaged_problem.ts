@@ -1,6 +1,6 @@
 import { Problem } from "application/problem"
 import type { ProblemIdentifier } from "application/problem"
-import type { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name"
 
 export class CreepDamagedProblem implements Problem {
   public readonly identifier: ProblemIdentifier

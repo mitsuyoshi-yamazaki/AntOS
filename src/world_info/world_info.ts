@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Creeps, CreepsInterface } from "./creep_info"
 import { RoomMap, RoomMapInterface } from "./room_map_info"
 import { ResourcePools, ResourcePoolsInterface } from "./resource_pool/resource_pool"

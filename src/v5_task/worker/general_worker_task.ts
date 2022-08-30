@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"

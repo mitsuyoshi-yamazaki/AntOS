@@ -1,4 +1,4 @@
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 
 export function parseProcessId(arg: string[] | string | undefined): Result<number, string> {
   const rawProcessId = ((): string | undefined => {

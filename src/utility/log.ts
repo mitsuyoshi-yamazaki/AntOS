@@ -1,5 +1,5 @@
 import { Environment } from "./environment"
-import { Timestamp } from "./timestamp"
+import { Timestamp } from "../shared/utility/timestamp"
 
 const textColors: { [index: string]: string } = {
   // Log level

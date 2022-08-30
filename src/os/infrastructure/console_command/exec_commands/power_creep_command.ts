@@ -1,6 +1,6 @@
 import { roomLink } from "utility/log"
-import { KeywordArguments } from "../utility/keyword_argument_parser"
-import { ListArguments } from "../utility/list_argument_parser"
+import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 /** @throws */
 export function execPowerCreepCommand(powerCreep: PowerCreep, args: string[]): string {

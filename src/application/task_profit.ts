@@ -1,6 +1,6 @@
 import type { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { GameConstants } from "utility/constants"
-import type { Timestamp } from "utility/timestamp"
+import type { Timestamp } from "shared/utility/timestamp"
 
 export type TaskPerformancePeriodType = number | "continuous"
 

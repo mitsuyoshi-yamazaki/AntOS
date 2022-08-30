@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Rooms } from "world_info/room_info"
 import { ResourcePoolType } from "./resource_pool"
 

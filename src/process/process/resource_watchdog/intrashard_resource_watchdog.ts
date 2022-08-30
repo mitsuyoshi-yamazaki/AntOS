@@ -54,7 +54,7 @@
 
 import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Timestamp } from "utility/timestamp"
 import { WatchDog, WatchDogState } from "./watchdog"
 

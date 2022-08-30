@@ -4,7 +4,7 @@ import { defaultMoveToOptions } from "prototype/creep"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { GameConstants, OBSTACLE_COST } from "utility/constants"
 import { roomLink } from "utility/log"
-import { RoomName, roomTypeOf } from "utility/room_name"
+import { RoomName, roomTypeOf } from "shared/utility/room_name"
 
 export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints: RoomName[], sourceKeeperRange?: number): void {
   const creepRoom = creep.room

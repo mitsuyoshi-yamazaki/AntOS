@@ -2,7 +2,7 @@ import _ from "lodash"
 import { tick as extensionTick } from "_old/extensions"
 import { leveled_colored_text } from '../utility'
 import { World } from "world_info/world_info"
-import { SystemInfo } from "utility/system_info"
+import { SystemInfo } from "shared/utility/system_info"
 
 export function init(): void {
   if (!Memory.versions) {
@@ -52,20 +52,6 @@ export function init(): void {
 
   if (Memory.v6RoomInfo == null) {
     Memory.v6RoomInfo = {}
-  }
-
-  if (Memory.eventMemory == null) {
-    Memory.eventMemory = {
-      roomVisibility: {
-        observingVisibleRooms: []
-      }
-    }
-  } else {
-    if (Memory.eventMemory.roomVisibility == null) {
-      Memory.eventMemory.roomVisibility = {
-        observingVisibleRooms: []
-      }
-    }
   }
 
   if (Memory.gameMap == null) {

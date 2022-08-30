@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -11,7 +11,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
@@ -21,7 +21,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)

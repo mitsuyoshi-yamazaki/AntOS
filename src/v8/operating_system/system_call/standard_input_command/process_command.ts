@@ -1,4 +1,4 @@
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { tab, Tab } from "utility/log"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { ProcessInfo } from "v8/operating_system/process_store"

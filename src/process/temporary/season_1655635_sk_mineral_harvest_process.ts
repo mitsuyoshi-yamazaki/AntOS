@@ -2,7 +2,7 @@
 
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName, roomTypeOf } from "utility/room_name"
+import { RoomName, roomTypeOf } from "shared/utility/room_name"
 import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"

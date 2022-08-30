@@ -5,10 +5,10 @@ import { AnyCreepApiWrapper, CreepApiWrapperState, decodeCreepApiWrapperFromStat
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { decodeRoomPosition, RoomPositionId, RoomPositionState } from "prototype/room_position"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText, roomLink } from "utility/log"
-import { DirectionConstants } from "utility/direction"
+import { DirectionConstants } from "shared/utility/direction"
 import { GameConstants } from "utility/constants"
 import { avoidConstructionSitesCostCallback } from "../meta_task/move_to_task"
 

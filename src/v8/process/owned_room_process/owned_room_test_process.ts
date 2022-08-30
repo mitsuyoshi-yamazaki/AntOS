@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 import { OwnedRoomChildProcess } from "./owned_room_child_process"

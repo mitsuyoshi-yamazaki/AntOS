@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
@@ -11,9 +11,9 @@ import { OperatingSystem } from "os/os"
 import { DistributorProcess } from "../process/distributor_process"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
-import { SectorName } from "utility/room_sector"
+import { SectorName } from "shared/utility/room_sector"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)

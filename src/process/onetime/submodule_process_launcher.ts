@@ -1,5 +1,5 @@
 import { OperatingSystem } from "os/os"
-import { Result, ResultFailed } from "utility/result"
+import { Result, ResultFailed } from "shared/utility/result"
 import { SpecializedQuadProcess } from "../../../submodules/private/attack/quad/quad_process"
 import { isQuadType, PredefinedQuadSpec } from "../../../submodules/private/attack/quad/predefined_quad_spec"
 // import { } from "../../../submodules/private/attack/platoon/platoon_process"

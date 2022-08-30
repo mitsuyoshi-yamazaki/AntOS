@@ -22,8 +22,8 @@
 
 import { V9Creep } from "prototype/creep"
 import { Position } from "prototype/room_position"
-import { RoomName } from "utility/room_name"
-import { ValuedArrayMap, ValuedMapMap } from "utility/valued_collection"
+import { RoomName } from "shared/utility/room_name"
+import { ValuedArrayMap, ValuedMapMap } from "shared/utility/valued_collection"
 import { Driver } from "../driver"
 
 type IntraRoomPositionId = string

@@ -1,5 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 
 export class MemoryCommand implements ConsoleCommand {

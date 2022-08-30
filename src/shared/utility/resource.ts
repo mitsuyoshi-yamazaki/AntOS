@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { coloredResourceType } from "./log"
+import { coloredResourceType } from "../../utility/log"
 
 export const MineralBaseCompoundsConstant: MineralBaseCompoundsConstant[] = [
   RESOURCE_HYDROXIDE,

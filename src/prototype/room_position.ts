@@ -1,5 +1,5 @@
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { RoomCoordinate, RoomName } from "shared/utility/room_name"
 import { PositionTaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"

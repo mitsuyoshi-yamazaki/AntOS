@@ -1,4 +1,4 @@
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { coloredText } from "utility/log"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { StandardInputCommand } from "../standard_input_command"

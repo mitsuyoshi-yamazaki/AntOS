@@ -1,5 +1,5 @@
 import { ProcessId } from "process/process"
-import { ValuedArrayMap } from "utility/valued_collection"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
 
 type ProcessLogRequest = {
   readonly processId: ProcessId

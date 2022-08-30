@@ -1,11 +1,11 @@
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessId, ProcessState } from "../process"
 import { ProcessType, ProcessTypeConverter } from "../process_type"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { OwnedRoomProcess, OwnedRoomProcessState } from "../owned_room_process/owned_room_process"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { OwnedRoomProcessRequest } from "../owned_room_process/owned_room_process_request"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 
 const processType = "EconomyProcess"
 

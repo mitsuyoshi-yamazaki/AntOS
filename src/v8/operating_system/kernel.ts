@@ -40,7 +40,7 @@ import { ProcessCommand } from "./system_call/standard_input_command/process_com
 import { KillCommand } from "./system_call/standard_input_command/kill_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { StandardInputCommand } from "./system_call/standard_input_command"
 import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 import { GameConstants } from "utility/constants"

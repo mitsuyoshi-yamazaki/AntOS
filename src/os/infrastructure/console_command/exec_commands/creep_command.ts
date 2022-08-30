@@ -1,14 +1,14 @@
 import { GameMap } from "game/game_map"
 import { isV5CreepMemory } from "prototype/creep"
 import { coloredResourceType, roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawApiWrapper, WithdrawApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { MoveToInvisibleTargetTask } from "v5_object_task/creep_task/combined_task/move_to_invisible_target_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { ListArguments } from "../utility/list_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 /** @throws */
 export function execCreepCommand(creep: Creep, args: string[]): string {

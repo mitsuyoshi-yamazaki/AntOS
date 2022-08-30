@@ -2,7 +2,7 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
 

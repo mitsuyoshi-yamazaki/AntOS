@@ -1,6 +1,6 @@
 import { State } from "os/infrastructure/state"
-import type { RoomName } from "utility/room_name"
-import type { Timestamp } from "utility/timestamp"
+import type { RoomName } from "shared/utility/room_name"
+import type { Timestamp } from "shared/utility/timestamp"
 import type { TaskType } from "./task_decoder"
 
 export interface TaskState extends State {
