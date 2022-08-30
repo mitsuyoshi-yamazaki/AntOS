@@ -5,7 +5,7 @@ import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 import { EnergyStore } from "prototype/room_object"
-import { isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "shared/utility/resource"
 
 type WithdrawApiWrapperResult = FINISHED | IN_PROGRESS | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
 export type WithdrawApiWrapperTargetType = EnergyStore | Ruin | StructureLab | StructureFactory | StructureLink | StructureExtension | StructureSpawn | StructureTower

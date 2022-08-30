@@ -32,7 +32,7 @@ import { OperatingSystem } from "os/os"
 import { ProcessInfo } from "os/os_process_info"
 import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { ValuedArrayMap } from "utility/valued_collection"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
 
 ProcessDecoder.register("IntrashardResourceWatchdogProcess", state => {
   return IntrashardResourceWatchdogProcess.decode(state as IntrashardResourceWatchdogProcessState)

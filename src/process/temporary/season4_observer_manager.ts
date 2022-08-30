@@ -1,9 +1,9 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
-import { Timestamp } from "utility/timestamp"
-import { ValuedMapMap } from "utility/valued_collection"
+import { RoomName } from "shared/utility/room_name"
+import { Timestamp } from "shared/utility/timestamp"
+import { ValuedMapMap } from "shared/utility/valued_collection"
 
 type ObserveInterval = "short" | "medium" | "long"
 

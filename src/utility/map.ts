@@ -1,6 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "./room_name"
+import { RoomName } from "../shared/utility/room_name"
 
 export function findRoomRoute(fromRoomName: RoomName, toRoomName: RoomName, waypoints: RoomName[]): RoomName[] {
   const result = ErrorMapper.wrapLoop((): RoomName[] => {

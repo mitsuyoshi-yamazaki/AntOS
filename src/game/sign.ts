@@ -1,4 +1,4 @@
-import { SystemInfo } from "utility/system_info"
+import { SystemInfo } from "shared/utility/system_info"
 
 export const Sign = {
   sign(room: Room): string {

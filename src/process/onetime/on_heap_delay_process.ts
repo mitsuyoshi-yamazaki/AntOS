@@ -5,7 +5,7 @@ import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { Assert } from "utility/assert"
 import { coloredText } from "utility/log"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { ProcessState } from "../process_state"
 
 ProcessDecoder.registerUndecodableProcess("OnHeapDelayProcess")

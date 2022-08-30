@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { GclFarmPositions } from "./gcl_farm_predefined_plans"
 
 export type GclFarmRoom = {

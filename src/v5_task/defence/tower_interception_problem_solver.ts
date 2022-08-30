@@ -1,6 +1,6 @@
 import { ProblemIdentifier } from "v5_problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "v5_problem/problem_solver"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Task, TaskStatus } from "v5_task/task"
 import { TowerPoolTaskPriority, TowerTask } from "world_info/resource_pool/tower_resource_pool"
 import { OwnedRoomObjects } from "world_info/room_info"

@@ -1,8 +1,8 @@
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { roomLink } from "utility/log"
 import { GameConstants } from "utility/constants"
-import { ValuedArrayMap } from "utility/valued_collection"
-import { Result } from "utility/result"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
+import { Result } from "shared/utility/result"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomPlanner } from "room_plan/room_planner"
 

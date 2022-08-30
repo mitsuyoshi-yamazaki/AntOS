@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 import { Process, ProcessId } from "./process"
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 

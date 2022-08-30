@@ -1,7 +1,7 @@
 import { CreepTask } from "object_task/creep_task/creep_task"
 import { GameConstants } from "utility/constants"
 import { bodyCost } from "utility/creep_body"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import type { TaskIdentifier } from "./task_identifier"
 
 export type TaskRequestCreepTaskType = "normal" | "flee"

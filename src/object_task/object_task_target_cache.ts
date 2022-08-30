@@ -1,6 +1,6 @@
 import type { RoomPositionId } from "prototype/room_position"
 import { CreepBodyActionType } from "utility/constants"
-import { ValuedArrayMap, ValuedMapArrayMap } from "utility/valued_collection"
+import { ValuedArrayMap, ValuedMapArrayMap } from "shared/utility/valued_collection"
 
 export type TaskRunnerType = Creep | StructureSpawn | StructureTower
 export type TaskRunnerId = Id<TaskRunnerType>

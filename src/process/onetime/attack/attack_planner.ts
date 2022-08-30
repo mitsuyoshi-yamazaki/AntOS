@@ -1,12 +1,12 @@
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { QuadCreepSpec, QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
 import { coloredResourceType, roomLink, shortenedNumber } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { BoostTier, getBoostTier } from "utility/resource"
-import { RoomName } from "utility/room_name"
+import { BoostTier, getBoostTier } from "shared/utility/resource"
+import { RoomName } from "shared/utility/room_name"
 
 type ConstructedWall = StructureWall | StructureRampart
 

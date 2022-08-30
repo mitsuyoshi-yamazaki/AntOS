@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"

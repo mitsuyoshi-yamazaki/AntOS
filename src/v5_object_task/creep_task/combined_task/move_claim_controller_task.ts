@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { roomLink } from "utility/log"
 import { ClaimControllerApiWrapper } from "../api_wrapper/claim_controller_api_wrapper"

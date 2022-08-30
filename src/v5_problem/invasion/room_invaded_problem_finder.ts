@@ -1,6 +1,6 @@
 import { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
 import { ProblemSolver } from "v5_problem/problem_solver"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { TowerInterceptionProblemSolver } from "v5_task/defence/tower_interception_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { ActivateSafemodeProblemSolver } from "v5_task/defence/activate_safemode_task"

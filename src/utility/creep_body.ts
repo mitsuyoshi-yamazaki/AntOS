@@ -1,6 +1,6 @@
 import { CreepBodyBoostableActionType, CreepBodyEnergyConsumeActionType, CreepBodyFixedAmountActionType, GameConstants } from "./constants"
 import { anyColoredText, creepBodyColorCode } from "./log"
-import { boostableCreepBody } from "./resource"
+import { boostableCreepBody } from "../shared/utility/resource"
 
 const CreepActionToBodyPart: { [index in CreepBodyBoostableActionType]: BodyPartConstant } = {
   harvest: WORK,

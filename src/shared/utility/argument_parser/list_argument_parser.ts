@@ -1,7 +1,7 @@
 import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "utility/resource"
-import { RoomCoordinate, RoomName } from "utility/room_name"
+import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
+import { RoomCoordinate, RoomName } from "shared/utility/room_name"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument } from "./string_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 

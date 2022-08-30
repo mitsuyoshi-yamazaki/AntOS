@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"
 import { ClaimRoomTask } from "./claim_room_task"

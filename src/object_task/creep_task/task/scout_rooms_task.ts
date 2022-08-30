@@ -1,6 +1,6 @@
 import type { TaskTarget } from "object_task/object_task_target_cache"
 import { V6Creep } from "prototype/creep"
-import { RoomName } from "utility/room_name"
+import { RoomName } from "shared/utility/room_name"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { MoveToRoomTask, MoveToRoomTaskState } from "./move_to_room_task"

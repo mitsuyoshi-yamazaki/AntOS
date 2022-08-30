@@ -2,7 +2,7 @@ import { Invader } from "game/invader"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { profileLink, roomLink } from "utility/log"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { GclFarmRoom } from "./gcl_farm_types"
 
 /**

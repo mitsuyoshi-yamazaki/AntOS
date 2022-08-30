@@ -1,4 +1,4 @@
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import type { Process, ProcessId } from "process/process"
 import { RootProcess } from "./infrastructure/root"
