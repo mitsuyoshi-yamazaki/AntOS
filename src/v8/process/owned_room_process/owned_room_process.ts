@@ -12,6 +12,17 @@ import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
 
 const processType = "OwnedRoomProcess"
 
+type OwnedRoomStateLost = {
+  readonly case: "lost"
+}
+type OwnedRoomStateNormal = {
+  readonly case: "noraml"
+}
+type OwnedRoomStateUnclaiming = {
+  readonly case: "unclaiming"
+}
+type OwnedRoomState = OwnedRoomStateLost | OwnedRoomStateNormal | OwnedRoomStateUnclaiming
+
 export interface OwnedRoomProcessState extends ProcessState {
   /// room name
   readonly r: RoomName
