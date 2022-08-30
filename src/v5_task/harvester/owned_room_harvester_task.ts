@@ -177,7 +177,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
           solver.initialTask = FleeFromAttackerTask.create(MoveToTask.create(source.pos, 1), 6, {failOnFlee: true})
           solver.priority = CreepSpawnRequestPriority.High
-          solver.body = this.harvesterBody(source)
+          solver.body = this.harvesterBody(source, objects.controller.level)
         }
         if (solver != null) {
           this.addChildTask(solver)
@@ -190,7 +190,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     return problemFinderWrapper
   }
 
-  private harvesterBody(source: Source): BodyPartConstant[] {
+  private harvesterBody(source: Source, rcl: number): BodyPartConstant[] {
     const sourceCapacity = ((): number => {
       const effects = source.effects
       if (effects == null) {  // undefinedの場合がある
@@ -211,7 +211,14 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     })()
 
     const moveSpeed = 0.5
-    const maximumWorkCount = Math.ceil((sourceCapacity / 300) / HARVEST_POWER) + 1
+    const maximumWorkCount = ((): number => {
+      const defaultWorkCount = (sourceCapacity / 300) / HARVEST_POWER
+      if (rcl < 8 || Memory.gameInfo.enableCpuOptimization !== true) {
+        return Math.ceil(defaultWorkCount) + 1
+      }
+      return Math.ceil(defaultWorkCount * 2) + 1
+    })()
+
     const carryCount = ((): number => {
       const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
       if (roomResource?.roomInfoAccessor.sourceEnergyTransferType.case === "link") {
@@ -348,18 +355,22 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
       excludeTerrainWalls: true,
       allowedStructureTypes: [STRUCTURE_RAMPART],
     }
-    const positions = harvesterPosition.positionsInRange(1, options).map(position => {
-      const distance = ((): number => {
-        if (coreLinkPosition == null) {
-          return 0
+    const positions = harvesterPosition.positionsInRange(1, options)
+      .filter(position => {
+        return position.canConstruct()
+      })
+      .map(position => {
+        const distance = ((): number => {
+          if (coreLinkPosition == null) {
+            return 0
+          }
+          return position.getRangeTo(coreLinkPosition)
+        })()
+        return {
+          position,
+          distance,
         }
-        return position.getRangeTo(coreLinkPosition)
-      })()
-      return {
-        position,
-        distance,
-      }
-    })
+      })
 
     positions.sort((lhs, rhs) => lhs.distance - rhs.distance)
     const linkPosition = positions[0]

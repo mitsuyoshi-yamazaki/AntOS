@@ -66,8 +66,8 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     private noFlee: boolean,
     private readonly maxBodyCount: number,
   ) {
-    this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
-    this.codename = generateCodename(this.identifier, this.launchTime)
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.parentRoomName}_${this.targetRoomName}`
+    this.codename = generateCodename(this.identifier, this.processId)
   }
 
   public encode(): Season1244215GenericDismantleProcessState {
@@ -287,7 +287,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
         }
         const storedTarget = Game.getObjectById(targetId)
         if (storedTarget == null) {
-          processLog(this, `Target destroyed (target: ${this.targetRoomName})`)
+          processLog(this, `Target destroyed (target: ${targetId} in ${roomLink(this.targetRoomName)})`)
           const index = this.targetIds.indexOf(targetId)
           if (index >= 0) {
             this.targetIds.splice(index, 1)
@@ -309,12 +309,18 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     }
 
     const excluded: StructureConstant[] = [
-      STRUCTURE_CONTROLLER,
-      STRUCTURE_STORAGE,  // storage等を破壊する場合は明示的に指定する
+      // Storage等を破壊する場合は明示的に指定する
+      STRUCTURE_STORAGE,
       STRUCTURE_TERMINAL,
+      STRUCTURE_FACTORY,
+
+      // 大抵遠いため
+      STRUCTURE_EXTRACTOR,
+
+      // 破壊不能Structure
+      STRUCTURE_CONTROLLER,
       STRUCTURE_KEEPER_LAIR,
       STRUCTURE_INVADER_CORE, // dismantleで破壊できない(-7)
-      STRUCTURE_EXTRACTOR,
     ]
     const targetPriority: StructureConstant[] = [ // 添字の大きい方が優先
       STRUCTURE_CONTAINER,

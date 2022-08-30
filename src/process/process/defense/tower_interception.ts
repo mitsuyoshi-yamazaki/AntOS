@@ -2,6 +2,7 @@ import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { calculateTowerDamage } from "utility/tower"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Invader } from "game/invader"
 
 export type TowerInterceptionTarget = {
   target: AnyCreep
@@ -18,6 +19,11 @@ type TowerInterceptionResult = {
 const roomMinExit = GameConstants.room.edgePosition.min
 const roomMaxExit = GameConstants.room.edgePosition.max
 const maxTicksToKillLimit = 100
+const closeToEdge = 3
+const roomEdges = {
+  min: roomMinExit + closeToEdge,
+  max: roomMaxExit - closeToEdge,
+}
 
 export const TowerInterception = {
   attackTarget(roomResource: OwnedRoomResource): TowerInterceptionResult {
@@ -42,7 +48,7 @@ export const TowerInterception = {
             return result + CreepBody.power(current.body, "heal")
           }, 0)
 
-          if (healPower < damage && target.target.getActiveBodyparts(TOUGH) < 3) {
+          if (healPower < damage && (target.target.getActiveBodyparts(TOUGH) < 3) || (target.target.owner.username === Invader.username)) {
             return false
           }
           const hasAttacker = target.target.pos.findInRange(FIND_MY_CREEPS, 2).some(creep => creep.getActiveBodyparts(ATTACK) > 0)
@@ -217,7 +223,20 @@ function attackTarget(roomResource: OwnedRoomResource, towerPositions: RoomPosit
       allTargets: [],
     }
   }
-  if (roomResource.roomInfo.config?.forceAttack !== true && nextTargetInfo.maxTicksToKill > (nextTargetInfo.minimumTicksToEscape * 2)) {
+  const canEscape = ((): boolean => {
+    if (nextTargetInfo.maxTicksToKill < (nextTargetInfo.minimumTicksToEscape * 2)) {
+      return false
+    }
+    const position = nextTargetInfo.target.pos
+    if (position.x <= roomEdges.min || position.x >= roomEdges.max || position.y <= roomEdges.min || position.y >= roomEdges.max) {
+      return true
+    }
+    return false
+  })()
+  if (roomResource.roomInfo.config?.forceAttack !== true && canEscape === true) {
+    if (roomResource.room.name === "W43S2") {
+      console.log("can escape")
+    }
     return {
       target: null,
       allTargets: [],

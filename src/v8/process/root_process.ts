@@ -1,28 +1,20 @@
-import { ProcessId } from "./process"
-import { LaunchMessageObserver } from "./message_observer/launch_message_observer"
+/**
+ # RootProcess
+ ## 概要
+ v2系OSの最上位Process
+ Application Processはこの直下に位置する
 
-import { V8TestProcess } from "./temporary/v8_test_process"
-import { ProcessType, rootProcessId } from "./process_type"
-import { AnyProcess } from "./any_process"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+ ## 仕様
+ 最上位に位置するため親がいないなど性格が異なり、Processを継承するオブジェクトではない
+ */
 
-export class RootProcess implements LaunchMessageObserver {
-  public readonly processType = "RootProcess"
-  public readonly processId: ProcessId = rootProcessId
+import { rootProcessId } from "./process_type"
 
-  /** @throws */
-  didReceiveLaunchMessage(processType: ProcessType): (processId: ProcessId) => AnyProcess {
-    switch (processType) {
-    case "V8TestProcess":
-      return processId => V8TestProcess.create(processId)
-    default:
-      throw `cannot launch ${processType}`
-    }
-  }
+export class RootProcess {
+  public readonly processId = rootProcessId
+
+  public constructor() {}
 
   public run(): void {
-    if (Game.time % 20 === 0) {
-      PrimitiveLogger.log("v8 RootProcess.run()")  // FixMe: 消す
-    }
   }
 }

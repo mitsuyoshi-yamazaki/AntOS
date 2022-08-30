@@ -427,6 +427,15 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
     return `${removedRoomNames.length} target rooms removed: ${removedRoomNames.map(roomName => roomLink(roomName)).join(",")}`
   }
 
+  public removeBase(baseRoomName: RoomName): "removed" | "no base" {
+    const index = this.bases.findIndex(base => base.roomName === baseRoomName)
+    if (index >= 0) {
+      this.bases.splice(index, 1)
+      return "removed"
+    }
+    return "no base"
+  }
+
   public runOnTick(): void {
     if ((Game.time % 11) !== 0 && (Game.time % 13) !== 0) {
       return

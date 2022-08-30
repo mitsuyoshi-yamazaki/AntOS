@@ -68,10 +68,15 @@ import { ProblemSolverV1, ProblemSolverV1Process } from "process/onetime/problem
 import { GameConstants } from "utility/constants"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { DefenseNukeProcess } from "process/onetime/defense_nuke_process"
-import { IntershardResourceTransferProcess } from "process/onetime/intershard/intershard_resource_transfer_process"
+import { } from "process/onetime/intershard/intershard_resource_transfer_process"
 // import { IntershardResourceReceiverProcess } from "process/onetime/intershard/intershard_resource_receiver_process"
 import { HaulEnergyProcess } from "process/onetime/haul_energy_process"
 // import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
+import { World42768365ProblemSolverProcess } from "process/temporary/world_42768365_problem_solver_process"
+import { ClaimProcess } from "process/onetime/claim_process"
+import { World42791528ProblemFinderProcess } from "process/temporary/world_42791528_problem_finder_process"
+// import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
+import { MapVisualProcess } from "process/onetime/map_visual_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1213,6 +1218,72 @@ ProcessLauncher.register("StealResourceProcess", args => {
     return Result.Failed(`${error}`)
   }
 })
+
+ProcessLauncher.register("World42768365ProblemSolverProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse()
+
+    return Result.Succeeded((processId) => World42768365ProblemSolverProcess.create(
+      processId,
+      roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("World42791528ProblemFinderProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+
+    return Result.Succeeded((processId) => World42791528ProblemFinderProcess.create(
+      processId,
+      roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("ClaimProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const maxClaimSize = args.int("max_claim_size").parseOptional({min: 1})
+
+    return Result.Succeeded((processId) => ClaimProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      maxClaimSize,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("MapVisualProcess", args => {
+  try {
+    const duration = args.int("duration").parse({min: 1})
+
+    return Result.Succeeded((processId) => MapVisualProcess.create(
+      processId,
+      duration,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+// ProcessLauncher.register("IntrashardResourceWatchdogProcess", () => {
+//   try {
+//     return Result.Succeeded((processId) => IntrashardResourceWatchdogProcess.create(
+//       processId,
+//     ))
+//   } catch (error) {
+//     return Result.Failed(`${error}`)
+//   }
+// })
 
 // ProcessLauncher.register("IntershardResourceTransferProcess", args => {
 //   try {

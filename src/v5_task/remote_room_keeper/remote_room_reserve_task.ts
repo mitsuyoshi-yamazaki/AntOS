@@ -14,7 +14,7 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { SequentialTask, SequentialTaskOptions } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ReserveControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/reserve_controller_api_wrapper"
-import { bodyCost } from "utility/creep_body"
+import { bodyCost, CreepBody } from "utility/creep_body"
 import { Invader } from "game/invader"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
@@ -111,7 +111,7 @@ export class RemoteRoomReserveTask extends Task {
 
     if (objects.activeStructures.storage != null) {
       if (targetController.my !== true) { // GCL Farmの場合
-        if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 3900) {
+        if (targetController.reservation == null || targetController.reservation.username !== Game.user.name || targetController.reservation.ticksToEnd < 1300) {
           const targetRoom = World.rooms.get(this.targetRoomName)
           if (targetRoom != null) {
             const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
@@ -149,19 +149,20 @@ export class RemoteRoomReserveTask extends Task {
   }
 
   private createReserverBody(minimumBody: BodyPartConstant[], energyCapacity: number): BodyPartConstant[] {
-    const maximumBody = [
-      MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
-      CLAIM, CLAIM, CLAIM,
-    ]
-    if (bodyCost(maximumBody) <= energyCapacity) {
-      return maximumBody
-    }
-    const mediumBody = [
-      MOVE, MOVE, MOVE, MOVE, MOVE,
-      CLAIM, CLAIM,
-    ]
+    return CreepBody.create([], [CLAIM, MOVE], energyCapacity, 7)
+    // const maximumBody = [  // FixMe: 問題なければ消す
+    //   MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE,
+    //   CLAIM, CLAIM, CLAIM,
+    // ]
+    // if (bodyCost(maximumBody) <= energyCapacity) {
+    //   return maximumBody
+    // }
+    // const mediumBody = [
+    //   MOVE, MOVE, MOVE, MOVE,
+    //   CLAIM, CLAIM,
+    // ]
 
-    return bodyCost(mediumBody) <= energyCapacity ? mediumBody : minimumBody
+    // return bodyCost(mediumBody) <= energyCapacity ? mediumBody : minimumBody
   }
 
   private newClaimerTaskFor(targetController: StructureController): CreepTask | null {

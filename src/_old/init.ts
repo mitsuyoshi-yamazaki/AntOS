@@ -5,8 +5,6 @@ import { World } from "world_info/world_info"
 import { SystemInfo } from "utility/system_info"
 
 export function init(): void {
-  const now = Game.time
-
   if (!Memory.versions) {
     Memory.versions = []
   }
@@ -38,14 +36,15 @@ export function init(): void {
   if (Memory.gameInfo.sourceHarvestWhitelist == null) {
     Memory.gameInfo.sourceHarvestWhitelist = []
   }
-  if (Memory.v8 == null) {
-    Memory.v8 = {
-      process: {
-        processIdIndex: 0,
-        processInfo: {},
-      }
-    }
-  }
+  // if (Memory.v3 == null) { // EnvironmentalVariableのロード時に存在する必要があるためそちらで行っている
+  //   Memory.v3 = {
+  //     enabled: false,
+  //     process: {
+  //       processIdIndex: 0,
+  //       processInfoMemories: {},
+  //     },
+  //   }
+  // }
 
   if (Memory.room_info == null) {
     Memory.room_info = {}
@@ -114,8 +113,9 @@ export function tick(): void {
   const time = Game.time
 
   const cpu_ticks = 20
-  if (Memory.cpu_usages.length > cpu_ticks) {
-    Memory.cpu_usages.shift()
+  const deletionCount = Memory.cpu_usages.length - cpu_ticks
+  if (deletionCount > 0) {
+    Memory.cpu_usages.splice(0, deletionCount)
   }
 
   const current_bucket = Game.cpu.bucket

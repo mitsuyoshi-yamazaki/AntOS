@@ -1,129 +1,160 @@
+/**
+ # Kernel
+ ## 概要
+ OSのコア機能である以下の機能を司る
+
+ ### 機能
+ - SystemCallとDriverのライフサイクルの管理
+ - プロセスの実行
+
+ ## SystemCallとDriver
+ プロセスが任意に使用できる、メソッドをもつシングルトンオブジェクト
+ 以下のライフサイクルメソッドがKernelから呼び出される
+
+ - load: OSのロード時（サーバーリセット）
+
+ ## プロセス管理
+ プロセスは動的に起動される処理の単位
+
+ ## ドライバ管理
+ ドライバは将来的に動的に有効化することを見据えてKernelとは互いに依存（TSのimportを）しない実装
+
+ ## Kernel管理下のsystem callのインターフェース提供
+ Kernel管理下のsystem callのインターフェース `SystemCallInterface` を提供する
+
+ - ProcessAccessor
+
+ ## Discussion
+ 環境からの独立性
+ 仕組み上独立にできない項目
+ - tick単位の計算
+ - CPU usage
+ */
+
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { } from "./kernel_memory"
 import { Driver } from "./driver"
-import { ProcessScheduler } from "./process_scheduler"
+import { ProcessManager } from "./process_manager"
 import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
-import { } from "./system_call/standard_input_command/process_command"
+import { ProcessCommand } from "./system_call/standard_input_command/process_command"
+import { KillCommand } from "./system_call/standard_input_command/kill_command"
+import type { ProcessId } from "v8/process/process"
+import type { ProcessType } from "v8/process/process_type"
+import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { StandardInputCommand } from "./system_call/standard_input_command"
+import { SystemCall, SystemCallDefaultInterface } from "./system_call"
+import { GameConstants } from "utility/constants"
+import { ProcessLogger } from "./system_call/process_logger"
 
-type LifecycleEventLoad = "load"
-type LifecycleEventStartOfTick = "start_of_tick"
-type LifecycleEventEndOfTick = "end_of_tick"
-export type LifecycleEvent = LifecycleEventLoad | LifecycleEventStartOfTick | LifecycleEventEndOfTick
-export const LifecycleEvent = {
-  LifecycleEventLoad: "load" as LifecycleEventLoad,
-  LifecycleEventStartOfTick: "start_of_tick" as LifecycleEventStartOfTick,
-  LifecycleEventEndOfTick: "end_of_tick" as LifecycleEventEndOfTick,
-}
+type LifecycleEvent = keyof SystemCallDefaultInterface
 
-const kernelConstants = {
-  driverMaxLoadCpu: 10,
-}
+// const kernelConstants = {
+//   driverMaxLoadCpu: 10,
+// }
 
 type KernelInterface = {
-  registerDriverCall(events: LifecycleEvent[], driver: Driver): void
+  // ---- Boot ---- //
+  registerDrivers(drivers: Driver[]): void
+  load(): void
 
+  // ---- Every Ticks ---- //
   run(): void
 }
 
-type ProcessAccessor = {
-  //
-}
+type SystemCallLifecycleFunction = () => void
 
-type SystemCallInterface = {
-  readonly process: ProcessAccessor
-}
+const standardInputCommands = new Map<string, StandardInputCommand>([
+  ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
+  ["process", new ProcessCommand()],
+  ["kill", new KillCommand()],
+])
 
-type DriverEventCall = () => void
-
-const kernelMemory = Memory.v8
-const processScheduler = new ProcessScheduler(kernelMemory.process)
-let lastCpuUse: number | null = null
-const driverCalls: { [K in LifecycleEvent]: DriverEventCall[] } = {
+const driverFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {
   load: [],
-  start_of_tick: [],
-  end_of_tick: [],
+  startOfTick: [],
+  endOfTick: [],
 }
-const standardInputCommands = [
-  new LaunchCommand(processScheduler.launchWithArguments),
+const systemCallFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {
+  load: [],
+  startOfTick: [],
+  endOfTick: [],
+}
+const systemCalls: SystemCall[] = [
+  ProcessManager,
+  ProcessLogger,
 ]
+systemCalls.forEach(systemCall => {
+  if (systemCall.load != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.load.push(() => systemCall.load!())
+  }
+  if (systemCall.startOfTick != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.startOfTick.push(() => systemCall.startOfTick!())
+  }
+  if (systemCall.endOfTick != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    systemCallFunctions.endOfTick.unshift(() => systemCall.endOfTick!())
+  }
+})
 
-export const Kernel: KernelInterface & SystemCallInterface = {
-  registerDriverCall(events: LifecycleEvent[], driver: Driver): void {
-    const register = (call: DriverEventCall | undefined, list: DriverEventCall[], description: string, reversed?: boolean): void => {
-      if (call == null) {
-        PrimitiveLogger.fatal(`${description} not implemented`)
-        return
+export const Kernel: KernelInterface = {
+  registerDrivers(drivers: Driver[]): void {
+    drivers.forEach(driver => {
+      if (driver.load != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.load.push(() => driver.load!())
       }
-      if (reversed === true) {
-        list.unshift(call)
-      } else {
-        list.push(call)
+      if (driver.startOfTick != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.startOfTick.push(() => driver.startOfTick!())
       }
-    }
-
-    events.forEach(event => {
-      const description = `${driver.description}.${event}`
-      switch (event) {
-      case LifecycleEvent.LifecycleEventLoad:
-        register(driver.load, driverCalls.load, description)
-        break
-      case LifecycleEvent.LifecycleEventStartOfTick:
-        register(driver.startOfTick, driverCalls.start_of_tick, description)
-        break
-      case LifecycleEvent.LifecycleEventEndOfTick:
-        register(driver.endOfTick, driverCalls.end_of_tick, description, true)
-        break
+      if (driver.endOfTick != null) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.endOfTick.unshift(() => driver.endOfTick!())
       }
     })
+  },
+
+  load(): void {
+    callSystemCallFunctions(systemCallFunctions.load)
+    callSystemCallFunctions(driverFunctions.load)
   },
 
   run(): void {
-    systemCallStartOfTick()
+    ErrorMapper.wrapLoop((): void => {
+      Game.v3 = standardInput(standardInputCommands)
+    })()
+    callSystemCallFunctions(systemCallFunctions.startOfTick)
+    callSystemCallFunctions(driverFunctions.startOfTick)
 
-    if (driverCalls.load.length > 0) {
-      loadDrivers()
-    }
+    // Process実行時には全てのSystemCall, Driverが準備完了している必要がある
+    ProcessManager.runProcesses(getProcessCpuLimit())
 
-    driverCalls.start_of_tick.forEach(call => {
-      ErrorMapper.wrapLoop((): void => {
-        call()
-      })()
-    })
-
-    if (Game.time % 100 === 0) {
-      PrimitiveLogger.log("v8 kernel.run()")  // FixMe: 消す
-    }
-
-    processScheduler.run(lastCpuUse)
-
-    driverCalls.end_of_tick.forEach(call => {
-      ErrorMapper.wrapLoop((): void => {
-        call()
-      })()
-    })
-
-    lastCpuUse = Game.cpu.getUsed()
+    callSystemCallFunctions(driverFunctions.endOfTick)
+    callSystemCallFunctions(systemCallFunctions.endOfTick)
   },
 }
 
-const loadDrivers = (): void => {
-  const maxCpu = 10
-  const cpu = kernelConstants.driverMaxLoadCpu
-
-  for(const load of driverCalls.load) {
+const callSystemCallFunctions = (functions: (() => void)[]): void => {
+  functions.forEach(f => {
     ErrorMapper.wrapLoop((): void => {
-      load()
-    })
-    if (Game.cpu.getUsed() - cpu > maxCpu) {
-      break
-    }
-  }
+      f()
+    })()
+  })
 }
 
-const systemCallStartOfTick = (): void => {
-  ErrorMapper.wrapLoop((): void => {
-    Game.v8 = standardInput(standardInputCommands)
-  })()
+const getProcessCpuLimit = (): number => {
+  const usableBucket = Math.min(Game.cpu.bucket, GameConstants.game.cpu.limit)
+  const estimatedSystemCallEndOfTick = 10
+  const remainingCpu = Math.max(Game.cpu.limit - Game.cpu.getUsed() - estimatedSystemCallEndOfTick, 0)
+
+  if (remainingCpu > 0) {
+    return remainingCpu
+  }
+
+  if (usableBucket < 400) {
+    return Math.min(remainingCpu, 5)
+  }
+  return remainingCpu
 }

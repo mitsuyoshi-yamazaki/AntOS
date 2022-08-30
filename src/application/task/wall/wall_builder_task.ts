@@ -103,6 +103,9 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
       const maxHits = roomResource.activeStructures.terminal == null ? 2000000 : roomResource.roomInfoAccessor.config.wallMaxHits
 
       return wall => {
+        if (wall.hits == null) { // Novice/respawn areaのConstructedWallはhitsがundefined
+          return false
+        }
         if (wall.hits >= wall.hitsMax) {
           return false
         }

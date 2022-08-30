@@ -209,7 +209,15 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
     }
   }
 
-  public newTaskFor(): CreepTask | null {
-    return MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, true)
+  public newTaskFor(creep: Creep): CreepTask | null {
+    const ignoreSwamp = ((): boolean => {
+      const moveCount = creep.getActiveBodyparts(MOVE)
+      const swampSpeed = ((creep.body.length - moveCount) * 5) / moveCount
+      if (swampSpeed <= 1) {
+        return true
+      }
+      return false
+    })()
+    return MoveClaimControllerTask.create(this.targetRoomName, this.waypoints, ignoreSwamp)
   }
 }

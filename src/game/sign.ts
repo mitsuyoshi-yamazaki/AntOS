@@ -24,3 +24,10 @@ export const Sign = {
     return `GCL Farm v${SystemInfo.application.version} at ${Game.time}`
   }
 }
+
+/**
+ * # Examples
+ * - exclusion zone
+ * - restricted area
+ * - no entry
+ */

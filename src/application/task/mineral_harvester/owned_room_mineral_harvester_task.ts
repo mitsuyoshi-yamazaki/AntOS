@@ -74,6 +74,10 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
     }
 
     const disableMineralHarvesting = ((): boolean => {
+      if (Memory.gameInfo.disableMineralHarvesting === true) {
+        return true
+      }
+
       switch (Environment.world) {
       case "season 4":
       case "persistent world":

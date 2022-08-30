@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { isValidRoomName, RoomName } from "utility/room_name"
-import { coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
@@ -27,6 +27,9 @@ export class QuadMakerProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get roomName(): RoomName {
+    return this.quadMaker.roomName
   }
 
   private constructor(
@@ -242,7 +245,7 @@ commands: ${commands}
       })()
 
       this.quadMaker.boosts = boosts
-      return `set boosts=${this.quadMaker.boosts}`
+      return `set boosts=${this.quadMaker.boosts.map(boost => coloredResourceType(boost)).join(",")}`
     }
 
     case "creep": {

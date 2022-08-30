@@ -1,10 +1,12 @@
 import { MemoryIdentifierConverter  } from "../utility/memory_identifier_converter/memory_identifier_converter"
 
-export const rootProcessId = "root"
+export const rootProcessId = "root" // TODO: 不要なら消す
 
-export const processTypes = [
-  "RootProcess",
+const processTypes = [
   "V8TestProcess",
+  "EconomyProcess",
+  "OwnedRoomProcess",
+  "OwnedRoomTestProcess",
 ] as const
 export type ProcessType = typeof processTypes[number]
 
@@ -15,18 +17,13 @@ export const isProcessType = (arg: string): arg is ProcessType => {
   return true
 }
 
-export type ShortV8TestProcessType = "a"
-
-const shortV8TestProcessType: ShortV8TestProcessType = "a"
-
-export const compressedProcessTypes = [
-  shortV8TestProcessType,
-] as const
-export type CompressedProcessType = typeof compressedProcessTypes[number]
-
-const processTypeMap: { [Key in CompressedProcessType]: ProcessType } = {
-  a: "V8TestProcess",
-}
+const processTypeMap = {
+  "1": "V8TestProcess",
+  "2": "EconomyProcess",
+  "3": "OwnedRoomProcess",
+  "4": "OwnedRoomTestProcess",
+} as const
+export type CompressedProcessType = keyof typeof processTypeMap
 
 const processTypeReverseMap: { [Key in ProcessType]: CompressedProcessType } = (() => {
   const obj: {[Key: string]: string} = {}

@@ -51,6 +51,8 @@ declare global {
     positionTo(direction: DirectionConstant): RoomPosition | null
     nextRoomPositionTo(direction: DirectionConstant): RoomPosition
     nextRoomEdgePosition(): RoomPosition | null
+
+    canConstruct(): boolean
   }
 }
 
@@ -324,6 +326,17 @@ export function init(): void {
       PrimitiveLogger.programError(`RoomPosition.nextRoomEdgePosition() faild: ${e}`)
       return null
     }
+  }
+
+  RoomPosition.prototype.canConstruct = function (): boolean {
+    const prohibitArea = 2
+    const min = GameConstants.room.edgePosition.min + prohibitArea
+    const max = GameConstants.room.edgePosition.max - prohibitArea
+
+    if (this.x < min || this.x > max || this.y < min || this.y > max) {
+      return false
+    }
+    return true
   }
 }
 

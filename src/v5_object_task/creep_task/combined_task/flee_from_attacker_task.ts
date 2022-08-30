@@ -42,7 +42,7 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   public static create(childTask: CreepTask, range?: number, options?: {failOnFlee?: boolean}): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 6, options?.failOnFlee ?? false)
+    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 4, options?.failOnFlee ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {

@@ -8,7 +8,7 @@ import { Result } from "utility/result"
 import { RoomName } from "utility/room_name"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
 
-export const defaultMaxWallHits = 5000000
+export const defaultMaxWallHits = 10000000
 
 class Config {
   public set disablePowerHarvesting(value: boolean) {

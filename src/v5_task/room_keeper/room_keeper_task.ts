@@ -20,7 +20,6 @@ import { Environment } from "utility/environment"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { GameConstants } from "utility/constants"
 import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
-import { defaultMaxWallHits } from "room_resource/room_info_accessor"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -104,6 +103,7 @@ export class RoomKeeperTask extends Task {
           this.turnAttackNotificationOn(objects.controller.room)
           this.removeLeftoverFlags(objects.controller.room)
           this.removeLeftoverStructures(objects.controller.room)
+          this.removeConstructionSites(objects.controller.room)
           break
         case "failed":
           PrimitiveLogger.fatal(`${this.taskIdentifier} ${roomLink(this.roomName)} ${result.reason}`)
@@ -113,6 +113,12 @@ export class RoomKeeperTask extends Task {
     }
 
     return TaskStatus.InProgress
+  }
+
+  private removeConstructionSites(room: Room): void {
+    room.find(FIND_CONSTRUCTION_SITES)
+      .filter(constructionSite => constructionSite.my !== true)
+      .forEach(constructionSite => constructionSite.remove())
   }
 
   private turnAttackNotificationOn(room: Room): void {
@@ -150,10 +156,6 @@ export class RoomKeeperTask extends Task {
       }
 
       if (wallTypes.includes(structure.structureType) === true) {
-        if (structure.hits >= defaultMaxWallHits) {
-          return
-        }
-
         structure.destroy()
         return
       }
