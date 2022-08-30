@@ -5,8 +5,6 @@ import { World } from "world_info/world_info"
 import { SystemInfo } from "utility/system_info"
 
 export function init(): void {
-  const now = Game.time
-
   if (!Memory.versions) {
     Memory.versions = []
   }
