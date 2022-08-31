@@ -1,6 +1,5 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomCoordinate } from "shared/utility/room_name"
 import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -18,6 +17,7 @@ import { processLog } from "os/infrastructure/logger"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { ProcessDecoder } from "process/process_decoder"
 import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 ProcessDecoder.register("World35587255ScoutRoomProcess", state => {
   return World35587255ScoutRoomProcess.decode(state as World35587255ScoutRoomProcessState)

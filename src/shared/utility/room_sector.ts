@@ -1,5 +1,5 @@
-import { RoomCoordinate } from "./room_name"
 import type { RoomName, RoomType } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 export type SectorName = RoomName
 

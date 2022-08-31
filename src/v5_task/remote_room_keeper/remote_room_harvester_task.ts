@@ -1,4 +1,3 @@
-import { roomTypeOf } from "shared/utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -31,6 +30,7 @@ import { RemoteRoomInfo } from "room_resource/room_info"
 import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 const routeRecalculationInterval = 80000
 

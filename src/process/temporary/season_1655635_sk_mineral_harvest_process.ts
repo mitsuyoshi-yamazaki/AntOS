@@ -2,7 +2,6 @@
 
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomTypeOf } from "shared/utility/room_name"
 import { coloredResourceType, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -21,6 +20,7 @@ import { HRAQuad } from "./season_1536602_quad"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ProcessDecoder } from "process/process_decoder"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 ProcessDecoder.register("Season1655635SKMineralHarvestProcess", state => {
   return Season1655635SKMineralHarvestProcess.decode(state as Season1655635SKMineralHarvestProcessState)

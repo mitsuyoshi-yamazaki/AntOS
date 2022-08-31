@@ -34,7 +34,6 @@ import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_t
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
 import { GameMap } from "game/game_map"
-import { RoomCoordinate } from "shared/utility/room_name"
 import type { RoomName } from "shared/utility/room_name_types"
 import { Season4332399SKMineralHarvestProcess } from "process/temporary/season4_332399_sk_mineral_harvest_process"
 import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
@@ -78,6 +77,7 @@ import { ClaimProcess } from "process/onetime/claim_process"
 import { World42791528ProblemFinderProcess } from "process/temporary/world_42791528_problem_finder_process"
 // import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
 import { MapVisualProcess } from "process/onetime/map_visual_process"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 type LaunchCommandResult = Result<Process, string>
 

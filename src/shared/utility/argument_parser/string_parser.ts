@@ -1,12 +1,14 @@
-import { Position } from "prototype/room_position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "shared/utility/direction"
-import { roomLink } from "utility/log"
 import { isPowerConstant } from "shared/utility/power"
-import { RoomCoordinate } from "shared/utility/room_name"
 import type { RoomName } from "shared/utility/room_name_types"
+import { ConsoleUtility } from "../console_utility/console_utility"
+import { Position } from "../position"
+import { RoomCoordinate } from "utility/room_coordinate"
+
+const roomLink = ConsoleUtility.roomLink
 
 export type ArgumentParsingOptions = {
   missingArgumentErrorMessage?: string

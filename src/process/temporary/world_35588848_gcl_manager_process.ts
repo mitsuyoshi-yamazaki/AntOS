@@ -1,6 +1,5 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomTypeOf } from "shared/utility/room_name"
 import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
@@ -14,6 +13,7 @@ import { CreepBody } from "utility/creep_body"
 import { NormalRoomInfo } from "room_resource/room_info"
 import { ProcessDecoder } from "process/process_decoder"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 ProcessDecoder.register("World35588848GclManagerProcess", state => {
   return World35588848GclManagerProcess.decode(state as World35588848GclManagerProcessState)

@@ -3,10 +3,10 @@ import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/
 import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { roomSectorNameOf } from "shared/utility/room_name"
 import { ShortVersion } from "shared/utility/system_info"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomSectorNameOf } from "utility/room_coordinate"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []

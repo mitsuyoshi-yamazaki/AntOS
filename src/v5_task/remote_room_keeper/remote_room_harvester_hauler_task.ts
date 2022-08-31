@@ -1,4 +1,3 @@
-import { roomTypeOf } from "shared/utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -33,6 +32,7 @@ import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/travel_to_target_task"
 import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */

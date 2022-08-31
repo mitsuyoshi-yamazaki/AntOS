@@ -5,7 +5,6 @@ import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
 import { isResourceConstant } from "shared/utility/resource"
-import { isRoomName } from "shared/utility/room_name"
 import { RoomResources } from "room_resource/room_resources"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
@@ -42,6 +41,7 @@ import { LaunchQuadProcess } from "process/onetime/quad_maker/launch_quad_proces
 import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
 import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import type { RoomName } from "shared/utility/room_name_types"
+import { isRoomName } from "utility/room_coordinate"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(

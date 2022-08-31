@@ -1,9 +1,9 @@
-import { coloredText } from "utility/log"
+import { ConsoleUtility } from "../console_utility/console_utility"
 
 export type PrimitiveLogLevel = "log" | "notice" | "fatal" | "program error"
 
 /**
- * OSより低レベルでエラーが発生した際に使用する
+ * Processより低レベルでエラーが発生した際に使用する
  */
 export const PrimitiveLogger = {
   log(message: string, level?: PrimitiveLogLevel): void {
@@ -34,14 +34,14 @@ export const PrimitiveLogger = {
 
   /** ゲームの危機状態の通知 */
   fatal(message: string): void {
-    const coloredMessage = coloredText(message, "error")
+    const coloredMessage = ConsoleUtility.colored(message, "error")
     console.log(coloredMessage)
     Game.notify(coloredMessage)
   },
 
   /** プログラムの問題の通知 */
   programError(message: string): void {
-    const coloredMessage = coloredText(`[Program bug]: ${message}`, "critical")
+    const coloredMessage = ConsoleUtility.colored(`[Program bug]: ${message}`, "critical")
     console.log(coloredMessage)
     Game.notify(coloredMessage)
   },
