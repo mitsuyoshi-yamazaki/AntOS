@@ -1,7 +1,6 @@
 import { OSMemory } from "../os/os"
 
 import { LeagueOfAutomatedNations } from "./loanUserList"
-import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "shared/utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
 import type { RoomInfoType } from "room_resource/room_info"
@@ -12,13 +11,9 @@ import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
 import { RoomName } from "shared/utility/room_name_types"
-import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {
   interface Game {
-    io: (message: string) => string
-    v3: (message: string) => string // TODO: Game.ioに置き換える
-
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
     environment: string
@@ -30,7 +25,6 @@ declare global {
 
   interface Memory {
     os: OSMemory
-    v3: KernelMemory
     versions: string[]
     cpu_usages: number[]
     cpu: {
@@ -51,10 +45,8 @@ declare global {
   }
 }
 
+// Gameオブジェクトは毎tick更新されるため
 export function tick(): void {
-  // Gameオブジェクトは毎tick更新されるため
-  Game.io = standardInput
-
   Game.user = {
     name: 'Mitsuyoshi',
   }

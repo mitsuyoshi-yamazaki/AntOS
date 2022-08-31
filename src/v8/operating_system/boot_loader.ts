@@ -17,8 +17,9 @@
  - init, extensionなどもどうにかする
  */
 
-import type { Driver } from "./driver"
+import {} from "../prototype/memory"
 import { Kernel } from "./kernel"
+import type { Driver } from "./driver"
 import { loadApplicationProcesses } from "v8/process/application_process_loader"
 // import { } from "./driver/traffic_driver"
 // import { CpuTimeProfiler } from "./driver/cpu_time_profiler"
@@ -34,4 +35,6 @@ export const BootLoader = {
     Kernel.registerDrivers(drivers)
     Kernel.load()
   },
+
+  io: Kernel.standardInput,
 }
