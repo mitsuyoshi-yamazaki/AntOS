@@ -1,12 +1,9 @@
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "shared/utility/direction"
 import { isPowerConstant } from "shared/utility/power"
 import type { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "../console_utility/console_utility"
 import { Position } from "../position"
-import { RoomCoordinate } from "utility/room_coordinate"
 
 const roomLink = ConsoleUtility.roomLink
 
@@ -51,22 +48,6 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
     }
     validateRoomNameArgument(this.value, options)
     return this.value
-  }
-}
-
-export class RoomCoordinateArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
-  /** throws */
-  public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomCoordinate {
-    if (this.value == null) {
-      throw this.missingArgumentErrorMessage()
-    }
-    validateRoomNameArgument(this.value, options)
-
-    const coordinate = RoomCoordinate.parse(this.value)
-    if (coordinate == null) {
-      throw `failed to parse ${roomLink(this.value)} to RoomCoordinate`
-    }
-    return coordinate
   }
 }
 
@@ -377,22 +358,6 @@ export class RoomPositionArgument extends SingleOptionalArgument<{ allowClosedRo
     validateRoomNameArgument(roomName, options)
 
     return new RoomPosition(x, y, roomName)
-  }
-}
-
-export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, OwnedRoomResource> {
-  /** throws */
-  public parse(): OwnedRoomResource {
-    if (this.value == null) {
-      throw this.missingArgumentErrorMessage()
-    }
-    validateRoomNameArgument(this.value)
-
-    const roomResource = RoomResources.getOwnedRoomResource(this.value)
-    if (roomResource == null) {
-      throw `${roomLink(this.value)} is not mine`
-    }
-    return roomResource
   }
 }
 
