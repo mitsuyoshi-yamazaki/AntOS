@@ -7,7 +7,7 @@ import { Timestamp } from "shared/utility/timestamp"
 import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
 import { processLog } from "os/infrastructure/logger"
 import { QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)

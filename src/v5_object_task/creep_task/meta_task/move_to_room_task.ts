@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { defaultMoveToOptions } from "prototype/creep"
-import { RoomName, roomTypeOf } from "shared/utility/room_name"
+import { roomTypeOf } from "shared/utility/room_name"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { roomLink } from "utility/log"
@@ -8,6 +8,7 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
 import { GameConstants } from "utility/constants"
+import type { RoomName } from "shared/utility/room_name_types"
 
 export interface MoveToRoomTaskState extends CreepTaskState {
   /** destination room name */

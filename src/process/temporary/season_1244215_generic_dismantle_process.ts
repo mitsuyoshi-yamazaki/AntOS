@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { isRoomName, RoomName } from "shared/utility/room_name"
+import { isRoomName } from "shared/utility/room_name"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -22,6 +22,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("Season1244215GenericDismantleProcess", state => {
   return Season1244215GenericDismantleProcess.decode(state as Season1244215GenericDismantleProcessState)

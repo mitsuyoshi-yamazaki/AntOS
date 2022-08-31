@@ -20,9 +20,7 @@
  - Resource Transfer Managerも作る
  */
 
-import { V9Creep } from "prototype/creep"
-import { Position } from "prototype/room_position"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ValuedArrayMap, ValuedMapMap } from "shared/utility/valued_collection"
 import { Driver } from "../driver"
 

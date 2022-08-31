@@ -1,6 +1,6 @@
 import { Position } from "prototype/room_position"
 import { Result } from "shared/utility/result"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { UniqueId } from "utility/unique_id"
 import { flagColors, LayoutMark, RoomPlannerInterface } from "./room_planner"
 

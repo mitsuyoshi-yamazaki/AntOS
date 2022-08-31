@@ -45,6 +45,7 @@ import { StandardInputCommand } from "./system_call/standard_input_command"
 import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 import { GameConstants } from "utility/constants"
 import { ProcessLogger } from "./system_call/process_logger"
+import { UniqueId } from "./system_call/unique_id"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
@@ -80,6 +81,7 @@ const systemCallFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[
   endOfTick: [],
 }
 const systemCalls: SystemCall[] = [
+  UniqueId,
   ProcessManager,
   ProcessLogger,
 ]

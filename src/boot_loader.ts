@@ -3,7 +3,7 @@ import { OperatingSystem } from "os/os"
 import { isRespawned, resetOldSpawnData } from "script/respawn"
 import { tick as initializerTick } from "_old/init"
 import { Environment } from "utility/environment"
-import { BootLoader as V3BootLoader } from "v8/operating_system/v3_boot_loader"
+import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
 import { Kernel } from "v8/operating_system/kernel"
 
 type RootFunctions = {

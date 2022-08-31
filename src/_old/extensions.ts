@@ -11,7 +11,7 @@ import type { GameMapMemory } from "game/game_map"
 import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
-import { RoomName } from "shared/utility/room_name"
+import { RoomName } from "shared/utility/room_name_types"
 import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {

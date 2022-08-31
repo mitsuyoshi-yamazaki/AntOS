@@ -3,7 +3,7 @@ import { coloredText, roomLink } from "utility/log"
 import { Result } from "shared/utility/result"
 import { generateUniqueId } from "utility/unique_id"
 import { GameConstants } from "utility/constants"
-import type { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 function visualize(positions: RoomPosition[], options?: { color?: string, text?: string }): void {
   const text = options?.text ?? "*"

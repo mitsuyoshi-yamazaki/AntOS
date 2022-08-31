@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"

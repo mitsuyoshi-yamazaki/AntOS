@@ -1,0 +1,1 @@
+export type CreepName = string

@@ -1,14 +1,6 @@
+import type { RoomName, RoomType, RoomTypeHighway, RoomTypeHighwayCrossing, RoomTypeNormal, RoomTypeSectorCenter, RoomTypeSourceKeeper } from "./room_name_types"
 import { State, Stateful } from "os/infrastructure/state"
 import { Position } from "prototype/room_position"
-
-export type RoomName = string
-
-export type RoomTypeNormal = "normal"
-export type RoomTypeHighway = "highway"
-export type RoomTypeHighwayCrossing = "highway_crossing"
-export type RoomTypeSourceKeeper = "source_keeper"
-export type RoomTypeSectorCenter = "sector_center"
-export type RoomType = RoomTypeNormal | RoomTypeHighway | RoomTypeHighwayCrossing | RoomTypeSourceKeeper | RoomTypeSectorCenter
 
 const RoomCoordinateDirection = ["NE", "NW", "SE", "SW"] as const
 type RoomCoordinateDirection = typeof RoomCoordinateDirection[number]

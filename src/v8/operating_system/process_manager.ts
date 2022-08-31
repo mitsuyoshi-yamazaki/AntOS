@@ -7,8 +7,6 @@
  Process Managerは使えるCPU時間をprocessに通知し、超過した場合の処理を行い、逆にprocessから通知された優先順位に基づいてprocess実行順を入れ替えたりするものになる
  */
 
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { UniqueId } from "utility/unique_id"
 import { ProcessId, Process } from "../process/process"
 import { SystemCall } from "./system_call"
 import { ExternalProcessInfo, ProcessInfo, ProcessStore, RunningProcess } from "./process_store"
@@ -19,7 +17,8 @@ import { isLauncherProcess } from "v8/process/message_observer/launch_message_ob
 import { ProcessInfoMemory } from "./kernel_memory"
 import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
 import { ApplicationProcessDecoder } from "v8/process/application_process_decoder"
-import { coloredText } from "utility/log"
+import { UniqueId } from "./system_call/unique_id"
+import { PrimitiveLogger } from "./primitive_logger"
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -137,13 +136,13 @@ const launchProcessOnRoot = (processType: ProcessType, args: ArgumentParser): Pr
 const assignProcessId = (process: Process, processId: ProcessId, options?: {noLog?: boolean}): RunningProcess => {
   (process as unknown as { _processId: ProcessId })._processId = processId
   if (options?.noLog !== true) {
-    PrimitiveLogger.log(`${coloredText("[Info]", "info")} assign process ${process.constructor.name} ${process.processId}`)
+    PrimitiveLogger.info(`assign process ${process.constructor.name} ${process.processId}`)
   }
   return process as RunningProcess
 }
 
 const resignProcessId = (process: RunningProcess): Process => {
-  PrimitiveLogger.log(`${coloredText("[Info]", "info")} resign process ${process.constructor.name} ${process.processId}`);
+  PrimitiveLogger.info(`resign process ${process.constructor.name} ${process.processId}`);
   (process as unknown as { _processId: ProcessId | null })._processId = null
   return process
 }

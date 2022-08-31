@@ -4,7 +4,7 @@ import { moveToRoom } from "script/move_to_room"
 import { GameConstants, oppositeDirection } from "utility/constants"
 import { CreepBody } from "utility/creep_body"
 import { roomLink } from "utility/log"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { oppositeDirections } from "shared/utility/direction"
 
 export interface QuadState {

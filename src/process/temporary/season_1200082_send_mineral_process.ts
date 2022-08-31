@@ -4,7 +4,7 @@ import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
 

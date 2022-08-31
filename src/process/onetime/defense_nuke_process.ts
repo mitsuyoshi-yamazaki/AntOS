@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { UniqueId } from "utility/unique_id"

@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { TaskState } from "v5_task/task_state"

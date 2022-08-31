@@ -1,6 +1,6 @@
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
-import { coloredText } from "utility/log"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Process, ProcessId } from "v8/process/process"
 import { isProcessType, ProcessType } from "v8/process/process_type"
 import { StandardInputCommand } from "../standard_input_command"
@@ -33,7 +33,7 @@ export class LaunchCommand implements StandardInputCommand {
 
     } catch (error) {
       const message = `Launching ${processType} in ${parentProcessId} failed: ${error}`
-      return `${coloredText("[Error]", "error")} ${message}`
+      return `${ConsoleUtility.colored("[Error]", "error")} ${message}`
     }
   }
 }

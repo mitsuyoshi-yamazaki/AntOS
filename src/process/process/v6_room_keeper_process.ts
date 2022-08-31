@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { RoomKeeperTask, RoomKeeperTaskOutputs, RoomKeeperTaskState } from "application/task/room_keeper/room_keeper_task"

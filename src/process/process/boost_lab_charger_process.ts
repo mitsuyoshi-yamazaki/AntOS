@@ -12,7 +12,7 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { BoostLabInfo } from "room_resource/room_info"

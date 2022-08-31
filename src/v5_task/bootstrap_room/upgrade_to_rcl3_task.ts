@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName, roomTypeOf } from "shared/utility/room_name"
+import { roomTypeOf } from "shared/utility/room_name"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "v5_task/general/general_creep_worker_task"
@@ -28,6 +28,7 @@ import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import type { RoomName } from "shared/utility/room_name_types"
 
 const minimumNumberOfCreeps = 6
 const defaultNumberOfCreeps = 10

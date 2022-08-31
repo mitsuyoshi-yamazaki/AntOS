@@ -1,4 +1,4 @@
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { roomLink } from "utility/log"
 import { GameConstants } from "utility/constants"
 import { ValuedArrayMap } from "shared/utility/valued_collection"

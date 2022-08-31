@@ -1,5 +1,5 @@
 import { RoomKeeperProcess } from "process/process/room_keeper_process"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { RoomKeeperTask as V5RoomKeeperTask } from "v5_task/room_keeper/room_keeper_task"
 import { Migration } from "utility/migration"
 import { ShortVersion } from "shared/utility/system_info"

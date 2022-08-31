@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { Timestamp } from "shared/utility/timestamp"
 import { ValuedMapMap } from "shared/utility/valued_collection"
 

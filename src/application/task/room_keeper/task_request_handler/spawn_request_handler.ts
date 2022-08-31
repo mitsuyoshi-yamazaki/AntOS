@@ -5,7 +5,7 @@ import { V6CreepMemory } from "prototype/creep"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { bodyDescription } from "utility/creep_body"
 import { roomLink } from "utility/log"
-import type { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ShortVersion } from "shared/utility/system_info"
 import { generateUniqueId, UniqueId } from "utility/unique_id"
 

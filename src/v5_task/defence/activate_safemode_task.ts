@@ -1,6 +1,6 @@
 import { ProblemIdentifier } from "v5_problem/problem_finder"
 import { ProblemSolver, ProblemSolverState } from "v5_problem/problem_solver"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { Task, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"

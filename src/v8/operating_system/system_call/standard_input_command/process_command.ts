@@ -1,8 +1,10 @@
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
-import { tab, Tab } from "utility/log"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { ProcessInfo } from "v8/operating_system/process_store"
 import { StandardInputCommand } from "../standard_input_command"
+
+const TabSize = ConsoleUtility.TabSize
 
 export class ProcessCommand implements StandardInputCommand {
   public readonly description = [
@@ -30,7 +32,7 @@ export class ProcessCommand implements StandardInputCommand {
     const processes = ProcessManager.listProcesses()
 
     const getAlignedText = (processId: string, typeIdentifier: string, runningState: string, description: string): string => {
-      return `${tab(processId, Tab.small)}${tab(typeIdentifier, Tab.large)}${tab(runningState, Tab.small)}${tab(description, Tab.medium)}`
+      return `${ConsoleUtility.tab(processId, TabSize.small)}${ConsoleUtility.tab(typeIdentifier, TabSize.large)}${ConsoleUtility.tab(runningState, TabSize.small)}${ConsoleUtility.tab(description, TabSize.medium)}`
     }
 
     const getDescription = (processInfo: ProcessInfo): string => {

@@ -1,5 +1,5 @@
 import { isV5CreepMemory } from "prototype/creep"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { TaskIdentifier } from "v5_task/task"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
 import { CreepSpawnRequest } from "./creep_specs"

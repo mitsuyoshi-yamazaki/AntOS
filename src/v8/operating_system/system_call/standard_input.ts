@@ -1,4 +1,4 @@
-import { coloredText } from "utility/log"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { StandardInputCommand } from "./standard_input_command"
 
 export const standardInput = (commands: Map<string, StandardInputCommand>): (message?: string) => string => {
@@ -30,7 +30,7 @@ export const standardInput = (commands: Map<string, StandardInputCommand>): (mes
       return command.run(args)
 
     } catch (error) {
-      return `${coloredText("[Error]", "error")} ${error}`
+      return `${ConsoleUtility.colored("[Error]", "error")} ${error}`
     }
   }
 }

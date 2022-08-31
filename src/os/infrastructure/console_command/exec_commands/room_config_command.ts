@@ -6,7 +6,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { powerName } from "shared/utility/power"
 import { isMineralBoostConstant, isMineralCompoundConstant } from "shared/utility/resource"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 

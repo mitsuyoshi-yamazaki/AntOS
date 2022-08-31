@@ -1,8 +1,8 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { Process, ProcessId } from "v8/process/process"
 import { ProcessType } from "v8/process/process_type"
 import { RootProcess } from "v8/process/root_process"
+import { PrimitiveLogger } from "./primitive_logger"
 
 export type RunningProcess = Process & { processId: ProcessId }
 

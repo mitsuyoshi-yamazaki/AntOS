@@ -1,4 +1,4 @@
-import { RoomName, roomTypeOf } from "shared/utility/room_name"
+import { roomTypeOf } from "shared/utility/room_name"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { TaskState } from "v5_task/task_state"
@@ -7,6 +7,7 @@ import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
 import { ProblemFinder } from "v5_problem/problem_finder"
 import { roomLink } from "utility/log"
+import type { RoomName } from "shared/utility/room_name_types"
 
 export interface RemoteRoomWorkerTaskState extends TaskState {
   /** room name */
