@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName, roomTypeOf } from "shared/utility/room_name"
+import { roomTypeOf } from "shared/utility/room_name"
 import { coloredResourceType, describeTime, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -15,13 +15,13 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { processLog } from "os/infrastructure/logger"
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
-import { OperatingSystem } from "os/os"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { avoidSourceKeeper } from "script/move_to_room"
 import { Timestamp } from "shared/utility/timestamp"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)

@@ -5,7 +5,7 @@ import { decodeRoomPosition, Position } from "prototype/room_position"
 import { coloredResourceType, roomLink } from "utility/log"
 import { MineralCompoundIngredients, ResourceConstant } from "shared/utility/resource"
 import { Result } from "shared/utility/result"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
 
 export const defaultMaxWallHits = 10000000

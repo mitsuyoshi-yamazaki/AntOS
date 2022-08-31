@@ -11,9 +11,11 @@
  - ActiveStructureのtypeを作ったらどうか
  */
 
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Position } from "prototype/room_position"
-import { roomLink } from "utility/log"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { PrimitiveLogger } from "v8/operating_system/primitive_logger"
+
+const roomLink = ConsoleUtility.roomLink
 
 type StructureObjectStateNotStarted = {
   readonly case: "not started"

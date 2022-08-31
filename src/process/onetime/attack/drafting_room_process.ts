@@ -2,7 +2,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { coloredText, profileLink, roomLink } from "utility/log"
-import { RoomCoordinate, RoomCoordinateState, RoomName } from "shared/utility/room_name"
+import { RoomCoordinate, RoomCoordinateState } from "shared/utility/room_name"
 import { Timestamp } from "shared/utility/timestamp"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
@@ -17,6 +17,7 @@ import { ListArguments } from "shared/utility/argument_parser/list_argument_pars
 import { Invader } from "game/invader"
 import { GameMap } from "game/game_map"
 import { LeagueOfAutomatedNations } from "_old/loanUserList"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("DraftingRoomProcess", state => {
   return DraftingRoomProcess.decode(state as DraftingRoomProcessState)

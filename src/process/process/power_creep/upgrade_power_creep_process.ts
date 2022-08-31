@@ -9,7 +9,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { powerName } from "shared/utility/power"
 import { ProcessDecoder } from "process/process_decoder"
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { OperatingSystem } from "os/os"
 import { PowerCreepProcess } from "./power_creep_process"
 

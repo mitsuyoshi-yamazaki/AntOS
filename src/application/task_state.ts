@@ -1,5 +1,5 @@
 import { State } from "os/infrastructure/state"
-import type { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import type { Timestamp } from "shared/utility/timestamp"
 import type { TaskType } from "./task_decoder"
 

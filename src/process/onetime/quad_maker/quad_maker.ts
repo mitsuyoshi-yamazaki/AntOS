@@ -1,4 +1,4 @@
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { QuadCreepSpec, QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
 import { CreepBody } from "utility/creep_body"

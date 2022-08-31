@@ -1,9 +1,10 @@
 import { TaskRunnerId as V5TaskRunnerId, TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
-import { RoomCoordinate, RoomName } from "shared/utility/room_name"
+import { RoomCoordinate } from "shared/utility/room_name"
 import { PositionTaskRunnerInfo, TaskTargetCache, TaskTargetCacheTaskType } from "object_task/object_task_target_cache"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { GameConstants } from "utility/constants"
+import type { RoomName } from "shared/utility/room_name_types"
 
 enum RoomPositionIdType { }
 export type RoomPositionId = string & RoomPositionIdType

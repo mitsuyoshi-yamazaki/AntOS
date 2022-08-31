@@ -3,7 +3,7 @@ import { ShortVersion, ShortVersionV5, ShortVersionV6, ShortVersionV9 } from "sh
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
-import type { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import type { CreepTaskState as V5CreepTaskState } from "v5_object_task/creep_task/creep_task_state"
 import type { TaskIdentifier } from "application/task_identifier"
 import type { CreepTaskState } from "object_task/creep_task/creep_task_state"

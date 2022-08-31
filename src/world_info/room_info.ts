@@ -3,9 +3,10 @@ import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/
 import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { RoomName, roomSectorNameOf } from "shared/utility/room_name"
+import { roomSectorNameOf } from "shared/utility/room_name"
 import { ShortVersion } from "shared/utility/system_info"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
+import type { RoomName } from "shared/utility/room_name_types"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []
@@ -97,7 +98,8 @@ export const Rooms: RoomsInterface = {
         if (controller.level >= 8) {
           return roomLink(controller.room.name)
         }
-        return `${roomLink(controller.room.name)}(${controller.level})`
+        const progress = Math.floor((controller.progress / controller.progressTotal) * 10)
+        return `${roomLink(controller.room.name)}(${controller.level}.${progress})`
       })
 
       roomVersions.forEach((controllers, version) => {

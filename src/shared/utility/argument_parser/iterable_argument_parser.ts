@@ -1,5 +1,5 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument, VisibleRoomObjectArgument } from "./string_parser"
 
 export type IterableArgumentType = "string"

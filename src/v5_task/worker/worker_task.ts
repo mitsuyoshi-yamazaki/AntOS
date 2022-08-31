@@ -1,4 +1,4 @@
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomHarvesterTask } from "v5_task/harvester/owned_room_harvester_task"
 import { EnergySourceTask } from "v5_task/hauler/owned_room_energy_source_task"
 import { OwnedRoomHaulerTask } from "v5_task/hauler/owned_room_hauler_task"

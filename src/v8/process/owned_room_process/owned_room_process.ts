@@ -1,5 +1,3 @@
-import { roomLink } from "utility/log"
-import { RoomName } from "shared/utility/room_name"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessId, ProcessState } from "../process"
@@ -9,6 +7,10 @@ import { OwnedRoomTestProcess } from "./owned_room_test_process"
 import { OwnedRoomResource } from "./owned_room_resource/owned_room_resource"
 import { OwnedRoomProcessRequest } from "./owned_room_process_request"
 import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
+import type { RoomName } from "shared/utility/room_name_types"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+
+const roomLink = ConsoleUtility.roomLink
 
 const processType = "OwnedRoomProcess"
 

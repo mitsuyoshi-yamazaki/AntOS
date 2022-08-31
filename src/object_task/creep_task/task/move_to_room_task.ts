@@ -7,7 +7,7 @@ import { defaultMoveToOptions, V6Creep } from "prototype/creep"
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { roomLink } from "utility/log"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { CreepTask, CreepTaskProgress } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 

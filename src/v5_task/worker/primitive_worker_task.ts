@@ -1,4 +1,4 @@
-import { RoomName, roomTypeOf } from "shared/utility/room_name"
+import { roomTypeOf } from "shared/utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -25,6 +25,7 @@ import { GameConstants } from "utility/constants"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { NormalRoomInfo } from "room_resource/room_info"
+import type { RoomName } from "shared/utility/room_name_types"
 
 function moveToOptions(): MoveToTargetTaskOptions {
   return {

@@ -3,8 +3,8 @@ import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType, roomLink } from "./log"
 import { MineralConstant } from "../shared/utility/resource"
 import { Result, ResultFailed } from "../shared/utility/result"
-import { RoomName } from "../shared/utility/room_name"
 import { ValuedArrayMap } from "../shared/utility/valued_collection"
+import type { RoomName } from "../shared/utility/room_name_types"
 
 let list = null as Map<ResourceConstant, number> | null
 let resourceInRoom = null as Map<RoomName, number> | null

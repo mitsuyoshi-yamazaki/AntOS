@@ -5,7 +5,8 @@ import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "shared/utility/direction"
 import { roomLink } from "utility/log"
 import { isPowerConstant } from "shared/utility/power"
-import { RoomCoordinate, RoomName } from "shared/utility/room_name"
+import { RoomCoordinate } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 export type ArgumentParsingOptions = {
   missingArgumentErrorMessage?: string

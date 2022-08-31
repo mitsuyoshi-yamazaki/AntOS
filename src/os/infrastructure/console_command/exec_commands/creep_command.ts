@@ -1,7 +1,7 @@
 import { GameMap } from "game/game_map"
 import { isV5CreepMemory } from "prototype/creep"
 import { coloredResourceType, roomLink } from "utility/log"
-import { RoomName } from "shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawApiWrapper, WithdrawApiWrapperTargetType } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { MoveToInvisibleTargetTask } from "v5_object_task/creep_task/combined_task/move_to_invisible_target_task"

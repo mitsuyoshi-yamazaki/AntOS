@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { isValidRoomName, RoomName } from "shared/utility/room_name"
+import { isValidRoomName } from "shared/utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
@@ -11,6 +11,7 @@ import { CreepBody, isBodyPartConstant } from "utility/creep_body"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { QuadMaker, QuadMakerState } from "./quad_maker"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
