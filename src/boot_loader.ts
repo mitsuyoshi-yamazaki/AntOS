@@ -5,6 +5,7 @@ import { tick as initializerTick } from "_old/init"
 import { Environment } from "utility/environment"
 import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
 import { Kernel } from "v8/operating_system/kernel"
+import { standardInput } from "os/infrastructure/standard_input"
 
 type RootFunctions = {
   load(): void
@@ -33,6 +34,8 @@ const v2Functions = (): RootFunctions => {
     },
 
     loop(): void {
+      Game.io = standardInput
+
       ErrorMapper.wrapLoop(() => {
         initializerTick()
       }, "initializerTick")()
@@ -57,6 +60,8 @@ const v3Functions = (): RootFunctions => {
     },
 
     loop(): void {
+      Game.io = V3BootLoader.io
+
       ErrorMapper.wrapLoop(() => {
         initializerTick()
       }, "initializerTick")()

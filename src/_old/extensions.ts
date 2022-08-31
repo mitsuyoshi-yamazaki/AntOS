@@ -1,7 +1,6 @@
 import { OSMemory } from "../os/os"
 
 import { LeagueOfAutomatedNations } from "./loanUserList"
-import { standardInput } from "../os/infrastructure/standard_input"
 import { SystemInfo } from "shared/utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
 import type { RoomInfoType } from "room_resource/room_info"
@@ -51,10 +50,8 @@ declare global {
   }
 }
 
+// Gameオブジェクトは毎tick更新されるため
 export function tick(): void {
-  // Gameオブジェクトは毎tick更新されるため
-  Game.io = standardInput
-
   Game.user = {
     name: 'Mitsuyoshi',
   }

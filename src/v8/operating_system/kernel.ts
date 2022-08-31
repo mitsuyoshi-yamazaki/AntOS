@@ -55,6 +55,7 @@ type LifecycleEvent = keyof SystemCallDefaultInterface
 
 type KernelInterface = {
   // ---- Boot ---- //
+  standardInput: (command?: string) => string
   registerDrivers(drivers: Driver[]): void
   load(): void
 
@@ -101,6 +102,8 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
+  standardInput: standardInput(standardInputCommands),
+
   registerDrivers(drivers: Driver[]): void {
     drivers.forEach(driver => {
       if (driver.load != null) {
@@ -124,9 +127,6 @@ export const Kernel: KernelInterface = {
   },
 
   run(): void {
-    ErrorMapper.wrapLoop((): void => {
-      Game.v3 = standardInput(standardInputCommands)
-    })()
     callSystemCallFunctions(systemCallFunctions.startOfTick)
     callSystemCallFunctions(driverFunctions.startOfTick)
 

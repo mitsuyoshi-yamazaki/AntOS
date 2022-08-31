@@ -34,4 +34,6 @@ export const BootLoader = {
     Kernel.registerDrivers(drivers)
     Kernel.load()
   },
+
+  io: Kernel.standardInput,
 }
