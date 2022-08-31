@@ -1,4 +1,4 @@
-import type { RoomName, RoomType, RoomTypeHighway, RoomTypeHighwayCrossing, RoomTypeNormal, RoomTypeSectorCenter, RoomTypeSourceKeeper } from "./room_name_types"
+import type { RoomName } from "./room_name_types"
 
 export const isValidRoomName = (roomName: RoomName): boolean => {
   switch (Game.map.getRoomStatus(roomName).status ) {
