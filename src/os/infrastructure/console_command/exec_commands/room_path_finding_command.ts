@@ -1,7 +1,7 @@
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
-import { RoomCoordinate } from "shared/utility/room_name"
 import { roomLink } from "utility/log"
-import { RoomSector } from "shared/utility/room_sector"
+import { RoomSector } from "utility/room_sector"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 /** @throws */
 export function execRoomPathfindingCommand(args: string[]): string {

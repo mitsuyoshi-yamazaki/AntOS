@@ -5,10 +5,10 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { coloredText, roomLink } from "utility/log"
-import { RoomCoordinate } from "shared/utility/room_name"
-import { RoomSector } from "shared/utility/room_sector"
+import { RoomSector } from "utility/room_sector"
 import { ProcessState } from "../process_state"
 import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 ProcessDecoder.register("MapAccessorProcess", state => {
   return MapAccessorProcess.decode(state as MapAccessorProcessState)

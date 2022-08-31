@@ -1,12 +1,14 @@
 import { GameMap } from "game/game_map"
-import { Position } from "prototype/room_position"
+import { Position } from "shared/utility/position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { roomLink } from "utility/log"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
-import { RoomCoordinate } from "shared/utility/room_name"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument } from "./string_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 import type { RoomName } from "shared/utility/room_name_types"
+import { ConsoleUtility } from "../console_utility/console_utility"
+import { RoomCoordinate } from "utility/room_coordinate"
+
+const roomLink = ConsoleUtility.roomLink
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する

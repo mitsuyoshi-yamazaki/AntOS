@@ -1,5 +1,5 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { coloredResourceType } from "../../utility/log"
+import { ConsoleUtility } from "./console_utility/console_utility"
+import { PrimitiveLogger } from "./logger/primitive_logger"
 
 export const MineralBaseCompoundsConstant: MineralBaseCompoundsConstant[] = [
   RESOURCE_HYDROXIDE,
@@ -227,7 +227,7 @@ export function getBoostTier(boost: MineralBoostConstant): BoostTier {
   if ((Tier3BoostConstants as MineralBoostConstant[]).includes(boost) === true) {
     return 3
   }
-  PrimitiveLogger.programError(`getBoostTier() cannot determine boost tier of${coloredResourceType(boost)}`)
+  PrimitiveLogger.programError(`getBoostTier() cannot determine boost tier of ${ConsoleUtility.coloredResourceType(boost)}`)
   return 0
 }
 

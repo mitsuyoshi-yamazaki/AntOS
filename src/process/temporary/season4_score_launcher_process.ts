@@ -2,7 +2,6 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
-import { getHighwayRooms, Highway, RoomCoordinate } from "shared/utility/room_name"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { coloredResourceType, coloredText, describeTime, roomHistoryLink, roomLink } from "utility/log"
 import { Timestamp } from "shared/utility/timestamp"
@@ -23,6 +22,7 @@ import { Season41076620ResourceManagerProcess } from "./season4_1076620_resource
 import { ResourceManager } from "utility/resource_manager"
 import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "shared/utility/room_name_types"
+import { getHighwayRooms, Highway, RoomCoordinate } from "utility/room_coordinate"
 
 ProcessDecoder.register("Season4ScoreLauncherProcess", state => {
   return Season4ScoreLauncherProcess.decode(state as Season4ScoreLauncherProcessState)

@@ -2,8 +2,9 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
 import { Result } from "shared/utility/result"
-import { isValidRoomName, RoomCoordinate } from "../shared/utility/room_name"
+import { isValidRoomName } from "../shared/utility/room_name"
 import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }

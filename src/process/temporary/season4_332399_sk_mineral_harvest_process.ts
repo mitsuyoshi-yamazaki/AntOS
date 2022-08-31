@@ -1,6 +1,5 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { roomTypeOf } from "shared/utility/room_name"
 import { coloredResourceType, describeTime, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -22,6 +21,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { avoidSourceKeeper } from "script/move_to_room"
 import { Timestamp } from "shared/utility/timestamp"
 import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 ProcessDecoder.register("Season4332399SKMineralHarvestProcess", state => {
   return Season4332399SKMineralHarvestProcess.decode(state as Season4332399SKMineralHarvestProcessState)

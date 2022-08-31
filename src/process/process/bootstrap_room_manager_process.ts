@@ -8,13 +8,13 @@ import { ProcessState } from "../process_state"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { BootstrapRoomTask, BootstrapRoomTaskState } from "v5_task/bootstrap_room/bootstrap_room_task"
 import { processLog } from "os/infrastructure/logger"
-import { isRoomName } from "shared/utility/room_name"
 import { Result } from "shared/utility/result"
 import { ProcessDecoder } from "../process_decoder"
 import { RoomResources } from "room_resource/room_resources"
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { GameMap } from "game/game_map"
 import type { RoomName } from "shared/utility/room_name_types"
+import { isRoomName } from "utility/room_coordinate"
 
 type TargetRoom = {
   readonly parentRoomName: RoomName
