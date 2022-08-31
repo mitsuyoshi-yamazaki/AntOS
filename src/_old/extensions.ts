@@ -16,7 +16,6 @@ import { KernelMemory } from "v8/operating_system/kernel_memory"
 declare global {
   interface Game {
     io: (message: string) => string
-    v3: (message: string) => string // TODO: Game.ioに置き換える
 
     user: { name: 'Mitsuyoshi' }
     systemInfo: string

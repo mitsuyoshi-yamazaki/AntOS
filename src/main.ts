@@ -4,21 +4,18 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { memhack } from "./memory_hack"
 // import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
-import { init as initializerInit } from "_old/init"
 import { leveled_colored_text } from "./utility"
 import { SystemInfo } from "shared/utility/system_info"
 import { BootLoader } from "./boot_loader"
 
 memhack.load()
 
-initializerInit() // TODO: OSの機能に入るものはBootLoaderに移動する
-const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
-console.log(leveled_colored_text(initializing_message, "warn"))
-
 const rootFunctions = BootLoader.load()
 rootFunctions.load()
-
 const mainLoop = rootFunctions.loop
+
+const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
+console.log(leveled_colored_text(initializing_message, "warn"))
 
 // ScreepsProfiler.enable()  // TODO: 普段はオフに
 

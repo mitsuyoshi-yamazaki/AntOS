@@ -6,6 +6,7 @@ import { Environment } from "utility/environment"
 import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
 import { Kernel } from "v8/operating_system/kernel"
 import { standardInput } from "os/infrastructure/standard_input"
+import { initializeMemory } from "_old/initialize_memory"
 
 type RootFunctions = {
   load(): void
@@ -31,6 +32,7 @@ export const BootLoader = {
 const v2Functions = (): RootFunctions => {
   return {
     load(): void {
+      initializeMemory()
     },
 
     loop(): void {
