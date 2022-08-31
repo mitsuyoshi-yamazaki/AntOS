@@ -98,7 +98,8 @@ export const Rooms: RoomsInterface = {
         if (controller.level >= 8) {
           return roomLink(controller.room.name)
         }
-        return `${roomLink(controller.room.name)}(${controller.level})`
+        const progress = Math.floor((controller.progress / controller.progressTotal) * 10)
+        return `${roomLink(controller.room.name)}(${controller.level}.${progress})`
       })
 
       roomVersions.forEach((controllers, version) => {
