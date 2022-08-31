@@ -27,6 +27,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   mainLoop()
   memhack.afterTick()
 
+  // TODO: 旧ソースに依存している
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
 }, "Main")

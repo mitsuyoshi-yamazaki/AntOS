@@ -11,12 +11,9 @@ import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
 import { RoomName } from "shared/utility/room_name_types"
-import { KernelMemory } from "v8/operating_system/kernel_memory"
 
 declare global {
   interface Game {
-    io: (message: string) => string
-
     user: { name: 'Mitsuyoshi' }
     systemInfo: string
     environment: string
@@ -28,7 +25,6 @@ declare global {
 
   interface Memory {
     os: OSMemory
-    v3: KernelMemory
     versions: string[]
     cpu_usages: number[]
     cpu: {
