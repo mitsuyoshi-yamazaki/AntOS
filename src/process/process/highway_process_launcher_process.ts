@@ -431,6 +431,7 @@ export class HighwayProcessLauncherProcess implements Process, Procedural, Messa
     const index = this.bases.findIndex(base => base.roomName === baseRoomName)
     if (index >= 0) {
       this.bases.splice(index, 1)
+      Season4ObserverManager.stopObserving(baseRoomName)
       return "removed"
     }
     return "no base"
