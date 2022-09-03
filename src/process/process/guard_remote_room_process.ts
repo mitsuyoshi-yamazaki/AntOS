@@ -650,28 +650,23 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return
     }
 
-    if (this.waitingPosition != null) {
-      if (creep.pos.isEqualTo(this.waitingPosition.x, this.waitingPosition.y) === true) {
-        if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
-          creep.move(randomDirection(this.launchTime))
-        }
-        this.talk(creep)
-        return
+    const waitingPosition = ((): Position | null => {
+      if (this.waitingPosition != null) {
+        return this.waitingPosition
       }
-      const moveToOptions = defaultMoveToOptions()
-      moveToOptions.range = 0
-      creep.moveTo(this.waitingPosition.x, this.waitingPosition.y, moveToOptions)
-      this.talk(creep)
-      return
-    }
 
-    const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
-    if (waitingTarget == null) {
+      const spawn = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0]
+      if (spawn != null) {
+        return spawn.pos
+      }
+      return creep.room.controller?.pos ?? null
+    })()
+    if (waitingPosition == null) {
       this.talk(creep)
       return
     }
     const waitingRange = 5
-    if (creep.pos.getRangeTo(waitingTarget.pos) <= waitingRange) {
+    if (creep.pos.getRangeTo(waitingPosition.x, waitingPosition.y) <= waitingRange) {
       if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
         creep.move(randomDirection(this.launchTime))
       }
@@ -680,7 +675,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
     const moveToOptions = defaultMoveToOptions()
     moveToOptions.range = waitingRange
-    creep.moveTo(waitingTarget, moveToOptions)
+    creep.moveTo(waitingPosition.x, waitingPosition.y, moveToOptions)
     this.talk(creep)
   }
 
