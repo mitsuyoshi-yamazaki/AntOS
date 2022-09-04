@@ -727,6 +727,9 @@ export class ExecCommand implements ConsoleCommand {
           RESOURCE_LEMERGIUM,
           RESOURCE_UTRIUM,
           RESOURCE_ZYNTHIUM,
+          RESOURCE_OXYGEN,
+          RESOURCE_HYDROGEN,
+          RESOURCE_CATALYST,
         ]
       })()
 
