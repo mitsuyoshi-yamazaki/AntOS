@@ -30,7 +30,7 @@ type Observation = {
 
 const observations = new Map<RoomName, Observation>() // <observerRoomName, observation>
 const reserved = new ValuedMapMap<RoomName, Timestamp, RoomName>() // <observerRoomName, observeTime, targetRoomName>
-const requestArguments: ObserveRequestArguments[] = []
+let requestArguments: ObserveRequestArguments[] = []
 
 export const Season4ObserverManager = {
   beforeTick(): void {
@@ -83,9 +83,15 @@ export const Season4ObserverManager = {
     reservationMap.set(observeTime, targetRoomName)
   },
 
-  // 一旦デプロイでクリアされるため不要
-  // stopObserving(roomName: RoomName, requesterIdentifier: string): void {
-  // },
+  // デプロイもクリアされる
+  stopObserving(roomName: RoomName): void {
+    requestArguments = requestArguments.filter(request => {
+      if (request.observerRoomName === roomName) {
+        return false
+      }
+      return true
+    })
+  },
 }
 
 function recalculateObservation(): void {
