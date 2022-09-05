@@ -2,7 +2,7 @@ import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecut
 import { ProcessType, ProcessTypeConverter } from "../process_type"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
-// import { OwnedRoomProcess, OwnedRoomProcessState } from "../owned_room_process/owned_room_process"
+import { OwnedRoomProcess, OwnedRoomProcessState } from "../owned_room_process/owned_room_process"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { OwnedRoomProcessRequest } from "../owned_room_process/owned_room_process_request"
 import type { RoomName } from "shared/utility/room_name_types"

@@ -25,6 +25,7 @@ import { loadApplicationProcesses } from "v8/process/application_process_loader"
 // import { CpuTimeProfiler } from "./driver/cpu_time_profiler"
 // import {  } from "./driver/hostile_creep_predictor"
 // import { } from "./driver/terminal_network_manager"
+// import {} from "./driver/owned_room_resource/owned_room_resource_driver"
 
 export const BootLoader = {
   load(): void {
