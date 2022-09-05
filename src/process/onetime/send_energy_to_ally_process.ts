@@ -40,7 +40,7 @@ const SpawnStopReasons = {
   droppedEnergyNotInUse: "dropped energy not in use",
 }
 
-const maxCarryAmount = 1000
+const maxCarryAmount = 1250
 
 export interface SendEnergyToAllyProcessState extends ProcessState {
   /** parent room name */
@@ -260,6 +260,13 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
     }
 
     const chargeableStructure = ((): EnergyChargeableStructure | StructureStorage | null => {
+      const targetRoomResource = RoomResources.getOwnedRoomResource(creep.room.name)
+      if (targetRoomResource != null) {
+        return targetRoomResource.activeStructures.storage
+          ?? targetRoomResource.activeStructures.chargeableStructures[0]
+          ?? null
+      }
+
       const isTransferrable = (structure: AnyOwnedStructure): boolean => {
         const rampart = structure.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } })[0] as StructureRampart | null
         if (rampart == null) {
