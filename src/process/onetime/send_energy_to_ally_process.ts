@@ -53,7 +53,7 @@ export interface SendEnergyToAllyProcessState extends ProcessState {
   readonly finishWorking: number
   readonly maxNumberOfCreeps: number
   readonly stopSpawningReasons: string[]
-  readonly allyRoomEntrancePosition: Position
+  readonly allyRoomEntrancePosition: Position // Ally Roomの出口の場所
 }
 
 /** Haulerによる輸送 */
