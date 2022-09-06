@@ -201,7 +201,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
         return source.energyCapacity
       }
       const powerConstant = GameConstants.power.regenSource
-      const value = powerConstant.value[regenEffect.level]
+      const value = powerConstant.value[regenEffect.level - 1]
       if (value == null) {
         PrimitiveLogger.programError(`Source ${source.id} in ${roomLink(source.room.name)} has effect with unimplemented level ${regenEffect.level}`)
         return source.energyCapacity
