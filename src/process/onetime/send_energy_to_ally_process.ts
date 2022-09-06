@@ -70,7 +70,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly parentRoomName: RoomName,
+    public readonly parentRoomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
     private readonly finishWorking: number,
