@@ -42,6 +42,7 @@ import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
 import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import type { RoomName } from "shared/utility/room_name_types"
 import { isRoomName } from "utility/room_coordinate"
+import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -619,6 +620,12 @@ export class ExecCommand implements ConsoleCommand {
         return
       }
       if (process instanceof HarvestCommodityProcess) {
+        if (process.parentRoomName === roomName) {
+          processesToKill.push(process)
+        }
+        return
+      }
+      if (process instanceof SendEnergyToAllyProcess) {
         if (process.parentRoomName === roomName) {
           processesToKill.push(process)
         }
