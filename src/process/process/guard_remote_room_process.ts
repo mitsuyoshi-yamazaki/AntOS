@@ -53,7 +53,10 @@ type FinishConditionOwnedRoom = {
   readonly case: "owned_room"
   readonly condition: "tower" | "2towers" | "storage"
 }
-type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom
+type FinishConditionUnclaimed = {
+  readonly case: "unclaimed"
+}
+type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom | FinishConditionUnclaimed
 
 type Username = string
 
@@ -351,6 +354,12 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         }
       }
 
+      case "unclaimed": {
+        return {
+          case: "unclaimed",
+        }
+      }
+
       case "never":
         return {
           case: "never"
@@ -524,8 +533,34 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         this.addStopSpawningReason("duration ended")
       }
       return
+    case "unclaimed":
+      if (targetRoom.controller == null) {
+        this.addStopSpawningReason("not claimed")
+        return
+      }
+      if (targetRoom.controller.owner != null) {
+        if (targetRoom.controller.my === true) {
+          this.addStopSpawningReason("target owned")
+          return
+        }
+        return
+      }
+      if (targetRoom.controller.reservation != null) {
+        if (targetRoom.controller.reservation.username === Game.user.name) {
+          this.addStopSpawningReason("target reserved")
+          return
+        }
+        return
+      }
+      this.addStopSpawningReason("target unclaimed")
+      return
     case "never":
       return
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.finishCondition
+      return
+    }
     }
   }
 
