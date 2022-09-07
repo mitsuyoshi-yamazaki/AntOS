@@ -83,7 +83,7 @@ export const Season4ObserverManager = {
     reservationMap.set(observeTime, targetRoomName)
   },
 
-  // デプロイもクリアされる
+  // デプロイ時にもクリアされる
   stopObserving(roomName: RoomName): void {
     requestArguments = requestArguments.filter(request => {
       if (request.observerRoomName === roomName) {
@@ -91,6 +91,9 @@ export const Season4ObserverManager = {
       }
       return true
     })
+
+    observations.delete(roomName)
+    reserved.delete(roomName)
   },
 }
 
