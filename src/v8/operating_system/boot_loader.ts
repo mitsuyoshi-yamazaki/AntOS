@@ -26,12 +26,14 @@ import { loadApplicationProcesses } from "v8/process/application_process_loader"
 // import {  } from "./driver/hostile_creep_predictor"
 // import { } from "./driver/terminal_network_manager"
 // import {} from "./driver/owned_room_resource/owned_room_resource_driver"
+import { DriverFamily } from "./driver_family/driver_family"
 
 export const BootLoader = {
   load(): void {
     loadApplicationProcesses()
 
     const drivers: Driver[] = [
+      ...DriverFamily.Beryllium.drivers,
     ]
     Kernel.registerDrivers(drivers)
     Kernel.load()
