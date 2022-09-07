@@ -3,6 +3,9 @@
  ## 概要
  DriverFamilyはBotの認知の基礎を成すDriverの集合
  BotはOS上で動作するDriverとProcessの集合
+
+ ## 仕様
+ Botのidentifierはmajor versionと対応する
  */
 
 import { SemanticVersion } from "shared/utility/semantic_version"
@@ -28,7 +31,7 @@ const Beryllium: DriverFamily = {
   identifier: "Beryllium",
   prefix: "be",
   description: "",  // TODO:
-  version: new SemanticVersion(1, 0, 0),
+  version: new SemanticVersion(10, 0, 0),
   drivers: [
   ],
 }

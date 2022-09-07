@@ -16,6 +16,7 @@ export const ShortVersion = {
   v9: shortVersionV9,
 }
 
+/** @deprecated */
 export const SystemInfo = {
   os: {
     version: "3.2.4",
