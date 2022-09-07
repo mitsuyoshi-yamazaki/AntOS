@@ -19,7 +19,7 @@
 
 import {} from "../prototype/memory"
 import { Kernel } from "./kernel"
-import { loadApplicationProcesses } from "v8/process/application_process_loader"
+import { loadApplicationProcesses } from "v8/process/application/application_process_loader"
 import { DriverFamily } from "./driver_family/driver_family"
 
 export const BootLoader = {

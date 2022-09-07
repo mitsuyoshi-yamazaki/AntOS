@@ -1,8 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText } from "utility/log"
-import { Process, ProcessState } from "./process"
-import { ProcessType, ProcessTypeConverter } from "./process_type"
+import { Process, ProcessState } from "../process"
+import { ProcessType, ProcessTypeConverter } from "../process_type"
 
 type Decoder = (state: ProcessState) => Process | null
 

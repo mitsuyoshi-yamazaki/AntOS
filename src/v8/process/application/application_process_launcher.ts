@@ -1,7 +1,7 @@
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Process } from "./process"
-import { ProcessType } from "./process_type"
+import { Process } from "../process"
+import { ProcessType } from "../process_type"
 
 /** @throws */
 type Launcher = (args: ArgumentParser) => Process

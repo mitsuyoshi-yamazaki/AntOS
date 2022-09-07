@@ -15,8 +15,8 @@ import { ProcessType, ProcessTypeConverter, rootProcessId } from "v8/process/pro
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
 import { ProcessInfoMemory } from "./kernel_memory"
-import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
-import { ApplicationProcessDecoder } from "v8/process/application_process_decoder"
+import { ApplicationProcessLauncher } from "v8/process/application/application_process_launcher"
+import { ApplicationProcessDecoder } from "v8/process/application/application_process_decoder"
 import { UniqueId } from "./system_call/unique_id"
 import { PrimitiveLogger } from "./primitive_logger"
 
