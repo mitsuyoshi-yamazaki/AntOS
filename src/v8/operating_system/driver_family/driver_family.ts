@@ -9,8 +9,12 @@ import { Driver } from "../driver"
 
 type DriverFamilyName = "Beryllium" | "Magnesium" | "Calcium" | "Strontium" | "Barium" | "Radium"
 
-type DriverFamily = {
+export type DriverFamily = {
+  /** nameはFamilyの特定に用いるため一意 */
   readonly name: DriverFamilyName
+
+  /** shortNameはDriverCommandの指定で用いるため一意 */
+  readonly shortName: string
   readonly description: string
   readonly version: SemanticVersion
   readonly drivers: Driver[]
@@ -18,10 +22,10 @@ type DriverFamily = {
 
 const Beryllium: DriverFamily = {
   name: "Beryllium",
+  shortName: "be",
   description: "",  // TODO:
   version: new SemanticVersion(1, 0, 0),
   drivers: [
-
   ],
 }
 

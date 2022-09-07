@@ -14,6 +14,9 @@ interface UniqueIdInterface extends SystemCall {
 export type UniqueIdMemory = OldMemory
 
 export const UniqueId: UniqueIdInterface = {
+  identifier: "UniqueId",
+  description: "generate unique identifier",
+
   // 旧実装で行っている
   // load(): void {
   // },

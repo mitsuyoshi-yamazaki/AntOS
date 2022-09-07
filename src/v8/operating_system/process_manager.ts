@@ -48,6 +48,9 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
 const processManagerMemory = EnvironmentalVariables.kernelMemory.process
 
 export const ProcessManager: ProcessManagerInterface = {
+  identifier: "ProcessManager",
+  description: "manages processes",
+
   // ---- Accessor ---- //
   getChildProcesses(processId: ProcessId): RunningProcess[] {
     const childProcessInfo = ProcessStore.childProcessInfo(processId) ?? []
