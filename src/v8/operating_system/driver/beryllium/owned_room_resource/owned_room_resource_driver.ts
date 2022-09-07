@@ -8,7 +8,7 @@
  */
 
 import { RoomName } from "shared/utility/room_name_types"
-import { Driver } from "../../driver"
+import { Driver } from "../../../driver"
 import {} from "./owned_room_resource"
 
 interface OwnedRoomResourceDriverInterface extends Driver {

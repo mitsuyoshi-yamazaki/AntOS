@@ -4,7 +4,7 @@ import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 import { OwnedRoomChildProcess } from "./owned_room_child_process"
-import { OwnedRoomResource } from "../../operating_system/driver/owned_room_resource/owned_room_resource"
+import { OwnedRoomResource } from "../../operating_system/driver/beryllium/owned_room_resource/owned_room_resource"
 
 const roomLink = ConsoleUtility.roomLink
 
