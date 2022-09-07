@@ -118,15 +118,14 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
-  version: new SemanticVersion(3, 2, 6),
+  version: new SemanticVersion(3, 2, 7),
 
   standardInput: standardInput(standardInputCommands),
 
   load(driverFamilies: DriverFamily[]): void {
     PrimitiveLogger.info(ConsoleUtility.colored(`${this.version} Kernel loaded`, "info"))
 
-    const botUnit: string = driverFamilies.length > 1 ? "bots" : "bot"
-    const loadDriverMessage = `Starging ${driverFamilies.map(family => `${family.name} ${family.version}`).join(", ")} ${botUnit}...`
+    const loadDriverMessage = `Starting ${driverFamilies.map(family => `${family.displayName} ${family.version}`).join(", ")}`
     PrimitiveLogger.info(ConsoleUtility.colored(loadDriverMessage, "info"))
 
     callSystemCallFunctions(systemCallFunctions.load)
@@ -175,8 +174,8 @@ const registerDriverFamilies = (driverFamilies: DriverFamily[]): void => {
   interactiveDrivers.clear()
 
   const interactiveDriverList: {
-    familyName: string,
-    shortName: string,
+    botDescription: string,
+    prefix: string,
     drivers: (SystemCall & MessageObserver)[]
   }[] = []
   const shortDriverIdentifiers: string[] = [] // Driver Family Nameのついていない単体の名前
@@ -221,8 +220,8 @@ const registerDriverFamilies = (driverFamilies: DriverFamily[]): void => {
     })
 
     interactiveDriverList.push({
-      familyName: family.name,
-      shortName: family.shortName,
+      botDescription: `${family.identifier} (${family.displayName})`,
+      prefix: family.prefix,
       drivers,
     })
   })
@@ -240,7 +239,7 @@ const registerDriverFamilies = (driverFamilies: DriverFamily[]): void => {
     family.drivers.forEach(driver => {
       const identifiers: string[] = []
 
-      const identifier = `${family.shortName}.${driver.identifier}`
+      const identifier = `${family.prefix}.${driver.identifier}`
       interactiveDrivers.set(identifier, driver)
       identifiers.push(identifier)
 
@@ -252,6 +251,6 @@ const registerDriverFamilies = (driverFamilies: DriverFamily[]): void => {
       info.push([identifiers.join(", "), driver.description])
     })
 
-    driverInfo.set(family.familyName, info)
+    driverInfo.set(family.botDescription, info)
   })
 }
