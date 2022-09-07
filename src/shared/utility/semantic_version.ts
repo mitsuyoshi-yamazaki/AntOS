@@ -7,6 +7,6 @@ export class SemanticVersion {
   }
 
   public toString(): string {
-    return `${this.major}.${this.minor}.${this.patch}`
+    return `v${this.major}.${this.minor}.${this.patch}`
   }
 }
