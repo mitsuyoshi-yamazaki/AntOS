@@ -5,11 +5,7 @@
  BootLoaderより先に実行される必要があるため別ファイルとなっている。 `boot_loader.ts` の説明を参照
  */
 
-import { KernelMemory } from "./kernel_memory"
-
-type EnvironmentalVariablesInterface = {
-  kernelMemory: KernelMemory
-}
+import { KernelMemory, ProcessManagerMemory } from "./kernel_memory"
 
 // EnvironmentalVariable読み込み時に必要なため
 if (Memory.v3 == null) {
@@ -22,6 +18,12 @@ if (Memory.v3 == null) {
   }
 }
 
-export const EnvironmentalVariables: EnvironmentalVariablesInterface = {
-  kernelMemory: Memory.v3,
+export const EnvironmentalVariables = {
+  getKernelMemory(): KernelMemory {
+    return Memory.v3  // Memoryオブジェクトの参照はtick毎変化するためキャッシュしない
+  },
+
+  getProcessManagerMemory(): ProcessManagerMemory {
+    return Memory.v3.process
+  },
 }

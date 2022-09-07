@@ -118,7 +118,8 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
-  version: new SemanticVersion(3, 2, 5),
+  version: new SemanticVersion(3, 2, 6),
+
   standardInput: standardInput(standardInputCommands),
 
   load(driverFamilies: DriverFamily[]): void {

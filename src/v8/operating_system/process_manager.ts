@@ -49,8 +49,6 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
   listProcesses(): ExternalProcessInfo[]
 }
 
-const processManagerMemory = EnvironmentalVariables.kernelMemory.process
-
 export const ProcessManager: ProcessManagerInterface = {
   identifier: "ProcessManager",
   description: "manages processes",
@@ -159,6 +157,7 @@ const resignProcessId = (process: RunningProcess): Process => {
 }
 
 const newProcessId = (): ProcessId => {
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   const processId: ProcessId = `p${UniqueId.generateFromInteger(processManagerMemory.processIdIndex) }`
   processManagerMemory.processIdIndex += 1
   return processId
@@ -215,6 +214,7 @@ const decodeProcesses = (): void => {
     return
   }
 
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   processManagerMemory.processInfoMemories.forEach(processInfoMemory => {
     const process = ApplicationProcessDecoder.decode(processInfoMemory.s)
     if (process == null) {
@@ -263,6 +263,7 @@ const recursivelyDecodeProcesses = (parentProcess: RunningProcess, childProcessI
 }
 
 const encodeProcesses = (): void => {
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   const applicationProcesses = ProcessStore.childProcessInfo(rootProcessId) ?? []
   processManagerMemory.processInfoMemories = recursivelyEncodeProcess(applicationProcesses)
 }
