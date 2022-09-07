@@ -17,8 +17,8 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { RoomResources } from "room_resource/room_resources"
 import { Timestamp } from "shared/utility/timestamp"
-import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { Position } from "prototype/room_position"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -36,10 +36,11 @@ export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemo
   return (guardRemoteRoomProcessCreepType as (readonly string[])).includes(obj)
 }
 
-const finishConditionTypes = [
+const finishConditionCases = [
   "never",
   "duration",
   "owned_room",
+  "unclaimed",
 ] as const
 
 type FinishConditionNever = {
@@ -330,7 +331,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
   /** @throws */
   private changeFinishCondition(args: string[]): string {
-    const keywordArguments = new KeywordArguments(args)
+    const parser = new ArgumentParser(args)
+    const keywordArguments = parser.keyword
+
+    const command = parser.list.string(0, "command").parse()
+    if (command === "help") {
+      return `finish conditions: ${finishConditionCases.join(", ")}`
+    }
+
     const conditionType = keywordArguments.string("condition").parse()
 
     const condition = ((): FinishCondition => {
@@ -366,7 +374,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         }
 
       default:
-        throw `invalid condition ${conditionType}, available conditions: ${finishConditionTypes}`
+        throw `invalid condition ${conditionType}, available conditions: ${finishConditionCases}`
       }
     })()
 
