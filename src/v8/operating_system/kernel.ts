@@ -53,10 +53,6 @@ import { PrimitiveLogger } from "./primitive_logger"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
-// const kernelConstants = {
-//   driverMaxLoadCpu: 10,
-// }
-
 type KernelInterface = {
   // ---- Boot ---- //
   standardInput: (command?: string) => string
