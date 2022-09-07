@@ -19,6 +19,9 @@ import { ApplicationProcessLauncher } from "v8/process/application/application_p
 import { ApplicationProcessDecoder } from "v8/process/application/application_process_decoder"
 import { UniqueId } from "./system_call/unique_id"
 import { PrimitiveLogger } from "./primitive_logger"
+import { Application, isApplicationProcess } from "v8/process/application/application_process"
+
+
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -26,6 +29,7 @@ interface ProcessManagerExternal {
   processInfoOf(processId: ProcessId): { parentProcessId: ProcessId, running: boolean } | null
   pauseProcess(processId: ProcessId): void
   resumeProcess(processId: ProcessId): void
+  getApplicationInfo(processId: ProcessId): Application | null  // 最上位ProcessをApplicationと呼び特別視するのは実装上必須ではない
 
   // ---- Lifecycle ---- //
   addProcess(process: Process, parentProcessId: ProcessId): void
@@ -75,6 +79,10 @@ export const ProcessManager: ProcessManagerInterface = {
       return
     }
     processInfo.running = true
+  },
+
+  getApplicationInfo(processId: ProcessId): Application | null {
+    return recursivelyGetApplicationInfo(processId)
   },
 
   // ---- Lifecycle ---- //
@@ -292,4 +300,18 @@ const runProcessRecursively = (processInfo: ProcessInfo): void => {
   }
 
   childProcesses.forEach(childProcessInfo => runProcessRecursively(childProcessInfo))
+}
+
+const recursivelyGetApplicationInfo = (processId: ProcessId): Application | null => {
+  const processInfo = ProcessStore.processInfo(processId)
+  if (processInfo == null) {
+    return null
+  }
+  if (isApplicationProcess(processInfo.process)) {
+    return processInfo.process
+  }
+  if (processInfo.parentProcessId === rootProcessId) {
+    return null
+  }
+  return recursivelyGetApplicationInfo(processInfo.parentProcessId)
 }
