@@ -50,10 +50,14 @@ import { UniqueId } from "./system_call/unique_id"
 import { isMessageObserver, MessageObserver } from "./message_observer"
 import { DriverFamily } from "./driver_family/driver_family"
 import { PrimitiveLogger } from "./primitive_logger"
+import { SemanticVersion } from "shared/utility/semantic_version"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
 type KernelInterface = {
+  version: SemanticVersion
+
   // ---- Boot ---- //
   standardInput: (command?: string) => string
   load(driverFamilies: DriverFamily[]): void
@@ -114,9 +118,16 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
+  version: new SemanticVersion(3, 2, 5),
   standardInput: standardInput(standardInputCommands),
 
   load(driverFamilies: DriverFamily[]): void {
+    PrimitiveLogger.info(ConsoleUtility.colored(`${this.version} Kernel loaded`, "info"))
+
+    const botUnit: string = driverFamilies.length > 1 ? "bots" : "bot"
+    const loadDriverMessage = `Starging ${driverFamilies.map(family => `${family.name} ${family.version}`).join(", ")} ${botUnit}...`
+    PrimitiveLogger.info(ConsoleUtility.colored(loadDriverMessage, "info"))
+
     callSystemCallFunctions(systemCallFunctions.load)
     callSystemCallFunctions(driverFunctions.load)
 

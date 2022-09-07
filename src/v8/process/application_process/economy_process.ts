@@ -6,6 +6,7 @@ import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { OwnedRoomProcessRequest } from "../owned_room_process/owned_room_process_request"
 import type { RoomName } from "shared/utility/room_name_types"
 import { SemanticVersion } from "shared/utility/semantic_version"
+import { PrimitiveLogger } from "v8/operating_system/primitive_logger"
 
 const processType = "EconomyProcess"
 
@@ -23,6 +24,7 @@ export class EconomyProcess extends Process implements LaunchMessageObserver, Ap
   private constructor(
   ) {
     super()
+    PrimitiveLogger.info(`${this.applicationName} ${this.version}`)
   }
 
   public encode(): EconomyProcessState {
@@ -50,7 +52,7 @@ export class EconomyProcess extends Process implements LaunchMessageObserver, Ap
   }
 
   public shortDescription = (): string => {
-    return ""
+    return `${this.version}`
   }
 
   /** @throws */
