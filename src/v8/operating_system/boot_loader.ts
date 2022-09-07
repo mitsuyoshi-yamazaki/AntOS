@@ -20,13 +20,14 @@
 import {} from "../prototype/memory"
 import { Kernel } from "./kernel"
 import { loadApplicationProcesses } from "v8/process/application/application_process_loader"
+import { DriverFamily as DriverFamilyType } from "./driver_family/driver_family_types"
 import { DriverFamily } from "./driver_family/driver_family"
 
 export const BootLoader = {
   load(): void {
     loadApplicationProcesses()
 
-    const driverFamilies: DriverFamily[] = [
+    const driverFamilies: DriverFamilyType[] = [
       DriverFamily.Beryllium,
     ]
     Kernel.load(driverFamilies)

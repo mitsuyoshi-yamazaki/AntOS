@@ -48,10 +48,10 @@ import { GameConstants } from "utility/constants"
 import { ProcessLogger } from "./system_call/process_logger"
 import { UniqueId } from "./system_call/unique_id"
 import { isMessageObserver, MessageObserver } from "./message_observer"
-import { DriverFamily } from "./driver_family/driver_family"
 import { PrimitiveLogger } from "./primitive_logger"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { DriverFamily } from "./driver_family/driver_family_types"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
@@ -118,7 +118,7 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
-  version: new SemanticVersion(3, 2, 7),
+  version: new SemanticVersion(3, 2, 8),
 
   standardInput: standardInput(standardInputCommands),
 
