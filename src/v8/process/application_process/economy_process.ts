@@ -1,18 +1,21 @@
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessId, ProcessState } from "../process"
 import { ProcessType, ProcessTypeConverter } from "../process_type"
+import { Application } from "../application/application_process"
 import { LaunchMessageObserver } from "../message_observer/launch_message_observer"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
-import { OwnedRoomProcess, OwnedRoomProcessState } from "../owned_room_process/owned_room_process"
-import { ProcessManager } from "v8/operating_system/process_manager"
 import { OwnedRoomProcessRequest } from "../owned_room_process/owned_room_process_request"
 import type { RoomName } from "shared/utility/room_name_types"
+import { SemanticVersion } from "shared/utility/semantic_version"
 
 const processType = "EconomyProcess"
 
 export interface EconomyProcessState extends ProcessState {
 }
 
-export class EconomyProcess extends Process implements LaunchMessageObserver {
+export class EconomyProcess extends Process implements LaunchMessageObserver, Application {
+  public readonly applicationName: string = processType
+  public readonly version = new SemanticVersion(1, 0, 0)
+
   public readonly processType = processType
 
   // private ownedRoomProcesses: OwnedRoomProcess[] = []
