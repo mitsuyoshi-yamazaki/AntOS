@@ -57,10 +57,14 @@ export class DriverCommand implements StandardInputCommand {
   private listDrivers(): string {
     return Array.from(this.driverAccessor.listDriverInfo().entries())
       .flatMap(([driverFamilyName, driverInfo]): string[] => {
-        const results: string[] = [
-          `- ${driverFamilyName}`,
-          ...driverInfo.map(([driverIdentifiers, description]) => `  - ${ConsoleUtility.tab(driverIdentifiers, TabSize.medium)}: ${description}`)
-        ]
+        const results: string[] = []
+
+        if (driverInfo.length > 0) {
+          results.push(`- ${driverFamilyName}`)
+          results.push(...driverInfo.map(([driverIdentifiers, description]) => `  - ${ConsoleUtility.tab(driverIdentifiers, TabSize.medium)}: ${description}`))
+        } else {
+          results.push(`- ${driverFamilyName}: no interactive drivers`)
+        }
 
         return results
       })
