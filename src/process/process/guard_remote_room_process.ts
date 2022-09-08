@@ -89,8 +89,8 @@ const smallRangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL,
   MOVE,
+  HEAL, HEAL,
 ]
 const rangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -101,8 +101,8 @@ const rangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const highSpeedangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -114,8 +114,8 @@ const highSpeedangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const heavyRangedAttackerBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
@@ -127,9 +127,9 @@ const heavyRangedAttackerBody: BodyPartConstant[] = [
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL,
-  MOVE,
 ]
 
 export interface GuardRemoteRoomProcessState extends ProcessState {
