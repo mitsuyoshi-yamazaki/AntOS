@@ -623,7 +623,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
     if (movement.attackedTarget != null) {
       const attackedTarget = movement.attackedTarget
-      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true) {
+      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && (attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true)) {
         creep.moveTo(movement.attackedTarget)
       }
       this.talk(creep)
@@ -696,7 +696,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
         creep.rangedHeal(damagedCreep)
       }
-      creep.moveTo(damagedCreep)
+      if (damagedCreep.pos.isRoomEdge !== true) {
+        creep.moveTo(damagedCreep)
+      }
       this.talk(creep)
       return
     }
@@ -744,7 +746,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range === 3) {
         // do nothing
       } else {
-        creep.moveTo(target)
+        if (target.pos.isRoomEdge !== true) {
+          creep.moveTo(target)
+        }
       }
     } else {
       if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
