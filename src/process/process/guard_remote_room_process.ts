@@ -793,19 +793,22 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         if (hasAttackPart === true) {
           if (range <= 2) {
             this.fleeFrom(closestHostile.pos, creep, 4)
+            moved = true
           } else if (range === 3) {
             // do nothing
+            moved = true
           } else {
-            if (closestHostile.pos.isRoomEdge !== true) {
+            if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
               creep.moveTo(closestHostile)
+              moved = true
             }
           }
         } else {
-          if (closestHostile.pos.isRoomEdge !== true) {
+          if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
             creep.moveTo(closestHostile)
+            moved = true
           }
         }
-        moved = true
       }
     }
     return { attackedTarget, moved }
