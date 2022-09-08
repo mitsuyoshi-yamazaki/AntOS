@@ -792,10 +792,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
           } else if (range === 3) {
             // do nothing
           } else {
-            creep.moveTo(closestHostile)
+            if (closestHostile.pos.isRoomEdge !== true) {
+              creep.moveTo(closestHostile)
+            }
           }
         } else {
-          creep.moveTo(closestHostile)
+          if (closestHostile.pos.isRoomEdge !== true) {
+            creep.moveTo(closestHostile)
+          }
         }
         moved = true
       }
