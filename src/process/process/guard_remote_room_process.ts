@@ -257,6 +257,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.creepType,
     ]
 
+    if (this.finishCondition.case !== "never") {
+      descriptions.push(`condition: ${this.finishCondition.case}`)
+    }
+
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`stopped by: ${this.stopSpawningReasons.join(", ")}`)
     }
