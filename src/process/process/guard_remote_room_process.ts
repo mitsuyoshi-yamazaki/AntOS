@@ -19,6 +19,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { Timestamp } from "shared/utility/timestamp"
 import { Position } from "prototype/room_position"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
+import { CreepBody } from "utility/creep_body"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -34,6 +35,13 @@ export type GuardRemoteRoomProcessCreepType = typeof guardRemoteRoomProcessCreep
 
 export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemoteRoomProcessCreepType => {
   return (guardRemoteRoomProcessCreepType as (readonly string[])).includes(obj)
+}
+
+export const canSpawnGuardCreep = (guardCreepType: GuardRemoteRoomProcessCreepType, energyCapacity: number): boolean => {
+  const body = creepSpecFor(guardCreepType).body
+  const cost = CreepBody.cost(body)
+
+  return cost <= energyCapacity
 }
 
 const finishConditionCases = [
