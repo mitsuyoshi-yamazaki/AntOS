@@ -420,8 +420,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
 
     } catch (error) {
-      PrimitiveLogger.fatal(`${this.taskIdentifier} calculateRoute() ${error}`)
+      PrimitiveLogger.fatal(`${this.taskIdentifier} calculateRoute() ${roomLink(this.targetRoomName)} ${error}`)
     }
+    PrimitiveLogger.log(`${this.taskIdentifier} calculateRoute() ${roomLink(this.targetRoomName)}`)
   }
 
   /** throws */
