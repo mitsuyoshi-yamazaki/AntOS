@@ -168,7 +168,7 @@ export class RootProcess {
     })
   }
 
-  private storeTasks(): void {
+  private storeTasks(): void {  // ※ Creepオブジェクトは永続化しないため、Game.serialization.canSkip()の値に関わらずMemoryに入れる必要がある
     Object.entries(Game.creeps).forEach(([, creep]) => {
       if (isV6Creep(creep)) {
         creep.memory.t = creep.task?.encode() ?? null

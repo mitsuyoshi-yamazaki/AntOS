@@ -43,6 +43,7 @@ import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_proce
 import type { RoomName } from "shared/utility/room_name_types"
 import { isRoomName } from "utility/room_coordinate"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
+import { execMemorySerializationCommand } from "./exec_commands/memory_serialization_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -53,58 +54,67 @@ export class ExecCommand implements ConsoleCommand {
 
   public run(): CommandExecutionResult {
     try {
-      const args = [...this.args]
-      const scriptType = args.shift()
-      switch (scriptType) {
-      case "show_remote_route":
-        return this.showRemoteRoute()
-      case "calculate_inter_room_shortest_routes":
-        return this.calculateInterRoomShortestRoutes()
-      case "roads_to_parent_room":
-        return this.getRoadPositionsToParentRoom()
-      case "describeLabs":
-        return this.describeLabs()
-      case "resource":
-        return this.resource()
-      case "set_waiting_position":
-        return this.setWaitingPosition()
-      case "show_room_plan":
-        return this.showRoomPlan()
-      case "show_wall_plan":
-        return this.showWallPlan()
-      case "mineral":
-        return this.showHarvestableMinerals()
-      case "room_config":
-        return this.configureRoomInfo(args)
-      case "check_alliance":
-        return this.checkAlliance()
-      case "unclaim":
-        return this.unclaim()
-      case "prepare_unclaim":
-        return this.prepareUnclaim(args)
-      case "creep":
-        return this.creep(args)
-      case "power_creep":
-        return this.powerCreep(args)
-      case "room_path_finding":
-        return this.roomPathFinding(args)
-      case "attack_plan":
-        return this.attackPlan(args)
-      case "interpret_room":
-        return this.interpretRoom(args)
-      case "cron":
-        return this.cron(args)
-      case "enable_swc_ally_request":
-        return this.enableSwcAllyRequest()
-      case "show_swc_ally_requests":
-        return this.showSwcAllyRequests()
-      case "script":
-        return this.runScript()
-      default:
-        throw `Invalid script type ${scriptType}`
-      }
+      const result = this.runCommand()
+      Game.serialization.shouldSerializeMemory()
+      return result
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private runCommand(): CommandExecutionResult {
+    const args = [...this.args]
+    const scriptType = args.shift()
+    switch (scriptType) {
+    case "show_remote_route":
+      return this.showRemoteRoute()
+    case "calculate_inter_room_shortest_routes":
+      return this.calculateInterRoomShortestRoutes()
+    case "roads_to_parent_room":
+      return this.getRoadPositionsToParentRoom()
+    case "describeLabs":
+      return this.describeLabs()
+    case "resource":
+      return this.resource()
+    case "set_waiting_position":
+      return this.setWaitingPosition()
+    case "show_room_plan":
+      return this.showRoomPlan()
+    case "show_wall_plan":
+      return this.showWallPlan()
+    case "mineral":
+      return this.showHarvestableMinerals()
+    case "room_config":
+      return this.configureRoomInfo(args)
+    case "check_alliance":
+      return this.checkAlliance()
+    case "unclaim":
+      return this.unclaim()
+    case "prepare_unclaim":
+      return this.prepareUnclaim(args)
+    case "creep":
+      return this.creep(args)
+    case "power_creep":
+      return this.powerCreep(args)
+    case "room_path_finding":
+      return this.roomPathFinding(args)
+    case "attack_plan":
+      return this.attackPlan(args)
+    case "interpret_room":
+      return this.interpretRoom(args)
+    case "cron":
+      return this.cron(args)
+    case "enable_swc_ally_request":
+      return this.enableSwcAllyRequest()
+    case "show_swc_ally_requests":
+      return this.showSwcAllyRequests()
+    case "script":
+      return this.runScript()
+    case "memory_serialization":
+      return execMemorySerializationCommand(args)
+    default:
+      throw `Invalid script type ${scriptType}`
     }
   }
 

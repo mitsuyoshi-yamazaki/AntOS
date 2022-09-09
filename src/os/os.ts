@@ -155,6 +155,9 @@ export class OperatingSystem {
     const process = maker(processId)
     this.processStore.add(process, parentProcessId)
     PrimitiveLogger.log(`Launch process ${process.taskIdentifier}, ID: ${processId}`)
+
+    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+
     return process
   }
 
@@ -210,6 +213,9 @@ export class OperatingSystem {
     if (this.processIdsToKill.includes(processId) !== true) {
       this.processIdsToKill.push(processId)
     }
+
+    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+
     return Result.Succeeded(process.constructor.name)
   }
 
@@ -263,7 +269,7 @@ export class OperatingSystem {
       this.setup()
       this.didSetup = true
     } else {
-      if (Memory.os.config.shouldReadMemory === true) {
+      if (Memory.os.config.shouldReadMemory === true) { // 手動等でメモリ内容が編集された場合
         ErrorMapper.wrapLoop(() => {
           this.restoreProcesses()
         }, "OperatingSystem.restoreProcesses()")()
@@ -351,6 +357,10 @@ export class OperatingSystem {
   }
 
   private storeProcesses(): void {
+    if (Game.serialization.canSkip() === true) {
+      return
+    }
+
     const processesMemory: ProcessMemory[] = []
     this.processStore.list().forEach(processInfo => {
       const process = processInfo.process
@@ -493,7 +503,5 @@ export class OperatingSystem {
     if (messages.length > 0) {
       PrimitiveLogger.log(`Kill process\n${messages.join("\n")}`)
     }
-
-    this.storeProcesses()
   }
 }
