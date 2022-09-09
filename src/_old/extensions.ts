@@ -1,5 +1,3 @@
-import { OSMemory } from "../os/os"
-
 import { LeagueOfAutomatedNations } from "./loanUserList"
 import { SystemInfo } from "shared/utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
@@ -7,10 +5,11 @@ import type { RoomInfoType } from "room_resource/room_info"
 import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import type { GameMapMemory } from "game/game_map"
-import { GclFarmMemory } from "room_resource/gcl_farm_resources"
-import { PathCacheMemory } from "prototype/travel_to"
-import { UniqueIdMemory } from "utility/unique_id"
-import { RoomName } from "shared/utility/room_name_types"
+import type { GclFarmMemory } from "room_resource/gcl_farm_resources"
+import type { PathCacheMemory } from "prototype/travel_to"
+import type { UniqueIdMemory } from "utility/unique_id"
+import type { RoomName } from "shared/utility/room_name_types"
+import type { OSMemory } from "os/os_memory"
 
 declare global {
   interface Game {
@@ -21,6 +20,8 @@ declare global {
     // Alliance
     whitelist: string[]
     isEnemy(player: Owner): boolean
+
+    canSkipSerialization: boolean
   }
 
   interface Memory {

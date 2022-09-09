@@ -1,5 +1,6 @@
 import { Result } from "shared/utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { ProcessMemory } from "./os_memory"
 import type { Process, ProcessId } from "process/process"
 import { RootProcess } from "./infrastructure/root"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
@@ -8,23 +9,10 @@ import { init as initCreepPrototype } from "prototype/creep"
 import { init as initPowerCreepPrototype } from "prototype/power_creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 import { init as initRoomPrototype } from "prototype/room"
-import type { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
-import { LoggerMemory } from "./infrastructure/logger"
 import { PrimitiveLogger } from "./infrastructure/primitive_logger"
-
-interface ProcessMemory {
-  /** running */
-  readonly r: boolean
-
-  /** process state */
-  readonly s: ProcessState
-
-  readonly childProcessIds: ProcessId[]
-  readonly executionPriority: number
-}
 
 interface InternalProcessInfo {
   running: boolean
@@ -33,18 +21,6 @@ interface InternalProcessInfo {
 
   /** 最上位（親なし）が0 */
   readonly executionPriority: number
-}
-
-export interface OSMemory {
-  p: ProcessMemory[]  // processes (stateless)
-  config: {
-    /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
-    shouldReadMemory?: boolean
-  }
-  logger: LoggerMemory
-  enabledDrivers: {
-    swcAllyRequest: boolean
-  },
 }
 
 function init(): void {
