@@ -1,10 +1,46 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Stateful } from "os/infrastructure/state"
+import { coloredText } from "utility/log"
 import type { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
 import type { ProblemSolver } from "v5_problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import type { TaskState } from "./task_state"
+
+let resetTime = Game.time
+const resetInterval = 100
+const taskCpuUse = new Map<string, {sum: number, count: number}>()  // <task name>, <obj>
+const cpuProfiler = {
+  add(name: string, cpuUse: number): void {
+    if (Game.time >= resetTime + resetInterval) {
+      if (taskCpuUse.size > 0) {
+        const entries = Array.from(taskCpuUse.entries())
+        entries.sort((lhs, rhs) => rhs[1].sum - lhs[1].sum)
+
+        const messages: string[] = entries.map(entry => `- ${entry[1].count}times, ave: ${Math.floor((entry[1].sum / entry[1].count) * 100) / 100}: ${entry[0]}`)
+        PrimitiveLogger.log(`${coloredText("[CPU]", "warn")}\n${messages.join("\n")}`)
+        taskCpuUse.clear()
+      }
+      resetTime = Game.time
+    }
+
+    const info = ((): { sum: number, count: number } => {
+      const stored = taskCpuUse.get(name)
+      if (stored != null) {
+        return stored
+      }
+      const newInfo = {
+        sum: 0,
+        count: 0,
+      }
+      taskCpuUse.set(name, newInfo)
+      return newInfo
+    })()
+
+    info.count += 1
+    info.sum += cpuUse
+  },
+}
 
 // ---- Types and Constants ---- //
 export type TaskIdentifier = string
@@ -116,6 +152,8 @@ export abstract class Task implements Stateful {
             name: task.taskIdentifier,
             cpu: cpuUse,
           })
+
+          cpuProfiler.add(task.taskIdentifier, cpuUse)
         }
 
         switch (status) {
