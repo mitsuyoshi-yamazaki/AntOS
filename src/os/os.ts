@@ -394,6 +394,8 @@ export class OperatingSystem {
     })
 
     try {
+      const cpuUses: {name: string, cpu: number}[] = []
+
       // 強制終了処理
       // let lastProcess: InternalProcessInfo | null = null
       runningProcessInfo.forEach(processInfo => {
@@ -403,9 +405,27 @@ export class OperatingSystem {
         // lastProcess = processInfo
         const process = processInfo.process
         ErrorMapper.wrapLoop((): void => {
+          const before = Game.cpu.getUsed()
           process.runOnTick()
+          const cpuUse = Game.cpu.getUsed() - before
+          if (cpuUse > 2) {
+            cpuUses.push({
+              name: `${process.taskIdentifier} - ${process.processShortDescription != null ? process.processShortDescription() : "no desc"}`,
+              cpu: cpuUse,
+            })
+          }
         }, `Procedural process ${process.processId} run()`)()
       })
+
+      if (cpuUses.length > 0) {
+        cpuUses.sort((lhs, rhs) => rhs.cpu - lhs.cpu)
+        const logCount = 20
+        if (cpuUses.length > logCount) {
+          cpuUses.splice(logCount, cpuUses.length - logCount)
+        }
+        console.log(`large CPU use in ${Game.time}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
+      }
+
     } catch (error) {
       PrimitiveLogger.log(`${error}`)
     }
