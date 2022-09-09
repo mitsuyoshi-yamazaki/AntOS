@@ -8,7 +8,7 @@ import { OwnedRoomObjects } from "world_info/room_info"
 import type { TaskState } from "./task_state"
 
 let resetTime = Game.time
-const resetInterval = 100
+const resetInterval = 200
 const taskCpuUse = new Map<string, {sum: number, count: number}>()  // <task name>, <obj>
 const cpuProfiler = {
   add(name: string, cpuUse: number): void {
@@ -141,17 +141,17 @@ export abstract class Task implements Stateful {
       const finishedTasks: Task[] = []
       const failedTasks: Task[] = []
 
-      const cpuUses: {name: string, cpu: number}[] = []
+      // const cpuUses: {name: string, cpu: number}[] = []
 
       this.children.forEach(task => {
         const before = Game.cpu.getUsed()
         const status = task.run(objects)
         const cpuUse = Game.cpu.getUsed() - before
-        if (cpuUse > 5) {
-          cpuUses.push({
-            name: task.taskIdentifier,
-            cpu: cpuUse,
-          })
+        if (cpuUse > 3 && task.constructor.name === "RemoteRoomKeeperTask") { // 循環参照になるためinstanceOfは使用しない
+          // cpuUses.push({
+          //   name: task.taskIdentifier,
+          //   cpu: cpuUse,
+          // })
 
           cpuProfiler.add(task.taskIdentifier, cpuUse)
         }
@@ -168,9 +168,9 @@ export abstract class Task implements Stateful {
         }
       })
 
-      if (cpuUses.length > 0) {
-        console.log(`[Task] large CPU use in ${Game.time} in ${this.taskIdentifier}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
-      }
+      // if (cpuUses.length > 0) {
+      //   console.log(`[Task] large CPU use in ${Game.time} in ${this.taskIdentifier}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
+      // }
 
       this.removeChildTasks(finishedTasks)
       this.removeChildTasks(failedTasks)
