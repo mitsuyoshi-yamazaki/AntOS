@@ -23,7 +23,7 @@ console.log(leveled_colored_text(initializing_message, "warn"))
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
   memhack.beforeTick()
-  // ScreepsProfiler.wrap(mainLoop)
+  // ScreepsProfiler.wrap(mainLoop) mainLoopの呼び出しは停止する
   mainLoop()
   memhack.afterTick()
 
