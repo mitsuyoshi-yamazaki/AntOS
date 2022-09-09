@@ -21,7 +21,6 @@ export class TargetToPositionTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     public readonly destinationPosition: RoomPosition,
     public readonly apiWrappers: AnyCreepApiWrapper[],
   ) {
@@ -30,7 +29,6 @@ export class TargetToPositionTask implements CreepTask {
 
   public encode(): TargetToPositionTaskState {
     return {
-      s: this.startTime,
       t: "TargetToPositionTask",
       d: this.destinationPosition.encode(),
       as: this.apiWrappers.map(wrapper => wrapper.encode())
@@ -46,11 +44,11 @@ export class TargetToPositionTask implements CreepTask {
       }
       apiWrappers.push(wrapper)
     }
-    return new TargetToPositionTask(state.s, decodeRoomPosition(state.d), apiWrappers)
+    return new TargetToPositionTask(decodeRoomPosition(state.d), apiWrappers)
   }
 
   public static create(destinationPosition: RoomPosition, apiWrappers: AnyCreepApiWrapper[]): TargetToPositionTask {
-    return new TargetToPositionTask(Game.time, destinationPosition, apiWrappers)
+    return new TargetToPositionTask(destinationPosition, apiWrappers)
   }
 
   public run(creep: Creep): TaskProgressType {

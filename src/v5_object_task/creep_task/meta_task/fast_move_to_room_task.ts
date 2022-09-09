@@ -31,7 +31,6 @@ export class FastMoveToRoomTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     public readonly destinationRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private exitPosition: RoomPosition | null,
@@ -42,7 +41,6 @@ export class FastMoveToRoomTask implements CreepTask {
 
   public encode(): FastMoveToRoomTaskState {
     return {
-      s: this.startTime,
       t: "FastMoveToRoomTask",
       d: this.destinationRoomName,
       w: this.waypoints,
@@ -53,11 +51,11 @@ export class FastMoveToRoomTask implements CreepTask {
 
   public static decode(state: FastMoveToRoomTaskState): FastMoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
-    return new FastMoveToRoomTask(state.s, state.d, state.w, exitPosition, state.mode)
+    return new FastMoveToRoomTask(state.d, state.w, exitPosition, state.mode)
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[]): FastMoveToRoomTask {
-    return new FastMoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, "normal")
+    return new FastMoveToRoomTask(destinationRoomName, [...waypoints], null, "normal")
   }
 
   public run(creep: Creep): TaskProgressType {

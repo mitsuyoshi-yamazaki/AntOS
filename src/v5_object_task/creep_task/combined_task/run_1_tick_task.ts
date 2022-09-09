@@ -17,7 +17,6 @@ export class Run1TickTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly childTask: CreepTask,
     private readonly until: Timestamp,
   ) {
@@ -26,7 +25,6 @@ export class Run1TickTask implements CreepTask {
 
   public encode(): Run1TickTaskState {
     return {
-      s: this.startTime,
       t: "Run1TickTask",
       childTaskState: this.childTask.encode(),
       until: this.until,
@@ -34,12 +32,12 @@ export class Run1TickTask implements CreepTask {
   }
 
   public static decode(state: Run1TickTaskState, childTask: CreepTask): Run1TickTask {
-    return new Run1TickTask(state.s, childTask, state.until ?? (Game.time + 1))
+    return new Run1TickTask(childTask, state.until ?? (Game.time + 1))
   }
 
   public static create(childTask: CreepTask, options?: { duration?: number }): Run1TickTask {
     const until = Game.time + (options?.duration ?? 1)
-    return new Run1TickTask(Game.time, childTask, until)
+    return new Run1TickTask(childTask, until)
   }
 
   public run(creep: Creep): TaskProgressType {

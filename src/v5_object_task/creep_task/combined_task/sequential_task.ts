@@ -35,7 +35,6 @@ export class SequentialTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     public readonly childTasks: CreepTask[],
     public readonly options: SequentialTaskOptions,
   ) {
@@ -43,7 +42,6 @@ export class SequentialTask implements CreepTask {
 
   public encode(): SequentialTaskState {
     return {
-      s: this.startTime,
       t: "SequentialTask",
       c: this.childTasks.map(task => task.encode()),
       o: {
@@ -70,11 +68,11 @@ export class SequentialTask implements CreepTask {
       ignoreFailure: state.o.i,
       finishWhenSucceed: state.o.f,
     }
-    return new SequentialTask(state.s, filteredChildren, options)
+    return new SequentialTask(filteredChildren, options)
   }
 
   public static create(childTasks: CreepTask[], options: SequentialTaskOptions): SequentialTask {
-    return new SequentialTask(Game.time, childTasks, options)
+    return new SequentialTask(childTasks, options)
   }
 
   public run(creep: Creep): TaskProgressType {

@@ -20,7 +20,6 @@ export class RunApiTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly apiWrapper: AnyCreepApiWrapper,
   ) {
     this.shortDescription = apiWrapper.shortDescription
@@ -28,7 +27,6 @@ export class RunApiTask implements CreepTask {
 
   public encode(): RunApiTaskState {
     return {
-      s: this.startTime,
       t: "RunApiTask",
       as: this.apiWrapper.encode(),
     }
@@ -39,11 +37,11 @@ export class RunApiTask implements CreepTask {
     if (wrapper == null) {
       return null
     }
-    return new RunApiTask(state.s, wrapper)
+    return new RunApiTask(wrapper)
   }
 
   public static create(apiWrapper: AnyCreepApiWrapper): RunApiTask {
-    return new RunApiTask(Game.time, apiWrapper)
+    return new RunApiTask(apiWrapper)
   }
 
   public run(creep: Creep): TaskProgressType {
