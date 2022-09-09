@@ -33,6 +33,13 @@ import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/trav
 import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { CpuMeasurer, CpuPointMeasurer } from "shared/utility/cpu_measurer"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+
+const cpuUsageHandler = (identifier: string, cpuUsage: number): void => {
+  PrimitiveLogger.log(`[RemoteRoomHaulerTask] ${identifier}: ${cpuUsage}`)
+}
+const cpuMeasurer = new CpuMeasurer(cpuUsageHandler, 2)
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -80,13 +87,15 @@ export class RemoteRoomHaulerTask extends Task {
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const problemFinders: ProblemFinder[] = []
-    problemFinders.push(...this.runHauler(objects))
+    problemFinders.push(...cpuMeasurer.measure(() => this.runHauler(objects), `${this.taskIdentifier}-runHauler`))
 
     return TaskStatus.InProgress
   }
 
   // ---- Run & Check Problem ---- //
   private runHauler(objects: OwnedRoomObjects): ProblemFinder[] {
+    const pointMeasurer = new CpuPointMeasurer(cpuUsageHandler, 1)
+
     const energySources = this.energySources.flatMap(source => source.energySources)
     const energyCapacity = this.energySources.reduce((result, current) => result + current.energyCapacity, 0)
 
@@ -98,27 +107,35 @@ export class RemoteRoomHaulerTask extends Task {
     const problemFinders: ProblemFinder[] = [
     ]
 
+    pointMeasurer.measure(`${this.taskIdentifier}-p0`)
+
     if (objects.activeStructures.storage != null) {
       const hasEnergy = energySources.some(source => getEnergyAmountOf(source) > 500)
       if (hasEnergy === true) {
         const targetRoom = World.rooms.get(this.targetRoomName)
         if (targetRoom != null) {
+          pointMeasurer.measure(`${this.taskIdentifier}-p0.5`)
           const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
           if (invaded !== true) {
+            pointMeasurer.measure(`${this.taskIdentifier}-p0.6`)
             problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, necessaryRoles, minimumCreepCount))
           }
         }
       }
     }
 
+    pointMeasurer.measure(`${this.taskIdentifier}-p1`)
+
     this.checkProblemFinders(problemFinders)
+
+    pointMeasurer.measure(`${this.taskIdentifier}-p2`)
 
     World.resourcePools.assignTasks(
       objects.controller.room.name,
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        const task = this.newTaskForHauler(creep, objects, energySources)
+        const task = cpuMeasurer.measure(() => this.newTaskForHauler(creep, objects, energySources), `${this.taskIdentifier}`)
         if (task == null) {
           return null
         }
@@ -129,6 +146,8 @@ export class RemoteRoomHaulerTask extends Task {
       },
       creepPoolFilter,
     )
+
+    pointMeasurer.measure(`${this.taskIdentifier}-p3`)
 
     return problemFinders
   }
