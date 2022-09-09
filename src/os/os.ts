@@ -408,7 +408,7 @@ export class OperatingSystem {
           const before = Game.cpu.getUsed()
           process.runOnTick()
           const cpuUse = Game.cpu.getUsed() - before
-          if (cpuUse > 2) {
+          if (cpuUse > 5) {
             cpuUses.push({
               name: `${process.taskIdentifier} - ${process.processShortDescription != null ? process.processShortDescription() : "no desc"}`,
               cpu: cpuUse,
@@ -423,7 +423,7 @@ export class OperatingSystem {
         if (cpuUses.length > logCount) {
           cpuUses.splice(logCount, cpuUses.length - logCount)
         }
-        console.log(`large CPU use in ${Game.time}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
+        console.log(`[Process] large CPU use in ${Game.time}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
       }
 
     } catch (error) {
