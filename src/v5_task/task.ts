@@ -105,8 +105,19 @@ export abstract class Task implements Stateful {
       const finishedTasks: Task[] = []
       const failedTasks: Task[] = []
 
+      const cpuUses: {name: string, cpu: number}[] = []
+
       this.children.forEach(task => {
+        const before = Game.cpu.getUsed()
         const status = task.run(objects)
+        const cpuUse = Game.cpu.getUsed() - before
+        if (cpuUse > 5) {
+          cpuUses.push({
+            name: task.taskIdentifier,
+            cpu: cpuUse,
+          })
+        }
+
         switch (status) {
         case TaskStatus.InProgress:
           return
@@ -118,6 +129,10 @@ export abstract class Task implements Stateful {
           return
         }
       })
+
+      if (cpuUses.length > 0) {
+        console.log(`[Task] large CPU use in ${Game.time} in ${this.taskIdentifier}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
+      }
 
       this.removeChildTasks(finishedTasks)
       this.removeChildTasks(failedTasks)
