@@ -1,6 +1,7 @@
 # Screeps config
 screeps.json
 local_configs.ts
+compiler.jar
 
 #
 /dist
