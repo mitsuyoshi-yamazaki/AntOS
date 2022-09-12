@@ -20,9 +20,33 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { ResourceManager } from "utility/resource_manager"
+import { BoostLabChargerProcessLauncher } from "./boost_lab_charger_process_launcher"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
+})
+
+BoostLabChargerProcessLauncher.load({
+  getRunningProcess(roomName: RoomName): BoostLabChargerProcess | null {
+    const processList = SystemCalls.systemCall()?.listAllProcesses() ?? []
+
+    for (const processInfo of processList) {
+      const process = processInfo.process
+      if (!(process instanceof BoostLabChargerProcess)) {
+        continue
+      }
+      if (process.parentRoomName !== roomName) {
+        continue
+      }
+      return process
+    }
+    return null
+  },
+
+  launch(roomName: RoomName): BoostLabChargerProcess | null {
+    return SystemCalls.systemCall()?.addProcess(null, processId => BoostLabChargerProcess.create(processId, roomName)) ?? null
+  },
 })
 
 const noBoostReason = "no boost"
