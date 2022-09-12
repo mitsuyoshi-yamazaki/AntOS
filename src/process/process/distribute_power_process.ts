@@ -27,7 +27,7 @@ export class DistributePowerProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly lastRun: Timestamp,
+    private lastRun: Timestamp,
     private readonly interval: Timestamp,
   ) {
     this.taskIdentifier = this.constructor.name
@@ -59,6 +59,7 @@ export class DistributePowerProcess implements Process, Procedural {
     if (Game.time < (this.lastRun + this.interval)) {
       return
     }
+    this.lastRun = Game.time
 
     const powerProcessingRoomNames: RoomName[] = []
     const requirePowerRoomNames: RoomName[] = []
