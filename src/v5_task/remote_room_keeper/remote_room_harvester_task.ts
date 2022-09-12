@@ -1,6 +1,5 @@
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { World } from "world_info/world_info"
@@ -182,10 +181,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     source: Source,
     container: StructureContainer | null,
   ): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
     const isBuildingContainer = (this.containerId == null)
     const minimumCreepCount = isBuildingContainer ? 2 : 1
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
     ]
@@ -196,7 +193,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
         if (invaded !== true) {
           const isConstructing = isBuildingContainer || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
-          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
+          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, minimumCreepCount, source, isConstructing))
         }
       }
     }
@@ -217,7 +214,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         }
         return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
       },
-      creepPoolFilter,
     )
 
     return problemFinders
@@ -225,13 +221,12 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
-    necessaryRoles: CreepRole[],
     minimumCreepCount: number,
     source: Source,
     isConstructing: boolean,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], this.taskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

@@ -90,7 +90,7 @@ export class PowerProcessProcess implements Process, Procedural {
     const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
     const hasEnoughEnergy = energyAmount > 150000
 
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (creepCount <= 0 && powerAmount > 0 && hasEnoughEnergy === true) {
       World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
         priority: CreepSpawnRequestPriority.Low,
@@ -117,7 +117,6 @@ export class PowerProcessProcess implements Process, Procedural {
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.haulerTask(creep, powerSpawn, roomResource),
-      () => true,
     )
   }
 

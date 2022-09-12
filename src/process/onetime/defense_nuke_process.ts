@@ -339,7 +339,7 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       }
 
       const creepMaxCount = 3
-      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier)
 
       if (creepCount >= creepMaxCount) {
         return false
@@ -368,7 +368,6 @@ export class DefenseNukeProcess implements Process, Procedural, MessageObserver 
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
       creep => this.newTaskFor(creep, roomResource),
-      () => true,
     )
   }
 

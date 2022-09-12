@@ -415,7 +415,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
       }
     }
 
-    const allCreeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const allCreeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     const haulerSpec = this.haulerSpec
 
     const scouts: Creep[] = []
@@ -533,7 +533,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
             processLog(this, `${coloredText("[Warning]", "warn")} Whitelisted user ${profileLink(whitelistedHarvestCreep.owner.username)} is harvesting ${roomLink(this.targetRoomName)} power. quitting...`)
             this.pickupFinished = true
 
-            World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true).forEach(creep => {
+            World.resourcePools.getCreeps(this.parentRoomName, this.identifier).forEach(creep => {
               creep.v5task = null
             })
           }
@@ -722,7 +722,7 @@ export class HarvestPowerProcess implements Process, Procedural, MessageObserver
     processLog(this, `${roomLink(this.parentRoomName)} ${workingStatus} ${roomLink(this.targetRoomName)} ${scoutCount}S, ${attackerCount}A, ${healerCount}HE, ${rangedAttackerCount}RA, ${haulerCount}H ${haulerDescription}${estimation}`)
 
     if (this.pickupFinished === true) {
-      const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+      const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
       if (creepCount <= 0) {
         World.resourcePools.assignTasks(
           this.parentRoomName,

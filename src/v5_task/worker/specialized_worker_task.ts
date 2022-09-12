@@ -77,7 +77,7 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
-    const creepCount = World.resourcePools.countCreeps(this.roomName, null, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.roomName, null)
     const energyAmount = (objects.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
       + (objects.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
     const lackOfEnergy = energyAmount < 10000

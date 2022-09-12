@@ -133,7 +133,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
   }
 
   public creepFileterRoles(): CreepRole[] | null {
-    return [CreepRole.Claimer]
+    return null
   }
 
   public creepRequest(): GeneralCreepWorkerTaskCreepRequest | null {

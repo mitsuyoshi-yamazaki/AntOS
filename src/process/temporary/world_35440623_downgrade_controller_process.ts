@@ -114,7 +114,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       this.targetRoomNames.map(roomName => roomLink(roomName)).join(","),
     ]
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier)
     if (creeps.length > 0) {
       descriptions.push(`creep in ${creeps.map(creep => roomLink(creep.room.name)).join(",")}`)
     } else {
@@ -173,7 +173,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       return
     }
 
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (creepCount < 1 && (Game.time - this.attackControllerInterval) > this.lastSpawnTime) {
       if (this.spawnStopReasons.length <= 0) {
         this.spawnDowngrader(resources)
@@ -185,7 +185,6 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.newTaskFor(creep),
-      () => true,
     )
   }
 

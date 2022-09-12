@@ -102,7 +102,7 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
   }
 
   private keepUpgrading(roomResource: OwnedRoomResource): void {
-    const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier)
     if (creepCount < 4) {
       World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,
@@ -121,7 +121,6 @@ export class World42768365ProblemSolverProcess implements Process, Procedural {
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
       creep => this.upgradeTask(creep, roomResource),
-      () => true,
     )
   }
 

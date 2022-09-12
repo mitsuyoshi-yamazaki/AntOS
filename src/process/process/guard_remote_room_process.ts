@@ -250,7 +250,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       roomLink(this.targetRoomName),
       `${creepCount}/${this.numberOfCreeps}cr`,
@@ -448,7 +448,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
         return false

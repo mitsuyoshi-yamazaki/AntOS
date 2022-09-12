@@ -234,9 +234,6 @@ function attackTarget(roomResource: OwnedRoomResource, towerPositions: RoomPosit
     return false
   })()
   if (roomResource.roomInfo.config?.forceAttack !== true && canEscape === true) {
-    if (roomResource.room.name === "W43S2") {
-      console.log("can escape")
-    }
     return {
       target: null,
       allTargets: [],

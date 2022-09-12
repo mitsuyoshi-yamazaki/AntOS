@@ -110,7 +110,7 @@ export class SignProcess implements Process, Procedural {
     }
 
     if (signCreep == null) {
-      const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+      const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
       const creep = creeps[0]
 
       if (creep != null) {
@@ -134,7 +134,6 @@ export class SignProcess implements Process, Procedural {
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
       creep => this.newTask(creep),
-      () => true,
     )
   }
 

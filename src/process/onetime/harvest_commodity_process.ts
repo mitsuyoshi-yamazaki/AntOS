@@ -110,7 +110,7 @@ export class HarvestCommodityProcess implements Process, Procedural, MessageObse
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.taskIdentifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.taskIdentifier)
     const storageRoomDescription = this.storageRoomName == null ? "" : `-&gt ${roomLink(this.storageRoomName)}`
     const descriptions: string[] = [
       `${roomLink(this.parentRoomName)} -&gt ${coloredResourceType(this.depositInfo.commodityType)} in ${roomLink(this.depositInfo.roomName)}${storageRoomDescription}`,
@@ -182,7 +182,7 @@ export class HarvestCommodityProcess implements Process, Procedural, MessageObse
     const harvesters: Creep[] = []
     const haulers: Creep[] = []
 
-    World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier, () => true).forEach(creep => {
+    World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier).forEach(creep => {
       if (hasNecessaryRoles(creep, [...this.harvesterRoles])) {
         harvesters.push(creep)
         return

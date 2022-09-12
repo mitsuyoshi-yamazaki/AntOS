@@ -86,7 +86,6 @@ export class OwnedRoomHaulerTask extends Task {
 
   // ---- Run & Check Problem ---- //
   private runHauler(objects: OwnedRoomObjects, energySources: EnergySource[]): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
     const energyCapacity = objects.sources.reduce((result, current) => result + current.energyCapacity, 0)
     const minimumCreepCount = ((): number => {
@@ -101,7 +100,6 @@ export class OwnedRoomHaulerTask extends Task {
       const countBasedOnDistance = Math.ceil((baseCount / 2) * (this.storageDistance / 10)) * 0.8
       return Math.max(countBasedOnDistance, baseCount) + 1
     })()
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
     ]
@@ -119,7 +117,7 @@ export class OwnedRoomHaulerTask extends Task {
       })()
 
       if (shouldSpawn === true) {
-        const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
+        const problemFinder = this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, minimumCreepCount, null, CreepSpawnRequestPriority.Low)
         problemFinders.push(problemFinder)
       }
     }
@@ -137,7 +135,6 @@ export class OwnedRoomHaulerTask extends Task {
         }
         return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
       },
-      creepPoolFilter,
     )
 
     return problemFinders
@@ -145,14 +142,13 @@ export class OwnedRoomHaulerTask extends Task {
 
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
-    necessaryRoles: CreepRole[],
     filterTaskIdentifier: TaskIdentifier | null,
     minimumCreepCount: number,
     initialTask: (() => CreepTask) | null,
     priority: CreepSpawnRequestPriority,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], filterTaskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

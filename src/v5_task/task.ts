@@ -7,40 +7,40 @@ import type { ProblemSolver } from "v5_problem/problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import type { TaskState } from "./task_state"
 
-let resetTime = Game.time
-const resetInterval = 200
-const taskCpuUse = new Map<string, {sum: number, count: number}>()  // <task name>, <obj>
-const cpuProfiler = {
-  add(name: string, cpuUse: number): void {
-    if (Game.time >= resetTime + resetInterval) {
-      if (taskCpuUse.size > 0) {
-        const entries = Array.from(taskCpuUse.entries())
-        entries.sort((lhs, rhs) => rhs[1].sum - lhs[1].sum)
+// let resetTime = Game.time
+// const resetInterval = 200
+// const taskCpuUse = new Map<string, {sum: number, count: number}>()  // <task name>, <obj>
+// const cpuProfiler = {
+//   add(name: string, cpuUse: number): void {
+//     if (Game.time >= resetTime + resetInterval) {
+//       if (taskCpuUse.size > 0) {
+//         const entries = Array.from(taskCpuUse.entries())
+//         entries.sort((lhs, rhs) => rhs[1].sum - lhs[1].sum)
 
-        const messages: string[] = entries.map(entry => `- ${entry[1].count}times, ave: ${Math.floor((entry[1].sum / entry[1].count) * 100) / 100}: ${entry[0]}`)
-        PrimitiveLogger.log(`${coloredText("[CPU]", "warn")}\n${messages.join("\n")}`)
-        taskCpuUse.clear()
-      }
-      resetTime = Game.time
-    }
+//         const messages: string[] = entries.map(entry => `- ${entry[1].count}times, ave: ${Math.floor((entry[1].sum / entry[1].count) * 100) / 100}: ${entry[0]}`)
+//         PrimitiveLogger.log(`${coloredText("[CPU]", "warn")}\n${messages.join("\n")}`)
+//         taskCpuUse.clear()
+//       }
+//       resetTime = Game.time
+//     }
 
-    const info = ((): { sum: number, count: number } => {
-      const stored = taskCpuUse.get(name)
-      if (stored != null) {
-        return stored
-      }
-      const newInfo = {
-        sum: 0,
-        count: 0,
-      }
-      taskCpuUse.set(name, newInfo)
-      return newInfo
-    })()
+//     const info = ((): { sum: number, count: number } => {
+//       const stored = taskCpuUse.get(name)
+//       if (stored != null) {
+//         return stored
+//       }
+//       const newInfo = {
+//         sum: 0,
+//         count: 0,
+//       }
+//       taskCpuUse.set(name, newInfo)
+//       return newInfo
+//     })()
 
-    info.count += 1
-    info.sum += cpuUse
-  },
-}
+//     info.count += 1
+//     info.sum += cpuUse
+//   },
+// }
 
 // ---- Types and Constants ---- //
 export type TaskIdentifier = string
@@ -144,17 +144,17 @@ export abstract class Task implements Stateful {
       // const cpuUses: {name: string, cpu: number}[] = []
 
       this.children.forEach(task => {
-        const before = Game.cpu.getUsed()
+        // const before = Game.cpu.getUsed()
         const status = task.run(objects)
-        const cpuUse = Game.cpu.getUsed() - before
-        if (cpuUse > 3 && task.constructor.name === "RemoteRoomKeeperTask") { // 循環参照になるためinstanceOfは使用しない
-          // cpuUses.push({
-          //   name: task.taskIdentifier,
-          //   cpu: cpuUse,
-          // })
+        // const cpuUse = Game.cpu.getUsed() - before
+        // if (cpuUse > 3 && task.constructor.name === "RemoteRoomKeeperTask") { // 循環参照になるためinstanceOfは使用しない
+        //   // cpuUses.push({
+        //   //   name: task.taskIdentifier,
+        //   //   cpu: cpuUse,
+        //   // })
 
-          cpuProfiler.add(task.taskIdentifier, cpuUse)
-        }
+        //   cpuProfiler.add(task.taskIdentifier, cpuUse)
+        // }
 
         switch (status) {
         case TaskStatus.InProgress:

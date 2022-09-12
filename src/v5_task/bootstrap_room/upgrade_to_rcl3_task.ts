@@ -172,7 +172,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepFileterRoles(): CreepRole[] | null {
-    return [CreepRole.Worker, CreepRole.Mover]
+    return null
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {

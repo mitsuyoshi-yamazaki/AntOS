@@ -74,7 +74,7 @@ export class BoostLabChargerProcess implements Process, Procedural {
   }
 
   public processShortDescription(): string {
-    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const boostDescriptions = ((): string[] => {
       const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
       if (roomResource == null) {
@@ -131,7 +131,7 @@ export class BoostLabChargerProcess implements Process, Procedural {
       return false
     })()
     const shouldCollectResources = roomResource.roomInfo.config?.collectResources ?? false
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (creepCount < 1 && (needResourceTransfer === true || shouldCollectResources === true)) {
       this.requestCreep()
     }
@@ -188,7 +188,6 @@ export class BoostLabChargerProcess implements Process, Procedural {
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.creepTask(creep, terminal, labs, shouldCollectResources, roomResource),
-      () => true,
     )
   }
 
