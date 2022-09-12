@@ -4,6 +4,7 @@ local_configs.ts
 
 #
 /dist
+/temp
 /.rpt2_cache
 /node_modules
 
