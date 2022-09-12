@@ -1,5 +1,4 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { coloredResourceType, roomLink } from "utility/log"
@@ -7,6 +6,7 @@ import { MineralCompoundIngredients, ResourceConstant } from "shared/utility/res
 import { Result } from "shared/utility/result"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
+import { SystemCalls } from "os/system_calls"
 
 export const defaultMaxWallHits = 10000000
 
@@ -369,7 +369,7 @@ export class OwnedRoomInfoAccessor {
 
       const runningProcess = labChargerProcessFor(this.roomName)
       if (runningProcess == null) {
-        OperatingSystem.os.addProcess(null, processId => BoostLabChargerProcess.create(processId, this.roomName))
+        SystemCalls.systemCall()?.addProcess(null, processId => BoostLabChargerProcess.create(processId, this.roomName))
       }
 
       return Result.Succeeded({
@@ -635,7 +635,9 @@ export class OwnedRoomInfoAccessor {
 }
 
 function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
-  for (const processInfo of OperatingSystem.os.listAllProcesses()) {
+  const processList = SystemCalls.systemCall()?.listAllProcesses() ?? []
+
+  for (const processInfo of processList) {
     const process = processInfo.process
     if (!(process instanceof BoostLabChargerProcess)) {
       continue

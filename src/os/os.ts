@@ -13,6 +13,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
 import { PrimitiveLogger } from "./infrastructure/primitive_logger"
+import { SystemCalls } from "./system_calls"
 
 interface InternalProcessInfo {
   running: boolean
@@ -135,7 +136,12 @@ class ProcessStore {
 export class OperatingSystem {
   static readonly os = (() => {
     init()
-    return new OperatingSystem()
+    const os = new OperatingSystem()
+    SystemCalls.load({
+      addProcess: os.addProcess,
+      listAllProcesses: os.listAllProcesses,
+    })
+    return os
   })()
 
   private didSetup = false
@@ -150,6 +156,7 @@ export class OperatingSystem {
   }
 
   // ---- Process ---- //
+  /** @deprecated use SystemCalls.systemCall?.addProces() */
   public addProcess<T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
@@ -237,6 +244,7 @@ export class OperatingSystem {
     }
   }
 
+  /** @deprecated use SystemCalls.systemCall?.listAllProcesses() */
   public listAllProcesses(): ProcessInfo[] {
     return this.processStore.list().map(processInfo => {
       const info: ProcessInfo = {
