@@ -140,6 +140,7 @@ export class OperatingSystem {
     SystemCalls.load({
       addProcess: os.addProcess,
       listAllProcesses: os.listAllProcesses,
+      suspendProcess: os.suspendProcess,
     })
     return os
   })()
@@ -183,6 +184,7 @@ export class OperatingSystem {
     this.processIdsToSuspend.push(processId)
   }
 
+  /** @deprecated use SystemCalls.systemCall?.suspendProcess() */
   public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
