@@ -138,9 +138,9 @@ export class OperatingSystem {
     init()
     const os = new OperatingSystem()
     SystemCalls.load({
-      addProcess: os.addProcess,
-      listAllProcesses: os.listAllProcesses,
-      suspendProcess: os.suspendProcess,
+      addProcess: <T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T => os.addProcess(parentProcessId, maker),
+      listAllProcesses: (): ProcessInfo[] => os.listAllProcesses(),
+      suspendProcess: (processId: ProcessId): Result < string, string> => os.suspendProcess(processId),
     })
     return os
   })()
