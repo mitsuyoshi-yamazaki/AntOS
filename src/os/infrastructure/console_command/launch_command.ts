@@ -78,6 +78,7 @@ import { World42791528ProblemFinderProcess } from "process/temporary/world_42791
 // import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
 import { MapVisualProcess } from "process/onetime/map_visual_process"
 import { RoomCoordinate } from "utility/room_coordinate"
+import { DistributePowerProcess } from "process/process/distribute_power_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1275,6 +1276,19 @@ ProcessLauncher.register("MapVisualProcess", args => {
     return Result.Succeeded((processId) => MapVisualProcess.create(
       processId,
       duration,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DistributePowerProcess", args => {
+  try {
+    const interval = args.int("interval").parse({ min: 1 })
+
+    return Result.Succeeded((processId) => DistributePowerProcess.create(
+      processId,
+      interval,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
