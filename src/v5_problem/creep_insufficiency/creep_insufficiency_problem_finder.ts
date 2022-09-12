@@ -24,7 +24,7 @@ export class CreepInsufficiencyProblemFinder implements ProblemFinder {
   public constructor(
     public readonly roomName: RoomName,
     public readonly necessaryRoles: CreepRole[] | null,
-    public readonly creepRoles: CreepRole[],
+    public readonly creepRoles: CreepRole[] | null,
     public readonly targetTaskIdentifier: TaskIdentifier | null,
     public readonly minimumCreepCount: number,
   ) {
@@ -64,7 +64,7 @@ export class CreepInsufficiencyProblemFinder implements ProblemFinder {
       return []
     }
     return [
-      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.necessaryRoles, this.targetTaskIdentifier, this.minimumCreepCount)
+      CreepInsufficiencyProblemSolver.create(this.identifier, this.roomName, this.creepRoles, this.targetTaskIdentifier, this.minimumCreepCount)
     ]
   }
 }
