@@ -230,7 +230,12 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
       const storedResourceType = (Array.from(Object.keys(creep.store)) as ResourceConstant[])[0]
       if (storedResourceType != null) {
-        const transferTarget = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        const transferTarget = ((): StructureTerminal | StructureStorage | null => {
+          if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.store.getFreeCapacity() > 0) {
+            return objects.activeStructures.terminal
+          }
+          return objects.activeStructures.storage
+        })()
         if (transferTarget != null) {
           return MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, storedResourceType))
         }
