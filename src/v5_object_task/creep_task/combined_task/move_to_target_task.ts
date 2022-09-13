@@ -11,6 +11,8 @@ import { coloredText, roomLink } from "utility/log"
 import { DirectionConstants } from "shared/utility/direction"
 import { GameConstants } from "utility/constants"
 import { avoidConstructionSitesCostCallback } from "../meta_task/move_to_task"
+import { GameMap } from "game/game_map"
+import { moveToRoom } from "script/move_to_room"
 
 const noPathPositions: string[] = []
 const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition): string => {
@@ -154,6 +156,13 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE: {
+      const targetRoomName = this.apiWrapper.target.pos.roomName
+      if (creep.room.name !== targetRoomName) {
+        const waypoints = GameMap.getWaypoints(creep.room.name, targetRoomName) ?? []
+        moveToRoom(creep, targetRoomName, waypoints)
+        return TaskProgressType.InProgress
+      }
+
       const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
       if (this.options.isAllyRoom === true) {
         moveToOps.ignoreCreeps = false
