@@ -13,7 +13,8 @@ plugins:
 ignorePatterns:
   - src/_old/**/*
   - src/error_mapper/**/*
-  - rollup.config.js
+  - rollup_build.config.js
+  - rollup_deploy.config.js
   - dist/**/*
 rules:
   indent:
