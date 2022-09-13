@@ -219,7 +219,7 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
   }
 
   private runScout(): void {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const insufficientCreepCount = this.numberOfCreeps - creepCount
     if (insufficientCreepCount > 0) {
       this.sendScout()
@@ -229,7 +229,6 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep), this.fleeRange),
-      () => true,
     )
   }
 

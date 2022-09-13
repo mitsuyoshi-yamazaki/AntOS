@@ -1,5 +1,6 @@
 import { Result } from "shared/utility/result"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { ProcessMemory } from "./os_memory"
 import type { Process, ProcessId } from "process/process"
 import { RootProcess } from "./infrastructure/root"
 import { init as initRoomPositionPrototype } from "prototype/room_position"
@@ -8,23 +9,11 @@ import { init as initCreepPrototype } from "prototype/creep"
 import { init as initPowerCreepPrototype } from "prototype/power_creep"
 import { init as initStructureSpawnPrototype } from "prototype/structure_spawn"
 import { init as initRoomPrototype } from "prototype/room"
-import type { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessInfo } from "./os_process_info"
 import type { ProcessLauncher } from "./os_process_launcher"
-import { LoggerMemory } from "./infrastructure/logger"
 import { PrimitiveLogger } from "./infrastructure/primitive_logger"
-
-interface ProcessMemory {
-  /** running */
-  readonly r: boolean
-
-  /** process state */
-  readonly s: ProcessState
-
-  readonly childProcessIds: ProcessId[]
-  readonly executionPriority: number
-}
+import { SystemCalls } from "./system_calls"
 
 interface InternalProcessInfo {
   running: boolean
@@ -33,18 +22,6 @@ interface InternalProcessInfo {
 
   /** 最上位（親なし）が0 */
   readonly executionPriority: number
-}
-
-export interface OSMemory {
-  p: ProcessMemory[]  // processes (stateless)
-  config: {
-    /** 毎tickメモリ呼び出しを行う: ProcessStateを手動で編集することが可能になる */
-    shouldReadMemory?: boolean
-  }
-  logger: LoggerMemory
-  enabledDrivers: {
-    swcAllyRequest: boolean
-  },
 }
 
 function init(): void {
@@ -159,7 +136,13 @@ class ProcessStore {
 export class OperatingSystem {
   static readonly os = (() => {
     init()
-    return new OperatingSystem()
+    const os = new OperatingSystem()
+    SystemCalls.load({
+      addProcess: <T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T => os.addProcess(parentProcessId, maker),
+      listAllProcesses: (): ProcessInfo[] => os.listAllProcesses(),
+      suspendProcess: (processId: ProcessId): Result < string, string> => os.suspendProcess(processId),
+    })
+    return os
   })()
 
   private didSetup = false
@@ -174,11 +157,15 @@ export class OperatingSystem {
   }
 
   // ---- Process ---- //
+  /** @deprecated use SystemCalls.systemCall?.addProces() */
   public addProcess<T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T {
     const processId = this.getNewProcessId()
     const process = maker(processId)
     this.processStore.add(process, parentProcessId)
     PrimitiveLogger.log(`Launch process ${process.taskIdentifier}, ID: ${processId}`)
+
+    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+
     return process
   }
 
@@ -197,6 +184,7 @@ export class OperatingSystem {
     this.processIdsToSuspend.push(processId)
   }
 
+  /** @deprecated use SystemCalls.systemCall?.suspendProcess() */
   public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
@@ -234,6 +222,9 @@ export class OperatingSystem {
     if (this.processIdsToKill.includes(processId) !== true) {
       this.processIdsToKill.push(processId)
     }
+
+    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+
     return Result.Succeeded(process.constructor.name)
   }
 
@@ -255,6 +246,7 @@ export class OperatingSystem {
     }
   }
 
+  /** @deprecated use SystemCalls.systemCall?.listAllProcesses() */
   public listAllProcesses(): ProcessInfo[] {
     return this.processStore.list().map(processInfo => {
       const info: ProcessInfo = {
@@ -287,7 +279,7 @@ export class OperatingSystem {
       this.setup()
       this.didSetup = true
     } else {
-      if (Memory.os.config.shouldReadMemory === true) {
+      if (Memory.os.config.shouldReadMemory === true) { // 手動等でメモリ内容が編集された場合
         ErrorMapper.wrapLoop(() => {
           this.restoreProcesses()
         }, "OperatingSystem.restoreProcesses()")()
@@ -375,6 +367,10 @@ export class OperatingSystem {
   }
 
   private storeProcesses(): void {
+    if (Game.serialization.canSkip() === true) {
+      return
+    }
+
     const processesMemory: ProcessMemory[] = []
     this.processStore.list().forEach(processInfo => {
       const process = processInfo.process
@@ -408,6 +404,8 @@ export class OperatingSystem {
     })
 
     try {
+      // const cpuUses: {name: string, cpu: number}[] = []
+
       // 強制終了処理
       // let lastProcess: InternalProcessInfo | null = null
       runningProcessInfo.forEach(processInfo => {
@@ -417,9 +415,27 @@ export class OperatingSystem {
         // lastProcess = processInfo
         const process = processInfo.process
         ErrorMapper.wrapLoop((): void => {
+          // const before = Game.cpu.getUsed()
           process.runOnTick()
+          // const cpuUse = Game.cpu.getUsed() - before
+          // if (cpuUse > 10) {
+          //   cpuUses.push({
+          //     name: `${process.taskIdentifier} - ${process.processShortDescription != null ? process.processShortDescription() : "no desc"}`,
+          //     cpu: cpuUse,
+          //   })
+          // }
         }, `Procedural process ${process.processId} run()`)()
       })
+
+      // if (cpuUses.length > 0) {
+      //   cpuUses.sort((lhs, rhs) => rhs.cpu - lhs.cpu)
+      //   const logCount = 20
+      //   if (cpuUses.length > logCount) {
+      //     cpuUses.splice(logCount, cpuUses.length - logCount)
+      //   }
+      //   console.log(`[Process] large CPU use in ${Game.time}:\n${cpuUses.map(use => `- ${Math.floor(use.cpu * 100) / 100}, ${use.name}`).join("\n")}`)
+      // }
+
     } catch (error) {
       PrimitiveLogger.log(`${error}`)
     }
@@ -517,7 +533,5 @@ export class OperatingSystem {
     if (messages.length > 0) {
       PrimitiveLogger.log(`Kill process\n${messages.join("\n")}`)
     }
-
-    this.storeProcesses()
   }
 }

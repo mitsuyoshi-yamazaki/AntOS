@@ -1,5 +1,3 @@
-import { OSMemory } from "../os/os"
-
 import { LeagueOfAutomatedNations } from "./loanUserList"
 import { SystemInfo } from "shared/utility/system_info"
 import type { RoomInfoMemory as V5RoomInfoMemory } from "world_info/room_info"
@@ -7,10 +5,18 @@ import type { RoomInfoType } from "room_resource/room_info"
 import type { GameInfoMemory } from "game/game_info"
 import { Environment } from "utility/environment"
 import type { GameMapMemory } from "game/game_map"
-import { GclFarmMemory } from "room_resource/gcl_farm_resources"
-import { PathCacheMemory } from "prototype/travel_to"
-import { UniqueIdMemory } from "utility/unique_id"
-import { RoomName } from "shared/utility/room_name_types"
+import type { GclFarmMemory } from "room_resource/gcl_farm_resources"
+import type { PathCacheMemory } from "prototype/travel_to"
+import type { UniqueIdMemory } from "utility/unique_id"
+import type { RoomName } from "shared/utility/room_name_types"
+import type { OSMemory } from "os/os_memory"
+import { coloredText } from "utility/log"
+
+const serialization = {
+  canSkip: false,
+  shouldSerializeInNextTick: false,
+  finished: false,  // serializeしたかどうかに関わらず、tick中の処理が終わったらtrue. consoleで手動処理を行った際にshouldSerializeInNextTickを有効化するために用いる
+}
 
 declare global {
   interface Game {
@@ -21,6 +27,14 @@ declare global {
     // Alliance
     whitelist: string[]
     isEnemy(player: Owner): boolean
+
+    serialization: {
+      shouldSerializeMemory(): void
+      canSkip(): boolean
+
+      /** memhack以外から呼び出さないこと */
+      tickFinished(): void
+    }
   }
 
   interface Memory {
@@ -42,6 +56,12 @@ declare global {
 
     LOANalliance: string | undefined
     napAlliances: string[]
+
+    skipSerialization: {
+      by: number | null
+      interval: number | null
+      test: boolean
+    }
   }
 }
 
@@ -62,4 +82,53 @@ export function tick(): void {
 
   LeagueOfAutomatedNations.populate()
   Game.whitelist = [...LeagueOfAutomatedNations.LOANlist].concat(Memory.gameInfo.whitelist)
+
+  // ---- Serialization ---- //
+  if (serialization.shouldSerializeInNextTick === true) {
+    serialization.canSkip = false
+  } else {
+    serialization.canSkip = ((): boolean => {
+      // if (Memory.skipSerialization.test === true) {
+      //   return true  // テストコード無効化
+      // }
+      if (Memory.skipSerialization.by != null && Game.time < Memory.skipSerialization.by) {
+        return true
+      }
+      if (Memory.skipSerialization.interval != null && ((Game.time % Memory.skipSerialization.interval) !== 0)) {
+        return true
+      }
+      return false
+    })()
+  }
+  serialization.finished = false
+  serialization.shouldSerializeInNextTick = false
+
+  Game.serialization = {
+    canSkip(): boolean {
+      return serialization.canSkip
+    },
+
+    shouldSerializeMemory(): void {
+      if (serialization.finished === true) {
+        if (serialization.shouldSerializeInNextTick === true) {
+          return
+        }
+        serialization.shouldSerializeInNextTick = true
+        console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization in next tick (${Game.time})`)
+        return
+      }
+      if (serialization.canSkip !== true) {
+        console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization at ${Game.time}`)
+      }
+      serialization.canSkip = true
+    },
+
+    tickFinished(): void {
+      serialization.finished = true
+    },
+  }
+
+  if (Game.serialization.canSkip() === true) {
+    console.log(`${coloredText("[CAUTION]", "critical")} can skip memory serialization at ${Game.time}`)
+  }
 }

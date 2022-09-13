@@ -127,7 +127,7 @@ export class WithdrawStructureProcess implements Process, Procedural {
       return [structure]
     })
 
-    const haulerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+    const haulerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier)
     const shouldSpawn = ((): boolean => {
       if (haulerCount > 0) {
         return false
@@ -172,7 +172,6 @@ export class WithdrawStructureProcess implements Process, Procedural {
         }
         return FleeFromAttackerTask.create(task)
       },
-      () => true,
     )
   }
 

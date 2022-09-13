@@ -202,7 +202,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     }
 
     const targetRooms = [...this.targetRooms]
-    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
 
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}
@@ -287,7 +287,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
           return
         }
       } else {  // no ATTACK
-        creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
+        if (attackTarget.creep.pos.isRoomEdge !== true) {
+          creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
+        }
         if (attackTarget.range > 1) {
           creep.heal(creep)
         } else {

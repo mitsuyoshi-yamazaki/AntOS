@@ -17,7 +17,7 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
-import { bodyCost } from "utility/creep_body"
+import { bodyCost, CreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
@@ -30,9 +30,19 @@ import { roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
 
-const minimumNumberOfCreeps = 6
-const defaultNumberOfCreeps = 10
-const increasedNumberOfCreeps = 15
+const generalWorkerSpec = (() => {
+  const bodyUnit = [CARRY, WORK, MOVE, MOVE]
+  const unitCount = 6
+  const body = Array(unitCount).fill(bodyUnit).flatMap(x => x)
+  const maxEnergyCapacity = CreepBody.cost(body)
+
+  return {
+    bodyUnit,
+    unitCount,
+    body,
+    maxEnergyCapacity,
+  }
+})()
 
 function neighboursToObserve(roomName: RoomName): RoomName[] {
   const exits = Game.map.describeExits(roomName)
@@ -162,7 +172,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepFileterRoles(): CreepRole[] | null {
-    return [CreepRole.Worker, CreepRole.Mover]
+    return null
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
@@ -170,30 +180,16 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return null
     }
 
-    const numberOfCreeps = ((): number => {
-      if (this.targetRoomName === "W11S14" || this.targetRoomName === "W17S11") {
-        const targetRoom = Game.rooms[this.targetRoomName]
-        if (targetRoom == null) {
-          return increasedNumberOfCreeps
-        }
-        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length <= 0) {
-          return increasedNumberOfCreeps
-        }
-      }
-      if (this.targetRoomName === "W15S8") {
-        return minimumNumberOfCreeps
-      }
-      return defaultNumberOfCreeps
-    })()
+    const { body, creepCount } = this.creepBody(objects.controller.room.energyCapacityAvailable)
 
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
       taskIdentifier: this.taskIdentifier,
-      numberOfCreeps,
+      numberOfCreeps: creepCount,
       codename: this.codename,
       initialTask: MoveToRoomTask.create(this.targetRoomName, this.waypoints),
       priority: CreepSpawnRequestPriority.Low,
-      body: this.creepBody(objects.controller.room.energyCapacityAvailable)
+      body,
     }
   }
 
@@ -472,17 +468,18 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   // ---- Creep Body ---- //
-  private creepBody(energyCapacity: number): BodyPartConstant[] {
-    const bodyUnit = [CARRY, WORK, MOVE, MOVE]
-    const unitCost = bodyCost(bodyUnit)
-    const unitMaxCount = 6
-    const unitCount = Math.max(Math.min(Math.floor(energyCapacity / unitCost), unitMaxCount), 1)
-    const body: BodyPartConstant[] = []
-
-    for (let i = 0; i < unitCount; i += 1) {
-      body.push(...bodyUnit)
+  private creepBody(energyCapacity: number): { body: BodyPartConstant[], creepCount: number } {
+    if (energyCapacity <= generalWorkerSpec.maxEnergyCapacity) {
+      return {
+        body: [...generalWorkerSpec.body],
+        creepCount: 6,
+      }
     }
-    return body
+
+    return {
+      body: CreepBody.create([], generalWorkerSpec.bodyUnit, energyCapacity, generalWorkerSpec.unitCount + 4),
+      creepCount: 4,
+    }
   }
 
   // ---- Take Over Creeps ---- //

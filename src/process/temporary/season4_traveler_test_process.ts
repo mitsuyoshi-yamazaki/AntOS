@@ -113,7 +113,7 @@ export class Season4TravelerTestProcess implements Process, Procedural, MessageO
     })()
 
     if (creep == null && this.creepName == null) {
-      const retrievedCreep = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)[0]
+      const retrievedCreep = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)[0]
       if (retrievedCreep != null) {
         this.creepName = retrievedCreep.name
         return

@@ -19,6 +19,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { Timestamp } from "shared/utility/timestamp"
 import { Position } from "prototype/room_position"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
+import { CreepBody } from "utility/creep_body"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -34,6 +35,13 @@ export type GuardRemoteRoomProcessCreepType = typeof guardRemoteRoomProcessCreep
 
 export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemoteRoomProcessCreepType => {
   return (guardRemoteRoomProcessCreepType as (readonly string[])).includes(obj)
+}
+
+export const canSpawnGuardCreep = (guardCreepType: GuardRemoteRoomProcessCreepType, energyCapacity: number): boolean => {
+  const body = creepSpecFor(guardCreepType).body
+  const cost = CreepBody.cost(body)
+
+  return cost <= energyCapacity
 }
 
 const finishConditionCases = [
@@ -81,8 +89,8 @@ const smallRangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL,
   MOVE,
+  HEAL, HEAL,
 ]
 const rangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -93,8 +101,8 @@ const rangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const highSpeedangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -106,22 +114,22 @@ const highSpeedangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const heavyRangedAttackerBody: BodyPartConstant[] = [
-  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL,
-  MOVE,
 ]
 
 export interface GuardRemoteRoomProcessState extends ProcessState {
@@ -242,17 +250,21 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       roomLink(this.targetRoomName),
       `${creepCount}/${this.numberOfCreeps}cr`,
       this.creepType,
     ]
 
+    if (this.finishCondition.case !== "never") {
+      descriptions.push(`condition: ${this.finishCondition.case}`)
+    }
+
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`stopped by: ${this.stopSpawningReasons.join(", ")}`)
     }
-    return descriptions.join(" ")
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -436,7 +448,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       return
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
         return false
@@ -615,7 +627,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
     if (movement.attackedTarget != null) {
       const attackedTarget = movement.attackedTarget
-      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true) {
+      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && (attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true)) {
         creep.moveTo(movement.attackedTarget)
       }
       this.talk(creep)
@@ -688,7 +700,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
         creep.rangedHeal(damagedCreep)
       }
-      creep.moveTo(damagedCreep)
+      if (damagedCreep.pos.isRoomEdge !== true) {
+        creep.moveTo(damagedCreep)
+      }
       this.talk(creep)
       return
     }
@@ -736,7 +750,9 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range === 3) {
         // do nothing
       } else {
-        creep.moveTo(target)
+        if (target.pos.isRoomEdge !== true) {
+          creep.moveTo(target)
+        }
       }
     } else {
       if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
@@ -781,15 +797,22 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         if (hasAttackPart === true) {
           if (range <= 2) {
             this.fleeFrom(closestHostile.pos, creep, 4)
+            moved = true
           } else if (range === 3) {
             // do nothing
+            moved = true
           } else {
-            creep.moveTo(closestHostile)
+            if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
+              creep.moveTo(closestHostile)
+              moved = true
+            }
           }
         } else {
-          creep.moveTo(closestHostile)
+          if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
+            creep.moveTo(closestHostile)
+            moved = true
+          }
         }
-        moved = true
       }
     }
     return { attackedTarget, moved }

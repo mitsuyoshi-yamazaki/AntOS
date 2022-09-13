@@ -39,7 +39,6 @@ export class SwampRunnerTransferTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly apiWrapper: ApiWrapperType,
     private droppedResourceLocation: RoomPosition | null,
     private lastTickPosition: RoomPosition | null,
@@ -48,7 +47,6 @@ export class SwampRunnerTransferTask implements CreepTask {
 
   public encode(): SwampRunnerTransferTaskState {
     return {
-      s: this.startTime,
       t: "SwampRunnerTransferTask",
       as: this.apiWrapper.encode(),
       d: this.droppedResourceLocation?.encode() ?? null,
@@ -65,11 +63,11 @@ export class SwampRunnerTransferTask implements CreepTask {
     })
     const resourceLocation = parsePosition(state.d)
     const lastTickPosition = parsePosition(state.p)
-    return new SwampRunnerTransferTask(state.s, apiWrapper, resourceLocation, lastTickPosition)
+    return new SwampRunnerTransferTask(apiWrapper, resourceLocation, lastTickPosition)
   }
 
   public static create(apiWrapper: ApiWrapperType): SwampRunnerTransferTask {
-    return new SwampRunnerTransferTask(Game.time, apiWrapper, null, null)
+    return new SwampRunnerTransferTask(apiWrapper, null, null)
   }
 
   public run(creep: Creep): TaskProgressType {

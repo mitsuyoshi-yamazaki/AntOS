@@ -44,6 +44,17 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
 
     this.taskIdentifier = `${this.constructor.name}_${this.roomName}`
     this.codename = generateCodename(this.taskIdentifier, this.startTime)
+
+    if (upgraderPositions.length < 5) {
+      const room = Game.rooms[roomName]
+      if (room?.controller?.my === true && room.controller.level < 8) {
+        if (upgraderPositions.length <= 0) {
+          PrimitiveLogger.programError(`${this.taskIdentifier} no upgrader positions`)
+        } else {
+          PrimitiveLogger.programError(`${this.taskIdentifier} only ${upgraderPositions.length} upgrader positions ${upgraderPositions}`)
+        }
+      }
+    }
   }
 
   public encode(): UpgraderTaskState {
@@ -264,7 +275,7 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       return true
     })
     if (emptyPositions[0] == null) {
-      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position (${this.upgraderPositions.map(position => `${position}: ${position.v5TargetedBy}`)})`)
+      PrimitiveLogger.fatal(`[Program bug] UpgraderTask doesn't have empty position\navailablePositions: ${this.availablePositions.join(", ")}\nupgraderPositions: (${this.upgraderPositions.map(position => `${position}: ${position.v5TargetedBy}`)})`)
       return null
     }
     return emptyPositions[0]

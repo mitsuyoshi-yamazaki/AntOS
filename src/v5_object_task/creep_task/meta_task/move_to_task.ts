@@ -23,7 +23,6 @@ export class MoveToTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     public readonly destinationPosition: RoomPosition,
     public readonly range: number,
     public readonly ignoreSwamp: boolean,
@@ -34,7 +33,6 @@ export class MoveToTask implements CreepTask {
 
   public encode(): MoveToTaskState {
     return {
-      s: this.startTime,
       t: "MoveToTask",
       d: this.destinationPosition.encode(),
       r: this.range,
@@ -44,11 +42,11 @@ export class MoveToTask implements CreepTask {
   }
 
   public static decode(state: MoveToTaskState): MoveToTask {
-    return new MoveToTask(state.s, decodeRoomPosition(state.d), state.r, state.ignoreSwamp ?? false, state.isAllyRoom ?? false)
+    return new MoveToTask(decodeRoomPosition(state.d), state.r, state.ignoreSwamp ?? false, state.isAllyRoom ?? false)
   }
 
   public static create(destinationPosition: RoomPosition, range: number, options?: { ignoreSwamp?: boolean, isAllyRoom?: boolean}): MoveToTask {
-    return new MoveToTask(Game.time, destinationPosition, range, options?.ignoreSwamp ?? false, options?.isAllyRoom ?? false)
+    return new MoveToTask(destinationPosition, range, options?.ignoreSwamp ?? false, options?.isAllyRoom ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {

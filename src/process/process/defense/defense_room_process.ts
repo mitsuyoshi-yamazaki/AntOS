@@ -151,7 +151,7 @@ export class DefenseRoomProcess implements Process, Procedural {
     const intercepters: Creep[] = []
     const repairers: Creep[] = []
 
-    const processCreeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const processCreeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
     processCreeps.forEach(creep => {
       if (hasNecessaryRoles(creep, attackerRoles) === true) {
         intercepters.push(creep)

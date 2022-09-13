@@ -6,7 +6,6 @@ import { generateCodename } from "utility/unique_id"
 import { Timestamp } from "shared/utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
 import { processLog } from "os/infrastructure/logger"
-import { OperatingSystem } from "os/os"
 import { BootstrapRoomManagerProcess } from "process/process/bootstrap_room_manager_process"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
@@ -14,6 +13,7 @@ import { NormalRoomInfo } from "room_resource/room_info"
 import { ProcessDecoder } from "process/process_decoder"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("World35588848GclManagerProcess", state => {
   return World35588848GclManagerProcess.decode(state as World35588848GclManagerProcessState)
@@ -98,7 +98,7 @@ export class World35588848GclManagerProcess implements Process, Procedural {
       return
     }
 
-    const bootstrapRoomManagerProcess = OperatingSystem.os.listAllProcesses()
+    const bootstrapRoomManagerProcess = (SystemCalls.systemCall()?.listAllProcesses() ?? [])
       .find(processInfo => processInfo.process instanceof BootstrapRoomManagerProcess)?.process as BootstrapRoomManagerProcess ?? null
     if (bootstrapRoomManagerProcess == null) {
       console.log("no bootstrapRoomManagerProcess")

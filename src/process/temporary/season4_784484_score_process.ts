@@ -251,7 +251,7 @@ export class Season4784484ScoreProcess implements Process, Procedural, MessageOb
         return
       }
 
-      const allCreeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+      const allCreeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
       for (const creep of allCreeps) {
         if (hasNecessaryRoles(creep, haulerRoles) === true) {
           this.haulerName = creep.name

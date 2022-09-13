@@ -79,7 +79,7 @@ export class ScoutRoomProcess implements Process, Procedural {
 
   public runOnTick(): void {
     if (this.creepName == null) {
-      const scout = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)[0]
+      const scout = World.resourcePools.getCreeps(this.roomName, this.identifier)[0]
       if (scout != null) {
         this.creepName = scout.name
       }
@@ -107,7 +107,6 @@ export class ScoutRoomProcess implements Process, Procedural {
       this.identifier,
       CreepPoolAssignPriority.Low,
       () => this.scoutTask(),
-      () => true,
     )
   }
 

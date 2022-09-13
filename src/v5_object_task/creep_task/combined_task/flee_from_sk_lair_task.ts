@@ -5,6 +5,7 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
 export interface FleeFromSKLairTaskState extends CreepTaskState {
+  s: number // startTime
   childTaskState: CreepTaskState
   didFlee: boolean
 }

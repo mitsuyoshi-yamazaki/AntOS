@@ -21,6 +21,7 @@ export interface CronProcessState extends ProcessState {
   readonly stopReasons: string[]
 }
 
+/** @deprecated 循環importを回避するのが大変なため */
 export class CronProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 

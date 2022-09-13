@@ -93,9 +93,7 @@ export class PrimitiveWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const necessaryRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = null
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const neighbourRoomNames = RoomResources.getRoomInfo(this.roomName)?.neighbourRoomNames ?? []
     const harvestableNeighbourRooms: {roomName: RoomName, roomInfo: NormalRoomInfo}[] = neighbourRoomNames.flatMap(neighbourRoomName => {
@@ -123,7 +121,7 @@ export class PrimitiveWorkerTask extends Task {
 
     if (objects.roomInfo.bootstrapping !== true) {
       const neighbourRoomSourceCount = harvestableNeighbourRooms.reduce((result, current) => result + current.roomInfo.numberOfSources, 0)
-      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, filterTaskIdentifier, neighbourRoomSourceCount))
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier, neighbourRoomSourceCount))
     }
 
     this.checkProblemFinders(problemFinders)
@@ -135,18 +133,17 @@ export class PrimitiveWorkerTask extends Task {
       (creep: Creep): CreepTask | null => {
         return this.newTaskFor(creep, objects, harvestableNeighbourRooms.map(info => info.roomName))
       },
-      creepPoolFilter,
     )
 
     return TaskStatus.InProgress
   }
 
   // ---- Problem Solver ---- //
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null, neighbourRoomSourceCount: number): ProblemFinder {
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, filterTaskIdentifier: TaskIdentifier | null, neighbourRoomSourceCount: number): ProblemFinder {
     const creepSpec = this.creepSpec(objects, neighbourRoomSourceCount)
 
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, creepSpec.creepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], filterTaskIdentifier, creepSpec.creepCount)
 
     const noCreeps = World.resourcePools.countCreeps(this.roomName, filterTaskIdentifier, () => true) <= 2
     const [body, priority] = ((): [BodyPartConstant[], CreepSpawnRequestPriority] => {

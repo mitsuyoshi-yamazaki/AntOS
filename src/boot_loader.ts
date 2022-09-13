@@ -11,8 +11,8 @@ import {} from "shared/prototype/game"
 import { Environment } from "utility/environment"
 
 // ---- v3 OS ---- //
-import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
-import { Kernel } from "v8/operating_system/kernel"
+// import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
+// import { Kernel } from "v8/operating_system/kernel"
 
 type RootFunctions = {
   load(): void
@@ -64,24 +64,24 @@ export const BootLoader = {
 //   }
 // }
 
-const v3Functions = (): RootFunctions => {
-  return {
-    load(): void {
-      V3BootLoader.load()
-    },
+// const v3Functions = (): RootFunctions => {
+//   return {
+//     load(): void {
+//       V3BootLoader.load()
+//     },
 
-    loop(): void {
-      Game.io = V3BootLoader.io
+//     loop(): void {
+//       Game.io = V3BootLoader.io
 
-      // ErrorMapper.wrapLoop(() => {
-      //   initializerTick()
-      // }, "initializerTick")()
+//       // ErrorMapper.wrapLoop(() => {
+//       //   initializerTick()
+//       // }, "initializerTick")()
 
-      // TODO: Respawn対応
+//       // TODO: Respawn対応
 
-      ErrorMapper.wrapLoop((): void => {
-        Kernel.run()
-      })()
-    },
-  }
-}
+//       ErrorMapper.wrapLoop((): void => {
+//         Kernel.run()
+//       })()
+//     },
+//   }
+// }

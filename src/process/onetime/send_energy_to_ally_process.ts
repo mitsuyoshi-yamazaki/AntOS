@@ -106,7 +106,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       `${creepCount}cr`,
       `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`,
@@ -153,7 +153,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
       }
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
 
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
@@ -214,7 +214,6 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
         }
         return FleeFromAttackerTask.create(task)
       }),
-      () => true,
     )
   }
 

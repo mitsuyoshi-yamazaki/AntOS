@@ -84,9 +84,9 @@ export abstract class GeneralCreepWorkerTask extends Task {
 
     this.checkProblemFinders(problemFinders)
 
-    const filter = ((): CreepPoolFilter => {
+    const filter = ((): CreepPoolFilter | undefined => {
       if (creepFileterRoles == null) {
-        return () => true
+        return undefined
       }
       const roles = creepFileterRoles
       return creep => hasNecessaryRoles(creep, roles)

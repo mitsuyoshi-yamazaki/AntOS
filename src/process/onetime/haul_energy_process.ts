@@ -90,7 +90,7 @@ export class HaulEnergyProcess implements Process, Procedural, MessageObserver {
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       `${creepCount}cr`,
       `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`,
@@ -132,7 +132,7 @@ export class HaulEnergyProcess implements Process, Procedural, MessageObserver {
       return
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     const energyStore = ((): StructureTerminal | StructureStorage | null => {
       if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.store.getUsedCapacity(RESOURCE_ENERGY) > 3000) {
         return objects.activeStructures.terminal
@@ -187,7 +187,6 @@ export class HaulEnergyProcess implements Process, Procedural, MessageObserver {
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.creepTask(creep, energyStore, targetRoomObjects),
-      () => true,
     )
   }
 

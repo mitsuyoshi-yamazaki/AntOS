@@ -24,7 +24,6 @@ export class ContinuousRunApiTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly apiWrappers: AnyCreepApiWrapper[],
   ) {
     this.shortDescription = "multi"
@@ -32,7 +31,6 @@ export class ContinuousRunApiTask implements CreepTask {
 
   public encode(): ContinuousRunApiTaskState {
     return {
-      s: this.startTime,
       t: "ContinuousRunApiTask",
       as: this.apiWrappers.map(wrapper => wrapper.encode()),
     }
@@ -40,11 +38,11 @@ export class ContinuousRunApiTask implements CreepTask {
 
   public static decode(state: ContinuousRunApiTaskState): ContinuousRunApiTask | null {
     const wrappers = state.as.flatMap(wrapperState => decodeCreepApiWrapperFromState(wrapperState) ?? [])
-    return new ContinuousRunApiTask(state.s, wrappers)
+    return new ContinuousRunApiTask(wrappers)
   }
 
   public static create(apiWrappers: AnyCreepApiWrapper[]): ContinuousRunApiTask {
-    return new ContinuousRunApiTask(Game.time, apiWrappers)
+    return new ContinuousRunApiTask(apiWrappers)
   }
 
   public run(creep: Creep): TaskProgressType {

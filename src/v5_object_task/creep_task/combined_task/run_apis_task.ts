@@ -50,7 +50,6 @@ export class RunApisTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly apiWrappers: AnyCreepApiWrapper[],
     private readonly options: RunApisTaskOptions,
   ) {
@@ -65,7 +64,6 @@ export class RunApisTask implements CreepTask {
 
   public encode(): RunApisTaskState {
     return {
-      s: this.startTime,
       t: "RunApisTask",
       as: this.apiWrappers.map(wrapper => wrapper.encode()),
       o: {
@@ -81,11 +79,11 @@ export class RunApisTask implements CreepTask {
       waitUntilFinishedAll: state.o.w,
       ignoreFailure: state.o.i,
     }
-    return new RunApisTask(state.s, wrappers, options)
+    return new RunApisTask(wrappers, options)
   }
 
   public static create(apiWrappers: AnyCreepApiWrapper[], options: RunApisTaskOptions): RunApisTask {
-    return new RunApisTask(Game.time, apiWrappers, options)
+    return new RunApisTask(apiWrappers, options)
   }
 
   public run(creep: Creep): TaskProgressType {

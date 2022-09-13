@@ -110,7 +110,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
 
     const scouts: Creep[] = []
     const claimers: Creep[] = []
-    const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
     creeps.forEach(creep => {
       if (hasNecessaryRoles(creep, [CreepRole.Scout]) === true) {
         scouts.push(creep)

@@ -6,14 +6,14 @@ import { Result, ResultFailed } from "shared/utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
 import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
 import { Season1244215GenericDismantleProcess } from "process/temporary/season_1244215_generic_dismantle_process"
-import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
+import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess, canSpawnGuardCreep } from "process/process/guard_remote_room_process"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
 import { isResourceConstant } from "shared/utility/resource"
@@ -78,6 +78,7 @@ import { World42791528ProblemFinderProcess } from "process/temporary/world_42791
 // import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
 import { MapVisualProcess } from "process/onetime/map_visual_process"
 import { RoomCoordinate } from "utility/room_coordinate"
+import { DistributePowerProcess } from "process/process/distribute_power_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -160,7 +161,7 @@ export class LaunchCommand implements ConsoleCommand {
       return `Launched ${result.value.constructor.name}, PID: ${result.value.processId}${detail}`
     }
     case "failed":
-      return result.reason
+      return `${coloredText("[Launch Failed]", "error")} ${result.reason}`
     }
   }
 
@@ -859,7 +860,8 @@ ProcessLauncher.register("World39013108CollectResourceProcess", args => {
 
 ProcessLauncher.register("GuardRemoteRoomProcess", args => {
   try {
-    const roomName = args.roomName("room_name").parse({ my: true })
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
     const targetRoomName = args.roomName("target_room_name").parse()
 
     const waypoints = ((): RoomName[] => {
@@ -878,6 +880,10 @@ ProcessLauncher.register("GuardRemoteRoomProcess", args => {
     })()
 
     const creepType = args.typedString("creep_type", "GuardRemoteRoomProcessCreepType", isGuardRemoteRoomProcessCreepType).parse()
+    if (canSpawnGuardCreep(creepType, roomResource.room.energyCapacityAvailable) !== true) {
+      throw `cannot spawn ${creepType} in ${roomLink(roomName)} (capacity: roomResource.room.energyCapacityAvailable)`
+    }
+
     const creepCount = args.int("creep_count").parse({min: 1, max: 5})
 
     return Result.Succeeded((processId) => GuardRemoteRoomProcess.create(processId, roomName, targetRoomName, waypoints, creepType, creepCount))
@@ -1270,6 +1276,19 @@ ProcessLauncher.register("MapVisualProcess", args => {
     return Result.Succeeded((processId) => MapVisualProcess.create(
       processId,
       duration,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DistributePowerProcess", args => {
+  try {
+    const interval = args.int("interval").parse({ min: 1 })
+
+    return Result.Succeeded((processId) => DistributePowerProcess.create(
+      processId,
+      interval,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)

@@ -1,6 +1,5 @@
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
-import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepPoolAssignPriority, CreepPoolFilter } from "world_info/resource_pool/creep_resource_pool"
 import { World } from "world_info/world_info"
@@ -31,6 +30,7 @@ import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 const routeRecalculationInterval = 80000
 
@@ -105,7 +105,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const source = Game.getObjectById(this.sourceId)
     if (source == null) {
-      // TODO: initialTaskにmoveToRoomを入れておく
       return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
     }
 
@@ -181,10 +180,8 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     source: Source,
     container: StructureContainer | null,
   ): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
     const isBuildingContainer = (this.containerId == null)
     const minimumCreepCount = isBuildingContainer ? 2 : 1
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
     ]
@@ -195,7 +192,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
         if (invaded !== true) {
           const isConstructing = isBuildingContainer || (targetRoom.find(FIND_MY_CONSTRUCTION_SITES).length > 0)
-          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source, isConstructing))
+          problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, minimumCreepCount, source, isConstructing))
         }
       }
     }
@@ -216,7 +213,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         }
         return FleeFromAttackerTask.create(task, 6, { failOnFlee: true })
       },
-      creepPoolFilter,
     )
 
     return problemFinders
@@ -224,13 +220,12 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
 
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
-    necessaryRoles: CreepRole[],
     minimumCreepCount: number,
     source: Source,
     isConstructing: boolean,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], this.taskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,
@@ -239,7 +234,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.initialTask = MoveToTask.create(source.pos, 1)
+          solver.initialTask = null
           solver.priority = CreepSpawnRequestPriority.Medium
 
           const energyCapacity = objects.controller.room.energyCapacityAvailable
@@ -314,6 +309,10 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
     if (noEnergy) {
+      if (creep.room.name !== this.targetRoomName) {
+        const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+        return MoveToRoomTask.create(this.targetRoomName, waypoints)
+      }
       if (container != null) {
         const harvestPosition = container.pos
         if (creep.pos.isEqualTo(harvestPosition) === true) {
@@ -415,8 +414,9 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
       }
 
     } catch (error) {
-      PrimitiveLogger.fatal(`${this.taskIdentifier} calculateRoute() ${error}`)
+      PrimitiveLogger.fatal(`${this.taskIdentifier} calculateRoute() ${roomLink(this.targetRoomName)} ${error}`)
     }
+    PrimitiveLogger.log(`${this.taskIdentifier} calculateRoute() ${roomLink(this.targetRoomName)}`)
   }
 
   /** throws */

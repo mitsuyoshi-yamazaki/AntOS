@@ -87,13 +87,17 @@ export class CreateConstructionSiteTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
+    if (objects.flags.length <= 0) {
+      return TaskStatus.InProgress
+    }
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
       return TaskStatus.InProgress
     }
 
-    const interval = roomResource?.roomInfoAccessor.config.constructionInterval
-    if (interval == null || (Game.time % interval) !== 0) {
+    const interval = roomResource.roomInfoAccessor.config.constructionInterval
+    if ((Game.time % interval) !== 0) {
       return TaskStatus.InProgress
     }
 

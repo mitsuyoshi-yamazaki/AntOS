@@ -162,7 +162,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       `${roomLink(this.targetRoomName)} ${this.state}`,
       `${creepCount}cr`,
@@ -310,7 +310,7 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       return
     }
 
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (this.state === "finished" && creepCount <= 0) {
       processLog(this, `${coloredText("[Finished]", "info")} no more valuable resources in ${roomLink(this.targetRoomName)}`)
       OperatingSystem.os.suspendProcess(this.processId)
@@ -338,7 +338,6 @@ export class StealResourceProcess implements Process, Procedural, MessageObserve
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.newTaskFor(creep, resourceStore),
-      () => true,
     )
   }
 

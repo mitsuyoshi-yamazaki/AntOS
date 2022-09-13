@@ -6,6 +6,7 @@ import { TaskProgressType } from "v5_object_task/object_task"
 import { ResourcePoolType } from "./resource_pool"
 import { TaskIdentifier } from "v5_task/task"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
 // Worldをimportしない
 
 /** 別タスクの実行中であっても上書きする: 未実装 */
@@ -28,6 +29,7 @@ export type CreepPoolTaskBuilder = (creep: Creep) => CreepTask | null
 
 export class CreepPool implements ResourcePoolType<Creep> {
   private readonly creeps: Creep[] = []
+  private readonly v5Creeps = new ValuedArrayMap<TaskIdentifier, Creep>()
 
   public constructor(
     public readonly parentRoomName: RoomName,
@@ -35,41 +37,40 @@ export class CreepPool implements ResourcePoolType<Creep> {
 
   public addResource(creep: Creep): void {
     this.creeps.push(creep)
+
+    if (isV5CreepMemory(creep.memory)) {
+      if (creep.memory.i == null) {
+        this.v5Creeps.getValueFor("null").push(creep)
+      } else {
+        this.v5Creeps.getValueFor(creep.memory.i).push(creep)
+      }
+    }
   }
 
-  public countAllCreeps(filter: CreepPoolFilter): number {
-    return this.creeps
-      .filter(filter)
-      .length
+  // public countAllCreeps(filter: CreepPoolFilter): number {
+  //   return this.creeps
+  //     .filter(filter)
+  //     .length
+  // }
+
+  public countCreeps(taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): number {
+    return this.getRawCreepsList(taskIdentifier, filter).length
   }
 
-  public countCreeps(taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number {
-    return this.creeps
-      .filter(creep => {
-        if (!isV5CreepMemory(creep.memory)) {
-          return false
-        }
-        // eslint-disable-next-line eqeqeq
-        if (creep.memory.i != taskIdentifier) {
-          return false
-        }
-        return filter(creep)
-      })
-      .length
+  public getCreeps(taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): Creep[] {
+    const identifier = taskIdentifier ?? "null"
+    if (filter != null) {
+      return this.v5Creeps.getValueFor(identifier).filter(filter)
+    }
+    return [...this.v5Creeps.getValueFor(identifier)]
   }
 
-  public getCreeps(taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[] {
-    return this.creeps
-      .filter(creep => {
-        if (!isV5CreepMemory(creep.memory)) {
-          return false
-        }
-        // eslint-disable-next-line eqeqeq
-        if (creep.memory.i != taskIdentifier) {
-          return false
-        }
-        return filter(creep)
-      })
+  private getRawCreepsList(taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): Creep[] {
+    const identifier = taskIdentifier ?? "null"
+    if (filter != null) {
+      return this.v5Creeps.getValueFor(identifier).filter(filter)
+    }
+    return this.v5Creeps.getValueFor(identifier)
   }
 
   /**
@@ -78,18 +79,8 @@ export class CreepPool implements ResourcePoolType<Creep> {
    * @param taskBuilder 必要なだけ新しいCreepTaskを返す
    * @param filter
    */
-  public assignTasks(taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
-    const creeps = this.creeps
-      .filter(creep => {
-        if (!isV5CreepMemory(creep.memory)) {
-          return false
-        }
-        // eslint-disable-next-line eqeqeq
-        if (creep.memory.i != taskIdentifier) {
-          return false
-        }
-        return filter(creep)
-      })
+  public assignTasks(taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter?: CreepPoolFilter): void {
+    const creeps = this.getRawCreepsList(taskIdentifier, filter)
 
     const filteredCreeps = ((): Creep[] => {
       switch (priority) {
@@ -110,6 +101,7 @@ export class CreepPool implements ResourcePoolType<Creep> {
     }
   }
 
+  /** @deprecated */
   public takeOverCreeps(taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void {
     this.creeps.forEach(creep => {
       if (!isV5CreepMemory(creep.memory)) {
