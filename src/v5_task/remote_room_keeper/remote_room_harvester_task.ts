@@ -105,7 +105,6 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const source = Game.getObjectById(this.sourceId)
     if (source == null) {
-      // TODO: initialTaskにmoveToRoomを入れておく
       return TaskStatus.InProgress  // TODO: もう少し良い解決法ないか
     }
 
