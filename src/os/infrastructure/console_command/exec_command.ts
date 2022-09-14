@@ -24,7 +24,6 @@ import { ListArguments } from "../../../shared/utility/argument_parser/list_argu
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { execCreepCommand } from "./exec_commands/creep_command"
-import { CronProcess } from "process/onetime/cron_process"
 import { AttackPlanner } from "process/onetime/attack/attack_planner"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
@@ -92,8 +91,6 @@ export class ExecCommand implements ConsoleCommand {
         return this.attackPlan(args)
       case "interpret_room":
         return this.interpretRoom(args)
-      case "cron":
-        return this.cron(args)
       case "enable_swc_ally_request":
         return this.enableSwcAllyRequest()
       case "show_swc_ally_requests":
@@ -885,23 +882,6 @@ export class ExecCommand implements ConsoleCommand {
 
   private interpretRoomFor(targetRoom: Room): string {
     RoomInterpreter.interpret(targetRoom)
-    return "ok"
-  }
-
-  // Game.io("exec cron 1000 command=exec script collect_power dry_run=0")  // 実装上execを指定しているが、他のosコマンドは実行されない
-  /** @throws */
-  private cron(args: string[]): CommandExecutionResult {
-    const listArguments = new ListArguments(args)
-    const interval = listArguments.int(0, "interval").parse({ min: 1 })
-    const command = this.rawCommand.split("command=")[1]  // LaunchCommandでこれを行うのがだるいため
-    if (command == null || command.length <= 0) {
-      throw "missing command argument"
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return CronProcess.create(processId, interval, command)
-    })
-    Memory.os.logger.filteringProcessIds.push(process.processId)
     return "ok"
   }
 
