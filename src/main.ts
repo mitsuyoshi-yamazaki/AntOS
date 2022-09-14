@@ -1,28 +1,39 @@
 import "ts-polyfill/lib/es2019-array"
 
+import { memhack } from "./memory_hack" // 実行順としてmemhackは最初にimportする
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { memhack } from "./memory_hack"
 // import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
 import { leveled_colored_text } from "./utility"
 import { SystemInfo } from "shared/utility/system_info"
 import { BootLoader } from "./boot_loader"
 
-memhack.load()
+// memhack.load()
 
 const rootFunctions = BootLoader.load()
 rootFunctions.load()
 const mainLoop = rootFunctions.loop
 
-const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
+const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}\nload: ${Game.cpu.getUsed()} cpu`
 console.log(leveled_colored_text(initializing_message, "warn"))
 
 // ScreepsProfiler.enable()  // TODO: 普段はオフに
 
+let bucket = 0
+
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
+  const currentBucket = Game.cpu.bucket
+  if (Game.shard.name === "shard2") {
+    console.log(`[Previous cpu use]: ${(bucket - currentBucket) + Game.cpu.limit}`)
+  }
+  bucket = currentBucket
+
   memhack.beforeTick()
+
+  // console.log(`${Memory.gameInfo}, ${Game.cpu.getUsed()} cpu`) // memhackが動かなければここで大きな値が出る
+
   // ScreepsProfiler.wrap(mainLoop) mainLoopの呼び出しは停止する
   mainLoop()
   memhack.afterTick()
