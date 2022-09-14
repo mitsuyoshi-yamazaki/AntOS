@@ -15,6 +15,7 @@ ignorePatterns:
   - src/error_mapper/**/*
   - rollup_build.config.js
   - rollup_deploy.config.js
+  - rollup_default.config.js
   - dist/**/*
 rules:
   indent:
