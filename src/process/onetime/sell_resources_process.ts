@@ -141,8 +141,10 @@ export class SellResourcesProcess implements Process, Procedural {
         results.push(soldMessage)
         break
 
-      case ERR_NOT_OWNER:
       case ERR_NOT_ENOUGH_RESOURCES:
+        continue
+
+      case ERR_NOT_OWNER:
       case ERR_FULL:
       case ERR_INVALID_ARGS:  // The arguments provided are invalid.
       case ERR_TIRED:
