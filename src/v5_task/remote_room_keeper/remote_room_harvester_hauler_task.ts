@@ -33,6 +33,7 @@ import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/trav
 import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { roomLink } from "utility/log"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -92,7 +93,16 @@ export class RemoteRoomHaulerTask extends Task {
 
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = Math.ceil(energyCapacity / 2000) // TODO: 距離等を加味する
+    const minimumCreepCount = ((): number => {
+      // TODO: 距離等を加味する
+      if (objects.controller.room.energyCapacityAvailable < 2000) {
+        return Math.ceil(energyCapacity / 2000)
+      }
+      return Math.ceil(energyCapacity / 3000)
+    })()
+    if (minimumCreepCount <= 0) {
+      console.log(`0 haulers ${roomLink(this.targetRoomName)}, energy: ${energyCapacity}, ${objects.controller.room.energyCapacityAvailable}`)
+    }
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -174,7 +184,7 @@ export class RemoteRoomHaulerTask extends Task {
       const bodyUnit: BodyPartConstant[] = [
         CARRY, CARRY, MOVE,
       ]
-      return CreepBody.create([], bodyUnit, energyCapacity, 10)
+      return CreepBody.create([], bodyUnit, energyCapacity, 16)
     }
   }
 
