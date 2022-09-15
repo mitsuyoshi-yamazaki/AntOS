@@ -86,7 +86,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop_storage_drain"]
+    const commandList = ["help", "drain_storage", "stop_storage_drain"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -95,9 +95,13 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       case "help":
         return `Commands: ${commandList}`
 
+      case "drain_storage":
+        this.drainStorage = true
+        return "drain storage"
+
       case "stop_storage_drain":
         this.drainStorage = false
-        return "stopped"
+        return "drain storage stopped"
 
       default:
         throw `Invalid command ${command}, see "help"`
