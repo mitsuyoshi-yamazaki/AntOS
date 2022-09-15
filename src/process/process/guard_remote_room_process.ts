@@ -20,6 +20,7 @@ import { Timestamp } from "shared/utility/timestamp"
 import { Position } from "prototype/room_position"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { CreepBody } from "utility/creep_body"
+import { shortenedNumber } from "shared/utility/console_utility"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -258,7 +259,25 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     ]
 
     if (this.finishCondition.case !== "never") {
-      descriptions.push(`condition: ${this.finishCondition.case}`)
+      const conditionDescriptions: string[] = [
+        `condition: ${this.finishCondition.case}`,
+      ]
+      switch (this.finishCondition.case) {
+      case "duration":
+        conditionDescriptions.push(`${shortenedNumber(this.finishCondition.until - Game.time)} ticks`)
+        break
+      case "owned_room":
+        conditionDescriptions.push(this.finishCondition.condition)
+        break
+      case "unclaimed":
+        break
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = this.finishCondition
+        break
+      }
+      }
+      descriptions.push(conditionDescriptions.join(" "))
     }
 
     if (this.stopSpawningReasons.length > 0) {
