@@ -22,14 +22,18 @@ console.log(leveled_colored_text(initializing_message, "warn"))
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  memhack.beforeTick()
-  // ScreepsProfiler.wrap(mainLoop)
-  mainLoop()
-  memhack.afterTick()
+  if (Game.shard.name !== "shard3") {
+    memhack.beforeTick()
+    // ScreepsProfiler.wrap(mainLoop)
+    mainLoop()
+    memhack.afterTick()
 
-  // TODO: 旧ソースに依存している
-  const all_cpu = Math.ceil(Game.cpu.getUsed())
-  Memory.cpu_usages.push(all_cpu)
+    // TODO: 旧ソースに依存している
+    const all_cpu = Math.ceil(Game.cpu.getUsed())
+    Memory.cpu_usages.push(all_cpu)
+  } else {
+    // do nothing
+  }
 }, "Main")
 
 /**
