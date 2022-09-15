@@ -260,7 +260,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     })
 
     if (intercepters.length < creepMaxCount && this.intercepterCreepNames[target.roomName] == null) {
-      this.spawnIntercepter(roomResource, target)
+      if (roomResource.getResourceAmount(RESOURCE_ENERGY) > (roomResource.controller.level * 5000)) {
+        this.spawnIntercepter(roomResource, target)
+      }
     }
 
     intercepters.forEach(creep => this.runIntercepter(creep, target))
