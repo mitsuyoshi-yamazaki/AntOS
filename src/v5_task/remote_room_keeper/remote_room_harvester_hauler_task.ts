@@ -100,9 +100,6 @@ export class RemoteRoomHaulerTask extends Task {
       }
       return Math.ceil(energyCapacity / 3000)
     })()
-    if (minimumCreepCount <= 0) {
-      console.log(`0 haulers ${roomLink(this.targetRoomName)}, energy: ${energyCapacity}, ${objects.controller.room.energyCapacityAvailable}`)
-    }
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
