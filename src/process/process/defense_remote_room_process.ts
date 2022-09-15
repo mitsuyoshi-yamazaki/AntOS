@@ -290,7 +290,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
         if (attackTarget.creep.pos.isRoomEdge !== true) {
           creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
         }
-        if (attackTarget.range > 1) {
+        if (attackTarget.range > 1 || creep.hits < (creep.hitsMax * 0.9)) {
           creep.heal(creep)
         } else {
           creep.attack(attackTarget.creep)
@@ -355,7 +355,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
   }
 
   private spawnIntercepter(roomResource: OwnedRoomResource, target: TargetInfo): void {
-    const rangedAttackCount = Math.max(Math.ceil((target.totalPower.heal + 1) / GameConstants.creep.actionPower.rangedAttack), 5)
+    const rangedAttackCount = Math.max(Math.ceil((target.totalPower.heal + 1) / GameConstants.creep.actionPower.rangedAttack) + 1, 5)
     const healCount = ((): number => {
       const count = Math.max(Math.ceil(target.totalPower.rangedAttack / GameConstants.creep.actionPower.heal), 1)
       if (count > 3) {
@@ -363,11 +363,11 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       }
       return count
     })()
-    const moveCount = rangedAttackCount + healCount
+    const moveCount = Math.ceil((rangedAttackCount + healCount) / 2)
 
     const body: BodyPartConstant[] = [
       ...Array(moveCount).fill(MOVE),
-      ATTACK,
+      ATTACK, ATTACK,
       ...Array(rangedAttackCount).fill(RANGED_ATTACK),
       ...Array(healCount).fill(HEAL),
       MOVE, MOVE,
