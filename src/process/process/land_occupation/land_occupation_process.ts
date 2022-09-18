@@ -435,7 +435,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       return
     }
 
-    const [mainClusterData,] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
+    const [mainClusterData, mainClusterStaticData] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
 
     if ((mainClusterData.structures[STRUCTURE_SPAWN] ?? []).length <= 0) {
       const parentRoomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
@@ -459,11 +459,29 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       return
     }
 
-    const [controllerClusterData,] = fetchClusterData(controller, this.controllerPlan)
+    const [controllerClusterData, controllerClusterStaticData] = fetchClusterData(controller, this.controllerPlan)
 
     const constructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
       return mainClusterData.constructionSite ?? controllerClusterData.constructionSite
     })()
+
+    if (constructionSite == null) {
+      const mainClusterNextConstruction = mainClusterStaticData.nextConstructions.shift()
+      if (mainClusterNextConstruction != null) {
+        const result = controller.room.createConstructionSite(mainClusterNextConstruction.position.x, mainClusterNextConstruction.position.y, mainClusterNextConstruction.structureType)
+        if (result !== OK) {
+          processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${mainClusterNextConstruction.position.x},${mainClusterNextConstruction.position.y} ${mainClusterNextConstruction.structureType}`)
+        }
+      } else {
+        const controllerNextConstruction = controllerClusterStaticData.nextConstructions.shift()
+        if (controllerNextConstruction != null) {
+          const result = controller.room.createConstructionSite(controllerNextConstruction.position.x, controllerNextConstruction.position.y, controllerNextConstruction.structureType)
+          if (result !== OK) {
+            processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${controllerNextConstruction.position.x},${controllerNextConstruction.position.y} ${controllerNextConstruction.structureType}`)
+          }
+        }
+      }
+    }
 
     const sources = controller.room.find(FIND_SOURCES_ACTIVE)
 

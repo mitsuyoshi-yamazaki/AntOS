@@ -158,6 +158,14 @@ export type ClusterData = {
   readonly constructionSite: ConstructionSite<BuildableStructureConstant> | null
 }
 
+const constructingPriority: StructureConstant[] = [ // 添字が大きい方が優先
+  STRUCTURE_WALL,
+  STRUCTURE_CONTAINER,
+  STRUCTURE_SPAWN,
+  STRUCTURE_TOWER,
+  STRUCTURE_RAMPART,
+]
+
 export const fetchClusterData = (controller: StructureController, cluster: ClusterPlan): [ClusterData, ClusterStaticData] => {
   const centerPosition = decodeRoomPosition(cluster.center, controller.room.name)
   const structures: Partial<{ [K in StructureConstant]: ConcreteStructure<K>[] }> = {}
@@ -203,7 +211,7 @@ export const fetchClusterData = (controller: StructureController, cluster: Clust
 
   const canConstruct = controller.level >= 3
   if (canConstruct === true) {
-    nextConstructions.push(...Array.from(Object.entries(cluster.plan)).flatMap(([serializedPosition, structureType]): Construction[] => {
+    const prioritizedConstructions = Array.from(Object.entries(cluster.plan)).flatMap(([serializedPosition, structureType]): (Construction & { priority: number })[] => {
       if (structureType === STRUCTURE_WALL) {
         if (constructedStructures.get(serializedPosition) === structureType) {
           return []
@@ -211,24 +219,30 @@ export const fetchClusterData = (controller: StructureController, cluster: Clust
         return [{
           position: deserializePosition(serializedPosition),
           structureType,
+          priority: constructingPriority.indexOf(structureType)
         }]
       } else {
-        const missingConstructions: Construction[] = []
+        const missingConstructions: (Construction & { priority: number })[] = []
         if (constructedStructures.get(serializedPosition) !== structureType) {
           missingConstructions.push({
             position: deserializePosition(serializedPosition),
             structureType,
+            priority: constructingPriority.indexOf(structureType),
           })
         }
         if (constructedRamparts.has(serializedPosition) !== true) {
           missingConstructions.push({
             position: deserializePosition(serializedPosition),
             structureType: STRUCTURE_RAMPART,
+            priority: constructingPriority.indexOf(STRUCTURE_RAMPART),
           })
         }
         return missingConstructions
       }
-    }))
+    })
+
+    prioritizedConstructions.sort((lhs, rhs) => rhs.priority - lhs.priority)
+    nextConstructions.push(...prioritizedConstructions)
   }
 
   const clusterData: ClusterData = {
