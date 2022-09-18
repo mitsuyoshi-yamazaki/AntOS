@@ -46,7 +46,7 @@ export const RoomResources: RoomResourcesInterface = {
     enumerateCreeps()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
-      if (room.controller != null && room.controller.my === true) {
+      if (room.controller != null && room.controller.my === true && Memory.ignoreRooms.includes(roomName) !== true) {
         const creepInfo: OwnedRoomCreepInfo[] = (allCreeps.get(roomName) ?? []).map(creep => {
           return {
             creep,
