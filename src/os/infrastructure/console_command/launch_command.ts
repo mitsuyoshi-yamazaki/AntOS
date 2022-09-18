@@ -78,7 +78,9 @@ import { World42791528ProblemFinderProcess } from "process/temporary/world_42791
 import { MapVisualProcess } from "process/onetime/map_visual_process"
 import { RoomCoordinate } from "utility/room_coordinate"
 import { SellResourcesProcess } from "process/onetime/sell_resources_process"
-// import {} from "process/process/land_occupation/land_occupation_process"
+import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
+import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
+import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1296,6 +1298,93 @@ ProcessLauncher.register("SellResourcesProcess", () => {
 
     return Result.Succeeded((processId) => SellResourcesProcess.create(
       processId,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("LandOccupationProcess", args => {
+  try {
+    const room = args.room("room_name").parse()
+    const roomName = room.name
+    const controller = room.controller
+    if (controller == null) {
+      // TODO: 自動でObserveするようにする
+      throw `No controller in ${roomLink(roomName)}`
+    }
+
+    const parentRoomName = args.roomName("parent_room_name").parse({my: true})
+    const mainSource = args.visibleGameObject("main_source_id").parse({ inRoomName: roomName })
+    const mainCenterPosition = args.localPosition("main_center").parse()
+    const controllerCenterPosition = args.localPosition("controller_center").parse()
+
+    if (!(mainSource instanceof Source)) {
+      throw `${mainSource} is not a Source`
+    }
+
+    const emptyPositionFilteringOptions: RoomPositionFilteringOptions = {
+      excludeItself: true,
+      excludeStructures: true,
+      excludeTerrainWalls: true,
+      excludeWalkableStructures: false,
+    }
+
+    const mainSourcePlan = ((): ClusterPlan => {
+      const plan: { [SerializedPosition: string]: LandOccupationStructureTypes | BuildableWallTypes } = {}
+      plan[serializePosition(mainCenterPosition)] = STRUCTURE_CONTAINER
+
+      const requiredStructures = [
+        STRUCTURE_SPAWN,
+        STRUCTURE_TOWER,
+      ]
+      const emptyPositions = decodeRoomPosition(mainCenterPosition, roomName).positionsInRange(1, emptyPositionFilteringOptions)
+
+      for (const position of emptyPositions) {
+        const structureType = requiredStructures.shift()
+        if (structureType == null) {
+          break
+        }
+
+        plan[serializePosition(position)] = structureType
+      }
+
+      if (requiredStructures.length > 0) {
+        throw `Lack of empty positions around main source: ${emptyPositions}`
+      }
+
+      return {
+        center: mainCenterPosition,
+        plan,
+      }
+    })()
+
+    const controllerPlan = ((): ClusterPlan => {
+      const plan: { [SerializedPosition: string]: LandOccupationStructureTypes | BuildableWallTypes } = {}
+      plan[serializePosition(mainCenterPosition)] = STRUCTURE_CONTAINER
+
+      const emptyPositions = decodeRoomPosition(controller.pos, roomName).positionsInRange(1, emptyPositionFilteringOptions)
+
+      for (const position of emptyPositions) {
+        if (position.isEqualTo(controllerCenterPosition.x, controllerCenterPosition.y) === true) {
+          continue
+        }
+
+        plan[serializePosition(position)] = STRUCTURE_WALL
+      }
+
+      return {
+        center: mainCenterPosition,
+        plan,
+      }
+    })()
+
+    return Result.Succeeded((processId) => LandOccupationProcess.create(
+      processId,
+      roomName,
+      parentRoomName,
+      mainSourcePlan,
+      controllerPlan,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
