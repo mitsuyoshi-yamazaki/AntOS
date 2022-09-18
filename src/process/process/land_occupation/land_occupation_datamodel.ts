@@ -162,9 +162,9 @@ export const fetchClusterData = (controller: StructureController, cluster: Clust
   const centerPosition = decodeRoomPosition(cluster.center, controller.room.name)
   const structures: Partial<{ [K in StructureConstant]: ConcreteStructure<K>[] }> = {}
   const staticStructures: StructureData<StructureConstant>[] = []
-  const nextConstructions: Construction[] = Array.from(Object.entries(cluster.plan)).flatMap(([serializedPosition, structureType]): Construction[] => {
-    return [] // TODO:
-  })
+
+  const constructedStructures = new Map<SerializedPosition, StructureConstant>()
+  const constructedRamparts = new Map<SerializedPosition, boolean>()
 
   const addStructure = <T extends StructureConstant>(structure: ConcreteStructure<T>): void => {
     if (structures[structure.structureType] == null) {
@@ -180,12 +180,55 @@ export const fetchClusterData = (controller: StructureController, cluster: Clust
       id: structure.id,
       position: structure.pos,
     })
+
+    const serializedPosition = serializePosition(structure.pos)
+    if (structure.structureType === STRUCTURE_RAMPART) {
+      constructedRamparts.set(serializedPosition, true)
+    } else {
+      constructedStructures.set(serializedPosition, structure.structureType)
+    }
   })
 
+  const nextConstructions: Construction[] = []
+
   const constructionSite = centerPosition.findInRange(FIND_MY_CONSTRUCTION_SITES, 1)[0] ?? null
+  if (constructionSite != null) {
+    const serializedPosition = serializePosition(constructionSite.pos)
+    if (constructionSite.structureType === STRUCTURE_RAMPART) {
+      constructedRamparts.set(serializedPosition, true)
+    } else {
+      constructedStructures.set(serializedPosition, constructionSite.structureType)
+    }
+  }
+
   const canConstruct = controller.level >= 3
   if (canConstruct === true) {
-    //
+    nextConstructions.push(...Array.from(Object.entries(cluster.plan)).flatMap(([serializedPosition, structureType]): Construction[] => {
+      if (structureType === STRUCTURE_WALL) {
+        if (constructedStructures.get(serializedPosition) === structureType) {
+          return []
+        }
+        return [{
+          position: deserializePosition(serializedPosition),
+          structureType,
+        }]
+      } else {
+        const missingConstructions: Construction[] = []
+        if (constructedStructures.get(serializedPosition) !== structureType) {
+          missingConstructions.push({
+            position: deserializePosition(serializedPosition),
+            structureType,
+          })
+        }
+        if (constructedRamparts.has(serializedPosition) !== true) {
+          missingConstructions.push({
+            position: deserializePosition(serializedPosition),
+            structureType: STRUCTURE_RAMPART,
+          })
+        }
+        return missingConstructions
+      }
+    }))
   }
 
   const clusterData: ClusterData = {

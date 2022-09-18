@@ -22,8 +22,12 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
 import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
-import { ClusterPlan, deserializePosition } from "./land_occupation_datamodel"
+import { ClusterPlan, deserializePosition, fetchClusterData } from "./land_occupation_datamodel"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { BuildWallApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_wall_api_wrapper"
+import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
+import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
+import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 
 type RoomStateUnoccupied = {
   readonly case: "unoccupied"
@@ -80,7 +84,8 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   }
 
   private readonly codename: string
-  private wallPositions: WallPositions | null = null
+  private claimerBody: BodyPartConstant[] | null = null
+  private workerBody: BodyPartConstant[] | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -362,7 +367,14 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
         return
       }
 
-      roomState.claimerName = this.spawnClaimer(parentRoomResource.room.energyCapacityAvailable)
+      const body = ((): BodyPartConstant[] => {
+        if (this.claimerBody == null) {
+          this.claimerBody = CreepBody.create([], [MOVE, CLAIM], parentRoomResource.room.energyCapacityAvailable, 4)
+        }
+        return this.claimerBody
+      })()
+
+      roomState.claimerName = this.spawnCreep(body)
     } else {
       this.runClaimer(claimer)
     }
@@ -386,9 +398,8 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
     creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(creep.room.controller, "blockade🚫")))
   }
 
-  private spawnClaimer(energyCapacity: number): CreepName {
+  private spawnCreep(body: BodyPartConstant[]): CreepName {
     const creepName = UniqueId.generateCreepName(this.codename)
-    const body = CreepBody.create([], [MOVE, CLAIM], energyCapacity, 4)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
@@ -406,8 +417,6 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   }
 
   private runOccupied(roomState: RoomStateOccupied, controller: StructureController): void {
-    // this.updateRoomState(roomState, controller)
-
     const workers = ((): Creep[] => {
       const creeps: Creep[] = []
       roomState.workerNames = roomState.workerNames.filter(creepName => {
@@ -421,15 +430,50 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       return creeps
     })()
 
-    // const { constructionSite } = this.updateConstructionSite(roomState)
-
-    // workers.forEach(creep => this.runWorker(creep))
-  }
-
-  private runWorker(creep: Creep, roomState: RoomStateOccupied): void {
-    if (creep.v5task != null) {
+    const waitingWorkers = workers.filter(creep => creep.v5task == null)
+    if (waitingWorkers.length <= 0 && workers.length >= 4) {
       return
     }
+
+    const [mainClusterData,] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
+
+    if ((mainClusterData.structures[STRUCTURE_SPAWN] ?? []).length <= 0) {
+      const parentRoomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+      if (parentRoomResource == null) {
+        PrimitiveLogger.fatal(`${coloredText("[ERROR]", "error")} ${this.identifier} no parent room found ${roomLink(this.parentRoomName)}`)
+        OperatingSystem.os.suspendProcess(this.processId)
+        return
+      }
+
+      const body = ((): BodyPartConstant[] => {
+        if (this.workerBody == null) {
+          this.workerBody = CreepBody.create([], [WORK, CARRY, MOVE, MOVE], parentRoomResource.room.energyCapacityAvailable, 5)
+        }
+        return this.workerBody
+      })()
+
+      roomState.workerNames.push(this.spawnCreep(body))
+    }
+
+    if (waitingWorkers.length <= 0) {
+      return
+    }
+
+    const [controllerClusterData,] = fetchClusterData(controller, this.controllerPlan)
+
+    const constructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
+      return mainClusterData.constructionSite ?? controllerClusterData.constructionSite
+    })()
+
+    const sources = controller.room.find(FIND_SOURCES_ACTIVE)
+
+    waitingWorkers.forEach(creep => this.runWorker(creep, controller, constructionSite, sources))
+  }
+
+  private runWorker(creep: Creep, controller: StructureController, constructionSite: ConstructionSite<BuildableStructureConstant> | null, sources: Source[]): void {
+    // if (creep.v5task != null) {  // 事前にfilterしてある想定
+    //   return
+    // }
 
     if (creep.room.name !== this.roomName) {
       const waypoints = GameMap.getWaypoints(creep.room.name, this.roomName) ?? []
@@ -444,7 +488,27 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       //   return
       // }
 
+      if (constructionSite != null) {
+        if (constructionSite.structureType === STRUCTURE_RAMPART) {
+          creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(BuildWallApiWrapper.create(constructionSite as ConstructionSite<STRUCTURE_RAMPART>)))
+          return
+        }
+        creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(BuildApiWrapper.create(constructionSite)))
+        return
+      }
+
+      creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(UpgradeControllerApiWrapper.create(controller)))
+      return
     }
+
+    const source = sources[0]
+    if (source == null) {
+      creep.say("no task")
+      return
+    }
+
+    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source)))
+    return
   }
 
   // private updateConstructionSite(roomState: RoomStateOccupied, room: Room): { constructionSite: ConstructionSite<BuildableStructureTypes> | null } {
