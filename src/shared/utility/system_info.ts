@@ -22,7 +22,7 @@ export const SystemInfo = {
     name: "AntOS",
   },
   application: {
-    version: "9.2.7",
+    version: "9.2.8",
     name: "Declarative AI",
   },
 }

@@ -266,6 +266,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
           const claimer = Game.creeps[this.roomState.claimerName]
           claimer?.suicide()
         }
+        this.destroyHostileStructures(controller.room)
 
         const occupiedRoomState: RoomStateOccupied = {
           case: "occupied",
@@ -310,6 +311,34 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       break
     }
     }
+  }
+
+  private destroyHostileStructures(room: Room): void {
+    if (room.find(FIND_HOSTILE_CREEPS).length > 0) {
+      PrimitiveLogger.notice(`${this.identifier} destroying structure failed in ${roomLink(room.name)}`)
+      return
+    }
+
+    room.find(FIND_STRUCTURES).forEach(structure => {
+      if ((structure as {my?: boolean}).my === true) {
+        return
+      }
+      switch (structure.structureType) {
+      case STRUCTURE_CONTAINER:
+        if (structure.pos.isEqualTo(this.mainSourcePlan.center.x, this.mainSourcePlan.center.y) === true) {
+          return
+        }
+        if (structure.pos.isEqualTo(this.controllerPlan.center.x, this.controllerPlan.center.y) === true) {
+          return
+        }
+        break
+      case STRUCTURE_CONTROLLER:
+        return
+      default:
+        break
+      }
+      structure.destroy()
+    })
   }
 
   private runUnoccupied(roomState: RoomStateUnoccupied, controller: StructureController | null): void {
@@ -361,7 +390,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
     const creepName = UniqueId.generateCreepName(this.codename)
     const body = CreepBody.create([], [MOVE, CLAIM], energyCapacity, 4)
 
-    World.resourcePools.addSpawnCreepRequest(this.roomName, {
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
       codename: this.codename,
