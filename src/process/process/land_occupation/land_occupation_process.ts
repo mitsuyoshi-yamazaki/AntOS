@@ -151,31 +151,38 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
     const descriptions: string[] = [
       `${roomLink(this.roomName)}`,
       `parent: ${roomLink(this.parentRoomName)}`,
-      this.roomState.case,
+      this.describeCurrentState(),
     ]
 
     return descriptions.join(", ")
+  }
+
+  private describeCurrentState(): string {
+    switch (this.roomState.case) {
+    case "unoccupied":
+      if (this.roomState.claimerName != null) {
+        return `claiming: ${this.roomState.claimerName}`
+      }
+      return "unoccupied"
+    case "occupied":
+      if (this.roomState.workerNames.length > 0) {
+        return "building"
+      }
+      return "working"
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.roomState
+      return "unexpected state"
+    }
+    }
   }
 
   public processDescription(): string {
     const descriptions: string[] = [
       `${roomLink(this.roomName)}`,
       `parent: ${roomLink(this.parentRoomName)}`,
+      this.describeCurrentState(),
     ]
-
-    switch (this.roomState.case) {
-    case "unoccupied":
-      descriptions.push("unoccupied")
-      break
-    case "occupied":
-      descriptions.push("occupied")
-      break
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = this.roomState
-      break
-    }
-    }
 
     return descriptions.join(", ")
   }
