@@ -1361,7 +1361,7 @@ ProcessLauncher.register("LandOccupationProcess", args => {
 
     const controllerPlan = ((): ClusterPlan => {
       const plan: { [SerializedPosition: string]: LandOccupationStructureTypes | BuildableWallTypes } = {}
-      plan[serializePosition(mainCenterPosition)] = STRUCTURE_CONTAINER
+      plan[serializePosition(controllerCenterPosition)] = STRUCTURE_CONTAINER
 
       const emptyPositions = decodeRoomPosition(controller.pos, roomName).positionsInRange(1, emptyPositionFilteringOptions)
 

@@ -475,7 +475,7 @@ export const serializePosition = (position: Position): SerializedPosition => {
   return `${position.x},${position.y}` as SerializedPosition
 }
 
-const deserializePosition = (serialized: SerializedPosition): Position => {
+export const deserializePosition = (serialized: SerializedPosition): Position => {
   const components = (serialized as string).split(",")
   if (components[0] == null || components[1] == null) {
     PrimitiveLogger.programError(`invalid SerializedPosition: ${serialized}`)

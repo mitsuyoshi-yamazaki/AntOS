@@ -22,24 +22,21 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
 import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
-import { ClusterPlan } from "./land_occupation_datamodel"
+import { ClusterPlan, deserializePosition } from "./land_occupation_datamodel"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 type RoomStateUnoccupied = {
   readonly case: "unoccupied"
   claimerName: CreepName | null
-  readonly mainSourcePlan: ClusterPlan
-  readonly controllerPlan: ClusterPlan
 }
 type RoomStateOccupied = {
   readonly case: "occupied"
   level: number
 
   readonly mainSourceCluster: {
-    readonly plan: ClusterPlan
     harvesterName: CreepName | null
   }
   readonly controllerCluster: {
-    readonly plan: ClusterPlan
     upgraderName: CreepName | null
   }
 
@@ -71,10 +68,12 @@ ProcessDecoder.register("LandOccupationProcess", state => {
 interface LandOccupationProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly parentRoomName: RoomName
+  readonly mainSourcePlan: ClusterPlan
+  readonly controllerPlan: ClusterPlan
   readonly roomState: RoomState
 }
 
-export class LandOccupationProcess implements Process, Procedural {
+export class LandOccupationProcess implements Process, Procedural, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
@@ -88,6 +87,8 @@ export class LandOccupationProcess implements Process, Procedural {
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly parentRoomName: RoomName,
+    private readonly mainSourcePlan: ClusterPlan,
+    private readonly controllerPlan: ClusterPlan,
     private roomState: RoomState,
   ) {
     this.identifier = `${this.constructor.name}_${this.roomName}`
@@ -102,6 +103,8 @@ export class LandOccupationProcess implements Process, Procedural {
       roomName: this.roomName,
       parentRoomName: this.parentRoomName,
       roomState: this.roomState,
+      mainSourcePlan: this.mainSourcePlan,
+      controllerPlan: this.controllerPlan,
     }
   }
 
@@ -111,6 +114,8 @@ export class LandOccupationProcess implements Process, Procedural {
       state.i,
       state.roomName,
       state.parentRoomName,
+      state.mainSourcePlan,
+      state.controllerPlan,
       state.roomState,
     )
   }
@@ -129,8 +134,6 @@ export class LandOccupationProcess implements Process, Procedural {
     const roomState: RoomStateUnoccupied = {
       case: "unoccupied",
       claimerName: null,
-      mainSourcePlan,
-      controllerPlan,
     }
 
     return new LandOccupationProcess(
@@ -138,12 +141,109 @@ export class LandOccupationProcess implements Process, Procedural {
       processId,
       roomName,
       parentRoomName,
+      mainSourcePlan,
+      controllerPlan,
       roomState,
     )
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)}, parent: ${roomLink(this.parentRoomName)}`
+    const descriptions: string[] = [
+      `${roomLink(this.roomName)}`,
+      `parent: ${roomLink(this.parentRoomName)}`,
+      this.roomState.case,
+    ]
+
+    return descriptions.join(", ")
+  }
+
+  public processDescription(): string {
+    const descriptions: string[] = [
+      `${roomLink(this.roomName)}`,
+      `parent: ${roomLink(this.parentRoomName)}`,
+    ]
+
+    switch (this.roomState.case) {
+    case "unoccupied":
+      descriptions.push("unoccupied")
+      break
+    case "occupied":
+      descriptions.push("occupied")
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.roomState
+      break
+    }
+    }
+
+    return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "status"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+      case "status":
+        return this.showStatus()
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
+  }
+
+  private showStatus(): string {
+    const room = Game.rooms[this.roomName]
+    if (room == null) {
+      return `${coloredText("[No room visual]", "warn")} ${this.processDescription() }`
+    }
+
+    const visuals: { position: Position, text: string }[] = []
+    switch (this.roomState.case) {
+    case "unoccupied":
+      break
+    case "occupied":
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.roomState
+      break
+    }
+    }
+
+    visuals.push({
+      position: this.mainSourcePlan.center,
+      text: "X",
+    })
+    visuals.push(...Array.from(Object.entries(this.mainSourcePlan.plan)).map(([serializedPosition, structureType]) => {
+      return {
+        position: deserializePosition(serializedPosition),
+        text: (structureType[0] ?? "$").toUpperCase(),
+      }
+    }))
+    visuals.push({
+      position: this.controllerPlan.center,
+      text: "X",
+    })
+    visuals.push(...Array.from(Object.entries(this.controllerPlan.plan)).map(([serializedPosition, structureType]) => {
+      return {
+        position: deserializePosition(serializedPosition),
+        text: (structureType[0] ?? "$").toUpperCase(),
+      }
+    }))
+
+    visuals.forEach(visual => {
+      room.visual.text(visual.text, visual.position.x, visual.position.y)
+    })
+
+    return this.processDescription()
   }
 
   public runOnTick(): void {
@@ -165,11 +265,9 @@ export class LandOccupationProcess implements Process, Procedural {
           level: 0,
           mainSourceCluster: {
             harvesterName: null,
-            plan: this.roomState.mainSourcePlan,
           },
           controllerCluster: {
             upgraderName: null,
-            plan: this.roomState.controllerPlan,
           },
           workerNames: [],
           haulerName: null,
@@ -190,8 +288,6 @@ export class LandOccupationProcess implements Process, Procedural {
         const unoccupiedState: RoomStateUnoccupied = {
           case: "unoccupied",
           claimerName: null,
-          mainSourcePlan: this.roomState.mainSourceCluster.plan,
-          controllerPlan: this.roomState.controllerCluster.plan,
         }
         this.roomState = unoccupiedState
         this.runUnoccupied(this.roomState, controller ?? null)
