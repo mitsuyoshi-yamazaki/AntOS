@@ -366,15 +366,16 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
         OperatingSystem.os.suspendProcess(this.processId)
         return
       }
+      if (parentRoomResource.getResourceAmount(RESOURCE_ENERGY) > 40000 && (controller?.room.find(FIND_HOSTILE_CREEPS).length ?? 0) <= 0) {
+        const body = ((): BodyPartConstant[] => {
+          if (this.claimerBody == null) {
+            this.claimerBody = CreepBody.create([], [MOVE, CLAIM], parentRoomResource.room.energyCapacityAvailable, 6)
+          }
+          return this.claimerBody
+        })()
 
-      const body = ((): BodyPartConstant[] => {
-        if (this.claimerBody == null) {
-          this.claimerBody = CreepBody.create([], [MOVE, CLAIM], parentRoomResource.room.energyCapacityAvailable, 4)
-        }
-        return this.claimerBody
-      })()
-
-      roomState.claimerName = this.spawnCreep(body)
+        roomState.claimerName = this.spawnCreep(body)
+      }
     } else {
       this.runClaimer(claimer)
     }
@@ -430,14 +431,15 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       return creeps
     })()
 
+    const workerMaxCount = 4
     const waitingWorkers = workers.filter(creep => creep.v5task == null)
-    if (waitingWorkers.length <= 0 && workers.length >= 4) {
+    if (waitingWorkers.length <= 0 && workers.length > workerMaxCount) {
       return
     }
 
     const [mainClusterData, mainClusterStaticData] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
 
-    if ((mainClusterData.structures[STRUCTURE_SPAWN] ?? []).length <= 0) {
+    if ((mainClusterData.structures[STRUCTURE_SPAWN] ?? []).length <= 0 && workers.length < workerMaxCount) {
       const parentRoomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
       if (parentRoomResource == null) {
         PrimitiveLogger.fatal(`${coloredText("[ERROR]", "error")} ${this.identifier} no parent room found ${roomLink(this.parentRoomName)}`)
@@ -445,14 +447,16 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
         return
       }
 
-      const body = ((): BodyPartConstant[] => {
-        if (this.workerBody == null) {
-          this.workerBody = CreepBody.create([], [WORK, CARRY, MOVE, MOVE], parentRoomResource.room.energyCapacityAvailable, 5)
-        }
-        return this.workerBody
-      })()
+      if (parentRoomResource.getResourceAmount(RESOURCE_ENERGY) > 40000 && controller.room.find(FIND_HOSTILE_CREEPS).length <= 0) {
+        const body = ((): BodyPartConstant[] => {
+          if (this.workerBody == null) {
+            this.workerBody = CreepBody.create([], [WORK, CARRY, MOVE, MOVE], parentRoomResource.room.energyCapacityAvailable, 10)
+          }
+          return this.workerBody
+        })()
 
-      roomState.workerNames.push(this.spawnCreep(body))
+        roomState.workerNames.push(this.spawnCreep(body))
+      }
     }
 
     if (waitingWorkers.length <= 0) {
