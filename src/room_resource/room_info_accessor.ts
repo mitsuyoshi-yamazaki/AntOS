@@ -2,8 +2,8 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { coloredResourceType, roomLink } from "utility/log"
-import { MineralCompoundIngredients, ResourceConstant } from "shared/utility/resource"
+import { roomLink } from "utility/log"
+import { MineralCompoundIngredients } from "shared/utility/resource"
 import { Result } from "shared/utility/result"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
@@ -389,11 +389,11 @@ export class OwnedRoomInfoAccessor {
   }
   public removeBoosts(boosts: MineralBoostConstant[]): Result<{ addedToResearchOutputLabIds: Id<StructureLab>[] }, string> {
     try {
-      this.roomInfo.boostLabs.forEach(boostLabInfo => {
-        if (boosts.includes(boostLabInfo.boost) !== true) {
-          throw `${coloredResourceType(boostLabInfo.boost)} is not in the list ${roomLink(this.roomName)}`
-        }
-      })
+      // this.roomInfo.boostLabs.forEach(boostLabInfo => {  // 不要だと思う
+      //   if (boosts.includes(boostLabInfo.boost) !== true) {
+      //     throw `${coloredResourceType(boostLabInfo.boost)} is not in the list ${roomLink(this.roomName)}`
+      //   }
+      // })
 
       const addedToResearchOutputLabIds: Id<StructureLab>[] = []
       boosts.forEach(boost => {
