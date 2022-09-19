@@ -5,7 +5,7 @@ import { coloredText, roomLink } from "utility/log"
 import { generateCodename, UniqueId } from "utility/unique_id"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
-import { CreepName } from "prototype/creep"
+import { CreepName, V5CreepMemory } from "prototype/creep"
 import { Position } from "shared/utility/position"
 import { processLog } from "os/infrastructure/logger"
 import type { Timestamp } from "shared/utility/timestamp"
@@ -28,6 +28,7 @@ import { BuildWallApiWrapper } from "v5_object_task/creep_task/api_wrapper/build
 import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 
 type RoomStateUnoccupied = {
   readonly case: "unoccupied"
@@ -86,6 +87,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   private readonly codename: string
   private claimerBody: BodyPartConstant[] | null = null
   private workerBody: BodyPartConstant[] | null = null
+  private mainHarvesterSpawnDirection: DirectionConstant | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -418,6 +420,22 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   }
 
   private runOccupied(roomState: RoomStateOccupied, controller: StructureController): void {
+    const [mainClusterData, mainClusterStaticData] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
+    const spawn = (mainClusterData.structures[STRUCTURE_SPAWN] ?? [])[0]
+    const mainHarvester = ((): Creep | null => {
+      if (roomState.mainSourceCluster.harvesterName == null) {
+        return null
+      }
+      const creep = Game.creeps[roomState.mainSourceCluster.harvesterName]
+      if (creep != null) {
+        return creep
+      }
+      roomState.mainSourceCluster.harvesterName = null
+      return null
+    })()
+
+    const workerMaxCount = 4
+
     const workers = ((): Creep[] => {
       const creeps: Creep[] = []
       roomState.workerNames = roomState.workerNames.filter(creepName => {
@@ -431,65 +449,171 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       return creeps
     })()
 
-    const workerMaxCount = 4
+    if (spawn == null) {
+      if (workers.length < workerMaxCount) {
+        const parentRoomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+        if (parentRoomResource == null) {
+          PrimitiveLogger.fatal(`${coloredText("[ERROR]", "error")} ${this.identifier} no parent room found ${roomLink(this.parentRoomName)}`)
+          OperatingSystem.os.suspendProcess(this.processId)
+          return
+        }
+
+        if (parentRoomResource.getResourceAmount(RESOURCE_ENERGY) > 40000 && controller.room.find(FIND_HOSTILE_CREEPS).length <= 0) {
+          const body = ((): BodyPartConstant[] => {
+            if (this.workerBody == null) {
+              this.workerBody = CreepBody.create([], [WORK, CARRY, MOVE, MOVE], parentRoomResource.room.energyCapacityAvailable, 10)
+            }
+            return this.workerBody
+          })()
+
+          roomState.workerNames.push(this.spawnCreep(body))
+        }
+      }
+    } else {
+      if (mainHarvester == null) {
+        const spawnDirection = ((): DirectionConstant => {
+          if (this.mainHarvesterSpawnDirection == null) {
+            this.mainHarvesterSpawnDirection = spawn.pos.getDirectionTo(this.mainSourcePlan.center.x, this.mainSourcePlan.center.y)
+          }
+          return this.mainHarvesterSpawnDirection
+        })()
+        const body = [WORK, WORK, CARRY]
+        const creepName = UniqueId.generateCreepName(this.codename)
+        roomState.mainSourceCluster.harvesterName = creepName
+
+        const creepMemory: V5CreepMemory = {
+          v: "v5",
+          p: this.roomName,
+          r: [],
+          t: null,
+          i: this.taskIdentifier,
+          n: false,
+        }
+
+        spawn.spawnCreep(body, creepName, {
+          memory: creepMemory,
+          directions: [spawnDirection],
+        })
+      } else {
+        if (workers.length <= 0) { // FixMe: 仮コード
+          const body = [WORK, CARRY, MOVE]
+          const creepName = UniqueId.generateCreepName(this.codename)
+          roomState.workerNames.push(creepName)
+
+          const creepMemory: V5CreepMemory = {
+            v: "v5",
+            p: this.roomName,
+            r: [],
+            t: null,
+            i: this.taskIdentifier,
+            n: false,
+          }
+
+          spawn.spawnCreep(body, creepName, {
+            memory: creepMemory,
+          })
+        }
+      }
+    }
+
+    const tower = (mainClusterData.structures[STRUCTURE_TOWER] ?? [])[0] ?? null
+    if (tower != null) {
+      this.runTower(tower)
+    }
+
+    if (mainHarvester != null) {
+      this.runMainHarvester(
+        mainHarvester,
+        spawn ?? null,
+        tower,
+        mainClusterData.constructionSite,
+      )
+    }
+
     const waitingWorkers = workers.filter(creep => creep.v5task == null)
     if (waitingWorkers.length <= 0 && workers.length > workerMaxCount) {
       return
     }
 
-    const [mainClusterData, mainClusterStaticData] = fetchClusterData(controller, this.mainSourcePlan)  // TODO: キャッシュする
+    if (waitingWorkers.length > 0) {
+      const [controllerClusterData, controllerClusterStaticData] = fetchClusterData(controller, this.controllerPlan)
 
-    if ((mainClusterData.structures[STRUCTURE_SPAWN] ?? []).length <= 0 && workers.length < workerMaxCount) {
-      const parentRoomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
-      if (parentRoomResource == null) {
-        PrimitiveLogger.fatal(`${coloredText("[ERROR]", "error")} ${this.identifier} no parent room found ${roomLink(this.parentRoomName)}`)
-        OperatingSystem.os.suspendProcess(this.processId)
-        return
-      }
+      const constructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
+        return mainClusterData.constructionSite ?? controllerClusterData.constructionSite
+      })()
 
-      if (parentRoomResource.getResourceAmount(RESOURCE_ENERGY) > 40000 && controller.room.find(FIND_HOSTILE_CREEPS).length <= 0) {
-        const body = ((): BodyPartConstant[] => {
-          if (this.workerBody == null) {
-            this.workerBody = CreepBody.create([], [WORK, CARRY, MOVE, MOVE], parentRoomResource.room.energyCapacityAvailable, 10)
+      if (constructionSite == null) {
+        const mainClusterNextConstruction = mainClusterStaticData.nextConstructions.shift()
+        if (mainClusterNextConstruction != null) {
+          const result = controller.room.createConstructionSite(mainClusterNextConstruction.position.x, mainClusterNextConstruction.position.y, mainClusterNextConstruction.structureType)
+          if (result !== OK) {
+            processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${mainClusterNextConstruction.position.x},${mainClusterNextConstruction.position.y} ${mainClusterNextConstruction.structureType}`)
           }
-          return this.workerBody
-        })()
-
-        roomState.workerNames.push(this.spawnCreep(body))
+        } else {
+          const controllerNextConstruction = controllerClusterStaticData.nextConstructions.shift()
+          if (controllerNextConstruction != null) {
+            const result = controller.room.createConstructionSite(controllerNextConstruction.position.x, controllerNextConstruction.position.y, controllerNextConstruction.structureType)
+            if (result !== OK) {
+              processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${controllerNextConstruction.position.x},${controllerNextConstruction.position.y} ${controllerNextConstruction.structureType}`)
+            }
+          }
+        }
       }
+
+      const sources = controller.room.find(FIND_SOURCES_ACTIVE)
+
+      waitingWorkers.forEach(creep => this.runWorker(creep, controller, constructionSite, sources))
+    }
+  }
+
+  private runTower(tower: StructureTower): void {
+    const hostileCreep = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS)
+    if (hostileCreep == null) {
+      return
+    }
+    tower.attack(hostileCreep)
+  }
+
+  private runMainHarvester(creep: Creep, spawn: StructureSpawn | null, tower: StructureTower | null, constructionSite: ConstructionSite<BuildableStructureConstant> | null): void {
+    if (creep.spawning === true) {
+      return
+    }
+    if (spawn != null && spawn.spawning == null && (creep.ticksToLive ?? 0) < 500) {
+      spawn.renewCreep(creep)
     }
 
-    if (waitingWorkers.length <= 0) {
+    if (creep.v5task != null) {
       return
     }
 
-    const [controllerClusterData, controllerClusterStaticData] = fetchClusterData(controller, this.controllerPlan)
-
-    const constructionSite = ((): ConstructionSite<BuildableStructureConstant> | null => {
-      return mainClusterData.constructionSite ?? controllerClusterData.constructionSite
-    })()
-
-    if (constructionSite == null) {
-      const mainClusterNextConstruction = mainClusterStaticData.nextConstructions.shift()
-      if (mainClusterNextConstruction != null) {
-        const result = controller.room.createConstructionSite(mainClusterNextConstruction.position.x, mainClusterNextConstruction.position.y, mainClusterNextConstruction.structureType)
-        if (result !== OK) {
-          processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${mainClusterNextConstruction.position.x},${mainClusterNextConstruction.position.y} ${mainClusterNextConstruction.structureType}`)
-        }
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      const source = creep.pos.findInRange(FIND_SOURCES, 1)[0]
+      if (source != null) {
+        creep.v5task = RunApiTask.create(HarvestEnergyApiWrapper.create(source, false))
       } else {
-        const controllerNextConstruction = controllerClusterStaticData.nextConstructions.shift()
-        if (controllerNextConstruction != null) {
-          const result = controller.room.createConstructionSite(controllerNextConstruction.position.x, controllerNextConstruction.position.y, controllerNextConstruction.structureType)
-          if (result !== OK) {
-            processLog(this, `${coloredText("[Warning]", "warn")} createConstructionSite() failed in ${roomLink(controller.room.name)} at ${controllerNextConstruction.position.x},${controllerNextConstruction.position.y} ${controllerNextConstruction.structureType}`)
-          }
-        }
+        creep.say("no src")
       }
+      return
     }
 
-    const sources = controller.room.find(FIND_SOURCES_ACTIVE)
+    if (tower != null && tower.store.getFreeCapacity(RESOURCE_ENERGY) > 50) {
+      creep.v5task = RunApiTask.create(TransferEnergyApiWrapper.create(tower))
+      return
+    }
 
-    waitingWorkers.forEach(creep => this.runWorker(creep, controller, constructionSite, sources))
+    if (spawn != null && spawn.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+      creep.v5task = RunApiTask.create(TransferEnergyApiWrapper.create(spawn))
+      return
+    }
+
+    if (constructionSite != null) {
+      if (constructionSite.structureType === STRUCTURE_RAMPART) {
+        creep.v5task = RunApiTask.create(BuildWallApiWrapper.create(constructionSite as ConstructionSite<STRUCTURE_RAMPART>))
+        return
+      }
+      creep.v5task = RunApiTask.create(BuildApiWrapper.create(constructionSite))
+      return
+    }
   }
 
   private runWorker(creep: Creep, controller: StructureController, constructionSite: ConstructionSite<BuildableStructureConstant> | null, sources: Source[]): void {
