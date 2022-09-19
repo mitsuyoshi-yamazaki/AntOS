@@ -9,10 +9,12 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
+import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { decodeRoomPosition } from "prototype/room_position"
 
 /** @throws */
 export function execCreepCommand(creep: Creep, args: string[]): string {
-  const commandList = ["help", "pickup", "transfer", "bring_back", "move_to_room"]
+  const commandList = ["help", "pickup", "transfer", "bring_back", "move_to_room", "move_to"]
   const listArguments = new ListArguments(args)
 
   const command = listArguments.string(0, "command").parse()
@@ -30,9 +32,25 @@ export function execCreepCommand(creep: Creep, args: string[]): string {
     throw "not implemented yet"
   case "move_to_room":
     return moveToRoom(creep, args)
+  case "move_to":
+    return moveTo(creep, args)
   default:
     throw `Invalid command ${command}. see "help"`
   }
+}
+
+/** @throws */
+const moveTo = (creep: Creep, args: string[]): string => {
+  if (!isV5CreepMemory(creep.memory)) {
+    throwNotV5Error(creep)
+  }
+
+  const listArguments = new ListArguments(args)
+  const position = listArguments.localPosition(0, "position").parse()
+  const roomPosition = decodeRoomPosition(position, creep.room.name)
+
+  creep.memory.t = MoveToTask.create(roomPosition, 0).encode()
+  return `${creep.name} move to ${roomPosition}`
 }
 
 type PickupTargetType = Tombstone | Ruin | StructureContainer | StructureTower | StructureLab
