@@ -454,6 +454,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     if ((Game.time % 1511) === 27) {
       this.talkingTo = {}
     }
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
+      return
+    }
 
     const sourceHarvestWhitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
     const whitelist: string[] = [
@@ -470,6 +474,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
+        return false
+      }
+      const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
+      if (energyAmount < ((roomResource.controller.level + 1) * 5000)) {
         return false
       }
       if (this.numberOfCreeps === 1) {
@@ -525,15 +533,6 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
   }
 
   private checkFinishCondition(): void {
-    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
-    if (roomResource == null) {
-      return
-    }
-    const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
-    if (energyAmount < 50000) {
-      return
-    }
-
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
       return
