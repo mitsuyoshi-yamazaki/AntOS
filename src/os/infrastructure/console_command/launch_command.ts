@@ -1315,6 +1315,9 @@ ProcessLauncher.register("LandOccupationProcess", args => {
     }
 
     const parentRoomName = args.roomName("parent_room_name").parse({my: true})
+
+    getWaypoints(args, parentRoomName, roomName)  // waypointの確認
+
     const mainSource = args.visibleGameObject("main_source_id").parse({ inRoomName: roomName })
     const mainCenterPosition = args.localPosition("main_center").parse()
     const controllerCenterPosition = args.localPosition("controller_center").parse()
