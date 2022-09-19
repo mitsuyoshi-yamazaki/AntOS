@@ -229,7 +229,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const controller = creep.room.controller
-    if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > creep.pos.getRangeTo(controller.pos)) {
+    if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > (creep.ticksToLive ?? 0)) {
       const moveToNextRoomTask = this.moveToNextRoomTask(creep)
       if (moveToNextRoomTask == null) {
         creep.say("finished")
