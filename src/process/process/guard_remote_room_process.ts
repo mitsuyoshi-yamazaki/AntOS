@@ -281,7 +281,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     if (this.stopSpawningReasons.length > 0) {
-      descriptions.push(`stopped by: ${this.stopSpawningReasons.join(", ")}`)
+      descriptions.push(coloredText(`stopped by: ${this.stopSpawningReasons.join(", ")}`, "info"))
     }
     return descriptions.join(", ")
   }
