@@ -100,6 +100,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.showSwcAllyRequests()
       case "script":
         return this.runScript()
+      case "find_researchable_rooms":
+        return this.findResearchableRooms()
       default:
         throw `Invalid script type ${scriptType}`
       }
@@ -955,5 +957,20 @@ export class ExecCommand implements ConsoleCommand {
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }
+  }
+
+  private findResearchableRooms(): CommandExecutionResult {
+    const roomNames = RoomResources.getOwnedRoomResources().flatMap((roomResource): RoomName[] => {
+      const researchLabs = roomResource.roomInfoAccessor.researchLabs
+      if (researchLabs == null) {
+        return []
+      }
+      if (researchLabs.outputLabs.length < 6) {
+        return []
+      }
+      return [roomResource.room.name]
+    })
+
+    return `found ${roomNames.length} rooms\n- ${roomNames.map(roomName => roomLink(roomName)).join(", ")}`
   }
 }
