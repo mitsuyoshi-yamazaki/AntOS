@@ -81,6 +81,8 @@ import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
 import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
 import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
+import { FillNukerProcess } from "process/onetime/fill_nuker_process"
+import { PrimitiveLogger } from "../primitive_logger"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1388,6 +1390,27 @@ ProcessLauncher.register("LandOccupationProcess", args => {
       parentRoomName,
       mainSourcePlan,
       controllerPlan,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("FillNukerProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const nuker = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
+    if (nuker == null) {
+      throw `no nuker in ${roomLink(roomResource.room.name)}`
+    }
+
+    if ((roomResource.roomInfo.config?.genericWaitingPositions ?? []).length <= 0) {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} no waiting position in ${roomLink(roomResource.room.name)}`)
+    }
+
+    return Result.Succeeded((processId) => FillNukerProcess.create(
+      processId,
+      nuker,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
