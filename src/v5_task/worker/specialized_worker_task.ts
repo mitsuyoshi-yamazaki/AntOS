@@ -90,6 +90,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       if (resources == null) {
         return 3
       }
+      if (resources.roomInfo.config?.specializedWorkerCount != null) {
+        return resources.roomInfo.config?.specializedWorkerCount
+      }
       if (resources.roomInfo.roomPlan == null) {
         return 3
       }
