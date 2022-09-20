@@ -103,6 +103,7 @@ commands: ${commands}
 - reset &ltargument_name&gt
   - reset quad argument
   - arguments: ${argumentNames}
+  - specify creep index to reset specific creep spec
 - show
   - show current quad arguments
 - verify
