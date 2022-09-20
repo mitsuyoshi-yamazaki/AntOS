@@ -73,7 +73,7 @@ export class FillNukerProcess implements Process, Procedural {
       }
 
       const status = (resourceType: RESOURCE_ENERGY | RESOURCE_GHODIUM): string => {
-        return `${coloredResourceType(resourceType)}: ${Math.floor(nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100}%`
+        return `${coloredResourceType(resourceType)}: ${Math.floor((nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100)}%`
       }
 
       return `${status(RESOURCE_ENERGY)}, ${status(RESOURCE_GHODIUM)}`

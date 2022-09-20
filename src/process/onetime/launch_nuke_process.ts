@@ -64,7 +64,7 @@ export class LaunchNukeProcess implements Process, Procedural {
 
   public processDescription(): string {
     const resourceStatus = (nuker: StructureNuker, resourceType: RESOURCE_ENERGY | RESOURCE_GHODIUM): string => {
-      return `${coloredResourceType(resourceType)}: ${Math.floor(nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100}%`
+      return `${coloredResourceType(resourceType)}: ${Math.floor((nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100)}%`
     }
     const nukerStatus = (nukerId: Id<StructureNuker>): string => {
       const nuker = Game.getObjectById(nukerId)
