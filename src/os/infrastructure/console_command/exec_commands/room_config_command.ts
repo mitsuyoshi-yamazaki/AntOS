@@ -490,13 +490,24 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
 }
 
 // ---- Old Commands ---- //
-/** throws */
+/** @throws */
 function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {
   const room = roomResource.room
   const roomInfo = roomResource.roomInfo
   if (roomInfo.researchLab == null) {
     roomInfo.researchLab = setResearchLabs(room, roomInfo, args)
   }
+
+  const inputLabs = ((): StructureLab[] => {
+    const lab1 = Game.getObjectById(roomInfo.researchLab.inputLab1)
+    const lab2 = Game.getObjectById(roomInfo.researchLab.inputLab2)
+    if (lab1 == null || lab2 == null) {
+      const errorMessage = `input lab ${roomInfo.researchLab.inputLab1} and/or ${roomInfo.researchLab.inputLab2} is missing`
+      roomInfo.researchLab = undefined
+      throw errorMessage
+    }
+    return [lab1, lab2]
+  })()
 
   const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
     .map(lab => lab.id)
@@ -526,9 +537,23 @@ function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource
   if (labIdsInRoom.length <= 0) {
     return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
   }
-  roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
 
-  return `${labIdsInRoom.length} labs added to research output labs`
+  const addedOutputLabIds = labIdsInRoom.filter(labId => {
+    const lab = Game.getObjectById(labId)
+    if (lab == null) {
+      return false
+    }
+    if (inputLabs.some(inputLab => inputLab.pos.getRangeTo(lab.pos) > 2) === true) {
+      return false
+    }
+    return true
+  })
+
+  roomInfo.researchLab.outputLabs.push(
+    ...addedOutputLabIds
+  )
+
+  return `${addedOutputLabIds.length} labs added to research output labs`
 }
 
 //** throws */
