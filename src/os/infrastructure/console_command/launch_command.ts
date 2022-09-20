@@ -1,4 +1,4 @@
-import { Process } from "process/process"
+import { Process, ProcessId } from "process/process"
 import { TestChildProcess, TestProcess } from "process/test/test_process"
 import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
@@ -80,9 +80,11 @@ import { RoomCoordinate } from "utility/room_coordinate"
 import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
 import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
-import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
+import { decodeRoomPosition, Position, RoomPositionFilteringOptions } from "prototype/room_position"
 import { FillNukerProcess } from "process/onetime/fill_nuker_process"
 import { PrimitiveLogger } from "../primitive_logger"
+import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime/launch_nuke_process"
+import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1412,6 +1414,136 @@ ProcessLauncher.register("FillNukerProcess", args => {
       processId,
       nuker,
     ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("LaunchNukeProcess", args => {
+  try {
+    const rooms = args.list("room_names", "room").parse({ my: true })
+    const forced = args.boolean("forced").parseOptional() ?? false
+
+    const nukers = rooms.map(room => {
+      const nuker = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
+      if (nuker == null) {
+        throw `${roomLink(room.name)} has no nuker`
+      }
+
+      if (forced !== true) {
+        if (isNukerReady(nuker) !== true) {
+          throw `nuker in ${roomLink(nuker.room.name)} is not ready (set "forced=1" to force launch)`
+        }
+      }
+
+      return nuker
+    })
+
+    const targetIds = args.list("target_ids", "object_id").parseOptional() ?? []
+    const targetStructureTypes = args.list("target_structure_types", "string").parseOptional() ?? []
+    const targetPositions = args.list("target_positions", "local_position").parseOptional() ?? []
+
+    if (targetIds.length <= 0 && targetStructureTypes.length <= 0 && targetPositions.length <= 0) {
+      throw "no target: specify targets by \"target_ids\", \"target_structure_types\" and/or \"target_positions\""
+    }
+
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const delay = args.int("delay").parse({min: 0})
+
+    rooms.forEach(room => {
+      const distance = Game.map.getRoomLinearDistance(room.name, targetRoomName)
+      if (distance > NUKE_RANGE) {
+        throw `${roomLink(room.name)} is out of range (${distance})`
+      }
+    })
+
+    const launchProcess = (processId: ProcessId, targetRoom: Room): LaunchNukeProcess => {
+      const targetObjects = targetIds.map(targetId => {
+        const targetObject = Game.getObjectById(targetId)
+        if (targetObject == null) {
+          throw `no object with ID ${targetId}`
+        }
+        if (!(targetObject instanceof RoomObject)) {
+          throw `${targetObject} is not RoomObject`
+        }
+        if (targetObject.room == null || targetObject.room.name !== targetRoomName) {
+          throw `${targetObject} is not in the target room ${roomLink(targetRoomName)}`
+        }
+        return targetObject
+      })
+
+      const targetStructures = targetRoom.find(FIND_STRUCTURES).filter(structure => {
+        if (targetStructureTypes.includes(structure.structureType) !== true) {
+          return false
+        }
+        return true
+      })
+
+      const allTargetPositions: Position[] = [
+        ...targetObjects.map(targetObject => targetObject.pos),
+        ...targetStructures.map(structure => structure.pos),
+        ...targetPositions,
+      ].map(position => ({x: position.x, y: position.y})) // 最終的にMemoryへ保存するため、encodableなオブジェクトに強制する
+
+      if (nukers.length !== allTargetPositions.length) {
+        throw `number of nukers (${nukers.length}) shoud be same as number of targets (${allTargetPositions.length})`
+      }
+
+      const targetInfo: NukeTargetInfo[] = nukers.map((nuker, index) => {
+        const targetPosition = allTargetPositions[index]
+        if (targetPosition == null) {
+          throw `target position is null (${index})`
+        }
+        return {
+          nukerId: nuker.id,
+          position: targetPosition,
+        }
+      })
+
+      return LaunchNukeProcess.create(
+        processId,
+        targetRoomName,
+        targetInfo,
+        delay,
+      )
+    }
+
+    const checkedTargetRoom = Game.rooms[targetRoomName]
+    if (checkedTargetRoom == null) {
+      const observerRoomResource = args.ownedRoomResource("observer_room_name", { missingArgumentErrorMessage: `observer_room_name is required since the target room ${roomLink(targetRoomName)} is invisible` }).parse()
+      if (observerRoomResource.activeStructures.observer == null) {
+        throw `no observer in ${roomLink(observerRoomResource.room.name)}`
+      }
+
+      const observeResult = observerRoomResource.activeStructures.observer.observeRoom(targetRoomName)
+      switch (observeResult) {
+      case OK:
+        PrimitiveLogger.log(`reserve observation ${roomLink(targetRoomName)} at ${Game.time}`)
+        break
+      default:
+        throw `observe room ${roomLink(targetRoomName)} failed with ${observeResult}`
+      }
+
+      return Result.Succeeded((processId) => OnHeapDelayProcess.create(
+        processId,
+        `observe ${roomLink(targetRoomName)} to plan nuker attack`,
+        1,
+        (): string => {
+          const observedRoom = Game.rooms[targetRoomName]
+          if (observedRoom == null) {
+            throw `${roomLink(targetRoomName)} observation failed at ${Game.time}`
+          }
+
+          const process = OperatingSystem.os.addProcess(null, processId => launchProcess(processId, observedRoom))
+
+          Memory.os.logger.filteringProcessIds.push(process.processId)  // 引数を持ち越せないため手動で
+
+          return `process launched ${process.taskIdentifier}, ${process.processId}`
+        },
+      ))
+    }
+
+    return Result.Succeeded(processId => launchProcess(processId, checkedTargetRoom))
   } catch (error) {
     return Result.Failed(`${error}`)
   }
