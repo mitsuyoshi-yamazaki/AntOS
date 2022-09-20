@@ -1,6 +1,7 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import type { RoomName } from "shared/utility/room_name_types"
-import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument, VisibleRoomObjectArgument } from "./string_parser"
+import { Position } from "../position"
+import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument, VisibleRoomObjectArgument } from "./string_parser"
 
 export type IterableArgumentType = "string"
   | "int"
@@ -12,7 +13,9 @@ export type IterableArgumentType = "string"
   | "commodity"
   | "object_id"
   | "room_name"
+  | "room"
   | "visible_room_object"
+  | "local_position"
 
 type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? void
   : T extends "int" ? { min?: number, max?: number }
@@ -23,7 +26,9 @@ type IterableArgumentOption<T extends IterableArgumentType> = T extends "string"
   : T extends "commodity" ? void
   : T extends "object_id" ? void
   : T extends "room_name" ? { my?: boolean, allowClosedRoom?: boolean }
+  : T extends "room" ? { my?: boolean, allowClosedRoom?: boolean }
   : T extends "visible_room_object" ? { inRoomName?: RoomName }
+  : T extends "local_position" ? void
   : void  // "boolean"
 
 type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "string" ? string
@@ -35,7 +40,9 @@ type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "str
   : T extends "commodity" ? CommodityConstant
   : T extends "object_id" ? string
   : T extends "room_name" ? RoomName
+  : T extends "room" ? Room
   : T extends "visible_room_object" ? RoomObject
+  : T extends "local_position" ? Position
   : boolean // "boolean"
 
 const SingularParsers: { [T in IterableArgumentType]: (key: string, value: string, parseOptions?: ArgumentParsingOptions) => SingleOptionalArgument<IterableArgumentOption<T>, IterableArgumentReturnType<T>> } = {
@@ -69,8 +76,14 @@ const SingularParsers: { [T in IterableArgumentType]: (key: string, value: strin
   room_name: (key: string, value: string, parseOptions?: ArgumentParsingOptions): RoomNameArgument => {
     return new RoomNameArgument(key, value, parseOptions)
   },
+  room: (key: string, value: string, parseOptions?: ArgumentParsingOptions): RoomArgument => {
+    return new RoomArgument(key, value, parseOptions)
+  },
   visible_room_object: (key: string, value: string, parseOptions?: ArgumentParsingOptions): VisibleRoomObjectArgument => {
     return new VisibleRoomObjectArgument(key, value, parseOptions)
+  },
+  local_position: (key: string, value: string, parseOptions?: ArgumentParsingOptions): LocalPositionArgument => {
+    return new LocalPositionArgument(key, value, parseOptions)
   },
 }
 

@@ -2,7 +2,7 @@ import { GameMap } from "game/game_map"
 import { Position } from "shared/utility/position"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
-import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument } from "./string_parser"
+import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument, TypedStringListArgument } from "./string_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 import type { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "../console_utility/console_utility"
@@ -44,6 +44,7 @@ interface KeywordArgumentsInterface {
   ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource>
   roomCoordinate(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate>
   typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T>
+  typedStringList<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T[]>
 
   interRoomPath(
     fromRoomKey: string,
@@ -181,6 +182,10 @@ export class KeywordArguments implements KeywordArgumentsInterface {
 
   public typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T> {
     return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, typeName, typeGuard, options)
+  }
+
+  public typedStringList<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T[]> {
+    return new TypedStringListArgument(key, this.argumentMap.get(key) ?? null, typeName, typeGuard, options)
   }
 
   // ---- ---- //

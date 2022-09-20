@@ -118,6 +118,33 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
   }
 }
 
+export class TypedStringListArgument<T extends string> extends SingleOptionalArgument<void, T[]> {
+  public constructor(
+    key: string,
+    value: string | null,
+    private readonly typeName: string,
+    private readonly typeGuard: ((arg: string) => arg is T),
+    parseOptions?: ArgumentParsingOptions,
+  ) {
+    super(key, value, parseOptions)
+  }
+
+  /** throws */
+  public parse(): T[] {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const components = this.value.split(",")
+    return components.map(component => {
+      if (!(this.typeGuard(component))) {
+        throw `${component} is not ${this.typeName}`
+      }
+      return component
+    })
+  }
+}
+
 export class PowerTypeArgument extends SingleOptionalArgument<void, PowerConstant> {
   /** throws */
   public parse(): PowerConstant {
