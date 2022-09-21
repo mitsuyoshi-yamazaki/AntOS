@@ -31,6 +31,7 @@ import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 const routeRecalculationInterval = 80000
 
@@ -239,7 +240,7 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         const solver = problemFinder.getProblemSolvers()[0] // TODO: 選定する
         if (solver instanceof CreepInsufficiencyProblemSolver) {
           solver.codename = generateCodename(this.constructor.name, this.startTime)
-          solver.initialTask = MoveToTask.create(source.pos, 1)
+          // solver.initialTask = MoveToTask.create(source.pos, 1)
           solver.priority = CreepSpawnRequestPriority.Medium
 
           const energyCapacity = objects.controller.room.energyCapacityAvailable
@@ -313,13 +314,21 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
   ): CreepTask | null {
     const noEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0
 
-    if (noEnergy) {
+    if (noEnergy === true) {
       if (container != null) {
         const harvestPosition = container.pos
         if (creep.pos.isEqualTo(harvestPosition) === true) {
           return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
         }
+        if (creep.room.name !== this.targetRoomName) {
+          const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+          return MoveToRoomTask.create(this.targetRoomName, waypoints)
+        }
         return MoveToTask.create(harvestPosition, 0)
+      }
+      if (creep.room.name !== this.targetRoomName) {
+        const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+        return MoveToRoomTask.create(this.targetRoomName, waypoints)
       }
       return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
     }
