@@ -27,6 +27,7 @@ export interface LaunchNukeProcessState extends ProcessState {
   readonly result: "succeeded" | string | null // failed reason
 }
 
+// TODO: 時間差攻撃によってSpawn中だったCreep等を破壊する
 export class LaunchNukeProcess implements Process, Procedural {
   public readonly taskIdentifier: string
 
