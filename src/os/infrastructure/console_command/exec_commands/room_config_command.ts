@@ -517,12 +517,24 @@ function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource
     roomInfo.researchLab.inputLab2,
     ...roomInfo.researchLab.outputLabs,
   ]
-  researchLabIds.forEach(researchLabId => {
-    const index = labIdsInRoom.indexOf(researchLabId)
-    if (index >= 0) {
+
+  try {
+    researchLabIds.forEach(researchLabId => {
+      const index = labIdsInRoom.indexOf(researchLabId)
+      if (index < 0) {
+        const labInstance = Game.getObjectById(researchLabId)
+        if (labInstance == null) {
+          throw `lab with ID ${researchLabId} not found in ${roomLink(roomName)}`
+        }
+        throw `lab ${labInstance} ${labInstance.pos} is not located in ${roomLink(roomName)} or iterated twice`
+      }
       labIdsInRoom.splice(index, 1)
-    }
-  })
+    })
+  } catch (error) {
+    roomInfo.researchLab = undefined
+
+    throw `research lab iteration failed: ${error}\nreset research lab IDs in Memory`
+  }
 
   const boostLabIds = roomResource.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.labId)
   if (boostLabIds != null) {
