@@ -21,7 +21,7 @@ type NumberAccessorCommands = typeof numberAccessorCommands[number]
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
-  const oldCommandList = ["wall_positions", "research_compounds", "refresh_research_labs"]
+  const oldCommandList = ["wall_positions", "refresh_research_labs"]
   const commandList: string[] = [
     "help",
     "waiting_position",
@@ -33,6 +33,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "toggle_auto_attack",
     "show_labs",
     "no_repair_walls",
+    "research",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -64,6 +65,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return showLabs(roomResource)
   case "no_repair_walls":
     return noRepairWalls(roomResource, args)
+  case "research":
+    return research(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -73,14 +76,70 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     // ---- Old Commands ---- //
   case "wall_positions":
     return configureWallPositions(roomName, roomInfo, parseProcessArguments(args))
-  case "research_compounds":
-    return configureResearchCompounds(roomName, roomInfo, parseProcessArguments(args))
   case "refresh_research_labs":
     return refreshResearchLabs(roomName, roomResource, parseProcessArguments(args))
   // case "disable_boost_labs": // TODO: 消す
   //   return disableBoostLabs(roomName, roomInfo)
   default:
     throw `Invalid command ${command}, see "help"`
+  }
+}
+
+/** @throws */
+const research = (roomResource: OwnedRoomResource, args: string[]): string => {
+  const commands = ["help", "show", "add", "clear"]
+  const listArguments = new ListArguments(args)
+
+  const getCurentSettings = (): string => {
+    const entries = Object.entries(roomResource.roomInfo.config?.researchCompounds ?? {})
+    if (entries.length <= 0) {
+      return "no research compounds"
+    }
+    return entries
+      .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
+      .join("")
+  }
+
+  const command = listArguments.string(0, "command").parse()
+  switch (command) {
+  case "help":
+    return `commands: ${commands.join(", ")}`
+
+  case "show":
+    return getCurentSettings()
+
+  case "add": {
+    const compoundType = listArguments.typedString(1, "compound type", "MineralCompoundConstant", isMineralCompoundConstant).parse()
+    const amount = listArguments.int(2, "amount").parse({min: 1})
+
+    if (roomResource.roomInfo.config == null) {
+      roomResource.roomInfo.config = {}
+    }
+
+    if (roomResource.roomInfo.config.researchCompounds == null) {
+      roomResource.roomInfo.config.researchCompounds = {}
+    }
+
+    const oldValue = roomResource.roomInfo.config.researchCompounds[compoundType] ?? null
+    roomResource.roomInfo.config.researchCompounds[compoundType] = amount
+
+    if (oldValue != null) {
+      return `${coloredText("Updated:", "info")} ${coloredResourceType(compoundType)} (${oldValue} =&gt ${amount}): ${getCurentSettings()}`
+    }
+    return `${coloredText("Added:", "info")} ${coloredResourceType(compoundType)}: ${getCurentSettings()}`
+  }
+
+  case "clear": {
+    const currentSettings = getCurentSettings()
+    if (roomResource.roomInfo.config == null) {
+      roomResource.roomInfo.config = {}
+    }
+    roomResource.roomInfo.config.researchCompounds = {}
+    return `${coloredText("cleared", "info")}: ${currentSettings}`
+  }
+
+  default:
+    throw `invalid command ${command}, specify ${commands.join(", ")}`
   }
 }
 
@@ -592,79 +651,6 @@ function setResearchLabs(room: Room, roomInfo: OwnedRoomInfo, args: Map<string, 
     inputLab1: inputLab1Id,
     inputLab2: inputLab2Id,
     outputLabs: [],
-  }
-}
-
-function configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {
-  const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
-    const compoundType = args.get("compound")
-    if (compoundType == null) {
-      return missingArgumentError("compound")
-    }
-    if (!isMineralCompoundConstant(compoundType)) {
-      return `${compoundType} is not valid mineral compound type`
-    }
-    const rawAmount = args.get("amount")
-    if (rawAmount == null) {
-      return missingArgumentError("amount")
-    }
-    const amount = parseInt(rawAmount, 10)
-    if (isNaN(amount) === true) {
-      return `amount is not a number ${rawAmount}`
-    }
-    return [
-      compoundType,
-      amount
-    ]
-  }
-
-  const action = args.get("action")
-  if(action == null) {
-    return missingArgumentError("action")
-  }
-
-  const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    if (roomInfo.config.researchCompounds == null) {
-      roomInfo.config.researchCompounds = {}
-    }
-    return roomInfo.config.researchCompounds
-  }
-
-  const getCurentsettings = (): string => {
-    const entries = Object.entries(getResearchCompounds())
-    if (entries.length <= 0) {
-      return "no research compounds"
-    }
-    return entries
-      .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
-      .join("")
-  }
-
-  switch (action) {
-  case "show":
-    return getCurentsettings()
-  case "clear": {
-    const currentSettings = getCurentsettings()
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    roomInfo.config.researchCompounds = {}
-    return `${coloredText("cleared", "info")}: ${currentSettings}`
-  }
-  case "add": {
-    const settings = getCompoundSetting()
-    if (typeof settings === "string") {
-      return settings
-    }
-    const researchCompounds = getResearchCompounds()
-    researchCompounds[settings[0]] = settings[1]
-    return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
-  }
-  default:
-    return `Invalid action ${action}`
   }
 }
 
