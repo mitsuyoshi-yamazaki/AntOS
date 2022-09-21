@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -22,6 +22,9 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { processLog } from "os/infrastructure/logger"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -233,6 +236,32 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       const moveToNextRoomTask = this.moveToNextRoomTask(creep)
       if (moveToNextRoomTask == null) {
         creep.say("finished")
+
+        const canQuit = ((): boolean => {
+          if (this.targetRoomNames.length > 1) {
+            return false
+          }
+          if (controller == null) {
+            return false
+          }
+          if (this.targetRoomNames.includes(controller.room.name) !== true) {
+            return false
+          }
+          if (controller.level <= 0) {
+            return true
+          }
+          if (controller.level === 1 && controller.ticksToDowngrade < 2000) {
+            return true
+          }
+          return false
+        })()
+
+        if (canQuit === true) {
+          this.addSpawnStopReason("unclaimed")
+          processLog(this, `${coloredText("[Downgrade]", "info")} ${roomLink(creep.room.name)} is about to unclaim`)
+        }
+
+        return RunApiTask.create(SuicideApiWrapper.create())
       }
       return moveToNextRoomTask
     }
