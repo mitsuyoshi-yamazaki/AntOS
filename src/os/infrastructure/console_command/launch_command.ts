@@ -85,6 +85,7 @@ import { FillNukerProcess } from "process/onetime/fill_nuker_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime/launch_nuke_process"
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
+// import {} from "process/process/empire/empire_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1423,6 +1424,7 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
   try {
     const rooms = args.list("room_names", "room").parse({ my: true })
     const forced = args.boolean("forced").parseOptional() ?? false
+    const delay = args.int("delay").parse({ min: 0 })
 
     const nukers = rooms.map(room => {
       const nuker = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
@@ -1431,7 +1433,7 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
       }
 
       if (forced !== true) {
-        if (isNukerReady(nuker) !== true) {
+        if (isNukerReady(nuker, delay) !== true) {
           throw `nuker in ${roomLink(nuker.room.name)} is not ready (set "forced=1" to force launch)`
         }
       }
@@ -1448,7 +1450,6 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
     }
 
     const targetRoomName = args.roomName("target_room_name").parse()
-    const delay = args.int("delay").parse({min: 0})
 
     rooms.forEach(room => {
       const distance = Game.map.getRoomLinearDistance(room.name, targetRoomName)

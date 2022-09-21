@@ -151,8 +151,8 @@ export class LaunchNukeProcess implements Process, Procedural {
   }
 }
 
-export const isNukerReady = (nuker: StructureNuker): boolean => {
-  if (nuker.cooldown > 0) {
+export const isNukerReady = (nuker: StructureNuker, delay?: Timestamp): boolean => {
+  if (nuker.cooldown > (delay ?? 0)) {
     return false
   }
   if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
