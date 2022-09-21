@@ -4,7 +4,6 @@ import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
-import { isResourceConstant } from "shared/utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
@@ -41,8 +40,8 @@ import { LaunchQuadProcess } from "process/onetime/quad_maker/launch_quad_proces
 import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
 import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { isRoomName } from "utility/room_coordinate"
 import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -65,7 +64,7 @@ export class ExecCommand implements ConsoleCommand {
       case "describeLabs":
         return this.describeLabs()
       case "resource":
-        return this.resource()
+        return this.resource(args)
       case "set_waiting_position":
         return this.setWaitingPosition()
       case "show_room_plan":
@@ -251,46 +250,38 @@ export class ExecCommand implements ConsoleCommand {
     return describeLabs(roomName)
   }
 
-  private resource(): CommandExecutionResult {
+  /** @throws */
+  private resource(args: string[]): CommandExecutionResult {
     const commandList = ["help", "room", "collect", "list"]
-    const args = [...this.args]
-    args.splice(0, 1)
 
-    const command = args[0]
+    const command = args.shift()
+    const listArguments = new ListArguments(args)
+
     switch (command) {
     case "help":
       return `commands: ${commandList}`
-    case "room":
-      if (args[1] == null || !isResourceConstant(args[1])) {
-        return `Invalid resource type ${args[1]}`
-      }
-      return this.resourceInRoom(args[1])
+    case "room": {
+      const resourceType = listArguments.resourceType(0, "resource type").parse()
+      return this.resourceInRoom(resourceType)
+    }
     case "collect": {
-      if (args[1] == null || !isResourceConstant(args[1])) {
-        return `Invalid resource type ${args[1]}`
-      }
-      if (args[2] == null || !isRoomName(args[2])) {
-        return `Invalid room name ${args[2]}`
-      }
-      if (args[3] == null) {
-        return "amout is missing (number or \"all\")"
-      }
-      const rawAmount = args[3]
-      const amount = ((): number | "all" | null => {
+      const resourceType = listArguments.resourceType(0, "resource type").parse()
+      const destinationRoomResource = listArguments.ownedRoomResource(1, "room name").parse()
+      const rawAmount = listArguments.string(2, "amount").parse()
+      const amount = ((): number | "all" => {
         if (rawAmount === "all") {
           return "all"
         }
         const parsed = parseInt(rawAmount, 10)
         if (isNaN(parsed) === true) {
-          return null
+          throw `invalid amount ${rawAmount}, specify number or "all"`
         }
         return parsed
       })()
-      if (amount == null) {
-        return `Invalid amount ${args[3]} (number or "all")`
-      }
 
-      return this.collectResource(args[1], args[2], amount)
+      const fromRoomResource = listArguments.has(3) ? listArguments.ownedRoomResource(3, "from room name").parse() : null
+
+      return this.collectResource(resourceType, destinationRoomResource, amount, fromRoomResource)
     }
     case "list":
       return this.listResource()
@@ -331,31 +322,57 @@ export class ExecCommand implements ConsoleCommand {
     return "ok"
   }
 
-  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number | "all"): CommandExecutionResult {
-    const resources = RoomResources.getOwnedRoomResource(destinationRoomName)
-    if (resources == null) {
-      return `${this.constructor.name} collectResource() cannot retrieve owned room resources from ${roomLink(destinationRoomName)}`
-    }
-    if (resources.activeStructures.terminal == null) {
-      return `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomName)}`
+  /** @throws */
+  private collectResource(resourceType: ResourceConstant, destinationRoomResource: OwnedRoomResource, amount: number | "all", fromRoomResource: OwnedRoomResource | null): CommandExecutionResult {
+    if (destinationRoomResource.activeStructures.terminal == null) {
+      throw `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomResource.room.name)}`
     }
     if (amount === "all") {
       const resourceAmount = ResourceManager.amount(resourceType)
-      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
-        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)} (${resourceAmount} ${coloredResourceType(resourceType)})`
+      if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
+        throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (${resourceAmount} ${coloredResourceType(resourceType)})`
       }
     } else {
-      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
+      if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
+        throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)}`
       }
     }
 
-    const result = ResourceManager.collect(resourceType, destinationRoomName, amount)
+    if (fromRoomResource != null) {
+      if (fromRoomResource.activeStructures.terminal == null) {
+        throw `${roomLink(fromRoomResource.room.name)} has no terminal`
+      }
+      if (fromRoomResource.activeStructures.terminal.cooldown > 0) {
+        throw `terminal in ${roomLink(fromRoomResource.room.name)} under cooldown (${fromRoomResource.activeStructures.terminal.cooldown})`
+      }
+      const sendAmount = ((): number => {
+        const usedAmount = fromRoomResource.activeStructures.terminal.store.getUsedCapacity(resourceType)
+        if (usedAmount <= 0) {
+          throw `no ${coloredResourceType(resourceType)} in terminal in ${roomLink(fromRoomResource.room.name)}`
+        }
+        if (amount === "all") {
+          return usedAmount
+        }
+        if (usedAmount < amount) {
+          throw `not enough ${coloredResourceType(resourceType)} in terminal in ${roomLink(fromRoomResource.room.name)} (${usedAmount})`
+        }
+        return amount
+      })()
+      const result = fromRoomResource.activeStructures.terminal.send(resourceType, sendAmount, destinationRoomResource.room.name)
+      switch (result) {
+      case OK:
+        return `${sendAmount} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomResource.room.name)} from ${roomLink(fromRoomResource.room.name)}`
+      default:
+        throw `terminal.send(${coloredResourceType(resourceType)}, ${sendAmount}) failed with ${result}`
+      }
+    }
+
+    const result = ResourceManager.collect(resourceType, destinationRoomResource.room.name, amount)
     switch (result.resultType) {
     case "succeeded":
-      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomName)}`
+      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomResource.room.name)}`
     case "failed":
-      return result.reason.errorMessage
+      throw result.reason.errorMessage
     }
   }
 
