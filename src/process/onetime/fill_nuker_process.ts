@@ -158,15 +158,15 @@ export class FillNukerProcess implements Process, Procedural {
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(nuker, RESOURCE_GHODIUM))
     }
 
-    if (canFillEnergy === true) {
-      const task = this.withdrawTask(roomResource, RESOURCE_ENERGY, 30000)
+    if (canFillGhodium === true) {
+      const task = this.withdrawTask(roomResource, RESOURCE_GHODIUM)
       if (task != null) {
         return task
       }
     }
 
-    if (canFillGhodium === true) {
-      const task = this.withdrawTask(roomResource, RESOURCE_GHODIUM)
+    if (canFillEnergy === true) {
+      const task = this.withdrawTask(roomResource, RESOURCE_ENERGY, 30000)
       if (task != null) {
         return task
       }
