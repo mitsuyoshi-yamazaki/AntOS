@@ -1424,6 +1424,7 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
   try {
     const rooms = args.list("room_names", "room").parse({ my: true })
     const forced = args.boolean("forced").parseOptional() ?? false
+    const targetRoomName = args.roomName("target_room_name").parse()
     const delay = args.int("delay").parse({ min: 0 })
 
     const nukers = rooms.map(room => {
@@ -1433,8 +1434,9 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
       }
 
       if (forced !== true) {
-        if (isNukerReady(nuker, delay) !== true) {
-          throw `nuker in ${roomLink(nuker.room.name)} is not ready (set "forced=1" to force launch)`
+        const result = isNukerReady(nuker, delay)
+        if (result !== true) {
+          throw `nuker in ${roomLink(nuker.room.name)} is not ready (${result}) (set "forced=1" to force launch)`
         }
       }
 
@@ -1449,8 +1451,6 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
       throw "no target: specify targets by \"target_ids\", \"target_structure_types\" and/or \"target_positions\""
     }
 
-    const targetRoomName = args.roomName("target_room_name").parse()
-
     rooms.forEach(room => {
       const distance = Game.map.getRoomLinearDistance(room.name, targetRoomName)
       if (distance > NUKE_RANGE) {
@@ -1458,6 +1458,7 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
       }
     })
 
+    /** @throws */
     const launchProcess = (processId: ProcessId, targetRoom: Room): LaunchNukeProcess => {
       const targetObjects = targetIds.map(targetId => {
         const targetObject = Game.getObjectById(targetId)

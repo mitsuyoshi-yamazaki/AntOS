@@ -36,6 +36,10 @@ export class OnHeapDelayProcess implements Process, Procedural {
     }
   }
 
+  /**
+   *
+   * @param command throwable
+   */
   public static create(processId: ProcessId, description: string, delay: Timestamp, command: () => string): OnHeapDelayProcess {
     return new OnHeapDelayProcess(Game.time, processId, description, Game.time + delay, command)
   }

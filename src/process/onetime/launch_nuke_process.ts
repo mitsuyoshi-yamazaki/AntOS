@@ -24,6 +24,7 @@ export interface LaunchNukeProcessState extends ProcessState {
   readonly targetRoomName: RoomName
   readonly targets: NukeTargetInfo[]
   readonly nukeLaunchTime: Timestamp
+  readonly result: "succeeded" | string | null // failed reason
 }
 
 export class LaunchNukeProcess implements Process, Procedural {
@@ -35,6 +36,7 @@ export class LaunchNukeProcess implements Process, Procedural {
     private readonly targetRoomName: RoomName,
     private readonly targets: NukeTargetInfo[],
     private readonly nukeLaunchTime: Timestamp,
+    private result: "succeeded" | string | null, // failed reason
   ) {
     this.taskIdentifier = `${this.constructor.name}_${this.processId}_${this.targetRoomName}`
   }
@@ -47,22 +49,31 @@ export class LaunchNukeProcess implements Process, Procedural {
       targetRoomName: this.targetRoomName,
       targets: this.targets,
       nukeLaunchTime: this.nukeLaunchTime,
+      result: this.result,
     }
   }
 
   public static decode(state: LaunchNukeProcessState): LaunchNukeProcess {
-    return new LaunchNukeProcess(state.l, state.i, state.targetRoomName, state.targets, state.nukeLaunchTime)
+    return new LaunchNukeProcess(state.l, state.i, state.targetRoomName, state.targets, state.nukeLaunchTime, state.result)
   }
 
   public static create(processId: ProcessId, targetRoomName: RoomName, targets: NukeTargetInfo[], delay: Timestamp): LaunchNukeProcess {
-    return new LaunchNukeProcess(Game.time, processId, targetRoomName, targets, Game.time + delay)
+    return new LaunchNukeProcess(Game.time, processId, targetRoomName, targets, Game.time + delay, null)
   }
 
   public processShortDescription(): string {
-    return `${this.targets.length} targets in ${roomLink(this.targetRoomName)} in ${this.nukeLaunchTime - Game.time} ticks`
+    const timeToLaunch = this.nukeLaunchTime - Game.time
+    if (this.result == null) {
+      return `${this.targets.length} targets in ${roomLink(this.targetRoomName)} in ${shortenedNumber(timeToLaunch)} ticks`
+    }
+
+    const result = this.result === "succeeded" ? "succeeded" : "failed"
+    return `${this.targets.length} nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}`
   }
 
   public processDescription(): string {
+    const timeToLaunch = this.nukeLaunchTime - Game.time
+
     const resourceStatus = (nuker: StructureNuker, resourceType: RESOURCE_ENERGY | RESOURCE_GHODIUM): string => {
       return `${coloredResourceType(resourceType)}: ${Math.floor((nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100)}%`
     }
@@ -72,23 +83,42 @@ export class LaunchNukeProcess implements Process, Procedural {
         return "no active nuker"
       }
 
-      if (nuker.cooldown > 0 && nuker.store.getFreeCapacity(RESOURCE_ENERGY) <= 0 && nuker.store.getFreeCapacity(RESOURCE_GHODIUM) <= 0) {
-        return "nuker ready"
+      if (nuker.cooldown < timeToLaunch && nuker.store.getFreeCapacity(RESOURCE_ENERGY) <= 0 && nuker.store.getFreeCapacity(RESOURCE_GHODIUM) <= 0) {
+        if (nuker.cooldown > 0) {
+          return `nuker in ${roomLink(nuker.room.name)} ready (cooldown: ${shortenedNumber(nuker.cooldown)})`
+        }
+        return `nuker in ${roomLink(nuker.room.name)} ready`
       }
 
       return `cooldown: ${nuker.cooldown}, ${resourceStatus(nuker, RESOURCE_ENERGY)}, ${resourceStatus(nuker, RESOURCE_GHODIUM)}`
     }
 
+    const overview = ((): string => {
+      if (this.result == null) {
+        return `launch nukes to ${roomLink(this.targetRoomName)} in ${shortenedNumber(timeToLaunch)} ticks`
+      }
+      const result = this.result === "succeeded" ? "succeeded" : "failed"
+      return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}`
+    })()
 
     const descriptions: string[] = [
-      `${roomLink(this.targetRoomName)} in ${this.nukeLaunchTime - Game.time} ticks`,
+      overview,
       ...this.targets.map((target): string => `- ${describePosition(target.position)}: ${nukerStatus(target.nukerId)}`),
     ]
+
+    if (this.result != null && this.result !== "succeeded") {
+      descriptions.push(`failed reasons:\n${this.result}`)
+    }
 
     return descriptions.join("\n")
   }
 
   public runOnTick(): void {
+    if (this.result != null) {
+      processLog(this, `${coloredText("[Warning]", "warn")} nuke launched but process is still running`)
+      return
+    }
+
     const launchUntil = this.nukeLaunchTime - Game.time
 
     if (launchUntil > 0) {
@@ -106,34 +136,56 @@ export class LaunchNukeProcess implements Process, Procedural {
       return
     }
 
-    this.launch()
+    this.result = this.launch()
     OperatingSystem.os.suspendProcess(this.processId) // TODO: 動作したらkillに変更する
   }
 
-  private launch(): void {
-    const targetObjects = this.targets.map((target): { nuker: StructureNuker | null, position: RoomPosition } => {
+  private launch(): "succeeded" | string | null {
+    const targetObjects = this.targets.map((target): { nukerId: Id<StructureNuker>, nuker: StructureNuker | null, position: RoomPosition } => {
       return {
+        nukerId: target.nukerId,
         nuker: Game.getObjectById(target.nukerId) ?? null,
         position: decodeRoomPosition(target.position, this.targetRoomName),
       }
     })
 
-    const isLaunchable = targetObjects.every(target => {
+    const unreadyReasons = targetObjects.flatMap((target): string[] => {
       if (target.nuker == null) {
-        return false
+        return [`no nuker with ID ${target.nukerId}`]
       }
-      if (isNukerReady(target.nuker) !== true) {
-        return false
+      const result = isNukerReady(target.nuker)
+      if (result !== true) {
+        return [result]
       }
-      return true
+      return []
     })
 
-    if (isLaunchable !== true) {
-      PrimitiveLogger.fatal(`${this.taskIdentifier} nukes not launchable\n${this.processDescription()}`)
-      return
+    if (unreadyReasons.length > 0) {
+      const reason = unreadyReasons.map(reason => `- ${reason}`).join("\n")
+      PrimitiveLogger.fatal(`${this.taskIdentifier} nukes not launchable\n${reason}`)
+      return reason
     }
 
-    console.log("LAUNCH!!!!") // TODO:
+    const failedReasons = targetObjects.flatMap((target): string[] => {
+      if (target.nuker == null) {
+        return [`no nuker with ID ${target.nukerId}`]
+      }
+
+      const result = target.nuker.launchNuke(target.position)
+      if (result !== OK) {
+        return [`${target.nuker} to ${target.position} failed with ${result}`]
+      }
+      return []
+    })
+
+    PrimitiveLogger.log(coloredText(`NUKE LAUNCH!!!! ${roomLink(this.targetRoomName)}`, "high"))
+
+    if (failedReasons.length > 0) {
+      const reason = failedReasons.map(reason => `- ${reason}`).join("\n")
+      PrimitiveLogger.fatal(`${failedReasons.length}/${targetObjects.length} nukes failed to launch:\n${reason}`)
+      return reason
+    }
+    return "succeeded"
   }
 
   private logCurrentStatus(launchUntil: Timestamp, timeUnit?: Timestamp): void {
@@ -151,15 +203,15 @@ export class LaunchNukeProcess implements Process, Procedural {
   }
 }
 
-export const isNukerReady = (nuker: StructureNuker, delay?: Timestamp): boolean => {
+export const isNukerReady = (nuker: StructureNuker, delay?: Timestamp): true | string => {
   if (nuker.cooldown > (delay ?? 0)) {
-    return false
+    return `under cooldown (${nuker.cooldown} > ${delay ?? 0})`
   }
   if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-    return false
+    return `lack of energy (${shortenedNumber(nuker.store.getUsedCapacity(RESOURCE_ENERGY))}/${shortenedNumber(nuker.store.getCapacity(RESOURCE_ENERGY))})`
   }
   if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
-    return false
+    return `lack of ghodium (${shortenedNumber(nuker.store.getUsedCapacity(RESOURCE_GHODIUM))}/${shortenedNumber(nuker.store.getCapacity(RESOURCE_GHODIUM))})`
   }
   return true
 }
