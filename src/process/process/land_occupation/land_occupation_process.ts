@@ -8,7 +8,6 @@ import { ProcessState } from "process/process_state"
 import { CreepName, V5CreepMemory } from "prototype/creep"
 import { Position } from "shared/utility/position"
 import { processLog } from "os/infrastructure/logger"
-import type { Timestamp } from "shared/utility/timestamp"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { OperatingSystem } from "os/os"
@@ -20,7 +19,6 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
-import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { ClusterPlan, deserializePosition, fetchClusterData } from "./land_occupation_datamodel"
 import { MessageObserver } from "os/infrastructure/message_observer"
@@ -48,23 +46,21 @@ type RoomStateOccupied = {
   workerNames: CreepName[]
   haulerName: CreepName | null
 }
-type RoomState = RoomStateUnoccupied | RoomStateOccupied
-
-type HostileInfo = {
-  readonly attacking: Id<Creep> | null
-  readonly creeps: {
-    [CreepId: string]: {
-      readonly creepType: "attacker" | "worker"
-      readonly healPower: number
-    }
-  }
+type RoomStateUnclaiming = {
+  readonly case: "unclaiming"
+  progress: "triggered" | "object destroyed" | "room unclaimed"
 }
+type RoomState = RoomStateUnoccupied | RoomStateOccupied | RoomStateUnclaiming
 
-type WallPositions = {
-  readonly mainRampart: Position[]
-  readonly controllerRampart: Position
-  readonly controllerWall: Position[]
-}
+// type HostileInfo = {
+//   readonly attacking: Id<Creep> | null
+//   readonly creeps: {
+//     [CreepId: string]: {
+//       readonly creepType: "attacker" | "worker"
+//       readonly healPower: number
+//     }
+//   }
+// }
 
 ProcessDecoder.register("LandOccupationProcess", state => {
   return LandOccupationProcess.decode(state as LandOccupationProcessState)
@@ -176,6 +172,8 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
         return "building"
       }
       return "working"
+    case "unclaiming":
+      return this.roomState.progress
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = this.roomState
@@ -195,7 +193,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "status"]
+    const commandList = ["help", "status", "unclaim"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -205,11 +203,39 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
         return `Commands: ${commandList}`
       case "status":
         return this.showStatus()
+      case "unclaim":
+        return this.changeToUnclaimState()
       default:
         throw `Invalid command ${command}, see "help"`
       }
     } catch (error) {
       return `${coloredText("[Error]", "error")} ${error}`
+    }
+  }
+
+  /** @throws */
+  private changeToUnclaimState(): string {
+    if (RoomResources.getOwnedRoomResource(this.roomName) != null) {
+      throw `${roomLink(this.roomName)} has OwnedRoomResource`
+    }
+
+    const oldCase = this.roomState.case
+
+    switch (this.roomState.case) {
+    case "unoccupied":
+    case "occupied":
+      this.roomState = {
+        case: "unclaiming",
+        progress: "triggered",
+      }
+      return `${oldCase} =&gt unclaiming`
+    case "unclaiming":
+      throw `already unclaiming state (progress: ${this.roomState.progress})`
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.roomState
+      throw `invalid case: ${(this.roomState as {case?: string}).case} `
+    }
     }
   }
 
@@ -224,6 +250,8 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
     case "unoccupied":
       break
     case "occupied":
+      break
+    case "unclaiming":
       break
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -312,9 +340,93 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       this.runOccupied(this.roomState, controller)
       break
 
+    case "unclaiming":
+      this.unclaimRoom(this.roomState, room ?? null, controller ?? null)
+      break
+
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = this.roomState
+      break
+    }
+    }
+  }
+
+  private unclaimRoom(roomState: RoomStateUnclaiming, room: Room | null, controller: StructureController | null): void {
+    switch (roomState.progress) {
+    case "triggered": {
+      const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
+      creeps.forEach(creep => {
+        if (creep.spawning !== true) {
+          creep.suicide()
+          return
+        }
+
+        const spawn = creep.pos.findInRange(FIND_MY_SPAWNS, 0)[0]
+        if (spawn == null) {
+          PrimitiveLogger.programError(`${this.identifier} cannot find a spawn that is spawning creep ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)}`)
+          return
+        }
+        if (spawn.spawning == null || spawn.spawning.name !== creep.name) {
+          PrimitiveLogger.programError(`${this.identifier} wrong spawning object ${spawn.spawning?.name} in ${spawn.name}, spawning creep ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)}`)
+          return
+        }
+        spawn.spawning.cancel()
+      })
+
+      const constructionSites = Array.from(Object.values(Game.constructionSites)).filter(constructionSite => constructionSite.pos.roomName === this.roomName)
+      constructionSites.forEach(constructionSite => constructionSite.remove())
+
+      const structures: AnyStructure[] = []
+      if (room != null) {
+        structures.push(...room.find(FIND_STRUCTURES).filter(structure => structure.structureType !== STRUCTURE_CONTROLLER))
+      }
+      structures.forEach(structure => structure.destroy())
+
+      const destoryLogs: string[] = []
+      if (creeps.length > 0) {
+        destoryLogs.push(`killed ${creeps.length} creeps`)
+      }
+      if (constructionSites.length > 0) {
+        destoryLogs.push(`removed ${constructionSites.length} construction sites`)
+      }
+      if (structures.length > 0) {
+        destoryLogs.push(`destroyed ${structures.length} structures`)
+      }
+
+      if (destoryLogs.length <= 0) {
+        roomState.progress = "object destroyed"
+        processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)} all belonging object destroyed`)
+      } else {
+        processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)}\n${destoryLogs.join("\n")}`)
+      }
+      break
+    }
+    case "object destroyed":
+      if (controller == null || controller.my !== true) {
+        roomState.progress = "room unclaimed"
+        processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)} unclaimed`)
+      } else {
+        const result = controller.unclaim()
+        switch (result) {
+        case OK:
+          processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)} unclaim room`)
+          break
+        default:
+          processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)} unclaim failed with ${result}`)
+          break
+        }
+      }
+      break
+    case "room unclaimed": {
+      const index = Memory.ignoreRooms.indexOf(this.roomName)
+      if (index >= 0) {
+        Memory.ignoreRooms.splice(index, 1)
+      } else {
+        processLog(this, `${coloredText("[Unclaim]", "warn")} ${roomLink(this.roomName)} is not in the ignore list`)
+      }
+
+      OperatingSystem.os.killProcess(this.processId)
       break
     }
     }
@@ -376,7 +488,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
           return this.claimerBody
         })()
 
-        roomState.claimerName = this.spawnCreep(body)
+        roomState.claimerName = this.requestCreepSpawn(body)
       }
     } else {
       this.runClaimer(claimer)
@@ -401,7 +513,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
     creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(creep.room.controller, "blockade🚫")))
   }
 
-  private spawnCreep(body: BodyPartConstant[]): CreepName {
+  private requestCreepSpawn(body: BodyPartConstant[]): CreepName {
     const creepName = UniqueId.generateCreepName(this.codename)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
@@ -412,7 +524,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
       body,
       initialTask: null,
       taskIdentifier: this.taskIdentifier,
-      parentRoomName: null,
+      parentRoomName: this.roomName,
       name: creepName,
     })
 
@@ -466,7 +578,7 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
             return this.workerBody
           })()
 
-          roomState.workerNames.push(this.spawnCreep(body))
+          roomState.workerNames.push(this.requestCreepSpawn(body))
         }
       }
     } else {
@@ -895,37 +1007,37 @@ export class LandOccupationProcess implements Process, Procedural, MessageObserv
   // }
 }
 
-const getInitialHostileInfo = (room: Room): HostileInfo => {
-  const creeps: {
-    [CreepId: string]: {
-      readonly creepType: "attacker" | "worker"
-      readonly healPower: number
-    }
-  } = {}
+// const getInitialHostileInfo = (room: Room): HostileInfo => {
+//   const creeps: {
+//     [CreepId: string]: {
+//       readonly creepType: "attacker" | "worker"
+//       readonly healPower: number
+//     }
+//   } = {}
 
-  room.find(FIND_HOSTILE_CREEPS).forEach(creep => {
-    if (Game.isEnemy(creep.owner) !== true) {
-      return
-    }
-    const healPower = CreepBody.power(creep.body, "heal", {ignoreHits: true})
-    const creepType = ((): "attacker" | "worker" => {
-      if (healPower > 0) {
-        return "attacker"
-      }
-      if (creep.body.some(body => body.type === ATTACK || body.type === RANGED_ATTACK || body.type === CLAIM) === true) {
-        return "attacker"
-      }
-      return "worker"
-    })()
+//   room.find(FIND_HOSTILE_CREEPS).forEach(creep => {
+//     if (Game.isEnemy(creep.owner) !== true) {
+//       return
+//     }
+//     const healPower = CreepBody.power(creep.body, "heal", {ignoreHits: true})
+//     const creepType = ((): "attacker" | "worker" => {
+//       if (healPower > 0) {
+//         return "attacker"
+//       }
+//       if (creep.body.some(body => body.type === ATTACK || body.type === RANGED_ATTACK || body.type === CLAIM) === true) {
+//         return "attacker"
+//       }
+//       return "worker"
+//     })()
 
-    creeps[creep.id] = {
-      healPower,
-      creepType,
-    }
-  })
+//     creeps[creep.id] = {
+//       healPower,
+//       creepType,
+//     }
+//   })
 
-  return {
-    attacking: null,
-    creeps,
-  }
-}
+//   return {
+//     attacking: null,
+//     creeps,
+//   }
+// }
