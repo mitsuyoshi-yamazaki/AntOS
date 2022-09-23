@@ -17,10 +17,11 @@ export interface QuadMakerState extends State {
   readonly targetRoomName: RoomName
   readonly frontBaseRoomName: RoomName | null
   readonly canHandleMelee: boolean
-  readonly damageTolerance: number, // 0.0~1.0
-  readonly boosts: MineralBoostConstant[],
-  readonly creepSpecs: QuadCreepSpec[],
-  readonly targetIds: Id<AnyCreep | AnyStructure>[],
+  readonly damageTolerance: number // 0.0~1.0
+  readonly boosts: MineralBoostConstant[]
+  readonly creepSpecs: QuadCreepSpec[]
+  readonly targetIds: Id<AnyCreep | AnyStructure>[]
+  readonly quadProcessCodename: string | null
 }
 
 type QuadLaunchInfoDryRun = {
@@ -51,6 +52,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
     public boosts: MineralBoostConstant[],
     public creepSpecs: QuadCreepSpec[],
     public targetIds: Id<AnyCreep | AnyStructure>[],
+    public quadProcessCodename: string | null,
   ) {
   }
 
@@ -66,6 +68,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       boosts: this.boosts,
       creepSpecs: this.creepSpecs,
       targetIds: this.targetIds,
+      quadProcessCodename: this.quadProcessCodename,
     }
   }
 
@@ -80,6 +83,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       state.boosts,
       state.creepSpecs,
       state.targetIds,
+      state.quadProcessCodename,
     )
   }
 
@@ -107,7 +111,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       }
     })()
     const frontBaseRoomName: RoomName | null = null
-    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [])
+    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null)
   }
 
   public shortDescription(): string {
@@ -132,6 +136,9 @@ targets: ${this.targetIds.length} target IDs
     ]
     if (this.targetIds.length > 0) {
       descriptions.push(`${this.targetIds.length} targets`)
+    }
+    if (this.quadProcessCodename != null) {
+      descriptions.push(`creep codename: "${this.quadProcessCodename}"`)
     }
     descriptions.push(quadSpec.description())
     return descriptions.join("\n")
@@ -282,11 +289,18 @@ targets: ${this.targetIds.length} target IDs
       const process = ((): LaunchQuadProcess | SpecializedQuadProcess => {
         if (delay != null) {
           return OperatingSystem.os.addProcess(null, processId => {
-            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay }, launchArguments, result.value.quadSpec)
+            return LaunchQuadProcess.create(processId, { case: "delay", launchTime: Game.time + delay }, launchArguments, result.value.quadSpec, this.quadProcessCodename)
           })
         }
         return OperatingSystem.os.addProcess(null, processId => {
-          return SpecializedQuadProcess.create(processId, launchArguments, result.value.quadSpec)
+          return SpecializedQuadProcess.create(
+            processId,
+            launchArguments,
+            result.value.quadSpec,
+            {
+              codename: this.quadProcessCodename ?? undefined,
+            },
+          )
         })
       })()
 

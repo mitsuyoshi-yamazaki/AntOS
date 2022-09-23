@@ -18,7 +18,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 })
 
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
@@ -317,6 +317,14 @@ commands: ${commands}
       return `set target IDs ${this.quadMaker.targetIds.join(", ")}`
     }
 
+    case "codename": {
+      const listArguments = new ListArguments(args)
+      const codename = listArguments.string(0, "codename").parse()
+      this.quadMaker.quadProcessCodename = codename
+
+      return `set quad creep codename: "${codename}"`
+    }
+
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
@@ -352,6 +360,10 @@ commands: ${commands}
     case "target_ids":
       this.quadMaker.targetIds = []
       return `reset target_ids ${this.quadMaker.targetIds.length} IDs`
+
+    case "codename":
+      this.quadMaker.quadProcessCodename = null
+      return "reset codename"
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`

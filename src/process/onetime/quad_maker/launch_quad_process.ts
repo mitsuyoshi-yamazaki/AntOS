@@ -23,6 +23,7 @@ interface LaunchQuadProcessState extends ProcessState {
   readonly launchCondition: LaunchCondition
   readonly quadLaunchArguments: SpecializedQuadLaunchArguments
   readonly quadSpecState: QuadSpecState
+  readonly quadProcessCodename: string | null
 }
 
 export class LaunchQuadProcess implements Process, Procedural {
@@ -40,6 +41,7 @@ export class LaunchQuadProcess implements Process, Procedural {
     private readonly launchCondition: LaunchCondition,
     private readonly quadLaunchArguments: SpecializedQuadLaunchArguments,
     private readonly quadSpec: QuadSpec,
+    readonly quadProcessCodename: string | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${this.quadLaunchArguments.parentRoomName}_${this.quadSpec.shortDescription}`
   }
@@ -52,16 +54,24 @@ export class LaunchQuadProcess implements Process, Procedural {
       launchCondition: this.launchCondition,
       quadLaunchArguments: this.quadLaunchArguments,
       quadSpecState: this.quadSpec.encode(),
+      quadProcessCodename: this.quadProcessCodename,
     }
   }
 
   public static decode(state: LaunchQuadProcessState): LaunchQuadProcess {
     const quadSpec = QuadSpec.decode(state.quadSpecState)
-    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments, quadSpec)
+    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments, quadSpec, state.quadProcessCodename)
   }
 
-  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments, quadSpec: QuadSpec): LaunchQuadProcess {
-    return new LaunchQuadProcess(Game.time, processId, launchCondition, quadLaunchArguments, quadSpec)
+  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments, quadSpec: QuadSpec, quadProcessCodename: string | null): LaunchQuadProcess {
+    return new LaunchQuadProcess(
+      Game.time,
+      processId,
+      launchCondition,
+      quadLaunchArguments,
+      quadSpec,
+      quadProcessCodename,
+    )
   }
 
   public processShortDescription(): string {
