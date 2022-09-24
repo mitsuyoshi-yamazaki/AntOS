@@ -26,6 +26,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
@@ -76,9 +77,12 @@ export interface StealResourceProcessState extends ProcessState {
   prioritizedResources: ResourceConstant[]
 }
 
-export class StealResourceProcess implements Process, Procedural, MessageObserver {
+export class StealResourceProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

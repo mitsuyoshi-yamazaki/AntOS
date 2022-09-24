@@ -19,6 +19,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("FillNukerProcess", state => {
   return FillNukerProcess.decode(state as FillNukerProcessState)
@@ -29,10 +30,13 @@ interface FillNukerProcessState extends ProcessState {
   readonly nukerId: Id<StructureNuker>
 }
 
-export class FillNukerProcess implements Process, Procedural {
+export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private readonly codename: string

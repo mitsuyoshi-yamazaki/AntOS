@@ -38,6 +38,7 @@ import { ListArguments } from "shared/utility/argument_parser/list_argument_pars
 import { GameMap } from "game/game_map"
 import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("HarvestPowerProcess", state => {
   return HarvestPowerProcess.decode(state as HarvestPowerProcessState)
@@ -189,9 +190,12 @@ export interface HarvestPowerProcessState extends ProcessState {
   quadState: QuadState | null
 }
 
-export class HarvestPowerProcess implements Process, Procedural, MessageObserver {
+export class HarvestPowerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get isPickupFinished(): boolean {
     return this.pickupFinished
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public get taskIdentifier(): string {

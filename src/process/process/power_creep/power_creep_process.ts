@@ -15,6 +15,7 @@ import { powerName } from "shared/utility/power"
 import { OnHeapLogger } from "utility/on_heap_logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("PowerCreepProcess", state => {
   return PowerCreepProcess.decode(state as PowerCreepProcessState)
@@ -49,9 +50,12 @@ Game.powerCreeps["power_creep_0000"].renew(Game.getObjectById("60ec7853cb384f155
 Game.powerCreeps["power_creep_0000"].usePower(PWR_GENERATE_OPS)
 Game.io("launch -l PowerCreepProcess room_name=W9S24 power_creep_name=power_creep_0002")
 */
-export class PowerCreepProcess implements Process, Procedural, MessageObserver {
+export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   private readonly identifier: string

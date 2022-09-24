@@ -8,6 +8,7 @@ import { World } from "world_info/world_info"
 import { decodeTasksFrom } from "v5_task/task_decoder"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("RoomKeeperProcess", state => {
   return RoomKeeperProcess.decode(state as RoomKeeperProcessState)
@@ -18,9 +19,12 @@ export interface RoomKeeperProcessState extends ProcessState {
   s: RoomKeeperTaskState
 }
 
-export class RoomKeeperProcess implements Process, Procedural {
+export class RoomKeeperProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly taskIdentifier: string
 
+  public get ownedRoomName(): RoomName {
+    return this.task.roomName
+  }
   public get roomName(): RoomName {
     return this.task.roomName
   }

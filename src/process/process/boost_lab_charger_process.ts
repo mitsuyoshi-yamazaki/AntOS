@@ -20,6 +20,7 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { ResourceManager } from "utility/resource_manager"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
@@ -37,9 +38,12 @@ export interface BoostLabChargerProcessState extends ProcessState {
   readonly stopSpawningReasons: string[]
 }
 
-export class BoostLabChargerProcess implements Process, Procedural {
+export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomProcess {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

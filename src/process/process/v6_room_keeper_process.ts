@@ -11,6 +11,7 @@ import { processLog } from "os/infrastructure/logger"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { bodyDescription } from "utility/creep_body"
 import { ProcessDecoder } from "../process_decoder"
+import { OwnedRoomProcess } from "../owned_room_process"
 
 ProcessDecoder.register("V6RoomKeeperProcess", state => {
   return V6RoomKeeperProcess.decode(state as V6RoomKeeperProcessState)
@@ -27,9 +28,12 @@ export interface V6RoomKeeperProcessState extends ProcessState {
   readonly logFilter: LogFilter
 }
 
-export class V6RoomKeeperProcess implements Process, Procedural, MessageObserver {
+export class V6RoomKeeperProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly taskIdentifier: string
 
+  public get ownedRoomName(): RoomName {
+    return this.task.roomName
+  }
   public get roomName(): RoomName {
     return this.task.roomName
   }

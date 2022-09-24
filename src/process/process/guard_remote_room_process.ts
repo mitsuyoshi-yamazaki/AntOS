@@ -21,6 +21,7 @@ import { Position } from "prototype/room_position"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { CreepBody } from "utility/creep_body"
 import { shortenedNumber } from "shared/utility/console_utility"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
@@ -167,9 +168,12 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   waitingPosition: Position | null
 }
 
-export class GuardRemoteRoomProcess implements Process, Procedural, MessageObserver {
+export class GuardRemoteRoomProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

@@ -12,6 +12,7 @@ import { ListArguments } from "shared/utility/argument_parser/list_argument_pars
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { QuadMaker, QuadMakerState } from "./quad_maker"
 import type { RoomName } from "shared/utility/room_name_types"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -24,10 +25,13 @@ interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
 }
 
-export class QuadMakerProcess implements Process, Procedural, MessageObserver {
+export class QuadMakerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
   public get roomName(): RoomName {
     return this.quadMaker.roomName

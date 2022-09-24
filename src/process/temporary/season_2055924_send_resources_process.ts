@@ -14,6 +14,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import type { SectorName } from "shared/utility/room_sector_type"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)
@@ -27,9 +28,12 @@ export interface Season2055924SendResourcesProcessState extends ProcessState {
   readonly excludes: ResourceConstant[]
 }
 
-export class Season2055924SendResourcesProcess implements Process, Procedural, MessageObserver {
+export class Season2055924SendResourcesProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

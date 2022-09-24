@@ -27,6 +27,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { WithdrawApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_api_wrapper"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { OperatingSystem } from "os/os"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("HarvestCommodityProcess", state => {
   return HarvestCommodityProcess.decode(state as HarvestCommodityProcessState)
@@ -56,9 +57,12 @@ export interface HarvestCommodityProcessState extends ProcessState {
   readonly storageRoomName: RoomName | null
 }
 
-export class HarvestCommodityProcess implements Process, Procedural, MessageObserver {
+export class HarvestCommodityProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

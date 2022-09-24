@@ -3,21 +3,12 @@ import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPo
 import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
 import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
+import { coloredResourceType, coloredText, profileLink, roomLink } from "utility/log"
 import { RoomResources } from "room_resource/room_resources"
-import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
-import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
-import { DistributorProcess } from "process/process/distributor_process"
-import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
-import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
-import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { temporaryScript } from "../../../../submodules/private/attack/script/temporary_script"
 import { KeywordArguments } from "../../../shared/utility/argument_parser/keyword_argument_parser"
-import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
-import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
-import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
 import { ListArguments } from "../../../shared/utility/argument_parser/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
@@ -25,23 +16,14 @@ import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_co
 import { execCreepCommand } from "./exec_commands/creep_command"
 import { CronProcess } from "process/onetime/cron_process"
 import { AttackPlanner } from "process/onetime/attack/attack_planner"
-import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 import { } from "../../../../submodules/private/attack/planning/attack_plan"
 import { } from "../../../../submodules/private/attack/platoon/platoon"
 import { SwcAllyRequest } from "script/swc_ally_request"
-import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
-import { StealResourceProcess } from "process/onetime/steal_resource_process"
-import { GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
-import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
-import { LaunchQuadProcess } from "process/onetime/quad_maker/launch_quad_process"
-import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
-import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -78,7 +60,7 @@ export class ExecCommand implements ConsoleCommand {
       case "check_alliance":
         return this.checkAlliance()
       case "unclaim":
-        return this.unclaim()
+        return this.unclaim(args)
       case "prepare_unclaim":
         return this.prepareUnclaim(args)
       case "creep":
@@ -531,275 +513,21 @@ export class ExecCommand implements ConsoleCommand {
     return `${playerName} is not joined any alliances`
   }
 
-  private unclaim(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const dryRun = (args.get("dry_run") === "0") !== true
-
-    return this.unclaimRoom(roomName, dryRun)
-  }
-
-  private unclaimRoom(roomName: RoomName, dryRun: boolean): CommandExecutionResult {
-    const processesToKill: Process[] = []
-
-    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
-      const process = processInfo.process
-      if (process instanceof RoomKeeperProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof V6RoomKeeperProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DistributorProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof Season2055924SendResourcesProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof BoostLabChargerProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DefenseRoomProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DefenseRemoteRoomProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof World35587255ScoutRoomProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof PowerProcessProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof PowerCreepProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof StealResourceProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof GuardRemoteRoomProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof QuadMakerProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof LaunchQuadProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof HarvestPowerProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof HarvestCommodityProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof SendEnergyToAllyProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-    })
-
-    const messages: string[] = []
-
-    const processDescriptions = processesToKill.map(process => {
-      const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
-      return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
-    })
-    messages.push(coloredText(`${processesToKill.length} processes to remove:`, "info"))
-    messages.push(...processDescriptions)
-
-    const room = Game.rooms[roomName]
-    const flags: Flag[] = []
-    const constructionSiteCounts = new Map<StructureConstant, number>()
-    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = []
-    const ownedStructures: AnyOwnedStructure[] = []
-
-    if (room != null) {
-      constructionSites.push(...room.find(FIND_CONSTRUCTION_SITES))
-      ownedStructures.push(...room.find(FIND_MY_STRUCTURES))
-      flags.push(...room.find(FIND_FLAGS))
-    } else {
-      flags.push(...Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === roomName))
-    }
-
-    constructionSites.forEach(constructionSite => {
-      const structureType = constructionSite.structureType
-      const count = constructionSiteCounts.get(structureType) ?? 0
-      constructionSiteCounts.set(structureType, count + 1)
-    })
-
-    if (constructionSiteCounts.size > 0) {
-      const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
-        return `- ${tab(structureType, Tab.medium)}: ${count}`
-      })
-      messages.push(coloredText("Construction sites to remove:", "info"))
-      messages.push(...constructionSiteDescriptions)
-    }
-
-    if (ownedStructures.length > 0) {
-      messages.push(coloredText(`${ownedStructures.length} owned structures`, "info"))
-    }
-
-    if (flags.length > 0) {
-      messages.push(coloredText(`${flags.length} flags`, "info"))
-    }
-
-    if (dryRun === true) {
-      messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
-    } else {
-      if (room != null && room.controller != null && room.controller.my === true) {
-        const result = room.controller.unclaim()
-        switch (result) {
-        case OK:
-          break
-        default:
-          messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
-          return messages.join("\n")
-        }
-      }
-
-      messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
-
-      processesToKill.forEach(process => {
-        OperatingSystem.os.killProcess(process.processId)
-      })
-      constructionSites.forEach(constructionSite => {
-        constructionSite.remove()
-      })
-      flags.forEach(flag => {
-        flag.remove()
-      })
-      ownedStructures.forEach(structure => {
-        structure.notifyWhenAttacked(false)
-      })
-
-      RoomResources.removeRoomInfo(roomName)
-    }
-
-    return messages.join("\n")
-  }
-
   /** @throws */
+  private unclaim(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    args.shift()
+
+    return unclaim(roomResource, args)
+  }
+
   private prepareUnclaim(args: string[]): CommandExecutionResult {
-    const results: string[] = []
+    const listArguments = new ListArguments(args)
+    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    args.shift()
 
-    const keywordArguments = new KeywordArguments(args)
-    const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
-    const roomName = roomResource.room.name
-
-    // Send Resource
-    if (roomResource.activeStructures.terminal != null) {
-      const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
-      const excludedResourceTypes = ((): ResourceConstant[] => {
-        const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
-        if (given != null) {
-          return given
-        }
-        return [
-          RESOURCE_KEANIUM,
-          RESOURCE_LEMERGIUM,
-          RESOURCE_UTRIUM,
-          RESOURCE_ZYNTHIUM,
-          RESOURCE_OXYGEN,
-          RESOURCE_HYDROGEN,
-          RESOURCE_CATALYST,
-        ]
-      })()
-
-      const process = OperatingSystem.os.addProcess(null, processId => {
-        return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
-      })
-      results.push(`send resource process ${process.processId} launched`)
-    }
-
-    // Stop Mineral Harvesting
-    roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
-    results.push("stopped mineral harvesting")
-
-    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
-      const process = processInfo.process
-      if (process instanceof HighwayProcessLauncherProcess) {
-        const baseRemovalResult = process.removeBase(roomName)
-        switch (baseRemovalResult) {
-        case "removed":
-          results.push(`base removed from ${process.constructor.name}`)
-          break
-        case "no base":
-          break
-        default: {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const _: never = baseRemovalResult
-          break
-        }
-        }
-        return
-      }
-      if (process instanceof PowerCreepProcess) {
-        if (process.parentRoomName === roomName) {
-          process.suicidePowerCreep()
-          results.push(`commanded suicide PowerCreep ${process.powerCreepName}`)
-        }
-        return
-      }
-    })
-
-    return [
-      `preparing unclaim ${roomLink(roomName)}`,
-      ...results.map(r => `- ${r}`),
-    ].join("\n")
+    return prepareUnclaim(roomResource, args)
   }
 
   /** @throws */

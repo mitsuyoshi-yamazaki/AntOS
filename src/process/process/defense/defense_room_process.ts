@@ -20,6 +20,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { calculateTowerDamage } from "utility/tower"
 import { } from "./tower_interception"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
@@ -84,10 +85,13 @@ interface DefenseRoomProcessState extends ProcessState {
   readonly intercepterTargets: { [intercepterName: string]: Id<Creep> }
 }
 
-export class DefenseRoomProcess implements Process, Procedural {
+export class DefenseRoomProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private readonly codename: string

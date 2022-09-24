@@ -1,3 +1,21 @@
+/**
+ # DistributorProcess
+ ## 役割
+ - Terminal, Storage, Link間の資源配分
+ - Link間のエネルギー輸送
+
+ ## 挙動
+ Empire.RoomInfoを元に資源を配分する
+
+ ### 配分
+ - Terminal
+   - Energy以外の資源は20kを上限
+   - Energyは
+   - 資源の種類が7を超えたら他所に移す
+ - Storage
+   - Energy以外の資源は100kを上限
+ */
+
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
@@ -24,6 +42,7 @@ import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DistributorProcess", state => {
   return DistributorProcess.decode(state as DistributorProcessState)
@@ -38,9 +57,12 @@ export interface DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-export class DistributorProcess implements Process, Procedural, MessageObserver {
+export class DistributorProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

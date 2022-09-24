@@ -25,6 +25,7 @@ import { ListArguments } from "shared/utility/argument_parser/list_argument_pars
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -45,9 +46,12 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   attackControllerInterval: number
 }
 
-export class World35440623DowngradeControllerProcess implements Process, Procedural, MessageObserver {
+export class World35440623DowngradeControllerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

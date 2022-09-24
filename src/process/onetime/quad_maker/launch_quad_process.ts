@@ -8,6 +8,7 @@ import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../..
 import { processLog } from "os/infrastructure/logger"
 import { QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
 import type { RoomName } from "shared/utility/room_name_types"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)
@@ -26,13 +27,16 @@ interface LaunchQuadProcessState extends ProcessState {
   readonly quadProcessCodename: string | null
 }
 
-export class LaunchQuadProcess implements Process, Procedural {
+export class LaunchQuadProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
   }
   public get roomName(): RoomName {
     return this.quadLaunchArguments.parentRoomName
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private constructor(

@@ -19,6 +19,7 @@ import { GameMap } from "game/game_map"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
@@ -73,10 +74,13 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly intercepterCreepNames: {[roomName: string]: CreepName}
 }
 
-export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObserver {
+export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private get targetRooms(): RoomInfo[] {

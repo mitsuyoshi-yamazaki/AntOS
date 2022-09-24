@@ -18,6 +18,7 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { ProcessDecoder } from "process/process_decoder"
 import type { RoomName } from "shared/utility/room_name_types"
 import { RoomCoordinate } from "utility/room_coordinate"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("World35587255ScoutRoomProcess", state => {
   return World35587255ScoutRoomProcess.decode(state as World35587255ScoutRoomProcessState)
@@ -38,9 +39,12 @@ export interface World35587255ScoutRoomProcessState extends ProcessState {
 
 /** 周囲の自動偵察process */
 // Game.io("launch -l World35587255ScoutRoomProcess room_name=W19S19")
-export class World35587255ScoutRoomProcess implements Process, Procedural {
+export class World35587255ScoutRoomProcess implements Process, Procedural, OwnedRoomProcess {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

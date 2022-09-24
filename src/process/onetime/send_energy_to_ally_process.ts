@@ -28,6 +28,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { Position } from "prototype/room_position"
 import { processLog } from "os/infrastructure/logger"
 import { GameConstants } from "utility/constants"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("SendEnergyToAllyProcess", state => {
   return SendEnergyToAllyProcess.decode(state as SendEnergyToAllyProcessState)
@@ -57,9 +58,12 @@ export interface SendEnergyToAllyProcessState extends ProcessState {
 }
 
 /** Haulerによる輸送 */
-export class SendEnergyToAllyProcess implements Process, Procedural, MessageObserver {
+export class SendEnergyToAllyProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
