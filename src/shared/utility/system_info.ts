@@ -22,7 +22,7 @@ export const SystemInfo = {
     name: "AntOS",
   },
   application: {
-    version: "9.2.43",
+    version: "9.2.44",
     name: "Mitsuyoshi bot",
   },
 }
