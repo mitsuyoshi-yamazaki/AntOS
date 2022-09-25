@@ -91,7 +91,7 @@ export class LaunchNukeProcess implements Process, Procedural {
         return `nuker in ${roomLink(nuker.room.name)} ready`
       }
 
-      return `cooldown: ${nuker.cooldown}, ${resourceStatus(nuker, RESOURCE_ENERGY)}, ${resourceStatus(nuker, RESOURCE_GHODIUM)}`
+      return `nuker in ${roomLink(nuker.room.name)} cooldown: ${nuker.cooldown}, ${resourceStatus(nuker, RESOURCE_ENERGY)}, ${resourceStatus(nuker, RESOURCE_GHODIUM)}`
     }
 
     const overview = ((): string => {
@@ -99,7 +99,11 @@ export class LaunchNukeProcess implements Process, Procedural {
         return `launch nukes to ${roomLink(this.targetRoomName)} in ${shortenedNumber(timeToLaunch)} ticks`
       }
       const result = this.result === "succeeded" ? "succeeded" : "failed"
-      return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}`
+      const timeToLand = NUKE_LAND_TIME + timeToLaunch
+      if (timeToLand > 0) {
+        return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}, estimated landing in ${shortenedNumber(timeToLand)} ticks`
+      }
+      return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}, landed ${shortenedNumber(-timeToLand)} ticks ago`
     })()
 
     const descriptions: string[] = [
