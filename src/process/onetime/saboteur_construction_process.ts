@@ -17,13 +17,11 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { GameMap } from "game/game_map"
+import { FleeFromTask } from "v5_object_task/creep_task/meta_task/flee_from_task"
+import { StompTask } from "v5_object_task/creep_task/meta_task/stomp_task"
 
 ProcessDecoder.register("SaboteurConstructionProcess", state => {
-  return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
-})
-
-// FixMe: Migration
-ProcessDecoder.register("Season570208DismantleRcl2RoomProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
 })
 
@@ -36,9 +34,6 @@ export interface SaboteurConstructionProcessState extends ProcessState {
 
   /** waypoints */
   w: RoomName[]
-
-  /** target structure id */
-  ti: Id<AnyStructure> | null
 
   /** number of creeps */
   n: number
@@ -61,17 +56,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   public readonly identifier: string
   private readonly codename: string
 
-  private readonly dismantlerRoles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover]
-  private readonly dismantlerBody: BodyPartConstant[] = [
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    MOVE, MOVE, MOVE, MOVE, MOVE,
-    WORK, WORK, WORK, WORK, WORK,
-    WORK, WORK, WORK, WORK, WORK,
-  ]
-
   private readonly scoutBody: BodyPartConstant[] = [
     MOVE,
   ]
@@ -82,7 +66,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
     public readonly waypoints: RoomName[],
-    private target: AnyStructure | null,
     private numberOfCreeps: number,
     private fleeRange: number,
     private stopSpawning: boolean,
@@ -100,7 +83,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       p: this.parentRoomName,
       tr: this.targetRoomName,
       w: this.waypoints,
-      ti: this.target?.id ?? null,
       n: this.numberOfCreeps,
       fleeRange: this.fleeRange,
       stopSpawning: this.stopSpawning,
@@ -109,17 +91,11 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public static decode(state: SaboteurConstructionProcessState): SaboteurConstructionProcess {
-    const target = ((): AnyStructure | null => {
-      if (state.ti == null) {
-        return null
-      }
-      return Game.getObjectById(state.ti)
-    })()
-    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
+    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): SaboteurConstructionProcess {
-    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false, false)
+    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepCount, 6, false, false)
   }
 
   public processShortDescription(): string {
@@ -197,34 +173,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     })()
 
     this.runScout()
-
-
-    // if (insufficientCreepCount > 0) {
-    //   const priority: CreepSpawnRequestPriority = insufficientCreepCount > 2 ? CreepSpawnRequestPriority.High : CreepSpawnRequestPriority.Low
-    //   this.requestDismantler(priority, insufficientCreepCount)
-    // }
-
-    // World.resourcePools.assignTasks(
-    //   this.parentRoomName,
-    //   this.identifier,
-    //   CreepPoolAssignPriority.Low,
-    //   creep => this.newDismantlerTask(creep),
-    //   () => true,
-    // )
-  }
-
-  private structureTarget(creep: Creep): AnyStructure | null {
-    const structures = creep.room.find(FIND_HOSTILE_STRUCTURES)
-    const spawn = structures.find(structure => structure instanceof StructureSpawn)
-    if (spawn != null) {
-      return spawn
-    }
-    const extension = structures.find(structure => structure instanceof StructureExtension)
-    if (extension != null) {
-      return extension
-    }
-    const road = creep.pos.findClosestByRange(structures.filter(structure => structure instanceof StructureRoad))
-    return road ?? null
   }
 
   private runScout(): void {
@@ -237,28 +185,23 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       this.parentRoomName,
       this.identifier,
       CreepPoolAssignPriority.Low,
-      creep => FleeFromAttackerTask.create(this.removeConstructionSiteTask(creep), this.fleeRange),
+      creep => {
+        const task = this.removeConstructionSiteTask(creep)
+        if (task == null) {
+          return null
+        }
+        return FleeFromAttackerTask.create(task, this.fleeRange)
+      },
       () => true,
     )
   }
 
   private sendScout(): void {
-    // const childTasks: CreepTask[] = [
-    //   MoveToRoomTask.create("W25S25", []),
-    //   MoveToTask.create(new RoomPosition(49, 18, "W25S25"), 0),
-    //   MoveToRoomTask.create(this.targetRoomName, ["W24S22"]),
-    // ]
-    // const options: SequentialTaskOptions = {
-    //   ignoreFailure: false,
-    //   finishWhenSucceed: false,
-    // }
-    // const initialTask = SequentialTask.create(childTasks, options)
-
     if (this.stopSpawning === true) {
       return
     }
 
-    const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints)
+    const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints, true)
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.High,
@@ -316,58 +259,26 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     return SequentialTask.create(tasks, options)
   }
 
-  private removeConstructionSiteTask(creep: Creep): CreepTask {
-    const targetSite = this.targetConstructionSite(creep)
-    if (targetSite == null) {
-      const [position, range] = ((): [RoomPosition, number] => {
-        if (creep.room.controller != null) {
-          const controllerRange = 5
-          if (creep.pos.getRangeTo(creep.room.controller) <= controllerRange) {
-            if (creep.pos.x <= 1 || creep.pos.x >= 48 || creep.pos.y <= 1 || creep.pos.y >= 48) {
-              return [creep.room.controller.pos, 3]
-            }
-          }
-          return [creep.room.controller.pos, controllerRange]
-        }
-        return [creep.pos, 0]
-      })()
-      return MoveToTask.create(position, range)
-    }
-    if (targetSite.pos.isEqualTo(creep.pos) === true) {
-      const i = (Game.time % 3) - 1
-      const j = ((Game.time + 1) % 3) - 1
-      const position = new RoomPosition(targetSite.pos.x + i, targetSite.pos.y + j, creep.room.name)
-      return MoveToTask.create(position, 0)
+  private removeConstructionSiteTask(creep: Creep): CreepTask | null {
+    if (creep.pos.roomName !== this.targetRoomName) {
+      const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+      return MoveToRoomTask.create(this.targetRoomName, waypoints, true)
     }
 
-    // if ((creep.ticksToLive ?? 0) > 10 && creep.pos.isNearTo(targetSite.pos) === true) {
-    //   if (targetSite.progress < (targetSite.progressTotal / 2)) {
-    //     const attackBodyParts: BodyPartConstant[] = [ATTACK, RANGED_ATTACK]
-    //     if (creep.pos.findInRange(FIND_HOSTILE_CREEPS, 4).some(creep => creep.body.some(body => attackBodyParts.includes(body.type))) !== true) {
-    //       return null
-    //     }
-    //   }
-    // }
-    return MoveToTask.create(targetSite.pos, 0, {ignoreSwamp: true})
+    const targetSite = this.targetConstructionSite(creep)
+    if (targetSite == null) {
+      if (creep.room.controller == null) {
+        return null
+      }
+      return MoveToTask.create(creep.room.controller.pos, 5)
+    }
+    if (targetSite.pos.isEqualTo(creep.pos) === true) {
+      return FleeFromTask.create(targetSite.pos, 1)
+    }
+    return StompTask.create(targetSite.pos, {ignoreSwamp: true})
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
-    // const constructionSitePriority = (structureType: StructureConstant): number => {
-    //   const priority: StructureConstant[] = [
-    //     STRUCTURE_TOWER,
-    //     STRUCTURE_SPAWN,
-    //     STRUCTURE_STORAGE,
-    //     STRUCTURE_TERMINAL,
-    //     STRUCTURE_LAB,
-    //     STRUCTURE_EXTENSION,
-    //   ]
-    //   const index = priority.indexOf(structureType)
-    //   if (index < 0) {
-    //     return 100
-    //   }
-    //   return index
-    // }
-
     const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
       .filter(site => {
         if (site.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {

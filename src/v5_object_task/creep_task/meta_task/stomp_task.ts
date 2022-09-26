@@ -61,8 +61,8 @@ export class StompTask implements CreepTask {
     return new StompTask(state.s, state.d, previousState, state.ignoreSwamp)
   }
 
-  public static create(destinationPosition: RoomPosition, options?: { ignoreSwamp?: boolean }): StompTask {
-    return new StompTask(Game.time, destinationPosition, null, options?.ignoreSwamp ?? false)
+  public static create(destinationPosition: Position, options?: { ignoreSwamp?: boolean }): StompTask {
+    return new StompTask(Game.time, { x: destinationPosition.x, y: destinationPosition.y }, null, options?.ignoreSwamp ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {
@@ -96,9 +96,14 @@ export class StompTask implements CreepTask {
 
     case ERR_NOT_OWNER:
     case ERR_INVALID_TARGET:
-    default:
       PrimitiveLogger.fatal(`creep.moveTo() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
       return TaskProgressType.Finished
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = result
+      PrimitiveLogger.fatal(`creep.moveTo() returns ${result}, ${creep.name} in ${roomLink(creep.room.name)}`)
+      return TaskProgressType.Finished
+    }
     }
   }
 
