@@ -4,7 +4,6 @@ import { OperatingSystem } from "os/os"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { Result, ResultFailed } from "shared/utility/result"
 import { Season487837AttackInvaderCoreProcess } from "process/temporary/season_487837_attack_invader_core_process"
-import { Season570208DismantleRcl2RoomProcess } from "process/temporary/season_570208_dismantle_rcl2_room_process"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
@@ -85,7 +84,10 @@ import { FillNukerProcess } from "process/onetime/fill_nuker_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime/launch_nuke_process"
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
-// import {} from "process/process/empire/empire_process"
+// import {} from "process/process/declarative/empire_process"
+import { } from "process/process/purifier/purifier_process"
+import { } from "process/process/sign_sector_process"
+import { SaboteurConstructionProcess } from "process/onetime/saboteur_construction_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -114,8 +116,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchQuad()
       case "Season487837AttackInvaderCoreProcess":
         return this.launchSeason487837AttackInvaderCoreProcess()
-      case "Season570208DismantleRcl2RoomProcess":
-        return this.launchSeason570208DismantleRcl2RoomProcess()
       case "BuyPixelProcess":
         return this.launchBuyPixelProcess()
       case "Season1200082SendMineralProcess":
@@ -241,52 +241,6 @@ export class LaunchCommand implements ConsoleCommand {
   private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
     const process = OperatingSystem.os.addProcess(null, processId => {
       return Season487837AttackInvaderCoreProcess.create(processId)
-    })
-    return Result.Succeeded(process)
-  }
-
-  private launchSeason570208DismantleRcl2RoomProcess(): LaunchCommandResult {
-    const args = this.parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const targetRoomName = args.get("target_room_name")
-    if (targetRoomName == null) {
-      return this.missingArgumentError("target_room_name")
-    }
-    const rawNumberOfCreeps = args.get("creeps")
-    if (rawNumberOfCreeps == null) {
-      return this.missingArgumentError("creeps")
-    }
-    const numberOfCreeps = parseInt(rawNumberOfCreeps, 10)
-    if (isNaN(numberOfCreeps) === true) {
-      return Result.Failed(`creeps is not a number ${rawNumberOfCreeps}`)
-    }
-
-    const waypoints: RoomName[] = []
-    const rawWaypoints = args.get("waypoints")
-    if (rawWaypoints == null) {
-      const storedValue = GameMap.getWaypoints(roomName, targetRoomName)
-      if (storedValue == null) {
-        return this.missingArgumentError("waypoints")
-      }
-      waypoints.push(...storedValue)
-
-    } else {
-      const parsedValue = rawWaypoints.split(",")
-
-      const result = GameMap.setWaypoints(roomName, targetRoomName, parsedValue)
-      if (result.resultType === "failed") {
-        return Result.Failed(`Invalid room names: ${result.reason.invalidRoomNames.join(",")}`)
-      }
-
-      waypoints.push(...parsedValue)
-    }
-
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season570208DismantleRcl2RoomProcess.create(processId, roomName, targetRoomName, waypoints, numberOfCreeps)
     })
     return Result.Succeeded(process)
   }
@@ -1546,6 +1500,26 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
     }
 
     return Result.Succeeded(processId => launchProcess(processId, checkedTargetRoom))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SaboteurConstructionProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const numberOfCreeps = args.int("creep_count").parse({min: 1})
+    const waypoints = getWaypoints(args, roomName, targetRoomName)
+
+    return Result.Succeeded((processId) => SaboteurConstructionProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      waypoints,
+      numberOfCreeps,
+    ))
   } catch (error) {
     return Result.Failed(`${error}`)
   }

@@ -16,12 +16,18 @@ import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
-ProcessDecoder.register("Season570208DismantleRcl2RoomProcess", state => {
-  return Season570208DismantleRcl2RoomProcess.decode(state as Season570208DismantleRcl2RoomProcessState)
+ProcessDecoder.register("SaboteurConstructionProcess", state => {
+  return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
 })
 
-export interface Season570208DismantleRcl2RoomProcessState extends ProcessState {
+// FixMe: Migration
+ProcessDecoder.register("Season570208DismantleRcl2RoomProcess", state => {
+  return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
+})
+
+export interface SaboteurConstructionProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
 
@@ -44,9 +50,12 @@ export interface Season570208DismantleRcl2RoomProcessState extends ProcessState 
   keepSpawning: boolean
 }
 
-export class Season570208DismantleRcl2RoomProcess implements Process, Procedural, MessageObserver {
+export class SaboteurConstructionProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -83,9 +92,9 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     this.codename = generateCodename(this.identifier, this.launchTime)
   }
 
-  public encode(): Season570208DismantleRcl2RoomProcessState {
+  public encode(): SaboteurConstructionProcessState {
     return {
-      t: "Season570208DismantleRcl2RoomProcess",
+      t: "SaboteurConstructionProcess",
       l: this.launchTime,
       i: this.processId,
       p: this.parentRoomName,
@@ -99,18 +108,18 @@ export class Season570208DismantleRcl2RoomProcess implements Process, Procedural
     }
   }
 
-  public static decode(state: Season570208DismantleRcl2RoomProcessState): Season570208DismantleRcl2RoomProcess {
+  public static decode(state: SaboteurConstructionProcessState): SaboteurConstructionProcess {
     const target = ((): AnyStructure | null => {
       if (state.ti == null) {
         return null
       }
       return Game.getObjectById(state.ti)
     })()
-    return new Season570208DismantleRcl2RoomProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
+    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, target, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): Season570208DismantleRcl2RoomProcess {
-    return new Season570208DismantleRcl2RoomProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false, false)
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): SaboteurConstructionProcess {
+    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, null, creepCount, 6, false, false)
   }
 
   public processShortDescription(): string {
