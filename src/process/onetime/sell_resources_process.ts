@@ -7,6 +7,7 @@ import { processLog } from "os/infrastructure/logger"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { Market } from "shared/utility/market"
 
 const excludedResources: ResourceConstant[] = [
   RESOURCE_ENERGY,
@@ -113,10 +114,7 @@ export class SellResourcesProcess implements Process, Procedural {
         continue
       }
 
-      const orders = Game.market.getAllOrders({ resourceType, type: ORDER_BUY }).filter(order => order.remainingAmount > 0)
-      orders.sort((lhs, rhs) => rhs.price - lhs.price)
-
-      const highestPriceOrder = orders[0]
+      const highestPriceOrder = Market.highestPriceBuyOrder(resourceType)
       if (highestPriceOrder == null) {
         results.push(`no ${coloredResourceType(resourceType)} buy order`)
         continue
