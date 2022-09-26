@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
@@ -15,6 +15,8 @@ import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/fl
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { GameMap } from "game/game_map"
 import { isSpawningSpawn, SpawningSpawn } from "shared/utility/spawn"
+import { OwnedRoomProcess } from "process/owned_room_process"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 ProcessDecoder.register("DisturbCreepSpawnProcess", state => {
   return DisturbCreepSpawnProcess.decode(state as DisturbCreepSpawnProcessState)
@@ -49,10 +51,13 @@ interface DisturbCreepSpawnProcessState extends ProcessState {
   readonly codename?: string
 }
 
-export class DisturbCreepSpawnProcess implements Process, Procedural {
+export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private readonly codename: string
@@ -67,7 +72,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
     private readonly roomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly travelDistance: number,
-    private readonly stopSpawningReasons: string[],
+    private stopSpawningReasons: string[],
     private lastKillTime: Timestamp | null,
     private readonly specifiedCodename: string | null,
   ) {
@@ -126,6 +131,32 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
     }
 
     return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "clear_kill_time", "resume", "stop"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+      case "clear_kill_time":
+        this.lastKillTime = null
+        return "cleared"
+      case "resume":
+        this.stopSpawningReasons = []
+        return "ok"
+      case "stop":
+        this.addStopSpawningReason("manually")
+        return "ok"
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
@@ -208,16 +239,21 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
     if (shouldSpawn === true) {
       this.spawnCreep(roomResource.room.energyCapacityAvailable)
     }
+
+    creeps.forEach(creep => this.runCreep(creep))
   }
 
-  private runCreep(creep: Creep): void {
+  private runCreep(creep: Creep): void {  // TODO: 2体いる場合はsignする
     if (creep.v5task != null) {
+      this.heal(creep)
       return
     }
 
     if (creep.room.name !== this.targetRoomName) {
       const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
       creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, waypoints))
+
+      this.heal(creep)
       return
     }
 
@@ -228,10 +264,16 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
         creep.moveTo(target, defaultMoveToOptions())
         if (creep.pos.isNearTo(target.pos) === true) {
           creep.attack(target)
+        } else {
+          this.heal(creep)
         }
+      } else {
+        this.heal(creep)
       }
       return
     }
+
+    this.heal(creep)
 
     const spawningSpawn = this.getSpawiningSpawns(creep.room)[0]
     if (spawningSpawn != null) {
@@ -243,6 +285,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
         return
       }
       if (creep.pos.getRangeTo(spawningPosition) <= 1) {
+        creep.attack(spawningSpawn)
         return
       }
       creep.moveTo(spawningPosition, defaultMoveToOptions())
@@ -251,12 +294,23 @@ export class DisturbCreepSpawnProcess implements Process, Procedural {
 
     const spawn = this.getSpawns(creep.room)[0]
     if (spawn != null) {
+      if (creep.pos.getRangeTo(spawn.pos) <= 1) {
+        creep.attack(spawn)
+        return
+      }
       creep.moveTo(spawn.pos, defaultMoveToOptions())
       return
     }
 
     creep.say("nth to do")
     this.addStopSpawningReason("nothing to do")
+  }
+
+  private heal(creep: Creep): void {
+    if (creep.hits >= creep.hitsMax) {
+      return
+    }
+    creep.heal(creep)
   }
 
   private getTargetCreeps(targetRoom: Room): Creep[] {
