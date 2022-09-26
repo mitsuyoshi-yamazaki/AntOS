@@ -8,6 +8,7 @@ import { KeywordArguments } from "shared/utility/argument_parser/keyword_argumen
 import { OperatingSystem } from "os/os"
 import { isOwnedRoomProcess, OwnedRoomProcess } from "process/owned_room_process"
 import { RoomResources } from "room_resource/room_resources"
+import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
 
 export const unclaim = (roomResource: OwnedRoomResource, args: string[]): string => {
   const keywordArguments = new KeywordArguments(args)
@@ -146,6 +147,8 @@ export const prepareUnclaim = (roomResource: OwnedRoomResource, args: string[]):
   roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
   results.push("stopped mineral harvesting")
 
+  const processesToKill: Process[] = []
+
   OperatingSystem.os.listAllProcesses().forEach(processInfo => {
     const process = processInfo.process
     if (process instanceof HighwayProcessLauncherProcess) {
@@ -171,6 +174,17 @@ export const prepareUnclaim = (roomResource: OwnedRoomResource, args: string[]):
       }
       return
     }
+    if (process instanceof PowerProcessProcess) { // Powerの入力を停止するため
+      if (process.ownedRoomName === roomName) {
+        processesToKill.push(process)
+      }
+      return
+    }
+  })
+
+  processesToKill.forEach(process => {
+    OperatingSystem.os.killProcess(process.processId)
+    results.push(`kill ${process.processId} ${process.constructor.name}`)
   })
 
   return [
