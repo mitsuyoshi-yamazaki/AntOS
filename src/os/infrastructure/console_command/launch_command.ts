@@ -88,6 +88,7 @@ import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 import { } from "process/process/purifier/purifier_process"
 import { } from "process/process/sign_sector_process"
 import { SaboteurConstructionProcess } from "process/onetime/saboteur_construction_process"
+import { ObserveNukeLandingProcess } from "process/onetime/nuke/observe_nuke_landing_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1519,6 +1520,27 @@ ProcessLauncher.register("SaboteurConstructionProcess", args => {
       targetRoomName,
       waypoints,
       numberOfCreeps,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("ObserveNukeLandingProcess", args => {
+  try {
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const observerRoomResource = args.ownedRoomResource("observer_room_name").parse()
+    const observer = observerRoomResource.activeStructures.observer
+    if (observer == null) {
+      throw `no observer in ${roomLink(observerRoomResource.room.name)}`
+    }
+    const nukeLandingUntil = args.int("nuke_landing_until").parse()
+
+    return Result.Succeeded((processId) => ObserveNukeLandingProcess.create(
+      processId,
+      targetRoomName,
+      observer.id,
+      nukeLandingUntil + Game.time,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
