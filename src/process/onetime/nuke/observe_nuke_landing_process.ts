@@ -38,6 +38,10 @@ const excludedStructureTypes: StructureConstant[] = [
   STRUCTURE_CONTAINER,
   STRUCTURE_ROAD,
 ]
+const squashedStructureTypes: StructureConstant[] = [
+  STRUCTURE_LINK,
+  STRUCTURE_EXTENSION,
+]
 
 export interface ObserveNukeLandingProcessState extends ProcessState {
   readonly observerId: Id<StructureObserver>
@@ -102,6 +106,7 @@ export class ObserveNukeLandingProcess implements Process, Procedural, MessageOb
     const landUntil = this.nukeLandingTime - Game.time
     const structuresToDestroy = new Map<StructureConstant, number>()
     const protectedStructures: TargetStructure[] = []
+    const squashedProtectedStructures = new Map<StructureConstant, number>()
 
     this.targetInfo.inRangeStructures.forEach(structure => {
       if (structure.rampartHits < structure.estimatedDamage) {
@@ -109,17 +114,25 @@ export class ObserveNukeLandingProcess implements Process, Procedural, MessageOb
         structuresToDestroy.set(structure.structureType, structureCount + 1)
         return
       }
+      if (squashedStructureTypes.includes(structure.structureType) === true) {
+        const structureCount = squashedProtectedStructures.get(structure.structureType) ?? 0
+        squashedProtectedStructures.set(structure.structureType, structureCount + 1)
+        return
+      }
       protectedStructures.push(structure)
     })
+
+    protectedStructures.sort()
 
     const descriptions: string[] = [
       `nuke landing to ${roomLink(this.targetRoomName)} in ${shortenedNumber(landUntil)}`,
       "nukes:",
       ...this.targetInfo.nukes.map(nuke => `- ${describePosition(nuke.position)} from ${roomLink(nuke.fromRoomName)}`),
       "structures to destroy:",
-      ...Array.from(structuresToDestroy.entries()).map(([structureType, count]) => `- ${count} ${structureType}`),
+      ...Array.from(structuresToDestroy.entries()).map(([structureType, count]) => `- ${count} ${structureType}s`),
       "protected structures",
-      ...protectedStructures.map(structure => `- ${structure.structureType} at ${describePosition(structure.position)} (${shortenedNumber(structure.estimatedDamage)}/${shortenedNumber(structure.rampartHits)} damage)`)
+      ...protectedStructures.map(structure => `- ${structure.structureType} at ${describePosition(structure.position)} (${shortenedNumber(structure.estimatedDamage)}/${shortenedNumber(structure.rampartHits)} damage)`),
+      ...Array.from(squashedProtectedStructures.entries()).map(([structureType, count]) => `- ${count} ${structureType}s`),
     ]
 
     return descriptions.join("\n")
