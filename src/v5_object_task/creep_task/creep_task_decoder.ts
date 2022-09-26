@@ -27,6 +27,7 @@ import { TravelToTargetTask, TravelToTargetTaskState } from "./combined_task/tra
 import { MoveToInvisibleTargetTask, MoveToInvisibleTargetTaskState } from "./combined_task/move_to_invisible_target_task"
 import { ContinuousRunApiTask, ContinuousRunApiTaskState } from "./combined_task/continuous_run_apis_task"
 import { SwapNearbyCreepPositionTask, SwapNearbyCreepPositionTaskState } from "./meta_task/swap_nearby_creep_position_task"
+import { StompTask, StompTaskState } from "./meta_task/stomp_task"
 
 export type CreepTaskType = keyof CreepTaskDecoderMap
 class CreepTaskDecoderMap {
@@ -96,6 +97,7 @@ class CreepTaskDecoderMap {
     return SwampRunnerTransferTask.decode(swampRunnerTransferTaskState, apiWrapper)
   }
   "SwapNearbyCreepPositionTask" = (state: CreepTaskState) => SwapNearbyCreepPositionTask.decode(state as unknown as SwapNearbyCreepPositionTaskState)
+  "StompTask" = (state: CreepTaskState) => StompTask.decode(state as unknown as StompTaskState)
 
   // ---- Test Task ---- //
   "TestRunHaulerTask" = (state: CreepTaskState) => TestRunHaulerTask.decode(state as unknown as TestRunHaulerTaskState)
