@@ -25,6 +25,18 @@ ProcessDecoder.register("SaboteurConstructionProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
 })
 
+type ConstructionSiteInfo = {
+  readonly constructionSite: ConstructionSite<BuildableStructureConstant>
+  readonly priority: number
+}
+const targetPriority: BuildableStructureConstant[] = [  // 添字が大きい方が優先
+  STRUCTURE_RAMPART,
+  STRUCTURE_STORAGE,
+  STRUCTURE_TERMINAL,
+  STRUCTURE_SPAWN,
+  STRUCTURE_TOWER,
+]
+
 export interface SaboteurConstructionProcessState extends ProcessState {
   /** parent room name */
   p: RoomName
@@ -279,31 +291,32 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
-    const constructionSites = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES)
-      .filter(site => {
-        if (site.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
-          return false
-        }
-        if (site.pos.lookFor(LOOK_TERRAIN)[0] === "wall") {
-          return false
-        }
-        return true
-      })
+    const constructionSites: ConstructionSiteInfo[] = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES).map(constructionSite => {
+      return {
+        constructionSite,
+        priority: this.prioritize(constructionSite),
+      }
+    })
 
-    const towerSite = constructionSites.find(site => site.structureType === STRUCTURE_TOWER)
-    if (towerSite != null) {
-      return towerSite
-    }
-    const spawnSite = constructionSites.find(site => site.structureType === STRUCTURE_SPAWN)
-    if (spawnSite != null) {
-      return spawnSite
-    }
-    const targetSite = creep.pos.findClosestByRange(constructionSites)
-    if (targetSite != null) {
-      return targetSite
-    }
+    constructionSites.sort((lhs, rhs) => rhs.priority - lhs.priority)
+    return constructionSites.find(constructionSite => {
+      if (constructionSite.constructionSite.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
+        return false
+      }
+      if (constructionSite.constructionSite.pos.lookFor(LOOK_TERRAIN)[0] === "wall") {
+        return false
+      }
+      if (constructionSite.constructionSite.pos.findInRange(FIND_HOSTILE_CREEPS, 0).length > 0) {
+        return false
+      }
+      return true
+    })?.constructionSite ?? null
+  }
 
-    return null
+  private prioritize(constructionSite: ConstructionSite<BuildableStructureConstant>): number {
+    const structurePriority = targetPriority.indexOf(constructionSite.structureType) + 2  // -1を正の数に直すため
+    const constructionProgress = constructionSite.progress / constructionSite.progressTotal
+    return (constructionProgress * 100) + (structurePriority * 10)
   }
 
   private checkScoutAttacked(): boolean {
