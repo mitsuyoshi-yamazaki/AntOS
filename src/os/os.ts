@@ -197,6 +197,11 @@ export class OperatingSystem {
     this.processIdsToSuspend.push(processId)
   }
 
+  public isRunning(processId: ProcessId): boolean {
+    const processInfo = this.processStore.get(processId)
+    return processInfo?.running ?? false
+  }
+
   public suspendProcess(processId: ProcessId): Result<string, string> {
     const processInfo = this.processStore.get(processId)
     if (processInfo == null) {
