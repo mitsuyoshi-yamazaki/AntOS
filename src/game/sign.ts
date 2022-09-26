@@ -1,23 +1,33 @@
 import { SystemInfo } from "shared/utility/system_info"
 
+const attackingSigns: string[] = [
+  "🚫",
+  "💥",
+].map(x => `${x} #overlords`)
+
+const areaSigns: string[] = [
+  "Restricted area",
+  "Exclusion zone",
+  "No entry",
+].map(x => `${x} #overlords`)
+
 export const Sign = {
-  sign(room: Room): string {
-    if (room.controller == null) {
-      return ""
-    }
-    if (room.controller.my === true) {
+  signFor(controller: StructureController): string {
+    if (controller.my === true) {
       return this.signForOwnedRoom()
-    } else {
-      return `at ${Game.time}`
     }
+    if (controller.owner != null) {
+      return this.signForHostileRoom()
+    }
+    return areaSigns[Game.time % areaSigns.length] ?? ""
   },
 
   signForOwnedRoom(): string {
-    return `v${SystemInfo.application.version} at ${Game.time}`
+    return `${SystemInfo.application.name} v${SystemInfo.application.version}`
   },
 
   signForHostileRoom(): string {
-    return "🍣"
+    return attackingSigns[Game.time % attackingSigns.length] ?? ""
   },
 
   signForGclFarm(): string {
@@ -26,8 +36,6 @@ export const Sign = {
 }
 
 /**
- * # Examples
- * - exclusion zone
- * - restricted area
- * - no entry
+ * memo
+ * - marked as zombie
  */
