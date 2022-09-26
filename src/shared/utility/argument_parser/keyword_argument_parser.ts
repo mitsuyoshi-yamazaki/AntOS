@@ -17,7 +17,7 @@ interface KeywordArgumentsInterface {
   // ---- Primitive Type ---- //
   int(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number>
   float(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ min?: number, max?: number }, number>
-  string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string>
+  string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ allowSpacing?: boolean }, string>
   stringList(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string[]>
   boolean(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, boolean>
   list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T>
@@ -90,7 +90,7 @@ export class KeywordArguments implements KeywordArgumentsInterface {
     return new FloatArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 
-  public string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, string> {
+  public string(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ allowSpacing?: boolean }, string> {
     return new StringArgument(key, this.argumentMap.get(key) ?? null, options)
   }
 

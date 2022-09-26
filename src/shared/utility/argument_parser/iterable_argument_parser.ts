@@ -1,7 +1,7 @@
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import type { RoomName } from "shared/utility/room_name_types"
 import { Position } from "../position"
-import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, LocalPositionArgument, RoomArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument, VisibleRoomObjectArgument } from "./string_parser"
+import { ArgumentParsingOptions, BooleanArgument, FloatArgument, IntArgument, LocalPositionArgument, RawStringArgument, RoomArgument, RoomNameArgument, SingleOptionalArgument, StringArgument, TypedStringArgument, VisibleRoomObjectArgument } from "./string_parser"
 
 export type IterableArgumentType = "string"
   | "int"
@@ -17,7 +17,7 @@ export type IterableArgumentType = "string"
   | "visible_room_object"
   | "local_position"
 
-type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? void
+type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? { allowSpacing?: boolean }
   : T extends "int" ? { min?: number, max?: number }
   : T extends "float" ? { min?: number, max?: number }
   : T extends "resource" ? void
@@ -70,8 +70,8 @@ const SingularParsers: { [T in IterableArgumentType]: (key: string, value: strin
   commodity: (key: string, value: string, options?: ArgumentParsingOptions): TypedStringArgument<CommodityConstant> => {
     return new TypedStringArgument(key, value, "CommodityConstant", isCommodityConstant, options)
   },
-  object_id: (key: string, value: string, parseOptions?: ArgumentParsingOptions): StringArgument => {
-    return new StringArgument(key, value, parseOptions)
+  object_id: (key: string, value: string, parseOptions?: ArgumentParsingOptions): RawStringArgument => {
+    return new RawStringArgument(key, value, parseOptions)
   },
   room_name: (key: string, value: string, parseOptions?: ArgumentParsingOptions): RoomNameArgument => {
     return new RoomNameArgument(key, value, parseOptions)

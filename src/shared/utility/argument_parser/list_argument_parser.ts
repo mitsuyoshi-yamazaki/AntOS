@@ -15,7 +15,7 @@ interface KeywordArgumentsInterface {
   // ---- Primitive Type ---- //
   int(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number>
   float(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ min?: number, max?: number }, number>
-  string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string>
+  string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowSpacing?: boolean }, string>
   boolean(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, boolean>
   list<T extends IterableArgumentType>(index: number, key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T>
   localPosition(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, Position>
@@ -63,7 +63,7 @@ export class ListArguments implements KeywordArgumentsInterface {
     return new FloatArgument(key, this.getValueAt(index, key), options)
   }
 
-  public string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, string> {
+  public string(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ allowSpacing?: boolean }, string> {
     return new StringArgument(key, this.getValueAt(index, key), options)
   }
 

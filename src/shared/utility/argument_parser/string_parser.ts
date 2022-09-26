@@ -223,11 +223,27 @@ export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: 
   }
 }
 
-export class StringArgument extends SingleOptionalArgument<void, string> {
+export class RawStringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
   public parse(): string {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
+    }
+    return this.value
+  }
+}
+
+/**
+ * allowSpacing: '\\'をスペースに置換する
+ */
+export class StringArgument extends SingleOptionalArgument<{allowSpacing?: boolean}, string> {
+  /** throws */
+  public parse(options?: { allowSpacing?: boolean }): string {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    if (options?.allowSpacing === true) {
+      return this.value.replace(/\\/g, " ")
     }
     return this.value
   }
