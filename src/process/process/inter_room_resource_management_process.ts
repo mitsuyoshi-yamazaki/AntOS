@@ -10,6 +10,7 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { OperatingSystem } from "os/os"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
+import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
@@ -125,6 +126,14 @@ class ResourceTransferer {
         if (this.disabledRoomNames.includes(roomName) !== true) {
           this.disabledRoomNames.push(roomName)
         }
+        return
+      }
+      if (processInfo.process instanceof SellResourcesProcess) {
+        const roomName = processInfo.process.ownedRoomName
+        if (this.disabledRoomNames.includes(roomName) !== true) {
+          this.disabledRoomNames.push(roomName)
+        }
+        return
       }
     })
 
