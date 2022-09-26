@@ -143,6 +143,7 @@ export class LaunchNukeProcess implements Process, Procedural {
 
     this.result = this.launch()
     OperatingSystem.os.suspendProcess(this.processId) // TODO: 動作したらkillに変更する
+    // TODO: Nuke Observer Processを起動する
   }
 
   private launch(): "succeeded" | string | null {
