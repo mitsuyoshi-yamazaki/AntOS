@@ -13,6 +13,7 @@ import { OperatingSystem } from "os/os"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { shortenedNumber } from "shared/utility/console_utility"
 
 ProcessDecoder.register("SellResourcesProcess", state => {
   return SellResourcesProcess.decode(state as SellResourcesProcessState)
@@ -136,8 +137,11 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
     }
 
     const storage = roomResource.activeStructures.storage
+    let index = -1
 
     for (const resourceType of this.resourceTypes) {
+      index += 1
+
       const amountInTerminal = terminal.store.getUsedCapacity(resourceType)
       if (amountInTerminal <= 0) {
         if (storage != null && storage.store.getUsedCapacity(resourceType) <= 0) {
@@ -150,8 +154,15 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
         continue
       }
 
+      if (amountInTerminal < 2000 && index < this.resourceTypes.length) {
+        continue  // Storageから移している最中等の資源はスキップ
+      }
+
       const highestPriceOrder = Market.highestPriceBuyOrder(resourceType)
       if (highestPriceOrder == null) {
+        continue
+      }
+      if (highestPriceOrder.price < 1) {
         continue
       }
 
@@ -165,7 +176,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
 
       switch (dealResult) {
       case OK:
-        processLog(this, `${sellAmount} ${coloredResourceType(resourceType)} sold from ${roomLink(terminal.room.name)}, order ID: ${highestPriceOrder.id}`)
+        processLog(this, `${sellAmount} ${coloredResourceType(resourceType)} sold for ${coloredText(shortenedNumber(Math.floor(sellAmount * highestPriceOrder.price)), "info")} credit from ${roomLink(terminal.room.name)}, order ID: ${highestPriceOrder.id}`)
         return
 
       case ERR_NOT_ENOUGH_RESOURCES:
