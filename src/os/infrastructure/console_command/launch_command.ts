@@ -86,11 +86,11 @@ import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 // import {} from "process/process/declarative/empire_process"
 import { } from "process/process/purifier/purifier_process"
-import { } from "process/process/sign_sector_process"
 import { SaboteurConstructionProcess } from "process/onetime/saboteur_construction_process"
 import { ObserveNukeLandingProcess } from "process/onetime/nuke/observe_nuke_landing_process"
 import { DisturbCreepSpawnProcess } from "process/onetime/disturb_creep_spawn_process"
 import { SellResourcesProcess } from "process/onetime/sell_resources_process"
+import { SignRoomsProcess } from "process/onetime/sign_rooms_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1581,6 +1581,23 @@ ProcessLauncher.register("SellResourcesProcess", args => {
       processId,
       roomName,
       resourceTypes,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SignRoomsProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomNames = args.list("target_room_names", "room_name").parse()
+    const signs = args.list("signs", "string").parseOptional({allowSpacing: true})
+
+    return Result.Succeeded((processId) => SignRoomsProcess.create(
+      processId,
+      roomName,
+      targetRoomNames,
+      signs,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
