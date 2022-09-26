@@ -76,7 +76,7 @@ import { World42791528ProblemFinderProcess } from "process/temporary/world_42791
 // import { IntrashardResourceWatchdogProcess } from "process/process/resource_watchdog/intrashard_resource_watchdog_process"
 import { MapVisualProcess } from "process/onetime/map_visual_process"
 import { RoomCoordinate } from "utility/room_coordinate"
-import { SellResourcesProcess } from "process/onetime/sell_resources_process"
+import { SellAllResourcesProcess } from "process/onetime/sell_all_resources_process"
 import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
 import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
 import { decodeRoomPosition, Position, RoomPositionFilteringOptions } from "prototype/room_position"
@@ -1245,7 +1245,7 @@ ProcessLauncher.register("MapVisualProcess", args => {
   }
 })
 
-ProcessLauncher.register("SellResourcesProcess", () => {
+ProcessLauncher.register("SellAllResourcesProcess", () => {
   try {
     for (const processInfo of OperatingSystem.os.listAllProcesses()) {
       if (!(processInfo.process instanceof InterRoomResourceManagementProcess)) {
@@ -1257,7 +1257,7 @@ ProcessLauncher.register("SellResourcesProcess", () => {
       break
     }
 
-    return Result.Succeeded((processId) => SellResourcesProcess.create(
+    return Result.Succeeded((processId) => SellAllResourcesProcess.create(
       processId,
     ))
   } catch (error) {

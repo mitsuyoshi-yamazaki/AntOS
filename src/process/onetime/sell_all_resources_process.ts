@@ -13,15 +13,15 @@ const excludedResources: ResourceConstant[] = [
   RESOURCE_ENERGY,
 ]
 
-ProcessDecoder.register("SellResourcesProcess", state => {
-  return SellResourcesProcess.decode(state as SellResourcesProcessState)
+ProcessDecoder.register("SellAllResourcesProcess", state => {
+  return SellAllResourcesProcess.decode(state as SellAllResourcesProcessState)
 })
 
-export interface SellResourcesProcessState extends ProcessState {
+export interface SellAllResourcesProcessState extends ProcessState {
   readonly dryRun: boolean
 }
 
-export class SellResourcesProcess implements Process, Procedural {
+export class SellAllResourcesProcess implements Process, Procedural {
   public readonly taskIdentifier: string
 
   private constructor(
@@ -32,21 +32,21 @@ export class SellResourcesProcess implements Process, Procedural {
     this.taskIdentifier = this.constructor.name
   }
 
-  public encode(): SellResourcesProcessState {
+  public encode(): SellAllResourcesProcessState {
     return {
-      t: "SellResourcesProcess",
+      t: "SellAllResourcesProcess",
       l: this.launchTime,
       i: this.processId,
       dryRun: this.dryRun,
     }
   }
 
-  public static decode(state: SellResourcesProcessState): SellResourcesProcess {
-    return new SellResourcesProcess(state.l, state.i, state.dryRun)
+  public static decode(state: SellAllResourcesProcessState): SellAllResourcesProcess {
+    return new SellAllResourcesProcess(state.l, state.i, state.dryRun)
   }
 
-  public static create(processId: ProcessId): SellResourcesProcess {
-    return new SellResourcesProcess(Game.time, processId, true)
+  public static create(processId: ProcessId): SellAllResourcesProcess {
+    return new SellAllResourcesProcess(Game.time, processId, true)
   }
 
   // public processShortDescription(): string {
