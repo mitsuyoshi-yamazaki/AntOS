@@ -8,6 +8,7 @@ import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Market } from "shared/utility/market"
+import { MessageObserver } from "os/infrastructure/message_observer"
 
 const excludedResources: ResourceConstant[] = [
   RESOURCE_ENERGY,
@@ -21,7 +22,7 @@ export interface SellAllResourcesProcessState extends ProcessState {
   readonly dryRun: boolean
 }
 
-export class SellAllResourcesProcess implements Process, Procedural {
+export class SellAllResourcesProcess implements Process, Procedural, MessageObserver {
   public readonly taskIdentifier: string
 
   private constructor(

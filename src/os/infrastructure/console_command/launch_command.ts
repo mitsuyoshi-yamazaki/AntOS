@@ -90,6 +90,7 @@ import { } from "process/process/sign_sector_process"
 import { SaboteurConstructionProcess } from "process/onetime/saboteur_construction_process"
 import { ObserveNukeLandingProcess } from "process/onetime/nuke/observe_nuke_landing_process"
 import { DisturbCreepSpawnProcess } from "process/onetime/disturb_creep_spawn_process"
+import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1561,6 +1562,25 @@ ProcessLauncher.register("DisturbCreepSpawnProcess", args => {
       targetRoomName,
       travelDistance,
       codename,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SellResourcesProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    if (roomResource.activeStructures.terminal == null) {
+      throw `${roomLink(roomName)} has no terminal`
+    }
+    const resourceTypes = args.list("resource_types", "resource").parse()
+
+    return Result.Succeeded((processId) => SellResourcesProcess.create(
+      processId,
+      roomName,
+      resourceTypes,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
