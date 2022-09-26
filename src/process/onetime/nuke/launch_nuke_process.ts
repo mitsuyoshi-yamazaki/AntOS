@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { ProcessState } from "../process_state"
+import { ProcessState } from "../../process_state"
 import { processLog } from "os/infrastructure/logger"
 import type { RoomName } from "shared/utility/room_name_types"
 import type { Timestamp } from "shared/utility/timestamp"
