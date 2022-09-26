@@ -89,6 +89,7 @@ import { } from "process/process/purifier/purifier_process"
 import { } from "process/process/sign_sector_process"
 import { SaboteurConstructionProcess } from "process/onetime/saboteur_construction_process"
 import { ObserveNukeLandingProcess } from "process/onetime/nuke/observe_nuke_landing_process"
+import { DisturbCreepSpawnProcess } from "process/onetime/disturb_creep_spawn_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1541,6 +1542,25 @@ ProcessLauncher.register("ObserveNukeLandingProcess", args => {
       targetRoomName,
       observer.id,
       nukeLandingUntil + Game.time,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DisturbCreepSpawnProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const travelDistance = args.int("travel_distance").parse({ min: 50, max: 1400 })
+    const codename = args.string("codename").parseOptional() ?? null
+
+    return Result.Succeeded((processId) => DisturbCreepSpawnProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      travelDistance,
+      codename,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
