@@ -137,14 +137,13 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
     }
 
     const storage = roomResource.activeStructures.storage
-    let index = -1
 
     for (const resourceType of this.resourceTypes) {
-      index += 1
-
       const amountInTerminal = terminal.store.getUsedCapacity(resourceType)
+      const amountInStorage = (storage?.store.getUsedCapacity(resourceType) ?? 0)
+
       if (amountInTerminal <= 0) {
-        if (storage != null && storage.store.getUsedCapacity(resourceType) <= 0) {
+        if (amountInStorage <= 0) {
           const resourceIndex = this.resourceTypes.indexOf(resourceType)
           if (resourceIndex >= 0) {
             processLog(this, `all ${coloredResourceType(resourceType)} sold from ${roomLink(this.roomName)}`)
@@ -154,7 +153,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
         continue
       }
 
-      if (amountInTerminal < 2000 && index < this.resourceTypes.length) {
+      if (amountInTerminal < 2000 && amountInStorage > 0) {
         continue  // Storageから移している最中等の資源はスキップ
       }
 
