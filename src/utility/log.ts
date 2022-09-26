@@ -47,10 +47,10 @@ export function tab(text: string, tabs: Tab): string {
 }
 
 export function shortenedNumber(num: number): string {
-  if (num < 1000) {
+  if (num < 2000) {
     return `${num}`
   }
-  if (num < 1000000) {
+  if (num < 2000000) {
     return `${Math.floor(num / 1000)}k`
   }
   return `${Math.floor(num / 1000000)}M`
