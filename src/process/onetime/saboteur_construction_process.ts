@@ -20,6 +20,7 @@ import { OwnedRoomProcess } from "process/owned_room_process"
 import { GameMap } from "game/game_map"
 import { FleeFromTask } from "v5_object_task/creep_task/meta_task/flee_from_task"
 import { StompTask } from "v5_object_task/creep_task/meta_task/stomp_task"
+import { describePosition } from "prototype/room_position"
 
 ProcessDecoder.register("SaboteurConstructionProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
@@ -123,7 +124,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop", "resume", "flee", "creep", "keep_spawning"]
+    const commandList = ["help", "stop", "resume", "flee", "creep", "keep_spawning", "show_whereabouts"]
     const components = message.split(" ")
     const command = components[0]
 
@@ -167,6 +168,16 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       case "keep_spawning":
         this.keepSpawning = true
         return "keep spawn"
+      case "show_whereabouts": {
+        const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.taskIdentifier, () => true)
+        if (creeps.length <= 0) {
+          if (this.stopSpawning === true) {
+            return "spawning stopped"
+          }
+          return "no creeps"
+        }
+        return creeps.map(creep => `${creep.name} in ${describePosition(creep.pos)} ${roomLink(creep.pos.roomName)}`).join(", ")
+      }
       default:
         throw `Invalid command ${command}, see "help"`
       }
