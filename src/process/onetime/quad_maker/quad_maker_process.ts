@@ -20,7 +20,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
 })
 
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
@@ -205,10 +205,20 @@ commands: ${commands}
       }
       const oldValue = this.quadMaker.targetRoomName
       this.quadMaker.targetRoomName = targetRoomName
+
+      if (this.quadMaker.waypoints != null) {
+        this.quadMaker.waypoints = null
+        return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}, removed waypoints`
+      }
+
       return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`
     }
 
     case "front_base_room_name": {
+      if (this.quadMaker.waypoints != null) {
+        throw "while front_base_room_name is set, waypoints are ignored"
+      }
+
       const frontBaseRoomName = args[0]
       if (frontBaseRoomName == null) {
         throw "Missing front base room name argument"
@@ -351,6 +361,18 @@ commands: ${commands}
       return `set quad creep codename: "${codename}"`
     }
 
+    case "waypoints": {
+      if (this.quadMaker.frontBaseRoomName != null) {
+        throw "while front_base_room_name has a value, waypoints are ignored"
+      }
+
+      const listArguments = new ListArguments(args)
+      const waypoints = listArguments.list(0, "room_names", "room_name").parse()
+      this.quadMaker.waypoints = waypoints
+
+      return `set ${waypoints.map(roomName => roomLink(roomName)).join(" =&gt ")}`
+    }
+
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
@@ -390,6 +412,10 @@ commands: ${commands}
     case "codename":
       this.quadMaker.quadProcessCodename = null
       return "reset codename"
+
+    case "waypoints":
+      this.quadMaker.waypoints = null
+      return "reset waypoints"
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`

@@ -22,6 +22,7 @@ export interface QuadMakerState extends State {
   readonly creepSpecs: QuadCreepSpec[]
   readonly targetIds: Id<AnyCreep | AnyStructure>[]
   readonly quadProcessCodename: string | null
+  readonly waypoints: RoomName[] | null
 }
 
 type QuadLaunchInfoDryRun = {
@@ -53,6 +54,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
     public creepSpecs: QuadCreepSpec[],
     public targetIds: Id<AnyCreep | AnyStructure>[],
     public quadProcessCodename: string | null,
+    public waypoints: RoomName[] | null,
   ) {
   }
 
@@ -69,6 +71,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       creepSpecs: this.creepSpecs,
       targetIds: this.targetIds,
       quadProcessCodename: this.quadProcessCodename,
+      waypoints: this.waypoints,
     }
   }
 
@@ -84,6 +87,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       state.creepSpecs,
       state.targetIds,
       state.quadProcessCodename,
+      state.waypoints,
     )
   }
 
@@ -111,7 +115,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       }
     })()
     const frontBaseRoomName: RoomName | null = null
-    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null)
+    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null, null)
   }
 
   public cloned(quadName: string): QuadMaker {
@@ -127,14 +131,24 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
   public description(): string {
     const quadSpec = this.createQuadSpec()
     if (typeof quadSpec === "string") {
-      return `${quadSpec}:
-${this.quadName} ${this.roomPathDescription()}
-handle melee: ${this.canHandleMelee}
-damage tolerance: ${this.damageTolerance}
-boosts: ${this.boosts.map(boost => coloredResourceType(boost)).join(",")}
-creeps: ${this.creepSpecs.length} creeps
-targets: ${this.targetIds.length} target IDs
-      `
+      const descriptions: string[] = [
+        `${quadSpec}:`,
+        `${this.quadName} ${this.roomPathDescription()}`,
+        `handle melee: ${ this.canHandleMelee }`,
+        `damage tolerance: ${this.damageTolerance}`,
+        `boosts: ${ this.boosts.map(boost => coloredResourceType(boost)).join(",") }`,
+        `creeps: ${this.creepSpecs.length} creeps`,
+        `targets: ${ this.targetIds.length } target IDs`,
+      ]
+
+      if (this.quadProcessCodename != null) {
+        descriptions.push(`creep codename: "${this.quadProcessCodename}"`)
+      }
+      if (this.waypoints != null) {
+        descriptions.push(`waypoints: ${this.waypoints.map(roomName => roomLink(roomName)).join(" =&gt ")}`)
+      }
+
+      return descriptions.join("\n")
     }
 
     const descriptions: string[] = [
@@ -145,6 +159,9 @@ targets: ${this.targetIds.length} target IDs
     }
     if (this.quadProcessCodename != null) {
       descriptions.push(`creep codename: "${this.quadProcessCodename}"`)
+    }
+    if (this.waypoints != null) {
+      descriptions.push(`waypoints: ${this.waypoints.map(roomName => roomLink(roomName)).join(" =&gt ")}`)
     }
     descriptions.push(quadSpec.description())
     return descriptions.join("\n")
@@ -172,8 +189,10 @@ targets: ${this.targetIds.length} target IDs
         errors.push(noWaypointError(this.frontBaseRoomName, this.targetRoomName))
       }
     } else {
-      if (GameMap.getWaypoints(this.roomName, this.targetRoomName) == null) {
-        errors.push(noWaypointError(this.roomName, this.targetRoomName))
+      if (this.waypoints == null) {
+        if (GameMap.getWaypoints(this.roomName, this.targetRoomName) == null) {
+          errors.push(noWaypointError(this.roomName, this.targetRoomName))
+        }
       }
     }
 
@@ -290,6 +309,7 @@ targets: ${this.targetIds.length} target IDs
         targetRoomName: this.targetRoomName,
         predefinedTargetIds: this.targetIds,
         frontBaseRoomName: this.frontBaseRoomName,
+        waypoints: this.waypoints,
       }
 
       const process = ((): LaunchQuadProcess | SpecializedQuadProcess => {
