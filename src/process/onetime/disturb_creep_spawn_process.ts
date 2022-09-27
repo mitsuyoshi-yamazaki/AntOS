@@ -17,11 +17,15 @@ import { GameMap } from "game/game_map"
 import { isSpawningSpawn, SpawningSpawn } from "shared/utility/spawn"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { SignApiWrapper } from "v5_object_task/creep_task/api_wrapper/sign_controller_api_wrapper"
+import { Sign } from "game/sign"
 
 ProcessDecoder.register("DisturbCreepSpawnProcess", state => {
   return DisturbCreepSpawnProcess.decode(state as DisturbCreepSpawnProcessState)
 })
 
+type SignStatus = "unchecked" | "sign" | "done"
 type TargetInstances = {
   readonly spawns: StructureSpawn[]
   readonly spawningSpawns: SpawningSpawn[]
@@ -65,6 +69,8 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
   private cachedAttackerBody = null as Readonly<{ body: BodyPartConstant[], energyCapacity: number }> | null
   private cachedTargets = null as Readonly<{ spawnIds: Set<Id<StructureSpawn>> }> | null
   private targets = null as TargetInstances | null
+  private shouldSign = "unchecked" as SignStatus
+  private readyToSignCreepCount = 0
 
   private constructor(
     public readonly launchTime: number,
@@ -130,6 +136,8 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       descriptions.push(`stop spawning: ${this.stopSpawningReasons.join(",")}`)
     }
 
+    descriptions.push(`sign: ${this.shouldSign}`)
+
     return descriptions.join(", ")
   }
 
@@ -161,6 +169,8 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
 
   public runOnTick(): void {
     this.targets = null
+    this.readyToSignCreepCount = 0
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
       return
@@ -240,10 +250,13 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       this.spawnCreep(roomResource.room.energyCapacityAvailable)
     }
 
+    if (this.shouldSign === "sign") {
+      creeps.sort((lhs, rhs) => (rhs.ticksToLive ?? 0) - (lhs.ticksToLive ?? 0))
+    }
     creeps.forEach(creep => this.runCreep(creep))
   }
 
-  private runCreep(creep: Creep): void {  // TODO: 2体いる場合はsignする
+  private runCreep(creep: Creep): void {
     if (creep.v5task != null) {
       this.heal(creep)
       return
@@ -255,6 +268,22 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
 
       this.heal(creep)
       return
+    }
+
+    if (this.shouldSign === "unchecked") {
+      this.shouldSign = ((): SignStatus => {
+        const controller = creep.room.controller
+        if (controller == null) {
+          return "done"
+        }
+        if (controller.sign == null) {
+          return "sign"
+        }
+        if (controller.sign.username === Game.user.name) {
+          return "done"
+        }
+        return "sign"
+      })()
     }
 
     const targetCreeps = this.getTargetCreeps(creep.room)
@@ -274,6 +303,16 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
     }
 
     this.heal(creep)
+
+    if (this.readyToSignCreepCount >= 1 && this.shouldSign === "sign" && creep.room.controller != null && creep.ticksToLive != null && creep.ticksToLive < 300) {
+      if (creep.room.controller.sign?.username === Game.user.name) {
+        this.shouldSign = "done"
+      } else {
+        const sign = Sign.signForHostileRoom()
+        creep.v5task = MoveToTargetTask.create(SignApiWrapper.create(creep.room.controller, sign))
+        return
+      }
+    }
 
     const spawningSpawn = this.getSpawiningSpawns(creep.room)[0]
     if (spawningSpawn != null) {
@@ -295,6 +334,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
     const spawn = this.getSpawns(creep.room)[0]
     if (spawn != null) {
       if (creep.pos.getRangeTo(spawn.pos) <= 1) {
+        this.readyToSignCreepCount += 1
         creep.attack(spawn)
         return
       }
