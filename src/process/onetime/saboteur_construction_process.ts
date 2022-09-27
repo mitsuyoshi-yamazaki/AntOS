@@ -21,10 +21,14 @@ import { GameMap } from "game/game_map"
 import { FleeFromTask } from "v5_object_task/creep_task/meta_task/flee_from_task"
 import { StompTask } from "v5_object_task/creep_task/meta_task/stomp_task"
 import { describePosition } from "prototype/room_position"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 
 ProcessDecoder.register("SaboteurConstructionProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
 })
+
+type Options = "attacker creep" // [MOVE] の代わりに [ATTACK, MOVE] を使用する
+  | "keep spawning"  // safemodeに入っていてもcreepを送り続ける
 
 type SignStatus = "unchecked" | "sign" | "done"
 type ConstructionSiteInfo = {
@@ -41,22 +45,21 @@ const targetPriority: BuildableStructureConstant[] = [  // 添字が大きい方
 
 export interface SaboteurConstructionProcessState extends ProcessState {
   /** parent room name */
-  p: RoomName
+  readonly p: RoomName
 
   /** target room name */
-  tr: RoomName
+  readonly tr: RoomName
 
   /** waypoints */
-  w: RoomName[]
+  readonly w: RoomName[]
 
   /** number of creeps */
-  n: number
+  readonly n: number
 
-  fleeRange: number
-  stopSpawning: boolean
+  readonly fleeRange: number
+  readonly stopSpawning: boolean
 
-  /** safemodeに入っていてもcreepを送り続ける */
-  keepSpawning: boolean
+  readonly options: Options[]
 }
 
 export class SaboteurConstructionProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
@@ -80,9 +83,27 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   private shouldSign = "unchecked" as SignStatus
   private _estimatedTravelDistance = null as number | null
 
-  private readonly scoutBody: BodyPartConstant[] = [
-    MOVE,
-  ]
+  private get keepSpawning(): boolean {
+    return this.options.has("keep spawning")
+  }
+  private set keepSpawning(keep: boolean) {
+    if (keep === true) {
+      this.options.add("keep spawning")
+    } else {
+      this.options.delete("keep spawning")
+    }
+  }
+
+  private get useAttacker(): boolean {
+    return this.options.has("attacker creep")
+  }
+  private set useAttacker(use: boolean) {
+    if (use === true) {
+      this.options.add("attacker creep")
+    } else {
+      this.options.delete("attacker creep")
+    }
+  }
 
   private constructor(
     public readonly launchTime: number,
@@ -93,7 +114,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     private numberOfCreeps: number,
     private fleeRange: number,
     private stopSpawning: boolean,
-    private keepSpawning: boolean,
+    private readonly options: Set<Options>,
   ) {
     this.identifier = `${this.constructor.name}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -110,16 +131,16 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       n: this.numberOfCreeps,
       fleeRange: this.fleeRange,
       stopSpawning: this.stopSpawning,
-      keepSpawning: this.keepSpawning,
+      options: Array.from(this.options),
     }
   }
 
   public static decode(state: SaboteurConstructionProcessState): SaboteurConstructionProcess {
-    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, state.n, state.fleeRange, state.stopSpawning, state.keepSpawning ?? false)
+    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, state.n, state.fleeRange, state.stopSpawning, new Set<Options>(state.options ?? []))
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): SaboteurConstructionProcess {
-    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepCount, 6, false, false)
+    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepCount, 6, false, new Set<Options>([]))
   }
 
   public processShortDescription(): string {
@@ -133,9 +154,9 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop", "resume", "flee", "creep", "keep_spawning", "show_whereabouts"]
+    const commandList = ["help", "stop", "resume", "flee", "creep", "keep_spawning", "show_whereabouts", "use_attacker"]
     const components = message.split(" ")
-    const command = components[0]
+    const command = components.shift()
 
     try {
       if (command == null) {
@@ -151,7 +172,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
         this.stopSpawning = false
         return "Spawning resumed"
       case "flee": {
-        const rawRange = components[1]
+        const rawRange = components[0]
         if (rawRange == null) {
           return "No range argument"
         }
@@ -163,7 +184,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
         return `Flee range ${fleeRange} set`
       }
       case "creep": {
-        const rawCreeps = components[1]
+        const rawCreeps = components[0]
         if (rawCreeps == null) {
           return "No range argument"
         }
@@ -186,6 +207,11 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
           return "no creeps"
         }
         return creeps.map(creep => `${creep.name} in ${describePosition(creep.pos)} ${roomLink(creep.pos.roomName)}`).join(", ")
+      }
+      case "use_attacker": {
+        const listArguments = new ListArguments(components)
+        this.useAttacker = listArguments.boolean(0, "use attacker").parse()
+        return `set ${this.useAttacker}`
       }
       default:
         throw `Invalid command ${command}, see "help"`
@@ -249,13 +275,19 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     }
 
     const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints, true)
+    const body = ((): BodyPartConstant[] => {
+      if (this.useAttacker === true) {
+        return [ATTACK, MOVE]
+      }
+      return [MOVE]
+    })()
 
     World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
       priority: CreepSpawnRequestPriority.High,
       numberOfCreeps: 1,
       codename: this.codename,
       roles: [CreepRole.Scout],
-      body: this.scoutBody,
+      body,
       initialTask,
       taskIdentifier: this.identifier,
       parentRoomName: null,
