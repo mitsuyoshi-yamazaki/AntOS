@@ -3,7 +3,7 @@ import { V5CreepMemory } from "prototype/creep"
 import { bodyCost } from "utility/creep_body"
 import { roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
-import { generateUniqueId, UniqueId } from "utility/unique_id"
+import { UniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
 import { ResourcePoolType } from "./resource_pool"
 
