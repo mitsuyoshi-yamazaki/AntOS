@@ -20,9 +20,6 @@ import { OwnedRoomProcess } from "process/owned_room_process"
 import { GameMap } from "game/game_map"
 import { FleeFromTask } from "v5_object_task/creep_task/meta_task/flee_from_task"
 import { StompTask } from "v5_object_task/creep_task/meta_task/stomp_task"
-import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { SignApiWrapper } from "v5_object_task/creep_task/api_wrapper/sign_controller_api_wrapper"
-import { Sign } from "game/sign"
 
 ProcessDecoder.register("SaboteurConstructionProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
@@ -193,10 +190,15 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   private runScout(): void {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
-    const insufficientCreepCount = this.numberOfCreeps - creepCount
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const insufficientCreepCount = this.numberOfCreeps - creeps.length
     if (insufficientCreepCount > 0) {
       this.sendScout()
+    } else if (insufficientCreepCount === 0) {
+      const hasDyingCreep = creeps.some(creep => creep.ticksToLive != null && creep.ticksToLive < 400)
+      if (hasDyingCreep === true) {
+        this.sendScout()
+      }
     }
     World.resourcePools.assignTasks(
       this.parentRoomName,
