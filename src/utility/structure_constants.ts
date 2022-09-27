@@ -72,4 +72,8 @@ export const StructureGameConstants = {
   observer: {
     maxRange: OBSERVER_RANGE,
   },
+  nuke: {
+    targetRange: NUKE_RANGE,
+    damageRange: 2,
+  },
 }
