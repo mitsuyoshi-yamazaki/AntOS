@@ -12,7 +12,7 @@ import { LaunchQuadProcess } from "./launch_quad_process"
 import { State, Stateful } from "os/infrastructure/state"
 
 export interface QuadMakerState extends State {
-  readonly quadName: string
+  quadName: string
   readonly roomName: RoomName
   readonly targetRoomName: RoomName
   readonly frontBaseRoomName: RoomName | null
@@ -112,6 +112,12 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
     })()
     const frontBaseRoomName: RoomName | null = null
     return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null)
+  }
+
+  public cloned(quadName: string): QuadMaker {
+    const state = this.encode()
+    state.quadName = quadName
+    return QuadMaker.decode(state)
   }
 
   public shortDescription(): string {

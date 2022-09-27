@@ -13,6 +13,7 @@ import { KeywordArguments } from "shared/utility/argument_parser/keyword_argumen
 import { QuadMaker, QuadMakerState } from "./quad_maker"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { OperatingSystem } from "os/os"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
@@ -149,13 +150,34 @@ commands: ${commands}
     }
 
     case "clone":
-      throw "not implemented yet"
+      return this.clone(args)
 
     default:
       throw `Invalid command ${command}. see "help"`
     }
   }
 
+  /** @throws */
+  private clone(args: string[]): string {
+    const keywordArguments = new KeywordArguments(args)
+    const name = keywordArguments.string("name").parse()
+    const roomName = keywordArguments.roomName("room_name").parseOptional({ my: true }) ?? this.quadMaker.roomName
+    const targetRoomName = keywordArguments.roomName("target_room_name").parseOptional() ?? this.quadMaker.targetRoomName
+
+    const quadMaker = this.quadMaker.cloned(name)
+    quadMaker.roomName = roomName
+    quadMaker.targetRoomName = targetRoomName
+
+    const process = OperatingSystem.os.addProcess(null, processId => (new QuadMakerProcess(
+      Game.time,
+      processId,
+      quadMaker,
+    )))
+
+    return `launched ${process.processId}`
+  }
+
+  /** @throws */
   private change(args: string[]): string {
     const parameter = args.shift()
 
