@@ -20,11 +20,15 @@ import { OwnedRoomProcess } from "process/owned_room_process"
 import { GameMap } from "game/game_map"
 import { FleeFromTask } from "v5_object_task/creep_task/meta_task/flee_from_task"
 import { StompTask } from "v5_object_task/creep_task/meta_task/stomp_task"
+import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
+import { SignApiWrapper } from "v5_object_task/creep_task/api_wrapper/sign_controller_api_wrapper"
+import { Sign } from "game/sign"
 
 ProcessDecoder.register("SaboteurConstructionProcess", state => {
   return SaboteurConstructionProcess.decode(state as SaboteurConstructionProcessState)
 })
 
+type SignStatus = "unchecked" | "sign" | "done"
 type ConstructionSiteInfo = {
   readonly constructionSite: ConstructionSite<BuildableStructureConstant>
   readonly priority: number
@@ -67,6 +71,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
 
   public readonly identifier: string
   private readonly codename: string
+  private shouldSign = "unchecked" as SignStatus
 
   private readonly scoutBody: BodyPartConstant[] = [
     MOVE,
@@ -198,7 +203,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => {
-        const task = this.removeConstructionSiteTask(creep)
+        const task = this.creepTask(creep)
         if (task == null) {
           return null
         }
@@ -271,7 +276,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     return SequentialTask.create(tasks, options)
   }
 
-  private removeConstructionSiteTask(creep: Creep): CreepTask | null {
+  private creepTask(creep: Creep): CreepTask | null {
     if (creep.pos.roomName !== this.targetRoomName) {
       const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
       return MoveToRoomTask.create(this.targetRoomName, waypoints, true)
@@ -282,6 +287,36 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       if (creep.room.controller == null) {
         return null
       }
+      // TODO: 到達不能チェックを軽量に行える場合は行う
+      // const controller = creep.room.controller
+      // if (this.shouldSign === "unchecked") {
+      //   this.shouldSign = ((): SignStatus => {
+      //     if (controller.sign?.username === Game.user.name) {
+      //       return "done"
+      //     }
+
+      //     const options: FindPathOpts = {
+      //       maxRooms: 1,
+      //       maxOps: 800,
+      //       ignoreCreeps: true,
+      //     }
+      //     const path = creep.room.findPath(creep.pos, controller.pos, options)
+      //     const lastPosition = path[path.length - 1]
+
+      //     if (lastPosition == null || controller.pos.isNearTo(lastPosition.x, lastPosition.y) !== true) {
+      //       return "done" // 到達不能
+      //     }
+
+      //     return "sign"
+      //   })()
+      // }
+      // if (this.shouldSign === "sign") {
+      //   if (creep.room.controller.sign?.username === Game.user.name) {
+      //     this.shouldSign = "done"
+      //   } else {
+      //     return MoveToTargetTask.create(SignApiWrapper.create(creep.room.controller, Sign.signForHostileRoom()))
+      //   }
+      // }
       return MoveToTask.create(creep.room.controller.pos, 5)
     }
     if (targetSite.pos.isEqualTo(creep.pos) === true) {
