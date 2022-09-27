@@ -202,13 +202,20 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
       return null
     }
     if (shouldCollectResources === true) {
-      return this.collectResourceTask(creep, terminal, labs)
+      return this.collectResourceTask(creep, terminal, labs, roomResource)
     }
 
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
       if (resourceType != null && labs.every(l => l.boost !== resourceType)) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        if (terminal.store.getFreeCapacity(resourceType) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, resourceType))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
     }
 
@@ -239,7 +246,14 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
         continue
       }
       if (labInfo.lab.store.getFreeCapacity(labInfo.boost) <= 0) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, labInfo.boost))
+        if (terminal.store.getFreeCapacity(labInfo.boost) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, labInfo.boost))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, labInfo.boost))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(labInfo.lab, labInfo.boost))
     }
@@ -271,12 +285,20 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
     return null
   }
 
-  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[]): CreepTask | null {
+  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[], roomResource: OwnedRoomResource): CreepTask | null {
     creep.say("collect")
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0]
       if (resourceType != null && isResourceConstant(resourceType)) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+
+        if (terminal.store.getFreeCapacity(resourceType) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, resourceType))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
       PrimitiveLogger.programError(`${this.identifier} ${resourceType} is not resource constant ${roomLink(this.parentRoomName)}`)
       return null
