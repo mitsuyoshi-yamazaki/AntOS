@@ -68,8 +68,17 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public readonly identifier: string
+
+  private get estimatedTravelDistance(): number {
+    if (this._estimatedTravelDistance == null) {
+      this._estimatedTravelDistance = this.calculateTravelDistance()
+    }
+    return this._estimatedTravelDistance
+  }
+
   private readonly codename: string
   private shouldSign = "unchecked" as SignStatus
+  private _estimatedTravelDistance = null as number | null
 
   private readonly scoutBody: BodyPartConstant[] = [
     MOVE,
@@ -214,7 +223,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     if (insufficientCreepCount > 0) {
       this.sendScout()
     } else if (insufficientCreepCount === 0) {
-      const hasDyingCreep = creeps.some(creep => creep.ticksToLive != null && creep.ticksToLive < 400)
+      const hasDyingCreep = creeps.some(creep => creep.ticksToLive != null && creep.ticksToLive < (this.estimatedTravelDistance + 100))
       if (hasDyingCreep === true) {
         this.sendScout()
       }
@@ -383,5 +392,10 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
 
     const hasMyTombstone = targetRoom.find(FIND_TOMBSTONES).some(tomb => tomb.creep.my === true && (tomb.creep.ticksToLive ?? 0) > 1)
     return hasMyTombstone
+  }
+
+  private calculateTravelDistance(): number {
+    // return GameMap.estimatedTravelDistance(this.parentRoomName, this.targetRoomName)
+    return 400
   }
 }

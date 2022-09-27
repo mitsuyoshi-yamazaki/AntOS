@@ -5,13 +5,86 @@ import { Result } from "shared/utility/result"
 import { isValidRoomName } from "../shared/utility/room_name"
 import type { RoomName } from "shared/utility/room_name_types"
 import { RoomCoordinate } from "utility/room_coordinate"
+// import { GameConstants } from "utility/constants"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }
 }
 
+// const roomSize = GameConstants.room.size
 const missingWaypointPairs: { from: RoomName, to: RoomName }[] = []
 const cachedPairs: string[] = []
+// const estimatedTravelDistances = new Map<string, number>()  // <route identifier, distance>
+// const getRouteIdentifier = (fromRoomName: RoomName, toRoomName: RoomName): string => {
+//   return `${fromRoomName}-${toRoomName}`
+// }
+
+// const TravelDistance = {
+//   reset(fromRoomName: RoomName, toRoomName: RoomName): void {
+//     const routeIdentifier = getRouteIdentifier(fromRoomName, toRoomName)
+//     estimatedTravelDistances.delete(routeIdentifier)
+
+//     const returnTripIdentifier = getRouteIdentifier(toRoomName, fromRoomName)
+//     estimatedTravelDistances.delete(returnTripIdentifier)
+//   },
+
+//   get(fromRoomName: RoomName, toRoomName: RoomName): number {
+//     const routeIdentifier = getRouteIdentifier(fromRoomName, toRoomName)
+//     const estimated = estimatedTravelDistances.get(routeIdentifier)
+//     if (estimated != null) {
+//       return estimated
+//     }
+
+//     const returnTripIdentifier = getRouteIdentifier(toRoomName, fromRoomName)
+//     const estimatedReturnDistance = estimatedTravelDistances.get(returnTripIdentifier)
+//     if (estimatedReturnDistance != null) {
+//       return estimatedReturnDistance
+//     }
+
+//     const waypoints = ((): RoomName[] => {
+//       const w = getWaypoints(fromRoomName, toRoomName)
+//       if (w != null) {
+//         w.unshift(fromRoomName)
+//         w.push(toRoomName)
+//         return w
+//       }
+//       const r = getWaypoints(toRoomName, fromRoomName)
+//       if (r != null) {
+//         r.unshift(toRoomName)
+//         r.push(fromRoomName)
+//         return r
+//       }
+//       return [
+//         fromRoomName,
+//         toRoomName,
+//       ]
+//     })()
+
+//     const { roomCount } = waypoints.reduce((result, current) => {
+//       if (result.roomName == null) {
+//         return {
+//           roomName: current,
+//           roomCount: result.roomCount,
+//         }
+//       }
+//       const linearDistance = Game.map.getRoomLinearDistance(result.roomName, current)
+//       if (isNaN(linearDistance) === true) {
+//         return {
+//           roomName: current,
+//           roomCount: result.roomCount,
+//         }
+//       }
+//       return {
+//         roomName: current,
+//         roomCount: result.roomCount + linearDistance,
+//       }
+//     }, { roomName: null, roomCount: 0 } as { roomName: RoomName | null, roomCount: number })
+
+//     const distance = roomCount * roomSize
+//     estimatedTravelDistances.set(routeIdentifier, distance)
+//     return distance
+//   },
+// }
 
 const MissingWaypoints = {
   add(fromRoomName: RoomName, toRoomName: RoomName): void {
@@ -111,6 +184,9 @@ export const GameMap = {
       return list
     })()
     infoList[destinationRoomName] = waypoints
+
+    // TravelDistance.reset(roomName, destinationRoomName)
+
     return Result.Succeeded(undefined)
   },
 
@@ -132,6 +208,11 @@ export const GameMap = {
   calculateSafeWaypoints(fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null {
     return calculateSafeWaypoints(fromRoomName, toRoomName)
   },
+
+  // 挙動が怪しいため
+  // estimatedTravelDistance(fromRoomName: RoomName, toRoomName: RoomName): number {
+  //   return TravelDistance.get(fromRoomName, toRoomName)
+  // },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
