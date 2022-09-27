@@ -261,9 +261,12 @@ export class ExecCommand implements ConsoleCommand {
         return parsed
       })()
 
+      const keywordArguments = new KeywordArguments(args)
+      const forced = keywordArguments.boolean("forced").parseOptional() ?? false
+
       const fromRoomResource = listArguments.has(3) ? listArguments.ownedRoomResource(3, "from room name").parse() : null
 
-      return this.collectResource(resourceType, destinationRoomResource, amount, fromRoomResource)
+      return this.collectResource(resourceType, destinationRoomResource, amount, fromRoomResource, forced)
     }
     case "list":
       return this.listResource()
@@ -305,18 +308,20 @@ export class ExecCommand implements ConsoleCommand {
   }
 
   /** @throws */
-  private collectResource(resourceType: ResourceConstant, destinationRoomResource: OwnedRoomResource, amount: number | "all", fromRoomResource: OwnedRoomResource | null): CommandExecutionResult {
+  private collectResource(resourceType: ResourceConstant, destinationRoomResource: OwnedRoomResource, amount: number | "all", fromRoomResource: OwnedRoomResource | null, forced: boolean): CommandExecutionResult {
     if (destinationRoomResource.activeStructures.terminal == null) {
       throw `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomResource.room.name)}`
     }
-    if (amount === "all") {
-      const resourceAmount = ResourceManager.amount(resourceType)
-      if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
-        throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (${resourceAmount} ${coloredResourceType(resourceType)})`
-      }
-    } else {
-      if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-        throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)}`
+    if (forced !== true) {
+      if (amount === "all") {
+        const resourceAmount = ResourceManager.amount(resourceType)
+        if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
+          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (${resourceAmount} ${coloredResourceType(resourceType)})`
+        }
+      } else {
+        if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
+          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)}`
+        }
       }
     }
 
