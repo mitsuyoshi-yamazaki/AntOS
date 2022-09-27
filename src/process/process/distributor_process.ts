@@ -361,10 +361,10 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       return null
     }
 
-    const transferToTerminalResourceType = RESOURCE_OPS
-    if (creep.store.getUsedCapacity() <= 0 && storage.store.getUsedCapacity(transferToTerminalResourceType) > 0 && terminal.store.getFreeCapacity(transferToTerminalResourceType) > 10000) {
-      return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, transferToTerminalResourceType))
-    }
+    // const transferToTerminalResourceType = RESOURCE_OPS
+    // if (creep.store.getUsedCapacity() <= 0 && storage.store.getUsedCapacity(transferToTerminalResourceType) > 0 && terminal.store.getFreeCapacity(transferToTerminalResourceType) > 10000) {
+    //   return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, transferToTerminalResourceType))
+    // }
 
     const terminalAmount = 20000
     const excludedResourceTypes: ResourceConstant[] = [
