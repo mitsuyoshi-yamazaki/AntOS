@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -123,47 +123,55 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public didReceiveMessage(message: string): string {
+    const commandList = ["help", "stop", "resume", "flee", "creep", "keep_spawning"]
     const components = message.split(" ")
     const command = components[0]
-    if (command == null) {
-      return "empty message"
-    }
-    switch (command) {
-    case "stop":
-      this.stopSpawning = true
-      return "Spawning stopped"
-    case "resume":
-      this.stopSpawning = false
-      return "Spawning resumed"
-    case "flee": {
-      const rawRange = components[1]
-      if (rawRange == null) {
-        return "No range argument"
+
+    try {
+      if (command == null) {
+        throw "empty message"
       }
-      const fleeRange = parseInt(rawRange, 10)
-      if (isNaN(fleeRange) === true) {
-        return `Invalid flee range ${rawRange}`
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+      case "stop":
+        this.stopSpawning = true
+        return "Spawning stopped"
+      case "resume":
+        this.stopSpawning = false
+        return "Spawning resumed"
+      case "flee": {
+        const rawRange = components[1]
+        if (rawRange == null) {
+          return "No range argument"
+        }
+        const fleeRange = parseInt(rawRange, 10)
+        if (isNaN(fleeRange) === true) {
+          return `Invalid flee range ${rawRange}`
+        }
+        this.fleeRange = fleeRange
+        return `Flee range ${fleeRange} set`
       }
-      this.fleeRange = fleeRange
-      return `Flee range ${fleeRange} set`
-    }
-    case "creep": {
-      const rawCreeps = components[1]
-      if (rawCreeps == null) {
-        return "No range argument"
+      case "creep": {
+        const rawCreeps = components[1]
+        if (rawCreeps == null) {
+          return "No range argument"
+        }
+        const numberOfCreeps = parseInt(rawCreeps, 10)
+        if (isNaN(numberOfCreeps) === true) {
+          return `Invalid creep count ${rawCreeps}`
+        }
+        this.numberOfCreeps = numberOfCreeps
+        return `${numberOfCreeps} creeps set`
       }
-      const numberOfCreeps = parseInt(rawCreeps, 10)
-      if (isNaN(numberOfCreeps) === true) {
-        return `Invalid creep count ${rawCreeps}`
+      case "keep_spawning":
+        this.keepSpawning = true
+        return "keep spawn"
+      default:
+        throw `Invalid command ${command}, see "help"`
       }
-      this.numberOfCreeps = numberOfCreeps
-      return `${numberOfCreeps} creeps set`
-    }
-    case "keep_spawning":
-      this.keepSpawning = true
-      return "keep spawn"
-    default:
-      return `Invalid command ${command}`
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
     }
   }
 
