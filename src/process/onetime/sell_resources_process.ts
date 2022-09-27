@@ -132,7 +132,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
     if (terminal.cooldown > 0) {
       return
     }
-    if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000) {
+    if (terminal.store.getUsedCapacity(RESOURCE_ENERGY) < 10000 || roomResource.getResourceAmount(RESOURCE_ENERGY) < 50000) {
       return
     }
 
