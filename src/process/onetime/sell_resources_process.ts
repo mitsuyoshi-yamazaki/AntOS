@@ -157,35 +157,14 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
         continue  // Storageから移している最中等の資源はスキップ
       }
 
-      const highestPriceOrder = Market.highestPriceBuyOrder(resourceType)
-      if (highestPriceOrder == null) {
-        continue
-      }
-      if (highestPriceOrder.price < 1) {
-        continue
-      }
-
-      const sellAmount = Math.min(amountInTerminal, highestPriceOrder.remainingAmount)
-      if (sellAmount <= 0) {
-        PrimitiveLogger.programError(`${this.taskIdentifier} too small sell amount ${sellAmount} (order ID: ${highestPriceOrder.id}, remaining: ${highestPriceOrder.remainingAmount}, ${coloredResourceType(resourceType)} in terminal: ${amountInTerminal} in ${roomLink(terminal.room.name)})`)
-        continue
-      }
-
-      const dealResult = Game.market.deal(highestPriceOrder.id, sellAmount, terminal.room.name)
-
-      switch (dealResult) {
-      case OK:
-        processLog(this, `${sellAmount} ${coloredResourceType(resourceType)} sold for ${coloredText(shortenedNumber(Math.floor(sellAmount * highestPriceOrder.price)), "info")} credit from ${roomLink(terminal.room.name)}, order ID: ${highestPriceOrder.id}`)
+      const result = Market.sell(resourceType, this.roomName, amountInTerminal)
+      switch (result.resultType) {
+      case "succeeded":
+        processLog(this, result.value)
         return
-
-      case ERR_NOT_ENOUGH_RESOURCES:
-      case ERR_NOT_OWNER:
-      case ERR_FULL:
-      case ERR_INVALID_ARGS:
-      case ERR_TIRED:
-      default:
-        PrimitiveLogger.programError(`${this.taskIdentifier} order failed with ${dealResult} (order ID: ${highestPriceOrder.id}, remaining: ${highestPriceOrder.remainingAmount}, ${coloredResourceType(resourceType)} in terminal: ${amountInTerminal} in ${roomLink(terminal.room.name)})`)
-        continue
+      case "failed":
+        processLog(this, result.reason)
+        break
       }
     }
   }
