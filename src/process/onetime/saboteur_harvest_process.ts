@@ -17,11 +17,10 @@ import { CreepName } from "prototype/creep"
 import { World } from "world_info/world_info"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
-import { generateCodename } from "utility/unique_id"
+import { generateCodename, UniqueId } from "utility/unique_id"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
-import { Position } from "shared/utility/position"
-import type { Timestamp } from "shared/utility/timestamp"
+import { isEqualLocalPosition, Position } from "shared/utility/position"
 import { GameConstants } from "utility/constants"
 import { GameMap } from "game/game_map"
 import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
@@ -34,51 +33,46 @@ ProcessDecoder.register("SaboteurHarvestProcess", state => {
   return SaboteurHarvestProcess.decode(state as SaboteurHarvestProcessState)
 })
 
-type CreepInfo = {
-  readonly name: CreepName
-  readonly timeToDie: Timestamp
-}
-type PartialPositionInfo = {
-  readonly position: Position
-  creep: CreepInfo | null
-}
 type PositionInfo = {
   readonly position: Position
-  readonly creep: CreepInfo
+  creepName: CreepName
+  nextCreepName: CreepName | null
+}
+type SpawningPositionInfo = {
+  readonly position: Position
+  creepName: CreepName | null
 }
 
-type SaboteurStateSpawnFirstCreep = {
-  readonly case: "spawn first creep"
-}
+/// RoomをObserveする
 type SaboteurStateScouting = {
   readonly case: "scouting"
-  oldestCreepSpawnTime: Timestamp
 }
+
+/// 全てのPositionを埋める
 type SaboteurStateSpawning = {
   readonly case: "spawning"
-  readonly positions: PartialPositionInfo[]
-  oldestCreepSpawnTime: Timestamp
-
-  // TODO:
-  readonly creepPositions: Map<CreepName, Readonly<{ timeToDie: Timestamp, position: Position }>>
-  readonly emptyPositions: Position[]
+  readonly positions: SpawningPositionInfo[]
 }
+
+/// 運用中
 type SaboteurStateRunning = {
   readonly case: "running"
   readonly positions: PositionInfo[]
-  oldestCreepSpawnTime: Timestamp
+  finishedCreepNames: CreepName[]
 }
-type SaboteurState = SaboteurStateSpawnFirstCreep | SaboteurStateScouting | SaboteurStateSpawning | SaboteurStateRunning
+type SaboteurState = SaboteurStateScouting | SaboteurStateSpawning | SaboteurStateRunning
 
 const creepLifetime = GameConstants.creep.life.lifeTime
-// const spawnInterval = Math.floor(creepLifetime / 10)
-// const spawnCycleInterval = creepLifetime - spawnInterval
-const spawnInterval = 30  // FixMe: Debug
-const spawnCycleInterval = 300
+const spawnInterval = Math.floor(creepLifetime / 10)
+const spawnCycleInterval = Math.floor(creepLifetime - (spawnInterval * 1.5))
+// const spawnInterval = 30  // FixMe: Debug
+// const spawnCycleInterval = 200
 
 interface SaboteurHarvestProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly targetRoomName: RoomName
+  readonly travelDistance: number
+  readonly saboteurState: SaboteurState
   readonly stopRunningReasons: string[]
 }
 
@@ -99,8 +93,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
   }
 
   private readonly codename: string
-
-  private saboteurState = null as SaboteurState | null
+  private spawnThreshold: number
   private _waypoints = null as RoomName[] | null
 
   private constructor(
@@ -108,10 +101,14 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly targetRoomName: RoomName,
+    private readonly travelDistance: number,
+    private saboteurState: SaboteurState,
     private readonly stopRunningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}`
     this.codename = generateCodename(this.identifier, this.launchTime)
+
+    this.spawnThreshold = creepLifetime - spawnCycleInterval - travelDistance
   }
 
   public encode(): SaboteurHarvestProcessState {
@@ -121,26 +118,26 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       i: this.processId,
       roomName: this.roomName,
       targetRoomName: this.targetRoomName,
+      travelDistance: this.travelDistance,
+      saboteurState: this.saboteurState,
       stopRunningReasons: this.stopRunningReasons,
     }
   }
 
   public static decode(state: SaboteurHarvestProcessState): SaboteurHarvestProcess {
-    return new SaboteurHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.stopRunningReasons)
+    return new SaboteurHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.travelDistance ?? 50, state.saboteurState, state.stopRunningReasons)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName): SaboteurHarvestProcess {
-    return new SaboteurHarvestProcess(Game.time, processId, roomName, targetRoomName, [])
+  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, travelDistance: number): SaboteurHarvestProcess {
+    const saboteurState: SaboteurStateScouting = {
+      case: "scouting"
+    }
+    return new SaboteurHarvestProcess(Game.time, processId, roomName, targetRoomName, travelDistance, saboteurState, [])
   }
 
   public processShortDescription(): string {
     const stateDescription = ((): string => {
-      switch (this.saboteurState?.case) {
-      case null:
-      case undefined:
-        return "state: null"
-      case "spawn first creep":
-        return "spawn first creep"
+      switch (this.saboteurState.case) {
       case "scouting":
         return "scouting"
       case "spawning":
@@ -150,16 +147,19 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       }
     })()
 
+    const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
+
     const descriptions: string[] = [
       roomLink(this.targetRoomName),
       stateDescription,
+      `${creeps.length} creeps`,
     ]
 
     return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "kill_creeps"]
+    const commandList = ["help", "reset"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -167,7 +167,8 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       switch (command) {
       case "help":
         return `Commands: ${commandList}`
-      case "kill_creeps":
+      case "reset":
+        this.saboteurState = {case: "scouting"}
         return this.killCreeps()
       default:
         throw `Invalid command ${command}, see "help"`
@@ -189,33 +190,18 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       return
     }
 
-    const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
     const targetRoom = Game.rooms[this.targetRoomName]
 
-    if (this.saboteurState == null) {
-      this.saboteurState = this.calculateState(targetRoom ?? null, creeps)
-    }
-
     switch (this.saboteurState.case) {
-    case "spawn first creep":
-      if (creeps[0] != null) {
-        if (creeps[0].ticksToLive == null) {
-          //
-        } else {
-          this.saboteurState = {
-            case: "scouting",
-            oldestCreepSpawnTime: Game.time - (creepLifetime - creeps[0].ticksToLive),
-          }
-          this.logStateChange(this.saboteurState)
-          this.runScouting(this.saboteurState, creeps)
-        }
-      } else {
-        this.runSpawnFirstCreep(this.saboteurState)
-      }
-      break
     case "scouting": {
+      const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
       if (targetRoom != null) {
-        this.saboteurState = this.calculateSpawningState(targetRoom, this.saboteurState.oldestCreepSpawnTime)
+        this.saboteurState = this.calculateSpawningState(targetRoom)
+        creeps.forEach(creep => {
+          creep.say("finished")
+          creep.suicide()
+        })
+
         this.logStateChange(this.saboteurState)
         this.runSpawning(this.saboteurState, creeps)
       } else {
@@ -224,18 +210,23 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       break
     }
     case "spawning": {
-      const runningState = this.convertRunningState(this.saboteurState)
-      if (runningState != null) {
-        this.saboteurState = runningState
-        this.logStateChange(this.saboteurState)
-        this.run(this.saboteurState, creeps)
+      const creeps = World.resourcePools.getCreeps(this.roomName, this.identifier, () => true)
+      if (creeps.length >= this.saboteurState.positions.length) {
+        const runningState = this.convertRunningState(this.saboteurState)
+        if (runningState != null) {
+          this.saboteurState = runningState
+          this.logStateChange(this.saboteurState)
+          this.run(this.saboteurState)
+        } else {
+          this.runSpawning(this.saboteurState, creeps)
+        }
       } else {
         this.runSpawning(this.saboteurState, creeps)
       }
       break
     }
     case "running":
-      this.run(this.saboteurState, creeps)
+      this.run(this.saboteurState)
       break
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -245,19 +236,11 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     }
   }
 
-  // ---- Spawn First Creep ---- //
-  private runSpawnFirstCreep(state: SaboteurStateSpawnFirstCreep): void {
-    this.spawnCreep()
-  }
-
   // ---- Scouting ---- //
   private runScouting(state: SaboteurStateScouting, creeps: Creep[]): void {
     // Target roomがvisibleでない状態
 
-    const timeFromOldestCreepSpawn = Game.time - state.oldestCreepSpawnTime
-    const requiredCreepCount = Math.floor(timeFromOldestCreepSpawn / spawnInterval) + 1
-    if (requiredCreepCount > creeps.length) {
-      console.log(`run scout, required: ${requiredCreepCount} = ${timeFromOldestCreepSpawn} / ${spawnInterval}, ${creeps.length} creeps`)
+    if (creeps.length <= 0) {
       this.spawnCreep()
     }
 
@@ -265,26 +248,44 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       if (creep.v5task != null) {
         return
       }
-      creep.v5task = this.moveToRoomTask()
+      if (creep.room.name !== this.targetRoomName) {
+        creep.v5task = this.moveToRoomTask()
+        return
+      }
     })
   }
 
   // ---- Spawning ---- //
   private runSpawning(state: SaboteurStateSpawning, creeps: Creep[]): void {
-    const timeFromOldestCreepSpawn = Game.time - state.oldestCreepSpawnTime
-    const requiredCreepCount = Math.min(Math.floor(timeFromOldestCreepSpawn / spawnInterval) + 1, state.positions.length)
-    if (requiredCreepCount > creeps.length) {
-      console.log(`run scout, required: ${requiredCreepCount} = min(${timeFromOldestCreepSpawn} / ${spawnInterval}, ${state.positions.length}), ${creeps.length} creeps`)
+    const shouldSpawn = ((): boolean => {
+      if (creeps.length >= state.positions.length) {
+        return false
+      }
+      creeps.sort((lhs, rhs) => (lhs.ticksToLive ?? creepLifetime) - (rhs.ticksToLive ?? creepLifetime))
+      const youngestCreep = creeps[creeps.length - 1]
+      if (youngestCreep == null) {
+        return true
+      }
+      if (creepLifetime - (youngestCreep.ticksToLive ?? creepLifetime) > spawnInterval) {
+        return true
+      }
+      return false
+    })()
+
+    if (shouldSpawn === true) {
       this.spawnCreep()
     }
 
-    const creepInPosition = state.positions.flatMap((position): CreepName[] => {
-      if (position.creep == null) {
-        return []
+    const creepPositions = new Map<CreepName, Position>()
+    const emptyPositions: SpawningPositionInfo[] = []
+
+    state.positions.forEach(position => {
+      if (position.creepName == null) {
+        emptyPositions.push(position)
+        return
       }
-      return [position.creep.name]
+      creepPositions.set(position.creepName, position.position)
     })
-    const emptyPositions = state.positions.filter(position => position.creep == null)
 
     creeps.forEach(creep => {
       if (creep.v5task != null) {
@@ -295,27 +296,121 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         return
       }
 
-      const emptyPosition = emptyPositions.shift()
-      if (emptyPosition == null) {
-        creep.v5task = MoveToTask.create(decodeRoomPosition({ x: 25, y: 25, r: creep.room.name }), 20)
+      const creepPosition = creepPositions.get(creep.name)
+      if (creepPosition != null) {
+        if (isEqualLocalPosition(creep.pos, creepPosition) === true) {
+          return
+        }
+        creep.v5task = MoveToTask.create(decodeRoomPosition(creepPosition, creep.room.name), 0)
         return
       }
 
-      emptyPosition.creep = {
-        name: creep.name,
-        timeToDie: Game.time + (creep.ticksToLive ?? creepLifetime),
+      const emptyPosition = emptyPositions.shift()
+      if (emptyPosition == null) {
+        creep.say("no pos")
+        return
       }
+
+      emptyPosition.creepName = creep.name
       creep.v5task = MoveToTask.create(decodeRoomPosition(emptyPosition.position, creep.room.name), 0)
     })
   }
 
   // ---- ---- //
-  private run(state: SaboteurStateRunning, creeps: Creep[]): void {
+  private run(state: SaboteurStateRunning): void {
+    const finishedCreepNames: CreepName[] = []
+    state.finishedCreepNames.forEach(creepName => {
+      const creep = Game.creeps[creepName]
+      if (creep == null) {
+        return
+      }
+      finishedCreepNames.push(creep.name)
+      creep.say("finished")
+      creep.suicide()
+    })
 
+    state.finishedCreepNames = finishedCreepNames
+
+    let oldestCreepInfo = null as { position: PositionInfo, ticksToLive: number } | null
+
+    state.positions.forEach(position => {
+      const creep = Game.creeps[position.creepName]
+      if (creep == null) {
+        this.addStopRunningReason("creep killed")
+        return
+      }
+
+      const nextCreep = ((): Creep | null => {
+        if (position.nextCreepName == null) {
+          return null
+        }
+        const c = Game.creeps[position.nextCreepName]
+        if (c == null) {
+          position.nextCreepName = null
+          return null
+        }
+        return c
+      })()
+
+      if (nextCreep == null) {
+        this.moveCreepToPosition(creep, position.position)
+
+        if (creep.ticksToLive != null && (oldestCreepInfo == null || creep.ticksToLive < oldestCreepInfo.ticksToLive)) {
+          oldestCreepInfo = {
+            position,
+            ticksToLive: creep.ticksToLive,
+          }
+        }
+        return
+      }
+
+      if (creep.ticksToLive != null && creep.ticksToLive < 2 && isEqualLocalPosition(creep.pos, position.position) !== true) {
+        // 寿命が尽きようとしているのに位置についていない
+        creep.say("dying")
+        state.finishedCreepNames.push(creep.name)
+        position.creepName = nextCreep.name
+        position.nextCreepName = null
+        return
+      }
+
+      if (nextCreep.pos.getRangeTo(creep.pos) <= 1) {
+        creep.move(creep.pos.getDirectionTo(nextCreep.pos))
+        nextCreep.move(nextCreep.pos.getDirectionTo(creep.pos))
+
+        state.finishedCreepNames.push(creep.name)
+        position.creepName = nextCreep.name
+        position.nextCreepName = null
+        return
+      }
+
+      this.moveCreepToPosition(nextCreep, position.position, 1)
+    })
+
+    if (oldestCreepInfo != null) {
+      if (oldestCreepInfo.ticksToLive < this.spawnThreshold) {
+        oldestCreepInfo.position.nextCreepName = this.spawnCreep()
+      }
+    }
+  }
+
+  private moveCreepToPosition(creep: Creep, position: Position, range?: number): void {
+    if (creep.v5task != null) {
+      return
+    }
+    if (creep.room.name !== this.targetRoomName) {
+      creep.v5task = this.moveToRoomTask()
+      return
+    }
+    if (isEqualLocalPosition(creep.pos, position) === true) {
+      return
+    }
+    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range ?? 0)
   }
 
   // ---- ---- //
-  private spawnCreep(): void {
+  private spawnCreep(): CreepName {
+    const creepName = UniqueId.generateCreepName(this.codename)
+
     World.resourcePools.addSpawnCreepRequest(this.roomName, {
       priority: CreepSpawnRequestPriority.Low,
       numberOfCreeps: 1,
@@ -325,89 +420,51 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       initialTask: this.moveToRoomTask(),
       taskIdentifier: this.identifier,
       parentRoomName: null,
+      name: creepName,
     })
+
+    return creepName
   }
 
   private moveToRoomTask(): CreepTask {
     return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.waypoints))
   }
 
-  private calculateState(targetRoom: Room | null, creeps: Creep[]): SaboteurState {
-    creeps.sort((lhs, rhs) => (lhs.ticksToLive ?? creepLifetime) - (rhs.ticksToLive ?? creepLifetime))
-    const oldestCreep = creeps[creeps.length - 1]
-
-    if (oldestCreep == null || oldestCreep.ticksToLive == null) {
-      return {
-        case: "spawn first creep",
-      }
-    }
-
-    const oldestCreepSpawnTime = Game.time - (creepLifetime - oldestCreep.ticksToLive)
-    if (targetRoom == null) {
-      return {
-        case: "scouting",
-        oldestCreepSpawnTime,
-      }
-    }
-
-    const spawningState = this.calculateSpawningState(targetRoom, oldestCreepSpawnTime)
-    const runningState = this.convertRunningState(spawningState)
-
-    if (runningState == null) {
-      return spawningState
-    }
-    return runningState
-  }
-
-  private calculateSpawningState(targetRoom: Room, oldestCreepSpawnTime: Timestamp): SaboteurStateSpawning {
+  private calculateSpawningState(targetRoom: Room): SaboteurStateSpawning {
     const options: RoomPositionFilteringOptions = {
       excludeItself: true,
       excludeStructures: true,
       excludeTerrainWalls: true,
       excludeWalkableStructures: false,
     }
-    const positions = targetRoom.find(FIND_SOURCES).flatMap((source): PartialPositionInfo[] => {
-      return source.pos.positionsInRange(1, options).map(position => ({position: position, creep: null}))
+
+    const positions = targetRoom.find(FIND_SOURCES).flatMap((source): SpawningPositionInfo[] => {
+      return source.pos.positionsInRange(1, options).map(position => ({position: position.raw, creepName: null}))
     })
 
     return {
       case: "spawning",
       positions,
-      oldestCreepSpawnTime,
     }
   }
 
   private convertRunningState(spawningState: SaboteurStateSpawning): SaboteurStateRunning | null {
     try {
       const positions: PositionInfo[] = spawningState.positions.map(position => {
-        if (position.creep == null) {
+        if (position.creepName == null) {
           throw "no creep"
-        }
-        const creep = Game.creeps[position.creep.name]
-        if (creep == null) {
-          position.creep = null
-          throw "creep dead"
         }
         return {
           position: position.position,
-          creep: {
-            name: creep.name,
-            timeToDie: Game.time + (creep.ticksToLive ?? creepLifetime),
-          }
+          creepName: position.creepName,
+          nextCreepName: null,
         }
       })
-
-      positions.sort((lhs, rhs) => lhs.creep.timeToDie - rhs.creep.timeToDie)
-      const eariest = positions[0]
-      if (eariest == null) {
-        throw "no positions"
-      }
-      const oldestCreepSpawnTime = eariest.creep.timeToDie
 
       return {
         case: "running",
         positions,
-        oldestCreepSpawnTime,
+        finishedCreepNames: [],
       }
     } catch {
       return null

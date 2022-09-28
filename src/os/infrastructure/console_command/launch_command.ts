@@ -1613,12 +1613,14 @@ ProcessLauncher.register("SaboteurHarvestProcess", args => {
   try {
     const roomName = args.roomName("room_name").parse({ my: true })
     const targetRoomName = args.roomName("target_room_name").parse()
+    const travelDistance = args.int("travel_distance").parse({min: 50})
     getWaypoints(args, roomName, targetRoomName)
 
     return Result.Succeeded((processId) => SaboteurHarvestProcess.create(
       processId,
       roomName,
       targetRoomName,
+      travelDistance,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
