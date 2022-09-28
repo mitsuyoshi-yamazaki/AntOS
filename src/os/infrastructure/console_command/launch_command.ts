@@ -1249,6 +1249,10 @@ ProcessLauncher.register("MapVisualProcess", args => {
 
 ProcessLauncher.register("SellAllResourcesProcess", () => {
   try {
+    if (Environment.world === "persistent world") {
+      throw "SellAllResourcesProcess is disabled"
+    }
+
     for (const processInfo of OperatingSystem.os.listAllProcesses()) {
       if (!(processInfo.process instanceof InterRoomResourceManagementProcess)) {
         continue
