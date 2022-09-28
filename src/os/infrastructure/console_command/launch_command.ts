@@ -91,6 +91,7 @@ import { ObserveNukeLandingProcess } from "process/onetime/nuke/observe_nuke_lan
 import { DisturbCreepSpawnProcess } from "process/onetime/disturb_creep_spawn_process"
 import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 import { SignRoomsProcess } from "process/onetime/sign_rooms_process"
+import { SaboteurHarvestProcess } from "process/onetime/saboteur_harvest_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1598,6 +1599,22 @@ ProcessLauncher.register("SignRoomsProcess", args => {
       roomName,
       targetRoomNames,
       signs,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("SaboteurHarvestProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    getWaypoints(args, roomName, targetRoomName)
+
+    return Result.Succeeded((processId) => SaboteurHarvestProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
