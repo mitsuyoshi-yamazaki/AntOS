@@ -14,13 +14,14 @@ import { QuadMaker, QuadMakerState } from "./quad_maker"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { OperatingSystem } from "os/os"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
 })
 
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints", "quad_waypoints"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
@@ -362,6 +363,14 @@ commands: ${commands}
     }
 
     case "waypoints": {
+      const listArguments = new ListArguments(args)
+      const waypoints = listArguments.list(0, "room_names", "room_name").parse()
+      GameMap.setWaypoints(this.quadMaker.roomName, this.quadMaker.targetRoomName, waypoints)
+
+      return `set ${roomLink(this.quadMaker.roomName)} =&gt ${waypoints.map(roomName => roomLink(roomName)).join(", ")} =&gt ${roomLink(this.quadMaker.targetRoomName)}`
+    }
+
+    case "quad_waypoints": {
       if (this.quadMaker.frontBaseRoomName != null) {
         throw "while front_base_room_name has a value, waypoints are ignored"
       }
@@ -414,8 +423,11 @@ commands: ${commands}
       return "reset codename"
 
     case "waypoints":
+      throw "\"waypoints\" is just an alias to GameMap driver, not able to reset"
+
+    case "quad_waypoints":
       this.quadMaker.waypoints = null
-      return "reset waypoints"
+      return "reset quad waypoints"
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
