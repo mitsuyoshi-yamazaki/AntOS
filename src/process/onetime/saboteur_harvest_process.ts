@@ -63,7 +63,7 @@ type SaboteurStateRunning = {
 type SaboteurState = SaboteurStateScouting | SaboteurStateSpawning | SaboteurStateRunning
 
 const creepLifetime = GameConstants.creep.life.lifeTime
-const spawnInterval = Math.floor(creepLifetime / 10)
+const spawnInterval = Math.floor(creepLifetime / 12)
 const spawnCycleInterval = Math.floor(creepLifetime - (spawnInterval * 1.5))
 // const spawnInterval = 30  // FixMe: Debug
 // const spawnCycleInterval = 200
@@ -103,7 +103,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     private readonly targetRoomName: RoomName,
     private readonly travelDistance: number,
     private saboteurState: SaboteurState,
-    private readonly stopRunningReasons: string[],
+    private stopRunningReasons: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -155,6 +155,10 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       `${creeps.length} creeps`,
     ]
 
+    if (this.stopRunningReasons.length > 0) {
+      descriptions.push(`stopped by: ${this.stopRunningReasons.join(",")}`)
+    }
+
     return descriptions.join(", ")
   }
 
@@ -168,7 +172,8 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       case "help":
         return `Commands: ${commandList}`
       case "reset":
-        this.saboteurState = {case: "scouting"}
+        this.saboteurState = { case: "scouting" }
+        this.stopRunningReasons = []
         return this.killCreeps()
       default:
         throw `Invalid command ${command}, see "help"`
