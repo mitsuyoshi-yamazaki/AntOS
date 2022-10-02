@@ -71,6 +71,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
   private targets = null as TargetInstances | null
   private shouldSign = "unchecked" as SignStatus
   private readyToSignCreepCount = 0
+  private canAttackSpawn = false as boolean
 
   private constructor(
     public readonly launchTime: number,
@@ -323,7 +324,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
         creep.moveTo(spawningSpawn.pos, defaultMoveToOptions())
         return
       }
-      if (creep.pos.getRangeTo(spawningPosition) <= 1) {
+      if (this.canAttackSpawn === true && creep.pos.getRangeTo(spawningPosition) <= 1) {
         creep.attack(spawningSpawn)
         return
       }
@@ -333,7 +334,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
 
     const spawn = this.getSpawns(creep.room)[0]
     if (spawn != null) {
-      if (creep.pos.getRangeTo(spawn.pos) <= 1) {
+      if (this.canAttackSpawn === true && creep.pos.getRangeTo(spawn.pos) <= 1) {
         this.readyToSignCreepCount += 1
         creep.attack(spawn)
         return
@@ -390,6 +391,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       }
       spawns.push(spawn)
     })
+    this.canAttackSpawn = spawns.length > 1
 
     const spawningSpawns: SpawningSpawn[] = spawns.flatMap((spawn): SpawningSpawn[] => {
       if (isSpawningSpawn(spawn)) {
