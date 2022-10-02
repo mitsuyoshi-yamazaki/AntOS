@@ -11,6 +11,8 @@ import { coloredText, roomLink } from "utility/log"
 import { DirectionConstants } from "shared/utility/direction"
 import { GameConstants } from "utility/constants"
 import { avoidConstructionSitesCostCallback } from "../meta_task/move_to_task"
+import { moveToRoom } from "script/move_to_room"
+import { GameMap } from "game/game_map"
 
 const noPathPositions: string[] = []
 const getRouteIdentifier = (fromPosition: RoomPosition, toPosition: RoomPosition): string => {
@@ -156,6 +158,16 @@ export class MoveToTargetTask implements CreepTask {
 
     case IN_PROGRESS:
     case ERR_NOT_IN_RANGE: {
+      // CPUを食う割に効果がない
+      // const targetRoomName = this.apiWrapper.target.pos.roomName
+      // if (targetRoomName === "E35N51" || targetRoomName === "W49S7") {  // FixMe:
+      //   if (creep.room.name !== targetRoomName) { // かなりCPUを食う（800Creepsで約30）ため普段はオフ
+      //     const waypoints = GameMap.getWaypoints(creep.room.name, targetRoomName, { ignoreMissingWaypoints: true }) ?? []
+      //     moveToRoom(creep, targetRoomName, waypoints)
+      //     return TaskProgressType.InProgress
+      //   }
+      // }
+
       const moveToOps = this.moveToOpts(creep, this.apiWrapper.range, this.apiWrapper.target.pos)
       if (this.options.isAllyRoom === true) {
         moveToOps.ignoreCreeps = false

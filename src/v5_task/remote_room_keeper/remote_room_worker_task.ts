@@ -5,7 +5,7 @@ import { RemoteRoomHaulerTask } from "./remote_room_harvester_hauler_task"
 import { RemoteRoomHarvesterTask } from "./remote_room_harvester_task"
 import { RemoteRoomReserveTask } from "./remote_room_reserve_task"
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
 
@@ -64,10 +64,18 @@ export class RemoteRoomWorkerTask extends Task {
     const problemFinders: ProblemFinder[] = []
     this.checkProblemFinders(problemFinders)
 
-    if (this.children.some(task => task instanceof RemoteRoomReserveTask) !== true) {
-      this.addChildTask(RemoteRoomReserveTask.create(this.roomName, this.targetRoomName))
-      console.log(`Add RemoteRoomReserveTask for ${roomLink(this.targetRoomName)}`)
-    }
+    // if (this.children.some(task => task instanceof RemoteRoomReserveTask) !== true) {
+    //   this.addChildTask(RemoteRoomReserveTask.create(this.roomName, this.targetRoomName))
+    //   console.log(`Add RemoteRoomReserveTask for ${roomLink(this.targetRoomName)}`)
+    // }
+
+    // if (this.targetRoomName === "W42S2") {
+    //   const reserveTask = this.children.find(task => (task instanceof RemoteRoomReserveTask))
+    //   if (reserveTask != null) {
+    //     this.removeChildTask(reserveTask)
+    //     console.log(`${coloredText("[Remove]", "warn")} Reserve Task removed from ${roomLink(this.targetRoomName)}`)
+    //   }
+    // }
 
     return TaskStatus.InProgress
   }

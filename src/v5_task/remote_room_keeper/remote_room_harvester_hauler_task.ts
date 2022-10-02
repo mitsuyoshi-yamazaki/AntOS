@@ -29,11 +29,9 @@ import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_r
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
-import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/travel_to_target_task"
-import { RoomResources } from "room_resource/room_resources"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
-import { roomLink } from "utility/log"
+// import { GameMap } from "game/game_map"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -187,11 +185,16 @@ export class RemoteRoomHaulerTask extends Task {
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const createMoveToTargetTask = (apiWrapper: AnyCreepApiWrapper & TargetingApiWrapper): MoveToTargetTask | TravelToTargetTask => {
-      const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName]
-      if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
-        return TravelToTargetTask.create(apiWrapper)
-      }
+    const createMoveToTargetTask = (apiWrapper: AnyCreepApiWrapper & TargetingApiWrapper): MoveToTargetTask | MoveToRoomTask => {
+      // const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName]
+      // if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
+      //   return TravelToTargetTask.create(apiWrapper)
+      // }
+      // const destinationRoomName = apiWrapper.target.pos.roomName
+      // if (creep.room.name !== destinationRoomName) {
+      //   const waypoints = GameMap.getWaypoints(creep.room.name, destinationRoomName) ?? []
+      //   return MoveToRoomTask.create(destinationRoomName, waypoints)
+      // }
       return MoveToTargetTask.create(apiWrapper, {fallbackEnabled: true})
     }
 

@@ -31,7 +31,7 @@ import { GameMap } from "game/game_map"
 import { coloredText, roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
-import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
+// import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 
 const routeRecalculationInterval = 80000
 
@@ -320,16 +320,16 @@ export class RemoteRoomHarvesterTask extends EnergySourceTask {
         if (creep.pos.isEqualTo(harvestPosition) === true) {
           return RunApiTask.create(HarvestEnergyApiWrapper.create(source))
         }
-        if (creep.room.name !== this.targetRoomName) {
-          const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
-          return MoveToRoomTask.create(this.targetRoomName, waypoints)
-        }
+        // if (creep.room.name !== this.targetRoomName) {
+        //   const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+        //   return MoveToRoomTask.create(this.targetRoomName, waypoints)
+        // }
         return MoveToTask.create(harvestPosition, 0)
       }
-      if (creep.room.name !== this.targetRoomName) {
-        const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
-        return MoveToRoomTask.create(this.targetRoomName, waypoints)
-      }
+      // if (creep.room.name !== this.targetRoomName) {
+      //   const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+      //   return MoveToRoomTask.create(this.targetRoomName, waypoints)
+      // }
       return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source))
     }
 
