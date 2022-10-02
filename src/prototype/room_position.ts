@@ -37,6 +37,7 @@ declare global {
     id: RoomPositionId
     pos: RoomPosition
     isRoomEdge: boolean
+    raw: Position
 
     /** @deprecated */
     v5TargetedBy: V5TaskRunnerId[]
@@ -81,6 +82,15 @@ export function init(): void {
         || this.x === GameConstants.room.edgePosition.max
         || this.y === GameConstants.room.edgePosition.min
         || this.y === GameConstants.room.edgePosition.max
+    },
+  })
+
+  Object.defineProperty(RoomPosition.prototype, "raw", {
+    get(): Position {
+      return {
+        x: this.x,
+        y: this.y,
+      }
     },
   })
 
