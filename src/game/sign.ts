@@ -3,7 +3,12 @@ import { SystemInfo } from "shared/utility/system_info"
 const attackingSigns: string[] = [
   "🚫",
   "💥",
+  "blockade",
 ].map(x => `${x} #overlords`)
+
+const clearingZombie: string[] = [
+  "clearing zombie"
+]
 
 const areaSigns: string[] = [
   "Restricted area",
@@ -32,7 +37,7 @@ export const Sign = {
 
   signForGclFarm(): string {
     return `GCL Farm v${SystemInfo.application.version} at ${Game.time}`
-  }
+  },
 }
 
 /**
