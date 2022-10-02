@@ -105,6 +105,8 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     }
   }
 
+  private halt = 0
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
@@ -344,7 +346,14 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       return MoveToRoomTask.create(this.targetRoomName, waypoints, true)
     }
 
-    const targetSite = this.targetConstructionSite(creep)
+    if (this.halt > 0) {
+      creep.say(`${this.halt}`)
+      this.halt -= 1  // Creep数が多いと消費が激しくなるが厳密性を求めないのでもんだいない
+      return null
+    }
+
+    const result = this.targetConstructionSite(creep)
+    const targetSite = result.target
     if (targetSite == null) {
       if (creep.room.controller == null) {
         return null
@@ -379,15 +388,18 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       //     return MoveToTargetTask.create(SignApiWrapper.create(creep.room.controller, Sign.signForHostileRoom()))
       //   }
       // }
-      return MoveToTask.create(creep.room.controller.pos, 5)
+      return null
+    }
+    if (targetSite.progress <= 0 && result.constructionSiteCount <= 2) {
+      this.halt = 8
     }
     if (targetSite.pos.isEqualTo(creep.pos) === true) {
       return FleeFromTask.create(targetSite.pos, 1)
     }
-    return StompTask.create(targetSite.pos, {ignoreSwamp: true})
+    return StompTask.create(targetSite.pos, {ignoreSwamp: this.useAttacker !== true})
   }
 
-  private targetConstructionSite(creep: Creep): ConstructionSite<BuildableStructureConstant> | null {
+  private targetConstructionSite(creep: Creep): { target: ConstructionSite<BuildableStructureConstant> | null, constructionSiteCount: number } {
     const constructionSites: ConstructionSiteInfo[] = creep.room.find(FIND_HOSTILE_CONSTRUCTION_SITES).map(constructionSite => {
       return {
         constructionSite,
@@ -396,7 +408,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     })
 
     constructionSites.sort((lhs, rhs) => rhs.priority - lhs.priority)
-    return constructionSites.find(constructionSite => {
+    const target = constructionSites.find(constructionSite => {
       if (constructionSite.constructionSite.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } }).length > 0) {
         return false
       }
@@ -408,6 +420,11 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       }
       return true
     })?.constructionSite ?? null
+
+    return {
+      target,
+      constructionSiteCount: constructionSites.length,
+    }
   }
 
   private prioritize(constructionSite: ConstructionSite<BuildableStructureConstant>): number {
