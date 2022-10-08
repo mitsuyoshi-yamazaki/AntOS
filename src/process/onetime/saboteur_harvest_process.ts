@@ -31,6 +31,7 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
+import type { Timestamp } from "shared/utility/timestamp"
 
 ProcessDecoder.register("SaboteurHarvestProcess", state => {
   return SaboteurHarvestProcess.decode(state as SaboteurHarvestProcessState)
@@ -56,6 +57,11 @@ type SaboteurStateScouting = {
   readonly case: "scouting"
 }
 
+type SaboteurStateStopped = {
+  readonly case: "stopped"
+  readonly until: Timestamp
+}
+
 /// 全てのPositionを埋める
 type SaboteurStateSpawning = {
   readonly case: "spawning"
@@ -70,7 +76,7 @@ type SaboteurStateRunning = {
   finishedCreepNames: CreepName[]
   attackCreep: AttackCreepState | null
 }
-type SaboteurState = SaboteurStateScouting | SaboteurStateSpawning | SaboteurStateRunning
+type SaboteurState = SaboteurStateStopped | SaboteurStateScouting | SaboteurStateSpawning | SaboteurStateRunning
 
 const creepLifetime = GameConstants.creep.life.lifeTime
 const spawnInterval = Math.floor(creepLifetime / 12)
@@ -148,6 +154,8 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
   public processShortDescription(): string {
     const stateDescription = ((): string => {
       switch (this.saboteurState.case) {
+      case "stopped":
+        return `stopped in ${this.saboteurState.until - Game.time} ticks`
       case "scouting":
         return "scouting"
       case "spawning":
@@ -166,14 +174,14 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     ]
 
     if (this.stopRunningReasons.length > 0) {
-      descriptions.push(`stopped by: ${this.stopRunningReasons.join(",")}`)
+      descriptions.push(`stopped ${this.stopRunningReasons.length} times`)
     }
 
     return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "reset"]
+    const commandList = ["help", "reset", "log"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -185,6 +193,11 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         this.saboteurState = { case: "scouting" }
         this.stopRunningReasons = []
         return this.killCreeps()
+      case "log":
+        if (this.stopRunningReasons.length <= 0) {
+          return "no stop logs"
+        }
+        return `stopped ${this.stopRunningReasons.length} times\n${this.stopRunningReasons.map(x => `- ${x}`).join("\n")}`
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -201,8 +214,13 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
   }
 
   public runOnTick(): void {
-    if (this.stopRunningReasons.length > 0) {
-      return
+    if (this.saboteurState.case === "stopped") {
+      if (Game.time < this.saboteurState.until) {
+        return
+      }
+      this.saboteurState = {
+        case: "scouting",
+      }
     }
 
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
@@ -472,7 +490,11 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     state.positions.forEach(position => {
       const creep = Game.creeps[position.creepName]
       if (creep == null) {
-        this.addStopRunningReason("no creep in position")
+        this.addStopRunningReason(`no creep in position at ${Game.time}`)
+        this.saboteurState = {
+          case: "stopped",
+          until: Game.time + 1600,  // Invaderなどを想定
+        }
         return
       }
 
