@@ -526,9 +526,21 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       }
 
       this.moveCreepToPosition(nextCreep, position.position, 1)
-      creep.room.visual.line(creep.pos, nextCreep.pos, {
-        width: 0.2,
-      })
+
+      if (creep.room.name === nextCreep.room.name) {
+        creep.room.visual.line(creep.pos, nextCreep.pos, {
+          width: 0.05,
+          opacity: 0.3,
+          lineStyle: "dotted",
+        })
+      } else {
+        const estimatedArrivalTime = this.travelDistance - (creepLifetime - (nextCreep.ticksToLive ?? creepLifetime))
+        creep.room.visual.text(`${estimatedArrivalTime}`, creep.pos, {
+          font: 0.5,
+          strokeWidth: 0.2,
+          align: "center",
+        })
+      }
     })
 
     if (oldestCreepInfo != null) {
