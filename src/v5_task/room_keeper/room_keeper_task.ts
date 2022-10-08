@@ -90,15 +90,8 @@ export class RoomKeeperTask extends Task {
           }
           OperatingSystem.os.addProcess(null, processId => DistributorProcess.create(processId, this.roomName))
 
-          switch (Environment.world) {
-          case "persistent world":
-          case "simulation":
-            break
-          case "season 4":
-          case "botarena":
-          case "swc":
+          if (Environment.isAutomatic() === true) {
             OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
-            break
           }
           this.turnAttackNotificationOn(objects.controller.room)
           this.removeLeftoverFlags(objects.controller.room)

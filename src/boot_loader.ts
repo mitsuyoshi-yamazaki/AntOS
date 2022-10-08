@@ -29,6 +29,7 @@ export const BootLoader = {
     case "season 4":
     case "simulation":
     case "swc":
+    case "non game":  // ApplicationProcessLoader以外のOS機能は動作させる
     case "unknown":
       return v2Functions()
     }

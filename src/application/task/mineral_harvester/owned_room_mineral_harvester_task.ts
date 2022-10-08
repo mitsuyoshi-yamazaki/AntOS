@@ -83,6 +83,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       case "persistent world":
       case "swc":
       case "private":
+      case "non game":
       case "unknown":
         return false
       case "simulation":

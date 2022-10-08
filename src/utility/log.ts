@@ -66,6 +66,7 @@ const baseUrl = ((): string => {
   case "simulation":
   case "botarena":
   case "private":
+  case "non game":
   case "unknown":
     return "https://screeps.com/a/#!"
   case "season 4":
