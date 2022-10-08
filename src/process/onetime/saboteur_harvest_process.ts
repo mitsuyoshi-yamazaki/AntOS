@@ -515,10 +515,17 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         state.finishedCreepNames.push(creep.name)
         position.creepName = nextCreep.name
         position.nextCreepName = null
+
+        creep.room.visual.line(creep.pos, nextCreep.pos, {
+          width: 0.3,
+        })
         return
       }
 
       this.moveCreepToPosition(nextCreep, position.position, 1)
+      creep.room.visual.line(creep.pos, nextCreep.pos, {
+        width: 0.2,
+      })
     })
 
     if (oldestCreepInfo != null) {
