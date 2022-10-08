@@ -467,6 +467,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     state.finishedCreepNames = finishedCreepNames
 
     let oldestCreepInfo = null as { position: PositionInfo, ticksToLive: number } | null
+    let secondOldestTicksToLive = null as number | null
 
     state.positions.forEach(position => {
       const creep = Game.creeps[position.creepName]
@@ -491,6 +492,8 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         this.moveCreepToPosition(creep, position.position)
 
         if (creep.ticksToLive != null && (oldestCreepInfo == null || creep.ticksToLive < oldestCreepInfo.ticksToLive)) {
+          secondOldestTicksToLive = oldestCreepInfo?.ticksToLive ?? null
+
           oldestCreepInfo = {
             position,
             ticksToLive: creep.ticksToLive,
@@ -529,7 +532,20 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     })
 
     if (oldestCreepInfo != null) {
-      if (oldestCreepInfo.ticksToLive < this.spawnThreshold) {
+      const shouldSpawn = ((): boolean => {
+        if (oldestCreepInfo.ticksToLive < this.spawnThreshold) {
+          return true
+        }
+        if (secondOldestTicksToLive == null) {
+          return false
+        }
+        if ((secondOldestTicksToLive - spawnInterval) < this.spawnThreshold) {
+          return true
+        }
+        return false
+      })()
+
+      if (shouldSpawn === true) {
         oldestCreepInfo.position.nextCreepName = this.spawnWorkerCreep()
       }
     }
