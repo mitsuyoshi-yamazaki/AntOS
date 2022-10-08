@@ -83,7 +83,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
     private lastKillTime: Timestamp | null,
     private readonly specifiedCodename: string | null,
   ) {
-    this.identifier = `${this.constructor.name}_${this.targetRoomName}`
+    this.identifier = `${this.constructor.name}_${this.processId}_${this.targetRoomName}`
     this.codename = specifiedCodename ?? UniqueId.generateCodename(this.identifier, this.launchTime)
   }
 
