@@ -177,7 +177,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
           }
           return true
         }
-        return true
+        return false
       })()
 
       if (isOccupied === true) {
