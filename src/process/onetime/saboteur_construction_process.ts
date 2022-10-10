@@ -50,9 +50,6 @@ export interface SaboteurConstructionProcessState extends ProcessState {
   /** target room name */
   readonly tr: RoomName
 
-  /** waypoints */
-  readonly w: RoomName[]
-
   /** number of creeps */
   readonly n: number
 
@@ -112,7 +109,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
     public readonly processId: ProcessId,
     public readonly parentRoomName: RoomName,
     public readonly targetRoomName: RoomName,
-    public readonly waypoints: RoomName[],
     private numberOfCreeps: number,
     private fleeRange: number,
     private stopSpawning: boolean,
@@ -129,7 +125,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       i: this.processId,
       p: this.parentRoomName,
       tr: this.targetRoomName,
-      w: this.waypoints,
       n: this.numberOfCreeps,
       fleeRange: this.fleeRange,
       stopSpawning: this.stopSpawning,
@@ -138,11 +133,11 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   public static decode(state: SaboteurConstructionProcessState): SaboteurConstructionProcess {
-    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.w, state.n, state.fleeRange, state.stopSpawning, new Set<Options>(state.options ?? []))
+    return new SaboteurConstructionProcess(state.l, state.i, state.p, state.tr, state.n, state.fleeRange, state.stopSpawning, new Set<Options>(state.options ?? []))
   }
 
-  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], creepCount: number): SaboteurConstructionProcess {
-    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, waypoints, creepCount, 6, false, new Set<Options>([]))
+  public static create(processId: ProcessId, parentRoomName: RoomName, targetRoomName: RoomName, creepCount: number): SaboteurConstructionProcess {
+    return new SaboteurConstructionProcess(Game.time, processId, parentRoomName, targetRoomName, creepCount, 6, false, new Set<Options>([]))
   }
 
   public processShortDescription(): string {
@@ -246,6 +241,8 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   }
 
   private runScout(): void {
+    this.halt -= 1  // Creepが部屋の端で停止するなどしないようにする
+
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     const insufficientCreepCount = this.numberOfCreeps - creeps.length
     if (insufficientCreepCount > 0) {
@@ -276,7 +273,6 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       return
     }
 
-    const initialTask = MoveToRoomTask.create(this.targetRoomName, this.waypoints, true)
     const body = ((): BodyPartConstant[] => {
       if (this.useAttacker === true) {
         return [ATTACK, MOVE]
@@ -290,7 +286,7 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
       codename: this.codename,
       roles: [CreepRole.Scout],
       body,
-      initialTask,
+      initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
     })
@@ -343,12 +339,15 @@ export class SaboteurConstructionProcess implements Process, Procedural, OwnedRo
   private creepTask(creep: Creep): CreepTask | null {
     if (creep.pos.roomName !== this.targetRoomName) {
       const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
-      return MoveToRoomTask.create(this.targetRoomName, waypoints, true)
+      const tasks: CreepTask[] = [
+        MoveToRoomTask.create(this.targetRoomName, waypoints, true),
+        MoveToTask.create(new RoomPosition(25, 25, this.targetRoomName), 15),
+      ]
+      return SequentialTask.create(tasks, {ignoreFailure: false, finishWhenSucceed: false})
     }
 
     if (this.halt > 0) {
       creep.say(`${this.halt}`)
-      this.halt -= 1  // Creep数が多いと消費が激しくなるが厳密性を求めないのでもんだいない
       return null
     }
 
