@@ -177,6 +177,24 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       return
     }
 
+    if (Game.time % 23 === 3) {
+      ((): void => {
+        const targetRoom = Game.rooms[this.targetRoomName]
+        const controller = targetRoom?.controller
+        if (controller == null) {
+          return
+        }
+        if (controller.owner == null) {
+          this.addStopSpawningReason("unclaimed")
+          return
+        }
+        if (controller.owner.username === Game.user.name) {
+          this.addStopSpawningReason("claimed")
+          return
+        }
+      })()
+    }
+
     if (this.lastKillTime != null && Game.time > (this.lastKillTime + 1000)) {
       this.lastKillTime = null
     }
@@ -343,8 +361,8 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       return
     }
 
-    creep.say("nth to do")
-    this.addStopSpawningReason("nothing to do")
+    creep.say("no spawn")
+    this.addStopSpawningReason("no spawn")
   }
 
   private heal(creep: Creep): void {
