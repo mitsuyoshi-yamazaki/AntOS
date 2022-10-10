@@ -181,7 +181,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "reset", "log"]
+    const commandList = ["help", "reset", "show_log", "reset_log"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -193,11 +193,14 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         this.saboteurState = { case: "scouting" }
         this.stopRunningReasons = []
         return this.killCreeps()
-      case "log":
+      case "show_log":
         if (this.stopRunningReasons.length <= 0) {
           return "no stop logs"
         }
         return `stopped ${this.stopRunningReasons.length} times\n${this.stopRunningReasons.map(x => `- ${x}`).join("\n")}`
+      case "reset_log":
+        this.stopRunningReasons = []
+        return "ok"
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -287,7 +290,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         return
       }
       if (creep.room.name !== this.targetRoomName) {
-        creep.v5task = this.moveToRoomTask()
+        creep.v5task = this.moveToRoomTask(creep)
         return
       }
     })
@@ -360,7 +363,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         return
       }
       if (creep.room.name !== this.targetRoomName) {
-        creep.v5task = this.moveToRoomTask()
+        creep.v5task = this.moveToRoomTask(creep)
         return
       }
 
@@ -390,7 +393,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = this.moveToRoomTask()
+      creep.v5task = this.moveToRoomTask(creep)
       return
     }
 
@@ -401,6 +404,10 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       }
       const instance = Game.getObjectById(creepState.targetId)
       if (instance != null) {
+        if (instance.room.name !== this.targetRoomName) {
+          creep.say("f tgt2")
+          return this.findTarget(creep.room, creep.pos)
+        }
         if (instance.pos.isRoomEdge !== true) {
           if (instance.pos.getRangeTo(creep.pos) > 2) {
             const closerHostileCreep = creep.pos.findInRange(FIND_HOSTILE_CREEPS, 2)[0]
@@ -412,7 +419,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
           return instance
         }
       }
-      creep.say("f tgt2")
+      creep.say("f tgt3")
       return this.findTarget(creep.room, creep.pos)
     })()
 
@@ -590,10 +597,10 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       return
     }
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = this.moveToRoomTask()
+      creep.v5task = this.moveToRoomTask(creep)
       return
     }
-    if (isEqualLocalPosition(creep.pos, position) === true) {
+    if (creep.pos.getRangeTo(position.x, position.y) <= (range ?? 0)) {
       return
     }
     creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range ?? 0)
@@ -613,7 +620,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       codename: this.codename,
       roles: [],
       body,
-      initialTask: this.moveToRoomTask(),
+      initialTask: null,
       taskIdentifier: this.identifier,
       parentRoomName: null,
       name: creepName,
@@ -622,8 +629,9 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     return creepName
   }
 
-  private moveToRoomTask(): CreepTask {
-    return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.waypoints))
+  private moveToRoomTask(creep: Creep): CreepTask {
+    const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
+    return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, waypoints))
   }
 
   private calculateSpawningState(targetRoom: Room): SaboteurStateSpawning {
