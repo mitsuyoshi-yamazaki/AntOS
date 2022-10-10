@@ -1520,13 +1520,12 @@ ProcessLauncher.register("SaboteurConstructionProcess", args => {
     const roomName = roomResource.room.name
     const targetRoomName = args.roomName("target_room_name").parse()
     const numberOfCreeps = args.int("creep_count").parse({min: 1})
-    const waypoints = getWaypoints(args, roomName, targetRoomName)
+    getWaypoints(args, roomName, targetRoomName)
 
     return Result.Succeeded((processId) => SaboteurConstructionProcess.create(
       processId,
       roomName,
       targetRoomName,
-      waypoints,
       numberOfCreeps,
     ))
   } catch (error) {
