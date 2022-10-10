@@ -74,6 +74,13 @@ class Config {
     return this.config.wallMaxHits ?? defaultMaxWallHits
   }
 
+  public set upgraderMaxCount(value: number) {
+    this.config.upgraderMaxCount = value
+  }
+  public get upgraderMaxCount(): number {
+    return this.config.upgraderMaxCount ?? 5
+  }
+
   public get nonHidableRampartIds(): Id<StructureRampart>[] {
     if (this.config.nonHidableRampartIds == null) {
       this.config.nonHidableRampartIds = []

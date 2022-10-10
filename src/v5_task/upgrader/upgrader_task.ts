@@ -250,7 +250,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
-      return Math.min(Math.max(this.availablePositions.length - 1, 3), 5)  // 全位置を埋めるとHaulerが入って来れなくなるため
+      const max = roomResource.roomInfoAccessor.config.upgraderMaxCount
+      return Math.min(Math.max(this.availablePositions.length - 1, 3), max)  // 全位置を埋めるとHaulerが入って来れなくなるため
     })()
 
     return [body, numberOfCreeps]

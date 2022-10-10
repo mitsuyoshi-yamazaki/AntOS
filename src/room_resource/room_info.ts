@@ -93,6 +93,7 @@ export type OwnedRoomConfig = {
   wallMaxHits?: number
   extraLinkIds?: Id<StructureLink>[]
   specializedWorkerCount?: number
+  upgraderMaxCount?: number
 
   /// bootstrap中だけではなく、リスポーン後の最初の部屋にも適用される
   useSafemodeInBoostrap?: boolean
