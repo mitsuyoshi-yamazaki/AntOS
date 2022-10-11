@@ -26,6 +26,7 @@ import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task
 import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -236,40 +237,114 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const controller = creep.room.controller
-    if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > (creep.ticksToLive ?? 0)) {
-      const moveToNextRoomTask = this.moveToNextRoomTask(creep)
-      if (moveToNextRoomTask == null) {
-        creep.say("finished")
-
-        const canQuit = ((): boolean => {
-          if (this.targetRoomNames.length > 1) {
-            return false
-          }
-          if (controller == null) {
-            return false
-          }
-          if (this.targetRoomNames.includes(controller.room.name) !== true) {
-            return false
-          }
-          if (controller.level <= 0) {
-            return true
-          }
-          if (controller.level === 1 && controller.ticksToDowngrade < 2000) {
-            return true
-          }
-          return false
-        })()
-
-        if (canQuit === true) {
-          this.addSpawnStopReason("unclaimed")
-          processLog(this, `${coloredText("[Downgrade]", "info")} ${roomLink(creep.room.name)} is about to unclaim`)
-        }
-
-        return RunApiTask.create(SuicideApiWrapper.create())
+    const attackTarget = ((): StructureController | null => {
+      if (controller == null) {
+        return null
       }
-      return moveToNextRoomTask
+      if (this.targetRoomNames.includes(controller.room.name) !== true) {
+        return null
+      }
+      if (controller.owner == null) {
+        return null
+      }
+      if (controller.my === true) {
+        return null
+      }
+      if (controller.reservation?.username === Game.user.name) {
+        return null
+      }
+      if ((controller.upgradeBlocked ?? 0) > (creep.ticksToLive ?? 0)) {
+        return null
+      }
+      return controller
+    })()
+
+    if (attackTarget != null) {
+      return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(attackTarget), { ignoreSwamp: false, reusePath: 0 }))
     }
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(controller), { ignoreSwamp: false, reusePath: 0 }))
+
+    ((): void => {
+      if (controller == null) {
+        return
+      }
+      const index = this.targetRoomNames.indexOf(controller.room.name)
+      if (index < 0) {
+        return
+      }
+      if (controller.my === true) {
+        this.targetRoomNames.splice(index, 1)
+        return
+      }
+      if (controller.owner != null) {
+        return
+      }
+      this.targetRoomNames.splice(index, 1)
+      this.launchAggressiveClaimProcess(controller)
+    })()
+
+    const moveToNextRoomTask = this.moveToNextRoomTask(creep)
+    if (moveToNextRoomTask == null) {
+      creep.say("finished")
+
+      const canQuit = ((): boolean => {
+        if (this.targetRoomNames.length > 1) {
+          return false
+        }
+        if (controller == null) {
+          return false
+        }
+        if (this.targetRoomNames.includes(controller.room.name) !== true) {
+          return false
+        }
+        if (controller.level <= 0) {
+          return true
+        }
+        if (controller.level === 1 && controller.ticksToDowngrade < 2000) {
+          return true
+        }
+        return false
+      })()
+
+      if (canQuit === true) {
+        this.addSpawnStopReason("unclaimed")
+        processLog(this, `${coloredText("[Downgrade]", "info")} ${roomLink(creep.room.name)} is about to unclaim`)
+      }
+
+      return RunApiTask.create(SuicideApiWrapper.create())
+    }
+    return moveToNextRoomTask
+  }
+
+  private launchAggressiveClaimProcess(controller: StructureController): void {
+    processLog(this, `${roomLink(controller.room.name)} unclaimed`)
+
+    const excludedStructureIds: Id<(StructureStorage | StructureTerminal)>[] = []
+    const hostileStructures = controller.room.find(FIND_HOSTILE_STRUCTURES)
+
+    hostileStructures.forEach(structure => {
+      if (structure.structureType === STRUCTURE_TERMINAL) {
+        excludedStructureIds.push(structure.id)
+        return
+      }
+      if (structure.structureType === STRUCTURE_STORAGE) {
+        excludedStructureIds.push(structure.id)
+        return
+      }
+    })
+
+    if (hostileStructures.length === excludedStructureIds.length) {
+      processLog(this, `no structures to destroy in ${roomLink(controller.room.name)}`)
+      return
+    }
+
+    OperatingSystem.os.addProcess(null, processId => AggressiveClaimProcess.create(
+      processId,
+      this.parentRoomName,
+      controller.room.name,
+      [],
+      excludedStructureIds,
+    ))
+    processLog(this, `launched AggressiveClaimProcess to destroy ${hostileStructures.length - excludedStructureIds.length} structures in ${roomLink(controller.room.name)}`)
   }
 
   private moveToNextRoomTask(creep: Creep): CreepTask | null {
