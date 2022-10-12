@@ -23,7 +23,7 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { isEqualLocalPosition, Position } from "shared/utility/position"
 import { GameConstants } from "utility/constants"
 import { GameMap } from "game/game_map"
-import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
+import { decodeRoomPosition, describePosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { MessageObserver } from "os/infrastructure/message_observer"
@@ -32,10 +32,16 @@ import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { CreepBody } from "utility/creep_body"
 import type { Timestamp } from "shared/utility/timestamp"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("SaboteurHarvestProcess", state => {
   return SaboteurHarvestProcess.decode(state as SaboteurHarvestProcessState)
 })
+
+type Mutable<Type> = {
+  -readonly [Key in keyof Type]: Type[Key]
+}
 
 type PositionInfo = {
   readonly position: Position
@@ -55,17 +61,20 @@ type AttackCreepState = {
 /// RoomをObserveする
 type SaboteurStateScouting = {
   readonly case: "scouting"
+  reservedPosition: Position
 }
 
 type SaboteurStateStopped = {
   readonly case: "stopped"
   readonly until: Timestamp
+  reservedPosition: Position
 }
 
 /// 全てのPositionを埋める
 type SaboteurStateSpawning = {
   readonly case: "spawning"
   readonly positions: SpawningPositionInfo[]
+  reservedPosition: Mutable<SpawningPositionInfo>
   attackCreep: AttackCreepState | null
 }
 
@@ -73,6 +82,7 @@ type SaboteurStateSpawning = {
 type SaboteurStateRunning = {
   readonly case: "running"
   readonly positions: PositionInfo[]
+  reservedPosition: Mutable<SpawningPositionInfo>
   finishedCreepNames: CreepName[]
   attackCreep: AttackCreepState | null
 }
@@ -89,9 +99,10 @@ interface SaboteurHarvestProcessState extends ProcessState {
   readonly targetRoomName: RoomName
   readonly travelDistance: number
   readonly saboteurState: SaboteurState
-  readonly stopRunningReasons: string[]
+  readonly logs: string[]
 }
 
+// TODO: 遊撃を1Creep置いておく
 export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -101,16 +112,18 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     return this.roomName
   }
 
-  private get waypoints(): RoomName[] {
-    if (this._waypoints == null) {
-      this._waypoints = GameMap.getWaypoints(this.roomName, this.targetRoomName) ?? []
-    }
-    return this._waypoints
-  }
-
   private readonly codename: string
   private spawnThreshold: number
-  private _waypoints = null as RoomName[] | null
+  private get reservedPosition(): Position {
+    switch (this.saboteurState.case) {
+    case "stopped":
+    case "scouting":
+      return this.saboteurState.reservedPosition
+    case "spawning":
+    case "running":
+      return this.saboteurState.reservedPosition.position
+    }
+  }
 
   private constructor(
     public readonly launchTime: number,
@@ -119,7 +132,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     private readonly targetRoomName: RoomName,
     private readonly travelDistance: number,
     private saboteurState: SaboteurState,
-    private stopRunningReasons: string[],
+    private logs: string[],
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -136,17 +149,18 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       targetRoomName: this.targetRoomName,
       travelDistance: this.travelDistance,
       saboteurState: this.saboteurState,
-      stopRunningReasons: this.stopRunningReasons,
+      logs: this.logs,
     }
   }
 
   public static decode(state: SaboteurHarvestProcessState): SaboteurHarvestProcess {
-    return new SaboteurHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.travelDistance ?? 50, state.saboteurState, state.stopRunningReasons)
+    return new SaboteurHarvestProcess(state.l, state.i, state.roomName, state.targetRoomName, state.travelDistance ?? 50, state.saboteurState, state.logs ?? [])
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, travelDistance: number): SaboteurHarvestProcess {
+  public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, travelDistance: number, reservedPosition: Position): SaboteurHarvestProcess {
     const saboteurState: SaboteurStateScouting = {
-      case: "scouting"
+      case: "scouting",
+      reservedPosition,
     }
     return new SaboteurHarvestProcess(Game.time, processId, roomName, targetRoomName, travelDistance, saboteurState, [])
   }
@@ -173,15 +187,15 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       `${creeps.length} creeps`,
     ]
 
-    if (this.stopRunningReasons.length > 0) {
-      descriptions.push(`stopped ${this.stopRunningReasons.length} times`)
+    if (this.logs.length > 0) {
+      descriptions.push(`${this.logs.length} logs`)
     }
 
     return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "reset", "show_log", "reset_log"]
+    const commandList = ["help", "reset", "show_log", "reset_log", "set_reserved_position"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -190,17 +204,41 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       case "help":
         return `Commands: ${commandList}`
       case "reset":
-        this.saboteurState = { case: "scouting" }
-        this.stopRunningReasons = []
+        this.saboteurState = {
+          case: "scouting",
+          reservedPosition: this.reservedPosition,
+        }
+        this.logs = []
         return this.killCreeps()
       case "show_log":
-        if (this.stopRunningReasons.length <= 0) {
-          return "no stop logs"
+        if (this.logs.length <= 0) {
+          return "no logs"
         }
-        return `stopped ${this.stopRunningReasons.length} times\n${this.stopRunningReasons.map(x => `- ${x}`).join("\n")}`
+        return `${this.logs.length} logs\n${this.logs.map(x => `- ${x}`).join("\n")}`
       case "reset_log":
-        this.stopRunningReasons = []
+        this.logs = []
         return "ok"
+      case "set_reserved_position": {
+        const listArguments = new ListArguments(components)
+        const position = listArguments.localPosition(0, "position").parse()
+
+        switch (this.saboteurState.case) {
+        case "stopped":
+        case "scouting":
+          this.saboteurState.reservedPosition = position
+          break
+        case "spawning":
+        case "running":
+          this.saboteurState.reservedPosition.position = position
+          break
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = this.saboteurState
+          throw `unimplemented case ${(this.saboteurState as SaboteurState).case}`
+        }
+        }
+        return `set ${describePosition(position)}`
+      }
       default:
         throw `Invalid command ${command}, see "help"`
       }
@@ -223,6 +261,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       }
       this.saboteurState = {
         case: "scouting",
+        reservedPosition: this.saboteurState.reservedPosition,
       }
     }
 
@@ -328,8 +367,22 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     }
 
     // Worker
-    const shouldSpawn = ((): boolean => {
-      if (creeps.length >= state.positions.length) {
+    if (state.reservedPosition.creepName != null && Game.creeps[state.reservedPosition.creepName] == null) {
+      state.reservedPosition.creepName = null
+    }
+    state.positions.forEach(position => {
+      if (position.creepName == null) {
+        return
+      }
+      if (Game.creeps[position.creepName] != null) {
+        return
+      }
+      position.creepName = null
+    })
+
+    const shouldSpawnWorker = ((): boolean => {
+      const requiredWorkerCount = state.positions.length + 1  // reserved positionの分
+      if (creeps.length >= requiredWorkerCount) {
         return false
       }
       creeps.sort((lhs, rhs) => (rhs.ticksToLive ?? creepLifetime) - (lhs.ticksToLive ?? creepLifetime))
@@ -343,7 +396,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       return false
     })()
 
-    if (shouldSpawn === true) {
+    if (shouldSpawnWorker === true) {
       this.spawnWorkerCreep()
     }
 
@@ -378,7 +431,12 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
 
       const emptyPosition = emptyPositions.shift()
       if (emptyPosition == null) {
-        creep.say("no pos")
+        if (state.reservedPosition.creepName != null) {
+          creep.say("no pos")
+          return
+        }
+        state.reservedPosition.creepName = creep.name
+        creep.v5task = MoveToTask.create(decodeRoomPosition(state.reservedPosition.position, creep.room.name), 0)
         return
       }
 
@@ -477,7 +535,21 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       this.runAttacker(attacker, attackCreepState)
     }
 
-    //
+    // Reserve
+    const reservedCreep = ((): Creep | null => {
+      if (state.reservedPosition.creepName == null) {
+        return null
+      }
+      return Game.creeps[state.reservedPosition.creepName] ?? null
+    })()
+
+    if (reservedCreep == null) {
+      state.reservedPosition.creepName = this.spawnCreep([MOVE])
+    } else {
+      this.runReservedCreep(reservedCreep, state.reservedPosition.position)
+    }
+
+    // Worker
     const finishedCreepNames: CreepName[] = []
     state.finishedCreepNames.forEach(creepName => {
       const creep = Game.creeps[creepName]
@@ -493,14 +565,16 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
 
     let oldestCreepInfo = null as { position: PositionInfo, ticksToLive: number } | null
     let secondOldestTicksToLive = null as number | null
+    let dyingPosition = null as { position: PositionInfo, ticksToLive: number, nextCreep: Creep } | null
 
     state.positions.forEach(position => {
       const creep = Game.creeps[position.creepName]
       if (creep == null) {
-        this.addStopRunningReason(`no creep in position at ${Game.time}`)
+        this.addLog(`no creep in position at ${Game.time}`)
         this.saboteurState = {
           case: "stopped",
           until: Game.time + 1600,  // Invaderなどを想定
+          reservedPosition: state.reservedPosition.position,
         }
         return
       }
@@ -570,6 +644,16 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
           align: "center",
         })
       }
+
+      if (creep.ticksToLive != null && creep.ticksToLive < 50 && reservedCreep?.room.name === this.targetRoomName && nextCreep.room.name !== this.targetRoomName) {
+        if (dyingPosition == null || creep.ticksToLive < dyingPosition.ticksToLive) {
+          dyingPosition = {
+            position,
+            ticksToLive: creep.ticksToLive,
+            nextCreep,
+          }
+        }
+      }
     })
 
     if (oldestCreepInfo != null) {
@@ -590,6 +674,32 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         oldestCreepInfo.position.nextCreepName = this.spawnWorkerCreep()
       }
     }
+
+    if (dyingPosition != null && reservedCreep != null) {
+      const nextCreep = dyingPosition.nextCreep
+      nextCreep.v5task = null
+      reservedCreep.v5task = null
+
+      dyingPosition.position.nextCreepName = reservedCreep.name
+      state.reservedPosition.creepName = nextCreep.name
+
+      this.addLog(`swap reserved creep ${reservedCreep.name} to ${nextCreep.name} for position ${describePosition(dyingPosition.position.position)} at ${Game.time}`)
+    }
+  }
+
+  private runReservedCreep(creep: Creep, position: Position): void {
+    if (creep.v5task != null) {
+      return
+    }
+    if (creep.room.name !== this.targetRoomName) {
+      creep.v5task = this.moveToRoomTask(creep)
+      return
+    }
+    const range = 3
+    if (creep.pos.getRangeTo(position.x, position.y) <= range) {
+      return
+    }
+    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range)
   }
 
   private moveCreepToPosition(creep: Creep, position: Position, range?: number): void {
@@ -650,38 +760,57 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
       case: "spawning",
       positions,
       attackCreep: null,
+      reservedPosition: {
+        position: this.reservedPosition,
+        creepName: null,
+      },
     }
   }
 
   private convertRunningState(spawningState: SaboteurStateSpawning): SaboteurStateRunning | null {
     try {
       const positions: PositionInfo[] = spawningState.positions.map(position => {
-        if (position.creepName == null) {
+        const converted = this.convertPositionInfo(position)
+        if (converted == null) {
           throw "no creep"
         }
-        return {
-          position: position.position,
-          creepName: position.creepName,
-          nextCreepName: null,
-        }
+        return converted
       })
+
+      const reservedPosition = this.convertPositionInfo(spawningState.reservedPosition)
+      if (reservedPosition == null) {
+        throw "no creep"
+      }
 
       return {
         case: "running",
         positions,
         finishedCreepNames: [],
         attackCreep: spawningState.attackCreep,
+        reservedPosition,
       }
     } catch {
       return null
     }
   }
 
-  private addStopRunningReason(reason: string): void {
-    if (this.stopRunningReasons.includes(reason) === true) {
+  private convertPositionInfo(position: SpawningPositionInfo): PositionInfo | null {
+    if (position.creepName == null) {
+      return null
+    }
+    return {
+      position: position.position,
+      creepName: position.creepName,
+      nextCreepName: null,
+    }
+  }
+
+  private addLog(log: string): void {
+    if (this.logs.includes(log) === true) {
       return
     }
-    this.stopRunningReasons.push(reason)
+    this.logs.push(log)
+    PrimitiveLogger.notice(`${this.identifier} ${log}`)
   }
 
   private logStateChange(state: SaboteurState): void {
