@@ -207,12 +207,21 @@ commands: ${commands}
       const oldValue = this.quadMaker.targetRoomName
       this.quadMaker.targetRoomName = targetRoomName
 
+      const results: string[] = [
+        `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`,
+      ]
+
       if (this.quadMaker.waypoints != null) {
         this.quadMaker.waypoints = null
-        return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}, removed waypoints`
+        results.push("waypoints removed")
       }
 
-      return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`
+      if (this.quadMaker.targetIds.length > 0) {
+        this.quadMaker.targetIds = []
+        results.push("target IDs remvoed")
+      }
+
+      return results.join(", ")
     }
 
     case "front_base_room_name": {
