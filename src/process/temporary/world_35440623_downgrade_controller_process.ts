@@ -198,9 +198,20 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   private spawnDowngrader(resources: OwnedRoomResource): void {
-    const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
     const maxClaimSize = Math.min(this.maxClaimSize, 20)
     const body = ((): BodyPartConstant[] => {
+      const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      const minimumEnergy = ((): number => {
+        if (resources.controller.level >= 8) {
+          return 70000
+        }
+        return 40000
+      })()
+
+      if (energyAmount < minimumEnergy) {
+        return [CLAIM, MOVE]
+      }
+
       const energyCapacityAvailable = resources.room.energyCapacityAvailable
       const fastMoveBody = CreepBody.create([], [MOVE, CLAIM, MOVE], energyCapacityAvailable, maxClaimSize)
       const normalBody = CreepBody.create([], [CLAIM, MOVE], energyCapacityAvailable, maxClaimSize)
@@ -209,26 +220,19 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       }
       return fastMoveBody
     })()
-    const minimumEnergy = ((): number => {
-      if (resources.controller.level >= 8) {
-        return 70000
-      }
-      return 40000
-    })()
-    if (energyAmount > minimumEnergy) {
-      this.currentTargetRoomNames = [...this.targetRoomNames]
 
-      World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-        priority: CreepSpawnRequestPriority.Low,
-        numberOfCreeps: 1,
-        codename: this.codename,
-        roles: [CreepRole.Claimer, CreepRole.Mover],
-        body,
-        initialTask: null,
-        taskIdentifier: this.identifier,
-        parentRoomName: null,
-      })
-    }
+    this.currentTargetRoomNames = [...this.targetRoomNames]
+
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [CreepRole.Claimer, CreepRole.Mover],
+      body,
+      initialTask: null,
+      taskIdentifier: this.identifier,
+      parentRoomName: null,
+    })
   }
 
   private newTaskFor(creep: Creep): CreepTask | null {
