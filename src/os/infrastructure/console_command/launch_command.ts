@@ -792,9 +792,24 @@ ProcessLauncher.register("PowerCreepProcess", args => {
 ProcessLauncher.register("PowerProcessProcess", args => {
   try {
     const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
     const powerSpawn = roomResource.activeStructures.powerSpawn
     if (powerSpawn == null) {
       throw `no power spawn in ${roomLink(roomResource.room.name)}`
+    }
+
+    const processInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      if (!(processInfo.process instanceof PowerProcessProcess)) {
+        return false
+      }
+      if (processInfo.process.parentRoomName !== roomName) {
+        return false
+      }
+      return true
+    })
+
+    if (processInfo != null) {
+      throw `PowerProcessProcess for ${roomLink(roomName)} already exists (${processInfo.processId})`
     }
 
     return Result.Succeeded((processId) => PowerProcessProcess.create(processId, roomResource.room.name, powerSpawn.id))
@@ -1039,6 +1054,7 @@ ProcessLauncher.register("AggressiveClaimProcess", args => {
     const targetRoomName = args.roomName("target_room_name").parse()
     const blockingWallIds = args.list("blocking_wall_ids", "object_id").parse() as Id<StructureWall | StructureRampart>[]
     const excludeStructureIds = args.list("excluded_structure_ids", "object_id").parse() as Id<AnyStructure>[]
+    getWaypoints(args, roomName, targetRoomName)
 
     return Result.Succeeded((processId) => AggressiveClaimProcess.create(processId, roomName, targetRoomName, blockingWallIds, excludeStructureIds))
   } catch (error) {
@@ -1560,6 +1576,7 @@ ProcessLauncher.register("DisturbCreepSpawnProcess", args => {
     const targetRoomName = args.roomName("target_room_name").parse()
     const travelDistance = args.int("travel_distance").parse({ min: 50, max: 1400 })
     const codename = args.string("codename").parseOptional() ?? null
+    getWaypoints(args, roomName, targetRoomName)
 
     return Result.Succeeded((processId) => DisturbCreepSpawnProcess.create(
       processId,
