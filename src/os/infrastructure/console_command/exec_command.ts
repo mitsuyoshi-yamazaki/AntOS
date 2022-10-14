@@ -24,6 +24,7 @@ import { SwcAllyRequest } from "script/swc_ally_request"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
+import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/integrated_attack_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -83,6 +84,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.runScript()
       case "find_researchable_rooms":
         return this.findResearchableRooms()
+      case "integrated_attack":
+        return this.integratedAttack(args)
       default:
         throw `Invalid script type ${scriptType}`
       }
@@ -244,7 +247,13 @@ export class ExecCommand implements ConsoleCommand {
       return `commands: ${commandList}`
     case "room": {
       const resourceType = listArguments.resourceType(0, "resource type").parse()
-      return this.resourceInRoom(resourceType)
+      const minimumAmount = ((): number | undefined => {
+        if (listArguments.has(1) !== true) {
+          return undefined
+        }
+        return listArguments.int(1, "minimum amount").parse({min: 1})
+      })()
+      return this.resourceInRoom(resourceType, { minimumAmount })
     }
     case "collect": {
       const resourceType = listArguments.resourceType(0, "resource type").parse()
@@ -298,13 +307,19 @@ export class ExecCommand implements ConsoleCommand {
     return "ok"
   }
 
-  private resourceInRoom(resourceType: ResourceConstant): CommandExecutionResult {
+  private resourceInRoom(resourceType: ResourceConstant, options?: { minimumAmount?: number }): CommandExecutionResult {
+    const minimumAmount = options?.minimumAmount ?? 0
     const resourceInRoom = ResourceManager.resourceInRoom(resourceType)
-    PrimitiveLogger.log(`${coloredResourceType(resourceType)}: `)
-    resourceInRoom.forEach((amount, roomName) => {
-      PrimitiveLogger.log(`- ${roomLink(roomName)}: ${amount}`)
-    })
-    return "ok"
+    const results: string[] = [
+      `${coloredResourceType(resourceType)}: `,
+      ...Array.from(resourceInRoom.entries()).flatMap(([roomName, amount]): string[] => {
+        if (amount < minimumAmount) {
+          return []
+        }
+        return [`- ${roomLink(roomName)}: ${amount}`]
+      })
+    ]
+    return results.join("\n")
   }
 
   /** @throws */
@@ -722,5 +737,13 @@ export class ExecCommand implements ConsoleCommand {
     })
 
     return `found ${roomNames.length} rooms\n- ${roomNames.map(roomName => roomLink(roomName)).join(", ")}`
+  }
+
+  /** @throws */
+  private integratedAttack(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const roomName = listArguments.roomName(0, "target room name").parse()
+    args.shift()
+    return execIntegratedAttackCommand(roomName, args)
   }
 }
