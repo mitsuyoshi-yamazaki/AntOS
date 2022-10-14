@@ -75,6 +75,7 @@ export interface StealResourceProcessState extends ProcessState {
   storeId: Id<StructureStorage | StructureTerminal> | null
   stopSpawningReasons: string[]
   prioritizedResources: ResourceConstant[]
+  excludedResources?: ResourceConstant[]
 }
 
 export class StealResourceProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
@@ -103,6 +104,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
     private readonly storeId: Id<StructureStorage | StructureTerminal> | null,
     private stopSpawningReasons: string[],
     private prioritizedResources: ResourceConstant[],
+    private excludedResources: ResourceConstant[],
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomName}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -126,6 +128,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
       storeId: this.storeId,
       stopSpawningReasons: this.stopSpawningReasons,
       prioritizedResources: this.prioritizedResources,
+      excludedResources: this.excludedResources.length > 0 ? this.excludedResources : undefined,
     }
   }
 
@@ -144,6 +147,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
       state.storeId,
       state.stopSpawningReasons,
       state.prioritizedResources ?? [],
+      state.excludedResources ?? [],
     )
   }
 
@@ -162,6 +166,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
       options?.storeId ?? null,
       [],
       [],
+      [],
     )
   }
 
@@ -174,7 +179,10 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
     if (this.prioritizedResources.length > 0) {
       const resources = [...this.prioritizedResources]
       resources.reverse()
-      descriptions.push(`[${resources.map(resource => coloredResourceType(resource)).join(",")}]`)
+      descriptions.push(`pri: [${resources.map(resource => coloredResourceType(resource)).join(",")}]`)
+    }
+    if (this.excludedResources.length > 0) {
+      descriptions.push(`excl: [${this.excludedResources.map(resource => coloredResourceType(resource)).join(",")}]`)
     }
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`spawn stopped due to: ${this.stopSpawningReasons.join(", ")}`)
@@ -183,7 +191,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "set_creep_count", "change_target", "prioritize", "show_priority", "reset_priority", "stop", "resume"]
+    const commandList = ["help", "set_creep_count", "change_target", "prioritize", "show_priority", "reset_priority", "add_excluded", "clear_excluded", "stop", "resume"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -257,6 +265,22 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
         this.prioritizedResources = []
         this.resourcePriority = this.updatedResourcePriority()
         return "resource priority reset"
+
+      case "add_excluded": {
+        const listArguments = new ListArguments(components)
+        const resourceType = listArguments.resourceType(0, "resource type").parse()
+        if (this.excludedResources.includes(resourceType) === true) {
+          throw `${coloredResourceType(resourceType)} already excluded`
+        }
+        this.excludedResources.push(resourceType)
+        return `${this.excludedResources.length} resources excluded ${this.excludedResources.map(resource => coloredResourceType(resource)).join(", ")}`
+      }
+
+      case "clear_excluded": {
+        const result = `cleared excluded resources: ${this.excludedResources.map(resource => coloredResourceType(resource)).join(", ")}`
+        this.excludedResources = []
+        return result
+      }
 
       case "resume": {
         const oldValues = [...this.stopSpawningReasons]
@@ -444,7 +468,15 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
   }
 
   private resourceToSteal(target: TargetType): ResourceConstant | null {
-    const resourceType = (Object.keys(target.store) as ResourceConstant[])
+    const resourceTypes = ((): ResourceConstant[] => {
+      const allResources = (Object.keys(target.store) as ResourceConstant[])
+      if (this.excludedResources.length <= 0) {
+        return allResources
+      }
+      return allResources.filter(resource => this.excludedResources.includes(resource) !== true)
+    })()
+
+    const resourceType = resourceTypes
       .sort((lhs, rhs) => {
         return this.resourcePriority.indexOf(rhs) - this.resourcePriority.indexOf(lhs)
       })[0]
