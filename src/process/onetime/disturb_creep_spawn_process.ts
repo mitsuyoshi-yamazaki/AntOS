@@ -25,6 +25,7 @@ ProcessDecoder.register("DisturbCreepSpawnProcess", state => {
   return DisturbCreepSpawnProcess.decode(state as DisturbCreepSpawnProcessState)
 })
 
+type TargetState = "unknown" | "tower active" | "hauler remains" | "attackable"
 type SignStatus = "unchecked" | "sign" | "done"
 type TargetInstances = {
   readonly spawns: StructureSpawn[]
@@ -52,6 +53,7 @@ interface DisturbCreepSpawnProcessState extends ProcessState {
   readonly travelDistance: number
   readonly stopSpawningReasons: string[]
   readonly lastKillTime: Timestamp | null
+  readonly targetState: TargetState
   readonly codename?: string
 }
 
@@ -81,6 +83,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
     private readonly travelDistance: number,
     private stopSpawningReasons: string[],
     private lastKillTime: Timestamp | null,
+    private targetState: TargetState,
     private readonly specifiedCodename: string | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${this.targetRoomName}`
@@ -97,6 +100,7 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       travelDistance: this.travelDistance,
       stopSpawningReasons: this.stopSpawningReasons,
       lastKillTime: this.lastKillTime,
+      targetState: this.targetState,
       codename: this.specifiedCodename ?? undefined,
     }
   }
@@ -110,12 +114,13 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       state.travelDistance,
       state.stopSpawningReasons,
       state.lastKillTime,
+      state.targetState ?? "attackable",
       state.codename ?? null,
     )
   }
 
   public static create(processId: ProcessId, roomName: RoomName, targetRoomName: RoomName, travelDistance: number, codename: string | null): DisturbCreepSpawnProcess {
-    return new DisturbCreepSpawnProcess(Game.time, processId, roomName, targetRoomName, travelDistance, [], null, codename)
+    return new DisturbCreepSpawnProcess(Game.time, processId, roomName, targetRoomName, travelDistance, [], null, "unknown", codename)
   }
 
   public processShortDescription(): string {
@@ -277,7 +282,9 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
 
   private runCreep(creep: Creep): void {
     if (creep.v5task != null) {
-      this.heal(creep)
+      if (creep.hits < creep.hitsMax) {
+        this.heal(creep)
+      }
       return
     }
 
@@ -285,7 +292,9 @@ export class DisturbCreepSpawnProcess implements Process, Procedural, OwnedRoomP
       const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
       creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, waypoints))
 
-      this.heal(creep)
+      if (creep.hits < creep.hitsMax) {
+        this.heal(creep)
+      }
       return
     }
 

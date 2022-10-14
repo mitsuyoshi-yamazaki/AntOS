@@ -213,6 +213,59 @@ export const GameMap = {
   // estimatedTravelDistance(fromRoomName: RoomName, toRoomName: RoomName): number {
   //   return TravelDistance.get(fromRoomName, toRoomName)
   // },
+
+  // getRoomJustBeforeDestination(fromRoomName: RoomName, toRoomName: RoomName): RoomName | null {
+  //   const waypoints = this.getWaypoints(fromRoomName, toRoomName)
+  //   if (waypoints == null) {
+  //     return null
+  //   }
+  //   const lastWaypoint = waypoints.pop()
+  //   if (lastWaypoint != null && Game.map.getRoomLinearDistance(toRoomName, lastWaypoint) <= 1) {
+  //     this.setWaypoints(fromRoomName, lastWaypoint, waypoints)
+  //     return lastWaypoint
+  //   }
+
+  //   if (Game.map.getRoomLinearDistance(toRoomName, fromRoomName) <= 1) {
+  //     return fromRoomName
+  //   }
+
+  //   const  =
+
+  //   const result = Game.map.findRoute(lastWaypoint, toRoomName)
+  //   if (result === ERR_NO_PATH) {
+  //     PrimitiveLogger.programError(`GameMap.getRoomJustBeforeDestination() findRoute() failed with ${result} (${roomLink(lastWaypoint)} =&gt ${roomLink(toRoomName)})`)
+  //     return null
+  //   }
+  //   const lastRoom = result[result.length - 1]
+  //   if (lastRoom == null) {
+  //     PrimitiveLogger.programError(`GameMap.getRoomJustBeforeDestination() findRoute() returns no path (${roomLink(lastWaypoint)} =&gt ${roomLink(toRoomName)})`)
+  //     return null
+  //   }
+  //   return lastRoom.room
+  // },
+
+  // getWaitingRoom(fromRoomName: RoomName, toRoomName: RoomName): RoomName {
+  //   const roomName = this.getRoomJustBeforeDestination(fromRoomName, toRoomName)
+  //   if (roomName != null) {
+  //     return roomName
+  //   }
+  //   return fromRoomName
+  // },
+
+  // getWaypointsTo(fromRoomName: RoomName, toRoomName: RoomName, relativeDestination: "waiting room"): RoomName[] | null {
+  //   switch (relativeDestination) {
+  //   case "waiting room": {
+  //     const waitingRoom = this.getWaitingRoom(fromRoomName, toRoomName)
+
+  //     return
+  //   }
+  //   default: {
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     const _: never = relativeDestination
+  //     return null
+  //   }
+  //   }
+  // },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {
