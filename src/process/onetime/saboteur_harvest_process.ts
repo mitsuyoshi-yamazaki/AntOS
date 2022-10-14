@@ -425,7 +425,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
         if (isEqualLocalPosition(creep.pos, creepPosition) === true) {
           return
         }
-        creep.v5task = MoveToTask.create(decodeRoomPosition(creepPosition, creep.room.name), 0)
+        creep.v5task = MoveToTask.create(decodeRoomPosition(creepPosition, creep.room.name), 0, {ignoreSwamp: true})
         return
       }
 
@@ -436,12 +436,12 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
           return
         }
         state.reservedPosition.creepName = creep.name
-        creep.v5task = MoveToTask.create(decodeRoomPosition(state.reservedPosition.position, creep.room.name), 0)
+        creep.v5task = MoveToTask.create(decodeRoomPosition(state.reservedPosition.position, creep.room.name), 0, { ignoreSwamp: true })
         return
       }
 
       emptyPosition.creepName = creep.name
-      creep.v5task = MoveToTask.create(decodeRoomPosition(emptyPosition.position, creep.room.name), 0)
+      creep.v5task = MoveToTask.create(decodeRoomPosition(emptyPosition.position, creep.room.name), 0, { ignoreSwamp: true })
     })
   }
 
@@ -699,7 +699,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     if (creep.pos.getRangeTo(position.x, position.y) <= range) {
       return
     }
-    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range)
+    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range, { ignoreSwamp: true })
   }
 
   private moveCreepToPosition(creep: Creep, position: Position, range?: number): void {
@@ -713,7 +713,7 @@ export class SaboteurHarvestProcess implements Process, Procedural, OwnedRoomPro
     if (creep.pos.getRangeTo(position.x, position.y) <= (range ?? 0)) {
       return
     }
-    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range ?? 0)
+    creep.v5task = MoveToTask.create(decodeRoomPosition(position, creep.room.name), range ?? 0, { ignoreSwamp: true })
   }
 
   // ---- ---- //
