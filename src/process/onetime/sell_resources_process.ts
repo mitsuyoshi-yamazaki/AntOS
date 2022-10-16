@@ -4,7 +4,6 @@ import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Market } from "shared/utility/market"
 import { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
@@ -13,7 +12,6 @@ import { OperatingSystem } from "os/os"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { shortenedNumber } from "shared/utility/console_utility"
 
 ProcessDecoder.register("SellResourcesProcess", state => {
   return SellResourcesProcess.decode(state as SellResourcesProcessState)

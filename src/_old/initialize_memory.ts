@@ -67,6 +67,12 @@ export function initializeMemory(): void {
     Memory.ignoreRooms = []
   }
 
+  if (Memory.integratedAttack == null) {
+    Memory.integratedAttack = {
+      rooms: {},
+    }
+  }
+
   if (Memory.pathCache == null) {
     Memory.pathCache = {
       paths: {}

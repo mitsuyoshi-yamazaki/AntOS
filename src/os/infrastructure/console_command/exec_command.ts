@@ -335,7 +335,7 @@ export class ExecCommand implements ConsoleCommand {
         }
       } else {
         if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)}`
+          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (set forced=1 to send anyway)`
         }
       }
     }
@@ -741,9 +741,6 @@ export class ExecCommand implements ConsoleCommand {
 
   /** @throws */
   private integratedAttack(args: string[]): CommandExecutionResult {
-    const listArguments = new ListArguments(args)
-    const roomName = listArguments.roomName(0, "target room name").parse()
-    args.shift()
-    return execIntegratedAttackCommand(roomName, args)
+    return execIntegratedAttackCommand(args)
   }
 }

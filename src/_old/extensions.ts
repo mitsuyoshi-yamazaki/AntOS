@@ -11,6 +11,7 @@ import { GclFarmMemory } from "room_resource/gcl_farm_resources"
 import { PathCacheMemory } from "prototype/travel_to"
 import { UniqueIdMemory } from "utility/unique_id"
 import { RoomName } from "shared/utility/room_name_types"
+import { IntegratedAttackMemory } from "../../submodules/private/attack/integrated_attack/integrated_attack"
 
 declare global {
   interface Game {
@@ -39,6 +40,7 @@ declare global {
     gclFarm: GclFarmMemory
     ignoreRooms: RoomName[]
     pathCache: PathCacheMemory
+    integratedAttack: IntegratedAttackMemory
 
     LOANalliance: string | undefined
     napAlliances: string[]
