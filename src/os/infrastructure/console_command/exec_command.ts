@@ -24,7 +24,7 @@ import { SwcAllyRequest } from "script/swc_ally_request"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
-import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/integrated_attack_command"
+import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/standard_io/integrated_attack_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
