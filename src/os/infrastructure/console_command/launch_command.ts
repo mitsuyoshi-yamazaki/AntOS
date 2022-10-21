@@ -94,6 +94,7 @@ import { SignRoomsProcess } from "process/onetime/sign_rooms_process"
 import { SaboteurHarvestProcess } from "process/onetime/saboteur_harvest_process"
 // import {} from "process/non_game/distribution_simulation_process"
 import { } from "../../../../submodules/private/attack/quad_v2/quad_maker_process"
+import { MaintainLostRoomProcess } from "process/onetime/maintain_lost_room_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1641,6 +1642,28 @@ ProcessLauncher.register("SaboteurHarvestProcess", args => {
       targetRoomName,
       travelDistance,
       reservedPosition,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("MaintainLostRoomProcess", args => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    const roomName = roomResource.room.name
+    const targetRoomResource = args.ownedRoomResource("target_room_name").parse()
+    const targetRoomName = targetRoomResource.room.name
+    if (targetRoomResource.activeStructures.spawns.length > 0) {
+      throw `${roomLink(targetRoomName)} has spawns`
+    }
+
+    getWaypoints(args, roomName, targetRoomName)
+
+    return Result.Succeeded((processId) => MaintainLostRoomProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
