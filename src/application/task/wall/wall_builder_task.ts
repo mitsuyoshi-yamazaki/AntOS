@@ -135,8 +135,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
 
     const creepInfo = roomResource.runningCreepInfo(this.identifier)
     if (creepInfo.length < 1 && roomResource.hostiles.creeps.length <= 0) {
-      const energyAmount = (roomResource.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
-        + (roomResource.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
 
       if (energyAmount > 80000) {
         const hasWalls = hasWallToRepair() === true || roomResource.constructionSites.some(site => wallTypes.includes(site.structureType))
@@ -158,7 +157,13 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
             }
           }
 
-          taskOutputs.spawnRequests.push(this.spawnRequest(roomResource.room))
+          const body = ((): BodyPartConstant[] => {
+            if (energyAmount > 500000 && roomResource.activeStructures.spawns.length > 1) {
+              return CreepBody.create([], [WORK, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 16)
+            }
+            return CreepBody.create([], [WORK, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 8)  // 10 repair / withdraw
+          })()
+          taskOutputs.spawnRequests.push(this.spawnRequest(body))
         }
       }
     }
@@ -190,13 +195,13 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
     return taskOutputs
   }
 
-  private spawnRequest(room: Room): SpawnCreepTaskRequest {
+  private spawnRequest(body: BodyPartConstant[]): SpawnCreepTaskRequest {
     return new SpawnCreepTaskRequest(
       SpawnTaskRequestPriority.Cancellable,
       this.codename,
       this.identifier,
       null,
-      CreepBody.create([], [WORK, CARRY, MOVE], room.energyCapacityAvailable, 8),
+      body,
       null,
       0
     )
