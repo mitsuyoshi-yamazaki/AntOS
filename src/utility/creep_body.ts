@@ -35,7 +35,7 @@ export function isBodyPartConstant(arg: string): arg is BodyPartConstant {
 }
 
 export const CreepBody = {
-  create: function(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
+  create: function<Base extends BodyPartConstant, Unit extends BodyPartConstant>(baseBody: Base[], bodyUnit: Unit[], energyCapacity: number, maxUnitCount: number): (Base | Unit)[] {
     return createCreepBody(baseBody, bodyUnit, energyCapacity, maxUnitCount)
   },
 
@@ -138,8 +138,8 @@ export function bodyPower(body: BodyPartDefinition[], actionType: CreepBodyFixed
 }
 
 /** @deprecated */
-export function createCreepBody(baseBody: BodyPartConstant[], bodyUnit: BodyPartConstant[], energyCapacity: number, maxUnitCount: number): BodyPartConstant[] {
-  const result: BodyPartConstant[] = [...baseBody]
+export function createCreepBody<Base extends BodyPartConstant, Unit extends BodyPartConstant>(baseBody: Base[], bodyUnit: Unit[], energyCapacity: number, maxUnitCount: number): (Base | Unit)[] {
+  const result: (Base | Unit)[] = [...baseBody]
 
   const baseCost = bodyCost(baseBody)
   const unitCost = bodyCost(bodyUnit)
