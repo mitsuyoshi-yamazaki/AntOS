@@ -24,6 +24,7 @@ import type { RoomName } from "shared/utility/room_name_types"
 import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
 import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/standard_io/integrated_attack_command"
 import { execResourceCommand } from "./exec_commands/resource_command"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -85,6 +86,8 @@ export class ExecCommand implements ConsoleCommand {
         return this.findResearchableRooms()
       case "integrated_attack":
         return this.integratedAttack(args)
+      case "bot":
+        return this.bot(args)
       default:
         throw `Invalid script type ${scriptType}`
       }
@@ -598,5 +601,46 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private integratedAttack(args: string[]): CommandExecutionResult {
     return execIntegratedAttackCommand(args)
+  }
+
+  /** @throws */
+  private bot(args: string[]): CommandExecutionResult {
+    const argumentParser = new ArgumentParser(args)
+    const commands = ["help", "losing_room"] as const
+    const command = argumentParser.list.stringInList(0, "command", commands).parse()
+
+    switch (command) {
+    case "help":
+      return `available commands: ${commands.join(", ")}`
+
+    case "losing_room": {
+      const subCommands = ["add", "remove"] as const
+      const subCommand = argumentParser.list.stringInList(1, "sub command", subCommands).parse()
+      const roomName = argumentParser.list.roomName(2, "room name").parse({my: true})
+      switch (subCommand) {
+      case "add":
+        if (Memory.gameInfo.losingRoomNames?.includes(roomName) === true) {
+          throw `${roomLink(roomName)} is already in the list`
+        }
+        if (Memory.gameInfo.losingRoomNames == null) {
+          Memory.gameInfo.losingRoomNames = []
+        }
+        Memory.gameInfo.losingRoomNames.push(roomName)
+        return `${roomLink(roomName)} added`
+
+      case "remove": {
+        if (Memory.gameInfo.losingRoomNames == null) {
+          throw `${roomLink(roomName)} is not in the list`
+        }
+        const index = Memory.gameInfo.losingRoomNames.indexOf(roomName)
+        if (index < 0) {
+          throw `${roomLink(roomName)} is not in the list`
+        }
+        Memory.gameInfo.losingRoomNames.splice(index, 1)
+        return `${roomLink(roomName)} removed`
+      }
+      }
+    }
+    }
   }
 }
