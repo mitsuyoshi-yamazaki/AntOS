@@ -2,7 +2,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { isCommodityConstant, isDepositConstant, isHarvestableResourceConstant, isMineralBoostConstant } from "shared/utility/resource"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, roomLink, shortenedNumber } from "utility/log"
 import { ResourceManager } from "utility/resource_manager"
 
 /** @throws */
@@ -92,7 +92,7 @@ const listResource = (args: string[]): string => {
     }
     return lowerL === true ? -1 : 1
   })
-  return resources.map(([resourceType, amount]) => `- ${coloredResourceType(resourceType)}: ${amount}`).join("\n")
+  return resources.map(([resourceType, amount]) => `- ${coloredResourceType(resourceType)}: ${shortenedNumber(amount)}`).join("\n")
 }
 
 const resourceInRoom = (resourceType: ResourceConstant, options ?: { minimumAmount?: number }): string => {

@@ -48,12 +48,12 @@ export function tab(text: string, tabs: Tab): string {
 
 export function shortenedNumber(num: number): string {
   if (num < 2000) {
-    return `${num}`
+    return coloredText(`${num}`, "info")
   }
   if (num < 2000000) {
-    return `${Math.floor(num / 1000)}k`
+    return `${coloredText(`${Math.floor(num / 1000)}`, "info")}k`
   }
-  return `${Math.floor(num / 1000000)}M`
+  return `${coloredText(`${Math.floor(num / 1000000)}`, "info")}M`
 }
 
 export function describeTime(ticks: Timestamp): string {
