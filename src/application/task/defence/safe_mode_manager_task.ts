@@ -61,6 +61,10 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
       return taskOutputs
     }
 
+    if (Memory.gameInfo.losingRoomNames?.includes(roomResource.room.name) === true) {
+      return taskOutputs
+    }
+
     const invaders: AnyCreep[] = []
     invaders.push(...roomResource.hostiles.creeps)
     invaders.push(...roomResource.hostiles.powerCreeps)

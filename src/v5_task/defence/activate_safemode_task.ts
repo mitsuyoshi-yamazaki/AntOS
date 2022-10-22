@@ -41,6 +41,11 @@ export class ActivateSafemodeProblemSolver extends ProblemSolver {
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
     const controller = objects.controller
+
+    if (Memory.gameInfo.losingRoomNames?.includes(controller.room.name) === true) {
+      return TaskStatus.Finished
+    }
+
     const result = controller.activateSafeMode()
 
     switch (result) {
