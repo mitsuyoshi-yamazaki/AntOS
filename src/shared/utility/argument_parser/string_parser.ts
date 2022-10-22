@@ -145,6 +145,36 @@ export class TypedStringListArgument<T extends string> extends SingleOptionalArg
   }
 }
 
+export class StringInListArgument<T extends string> extends SingleOptionalArgument<void, T> {
+  public constructor(
+    key: string,
+    value: string | null,
+    private readonly valueList: Readonly<T[]>,
+    parseOptions?: ArgumentParsingOptions,
+  ) {
+    super(key, value, parseOptions)
+  }
+
+  /** throws */
+  public parse(): T {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    if (!this.isSpecifiedType(this.value)) {
+      throw `${this.value} is not in ${this.valueList}`
+    }
+    return this.value
+  }
+
+  private isSpecifiedType(value: string): value is T {
+    if ((this.valueList as Readonly<string[]>).includes(value) === true) {
+      return true
+    }
+    return false
+  }
+}
+
 export class PowerTypeArgument extends SingleOptionalArgument<void, PowerConstant> {
   /** throws */
   public parse(): PowerConstant {
