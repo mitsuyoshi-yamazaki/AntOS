@@ -2,7 +2,6 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
 import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
-import { PrimitiveLogger } from "../primitive_logger"
 import { coloredResourceType, coloredText, profileLink, roomLink } from "utility/log"
 import { RoomResources } from "room_resource/room_resources"
 import { OperatingSystem } from "os/os"
@@ -22,9 +21,9 @@ import { } from "../../../../submodules/private/attack/planning/attack_plan"
 import { } from "../../../../submodules/private/attack/platoon/platoon"
 import { SwcAllyRequest } from "script/swc_ally_request"
 import type { RoomName } from "shared/utility/room_name_types"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
 import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/standard_io/integrated_attack_command"
+import { execResourceCommand } from "./exec_commands/resource_command"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -47,7 +46,7 @@ export class ExecCommand implements ConsoleCommand {
       case "describeLabs":
         return this.describeLabs()
       case "resource":
-        return this.resource(args)
+        return execResourceCommand(args)
       case "set_waiting_position":
         return this.setWaitingPosition()
       case "show_room_plan":
@@ -233,149 +232,6 @@ export class ExecCommand implements ConsoleCommand {
       return "" // FixMe: nullチェック
     }
     return describeLabs(roomName)
-  }
-
-  /** @throws */
-  private resource(args: string[]): CommandExecutionResult {
-    const commandList = ["help", "room", "collect", "list"]
-
-    const command = args.shift()
-    const listArguments = new ListArguments(args)
-
-    switch (command) {
-    case "help":
-      return `commands: ${commandList}`
-    case "room": {
-      const resourceType = listArguments.resourceType(0, "resource type").parse()
-      const minimumAmount = ((): number | undefined => {
-        if (listArguments.has(1) !== true) {
-          return undefined
-        }
-        return listArguments.int(1, "minimum amount").parse({min: 1})
-      })()
-      return this.resourceInRoom(resourceType, { minimumAmount })
-    }
-    case "collect": {
-      const resourceType = listArguments.resourceType(0, "resource type").parse()
-      const destinationRoomResource = listArguments.ownedRoomResource(1, "room name").parse()
-      const rawAmount = listArguments.string(2, "amount").parse()
-      const amount = ((): number | "all" => {
-        if (rawAmount === "all") {
-          return "all"
-        }
-        const parsed = parseInt(rawAmount, 10)
-        if (isNaN(parsed) === true) {
-          throw `invalid amount ${rawAmount}, specify number or "all"`
-        }
-        return parsed
-      })()
-
-      const keywordArguments = new KeywordArguments(args)
-      const forced = keywordArguments.boolean("forced").parseOptional() ?? false
-
-      const fromRoomResource = listArguments.has(3) ? listArguments.ownedRoomResource(3, "from room name").parse() : null
-
-      return this.collectResource(resourceType, destinationRoomResource, amount, fromRoomResource, forced)
-    }
-    case "list":
-      return this.listResource()
-
-    default:
-      return `invalid command: ${command}, "help" to show manual`
-    }
-  }
-
-  private listResource(): CommandExecutionResult {
-    const isLowercase = (value: string): boolean => (value === value.toLocaleLowerCase())
-    const resources = Array.from(ResourceManager.list().entries()).sort(([lhs], [rhs]) => {
-      const lowerL = isLowercase(lhs)
-      const lowerR = isLowercase(rhs)
-      if (lowerL === true && lowerR === true) {
-        return rhs.length - lhs.length
-      }
-      if (lowerL === false && lowerR === false) {
-        return lhs.length - rhs.length
-      }
-      return lowerL === true ? -1 : 1
-    })
-    resources.forEach(([resourceType, amount]) => {
-      const amountDescription = ((): string => {
-        return `${amount}`  // TODO: format
-      })()
-      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amountDescription}`)
-    })
-    return "ok"
-  }
-
-  private resourceInRoom(resourceType: ResourceConstant, options?: { minimumAmount?: number }): CommandExecutionResult {
-    const minimumAmount = options?.minimumAmount ?? 0
-    const resourceInRoom = ResourceManager.resourceInRoom(resourceType)
-    const results: string[] = [
-      `${coloredResourceType(resourceType)}: `,
-      ...Array.from(resourceInRoom.entries()).flatMap(([roomName, amount]): string[] => {
-        if (amount < minimumAmount) {
-          return []
-        }
-        return [`- ${roomLink(roomName)}: ${amount}`]
-      })
-    ]
-    return results.join("\n")
-  }
-
-  /** @throws */
-  private collectResource(resourceType: ResourceConstant, destinationRoomResource: OwnedRoomResource, amount: number | "all", fromRoomResource: OwnedRoomResource | null, forced: boolean): CommandExecutionResult {
-    if (destinationRoomResource.activeStructures.terminal == null) {
-      throw `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomResource.room.name)}`
-    }
-    if (forced !== true) {
-      if (amount === "all") {
-        const resourceAmount = ResourceManager.amount(resourceType)
-        if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
-          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (${resourceAmount} ${coloredResourceType(resourceType)})`
-        }
-      } else {
-        if (destinationRoomResource.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-          throw `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomResource.room.name)} (set forced=1 to send anyway)`
-        }
-      }
-    }
-
-    if (fromRoomResource != null) {
-      if (fromRoomResource.activeStructures.terminal == null) {
-        throw `${roomLink(fromRoomResource.room.name)} has no terminal`
-      }
-      if (fromRoomResource.activeStructures.terminal.cooldown > 0) {
-        throw `terminal in ${roomLink(fromRoomResource.room.name)} under cooldown (${fromRoomResource.activeStructures.terminal.cooldown})`
-      }
-      const sendAmount = ((): number => {
-        const usedAmount = fromRoomResource.activeStructures.terminal.store.getUsedCapacity(resourceType)
-        if (usedAmount <= 0) {
-          throw `no ${coloredResourceType(resourceType)} in terminal in ${roomLink(fromRoomResource.room.name)}`
-        }
-        if (amount === "all") {
-          return usedAmount
-        }
-        if (usedAmount < amount) {
-          throw `not enough ${coloredResourceType(resourceType)} in terminal in ${roomLink(fromRoomResource.room.name)} (${usedAmount})`
-        }
-        return amount
-      })()
-      const result = fromRoomResource.activeStructures.terminal.send(resourceType, sendAmount, destinationRoomResource.room.name)
-      switch (result) {
-      case OK:
-        return `${sendAmount} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomResource.room.name)} from ${roomLink(fromRoomResource.room.name)}`
-      default:
-        throw `terminal.send(${coloredResourceType(resourceType)}, ${sendAmount}) failed with ${result}`
-      }
-    }
-
-    const result = ResourceManager.collect(resourceType, destinationRoomResource.room.name, amount)
-    switch (result.resultType) {
-    case "succeeded":
-      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomResource.room.name)}`
-    case "failed":
-      throw result.reason.errorMessage
-    }
   }
 
   // Game.io("exec set_waiting_position room_name=W52S25 pos=35,21")

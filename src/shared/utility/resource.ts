@@ -112,6 +112,21 @@ export const ResourceConstant: ResourceConstant[] = [
   ...CommodityConstant,
 ]
 
+export const HarvestableResourceConstants = [
+  RESOURCE_ENERGY,
+  RESOURCE_POWER,
+  ...MineralConstant,
+  ...DepositConstant,
+] as const
+export type HarvestableResourceConstant = typeof HarvestableResourceConstants[number]
+
+export const isHarvestableResourceConstant = (resourceType: ResourceConstant): resourceType is HarvestableResourceConstant => {
+  if ((HarvestableResourceConstants as Readonly<ResourceConstant[]>).includes(resourceType) === true) {
+    return true
+  }
+  return false
+}
+
 export function isMineralBoostConstant(arg: string): arg is MineralBoostConstant {
   return (MineralBoostConstant as string[]).includes(arg)
 }
