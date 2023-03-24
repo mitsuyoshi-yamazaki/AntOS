@@ -3,22 +3,21 @@ import { coloredText, roomLink, Tab, tab } from "utility/log"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { OperatingSystem } from "os/os"
 import { isOwnedRoomProcess, OwnedRoomProcess } from "process/owned_room_process"
 import { RoomResources } from "room_resource/room_resources"
 import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
+import { RoomName } from "shared/utility/room_name_types"
 
-export const unclaim = (roomResource: OwnedRoomResource, args: string[]): string => {
+export const unclaim = (roomName: RoomName, args: string[]): string => {
   const keywordArguments = new KeywordArguments(args)
   const dryRun = keywordArguments.boolean("dry_run").parseOptional() ?? true
 
-  return unclaimRoom(roomResource, dryRun)
+  return unclaimRoom(roomName, dryRun)
 }
 
-const unclaimRoom = (roomResource: OwnedRoomResource, dryRun: boolean): string => {
-  const roomName = roomResource.room.name
+const unclaimRoom = (roomName: RoomName, dryRun: boolean): string => {
   const processesToKill: (Process & OwnedRoomProcess)[] = []
 
   OperatingSystem.os.listAllProcesses().forEach(processInfo => {
@@ -112,40 +111,42 @@ const unclaimRoom = (roomResource: OwnedRoomResource, dryRun: boolean): string =
   return messages.join("\n")
 }
 
-export const prepareUnclaim = (roomResource: OwnedRoomResource, args: string[]): string => {
+export const prepareUnclaim = (roomName: RoomName, args: string[]): string => {
   const results: string[] = []
 
   const keywordArguments = new KeywordArguments(args)
-  const roomName = roomResource.room.name
+  const roomResource = RoomResources.getOwnedRoomResource(roomName)
 
-  // Send Resource
-  if (roomResource.activeStructures.terminal != null) {
-    const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
-    const excludedResourceTypes = ((): ResourceConstant[] => {
-      const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
-      if (given != null) {
-        return given
-      }
-      return [
-        RESOURCE_KEANIUM,
-        RESOURCE_LEMERGIUM,
-        RESOURCE_UTRIUM,
-        RESOURCE_ZYNTHIUM,
-        RESOURCE_OXYGEN,
-        RESOURCE_HYDROGEN,
-        RESOURCE_CATALYST,
-      ]
-    })()
+  if (roomResource != null) {
+    // Send Resource
+    if (roomResource.activeStructures.terminal != null) {
+      const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
+      const excludedResourceTypes = ((): ResourceConstant[] => {
+        const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
+        if (given != null) {
+          return given
+        }
+        return [
+          RESOURCE_KEANIUM,
+          RESOURCE_LEMERGIUM,
+          RESOURCE_UTRIUM,
+          RESOURCE_ZYNTHIUM,
+          RESOURCE_OXYGEN,
+          RESOURCE_HYDROGEN,
+          RESOURCE_CATALYST,
+        ]
+      })()
 
-    const process = OperatingSystem.os.addProcess(null, processId => {
-      return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
-    })
-    results.push(`send resource process ${process.processId} launched`)
+      const process = OperatingSystem.os.addProcess(null, processId => {
+        return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
+      })
+      results.push(`send resource process ${process.processId} launched`)
+    }
+
+    // Stop Mineral Harvesting
+    roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
+    results.push("stopped mineral harvesting")
   }
-
-  // Stop Mineral Harvesting
-  roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
-  results.push("stopped mineral harvesting")
 
   const processesToKill: Process[] = []
 

@@ -395,18 +395,18 @@ export class ExecCommand implements ConsoleCommand {
   /** @throws */
   private unclaim(args: string[]): CommandExecutionResult {
     const listArguments = new ListArguments(args)
-    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    const roomName = listArguments.roomName(0, "room name").parse()
     args.shift()
 
-    return unclaim(roomResource, args)
+    return unclaim(roomName, args)
   }
 
   private prepareUnclaim(args: string[]): CommandExecutionResult {
     const listArguments = new ListArguments(args)
-    const roomResource = listArguments.ownedRoomResource(0, "room name").parse()
+    const roomName = listArguments.roomName(0, "room name").parse()
     args.shift()
 
-    return prepareUnclaim(roomResource, args)
+    return prepareUnclaim(roomName, args)
   }
 
   /** @throws */
