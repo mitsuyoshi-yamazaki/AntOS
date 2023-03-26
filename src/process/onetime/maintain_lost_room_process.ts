@@ -19,8 +19,27 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { UpgradeControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/upgrade_controller_api_wrapper"
 import { HarvestEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/harvest_energy_api_wrapper"
 import { roomLink } from "utility/log"
+import { Position } from "shared/utility/position"
+import { decodeRoomPosition, describePosition, RoomPositionFilteringOptions } from "prototype/room_position"
+import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { BuildApiWrapper } from "v5_object_task/creep_task/api_wrapper/build_api_wrapper"
 
 const spawnInterval = 2000
+
+type ControllerWallPosition = {
+  readonly case: "position"
+  readonly position: RoomPosition
+}
+type ControllerWallConstructionSite = {
+  readonly case: "construction site"
+  readonly site: ConstructionSite<STRUCTURE_WALL>
+}
+type ControllerWallStructure = {
+  readonly case: "structure"
+  readonly structure: StructureWall
+}
+type ControllerWall = ControllerWallPosition | ControllerWallConstructionSite | ControllerWallStructure
 
 ProcessDecoder.register("MaintainLostRoomProcess", state => {
   return MaintainLostRoomProcess.decode(state as MaintainLostRoomProcessState)
@@ -46,6 +65,7 @@ export class MaintainLostRoomProcess implements Process, Procedural, OwnedRoomPr
   private get nextSpawnTime(): Timestamp {
     return this.lastSpawnTime + spawnInterval
   }
+  private controllerWallPositions: Position[] | null = null
 
   private constructor(
     public readonly launchTime: number,
@@ -155,11 +175,40 @@ export class MaintainLostRoomProcess implements Process, Procedural, OwnedRoomPr
       return FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, waypoints))
     }
 
-    if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       const controller = creep.room.controller
       if (controller == null) {
         creep.say("no ctrl")
         return null
+      }
+      if (controller.upgradeBlocked != null) {
+        const controllerWall = this.getControllerWall(controller)
+
+        switch (controllerWall?.case) {
+        case "position": {
+          const result = controller.room.createConstructionSite(controllerWall.position, STRUCTURE_WALL)
+          if (result !== OK) {
+            PrimitiveLogger.fatal(`${this.identifier} createConstructionSite() at ${controllerWall.position} ${roomLink(controller.room.name)} failed with ${result}`)
+          }
+          return null
+        }
+
+        case "construction site":
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(BuildApiWrapper.create(controllerWall.site)))
+
+        case "structure":
+          return FleeFromAttackerTask.create(MoveToTargetTask.create(RepairApiWrapper.create(controllerWall.structure)))
+
+        case null:
+        case undefined:
+          break
+
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = controllerWall
+          break
+        }
+        }
       }
       return FleeFromAttackerTask.create(MoveToTargetTask.create(UpgradeControllerApiWrapper.create(controller)))
     }
@@ -171,5 +220,56 @@ export class MaintainLostRoomProcess implements Process, Procedural, OwnedRoomPr
     }
 
     return FleeFromAttackerTask.create(MoveToTargetTask.create(HarvestEnergyApiWrapper.create(source, false)))
+  }
+
+  private getControllerWall(controller: StructureController): ControllerWall | null {
+    if (this.controllerWallPositions == null) {
+      this.controllerWallPositions = this.getControllerWallPositions(controller)
+    }
+
+    const roomName = controller.room.name
+    const repairStructures: StructureWall[] = []
+
+    for (const position of this.controllerWallPositions) {
+      const roomPosition = decodeRoomPosition(position, roomName)
+      const wall = (roomPosition.findInRange(FIND_STRUCTURES, 0, { filter: { structureType: STRUCTURE_WALL } }) as StructureWall[])[0]
+      if (wall != null) {
+        repairStructures.push(wall)
+        continue
+      }
+
+      const constructionSite = (roomPosition.findInRange(FIND_MY_CONSTRUCTION_SITES, 0) as ConstructionSite<STRUCTURE_WALL>[])[0]
+      if (constructionSite != null) {
+        return {
+          case: "construction site",
+          site: constructionSite,
+        }
+      }
+
+      return {
+        case: "position",
+        position: roomPosition,
+      }
+    }
+
+    repairStructures.sort((lhs, rhs) => lhs.hits - rhs.hits)
+    const structureToRepair = repairStructures[0]
+    if (structureToRepair == null) {
+      return null
+    }
+    return {
+      case: "structure",
+      structure: structureToRepair,
+    }
+  }
+
+  private getControllerWallPositions(controller: StructureController): Position[] {
+    const options: RoomPositionFilteringOptions = {
+      excludeItself: true,
+      excludeStructures: false,
+      excludeTerrainWalls: true,
+      excludeWalkableStructures: false,
+    }
+    return controller.pos.positionsInRange(1, options)
   }
 }
