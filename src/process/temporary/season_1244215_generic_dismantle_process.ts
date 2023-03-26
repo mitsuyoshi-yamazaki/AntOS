@@ -223,6 +223,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
           }
         }
       }
+      creep.say("nth to do")
       return
     }
 
@@ -241,6 +242,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     const target = this.getTarget(creep)
     if (target == null) {
       creep.v5task = this.wrappedTask(MoveToTask.create(creep.pos, 1)) // 何もしないが、FleeFromAttackerTaskを動かすため必要
+      creep.say("finished")
       return
     }
     creep.v5task = this.wrappedTask(MoveToTargetTask.create(DismantleApiWrapper.create(target)))
@@ -267,18 +269,6 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
   }
 
   private getTarget(creep: Creep): AnyStructure | null {
-    const controller = creep.room.controller
-    if (controller != null) {
-      if (controller.my === true) {
-        return null
-      }
-      if (controller.reservation != null && controller.reservation.username === Game.user.name) {
-        if (this.action !== "attack in reserved room") {
-          return null
-        }
-      }
-    }
-
     const target = ((): AnyStructure | null => {
       const targetIds = [...this.targetIds]
       for (let i = 0; i < this.targetIds.length; i += 1) {
@@ -307,6 +297,18 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
     }
     if (this.action === "specified target only") {
       return null
+    }
+
+    const controller = creep.room.controller
+    if (controller != null) {
+      if (controller.my === true) {
+        return null
+      }
+      if (controller.reservation != null && controller.reservation.username === Game.user.name) {
+        if (this.action !== "attack in reserved room") {
+          return null
+        }
+      }
     }
 
     const excluded: StructureConstant[] = [
