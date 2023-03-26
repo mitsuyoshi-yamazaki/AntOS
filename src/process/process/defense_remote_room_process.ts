@@ -264,7 +264,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomP
     })
 
     if (intercepters.length < creepMaxCount && this.intercepterCreepNames[target.roomName] == null) {
-      if (roomResource.getResourceAmount(RESOURCE_ENERGY) > (roomResource.controller.level * 5000)) {
+      if (roomResource.controller.level <= 4 || roomResource.getResourceAmount(RESOURCE_ENERGY) > (roomResource.controller.level * 5000)) {
         this.spawnIntercepter(roomResource, target)
       }
     }
@@ -371,7 +371,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomP
     })()
     const moveCount = Math.ceil((rangedAttackCount + healCount) / 2)
 
-    const body: BodyPartConstant[] = [
+    let body: BodyPartConstant[] = [
       ...Array(moveCount).fill(MOVE),
       ATTACK, ATTACK,
       ...Array(rangedAttackCount).fill(RANGED_ATTACK),
@@ -383,9 +383,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomP
     const energyCapacity = roomResource.room.energyCapacityAvailable
     const bodyPartMaxCount = GameConstants.creep.body.bodyPartMaxCount
     if (bodyCost > energyCapacity || body.length > bodyPartMaxCount) {
-      const shouldNotify = target.attacker.onlyNpc !== true
-      raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
-      return
+      if (target.totalPower.heal > 0 || (target.totalPower.attack + target.totalPower.rangedAttack) > 100) {
+        const shouldNotify = target.attacker.onlyNpc !== true
+        raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
+        return
+      }
+      body = [MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE]
+      if (CreepBody.cost(body) > energyCapacity) {
+        const shouldNotify = target.attacker.onlyNpc !== true
+        raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
+        return
+      }
     }
 
     if (target.attacker.onlyNpc !== true) { // TODO: 相手をコピーすれば良いのでは
