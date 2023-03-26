@@ -26,6 +26,9 @@ import { RoomPositionFilteringOptions } from "prototype/room_position"
 import { NormalRoomInfo } from "room_resource/room_info"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
+import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
+import { Environment } from "utility/environment"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 function moveToOptions(): MoveToTargetTaskOptions {
   return {
@@ -112,6 +115,9 @@ export class PrimitiveWorkerTask extends Task {
       if (neighbourRoomInfo.numberOfSources <= 0) {
         return []
       }
+      if (Environment.world === "swc" && neighbourRoomName === "E23N18") {  // FixMe:
+        return []
+      }
       return {
         roomName: neighbourRoomName,
         roomInfo: neighbourRoomInfo,
@@ -133,7 +139,11 @@ export class PrimitiveWorkerTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskFor(creep, objects, harvestableNeighbourRooms.map(info => info.roomName))
+        const task = this.newTaskFor(creep, objects, harvestableNeighbourRooms.map(info => info.roomName))
+        if (task == null) {
+          return null
+        }
+        return FleeFromAttackerTask.create(task)
       },
       creepPoolFilter,
     )
@@ -335,7 +345,11 @@ export class PrimitiveWorkerTask extends Task {
       return lhs.v5TargetedBy.length - rhs.v5TargetedBy.length
     })[0] ?? objects.sources[0]
     if (targetSource != null) {
-      return MoveToTargetTask.create(HarvestEnergyApiWrapper.create(targetSource), moveToOptions())
+      const tasks: CreepTask[] = [
+        MoveToRoomTask.create(targetSource.room.name, []),
+        MoveToTargetTask.create(HarvestEnergyApiWrapper.create(targetSource), moveToOptions()),
+      ]
+      return SequentialTask.create(tasks, {ignoreFailure: false, finishWhenSucceed: false})
     }
     return null
   }
