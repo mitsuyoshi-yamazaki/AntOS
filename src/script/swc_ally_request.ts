@@ -6,7 +6,13 @@ import type { RoomName } from "shared/utility/room_name_types"
 import { swcAllyRequestSegmentId } from "../../submodules/private/constants"
 
 const segmentID = swcAllyRequestSegmentId
-const allyList = Memory.gameInfo.whitelist
+
+/**
+API provides RawMemory, it contains segments RawMemory.segments,
+and we can make some of the segments public by RawMemory.setPublicSegments(ids),
+other players can access public segment RawMemory.setActiveForeignSegment(username, ids)
+https://docs.screeps.com/api/#RawMemory
+ */
 
 // Priority convention:
 // 1: I really need this or I'm going to die
@@ -187,6 +193,7 @@ export const SwcAllyRequest: SwcAllyRequestInterface = {
 // This sets foreign segments. Maybe you set them yourself for some other reason
 // Up to you to fix that.
 const checkAllies = (): void => {
+  const allyList = Memory.gameInfo.whitelist
   if (allyList.length === 0) {
     currentRequests.clear()
     return
