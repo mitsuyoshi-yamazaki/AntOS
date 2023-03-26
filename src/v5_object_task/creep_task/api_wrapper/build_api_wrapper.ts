@@ -71,7 +71,9 @@ export class BuildApiWrapper implements ApiWrapper<Creep, BuildApiWrapperResult>
         return IN_PROGRESS
       }
 
-      PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
+      if ((Game.time % 7) === 0) {
+        PrimitiveLogger.fatal(`creep.build() returns ${result}, ${creep.name}, construction site ${this.target} in ${roomLink(creep.room.name)}`)
+      }
       return ERR_PROGRAMMING_ERROR
     }
 
