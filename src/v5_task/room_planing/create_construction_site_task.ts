@@ -7,6 +7,7 @@ import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Environment } from "utility/environment"
 
 export const constructionSiteFlagColorMap = new Map<ColorConstant, StructureConstant>([
   [COLOR_BROWN, STRUCTURE_ROAD],
@@ -22,8 +23,9 @@ export const constructionSiteFlagColorMap = new Map<ColorConstant, StructureCons
 ])
 
 const structurePriority: StructureConstant[] = [
+  STRUCTURE_SPAWN,  // FixMe: SWC
   STRUCTURE_TOWER,
-  STRUCTURE_SPAWN,
+  // STRUCTURE_SPAWN,
   STRUCTURE_EXTENSION,
   STRUCTURE_STORAGE,
   STRUCTURE_TERMINAL,
@@ -137,6 +139,12 @@ export class CreateConstructionSiteTask extends Task {
     if (room.controller == null) {
       PrimitiveLogger.fatal(`[Probram bug] Room ${roomLink(room.name)} doesn't have a controller ${this.constructor.name}`)
       return
+    }
+
+    if (Environment.world === "swc") {
+      if (roomResource.constructionSites.length > 0) {
+        return
+      }
     }
 
     const [shouldPlaceExtensions, shouldPlaceRoads] = ((): [boolean, boolean] => {

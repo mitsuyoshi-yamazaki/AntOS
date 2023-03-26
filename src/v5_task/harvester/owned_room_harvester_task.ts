@@ -28,6 +28,7 @@ import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Environment } from "utility/environment"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -117,8 +118,20 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     if (container != null) {  // FixMe: containerがないときでもrunHarvesterを行う
       problemFinders.push(...this.runHarvester(objects, source, container))
     } else {
-      this.checkContainer(objects, childTaskResults.finishedTasks, source)
+      if (objects.activeStructures.spawns.length > 0) { // FixMe: SWC対応
+        this.checkContainer(objects, childTaskResults.finishedTasks, source)
+      }
     }
+
+    // if (Environment.world === "swc") {
+    //   const tasks = this.children.filter(task => {
+    //     if (task instanceof BuildContainerTask) {
+    //       return true
+    //     }
+    //     return false
+    //   })
+    //   tasks.forEach(task => this.removeChildTask(task))
+    // }
 
     return TaskStatus.InProgress
   }
