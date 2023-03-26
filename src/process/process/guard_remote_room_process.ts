@@ -29,6 +29,7 @@ ProcessDecoder.register("GuardRemoteRoomProcess", state => {
 
 const guardRemoteRoomProcessCreepType = [
   "test-tiny-ranged-attacker",   // RCL3
+  "tiny-ranged-attacker",   // RCL5
   "small-ranged-attacker",       // RCL6
   "ranged-attacker",             // RCL7
   "high-speed-ranged-attacker",  // RCL8
@@ -96,6 +97,14 @@ const testTinyRangedAttackerBody: BodyPartConstant[] = [
   TOUGH,
   RANGED_ATTACK,
   MOVE, MOVE, MOVE,
+  HEAL,
+]
+const tinyRangedAttackerBody: BodyPartConstant[] = [
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE,
+  RANGED_ATTACK, RANGED_ATTACK,
   HEAL,
 ]
 const smallRangedAttackerBody: BodyPartConstant[] = [
@@ -562,6 +571,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, OwnedRoomPro
 
     switch (this.creepType) {
     case "test-tiny-ranged-attacker":
+    case "tiny-ranged-attacker":
     case "small-ranged-attacker":
     case "ranged-attacker":
     case "high-speed-ranged-attacker":
@@ -1020,6 +1030,11 @@ function creepSpecFor(creepType: GuardRemoteRoomProcessCreepType): { roles: Cree
     return {
       roles: rangedAttackerRole,
       body: testTinyRangedAttackerBody,
+    }
+  case "tiny-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: tinyRangedAttackerBody,
     }
   case "small-ranged-attacker":
     return {
