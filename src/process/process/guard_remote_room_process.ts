@@ -510,6 +510,7 @@ export class GuardRemoteRoomProcess implements Process, Procedural, OwnedRoomPro
     const whitelist: string[] = [
       ...Memory.gameInfo.whitelist,
       ...sourceHarvestWhitelist,
+      ...Game.whitelist,
     ]
 
     const targetRoom = Game.rooms[this.targetRoomName]
