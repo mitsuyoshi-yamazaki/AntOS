@@ -27,6 +27,7 @@ export const BootLoader = {
     case "botarena":
     case "persistent world":
     case "season 4":
+    case "season 5":
     case "simulation":
     case "swc":
     case "non game":  // ApplicationProcessLoader以外のOS機能は動作させる
