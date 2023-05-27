@@ -3,7 +3,7 @@ import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
 import { ProcessDecoder } from "process/process_decoder"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("World35872159TestResourcePoolProcess", state => {
   return World35872159TestResourcePoolProcess.decode(state as World35872159TestResourcePoolProcessState)

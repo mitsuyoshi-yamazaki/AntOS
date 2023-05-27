@@ -2,7 +2,7 @@ import { Task } from "application/task"
 import { TaskIdentifier } from "application/task_identifier"
 import { emptyTaskOutputs, TaskOutputs } from "application/task_requests"
 import { TaskState } from "application/task_state"
-import type { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { GameConstants } from "utility/constants"
 import { EconomyTaskPerformance } from "application/task_profit/economy_task_performance"
 import { UnexpectedProblem } from "application/problem/unexpected/unexpected_problem"
@@ -83,6 +83,7 @@ export class OwnedRoomMineralHarvesterTask extends Task<OwnedRoomMineralHarveste
       case "persistent world":
       case "swc":
       case "private":
+      case "non game":
       case "unknown":
         return false
       case "simulation":

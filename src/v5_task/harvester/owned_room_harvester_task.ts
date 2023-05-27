@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -28,6 +28,7 @@ import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { FillEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/fill_energy_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Environment } from "utility/environment"
 
 export interface OwnedRoomHarvesterTaskState extends TaskState {
   /** room name */
@@ -117,8 +118,20 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     if (container != null) {  // FixMe: containerがないときでもrunHarvesterを行う
       problemFinders.push(...this.runHarvester(objects, source, container))
     } else {
-      this.checkContainer(objects, childTaskResults.finishedTasks, source)
+      if (objects.activeStructures.spawns.length > 0) { // FixMe: SWC対応
+        this.checkContainer(objects, childTaskResults.finishedTasks, source)
+      }
     }
+
+    // if (Environment.world === "swc") {
+    //   const tasks = this.children.filter(task => {
+    //     if (task instanceof BuildContainerTask) {
+    //       return true
+    //     }
+    //     return false
+    //   })
+    //   tasks.forEach(task => this.removeChildTask(task))
+    // }
 
     return TaskStatus.InProgress
   }
@@ -201,7 +214,7 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
         return source.energyCapacity
       }
       const powerConstant = GameConstants.power.regenSource
-      const value = powerConstant.value[regenEffect.level]
+      const value = powerConstant.value[regenEffect.level - 1]
       if (value == null) {
         PrimitiveLogger.programError(`Source ${source.id} in ${roomLink(source.room.name)} has effect with unimplemented level ${regenEffect.level}`)
         return source.energyCapacity

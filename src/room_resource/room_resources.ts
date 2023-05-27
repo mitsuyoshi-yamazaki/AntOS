@@ -2,7 +2,7 @@ import { Problem } from "application/problem"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { TaskProgress } from "object_task/object_task"
 import { CreepName, isV6Creep, V6Creep } from "prototype/creep"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { NormalRoomResource } from "./room_resource/normal_room_resource"
 import { OwnedRoomCreepInfo, OwnedRoomResource } from "./room_resource/owned_room_resource"
 import { RoomResource } from "./room_resource"
@@ -46,7 +46,7 @@ export const RoomResources: RoomResourcesInterface = {
     enumerateCreeps()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
-      if (room.controller != null && room.controller.my === true) {
+      if (room.controller != null && room.controller.my === true && Memory.ignoreRooms.includes(roomName) !== true) {
         const creepInfo: OwnedRoomCreepInfo[] = (allCreeps.get(roomName) ?? []).map(creep => {
           return {
             creep,

@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -20,6 +20,7 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { TaskState } from "v5_task/task_state"
 import { bodyCost } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
+import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 
 export interface GeneralWorkerTaskState extends TaskState {
   /** room name */
@@ -75,7 +76,11 @@ export class GeneralWorkerTask extends Task {
       filterTaskIdentifier,
       CreepPoolAssignPriority.Low,
       (creep: Creep): CreepTask | null => {
-        return this.newTaskFor(creep, objects)
+        const task = this.newTaskFor(creep, objects)
+        if (task == null) {
+          return null
+        }
+        return FleeFromAttackerTask.create(task)
       },
       creepPoolFilter,
     )

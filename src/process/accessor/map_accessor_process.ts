@@ -1,13 +1,14 @@
 import { GameMap } from "game/game_map"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { coloredText, roomLink } from "utility/log"
-import { RoomCoordinate, RoomName } from "utility/room_name"
 import { RoomSector } from "utility/room_sector"
 import { ProcessState } from "../process_state"
+import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 ProcessDecoder.register("MapAccessorProcess", state => {
   return MapAccessorProcess.decode(state as MapAccessorProcessState)
@@ -54,7 +55,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "show", "set", "show_missing_waypoints", "set_highway_waypoints"]
+    const commandList = ["help", "show", "set", "show_missing_waypoints", "set_highway_waypoints", "show_travel_distance"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -70,6 +71,8 @@ export class MapAccessorProcess implements Process, MessageObserver {
         return this.showMissingWaypoints()
       case "set_highway_waypoints":
         return this.setHighwayWaypoints(components)
+      case "show_travel_distance":
+        return this.showTravelDistance(components)
       default:
         throw `Invalid command ${command}. "help" to show command list`
       }
@@ -93,6 +96,22 @@ export class MapAccessorProcess implements Process, MessageObserver {
       this.missingWaypointIdentifiers.push(waypointIdentifier)
       this.missingWaypoints.push(waypoint)
     })
+  }
+
+  /** @throws */
+  private showTravelDistance(commandComponents: string[]): string {
+    // const listArguments = new ListArguments(commandComponents)
+    // const fromRoomName = listArguments.roomName(0, "from room name").parse()
+    // const toRoomName = listArguments.roomName(0, "to room name").parse()
+    // const noWaypoints = GameMap.getWaypoints(fromRoomName, toRoomName, {ignoreMissingWaypoints: true}) == null
+    // const travelDistance = GameMap.estimatedTravelDistance(fromRoomName, toRoomName)
+
+    // if (noWaypoints === true) {
+    //   return `distance: ${travelDistance} (no waypoints)`
+    // }
+    // return `distance: ${travelDistance}`
+
+    throw "not implemented yet"
   }
 
   private showWaypoints(commandComponents: string[]): string {

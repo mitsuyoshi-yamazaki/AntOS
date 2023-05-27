@@ -1,10 +1,10 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredResourceType, roomLink } from "./log"
-import { MineralConstant } from "./resource"
-import { Result, ResultFailed } from "./result"
-import { RoomName } from "./room_name"
-import { ValuedArrayMap } from "./valued_collection"
+import { MineralConstant } from "../shared/utility/resource"
+import { Result, ResultFailed } from "../shared/utility/result"
+import { ValuedArrayMap } from "../shared/utility/valued_collection"
+import type { RoomName } from "../shared/utility/room_name_types"
 
 let list = null as Map<ResourceConstant, number> | null
 let resourceInRoom = null as Map<RoomName, number> | null

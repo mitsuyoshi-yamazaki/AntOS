@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "v5_task/general/general_creep_worker_task"
@@ -250,7 +250,8 @@ export class UpgraderTask extends GeneralCreepWorkerTask {
       if (isRcl8 === true) {
         return 1
       }
-      return Math.min(Math.max(this.availablePositions.length - 1, 3), 5)  // 全位置を埋めるとHaulerが入って来れなくなるため
+      const max = roomResource.roomInfoAccessor.config.upgraderMaxCount
+      return Math.min(Math.max(this.availablePositions.length - 1, 3), max)  // 全位置を埋めるとHaulerが入って来れなくなるため
     })()
 
     return [body, numberOfCreeps]

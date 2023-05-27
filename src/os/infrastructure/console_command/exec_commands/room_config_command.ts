@@ -4,11 +4,11 @@ import { describePosition } from "prototype/room_position"
 import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { powerName } from "utility/power"
-import { isMineralBoostConstant, isMineralCompoundConstant } from "utility/resource"
-import { RoomName } from "utility/room_name"
-import { KeywordArguments } from "../utility/keyword_argument_parser"
-import { ListArguments } from "../utility/list_argument_parser"
+import { powerName } from "shared/utility/power"
+import { isMineralBoostConstant, isMineralCompoundConstant } from "shared/utility/resource"
+import type { RoomName } from "shared/utility/room_name_types"
+import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
+import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 
 const numberAccessorCommands = [
   "mineral_max_amount",
@@ -21,7 +21,7 @@ type NumberAccessorCommands = typeof numberAccessorCommands[number]
 // Game.io("exec room_config <room name> <command> ...")
 /** @throws */
 export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: string[]): string {
-  const oldCommandList = ["wall_positions", "research_compounds", "refresh_research_labs"]
+  const oldCommandList = ["wall_positions", "refresh_research_labs"]
   const commandList: string[] = [
     "help",
     "waiting_position",
@@ -33,6 +33,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "toggle_auto_attack",
     "show_labs",
     "no_repair_walls",
+    "research",
     ...numberAccessorCommands,
     ...oldCommandList,
   ]
@@ -64,6 +65,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return showLabs(roomResource)
   case "no_repair_walls":
     return noRepairWalls(roomResource, args)
+  case "research":
+    return research(roomResource, args)
   case "mineral_max_amount":
   case "construction_interval":
   case "concurrent_construction_site_count":
@@ -73,14 +76,70 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     // ---- Old Commands ---- //
   case "wall_positions":
     return configureWallPositions(roomName, roomInfo, parseProcessArguments(args))
-  case "research_compounds":
-    return configureResearchCompounds(roomName, roomInfo, parseProcessArguments(args))
   case "refresh_research_labs":
     return refreshResearchLabs(roomName, roomResource, parseProcessArguments(args))
   // case "disable_boost_labs": // TODO: 消す
   //   return disableBoostLabs(roomName, roomInfo)
   default:
     throw `Invalid command ${command}, see "help"`
+  }
+}
+
+/** @throws */
+const research = (roomResource: OwnedRoomResource, args: string[]): string => {
+  const commands = ["help", "show", "add", "clear"]
+  const listArguments = new ListArguments(args)
+
+  const getCurentSettings = (): string => {
+    const entries = Object.entries(roomResource.roomInfo.config?.researchCompounds ?? {})
+    if (entries.length <= 0) {
+      return "no research compounds"
+    }
+    return entries
+      .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
+      .join("")
+  }
+
+  const command = listArguments.string(0, "command").parse()
+  switch (command) {
+  case "help":
+    return `commands: ${commands.join(", ")}`
+
+  case "show":
+    return getCurentSettings()
+
+  case "add": {
+    const compoundType = listArguments.typedString(1, "compound type", "MineralCompoundConstant", isMineralCompoundConstant).parse()
+    const amount = listArguments.int(2, "amount").parse({min: 1})
+
+    if (roomResource.roomInfo.config == null) {
+      roomResource.roomInfo.config = {}
+    }
+
+    if (roomResource.roomInfo.config.researchCompounds == null) {
+      roomResource.roomInfo.config.researchCompounds = {}
+    }
+
+    const oldValue = roomResource.roomInfo.config.researchCompounds[compoundType] ?? null
+    roomResource.roomInfo.config.researchCompounds[compoundType] = amount
+
+    if (oldValue != null) {
+      return `${coloredText("Updated:", "info")} ${coloredResourceType(compoundType)} (${oldValue} =&gt ${amount}): ${getCurentSettings()}`
+    }
+    return `${coloredText("Added:", "info")} ${coloredResourceType(compoundType)}: ${getCurentSettings()}`
+  }
+
+  case "clear": {
+    const currentSettings = getCurentSettings()
+    if (roomResource.roomInfo.config == null) {
+      roomResource.roomInfo.config = {}
+    }
+    roomResource.roomInfo.config.researchCompounds = {}
+    return `${coloredText("cleared", "info")}: ${currentSettings}`
+  }
+
+  default:
+    throw `invalid command ${command}, specify ${commands.join(", ")}`
   }
 }
 
@@ -490,13 +549,24 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
 }
 
 // ---- Old Commands ---- //
-/** throws */
+/** @throws */
 function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource, args: Map<string, string>): string {
   const room = roomResource.room
   const roomInfo = roomResource.roomInfo
   if (roomInfo.researchLab == null) {
     roomInfo.researchLab = setResearchLabs(room, roomInfo, args)
   }
+
+  const inputLabs = ((): StructureLab[] => {
+    const lab1 = Game.getObjectById(roomInfo.researchLab.inputLab1)
+    const lab2 = Game.getObjectById(roomInfo.researchLab.inputLab2)
+    if (lab1 == null || lab2 == null) {
+      const errorMessage = `input lab ${roomInfo.researchLab.inputLab1} and/or ${roomInfo.researchLab.inputLab2} is missing`
+      roomInfo.researchLab = undefined
+      throw errorMessage
+    }
+    return [lab1, lab2]
+  })()
 
   const labIdsInRoom = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_LAB } }) as StructureLab[])
     .map(lab => lab.id)
@@ -506,12 +576,24 @@ function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource
     roomInfo.researchLab.inputLab2,
     ...roomInfo.researchLab.outputLabs,
   ]
-  researchLabIds.forEach(researchLabId => {
-    const index = labIdsInRoom.indexOf(researchLabId)
-    if (index >= 0) {
+
+  try {
+    researchLabIds.forEach(researchLabId => {
+      const index = labIdsInRoom.indexOf(researchLabId)
+      if (index < 0) {
+        const labInstance = Game.getObjectById(researchLabId)
+        if (labInstance == null) {
+          throw `lab with ID ${researchLabId} not found in ${roomLink(roomName)}`
+        }
+        throw `lab ${labInstance} ${labInstance.pos} is not located in ${roomLink(roomName)} or iterated twice`
+      }
       labIdsInRoom.splice(index, 1)
-    }
-  })
+    })
+  } catch (error) {
+    roomInfo.researchLab = undefined
+
+    throw `research lab iteration failed: ${error}\nreset research lab IDs in Memory`
+  }
 
   const boostLabIds = roomResource.roomInfoAccessor.getBoostLabs().map(labInfo => labInfo.labId)
   if (boostLabIds != null) {
@@ -526,9 +608,23 @@ function refreshResearchLabs(roomName: RoomName, roomResource: OwnedRoomResource
   if (labIdsInRoom.length <= 0) {
     return `no unused lab in ${roomLink(roomName)}, ${boostLabIds?.length ?? 0} boost labs and ${researchLabIds.length} research labs`
   }
-  roomInfo.researchLab.outputLabs.push(...labIdsInRoom)
 
-  return `${labIdsInRoom.length} labs added to research output labs`
+  const addedOutputLabIds = labIdsInRoom.filter(labId => {
+    const lab = Game.getObjectById(labId)
+    if (lab == null) {
+      return false
+    }
+    if (inputLabs.some(inputLab => inputLab.pos.getRangeTo(lab.pos) > 2) === true) {
+      return false
+    }
+    return true
+  })
+
+  roomInfo.researchLab.outputLabs.push(
+    ...addedOutputLabIds
+  )
+
+  return `${addedOutputLabIds.length} labs added to research output labs`
 }
 
 //** throws */
@@ -555,79 +651,6 @@ function setResearchLabs(room: Room, roomInfo: OwnedRoomInfo, args: Map<string, 
     inputLab1: inputLab1Id,
     inputLab2: inputLab2Id,
     outputLabs: [],
-  }
-}
-
-function configureResearchCompounds(roomName: RoomName, roomInfo: OwnedRoomInfo, args: Map<string, string>): string {
-  const getCompoundSetting = (): [MineralCompoundConstant, number] | string => {
-    const compoundType = args.get("compound")
-    if (compoundType == null) {
-      return missingArgumentError("compound")
-    }
-    if (!isMineralCompoundConstant(compoundType)) {
-      return `${compoundType} is not valid mineral compound type`
-    }
-    const rawAmount = args.get("amount")
-    if (rawAmount == null) {
-      return missingArgumentError("amount")
-    }
-    const amount = parseInt(rawAmount, 10)
-    if (isNaN(amount) === true) {
-      return `amount is not a number ${rawAmount}`
-    }
-    return [
-      compoundType,
-      amount
-    ]
-  }
-
-  const action = args.get("action")
-  if(action == null) {
-    return missingArgumentError("action")
-  }
-
-  const getResearchCompounds = (): { [index in MineralCompoundConstant]?: number } => {
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    if (roomInfo.config.researchCompounds == null) {
-      roomInfo.config.researchCompounds = {}
-    }
-    return roomInfo.config.researchCompounds
-  }
-
-  const getCurentsettings = (): string => {
-    const entries = Object.entries(getResearchCompounds())
-    if (entries.length <= 0) {
-      return "no research compounds"
-    }
-    return entries
-      .map(([compoundType, amount]) => `\n- ${coloredResourceType(compoundType as MineralCompoundConstant)}: ${amount}`)
-      .join("")
-  }
-
-  switch (action) {
-  case "show":
-    return getCurentsettings()
-  case "clear": {
-    const currentSettings = getCurentsettings()
-    if (roomInfo.config == null) {
-      roomInfo.config = {}
-    }
-    roomInfo.config.researchCompounds = {}
-    return `${coloredText("cleared", "info")}: ${currentSettings}`
-  }
-  case "add": {
-    const settings = getCompoundSetting()
-    if (typeof settings === "string") {
-      return settings
-    }
-    const researchCompounds = getResearchCompounds()
-    researchCompounds[settings[0]] = settings[1]
-    return `${coloredText("added", "info")} ${coloredResourceType(settings[0])}: ${getCurentsettings()}`
-  }
-  default:
-    return `Invalid action ${action}`
   }
 }
 

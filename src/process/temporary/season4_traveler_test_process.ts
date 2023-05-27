@@ -1,7 +1,7 @@
 
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
@@ -11,7 +11,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { CreepName } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { decodeRoomPosition, describePosition, Position } from "prototype/room_position"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { travelTo, TravelToOptions } from "prototype/travel_to"
 
 ProcessDecoder.register("Season4TravelerTestProcess", state => {

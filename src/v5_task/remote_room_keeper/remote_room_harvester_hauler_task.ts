@@ -1,4 +1,3 @@
-import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -30,8 +29,9 @@ import { GclFarmDeliverTarget, GclFarmResources } from "room_resource/gcl_farm_r
 import { SequentialTask } from "v5_object_task/creep_task/combined_task/sequential_task"
 import { AnyCreepApiWrapper } from "v5_object_task/creep_task/creep_api_wrapper"
 import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
-import { TravelToTargetTask } from "v5_object_task/creep_task/combined_task/travel_to_target_task"
-import { RoomResources } from "room_resource/room_resources"
+import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
+// import { GameMap } from "game/game_map"
 
 export interface RemoteRoomHaulerTaskState extends TaskState {
   /** room name */
@@ -91,7 +91,13 @@ export class RemoteRoomHaulerTask extends Task {
 
     const necessaryRoles: CreepRole[] = [CreepRole.Hauler, CreepRole.Mover, CreepRole.EnergyStore]
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = Math.ceil(energyCapacity / 2000) // TODO: 距離等を加味する
+    const minimumCreepCount = ((): number => {
+      // TODO: 距離等を加味する
+      if (objects.controller.room.energyCapacityAvailable < 2000) {
+        return Math.ceil(energyCapacity / 2000)
+      }
+      return Math.ceil(energyCapacity / 3000)
+    })()
     const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
@@ -173,17 +179,22 @@ export class RemoteRoomHaulerTask extends Task {
       const bodyUnit: BodyPartConstant[] = [
         CARRY, CARRY, MOVE,
       ]
-      return CreepBody.create([], bodyUnit, energyCapacity, 10)
+      return CreepBody.create([], bodyUnit, energyCapacity, 16)
     }
   }
 
   // ---- Creep Task ---- //
   private newTaskForHauler(creep: Creep, objects: OwnedRoomObjects, energySources: EnergySource[]): CreepTask | null {
-    const createMoveToTargetTask = (apiWrapper: AnyCreepApiWrapper & TargetingApiWrapper): MoveToTargetTask | TravelToTargetTask => {
-      const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName]
-      if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
-        return TravelToTargetTask.create(apiWrapper)
-      }
+    const createMoveToTargetTask = (apiWrapper: AnyCreepApiWrapper & TargetingApiWrapper): MoveToTargetTask | MoveToRoomTask => {
+      // const remoteRoomInfo = RoomResources.getOwnedRoomResource(this.roomName)?.roomInfo.remoteRoomInfo[this.targetRoomName]
+      // if (remoteRoomInfo != null && remoteRoomInfo.testConfig?.travelerEnabled === true) {
+      //   return TravelToTargetTask.create(apiWrapper)
+      // }
+      // const destinationRoomName = apiWrapper.target.pos.roomName
+      // if (creep.room.name !== destinationRoomName) {
+      //   const waypoints = GameMap.getWaypoints(creep.room.name, destinationRoomName) ?? []
+      //   return MoveToRoomTask.create(destinationRoomName, waypoints)
+      // }
       return MoveToTargetTask.create(apiWrapper, {fallbackEnabled: true})
     }
 

@@ -3,17 +3,25 @@ import { Process, ProcessId } from "process/process"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { RoomResources } from "room_resource/room_resources"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo } from "room_resource/room_info"
 import { processLog } from "os/infrastructure/logger"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { OperatingSystem } from "os/os"
 import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
+import { SellResourcesProcess } from "process/onetime/sell_resources_process"
+import { CommodityConstant, DepositConstant } from "shared/utility/resource"
+import { Market } from "shared/utility/market"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
 })
+
+const resourcesToSell: ResourceConstant[] = [
+  ...DepositConstant,
+  ...CommodityConstant,
+]
 
 export interface InterRoomResourceManagementProcessState extends ProcessState {
 }
@@ -125,6 +133,14 @@ class ResourceTransferer {
         if (this.disabledRoomNames.includes(roomName) !== true) {
           this.disabledRoomNames.push(roomName)
         }
+        return
+      }
+      if (processInfo.process instanceof SellResourcesProcess) {
+        const roomName = processInfo.process.ownedRoomName
+        if (this.disabledRoomNames.includes(roomName) !== true) {
+          this.disabledRoomNames.push(roomName)
+        }
+        return
       }
     })
 
@@ -263,6 +279,18 @@ class ResourceTransferer {
         })()
 
         if (excessResource != null) {
+          if (resourcesToSell.includes(excessResource.resourceType) === true) {
+            const result = Market.sell(excessResource.resourceType, roomName, excessResource.sendAmount)
+            switch (result.resultType) {
+            case "succeeded":
+              logs.push(result.value)
+              return
+            case "failed":
+              logs.push(result.reason)
+              return
+            }
+          }
+
           const target = this.resourceInsufficientTarget(roomName, excessResource.resourceType) ?? this.freeSpaceRoom(roomName, excessResource.resourceType)
           if (target != null) {
             const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)

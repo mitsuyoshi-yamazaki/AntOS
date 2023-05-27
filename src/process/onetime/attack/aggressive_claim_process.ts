@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { World } from "world_info/world_info"

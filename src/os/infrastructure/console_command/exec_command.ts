@@ -2,45 +2,29 @@ import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { calculateInterRoomShortestRoutes, placeRoadConstructionMarks, getRoadPositionsToParentRoom, calculateRoadPositionsFor } from "script/pathfinder"
 import { describeLabs, showRoomPlan } from "script/room_plan"
 import { ResourceManager } from "utility/resource_manager"
-import { PrimitiveLogger } from "../primitive_logger"
-import { coloredResourceType, coloredText, profileLink, roomLink, Tab, tab } from "utility/log"
-import { isResourceConstant } from "utility/resource"
-import { isRoomName, RoomName } from "utility/room_name"
+import { coloredResourceType, coloredText, profileLink, roomLink } from "utility/log"
 import { RoomResources } from "room_resource/room_resources"
-import { Process } from "process/process"
 import { OperatingSystem } from "os/os"
-import { V6RoomKeeperProcess } from "process/process/v6_room_keeper_process"
-import { DistributorProcess } from "process/process/distributor_process"
-import { Season2055924SendResourcesProcess } from "process/temporary/season_2055924_send_resources_process"
-import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
-import { RoomKeeperProcess } from "process/process/room_keeper_process"
 import { calculateWallPositions } from "script/wall_builder"
 import { temporaryScript } from "../../../../submodules/private/attack/script/temporary_script"
-import { KeywordArguments } from "./utility/keyword_argument_parser"
-import { DefenseRoomProcess } from "process/process/defense/defense_room_process"
-import { DefenseRemoteRoomProcess } from "process/process/defense_remote_room_process"
-import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
+import { KeywordArguments } from "../../../shared/utility/argument_parser/keyword_argument_parser"
 import { execPowerCreepCommand } from "./exec_commands/power_creep_command"
-import { ListArguments } from "./utility/list_argument_parser"
+import { ListArguments } from "../../../shared/utility/argument_parser/list_argument_parser"
 import { execRoomConfigCommand } from "./exec_commands/room_config_command"
 import { execRoomPathfindingCommand } from "./exec_commands/room_path_finding_command"
 import { execCreepCommand } from "./exec_commands/creep_command"
 import { CronProcess } from "process/onetime/cron_process"
 import { AttackPlanner } from "process/onetime/attack/attack_planner"
-import { PowerProcessProcess } from "process/process/power_creep/power_process_process"
-import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 import { RoomInterpreter } from "process/onetime/attack/room_interpreter"
 import { } from "../../../../submodules/private/attack/planning/attack_plan"
 import { } from "../../../../submodules/private/attack/platoon/platoon"
 import { SwcAllyRequest } from "script/swc_ally_request"
-import { HighwayProcessLauncherProcess } from "process/process/highway_process_launcher_process"
-import { StealResourceProcess } from "process/onetime/steal_resource_process"
-import { GuardRemoteRoomProcess } from "process/process/guard_remote_room_process"
-import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
-import { LaunchQuadProcess } from "process/onetime/quad_maker/launch_quad_process"
-import { HarvestPowerProcess } from "process/onetime/harvest_power_process"
-import { HarvestCommodityProcess } from "process/onetime/harvest_commodity_process"
+import type { RoomName } from "shared/utility/room_name_types"
+import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
+import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/standard_io/integrated_attack_command"
+import { execResourceCommand } from "./exec_commands/resource_command"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 
 export class ExecCommand implements ConsoleCommand {
   public constructor(
@@ -63,7 +47,7 @@ export class ExecCommand implements ConsoleCommand {
       case "describeLabs":
         return this.describeLabs()
       case "resource":
-        return this.resource()
+        return execResourceCommand(args)
       case "set_waiting_position":
         return this.setWaitingPosition()
       case "show_room_plan":
@@ -77,7 +61,7 @@ export class ExecCommand implements ConsoleCommand {
       case "check_alliance":
         return this.checkAlliance()
       case "unclaim":
-        return this.unclaim()
+        return this.unclaim(args)
       case "prepare_unclaim":
         return this.prepareUnclaim(args)
       case "creep":
@@ -98,6 +82,12 @@ export class ExecCommand implements ConsoleCommand {
         return this.showSwcAllyRequests()
       case "script":
         return this.runScript()
+      case "find_researchable_rooms":
+        return this.findResearchableRooms()
+      case "integrated_attack":
+        return this.integratedAttack(args)
+      case "bot":
+        return this.bot(args)
       default:
         throw `Invalid script type ${scriptType}`
       }
@@ -245,114 +235,6 @@ export class ExecCommand implements ConsoleCommand {
       return "" // FixMe: nullチェック
     }
     return describeLabs(roomName)
-  }
-
-  private resource(): CommandExecutionResult {
-    const commandList = ["help", "room", "collect", "list"]
-    const args = [...this.args]
-    args.splice(0, 1)
-
-    const command = args[0]
-    switch (command) {
-    case "help":
-      return `commands: ${commandList}`
-    case "room":
-      if (args[1] == null || !isResourceConstant(args[1])) {
-        return `Invalid resource type ${args[1]}`
-      }
-      return this.resourceInRoom(args[1])
-    case "collect": {
-      if (args[1] == null || !isResourceConstant(args[1])) {
-        return `Invalid resource type ${args[1]}`
-      }
-      if (args[2] == null || !isRoomName(args[2])) {
-        return `Invalid room name ${args[2]}`
-      }
-      if (args[3] == null) {
-        return "amout is missing (number or \"all\")"
-      }
-      const rawAmount = args[3]
-      const amount = ((): number | "all" | null => {
-        if (rawAmount === "all") {
-          return "all"
-        }
-        const parsed = parseInt(rawAmount, 10)
-        if (isNaN(parsed) === true) {
-          return null
-        }
-        return parsed
-      })()
-      if (amount == null) {
-        return `Invalid amount ${args[3]} (number or "all")`
-      }
-
-      return this.collectResource(args[1], args[2], amount)
-    }
-    case "list":
-      return this.listResource()
-
-    default:
-      return `invalid command: ${command}, "help" to show manual`
-    }
-  }
-
-  private listResource(): CommandExecutionResult {
-    const isLowercase = (value: string): boolean => (value === value.toLocaleLowerCase())
-    const resources = Array.from(ResourceManager.list().entries()).sort(([lhs], [rhs]) => {
-      const lowerL = isLowercase(lhs)
-      const lowerR = isLowercase(rhs)
-      if (lowerL === true && lowerR === true) {
-        return rhs.length - lhs.length
-      }
-      if (lowerL === false && lowerR === false) {
-        return lhs.length - rhs.length
-      }
-      return lowerL === true ? -1 : 1
-    })
-    resources.forEach(([resourceType, amount]) => {
-      const amountDescription = ((): string => {
-        return `${amount}`  // TODO: format
-      })()
-      PrimitiveLogger.log(`${coloredResourceType(resourceType)}: ${amountDescription}`)
-    })
-    return "ok"
-  }
-
-  private resourceInRoom(resourceType: ResourceConstant): CommandExecutionResult {
-    const resourceInRoom = ResourceManager.resourceInRoom(resourceType)
-    PrimitiveLogger.log(`${coloredResourceType(resourceType)}: `)
-    resourceInRoom.forEach((amount, roomName) => {
-      PrimitiveLogger.log(`- ${roomLink(roomName)}: ${amount}`)
-    })
-    return "ok"
-  }
-
-  private collectResource(resourceType: ResourceConstant, destinationRoomName: RoomName, amount: number | "all"): CommandExecutionResult {
-    const resources = RoomResources.getOwnedRoomResource(destinationRoomName)
-    if (resources == null) {
-      return `${this.constructor.name} collectResource() cannot retrieve owned room resources from ${roomLink(destinationRoomName)}`
-    }
-    if (resources.activeStructures.terminal == null) {
-      return `${this.constructor.name} collectResource() no active terminal found in ${roomLink(destinationRoomName)}`
-    }
-    if (amount === "all") {
-      const resourceAmount = ResourceManager.amount(resourceType)
-      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (resourceAmount + 10000)) {
-        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)} (${resourceAmount} ${coloredResourceType(resourceType)})`
-      }
-    } else {
-      if (resources.activeStructures.terminal.store.getFreeCapacity() <= (amount + 10000)) {
-        return `${this.constructor.name} collectResource() not enough free space ${roomLink(destinationRoomName)}`
-      }
-    }
-
-    const result = ResourceManager.collect(resourceType, destinationRoomName, amount)
-    switch (result.resultType) {
-    case "succeeded":
-      return `${result.value} ${coloredResourceType(resourceType)} sent to ${roomLink(destinationRoomName)}`
-    case "failed":
-      return result.reason.errorMessage
-    }
   }
 
   // Game.io("exec set_waiting_position room_name=W52S25 pos=35,21")
@@ -510,266 +392,21 @@ export class ExecCommand implements ConsoleCommand {
     return `${playerName} is not joined any alliances`
   }
 
-  private unclaim(): CommandExecutionResult {
-    const args = this._parseProcessArguments()
-
-    const roomName = args.get("room_name")
-    if (roomName == null) {
-      return this.missingArgumentError("room_name")
-    }
-    const dryRun = (args.get("dry_run") === "0") !== true
-
-    return this.unclaimRoom(roomName, dryRun)
-  }
-
-  private unclaimRoom(roomName: RoomName, dryRun: boolean): CommandExecutionResult {
-    const processesToKill: Process[] = []
-
-    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
-      const process = processInfo.process
-      if (process instanceof RoomKeeperProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof V6RoomKeeperProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DistributorProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof Season2055924SendResourcesProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof BoostLabChargerProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DefenseRoomProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof DefenseRemoteRoomProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof World35587255ScoutRoomProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof PowerProcessProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof PowerCreepProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof StealResourceProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof GuardRemoteRoomProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof QuadMakerProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof LaunchQuadProcess) {
-        if (process.roomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof HarvestPowerProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-      if (process instanceof HarvestCommodityProcess) {
-        if (process.parentRoomName === roomName) {
-          processesToKill.push(process)
-        }
-        return
-      }
-    })
-
-    const messages: string[] = []
-
-    const processDescriptions = processesToKill.map(process => {
-      const shortDescription = process.processShortDescription != null ? process.processShortDescription() : ""
-      return `- ${tab(`${process.processId}`, Tab.medium)}: ${tab(`${process.constructor.name}`, Tab.veryLarge)} ${tab(shortDescription, Tab.medium)}`
-    })
-    messages.push(coloredText(`${processesToKill.length} processes to remove:`, "info"))
-    messages.push(...processDescriptions)
-
-    const room = Game.rooms[roomName]
-    const flags: Flag[] = []
-    const constructionSiteCounts = new Map<StructureConstant, number>()
-    const constructionSites: ConstructionSite<BuildableStructureConstant>[] = []
-    const ownedStructures: AnyOwnedStructure[] = []
-
-    if (room != null) {
-      constructionSites.push(...room.find(FIND_CONSTRUCTION_SITES))
-      ownedStructures.push(...room.find(FIND_MY_STRUCTURES))
-      flags.push(...room.find(FIND_FLAGS))
-    } else {
-      flags.push(...Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === roomName))
-    }
-
-    constructionSites.forEach(constructionSite => {
-      const structureType = constructionSite.structureType
-      const count = constructionSiteCounts.get(structureType) ?? 0
-      constructionSiteCounts.set(structureType, count + 1)
-    })
-
-    if (constructionSiteCounts.size > 0) {
-      const constructionSiteDescriptions = Array.from(constructionSiteCounts.entries()).map(([structureType, count]) => {
-        return `- ${tab(structureType, Tab.medium)}: ${count}`
-      })
-      messages.push(coloredText("Construction sites to remove:", "info"))
-      messages.push(...constructionSiteDescriptions)
-    }
-
-    if (ownedStructures.length > 0) {
-      messages.push(coloredText(`${ownedStructures.length} owned structures`, "info"))
-    }
-
-    if (flags.length > 0) {
-      messages.push(coloredText(`${flags.length} flags`, "info"))
-    }
-
-    if (dryRun === true) {
-      messages.unshift(`${coloredText("[Unclaim room]", "warn")} (dry run):`)
-    } else {
-      if (room != null && room.controller != null && room.controller.my === true) {
-        const result = room.controller.unclaim()
-        switch (result) {
-        case OK:
-          break
-        default:
-          messages.unshift(`${coloredText("[Unclaim room]", "error")}: FAILED ${result}:`)
-          return messages.join("\n")
-        }
-      }
-
-      messages.unshift(`${coloredText("[Unclaim room]", "error")}:`)
-
-      processesToKill.forEach(process => {
-        OperatingSystem.os.killProcess(process.processId)
-      })
-      constructionSites.forEach(constructionSite => {
-        constructionSite.remove()
-      })
-      flags.forEach(flag => {
-        flag.remove()
-      })
-      ownedStructures.forEach(structure => {
-        structure.notifyWhenAttacked(false)
-      })
-
-      RoomResources.removeRoomInfo(roomName)
-    }
-
-    return messages.join("\n")
-  }
-
   /** @throws */
+  private unclaim(args: string[]): CommandExecutionResult {
+    const listArguments = new ListArguments(args)
+    const roomName = listArguments.roomName(0, "room name").parse()
+    args.shift()
+
+    return unclaim(roomName, args)
+  }
+
   private prepareUnclaim(args: string[]): CommandExecutionResult {
-    const results: string[] = []
+    const listArguments = new ListArguments(args)
+    const roomName = listArguments.roomName(0, "room name").parse()
+    args.shift()
 
-    const keywordArguments = new KeywordArguments(args)
-    const roomResource = keywordArguments.ownedRoomResource("room_name").parse()
-    const roomName = roomResource.room.name
-
-    // Send Resource
-    if (roomResource.activeStructures.terminal != null) {
-      const targetSectorNames = keywordArguments.list("transfer_target_sector_names", "room_name").parse()
-      const excludedResourceTypes = ((): ResourceConstant[] => {
-        const given = keywordArguments.list("excluded_resource_types", "resource").parseOptional()
-        if (given != null) {
-          return given
-        }
-        return [
-          RESOURCE_KEANIUM,
-          RESOURCE_LEMERGIUM,
-          RESOURCE_UTRIUM,
-          RESOURCE_ZYNTHIUM,
-        ]
-      })()
-
-      const process = OperatingSystem.os.addProcess(null, processId => {
-        return Season2055924SendResourcesProcess.create(processId, roomName, targetSectorNames, excludedResourceTypes)
-      })
-      results.push(`send resource process ${process.processId} launched`)
-    }
-
-    // Stop Mineral Harvesting
-    roomResource.roomInfoAccessor.config.mineralMaxAmount = 0
-    results.push("stopped mineral harvesting")
-
-    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
-      const process = processInfo.process
-      if (process instanceof HighwayProcessLauncherProcess) {
-        const baseRemovalResult = process.removeBase(roomName)
-        switch (baseRemovalResult) {
-        case "removed":
-          results.push(`base removed from ${process.constructor.name}`)
-          break
-        case "no base":
-          break
-        default: {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const _: never = baseRemovalResult
-          break
-        }
-        }
-        return
-      }
-      if (process instanceof PowerCreepProcess) {
-        if (process.parentRoomName === roomName) {
-          process.suicidePowerCreep()
-          results.push(`commanded suicide PowerCreep ${process.powerCreepName}`)
-        }
-        return
-      }
-    })
-
-    return [
-      `preparing unclaim ${roomLink(roomName)}`,
-      ...results.map(r => `- ${r}`),
-    ].join("\n")
+    return prepareUnclaim(roomName, args)
   }
 
   /** @throws */
@@ -943,6 +580,67 @@ export class ExecCommand implements ConsoleCommand {
       return temporaryScript(scriptName, args)
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  private findResearchableRooms(): CommandExecutionResult {
+    const roomNames = RoomResources.getOwnedRoomResources().flatMap((roomResource): RoomName[] => {
+      const researchLabs = roomResource.roomInfoAccessor.researchLabs
+      if (researchLabs == null) {
+        return []
+      }
+      if (researchLabs.outputLabs.length < 6) {
+        return []
+      }
+      return [roomResource.room.name]
+    })
+
+    return `found ${roomNames.length} rooms\n- ${roomNames.map(roomName => roomLink(roomName)).join(", ")}`
+  }
+
+  /** @throws */
+  private integratedAttack(args: string[]): CommandExecutionResult {
+    return execIntegratedAttackCommand(args)
+  }
+
+  /** @throws */
+  private bot(args: string[]): CommandExecutionResult {
+    const argumentParser = new ArgumentParser(args)
+    const commands = ["help", "losing_room"] as const
+    const command = argumentParser.list.stringInList(0, "command", commands).parse()
+
+    switch (command) {
+    case "help":
+      return `available commands: ${commands.join(", ")}`
+
+    case "losing_room": {
+      const subCommands = ["add", "remove"] as const
+      const subCommand = argumentParser.list.stringInList(1, "sub command", subCommands).parse()
+      const roomName = argumentParser.list.roomName(2, "room name").parse({my: true})
+      switch (subCommand) {
+      case "add":
+        if (Memory.gameInfo.losingRoomNames?.includes(roomName) === true) {
+          throw `${roomLink(roomName)} is already in the list`
+        }
+        if (Memory.gameInfo.losingRoomNames == null) {
+          Memory.gameInfo.losingRoomNames = []
+        }
+        Memory.gameInfo.losingRoomNames.push(roomName)
+        return `${roomLink(roomName)} added`
+
+      case "remove": {
+        if (Memory.gameInfo.losingRoomNames == null) {
+          throw `${roomLink(roomName)} is not in the list`
+        }
+        const index = Memory.gameInfo.losingRoomNames.indexOf(roomName)
+        if (index < 0) {
+          throw `${roomLink(roomName)} is not in the list`
+        }
+        Memory.gameInfo.losingRoomNames.splice(index, 1)
+        return `${roomLink(roomName)} removed`
+      }
+      }
+    }
     }
   }
 }

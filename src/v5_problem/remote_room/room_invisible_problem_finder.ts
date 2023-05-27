@@ -1,6 +1,6 @@
 import { ProblemFinder, ProblemIdentifier } from "v5_problem/problem_finder"
 import { ProblemSolver } from "v5_problem/problem_solver"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { RoomInvisibleProblemSolver } from "v5_task/scout/room_invisible_problem_solver"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { World } from "world_info/world_info"

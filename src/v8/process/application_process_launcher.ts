@@ -1,4 +1,4 @@
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Process } from "./process"
 import { ProcessType } from "./process_type"

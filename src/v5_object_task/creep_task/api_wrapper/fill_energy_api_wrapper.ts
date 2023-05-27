@@ -50,6 +50,9 @@ export class FillEnergyApiWrapper implements ApiWrapper<Creep, FillEnergyApiWrap
     if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > harvestPower) {
       return IN_PROGRESS
     }
+    if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+      return IN_PROGRESS
+    }
     const result = creep.transfer(this.target, RESOURCE_ENERGY)
 
     switch (result) {

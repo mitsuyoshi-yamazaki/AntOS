@@ -1,8 +1,7 @@
 import { OperatingSystem } from "os/os"
-import { Result, ResultFailed } from "utility/result"
+import { Result, ResultFailed } from "shared/utility/result"
 import { SpecializedQuadProcess } from "../../../submodules/private/attack/quad/quad_process"
 import { isQuadType, PredefinedQuadSpec } from "../../../submodules/private/attack/quad/predefined_quad_spec"
-// import { } from "../../../submodules/private/attack/platoon/platoon_process"
 import { QuadSpec } from "../../../submodules/private/attack/quad/quad_spec"
 import { QuadRequirement } from "../../../submodules/private/attack/quad/quad_requirement"
 
@@ -56,6 +55,7 @@ export function launchQuadProcess(args: Map<string, string>): Result<Specialized
       targetRoomName,
       predefinedTargetIds: targets as Id<AnyStructure>[],
       frontBaseRoomName: null,
+      waypoints: null,
     }, quadSpec)
   })
   return Result.Succeeded(process)

@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { roomLink } from "./log"
-import { ShortVersion } from "./system_info"
+import { ShortVersion } from "../shared/utility/system_info"
 
 export const Migration = {
   roomVersion: function (roomName: RoomName): ShortVersion {

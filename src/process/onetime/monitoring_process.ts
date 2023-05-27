@@ -1,12 +1,12 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "shared/utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 
 ProcessDecoder.register("MonitoringProcess", state => {

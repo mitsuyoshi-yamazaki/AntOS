@@ -1,5 +1,5 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "v5_task/general/general_creep_worker_task"
@@ -30,13 +30,13 @@ function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName
   //   return false
   // }
   if (targetRoomInfo.owner?.ownerType === "claim") {
+    if (targetRoomInfo.owner.safemodeEnabled === true) {
+      return false
+    }
     if (targetRoomInfo.owner.upgradeBlockedUntil != null) {
       if (Game.time < (targetRoomInfo.owner.upgradeBlockedUntil - (GameConstants.creep.life.claimLifeTime * 0.8))) {
         return false
       }
-    }
-    if (targetRoomInfo.owner.safemodeEnabled === true) {
-      return false
     }
   }
 
@@ -159,7 +159,17 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
       const isOccupied = ((): boolean => {
         const targetRoom = Game.rooms[this.targetRoomName]
         if (targetRoom == null) {
-          return false
+          const targetRoomInfo = RoomResources.getRoomInfo(this.targetRoomName)
+          if (targetRoomInfo == null) {
+            return false
+          }
+          if (targetRoomInfo.roomType === "owned") {
+            return false
+          }
+          if (targetRoomInfo.owner == null) {
+            return false
+          }
+          return true
         }
         const controller = targetRoom.controller
         if (controller == null) {
@@ -177,7 +187,7 @@ export class ClaimRoomTask extends GeneralCreepWorkerTask {
           }
           return true
         }
-        return true
+        return false
       })()
 
       if (isOccupied === true) {

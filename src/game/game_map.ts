@@ -1,15 +1,90 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
-import { Result } from "utility/result"
-import { isValidRoomName, RoomCoordinate, RoomName } from "../utility/room_name"
+import { Result } from "shared/utility/result"
+import { isValidRoomName } from "../shared/utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
+// import { GameConstants } from "utility/constants"
 
 export type GameMapMemory = {
   interRoomPath: { [roomName: string]: { [destinationRoomName: string]: RoomName[] } }
 }
 
+// const roomSize = GameConstants.room.size
 const missingWaypointPairs: { from: RoomName, to: RoomName }[] = []
 const cachedPairs: string[] = []
+// const estimatedTravelDistances = new Map<string, number>()  // <route identifier, distance>
+// const getRouteIdentifier = (fromRoomName: RoomName, toRoomName: RoomName): string => {
+//   return `${fromRoomName}-${toRoomName}`
+// }
+
+// const TravelDistance = {
+//   reset(fromRoomName: RoomName, toRoomName: RoomName): void {
+//     const routeIdentifier = getRouteIdentifier(fromRoomName, toRoomName)
+//     estimatedTravelDistances.delete(routeIdentifier)
+
+//     const returnTripIdentifier = getRouteIdentifier(toRoomName, fromRoomName)
+//     estimatedTravelDistances.delete(returnTripIdentifier)
+//   },
+
+//   get(fromRoomName: RoomName, toRoomName: RoomName): number {
+//     const routeIdentifier = getRouteIdentifier(fromRoomName, toRoomName)
+//     const estimated = estimatedTravelDistances.get(routeIdentifier)
+//     if (estimated != null) {
+//       return estimated
+//     }
+
+//     const returnTripIdentifier = getRouteIdentifier(toRoomName, fromRoomName)
+//     const estimatedReturnDistance = estimatedTravelDistances.get(returnTripIdentifier)
+//     if (estimatedReturnDistance != null) {
+//       return estimatedReturnDistance
+//     }
+
+//     const waypoints = ((): RoomName[] => {
+//       const w = getWaypoints(fromRoomName, toRoomName)
+//       if (w != null) {
+//         w.unshift(fromRoomName)
+//         w.push(toRoomName)
+//         return w
+//       }
+//       const r = getWaypoints(toRoomName, fromRoomName)
+//       if (r != null) {
+//         r.unshift(toRoomName)
+//         r.push(fromRoomName)
+//         return r
+//       }
+//       return [
+//         fromRoomName,
+//         toRoomName,
+//       ]
+//     })()
+
+//     const { roomCount } = waypoints.reduce((result, current) => {
+//       if (result.roomName == null) {
+//         return {
+//           roomName: current,
+//           roomCount: result.roomCount,
+//         }
+//       }
+//       const linearDistance = Game.map.getRoomLinearDistance(result.roomName, current)
+//       if (isNaN(linearDistance) === true) {
+//         return {
+//           roomName: current,
+//           roomCount: result.roomCount,
+//         }
+//       }
+//       return {
+//         roomName: current,
+//         roomCount: result.roomCount + linearDistance,
+//       }
+//     }, { roomName: null, roomCount: 0 } as { roomName: RoomName | null, roomCount: number })
+
+//     const distance = roomCount * roomSize
+//     estimatedTravelDistances.set(routeIdentifier, distance)
+//     return distance
+//   },
+// }
 
 const MissingWaypoints = {
   add(fromRoomName: RoomName, toRoomName: RoomName): void {
@@ -109,6 +184,9 @@ export const GameMap = {
       return list
     })()
     infoList[destinationRoomName] = waypoints
+
+    // TravelDistance.reset(roomName, destinationRoomName)
+
     return Result.Succeeded(undefined)
   },
 
@@ -130,6 +208,64 @@ export const GameMap = {
   calculateSafeWaypoints(fromRoomName: RoomName, toRoomName: RoomName): RoomName[] | null {
     return calculateSafeWaypoints(fromRoomName, toRoomName)
   },
+
+  // 挙動が怪しいため
+  // estimatedTravelDistance(fromRoomName: RoomName, toRoomName: RoomName): number {
+  //   return TravelDistance.get(fromRoomName, toRoomName)
+  // },
+
+  // getRoomJustBeforeDestination(fromRoomName: RoomName, toRoomName: RoomName): RoomName | null {
+  //   const waypoints = this.getWaypoints(fromRoomName, toRoomName)
+  //   if (waypoints == null) {
+  //     return null
+  //   }
+  //   const lastWaypoint = waypoints.pop()
+  //   if (lastWaypoint != null && Game.map.getRoomLinearDistance(toRoomName, lastWaypoint) <= 1) {
+  //     this.setWaypoints(fromRoomName, lastWaypoint, waypoints)
+  //     return lastWaypoint
+  //   }
+
+  //   if (Game.map.getRoomLinearDistance(toRoomName, fromRoomName) <= 1) {
+  //     return fromRoomName
+  //   }
+
+  //   const  =
+
+  //   const result = Game.map.findRoute(lastWaypoint, toRoomName)
+  //   if (result === ERR_NO_PATH) {
+  //     PrimitiveLogger.programError(`GameMap.getRoomJustBeforeDestination() findRoute() failed with ${result} (${roomLink(lastWaypoint)} =&gt ${roomLink(toRoomName)})`)
+  //     return null
+  //   }
+  //   const lastRoom = result[result.length - 1]
+  //   if (lastRoom == null) {
+  //     PrimitiveLogger.programError(`GameMap.getRoomJustBeforeDestination() findRoute() returns no path (${roomLink(lastWaypoint)} =&gt ${roomLink(toRoomName)})`)
+  //     return null
+  //   }
+  //   return lastRoom.room
+  // },
+
+  // getWaitingRoom(fromRoomName: RoomName, toRoomName: RoomName): RoomName {
+  //   const roomName = this.getRoomJustBeforeDestination(fromRoomName, toRoomName)
+  //   if (roomName != null) {
+  //     return roomName
+  //   }
+  //   return fromRoomName
+  // },
+
+  // getWaypointsTo(fromRoomName: RoomName, toRoomName: RoomName, relativeDestination: "waiting room"): RoomName[] | null {
+  //   switch (relativeDestination) {
+  //   case "waiting room": {
+  //     const waitingRoom = this.getWaitingRoom(fromRoomName, toRoomName)
+
+  //     return
+  //   }
+  //   default: {
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     const _: never = relativeDestination
+  //     return null
+  //   }
+  //   }
+  // },
 }
 
 function getWaypoints(roomName: RoomName, destinationRoomName: RoomName): RoomName[] | null {

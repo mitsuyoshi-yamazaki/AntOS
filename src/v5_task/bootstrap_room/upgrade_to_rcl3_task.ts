@@ -1,5 +1,4 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName, roomTypeOf } from "utility/room_name"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { GeneralCreepWorkerTask, GeneralCreepWorkerTaskCreepRequest, GeneralCreepWorkerTaskState } from "v5_task/general/general_creep_worker_task"
@@ -18,7 +17,7 @@ import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/dr
 import { GetEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/get_energy_api_wrapper"
 import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_energy_api_wrapper"
 import { RepairApiWrapper } from "v5_object_task/creep_task/api_wrapper/repair_api_wrapper"
-import { bodyCost } from "utility/creep_body"
+import { bodyCost, CreepBody } from "utility/creep_body"
 import { TempRenewApiWrapper } from "v5_object_task/creep_task/api_wrapper/temp_renew_api_wrapper"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
@@ -28,10 +27,12 @@ import { FleeFromSKLairTask } from "v5_object_task/creep_task/combined_task/flee
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
+import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
-const minimumNumberOfCreeps = 6
-const defaultNumberOfCreeps = 10
-const increasedNumberOfCreeps = 15
+const minimumNumberOfCreeps = 4
+const defaultNumberOfCreeps = 6
+const increasedNumberOfCreeps = 10
 
 function neighboursToObserve(roomName: RoomName): RoomName[] {
   const exits = Game.map.describeExits(roomName)
@@ -472,16 +473,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
 
   // ---- Creep Body ---- //
   private creepBody(energyCapacity: number): BodyPartConstant[] {
-    const bodyUnit = [CARRY, WORK, MOVE, MOVE]
-    const unitCost = bodyCost(bodyUnit)
-    const unitMaxCount = 6
-    const unitCount = Math.max(Math.min(Math.floor(energyCapacity / unitCost), unitMaxCount), 1)
-    const body: BodyPartConstant[] = []
-
-    for (let i = 0; i < unitCount; i += 1) {
-      body.push(...bodyUnit)
-    }
-    return body
+    return CreepBody.create([], [CARRY, WORK, MOVE, MOVE], energyCapacity, 8)
   }
 
   // ---- Take Over Creeps ---- //

@@ -7,10 +7,11 @@ import { TransferResourceApiWrapper, TransferResourceApiWrapperState } from "../
 import { decodeRoomPosition, RoomPositionFilteringOptions, RoomPositionState } from "prototype/room_position"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
-import { RoomName, roomTypeOf } from "utility/room_name"
 import { SourceKeeper } from "game/source_keeper"
 import { OBSTACLE_COST } from "utility/constants"
 import { WithdrawResourceApiWrapper, WithdrawResourceApiWrapperState } from "../api_wrapper/withdraw_resource_api_wrapper"
+import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 type ApiWrapperType = TransferResourceApiWrapper | WithdrawResourceApiWrapper
 

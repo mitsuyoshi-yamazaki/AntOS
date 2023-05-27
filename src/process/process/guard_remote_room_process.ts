@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredText, profileLink, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -14,17 +14,22 @@ import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { GameConstants } from "utility/constants"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { RoomResources } from "room_resource/room_resources"
-import { Timestamp } from "utility/timestamp"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { Timestamp } from "shared/utility/timestamp"
 import { Position } from "prototype/room_position"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
+import { CreepBody } from "utility/creep_body"
+import { shortenedNumber } from "shared/utility/console_utility"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("GuardRemoteRoomProcess", state => {
   return GuardRemoteRoomProcess.decode(state as GuardRemoteRoomProcessState)
 })
 
 const guardRemoteRoomProcessCreepType = [
+  "test-tiny-ranged-attacker",   // RCL3
+  "tiny-ranged-attacker",   // RCL5
   "small-ranged-attacker",       // RCL6
   "ranged-attacker",             // RCL7
   "high-speed-ranged-attacker",  // RCL8
@@ -36,10 +41,19 @@ export const isGuardRemoteRoomProcessCreepType = (obj: string): obj is GuardRemo
   return (guardRemoteRoomProcessCreepType as (readonly string[])).includes(obj)
 }
 
-const finishConditionTypes = [
+export const canSpawnGuardCreep = (guardCreepType: GuardRemoteRoomProcessCreepType, energyCapacity: number): boolean => {
+  const body = creepSpecFor(guardCreepType).body
+  const cost = CreepBody.cost(body)
+
+  return cost <= energyCapacity
+}
+
+const finishConditionCases = [
   "never",
   "duration",
   "owned_room",
+  "unclaimed",
+  "killed",
 ] as const
 
 type FinishConditionNever = {
@@ -53,7 +67,15 @@ type FinishConditionOwnedRoom = {
   readonly case: "owned_room"
   readonly condition: "tower" | "2towers" | "storage"
 }
-type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom
+type FinishConditionUnclaimed = {
+  readonly case: "unclaimed"
+}
+type FinishConditionKilled = {
+  readonly case: "killed"
+  readonly count: number
+  killedCount: number
+}
+type FinishCondition = FinishConditionNever | FinishConditionDuration | FinishConditionOwnedRoom | FinishConditionUnclaimed | FinishConditionKilled
 
 type Username = string
 
@@ -71,14 +93,28 @@ type TalkingInfo = {
 }
 
 const rangedAttackerRole: CreepRole[] = [CreepRole.Attacker, CreepRole.Mover]
+const testTinyRangedAttackerBody: BodyPartConstant[] = [
+  TOUGH,
+  RANGED_ATTACK,
+  MOVE, MOVE, MOVE,
+  HEAL,
+]
+const tinyRangedAttackerBody: BodyPartConstant[] = [
+  MOVE, MOVE, MOVE, MOVE, MOVE,
+  MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE,
+  RANGED_ATTACK, RANGED_ATTACK,
+  HEAL,
+]
 const smallRangedAttackerBody: BodyPartConstant[] = [
   TOUGH,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL,
   MOVE,
+  HEAL, HEAL,
 ]
 const rangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -89,8 +125,8 @@ const rangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const highSpeedangedAttackerBody: BodyPartConstant[] = [
   TOUGH, TOUGH,
@@ -102,22 +138,22 @@ const highSpeedangedAttackerBody: BodyPartConstant[] = [
   MOVE, MOVE,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
-  HEAL, HEAL, HEAL, HEAL, HEAL,
   MOVE,
+  HEAL, HEAL, HEAL, HEAL, HEAL,
 ]
 const heavyRangedAttackerBody: BodyPartConstant[] = [
-  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE, MOVE,
   MOVE, MOVE, MOVE, MOVE,
+  RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
   RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK,
+  MOVE,
   HEAL, HEAL, HEAL, HEAL, HEAL,
   HEAL, HEAL, HEAL, HEAL,
-  MOVE,
 ]
 
 export interface GuardRemoteRoomProcessState extends ProcessState {
@@ -141,9 +177,12 @@ export interface GuardRemoteRoomProcessState extends ProcessState {
   waitingPosition: Position | null
 }
 
-export class GuardRemoteRoomProcess implements Process, Procedural, MessageObserver {
+export class GuardRemoteRoomProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -151,6 +190,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
   private creepRole: CreepRole[]
   private creepBody: BodyPartConstant[]
+  private killedConditionData = {
+    activeCreepNames: new Map<CreepName, "active" | "dying" | "killed">(),
+    killedCreepNames: [] as CreepName[],
+  }
 
   private constructor(
     public readonly launchTime: number,
@@ -245,10 +288,35 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       this.creepType,
     ]
 
-    if (this.stopSpawningReasons.length > 0) {
-      descriptions.push(`stopped by: ${this.stopSpawningReasons.join(", ")}`)
+    if (this.finishCondition.case !== "never") {
+      const conditionDescriptions: string[] = [
+        `condition: ${this.finishCondition.case}`,
+      ]
+      switch (this.finishCondition.case) {
+      case "duration":
+        conditionDescriptions.push(`${shortenedNumber(this.finishCondition.until - Game.time)} ticks`)
+        break
+      case "owned_room":
+        conditionDescriptions.push(this.finishCondition.condition)
+        break
+      case "unclaimed":
+        break
+      case "killed":
+        conditionDescriptions.push(`${this.finishCondition.killedCount}/${this.finishCondition.count} life remains (${this.killedConditionData.activeCreepNames.size} creep info)`)
+        break
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = this.finishCondition
+        break
+      }
+      }
+      descriptions.push(conditionDescriptions.join(" "))
     }
-    return descriptions.join(" ")
+
+    if (this.stopSpawningReasons.length > 0) {
+      descriptions.push(coloredText(`stopped by: ${this.stopSpawningReasons.join(", ")}`, "info"))
+    }
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -327,7 +395,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
   /** @throws */
   private changeFinishCondition(args: string[]): string {
-    const keywordArguments = new KeywordArguments(args)
+    const parser = new ArgumentParser(args)
+    const keywordArguments = parser.keyword
+
+    const command = parser.list.string(0, "command").parse()
+    if (command === "help") {
+      return `finish conditions: ${finishConditionCases.join(", ")}`
+    }
+
     const conditionType = keywordArguments.string("condition").parse()
 
     const condition = ((): FinishCondition => {
@@ -351,13 +426,33 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         }
       }
 
+      case "unclaimed": {
+        return {
+          case: "unclaimed",
+        }
+      }
+
+      case "killed": {
+        const count = keywordArguments.int("count").parse({ min: 1 })
+        this.killedConditionData = {
+          activeCreepNames: new Map<CreepName, "active" | "dying" | "killed">(),
+          killedCreepNames: [] as CreepName[],
+        }
+
+        return {
+          case: "killed",
+          count,
+          killedCount: 0,
+        }
+      }
+
       case "never":
         return {
           case: "never"
         }
 
       default:
-        throw `invalid condition ${conditionType}, available conditions: ${finishConditionTypes}`
+        throw `invalid condition ${conditionType}, available conditions: ${finishConditionCases}`
       }
     })()
 
@@ -406,11 +501,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     if ((Game.time % 1511) === 27) {
       this.talkingTo = {}
     }
+    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
+    if (roomResource == null) {
+      return
+    }
 
     const sourceHarvestWhitelist = (Memory.gameInfo.sourceHarvestWhitelist as string[] | undefined) || []
     const whitelist: string[] = [
       ...Memory.gameInfo.whitelist,
       ...sourceHarvestWhitelist,
+      ...Game.whitelist,
     ]
 
     const targetRoom = Game.rooms[this.targetRoomName]
@@ -422,6 +522,10 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
+        return false
+      }
+      const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
+      if (energyAmount < ((roomResource.controller.level + 1) * 5000)) {
         return false
       }
       if (this.numberOfCreeps === 1) {
@@ -463,29 +567,27 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
 
     if (this.stopSpawningReasons.length <= 0) {
-      this.checkFinishCondition()
+      this.checkFinishCondition(creeps)
     }
 
     switch (this.creepType) {
+    case "test-tiny-ranged-attacker":
+    case "tiny-ranged-attacker":
     case "small-ranged-attacker":
     case "ranged-attacker":
     case "high-speed-ranged-attacker":
     case "heavy-ranged-attacker":
       creeps.forEach(creep => this.runRangedAttacker(creep, whitelist))
       break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.creepType
+      break
+    }
     }
   }
 
-  private checkFinishCondition(): void {
-    const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
-    if (roomResource == null) {
-      return
-    }
-    const energyAmount = roomResource.getResourceAmount(RESOURCE_ENERGY)
-    if (energyAmount < 50000) {
-      return
-    }
-
+  private checkFinishCondition(creeps: Creep[]): void {
     const targetRoom = Game.rooms[this.targetRoomName]
     if (targetRoom == null) {
       return
@@ -524,8 +626,81 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         this.addStopSpawningReason("duration ended")
       }
       return
+    case "unclaimed":
+      if (targetRoom.controller == null) {
+        this.addStopSpawningReason("not claimed")
+        return
+      }
+      if (targetRoom.controller.owner != null) {
+        if (targetRoom.controller.my === true) {
+          this.addStopSpawningReason("target owned")
+          return
+        }
+        return
+      }
+      if (targetRoom.controller.reservation != null) {
+        if (targetRoom.controller.reservation.username === Game.user.name) {
+          this.addStopSpawningReason("target reserved")
+          return
+        }
+        return
+      }
+      this.addStopSpawningReason("target unclaimed")
+      return
+    case "killed": {
+      const finishCondition = this.finishCondition
+      creeps.forEach(creep => {
+        if (creep.ticksToLive == null) {
+          return
+        }
+        if (creep.ticksToLive > 4) {
+          this.killedConditionData.activeCreepNames.set(creep.name, "active")
+          return
+        }
+        this.killedConditionData.activeCreepNames.set(creep.name, "dying")
+      })
+      targetRoom.find(FIND_TOMBSTONES).forEach(tomb => {
+        if (tomb.creep.my !== true) {
+          return
+        }
+        const creepStatus = this.killedConditionData.activeCreepNames.get(tomb.creep.name)
+
+        if (creepStatus != null && tomb.ticksToDecay === 1) { // 動かなくても問題はないが、activeCreepNamesが肥大化しないために入れている
+          this.killedConditionData.activeCreepNames.delete(tomb.creep.name)
+          return
+        }
+
+        switch (creepStatus) {
+        case "active":
+          this.killedConditionData.activeCreepNames.set(tomb.creep.name, "killed")
+          this.killedConditionData.killedCreepNames.push(tomb.creep.name)
+          finishCondition.killedCount += 1
+          break
+        case "dying":
+        case "killed":
+          break
+        case null:
+        case undefined:  // このProcessのCreepではない
+          return
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = creepStatus
+          break
+        }
+        }
+      })
+      if (finishCondition.killedCount >= finishCondition.count) {
+        this.addStopSpawningReason(`${finishCondition.killedCount}/${finishCondition.count} creeps killed`)
+      }
+      return
+    }
     case "never":
       return
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = this.finishCondition
+      return
+    }
     }
   }
 
@@ -572,14 +747,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
     if (movement.attackedTarget != null) {
       const attackedTarget = movement.attackedTarget
-      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true) {
+      if (attackedTarget.getActiveBodyparts(ATTACK) <= 0 && (attackedTarget.pos.isRoomEdge !== true || creep.pos.isNearTo(attackedTarget.pos) !== true)) {
         creep.moveTo(movement.attackedTarget)
       }
       this.talk(creep)
       return
     }
 
-    const {moved} = this.runSingleAttacker(creep, whitelist)
+    const { moved } = this.runSingleAttacker(creep, whitelist)
     if (moved === true) {
       this.talk(creep)
       return
@@ -645,33 +820,30 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range <= GameConstants.creep.actionRange.rangedHeal) {
         creep.rangedHeal(damagedCreep)
       }
-      creep.moveTo(damagedCreep)
-      this.talk(creep)
-      return
-    }
-
-    if (this.waitingPosition != null) {
-      if (creep.pos.isEqualTo(this.waitingPosition.x, this.waitingPosition.y) === true) {
-        if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
-          creep.move(randomDirection(this.launchTime))
-        }
-        this.talk(creep)
-        return
+      if (damagedCreep.pos.isRoomEdge !== true) {
+        creep.moveTo(damagedCreep)
       }
-      const moveToOptions = defaultMoveToOptions()
-      moveToOptions.range = 0
-      creep.moveTo(this.waitingPosition.x, this.waitingPosition.y, moveToOptions)
       this.talk(creep)
       return
     }
 
-    const waitingTarget = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0] ?? creep.room.controller
-    if (waitingTarget == null) {
+    const waitingPosition = ((): Position | null => {
+      if (this.waitingPosition != null) {
+        return this.waitingPosition
+      }
+
+      const spawn = creep.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })[0]
+      if (spawn != null) {
+        return spawn.pos
+      }
+      return creep.room.controller?.pos ?? null
+    })()
+    if (waitingPosition == null) {
       this.talk(creep)
       return
     }
     const waitingRange = 5
-    if (creep.pos.getRangeTo(waitingTarget.pos) <= waitingRange) {
+    if (creep.pos.getRangeTo(waitingPosition.x, waitingPosition.y) <= waitingRange) {
       if (creep.pos.findInRange(FIND_MY_CREEPS, 1).length > 1) {  // 自身を含むため>1
         creep.move(randomDirection(this.launchTime))
       }
@@ -680,14 +852,14 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
     }
     const moveToOptions = defaultMoveToOptions()
     moveToOptions.range = waitingRange
-    creep.moveTo(waitingTarget, moveToOptions)
+    creep.moveTo(waitingPosition.x, waitingPosition.y, moveToOptions)
     this.talk(creep)
   }
 
-  private runSingleAttacker(creep: Creep, whitelist: string[]): { moved: boolean} {
+  private runSingleAttacker(creep: Creep, whitelist: string[]): { moved: boolean } {
     const target = this.getClosestHostile(creep, creep.room.find(FIND_HOSTILE_CREEPS), whitelist)
     if (target == null) {
-      return {moved: false}
+      return { moved: false }
     }
 
     this.rangedAttack(creep, target)
@@ -698,14 +870,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
       } else if (range === 3) {
         // do nothing
       } else {
-        creep.moveTo(target)
+        if (target.pos.isRoomEdge !== true) {
+          creep.moveTo(target)
+        }
       }
     } else {
       if (target.pos.isRoomEdge !== true || creep.pos.isNearTo(target.pos) !== true) {
         creep.moveTo(target)
       }
     }
-    return { moved: true}
+    return { moved: true }
   }
 
   private attackNearbyHostile(creep: Creep, whitelist: string[]): { attackedTarget: Creep | null, moved: boolean } {
@@ -743,15 +917,22 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
         if (hasAttackPart === true) {
           if (range <= 2) {
             this.fleeFrom(closestHostile.pos, creep, 4)
+            moved = true
           } else if (range === 3) {
             // do nothing
+            moved = true
           } else {
-            creep.moveTo(closestHostile)
+            if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
+              creep.moveTo(closestHostile)
+              moved = true
+            }
           }
         } else {
-          creep.moveTo(closestHostile)
+          if (creep.room.name === this.targetRoomName && closestHostile.pos.isRoomEdge !== true) {
+            creep.moveTo(closestHostile)
+            moved = true
+          }
         }
-        moved = true
       }
     }
     return { attackedTarget, moved }
@@ -846,6 +1027,16 @@ export class GuardRemoteRoomProcess implements Process, Procedural, MessageObser
 
 function creepSpecFor(creepType: GuardRemoteRoomProcessCreepType): { roles: CreepRole[], body: BodyPartConstant[] } {
   switch (creepType) {
+  case "test-tiny-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: testTinyRangedAttackerBody,
+    }
+  case "tiny-ranged-attacker":
+    return {
+      roles: rangedAttackerRole,
+      body: tinyRangedAttackerBody,
+    }
   case "small-ranged-attacker":
     return {
       roles: rangedAttackerRole,

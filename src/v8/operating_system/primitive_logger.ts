@@ -4,7 +4,7 @@
  SystemCallやKernelから呼び出される関係上、SystemCall interfaceを適用せず、独立運用可能な実装
  */
 
-import { coloredText, TextColor } from "utility/log"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 export type LogLevel = "debug" | "info" | "warn" | "error" | "programError"
 
@@ -44,18 +44,18 @@ export const PrimitiveLogger = {
   },
 
   log(message: string, logLevel: LogLevel, options?: LogOptions): void {
-    const logColor = ((): TextColor | "none" => {
+    const logMessage = ((): string => {
       switch (logLevel) {
       case "debug":
-        return "none"
+        return message
       case "info":
-        return "info"
+        return `${ConsoleUtility.colored(`[${logLevel}]`, "info")} ${message}`
       case "warn":
-        return "warn"
+        return `${ConsoleUtility.colored(`[${logLevel}]`, "warn")} ${message}`
       case "error":
-        return "error"
+        return `${ConsoleUtility.colored(`[${logLevel}]`, "error")} ${message}`
       case "programError":
-        return "critical"
+        return `${ConsoleUtility.colored(`[${logLevel}]`, "critical")} ${message}`
       default: {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const _: never = logLevel
@@ -63,7 +63,6 @@ export const PrimitiveLogger = {
       }
       }
     })()
-    const logMessage = `${coloredText(`[${logLevel}]`, logColor)} ${message}`
     const notify = ((): boolean => {
       if (options?.notify === true) {
         return true

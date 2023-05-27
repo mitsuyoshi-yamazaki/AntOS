@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
@@ -12,14 +12,15 @@ import { CreepBody } from "utility/creep_body"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { decodeRoomPosition, RoomPositionFilteringOptions } from "prototype/room_position"
 import { processLog } from "os/infrastructure/logger"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { GameConstants } from "utility/constants"
 import { coloredText, profileLink, roomLink } from "utility/log"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { calculateTowerDamage } from "utility/tower"
 import { } from "./tower_interception"
-import { ValuedArrayMap } from "utility/valued_collection"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DefenseRoomProcess", state => {
   return DefenseRoomProcess.decode(state as DefenseRoomProcessState)
@@ -84,10 +85,13 @@ interface DefenseRoomProcessState extends ProcessState {
   readonly intercepterTargets: { [intercepterName: string]: Id<Creep> }
 }
 
-export class DefenseRoomProcess implements Process, Procedural {
+export class DefenseRoomProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private readonly codename: string

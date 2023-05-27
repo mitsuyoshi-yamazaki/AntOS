@@ -3,11 +3,12 @@ import { Process, ProcessId } from "process/process"
 import { OperatingSystem } from "os/os"
 import { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
 import { processLog } from "os/infrastructure/logger"
 import { QuadSpec, QuadSpecState } from "../../../../submodules/private/attack/quad/quad_spec"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("LaunchQuadProcess", state => {
   return LaunchQuadProcess.decode(state as LaunchQuadProcessState)
@@ -23,15 +24,19 @@ interface LaunchQuadProcessState extends ProcessState {
   readonly launchCondition: LaunchCondition
   readonly quadLaunchArguments: SpecializedQuadLaunchArguments
   readonly quadSpecState: QuadSpecState
+  readonly quadProcessCodename: string | null
 }
 
-export class LaunchQuadProcess implements Process, Procedural {
+export class LaunchQuadProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
   }
   public get roomName(): RoomName {
     return this.quadLaunchArguments.parentRoomName
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private constructor(
@@ -40,6 +45,7 @@ export class LaunchQuadProcess implements Process, Procedural {
     private readonly launchCondition: LaunchCondition,
     private readonly quadLaunchArguments: SpecializedQuadLaunchArguments,
     private readonly quadSpec: QuadSpec,
+    readonly quadProcessCodename: string | null,
   ) {
     this.identifier = `${this.constructor.name}_${this.processId}_${this.quadLaunchArguments.parentRoomName}_${this.quadSpec.shortDescription}`
   }
@@ -52,16 +58,24 @@ export class LaunchQuadProcess implements Process, Procedural {
       launchCondition: this.launchCondition,
       quadLaunchArguments: this.quadLaunchArguments,
       quadSpecState: this.quadSpec.encode(),
+      quadProcessCodename: this.quadProcessCodename,
     }
   }
 
   public static decode(state: LaunchQuadProcessState): LaunchQuadProcess {
     const quadSpec = QuadSpec.decode(state.quadSpecState)
-    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments, quadSpec)
+    return new LaunchQuadProcess(state.l, state.i, state.launchCondition, state.quadLaunchArguments, quadSpec, state.quadProcessCodename)
   }
 
-  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments, quadSpec: QuadSpec): LaunchQuadProcess {
-    return new LaunchQuadProcess(Game.time, processId, launchCondition, quadLaunchArguments, quadSpec)
+  public static create(processId: ProcessId, launchCondition: LaunchCondition, quadLaunchArguments: SpecializedQuadLaunchArguments, quadSpec: QuadSpec, quadProcessCodename: string | null): LaunchQuadProcess {
+    return new LaunchQuadProcess(
+      Game.time,
+      processId,
+      launchCondition,
+      quadLaunchArguments,
+      quadSpec,
+      quadProcessCodename,
+    )
   }
 
   public processShortDescription(): string {

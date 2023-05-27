@@ -1,5 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { RoomCoordinate, RoomName, RoomType, roomTypeOf } from "utility/room_name"
+import type { RoomName, RoomType } from "shared/utility/room_name_types"
+import { RoomCoordinate, roomTypeOf } from "utility/room_coordinate"
 
 /** @deprecated */
 export interface RoomPathMemory {

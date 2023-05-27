@@ -2,10 +2,10 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
 import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { coloredResourceType, roomLink } from "utility/log"
-import { MineralCompoundIngredients, ResourceConstant } from "utility/resource"
-import { Result } from "utility/result"
-import { RoomName } from "utility/room_name"
+import { roomLink } from "utility/log"
+import { MineralCompoundIngredients } from "shared/utility/resource"
+import { Result } from "shared/utility/result"
+import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
 
 export const defaultMaxWallHits = 10000000
@@ -72,6 +72,13 @@ class Config {
   }
   public get wallMaxHits(): number {
     return this.config.wallMaxHits ?? defaultMaxWallHits
+  }
+
+  public set upgraderMaxCount(value: number) {
+    this.config.upgraderMaxCount = value
+  }
+  public get upgraderMaxCount(): number {
+    return this.config.upgraderMaxCount ?? 5
   }
 
   public get nonHidableRampartIds(): Id<StructureRampart>[] {
@@ -389,11 +396,11 @@ export class OwnedRoomInfoAccessor {
   }
   public removeBoosts(boosts: MineralBoostConstant[]): Result<{ addedToResearchOutputLabIds: Id<StructureLab>[] }, string> {
     try {
-      this.roomInfo.boostLabs.forEach(boostLabInfo => {
-        if (boosts.includes(boostLabInfo.boost) !== true) {
-          throw `${coloredResourceType(boostLabInfo.boost)} is not in the list ${roomLink(this.roomName)}`
-        }
-      })
+      // this.roomInfo.boostLabs.forEach(boostLabInfo => {  // 不要だと思う
+      //   if (boosts.includes(boostLabInfo.boost) !== true) {
+      //     throw `${coloredResourceType(boostLabInfo.boost)} is not in the list ${roomLink(this.roomName)}`
+      //   }
+      // })
 
       const addedToResearchOutputLabIds: Id<StructureLab>[] = []
       boosts.forEach(boost => {

@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -28,6 +28,7 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { Position } from "prototype/room_position"
 import { processLog } from "os/infrastructure/logger"
 import { GameConstants } from "utility/constants"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("SendEnergyToAllyProcess", state => {
   return SendEnergyToAllyProcess.decode(state as SendEnergyToAllyProcessState)
@@ -40,7 +41,7 @@ const SpawnStopReasons = {
   droppedEnergyNotInUse: "dropped energy not in use",
 }
 
-const maxCarryAmount = 1000
+const maxCarryAmount = 1250
 
 export interface SendEnergyToAllyProcessState extends ProcessState {
   /** parent room name */
@@ -57,9 +58,12 @@ export interface SendEnergyToAllyProcessState extends ProcessState {
 }
 
 /** Haulerによる輸送 */
-export class SendEnergyToAllyProcess implements Process, Procedural, MessageObserver {
+export class SendEnergyToAllyProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -70,7 +74,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    private readonly parentRoomName: RoomName,
+    public readonly parentRoomName: RoomName,
     private readonly targetRoomName: RoomName,
     private readonly waypoints: RoomName[],
     private readonly finishWorking: number,
@@ -260,6 +264,13 @@ export class SendEnergyToAllyProcess implements Process, Procedural, MessageObse
     }
 
     const chargeableStructure = ((): EnergyChargeableStructure | StructureStorage | null => {
+      const targetRoomResource = RoomResources.getOwnedRoomResource(creep.room.name)
+      if (targetRoomResource != null) {
+        return targetRoomResource.activeStructures.storage
+          ?? targetRoomResource.activeStructures.chargeableStructures[0]
+          ?? null
+      }
+
       const isTransferrable = (structure: AnyOwnedStructure): boolean => {
         const rampart = structure.pos.findInRange(FIND_HOSTILE_STRUCTURES, 0, { filter: { structureType: STRUCTURE_RAMPART } })[0] as StructureRampart | null
         if (rampart == null) {

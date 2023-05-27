@@ -4,34 +4,36 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { memhack } from "./memory_hack"
 // import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
-import { init as initializerInit } from "_old/init"
 import { leveled_colored_text } from "./utility"
-import { SystemInfo } from "utility/system_info"
+import { SystemInfo } from "shared/utility/system_info"
 import { BootLoader } from "./boot_loader"
 
 memhack.load()
 
-initializerInit() // TODO: OSの機能に入るものはBootLoaderに移動する
-const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
-console.log(leveled_colored_text(initializing_message, "warn"))
-
 const rootFunctions = BootLoader.load()
 rootFunctions.load()
-
 const mainLoop = rootFunctions.loop
+
+const initializing_message = `${SystemInfo.os.name} v${SystemInfo.os.version} - ${SystemInfo.application.name} v${SystemInfo.application.version} reboot in ${Game.shard.name} at ${Game.time}`
+console.log(leveled_colored_text(initializing_message, "warn"))
 
 // ScreepsProfiler.enable()  // TODO: 普段はオフに
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  memhack.beforeTick()
-  // ScreepsProfiler.wrap(mainLoop)
-  mainLoop()
-  memhack.afterTick()
+  if (Game.shard.name !== "shard3") {
+    memhack.beforeTick()
+    // ScreepsProfiler.wrap(mainLoop)
+    mainLoop()
+    memhack.afterTick()
 
-  const all_cpu = Math.ceil(Game.cpu.getUsed())
-  Memory.cpu_usages.push(all_cpu)
+    // TODO: 旧ソースに依存している
+    const all_cpu = Math.ceil(Game.cpu.getUsed())
+    Memory.cpu_usages.push(all_cpu)
+  } else {
+    // do nothing
+  }
 }, "Main")
 
 /**

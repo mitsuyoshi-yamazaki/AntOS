@@ -1,8 +1,8 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { OperatingSystem } from "os/os"
-import { Result } from "utility/result"
+import { Result } from "shared/utility/result"
 import { Process, ProcessId } from "./process"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 
 type ProcessType = string
 type ProcessMaker = (processId: ProcessId) => Process

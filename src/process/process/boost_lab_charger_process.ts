@@ -12,14 +12,15 @@ import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_t
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
-import { RoomName } from "utility/room_name"
-import { isMineralBoostConstant, isResourceConstant } from "utility/resource"
+import type { RoomName } from "shared/utility/room_name_types"
+import { isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import { RoomResources } from "room_resource/room_resources"
 import { BoostLabInfo } from "room_resource/room_info"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { ResourceManager } from "utility/resource_manager"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
@@ -37,9 +38,12 @@ export interface BoostLabChargerProcessState extends ProcessState {
   readonly stopSpawningReasons: string[]
 }
 
-export class BoostLabChargerProcess implements Process, Procedural {
+export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomProcess {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -198,13 +202,20 @@ export class BoostLabChargerProcess implements Process, Procedural {
       return null
     }
     if (shouldCollectResources === true) {
-      return this.collectResourceTask(creep, terminal, labs)
+      return this.collectResourceTask(creep, terminal, labs, roomResource)
     }
 
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0] as ResourceConstant | null
       if (resourceType != null && labs.every(l => l.boost !== resourceType)) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        if (terminal.store.getFreeCapacity(resourceType) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, resourceType))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
     }
 
@@ -235,7 +246,14 @@ export class BoostLabChargerProcess implements Process, Procedural {
         continue
       }
       if (labInfo.lab.store.getFreeCapacity(labInfo.boost) <= 0) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, labInfo.boost))
+        if (terminal.store.getFreeCapacity(labInfo.boost) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, labInfo.boost))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, labInfo.boost))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
       return MoveToTargetTask.create(TransferResourceApiWrapper.create(labInfo.lab, labInfo.boost))
     }
@@ -267,12 +285,20 @@ export class BoostLabChargerProcess implements Process, Procedural {
     return null
   }
 
-  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[]): CreepTask | null {
+  private collectResourceTask(creep: Creep, terminal: StructureTerminal, labs: StructureLabInfo[], roomResource: OwnedRoomResource): CreepTask | null {
     creep.say("collect")
     if (creep.store.getUsedCapacity() > 0) {
       const resourceType = Object.keys(creep.store)[0]
       if (resourceType != null && isResourceConstant(resourceType)) {
-        return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+
+        if (terminal.store.getFreeCapacity(resourceType) > 0) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(terminal, resourceType))
+        }
+        if (roomResource.activeStructures.storage != null) {
+          return MoveToTargetTask.create(TransferResourceApiWrapper.create(roomResource.activeStructures.storage, resourceType))
+        }
+        PrimitiveLogger.fatal(`${this.taskIdentifier} no place to transfer`)
+        return null
       }
       PrimitiveLogger.programError(`${this.identifier} ${resourceType} is not resource constant ${roomLink(this.parentRoomName)}`)
       return null

@@ -1,5 +1,5 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { Result, ResultFailed } from "utility/result"
+import { Result, ResultFailed } from "shared/utility/result"
 import {
   ConsoleCommand,
   ConsoleCommandType,

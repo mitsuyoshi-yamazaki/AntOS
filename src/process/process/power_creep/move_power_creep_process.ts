@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
@@ -66,6 +66,23 @@ export class MovePowerCreepProcess implements Process, Procedural {
   }
 
   public static create(processId: ProcessId, fromRoomName: RoomName, toRoomName: RoomName, waypoints: RoomName[], powerCreepName: PowerCreepName): MovePowerCreepProcess {
+    const powerCreepProcessInfo = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      const process = processInfo.process
+      if (!(process instanceof PowerCreepProcess)) {
+        return false
+      }
+      if (process.parentRoomName !== fromRoomName) {
+        return false
+      }
+      return true
+    })
+
+    if (powerCreepProcessInfo != null) {
+      OperatingSystem.os.killProcess(powerCreepProcessInfo.processId)
+    } else {
+      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} no PowerCreepProcess for ${roomLink(fromRoomName)}`)
+    }
+
     return new MovePowerCreepProcess(Game.time, processId, fromRoomName, toRoomName, waypoints, powerCreepName, false, fromRoomName)
   }
 

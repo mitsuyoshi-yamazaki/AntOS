@@ -1,5 +1,5 @@
 import { Environment } from "./environment"
-import { Timestamp } from "./timestamp"
+import { Timestamp } from "../shared/utility/timestamp"
 
 const textColors: { [index: string]: string } = {
   // Log level
@@ -47,13 +47,13 @@ export function tab(text: string, tabs: Tab): string {
 }
 
 export function shortenedNumber(num: number): string {
-  if (num < 1000) {
-    return `${num}`
+  if (num < 2000) {
+    return coloredText(`${num}`, "info")
   }
-  if (num < 1000000) {
-    return `${Math.floor(num / 1000)}k`
+  if (num < 2000000) {
+    return `${coloredText(`${Math.floor(num / 1000)}`, "info")}k`
   }
-  return `${Math.floor(num / 1000000)}M`
+  return `${coloredText(`${Math.floor(num / 1000000)}`, "info")}M`
 }
 
 export function describeTime(ticks: Timestamp): string {
@@ -66,6 +66,7 @@ const baseUrl = ((): string => {
   case "simulation":
   case "botarena":
   case "private":
+  case "non game":
   case "unknown":
     return "https://screeps.com/a/#!"
   case "season 4":

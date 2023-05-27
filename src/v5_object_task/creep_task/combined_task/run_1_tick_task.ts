@@ -1,4 +1,4 @@
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { TaskProgressType } from "v5_object_task/object_task"
 import { TaskTargetTypeId } from "v5_object_task/object_task_target_cache"
 import { CreepTask } from "../creep_task"

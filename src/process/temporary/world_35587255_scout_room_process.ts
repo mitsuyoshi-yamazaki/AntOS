@@ -1,6 +1,5 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomCoordinate, RoomName } from "utility/room_name"
 import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -10,13 +9,16 @@ import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
 import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "utility/constants"
 import { processLog } from "os/infrastructure/logger"
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { ProcessDecoder } from "process/process_decoder"
+import type { RoomName } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("World35587255ScoutRoomProcess", state => {
   return World35587255ScoutRoomProcess.decode(state as World35587255ScoutRoomProcessState)
@@ -37,9 +39,12 @@ export interface World35587255ScoutRoomProcessState extends ProcessState {
 
 /** 周囲の自動偵察process */
 // Game.io("launch -l World35587255ScoutRoomProcess room_name=W19S19")
-export class World35587255ScoutRoomProcess implements Process, Procedural {
+export class World35587255ScoutRoomProcess implements Process, Procedural, OwnedRoomProcess {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string

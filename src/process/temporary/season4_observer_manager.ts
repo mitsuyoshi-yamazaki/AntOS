@@ -1,9 +1,9 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { RoomResources } from "room_resource/room_resources"
 import { coloredText, roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
-import { Timestamp } from "utility/timestamp"
-import { ValuedMapMap } from "utility/valued_collection"
+import type { RoomName } from "shared/utility/room_name_types"
+import { Timestamp } from "shared/utility/timestamp"
+import { ValuedMapMap } from "shared/utility/valued_collection"
 
 type ObserveInterval = "short" | "medium" | "long"
 
@@ -30,7 +30,7 @@ type Observation = {
 
 const observations = new Map<RoomName, Observation>() // <observerRoomName, observation>
 const reserved = new ValuedMapMap<RoomName, Timestamp, RoomName>() // <observerRoomName, observeTime, targetRoomName>
-const requestArguments: ObserveRequestArguments[] = []
+let requestArguments: ObserveRequestArguments[] = []
 
 export const Season4ObserverManager = {
   beforeTick(): void {
@@ -83,9 +83,18 @@ export const Season4ObserverManager = {
     reservationMap.set(observeTime, targetRoomName)
   },
 
-  // 一旦デプロイでクリアされるため不要
-  // stopObserving(roomName: RoomName, requesterIdentifier: string): void {
-  // },
+  // デプロイ時にもクリアされる
+  stopObserving(roomName: RoomName): void {
+    requestArguments = requestArguments.filter(request => {
+      if (request.observerRoomName === roomName) {
+        return false
+      }
+      return true
+    })
+
+    observations.delete(roomName)
+    reserved.delete(roomName)
+  },
 }
 
 function recalculateObservation(): void {

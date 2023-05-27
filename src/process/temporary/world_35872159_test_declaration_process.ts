@@ -3,13 +3,9 @@ import { Process, ProcessId } from "process/process"
 import { ProcessState } from "process/process_state"
 import { generateCodename } from "utility/unique_id"
 import { ProcessDecoder } from "process/process_decoder"
-import { RoomName } from "utility/room_name"
-import { SectorName } from "utility/room_sector"
 import { State, Stateful } from "os/infrastructure/state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Timestamp } from "utility/timestamp"
-import { ScoutRoomProcess } from "process/onetime/scout_room_process"
-import { OperatingSystem } from "os/os"
+import { Timestamp } from "shared/utility/timestamp"
 
 type DeclarationIdentifier = string
 

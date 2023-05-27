@@ -1,32 +1,39 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { isValidRoomName, RoomName } from "utility/room_name"
+import { isValidRoomName } from "shared/utility/room_name"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { QuadCreepSpec, QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
-import { isMineralBoostConstant } from "utility/resource"
+import { isMineralBoostConstant } from "shared/utility/resource"
 import { CreepBody, isBodyPartConstant } from "utility/creep_body"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
-import { KeywordArguments } from "os/infrastructure/console_command/utility/keyword_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { KeywordArguments } from "shared/utility/argument_parser/keyword_argument_parser"
 import { QuadMaker, QuadMakerState } from "./quad_maker"
+import type { RoomName } from "shared/utility/room_name_types"
+import { OwnedRoomProcess } from "process/owned_room_process"
+import { OperatingSystem } from "os/os"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
 })
 
 const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints", "quad_waypoints"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
 }
 
-export class QuadMakerProcess implements Process, Procedural, MessageObserver {
+export class QuadMakerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
   public get roomName(): RoomName {
     return this.quadMaker.roomName
@@ -102,6 +109,7 @@ commands: ${commands}
 - reset &ltargument_name&gt
   - reset quad argument
   - arguments: ${argumentNames}
+  - specify creep index to reset specific creep spec
 - show
   - show current quad arguments
 - verify
@@ -143,13 +151,34 @@ commands: ${commands}
     }
 
     case "clone":
-      throw "not implemented yet"
+      return this.clone(args)
 
     default:
       throw `Invalid command ${command}. see "help"`
     }
   }
 
+  /** @throws */
+  private clone(args: string[]): string {
+    const keywordArguments = new KeywordArguments(args)
+    const name = keywordArguments.string("name").parse()
+    const roomName = keywordArguments.roomName("room_name").parseOptional({ my: true }) ?? this.quadMaker.roomName
+    const targetRoomName = keywordArguments.roomName("target_room_name").parseOptional() ?? this.quadMaker.targetRoomName
+
+    const quadMaker = this.quadMaker.cloned(name)
+    quadMaker.roomName = roomName
+    quadMaker.targetRoomName = targetRoomName
+
+    const process = OperatingSystem.os.addProcess(null, processId => (new QuadMakerProcess(
+      Game.time,
+      processId,
+      quadMaker,
+    )))
+
+    return `launched ${process.processId}`
+  }
+
+  /** @throws */
   private change(args: string[]): string {
     const parameter = args.shift()
 
@@ -177,10 +206,29 @@ commands: ${commands}
       }
       const oldValue = this.quadMaker.targetRoomName
       this.quadMaker.targetRoomName = targetRoomName
-      return `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`
+
+      const results: string[] = [
+        `Changed target_room_name ${oldValue} =&gt ${this.quadMaker.targetRoomName}`,
+      ]
+
+      if (this.quadMaker.waypoints != null) {
+        this.quadMaker.waypoints = null
+        results.push("waypoints removed")
+      }
+
+      if (this.quadMaker.targetIds.length > 0) {
+        this.quadMaker.targetIds = []
+        results.push("target IDs remvoed")
+      }
+
+      return results.join(", ")
     }
 
     case "front_base_room_name": {
+      if (this.quadMaker.waypoints != null) {
+        throw "while front_base_room_name is set, waypoints are ignored"
+      }
+
       const frontBaseRoomName = args[0]
       if (frontBaseRoomName == null) {
         throw "Missing front base room name argument"
@@ -315,6 +363,34 @@ commands: ${commands}
       return `set target IDs ${this.quadMaker.targetIds.join(", ")}`
     }
 
+    case "codename": {
+      const listArguments = new ListArguments(args)
+      const codename = listArguments.string(0, "codename").parse()
+      this.quadMaker.quadProcessCodename = codename
+
+      return `set quad creep codename: "${codename}"`
+    }
+
+    case "waypoints": {
+      const listArguments = new ListArguments(args)
+      const waypoints = listArguments.list(0, "room_names", "room_name").parse()
+      GameMap.setWaypoints(this.quadMaker.roomName, this.quadMaker.targetRoomName, waypoints)
+
+      return `set ${roomLink(this.quadMaker.roomName)} =&gt ${waypoints.map(roomName => roomLink(roomName)).join(", ")} =&gt ${roomLink(this.quadMaker.targetRoomName)}`
+    }
+
+    case "quad_waypoints": {
+      if (this.quadMaker.frontBaseRoomName != null) {
+        throw "while front_base_room_name has a value, waypoints are ignored"
+      }
+
+      const listArguments = new ListArguments(args)
+      const waypoints = listArguments.list(0, "room_names", "room_name").parse()
+      this.quadMaker.waypoints = waypoints
+
+      return `set ${waypoints.map(roomName => roomLink(roomName)).join(" =&gt ")}`
+    }
+
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
@@ -350,6 +426,17 @@ commands: ${commands}
     case "target_ids":
       this.quadMaker.targetIds = []
       return `reset target_ids ${this.quadMaker.targetIds.length} IDs`
+
+    case "codename":
+      this.quadMaker.quadProcessCodename = null
+      return "reset codename"
+
+    case "waypoints":
+      throw "\"waypoints\" is just an alias to GameMap driver, not able to reset"
+
+    case "quad_waypoints":
+      this.quadMaker.waypoints = null
+      return "reset quad waypoints"
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`

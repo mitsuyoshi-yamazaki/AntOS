@@ -11,6 +11,7 @@ type EnvironmentalVariablesInterface = {
   kernelMemory: KernelMemory
 }
 
+// EnvironmentalVariable読み込み時に必要なため
 if (Memory.v3 == null) {
   Memory.v3 = {
     enabled: false,

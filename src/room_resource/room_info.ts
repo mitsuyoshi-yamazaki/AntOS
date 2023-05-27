@@ -1,9 +1,9 @@
 import type { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/room_object"
 import { Position } from "prototype/room_position"
 import type { WallPosition } from "script/wall_builder"
-import type { RoomName } from "utility/room_name"
-import { ShortVersion, ShortVersionV6 } from "utility/system_info"
-import type { Timestamp } from "utility/timestamp"
+import type { RoomName } from "shared/utility/room_name_types"
+import { ShortVersion, ShortVersionV6 } from "shared/utility/system_info"
+import type { Timestamp } from "shared/utility/timestamp"
 
 export type ResourceInsufficiency = number | "optional" | "urgent"
 
@@ -92,6 +92,8 @@ export type OwnedRoomConfig = {
   powers?: PowerConstant[]
   wallMaxHits?: number
   extraLinkIds?: Id<StructureLink>[]
+  specializedWorkerCount?: number
+  upgraderMaxCount?: number
 
   /// bootstrap中だけではなく、リスポーン後の最初の部屋にも適用される
   useSafemodeInBoostrap?: boolean

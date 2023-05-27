@@ -27,6 +27,7 @@ import { WithdrawApiWrapper, WithdrawApiWrapperState } from "./api_wrapper/withd
 import { RangedHealApiWrapper, RangedHealApiWrapperState } from "./api_wrapper/ranged_heal_api_wrapper"
 import { FillEnergyApiWrapper, FillEnergyApiWrapperState } from "./api_wrapper/fill_energy_api_wrapper"
 import { SignApiWrapper, SignApiWrapperState } from "./api_wrapper/sign_controller_api_wrapper"
+import { BuildWallApiWrapper, BuildWallApiWrapperState } from "./api_wrapper/build_wall_api_wrapper"
 
 export interface CreepApiWrapperState extends ApiWrapperState {
   t: keyof CreepApiWrapperDecoderMap
@@ -66,6 +67,7 @@ type CreepApiWrapperType = HarvestEnergyApiWrapper
   | RangedHealApiWrapper
   | FillEnergyApiWrapper
   | SignApiWrapper
+  | BuildWallApiWrapper
 
 class CreepApiWrapperDecoderMap {
   // force castしてdecode()するため返り値はnullableではない。代わりに呼び出す際はErrorMapperで囲う
@@ -95,6 +97,7 @@ class CreepApiWrapperDecoderMap {
   "RangedHealApiWrapper" = (state: CreepApiWrapperState) => RangedHealApiWrapper.decode(state as RangedHealApiWrapperState)
   "FillEnergyApiWrapper" = (state: CreepApiWrapperState) => FillEnergyApiWrapper.decode(state as FillEnergyApiWrapperState)
   "SignApiWrapper" = (state: CreepApiWrapperState) => SignApiWrapper.decode(state as SignApiWrapperState)
+  "BuildWallApiWrapper" = (state: CreepApiWrapperState) => BuildWallApiWrapper.decode(state as BuildWallApiWrapperState)
 }
 const decoderMap = new CreepApiWrapperDecoderMap()
 

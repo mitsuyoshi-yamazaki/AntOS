@@ -1,5 +1,5 @@
 import { ProcessId } from "process/process"
-import { parseProcessId } from "./utility/command_utility"
+import { parseProcessId } from "../../../shared/utility/argument_parser/command_utility"
 import { ConsoleCommand, CommandExecutionResult } from "./console_command"
 import { coloredText } from "utility/log"
 import { ProcessCommandRunner } from "./process_command"

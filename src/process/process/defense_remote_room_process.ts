@@ -1,6 +1,6 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredCreepBody, coloredText, profileLink, roomHistoryLink, roomLink } from "utility/log"
 import { ProcessState } from "../process_state"
 import { ProcessDecoder } from "../process_decoder"
@@ -18,7 +18,8 @@ import { moveToRoom } from "script/move_to_room"
 import { GameMap } from "game/game_map"
 import { CreepName, defaultMoveToOptions } from "prototype/creep"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DefenseRemoteRoomProcess", state => {
   return DefenseRemoteRoomProcess.decode(state as DefenseRemoteRoomProcessState)
@@ -73,10 +74,13 @@ interface DefenseRemoteRoomProcessState extends ProcessState {
   readonly intercepterCreepNames: {[roomName: string]: CreepName}
 }
 
-export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObserver {
+export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public readonly identifier: string
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.roomName
   }
 
   private get targetRooms(): RoomInfo[] {
@@ -260,7 +264,9 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     })
 
     if (intercepters.length < creepMaxCount && this.intercepterCreepNames[target.roomName] == null) {
-      this.spawnIntercepter(roomResource, target)
+      if (roomResource.controller.level <= 4 || roomResource.getResourceAmount(RESOURCE_ENERGY) > (roomResource.controller.level * 5000)) {
+        this.spawnIntercepter(roomResource, target)
+      }
     }
 
     intercepters.forEach(creep => this.runIntercepter(creep, target))
@@ -287,8 +293,10 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
           return
         }
       } else {  // no ATTACK
-        creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
-        if (attackTarget.range > 1) {
+        if (attackTarget.creep.pos.isRoomEdge !== true) {
+          creep.moveTo(attackTarget.creep.pos, defaultMoveToOptions())
+        }
+        if (attackTarget.range > 1 || creep.hits < (creep.hitsMax * 0.9)) {
           creep.heal(creep)
         } else {
           creep.attack(attackTarget.creep)
@@ -353,7 +361,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
   }
 
   private spawnIntercepter(roomResource: OwnedRoomResource, target: TargetInfo): void {
-    const rangedAttackCount = Math.max(Math.ceil((target.totalPower.heal + 1) / GameConstants.creep.actionPower.rangedAttack), 5)
+    const rangedAttackCount = Math.max(Math.ceil((target.totalPower.heal + 1) / GameConstants.creep.actionPower.rangedAttack) + 1, 5)
     const healCount = ((): number => {
       const count = Math.max(Math.ceil(target.totalPower.rangedAttack / GameConstants.creep.actionPower.heal), 1)
       if (count > 3) {
@@ -361,11 +369,11 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
       }
       return count
     })()
-    const moveCount = rangedAttackCount + healCount
+    const moveCount = Math.ceil((rangedAttackCount + healCount) / 2)
 
-    const body: BodyPartConstant[] = [
+    let body: BodyPartConstant[] = [
       ...Array(moveCount).fill(MOVE),
-      ATTACK,
+      ATTACK, ATTACK,
       ...Array(rangedAttackCount).fill(RANGED_ATTACK),
       ...Array(healCount).fill(HEAL),
       MOVE, MOVE,
@@ -375,9 +383,17 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, MessageObs
     const energyCapacity = roomResource.room.energyCapacityAvailable
     const bodyPartMaxCount = GameConstants.creep.body.bodyPartMaxCount
     if (bodyCost > energyCapacity || body.length > bodyPartMaxCount) {
-      const shouldNotify = target.attacker.onlyNpc !== true
-      raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
-      return
+      if (target.totalPower.heal > 0 || (target.totalPower.attack + target.totalPower.rangedAttack) > 100) {
+        const shouldNotify = target.attacker.onlyNpc !== true
+        raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
+        return
+      }
+      body = [MOVE, RANGED_ATTACK, RANGED_ATTACK, MOVE]
+      if (CreepBody.cost(body) > energyCapacity) {
+        const shouldNotify = target.attacker.onlyNpc !== true
+        raiseError(`${this.constructor.name} ${this.processId} ${roomLink(this.roomName)} can't handle invader in ${roomLink(target.roomName)} ${targetDescription(target)}, estimated intercepter body: ${CreepBody.description(body)}`, shouldNotify)
+        return
+      }
     }
 
     if (target.attacker.onlyNpc !== true) { // TODO: 相手をコピーすれば良いのでは

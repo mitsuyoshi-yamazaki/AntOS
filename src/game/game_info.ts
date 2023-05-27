@@ -6,4 +6,5 @@ export interface GameInfoMemory {
   disableMineralHarvesting?: boolean
   enableCpuOptimization?: boolean
   activeShards?: string[]
+  losingRoomNames?: string[]
 }

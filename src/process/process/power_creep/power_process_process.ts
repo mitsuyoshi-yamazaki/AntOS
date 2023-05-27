@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { ProcessState } from "process/process_state"
@@ -21,6 +21,7 @@ import { ProcessDecoder } from "process/process_decoder"
 import { RoomResources } from "room_resource/room_resources"
 import { OperatingSystem } from "os/os"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("PowerProcessProcess", state => {
   return PowerProcessProcess.decode(state as PowerProcessProcessState)
@@ -34,9 +35,12 @@ export interface PowerProcessProcessState extends ProcessState {
   p: Id<StructurePowerSpawn>
 }
 
-export class PowerProcessProcess implements Process, Procedural {
+export class PowerProcessProcess implements Process, Procedural, OwnedRoomProcess {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   private readonly identifier: string

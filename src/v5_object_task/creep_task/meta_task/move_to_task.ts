@@ -5,7 +5,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { interRoomMoveToOptions } from "prototype/creep"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { GameConstants } from "utility/constants"
 
 export interface MoveToTaskState extends CreepTaskState {

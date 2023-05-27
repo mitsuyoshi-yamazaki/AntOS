@@ -8,7 +8,7 @@ import type { TaskLogRequest } from "application/task_logger"
 import type { CreepName } from "prototype/creep"
 import { CreepTaskAssignTaskRequest, SpawnTaskRequestType, TowerActionTaskRequest } from "application/task_request"
 import type { AnyTaskProblem } from "application/any_problem"
-import type { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 export interface TaskRequestHandlerInputs {
   creepTaskAssignRequests: Map<CreepName, CreepTaskAssignTaskRequest>

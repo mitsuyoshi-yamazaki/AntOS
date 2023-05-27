@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { Process, ProcessId } from "process/process"
 import { coloredText } from "utility/log"
-import type { Timestamp } from "utility/timestamp"
+import type { Timestamp } from "shared/utility/timestamp"
 import { ProcessRequestStore } from "os/process_request_store"
 
 export function processLog(sender: Process, message: string): void {

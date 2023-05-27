@@ -1,6 +1,5 @@
-import { RoomCoordinate, RoomName, RoomType } from "./room_name"
-
-export type SectorName = RoomName
+import type { RoomName, RoomType } from "shared/utility/room_name_types"
+import { RoomCoordinate } from "utility/room_coordinate"
 
 export class RoomSector {
   public get centerRoomName(): RoomName {

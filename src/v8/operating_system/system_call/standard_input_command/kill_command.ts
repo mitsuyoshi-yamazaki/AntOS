@@ -1,7 +1,7 @@
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
-import { coloredText } from "utility/log"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { ProcessManager } from "v8/operating_system/process_manager"
 import { StandardInputCommand } from "../standard_input_command"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 export class KillCommand implements StandardInputCommand {
   public readonly description = [
@@ -23,7 +23,7 @@ export class KillCommand implements StandardInputCommand {
       return "ok"
 
     } catch (error) {
-      return `${coloredText("[Error]", "error")} ${error}`
+      return `${ConsoleUtility.colored("[Error]", "error")} ${error}`
     }
   }
 }

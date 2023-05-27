@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 
 export type RoomEventCacheCreepTaskType = "repair"
 

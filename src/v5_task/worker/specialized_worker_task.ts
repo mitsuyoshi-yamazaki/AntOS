@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ChildTaskExecutionResults, Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole } from "prototype/creep_role"
@@ -89,6 +89,9 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       const resources = RoomResources.getOwnedRoomResource(this.roomName)
       if (resources == null) {
         return 3
+      }
+      if (resources.roomInfo.config?.specializedWorkerCount != null) {
+        return resources.roomInfo.config?.specializedWorkerCount
       }
       if (resources.roomInfo.roomPlan == null) {
         return 3
@@ -230,7 +233,12 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
 
       const storedResourceType = (Array.from(Object.keys(creep.store)) as ResourceConstant[])[0]
       if (storedResourceType != null) {
-        const transferTarget = objects.activeStructures.terminal ?? objects.activeStructures.storage
+        const transferTarget = ((): StructureTerminal | StructureStorage | null => {
+          if (objects.activeStructures.terminal != null && objects.activeStructures.terminal.store.getFreeCapacity() > 0) {
+            return objects.activeStructures.terminal
+          }
+          return objects.activeStructures.storage
+        })()
         if (transferTarget != null) {
           return MoveToTargetTask.create(TransferResourceApiWrapper.create(transferTarget, storedResourceType))
         }

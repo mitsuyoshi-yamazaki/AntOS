@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
-import { roomLink } from "utility/log"
+import type { RoomName } from "shared/utility/room_name_types"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
 import { generateCodename } from "utility/unique_id"
@@ -11,7 +11,7 @@ import { CreepTask } from "v5_object_task/creep_task/creep_task"
 import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room_task"
 import { CreepPoolAssignPriority } from "world_info/resource_pool/creep_resource_pool"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { RoomResources } from "room_resource/room_resources"
 import { CreepBody } from "utility/creep_body"
 import { AttackControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/attack_controller_api_wrapper"
@@ -21,7 +21,12 @@ import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resour
 import { FleeFromAttackerTask } from "v5_object_task/creep_task/combined_task/flee_from_attacker_task"
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
+import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
+import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide_api_wrapper"
+import { processLog } from "os/infrastructure/logger"
+import { OwnedRoomProcess } from "process/owned_room_process"
+import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -42,9 +47,12 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   attackControllerInterval: number
 }
 
-export class World35440623DowngradeControllerProcess implements Process, Procedural, MessageObserver {
+export class World35440623DowngradeControllerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -190,9 +198,20 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   private spawnDowngrader(resources: OwnedRoomResource): void {
-    const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
     const maxClaimSize = Math.min(this.maxClaimSize, 20)
     const body = ((): BodyPartConstant[] => {
+      const energyAmount = (resources.activeStructures.terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (resources.activeStructures.storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+      const minimumEnergy = ((): number => {
+        if (resources.controller.level >= 8) {
+          return 70000
+        }
+        return 40000
+      })()
+
+      if (energyAmount < minimumEnergy) {
+        return [CLAIM, MOVE]
+      }
+
       const energyCapacityAvailable = resources.room.energyCapacityAvailable
       const fastMoveBody = CreepBody.create([], [MOVE, CLAIM, MOVE], energyCapacityAvailable, maxClaimSize)
       const normalBody = CreepBody.create([], [CLAIM, MOVE], energyCapacityAvailable, maxClaimSize)
@@ -201,26 +220,19 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       }
       return fastMoveBody
     })()
-    const minimumEnergy = ((): number => {
-      if (resources.controller.level >= 8) {
-        return 70000
-      }
-      return 40000
-    })()
-    if (energyAmount > minimumEnergy) {
-      this.currentTargetRoomNames = [...this.targetRoomNames]
 
-      World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
-        priority: CreepSpawnRequestPriority.Low,
-        numberOfCreeps: 1,
-        codename: this.codename,
-        roles: [CreepRole.Claimer, CreepRole.Mover],
-        body,
-        initialTask: null,
-        taskIdentifier: this.identifier,
-        parentRoomName: null,
-      })
-    }
+    this.currentTargetRoomNames = [...this.targetRoomNames]
+
+    World.resourcePools.addSpawnCreepRequest(this.parentRoomName, {
+      priority: CreepSpawnRequestPriority.Low,
+      numberOfCreeps: 1,
+      codename: this.codename,
+      roles: [CreepRole.Claimer, CreepRole.Mover],
+      body,
+      initialTask: null,
+      taskIdentifier: this.identifier,
+      parentRoomName: null,
+    })
   }
 
   private newTaskFor(creep: Creep): CreepTask | null {
@@ -229,14 +241,114 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     }
 
     const controller = creep.room.controller
-    if (controller == null || controller.owner == null || controller.my === true || (controller.upgradeBlocked ?? 0) > creep.pos.getRangeTo(controller.pos)) {
-      const moveToNextRoomTask = this.moveToNextRoomTask(creep)
-      if (moveToNextRoomTask == null) {
-        creep.say("finished")
+    const attackTarget = ((): StructureController | null => {
+      if (controller == null) {
+        return null
       }
-      return moveToNextRoomTask
+      if (this.targetRoomNames.includes(controller.room.name) !== true) {
+        return null
+      }
+      if (controller.owner == null) {
+        return null
+      }
+      if (controller.my === true) {
+        return null
+      }
+      if (controller.reservation?.username === Game.user.name) {
+        return null
+      }
+      if ((controller.upgradeBlocked ?? 0) > (creep.ticksToLive ?? 0)) {
+        return null
+      }
+      return controller
+    })()
+
+    if (attackTarget != null) {
+      return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(attackTarget), { ignoreSwamp: false, reusePath: 0 }))
     }
-    return FleeFromAttackerTask.create(MoveToTargetTask.create(AttackControllerApiWrapper.create(controller), { ignoreSwamp: false, reusePath: 0 }))
+
+    ((): void => {
+      if (controller == null) {
+        return
+      }
+      const index = this.targetRoomNames.indexOf(controller.room.name)
+      if (index < 0) {
+        return
+      }
+      if (controller.my === true) {
+        this.targetRoomNames.splice(index, 1)
+        return
+      }
+      if (controller.owner != null) {
+        return
+      }
+      this.targetRoomNames.splice(index, 1)
+      this.launchAggressiveClaimProcess(controller)
+    })()
+
+    const moveToNextRoomTask = this.moveToNextRoomTask(creep)
+    if (moveToNextRoomTask == null) {
+      creep.say("finished")
+
+      const canQuit = ((): boolean => {
+        if (this.targetRoomNames.length > 1) {
+          return false
+        }
+        if (controller == null) {
+          return false
+        }
+        if (this.targetRoomNames.includes(controller.room.name) !== true) {
+          return false
+        }
+        if (controller.level <= 0) {
+          return true
+        }
+        if (controller.level === 1 && controller.ticksToDowngrade < 2000) {
+          return true
+        }
+        return false
+      })()
+
+      if (canQuit === true) {
+        this.addSpawnStopReason("unclaimed")
+        processLog(this, `${coloredText("[Downgrade]", "info")} ${roomLink(creep.room.name)} is about to unclaim`)
+      }
+
+      return RunApiTask.create(SuicideApiWrapper.create())
+    }
+    return moveToNextRoomTask
+  }
+
+  private launchAggressiveClaimProcess(controller: StructureController): void {
+    processLog(this, `${roomLink(controller.room.name)} unclaimed`)
+
+    const excludedStructureIds: Id<(StructureStorage | StructureTerminal)>[] = []
+    const hostileStructures = controller.room.find(FIND_HOSTILE_STRUCTURES)
+
+    hostileStructures.forEach(structure => {
+      if (structure.structureType === STRUCTURE_TERMINAL) {
+        excludedStructureIds.push(structure.id)
+        return
+      }
+      if (structure.structureType === STRUCTURE_STORAGE) {
+        excludedStructureIds.push(structure.id)
+        return
+      }
+    })
+
+    if (hostileStructures.length === excludedStructureIds.length) {
+      processLog(this, `no structures to destroy in ${roomLink(controller.room.name)}`)
+      return
+    }
+
+    OperatingSystem.os.addProcess(null, processId => AggressiveClaimProcess.create(
+      processId,
+      this.parentRoomName,
+      controller.room.name,
+      [],
+      excludedStructureIds,
+    ))
+    processLog(this, `launched AggressiveClaimProcess to destroy ${hostileStructures.length - excludedStructureIds.length} structures in ${roomLink(controller.room.name)}`)
   }
 
   private moveToNextRoomTask(creep: Creep): CreepTask | null {

@@ -40,11 +40,12 @@ import { ProcessCommand } from "./system_call/standard_input_command/process_com
 import { KillCommand } from "./system_call/standard_input_command/kill_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
-import { ArgumentParser } from "os/infrastructure/console_command/utility/argument_parser"
+import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { StandardInputCommand } from "./system_call/standard_input_command"
 import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 import { GameConstants } from "utility/constants"
 import { ProcessLogger } from "./system_call/process_logger"
+import { UniqueId } from "./system_call/unique_id"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
@@ -54,6 +55,7 @@ type LifecycleEvent = keyof SystemCallDefaultInterface
 
 type KernelInterface = {
   // ---- Boot ---- //
+  standardInput: (command?: string) => string
   registerDrivers(drivers: Driver[]): void
   load(): void
 
@@ -80,6 +82,7 @@ const systemCallFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[
   endOfTick: [],
 }
 const systemCalls: SystemCall[] = [
+  UniqueId,
   ProcessManager,
   ProcessLogger,
 ]
@@ -99,6 +102,8 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
+  standardInput: standardInput(standardInputCommands),
+
   registerDrivers(drivers: Driver[]): void {
     drivers.forEach(driver => {
       if (driver.load != null) {
@@ -122,9 +127,6 @@ export const Kernel: KernelInterface = {
   },
 
   run(): void {
-    ErrorMapper.wrapLoop((): void => {
-      Game.v3 = standardInput(standardInputCommands)
-    })()
     callSystemCallFunctions(systemCallFunctions.startOfTick)
     callSystemCallFunctions(driverFunctions.startOfTick)
 

@@ -5,7 +5,7 @@ import { Process, ProcessId } from "process/process"
 import { ProcessDecoder } from "process/process_decoder"
 import { Assert } from "utility/assert"
 import { coloredText } from "utility/log"
-import { Timestamp } from "utility/timestamp"
+import { Timestamp } from "shared/utility/timestamp"
 import { ProcessState } from "../process_state"
 
 ProcessDecoder.registerUndecodableProcess("OnHeapDelayProcess")
@@ -36,6 +36,10 @@ export class OnHeapDelayProcess implements Process, Procedural {
     }
   }
 
+  /**
+   *
+   * @param command throwable
+   */
   public static create(processId: ProcessId, description: string, delay: Timestamp, command: () => string): OnHeapDelayProcess {
     return new OnHeapDelayProcess(Game.time, processId, description, Game.time + delay, command)
   }

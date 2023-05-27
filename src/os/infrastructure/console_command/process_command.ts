@@ -18,7 +18,13 @@ export class ProcessCommand implements ConsoleCommand {
   ) { }
 
   public run(): CommandExecutionResult {
-    if (this.args[0] != null) {
+    switch (this.args[0]) {
+    case "type":
+      return this.showProcessType()
+    case null:
+    case undefined:
+      return this.listProcess()
+    default: {
       const processId = parseInt(this.args[0], 10)
       if (isNaN(processId) === true) {
         return this.listProcess(this.args[0])
@@ -26,7 +32,45 @@ export class ProcessCommand implements ConsoleCommand {
         return this.showProcessDetail(processId)
       }
     }
-    return this.listProcess()
+    }
+  }
+
+  private showProcessType(): CommandExecutionResult {
+    const processTypeDescriptions = new Map < string, { count: number, running: number }>() // <process type name, {}>
+    const getTypeDescription = (processName: string): { count: number, running: number } => {
+      const stored = processTypeDescriptions.get(processName)
+      if (stored != null) {
+        return stored
+      }
+      const newObj = {
+        count: 0,
+        running: 0
+      }
+      processTypeDescriptions.set(processName, newObj)
+      return newObj
+    }
+
+    OperatingSystem.os.listAllProcesses().forEach(processInfo => {
+      const typeDescription = getTypeDescription(processInfo.process.constructor.name)
+      typeDescription.count += 1
+      if (processInfo.running === true) {
+        typeDescription.running += 1
+      }
+    })
+
+    const getAlignedText = (processType: string, running: string): string => {
+      return `${tab(running, smallTab)}${tab(processType, veryLargeTab)}`
+    }
+
+    const header = getAlignedText("Process Type", "Running/Count")
+    const results: string[] = [
+      header,
+      ...Array.from(processTypeDescriptions.entries()).map(([processTypeName, description]): string => {
+        return getAlignedText(processTypeName, `${description.running}/${description.count}`)
+      }),
+    ]
+
+    return results.join("\n")
   }
 
   private showProcessDetail(processId: ProcessId): CommandExecutionResult {

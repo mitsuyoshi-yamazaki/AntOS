@@ -6,6 +6,8 @@ local_configs.ts
 /dist
 /.rpt2_cache
 /node_modules
+/temp
+compiler.jar
 
 # Created by https://www.gitignore.io/api/macos
 

@@ -1,6 +1,24 @@
+/**
+ # DistributorProcess
+ ## 役割
+ - Terminal, Storage, Link間の資源配分
+ - Link間のエネルギー輸送
+
+ ## 挙動
+ Empire.RoomInfoを元に資源を配分する
+
+ ### 配分
+ - Terminal
+   - Energy以外の資源は20kを上限
+   - Energyは
+   - 資源の種類が7を超えたら他所に移す
+ - Storage
+   - Energy以外の資源は100kを上限
+ */
+
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { CreepRole } from "prototype/creep_role"
@@ -18,12 +36,13 @@ import { TransferEnergyApiWrapper } from "v5_object_task/creep_task/api_wrapper/
 import { RunApiTask } from "v5_object_task/creep_task/combined_task/run_api_task"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "shared/utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { CreepBody } from "utility/creep_body"
 import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("DistributorProcess", state => {
   return DistributorProcess.decode(state as DistributorProcessState)
@@ -38,9 +57,12 @@ export interface DistributorProcessState extends ProcessState {
   drainStorage: boolean
 }
 
-export class DistributorProcess implements Process, Procedural, MessageObserver {
+export class DistributorProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get taskIdentifier(): string {
     return this.identifier
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public readonly identifier: string
@@ -86,7 +108,7 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop_storage_drain"]
+    const commandList = ["help", "drain_storage", "stop_storage_drain"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -95,9 +117,13 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       case "help":
         return `Commands: ${commandList}`
 
+      case "drain_storage":
+        this.drainStorage = true
+        return "drain storage"
+
       case "stop_storage_drain":
         this.drainStorage = false
-        return "stopped"
+        return "drain storage stopped"
 
       default:
         throw `Invalid command ${command}, see "help"`
@@ -335,10 +361,10 @@ export class DistributorProcess implements Process, Procedural, MessageObserver 
       return null
     }
 
-    const transferToTerminalResourceType = RESOURCE_OPS
-    if (creep.store.getUsedCapacity() <= 0 && storage.store.getUsedCapacity(transferToTerminalResourceType) > 0 && terminal.store.getFreeCapacity(transferToTerminalResourceType) > 10000) {
-      return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, transferToTerminalResourceType))
-    }
+    // const transferToTerminalResourceType = RESOURCE_OPS
+    // if (creep.store.getUsedCapacity() <= 0 && storage.store.getUsedCapacity(transferToTerminalResourceType) > 0 && terminal.store.getFreeCapacity(transferToTerminalResourceType) > 10000) {
+    //   return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, transferToTerminalResourceType))
+    // }
 
     const terminalAmount = 20000
     const excludedResourceTypes: ResourceConstant[] = [

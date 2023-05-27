@@ -1,11 +1,12 @@
 import { ProblemFinder } from "v5_problem/problem_finder"
-import { RoomName, roomTypeOf } from "utility/room_name"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { RemoteRoomKeeperTask } from "./remote_room_keeper_task"
 import { TaskState } from "v5_task/task_state"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText } from "utility/log"
 import { RoomResources } from "room_resource/room_resources"
+import type { RoomName } from "shared/utility/room_name_types"
+import { roomTypeOf } from "utility/room_coordinate"
 
 export interface RemoteRoomManagerTaskState extends TaskState {
   /** room name */

@@ -1,4 +1,4 @@
-import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
+import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 
@@ -44,7 +44,7 @@ export class V8TestProcess extends Process {
 
   public run = (): void => {
     if (Game.time % 20 === 0) {
-      PrimitiveLogger.log(`${this.constructor.name} run`)  // FixMe: 消す
+      ProcessLogger.debug(this, "run")
     }
   }
 }

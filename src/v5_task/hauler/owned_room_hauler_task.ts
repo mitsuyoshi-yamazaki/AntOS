@@ -1,4 +1,4 @@
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { Task, TaskIdentifier, TaskStatus } from "v5_task/task"
 import { OwnedRoomObjects } from "world_info/room_info"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
@@ -191,7 +191,7 @@ export class OwnedRoomHaulerTask extends Task {
           return
         }
         const powerConstant = GameConstants.power.regenSource
-        const value = powerConstant.value[regenEffect.level]
+        const value = powerConstant.value[regenEffect.level - 1]
         if (value == null) {
           PrimitiveLogger.programError(`Source ${source.id} in ${roomLink(source.room.name)} has effect with unimplemented level ${regenEffect.level}`)
           return

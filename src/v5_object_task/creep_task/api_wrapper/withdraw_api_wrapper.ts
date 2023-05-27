@@ -5,7 +5,7 @@ import { TargetingApiWrapper } from "v5_object_task/targeting_api_wrapper"
 import { roomLink } from "utility/log"
 import { CreepApiWrapperState } from "../creep_api_wrapper"
 import { EnergyStore } from "prototype/room_object"
-import { isResourceConstant } from "utility/resource"
+import { isResourceConstant } from "shared/utility/resource"
 
 type WithdrawApiWrapperResult = FINISHED | IN_PROGRESS | FINISHED_AND_RAN | ERR_NOT_IN_RANGE | ERR_BUSY | ERR_PROGRAMMING_ERROR
 export type WithdrawApiWrapperTargetType = EnergyStore | Ruin | StructureLab | StructureFactory | StructureLink | StructureExtension | StructureSpawn | StructureTower
@@ -94,13 +94,13 @@ export class WithdrawApiWrapper implements ApiWrapper<Creep, WithdrawApiWrapperR
       if ((this.target instanceof Ruin) && this.target.structure.structureType === STRUCTURE_POWER_BANK) {
         return FINISHED // 対処療法
       }
-      PrimitiveLogger.fatal(`WithdrawApiWrapper received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
+      PrimitiveLogger.fatal(`WithdrawApiWrapper (1) received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
       return ERR_PROGRAMMING_ERROR
 
     case ERR_NOT_OWNER:
     case ERR_INVALID_ARGS:
     default:
-      PrimitiveLogger.fatal(`WithdrawApiWrapper received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
+      PrimitiveLogger.fatal(`WithdrawApiWrapper (2) received ${result}, ${creep.name} in ${roomLink(creep.room.name)}, target: ${this.target}`)
       return ERR_PROGRAMMING_ERROR
     }
   }

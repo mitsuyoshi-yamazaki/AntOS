@@ -1,7 +1,7 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { GameConstants } from "utility/constants"
 import { roomLink } from "utility/log"
-import { ValuedMapMap } from "utility/valued_collection"
+import { ValuedMapMap } from "shared/utility/valued_collection"
 import { constructionSiteFlagColorMap } from "v5_task/room_planing/create_construction_site_task"
 
 export type WallPosition = {

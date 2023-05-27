@@ -1,7 +1,7 @@
 import { decodeRoomPosition, Position } from "prototype/room_position"
 import { GameConstants } from "utility/constants"
 import { roomLink } from "utility/log"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { calculateAbsoluteGclFarmPositions, GclFarmPositions, getGclFarmPredefinedPlan } from "./gcl_farm_predefined_plans"
 
 export class GclFarmRoomPlan {

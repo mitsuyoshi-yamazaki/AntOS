@@ -3,9 +3,10 @@ import { EnergyChargeableStructure, EnergySource, EnergyStore } from "prototype/
 import { Environment } from "utility/environment"
 import { roomLink } from "utility/log"
 import { Migration } from "utility/migration"
-import { RoomName, roomSectorNameOf } from "utility/room_name"
-import { ShortVersion } from "utility/system_info"
-import { ValuedArrayMap } from "utility/valued_collection"
+import { ShortVersion } from "shared/utility/system_info"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
+import type { RoomName } from "shared/utility/room_name_types"
+import { roomSectorNameOf } from "utility/room_coordinate"
 // Worldをimportしない
 
 const allVisibleRooms: Room[] = []
@@ -74,7 +75,7 @@ export const Rooms: RoomsInterface = {
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
       allVisibleRooms.push(room)
 
-      if (room.controller != null && room.controller.my === true) {
+      if (room.controller != null && room.controller.my === true && Memory.ignoreRooms.includes(roomName) !== true) {
         ownedRooms.push(room)
         ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
 
@@ -97,7 +98,8 @@ export const Rooms: RoomsInterface = {
         if (controller.level >= 8) {
           return roomLink(controller.room.name)
         }
-        return `${roomLink(controller.room.name)}(${controller.level})`
+        const progress = Math.floor((controller.progress / controller.progressTotal) * 10)
+        return `${roomLink(controller.room.name)}(${controller.level}.${progress})`
       })
 
       roomVersions.forEach((controllers, version) => {

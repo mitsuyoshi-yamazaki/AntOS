@@ -2,7 +2,7 @@ import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import { coloredText, profileLink, roomHistoryLink, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
-import { RoomName } from "utility/room_name"
+import type { RoomName } from "shared/utility/room_name_types"
 import { ProcessState } from "process/process_state"
 import { CreepRole, hasNecessaryRoles } from "prototype/creep_role"
 import { CreepSpawnRequestPriority } from "world_info/resource_pool/creep_specs"
@@ -34,10 +34,11 @@ import { CreepName, defaultMoveToOptions, isV5CreepMemory } from "prototype/cree
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { ListArguments } from "os/infrastructure/console_command/utility/list_argument_parser"
+import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { GameMap } from "game/game_map"
 import { Quad, QuadState } from "../../../submodules/private/attack/quad/quad"
 import { RoomResources } from "room_resource/room_resources"
+import { OwnedRoomProcess } from "process/owned_room_process"
 
 ProcessDecoder.register("HarvestPowerProcess", state => {
   return HarvestPowerProcess.decode(state as HarvestPowerProcessState)
@@ -189,9 +190,12 @@ export interface HarvestPowerProcessState extends ProcessState {
   quadState: QuadState | null
 }
 
-export class HarvestPowerProcess implements Process, Procedural, MessageObserver {
+export class HarvestPowerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
   public get isPickupFinished(): boolean {
     return this.pickupFinished
+  }
+  public get ownedRoomName(): RoomName {
+    return this.parentRoomName
   }
 
   public get taskIdentifier(): string {

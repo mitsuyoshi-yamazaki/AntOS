@@ -12,13 +12,13 @@ import { TaskTargetCache } from "object_task/object_task_target_cache"
 import { ResourceManager } from "utility/resource_manager"
 import { Logger } from "./logger"
 import { ProcessRequestStore } from "os/process_request_store"
-import { EventManager } from "event_handler/event_manager"
 import { GameMap } from "game/game_map"
 import { GameRecord } from "game/game_record"
 import { Season4ObserverManager } from "process/temporary/season4_observer_manager"
 import { emptyPositionCache } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { UniqueId } from "utility/unique_id"
 import { SwcAllyRequest } from "script/swc_ally_request"
+import { IntegratedAttack } from "../../../submodules/private/attack/integrated_attack/integrated_attack"
 // import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 
 export class RootProcess {
@@ -33,6 +33,10 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       UniqueId.load()
     }, "UniqueId.load()")()
+
+    ErrorMapper.wrapLoop((): void => {
+      IntegratedAttack.load()
+    }, "IntegratedAttack.load()")()
   }
 
   public runBeforeTick(processList: Process[], processLauncher: ProcessLauncher): void {
@@ -73,10 +77,6 @@ export class RootProcess {
     }, "RootProcess.restoreTasks()")()
 
     ErrorMapper.wrapLoop((): void => {
-      EventManager.beforeTick()
-    }, "EventManager.beforeTick()")()
-
-    ErrorMapper.wrapLoop((): void => {
       ProcessRequestStore.beforeTick()
     }, "ProcessRequestStore.beforeTick()")()
 
@@ -101,6 +101,10 @@ export class RootProcess {
         SwcAllyRequest.beforeTick()
       }, "SwcAllyRequest.beforeTick()")()
     }
+
+    ErrorMapper.wrapLoop((): void => {
+      IntegratedAttack.beforeTick()
+    }, "IntegratedAttack.beforeTick()")()
   }
 
   public runAfterTick(): void {
@@ -123,10 +127,6 @@ export class RootProcess {
     ErrorMapper.wrapLoop((): void => {
       ResourceManager.afterTick()
     }, "ResourceManager.afterTick()")()
-
-    ErrorMapper.wrapLoop((): void => {
-      EventManager.afterTick()
-    }, "EventManager.afterTick()")()
 
     ErrorMapper.wrapLoop((): void => {
       ProcessRequestStore.afterTick()
@@ -161,6 +161,10 @@ export class RootProcess {
         SwcAllyRequest.afterTick()
       }, "SwcAllyRequest.afterTick()")()
     }
+
+    ErrorMapper.wrapLoop((): void => {
+      IntegratedAttack.afterTick()
+    }, "IntegratedAttack.afterTick()")()
   }
 
   // ---- Private ---- //
