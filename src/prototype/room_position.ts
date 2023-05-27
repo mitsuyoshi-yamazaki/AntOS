@@ -32,6 +32,12 @@ export interface RoomPositionFilteringOptions {
   allowedStructureTypes?: StructureConstant[]
 }
 
+export type RoomEdgePosition = {
+  readonly position: RoomPosition
+  readonly internalPosition: RoomPosition
+  readonly internalPositionDirection: DirectionConstant
+}
+
 declare global {
   interface RoomPosition {
     id: RoomPositionId
@@ -46,6 +52,7 @@ declare global {
     targetedBy(taskType: TaskTargetCacheTaskType): PositionTaskRunnerInfo
     neighbours(): RoomPosition[]
     positionsInRange(range: number, options: RoomPositionFilteringOptions): RoomPosition[]
+    roomEdgePosition(): RoomEdgePosition | null
 
     /**
      * @param direction 返り値のRoomPositionが部屋の外である場合はnullを返す（new RoomPosition(x + i, y + j, roomName) に失敗した際）
@@ -204,6 +211,44 @@ export function init(): void {
       PrimitiveLogger.programError(`${this}.positionsInRange() failed: ${error}`)
     }
     return positions
+  }
+
+  RoomPosition.prototype.roomEdgePosition = function (): RoomEdgePosition | null {
+    const { min, max } = GameConstants.room.edgePosition
+
+    try {
+      if (this.x === min) {
+        return {
+          position: this,
+          internalPosition: new RoomPosition(min + 1, this.y, this.roomName),
+          internalPositionDirection: RIGHT,
+        }
+      }
+      if (this.x === max) {
+        return {
+          position: this,
+          internalPosition: new RoomPosition(max - 1, this.y, this.roomName),
+          internalPositionDirection: LEFT,
+        }
+      }
+      if (this.y === min) {
+        return {
+          position: this,
+          internalPosition: new RoomPosition(this.x, min + 1, this.roomName),
+          internalPositionDirection: BOTTOM,
+        }
+      }
+      if (this.y === max) {
+        return {
+          position: this,
+          internalPosition: new RoomPosition(this.x, max - 1, this.roomName),
+          internalPositionDirection: TOP,
+        }
+      }
+      return null
+    } catch {
+      return null
+    }
   }
 
   RoomPosition.prototype.positionTo = function (direction: DirectionConstant): RoomPosition | null {
