@@ -229,7 +229,7 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
     }
 
     if ((powerCreep.store.getUsedCapacity(RESOURCE_OPS) > 300) || (powerCreep.store.getUsedCapacity() > (powerCreep.store.getCapacity() * 0.6))) {
-      const opsStorage = roomResource.activeStructures.terminal || roomResource.activeStructures.storage
+      const opsStorage = roomResource.activeStructures.terminal ?? roomResource.activeStructures.storage
       if (opsStorage != null) {
         this.transferOps(powerCreep, opsStorage)
         return
@@ -694,9 +694,9 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
     return "available"
   }
 
-  private getTargetObject<T extends RoomObject>(targetId: Id<T> | null, power: PowerConstant, rawObject: T): T | null
-  private getTargetObject<T extends RoomObject>(targetId: Id<T> | null, power: PowerConstant, rawObjects: T[]): T | null
-  private getTargetObject<T extends RoomObject>(targetId: Id<T> | null, power: PowerConstant, arg: T | T[]): T | null {
+  private getTargetObject<T extends AnyStructure>(targetId: Id<T> | null, power: PowerConstant, rawObject: T): T | null
+  private getTargetObject<T extends AnyStructure>(targetId: Id<T> | null, power: PowerConstant, rawObjects: T[]): T | null
+  private getTargetObject<T extends AnyStructure>(targetId: Id<T> | null, power: PowerConstant, arg: T | T[]): T | null {
     const rawObjects = ((): T[] => {
       if (arg instanceof Array) {
         return arg
@@ -705,7 +705,7 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
     })()
 
     if (targetId != null) {
-      const obj = Game.getObjectById(targetId)
+      const obj = Game.getObjectById(targetId) as T | null
       if (obj != null) {
         return obj
       }
@@ -714,7 +714,7 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
       if (obj.effects == null) {  // undefinedの場合がある
         return true
       }
-      if (obj.effects.some(obj => obj.effect === power)) {
+      if (obj.effects.some(obj => obj.effect === power) === true) {
         return false
       }
       return true

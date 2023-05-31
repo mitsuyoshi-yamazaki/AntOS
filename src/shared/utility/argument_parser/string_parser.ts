@@ -469,26 +469,26 @@ export class OwnedRoomResourceArgument extends SingleOptionalArgument<void, Owne
   }
 }
 
-export class GameObjectIdArgument extends SingleOptionalArgument<void, Id<RoomObject>> {
+export class GameObjectIdArgument extends SingleOptionalArgument<void, Id<RoomObject & _HasId>> {
   /** throws */
-  public parse(): Id<RoomObject> {
+  public parse(): Id<RoomObject & _HasId> {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
     if (this.value.length <= 0) {
       throw "ID cannot be empty string"
     }
-    return this.value as Id<RoomObject>
+    return this.value as Id<RoomObject & _HasId>
   }
 }
 
-export class VisibleRoomObjectArgument extends SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject> {
+export class VisibleRoomObjectArgument extends SingleOptionalArgument<{ inRoomName?: RoomName }, RoomObject & _HasId> {
   /** throws */
-  public parse(options?: { inRoomName?: RoomName }): RoomObject {
+  public parse(options?: { inRoomName?: RoomName }): RoomObject & _HasId {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
-    const obj = Game.getObjectById(this.value as Id<RoomObject>)
+    const obj = Game.getObjectById(this.value as Id<RoomObject & _HasId>)
     if (obj == null) {
       throw `no object with ID ${this.value}`
     }

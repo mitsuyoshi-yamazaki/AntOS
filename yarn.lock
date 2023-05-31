@@ -725,10 +725,10 @@
   resolved "https://registry.yarnpkg.com/@types/screeps-profiler/-/screeps-profiler-1.2.2.tgz#d99fa8e2fe1932c38dafc83d6d1f907fcecb8a07"
   integrity sha512-czGKUk8ulz1qosjl0q5Hg9YuivHpP0mDsiPhkRy0pHxMMYgIJt0zfdBCNzYoU4WnbvoeRxpzIn/cBAj5PBqJtQ==
 
-"@types/screeps@^3.2.3":
-  version "3.2.3"
-  resolved "https://registry.yarnpkg.com/@types/screeps/-/screeps-3.2.3.tgz#85a89ee286f8c35bb404214fb2e21c2eb3025b26"
-  integrity sha512-XJwbYyvGGu+nuxxGzTFv9dDO4+4XK+w7fi6k2l+mIvN2bZ9m0jNJPt3qIB4Z1OUc+lZnM0YYjXkTwqZQCZtvZw==
+"@types/screeps@^3.3.3":
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/@types/screeps/-/screeps-3.3.3.tgz#fc80647ff9ed8aaa7f95a9ec759947a778340314"
+  integrity sha512-r+ru4iNv8wNaNBWvk2gMXYpG8Ok1GJ8NVV9WBIHa5I+hz2QGttnAus+1whDMIzES8x3yK83Usz+gHqm8ehIW7w==
 
 "@types/stack-utils@^2.0.0":
   version "2.0.1"
