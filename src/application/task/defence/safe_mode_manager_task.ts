@@ -117,10 +117,11 @@ export class SafeModeManagerTask extends Task<SafeModeManagerTaskOutput, SafeMod
         if (target == null) { // 破壊されている場合はnullが帰る
           return false
         }
-        if ((target as {structureType?: StructureConstant}).structureType == null) {
+        const structureTarget = (target as { structureType?: StructureConstant })
+        if (structureTarget.structureType == null) {
           return false
         }
-        const structureType = (target as { structureType: StructureConstant }).structureType
+        const structureType = structureTarget.structureType
         if (vitalStructureTypes.includes(structureType) === true) {
           return true
         }

@@ -10,6 +10,7 @@ const team = ((): string => {
     return " #Beeeeees!"
   case "botarena":
   case "season 4":
+  case "season 5":
   case "simulation":
   case "non game":
   case "unknown":

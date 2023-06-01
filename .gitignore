@@ -2,6 +2,9 @@
 screeps.json
 local_configs.ts
 
+# yarn
+yarn-error.log
+
 #
 /dist
 /.rpt2_cache

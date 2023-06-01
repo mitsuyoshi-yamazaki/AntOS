@@ -62,6 +62,7 @@ const baseUrl = ((): string => {
   case "unknown":
     return "https://screeps.com/a/#!"
   case "season 4":
+  case "season 5":
     return "https://screeps.com/season/#!"
   case "swc":
     return "http://swc.screepspl.us/#!"

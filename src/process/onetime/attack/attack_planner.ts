@@ -173,7 +173,7 @@ export namespace AttackPlanner {
         return rampart.hits
       }
 
-      const structures: Structure<T>[] = room.find<Structure<T>>(FIND_STRUCTURES, { filter: { structureType: structureType } })
+      const structures = room.find(FIND_STRUCTURES, { filter: { structureType: structureType } }) as unknown as Structure<T>[]
       return structures.map((structure): TargetStructure<Structure<T>> => {
         return {
           id: structure.id,

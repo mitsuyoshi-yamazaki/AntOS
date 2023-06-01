@@ -59,7 +59,7 @@ export function init(): void {
   })
 }
 
-export function parseId<T>(id: Id<T> | null): T | null {
+export function parseId<T extends _HasId>(id: Id<T> | null): T | null {
   if (id == null) {
     return null
   }
@@ -69,7 +69,7 @@ export function parseId<T>(id: Id<T> | null): T | null {
 /**
  * - parse IDs and remove inexist IDs from argument array
  */
-export function parseIds<T>(ids: Id<T>[]): T[] {
+export function parseIds<T extends _HasId>(ids: Id<T>[]): T[] {
   const removeIndexes: number[] = []
   const result = ids.flatMap((id, index) => {
     const obj = Game.getObjectById(id)

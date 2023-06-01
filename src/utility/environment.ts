@@ -3,13 +3,14 @@ import { isPrivateEnvironment } from "../../submodules/private/constants"
 type PersistentWorld = "persistent world"
 type SimulationWorld = "simulation"
 type Season4 = "season 4"
+type Season5 = "season 5"
 type BotArena = "botarena"
 type Swc = "swc"
 type PrivateEnvironment = "private"
 type NonGame = "non game" // 本来 non game 環境は上段で分けてゲーム処理に混入しないようにするべき
 type UnknownEnvironment = "unknown"
 
-type World = PersistentWorld | SimulationWorld | Season4 | BotArena | Swc | PrivateEnvironment | NonGame | UnknownEnvironment
+type World = PersistentWorld | SimulationWorld | Season4 | Season5 | BotArena | Swc | PrivateEnvironment | NonGame | UnknownEnvironment
 type ShardName = string
 
 export interface Environment {
@@ -20,6 +21,7 @@ export interface Environment {
 
   isAutomatic(): boolean
   isTeamMatch(): boolean
+  isSeason(): boolean
 }
 
 const world = ((): World => {
@@ -29,7 +31,7 @@ const world = ((): World => {
     // return "simulation"
     return "non game"  // memhackより先に読み込まれてしまうためメモリに書き込むことができない。現状はコードを書き換えることで対応する
   case "shardSeason":
-    return "season 4"
+    return "season 5"
   case "shard0":
   case "shard1":
   case "shard2":
@@ -52,6 +54,7 @@ const hasMultipleShards = ((): boolean => {
   case "persistent world":
     return true
   case "season 4":
+  case "season 5":
   case "botarena":
   case "swc":
   case "simulation":
@@ -72,6 +75,7 @@ export const Environment: Environment = {
     switch (world) {
     case "persistent world":
     case "season 4":
+    case "season 5":
     case "swc":
     case "simulation":
     case "non game":
@@ -87,6 +91,7 @@ export const Environment: Environment = {
     switch (world) {
     case "persistent world":
     case "season 4":
+    case "season 5":
     case "simulation":
     case "botarena":
     case "private":
@@ -96,5 +101,21 @@ export const Environment: Environment = {
     case "swc":
       return true
     }
-  }
+  },
+
+  isSeason(): boolean {
+    switch (world) {
+    case "season 4":
+    case "season 5":
+      return true
+    case "persistent world":
+    case "simulation":
+    case "botarena":
+    case "swc":
+    case "private":
+    case "non game":
+    case "unknown":
+      return false
+    }
+  },
 }

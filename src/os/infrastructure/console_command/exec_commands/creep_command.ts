@@ -53,21 +53,22 @@ const moveTo = (creep: Creep, args: string[]): string => {
   return `${creep.name} move to ${roomPosition}`
 }
 
+type PickupOppprtunityType = Tombstone | Ruin | AnyStructure
 type PickupTargetType = Tombstone | Ruin | StructureContainer | StructureTower | StructureLab
-function isPickupTargetType(roomObject: RoomObject): roomObject is PickupTargetType {
-  if (roomObject instanceof Tombstone) {
+function isPickupTargetType(target: PickupOppprtunityType): target is PickupTargetType {
+  if (target instanceof Tombstone) {
     return true
   }
-  if (roomObject instanceof Ruin) {
+  if (target instanceof Ruin) {
     return true
   }
-  if (roomObject instanceof StructureContainer) {
+  if (target instanceof StructureContainer) {
     return true
   }
-  if (roomObject instanceof StructureTower) {
+  if (target instanceof StructureTower) {
     return true
   }
-  if (roomObject instanceof StructureLab) {
+  if (target instanceof StructureLab) {
     return true
   }
   return false
@@ -87,7 +88,7 @@ function pickup(creep: Creep, args: string[]): string {
   }
 
   const listArguments = new ListArguments(args)
-  const targetId = listArguments.gameObjectId(0, "target ID").parse() as Id<RoomObject>
+  const targetId = listArguments.gameObjectId(0, "target ID").parse() as Id<PickupOppprtunityType>
   const task = createPickupTask(
     creep,
     targetId,
@@ -99,7 +100,7 @@ function pickup(creep: Creep, args: string[]): string {
 }
 
 /** @throws */
-function createPickupTask(creep: Creep, pickupTargetId: Id<RoomObject>, getPickupTargetRoomName: () => RoomName): MoveToInvisibleTargetTask | MoveToTargetTask {
+function createPickupTask(creep: Creep, pickupTargetId: Id<PickupOppprtunityType>, getPickupTargetRoomName: () => RoomName): MoveToInvisibleTargetTask | MoveToTargetTask {
   const target = Game.getObjectById(pickupTargetId)
 
   if (target == null) {
@@ -148,11 +149,11 @@ function moveToRoom(creep: Creep, args: string[]): string {
 }
 
 type TransferTargetType = StructureStorage | StructureTerminal
-function isTransferTargetType(roomObject: RoomObject): roomObject is TransferTargetType {
-  if (roomObject instanceof StructureStorage) {
+function isTransferTargetType(structure: AnyStructure): structure is TransferTargetType {
+  if (structure instanceof StructureStorage) {
     return true
   }
-  if (roomObject instanceof StructureTerminal) {
+  if (structure instanceof StructureTerminal) {
     return true
   }
   return false
@@ -165,7 +166,7 @@ function transfer(creep: Creep, args: string[]): string {
   }
 
   const listArguments = new ListArguments(args)
-  const targetId = listArguments.gameObjectId(0, "target ID").parse() as Id<RoomObject>
+  const targetId = listArguments.gameObjectId(0, "target ID").parse() as Id<AnyStructure>
 
   const target = Game.getObjectById(targetId)
   if (target == null) {
