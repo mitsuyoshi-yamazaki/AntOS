@@ -5,11 +5,16 @@
     "target": "es6",
     "lib": [
       "ES2020",
-      "ES2019.Array"
+      "ES2019.Array",
+      "dom"
     ],
     "outDir": "dist",
     "baseUrl": "src/",
     "sourceMap": true,
+    "types": [
+      "./node_modules/typed-screeps",
+      "node"
+    ],
     "strict": true,
     "allowJs": true,
     "experimentalDecorators": true,
