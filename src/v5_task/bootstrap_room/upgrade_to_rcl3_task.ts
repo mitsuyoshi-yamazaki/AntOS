@@ -518,8 +518,8 @@ function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName
     }
     const storage = roomResource.activeStructures.storage
     const terminal = roomResource.activeStructures.terminal
-    if (storage == null || terminal == null) {
-      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage or terminal`)
+    if (storage == null && terminal == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage and terminal`)
       return 0
     }
     return (storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
