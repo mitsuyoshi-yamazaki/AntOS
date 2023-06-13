@@ -1,5 +1,22 @@
-type Idea = {
-  readonly targetedBy: Relation<Idea>[]
+/**
+# 要件
+- 自由に実行中の処理の関係性を可視化する
+  - ソフトウェア上の概念をリレーションで接続する
+    - それぞれの概念、リレーションは自己説明的になっている
+
+# 仕様
+- Idea: Subject, Objectの基底クラス
+  - Ideaは文字通りSubject, Objectになりうるもの。各種ゲームオブジェクト、プロセス、アルゴリズム等
+
+## 制約
+- Idea, Relationを動的に型ガードできる必要
+ */
+
+abstract class Idea {
+  public abstract readonly ideaType: string
+  public readonly targetedBy: Relation<Idea>[] = []
+
+  public abstract static guard(arg: Idea): arg is Idea
 }
 
 class Relation<T extends Idea> {
@@ -28,8 +45,7 @@ class BidirectionalRelation<Subject extends Idea, Obj extends Idea> extends Rela
 }
 
 // ---- ---- //
-abstract class GameObject implements Idea {
-  public readonly targetedBy: Relation<Idea>[] = []
+abstract class GameObject extends Idea {
 }
 
 // ---- Structure ---- //
@@ -38,14 +54,26 @@ type EnergyStore = {
 }
 
 class Spawn extends GameObject {
-  readonly store: EnergyStore = {
+  public readonly ideaType: "spawn"
+
+  public readonly store: EnergyStore = {
     energy: 0,
+  }
+
+  public static guard(arg: Idea): arg is Spawn {
+    return arg.ideaType === "spawn"
   }
 }
 
 class Extension extends GameObject {
-  readonly store: EnergyStore = {
+  public readonly ideaType: "extension"
+
+  public readonly store: EnergyStore = {
     energy: 0,
+  }
+
+  public static guard(arg: Idea): arg is Extension {
+    return arg.ideaType === "extension"
   }
 }
 
@@ -60,6 +88,11 @@ class TransferEnergyAction extends CreepAction<EnergyStorage> {
 
 // ---- Creep ---- //
 class Creep extends GameObject {
+  public readonly ideaType: "creep"
+
+  public static guard(arg: Idea): arg is Creep {
+    return arg.ideaType === "creep"
+  }
 }
 
 type HaulerActions = TransferEnergyAction
@@ -67,3 +100,11 @@ type HaulerActions = TransferEnergyAction
 class Hauler extends Creep {
   readonly actions: HaulerActions[] = []
 }
+
+const extension: Idea = ...;
+
+if (Creep.guard(extension)) {
+  extension
+}
+
+const hoge = extension.targetedBy.filter()
