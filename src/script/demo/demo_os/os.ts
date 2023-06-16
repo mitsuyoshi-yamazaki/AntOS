@@ -11,25 +11,14 @@
    - → DIコンテナの使い所では
  */
 
-type SystemCall = {
-  load(): void
-  startOfTick(): void
-  endOfTick(): void
-}
-
-type SystemCalls = {}
-
-type Driver = {
-  load(): void
-  startOfTick(): void
-  endOfTick(): void
-}
+import { Driver } from "./driver"
+import { SystemCall } from "./system_call"
 
 declare namespace Tag {
-  const OpaqueTagSymbol: unique symbol;
+  const OpaqueTagSymbol: unique symbol
 
   class OpaqueTag<T> {
-    private [OpaqueTagSymbol]: T;
+    private [OpaqueTagSymbol]: T
   }
 }
 type ProcessId<T extends Process> = string & Tag.OpaqueTag<T>;
@@ -38,12 +27,10 @@ type ProcessId<T extends Process> = string & Tag.OpaqueTag<T>;
 // それをProcessManagerはどう平準化するか？
 interface Process {
   readonly processId: ProcessId<this>
-
-
 }
 
 // ProcessからProcessManagerを呼び出す経路が循環しないようにする
-class ProcessManager implements SystemCall {  // TODO: プラットフォームの機能ではないので、OSのサブシステム扱いにする
+class ProcessManager {
   private processes: Process[] = []
 
   public load(): void {
@@ -71,7 +58,9 @@ class ProcessManager implements SystemCall {  // TODO: プラットフォーム�
   }
 }
 
-class OperatingSystem<S extends SystemCalls> {
+export abstract class OperatingSystem<S extends SystemCall> {
+  private processManager = new ProcessManager()
+
   public constructor(
     public readonly systemCall: S,
     public readonly drivers: Driver[],
@@ -79,26 +68,20 @@ class OperatingSystem<S extends SystemCalls> {
   }
 
   public load(): void {
+    this.systemCall.load()
+    this.processManager.load()
+    this.drivers.forEach(driver => driver.load())
   }
 
   public startOfTick(): void {
+    this.systemCall.startOfTick()
+    this.processManager.startOfTick()
+    this.drivers.forEach(driver => driver.startOfTick())
   }
 
   public endOfTick(): void {
+    this.drivers.forEach(driver => driver.endOfTick())
+    this.processManager.endOfTick()
+    this.systemCall.endOfTick()
   }
-}
-
-type ScreepsSystemCall = SystemCalls
-const screepsSystemCall: ScreepsSystemCall = {
-  load(): void {
-  },
-
-  startOfTick(): void {
-  },
-
-  endOfTick(): void {
-  },
-}
-
-class ScreepsOS extends OperatingSystem<ScreepsSystemCall> {
 }

@@ -14,6 +14,9 @@ import { Environment } from "utility/environment"
 // import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
 // import { Kernel } from "v8/operating_system/kernel"
 
+// ---- Demo OS ---- //
+import { ScreepsOS } from "script/demo/demo_os/screeps_os"
+
 type RootFunctions = {
   load(): void
   loop(): void
