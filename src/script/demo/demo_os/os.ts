@@ -9,6 +9,8 @@
  # 構造（仕様）
  - DriverはOSに渡す段階で固定して、ProcessはOSを経由してそのDriverへ依存するようにしたらどうか
    - → DIコンテナの使い所では
+   - Driver群が固定されていると（Processが依存するDriverを指定していないと）シーズン間でのProcessの使い回しに不自由が出る
+     - とはいえそれは実行前の段階の話なのでランタイムで条件分岐入れなくてもいいのでは
  */
 
 import { Driver } from "./driver"
