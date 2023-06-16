@@ -40,3 +40,9 @@ class ConcreteClassC extends SomeAbstractClass<ConcreteClassB> { // やっぱこ
     return new ConcreteClassC()
   }
 }
+
+class ConcreteClassD extends SomeAbstractClass<ConcreteClassD> {
+  returnItself(): ConcreteClassB {
+    return new ConcreteClassB()
+  }
+}

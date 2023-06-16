@@ -101,10 +101,10 @@ class Hauler extends Creep {
   readonly actions: HaulerActions[] = []
 }
 
-const extension: Idea = ...;
+const extension: Extension = ...;
 
-if (Creep.guard(extension)) {
-  extension
-}
+// if (Creep.guard(extension)) {
+//   extension
+// }
 
-const hoge = extension.targetedBy.filter()
+const hoge = extension.targetedBy.map(relation => relation.item).filter(Extension.guard)
