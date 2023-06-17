@@ -11,43 +11,11 @@
  - ActiveStructureのtypeを作ったらどうか
  */
 
-import { Position } from "prototype/room_position"
+import { } from "./buildable_structure"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { PrimitiveLogger } from "v8/operating_system/primitive_logger"
 
 const roomLink = ConsoleUtility.roomLink
-
-type StructureObjectStateNotStarted = {
-  readonly case: "not started"
-}
-type StructureObjectStateActive<S extends BuildableStructureConstant> = {
-  readonly case: "active"
-  readonly structure: Structure<S>
-}
-type StructureObjectStateInactive<S extends BuildableStructureConstant> = {
-  readonly case: "inactive"
-  readonly structure: Structure<S>
-}
-type StructureObjectStateConstructionSite<S extends BuildableStructureConstant> = {
-  readonly case: "construction site"
-  readonly constructionSite: ConstructionSite<S>
-}
-type StructureObjectStateConstructingRampart = {  // 建設されたRampartはStructureObjectに参照がある
-  readonly case: "constructing rampart"
-  readonly constructionSite: ConstructionSite<STRUCTURE_RAMPART>
-}
-type StructureObjectState<S extends BuildableStructureConstant> = StructureObjectStateNotStarted
-  | StructureObjectStateActive<S>
-  | StructureObjectStateInactive<S>
-  | StructureObjectStateConstructionSite<S>
-  | StructureObjectStateConstructingRampart
-
-type StructureObject<S extends BuildableStructureConstant> = {
-  position: Position
-  object: Structure<S> | null
-  state: StructureObjectState<S>
-  rampartId: Id<StructureRampart> | null
-}
 
 export class OwnedRoomResource {
   public readonly activeStructures: {

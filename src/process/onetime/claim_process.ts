@@ -91,7 +91,7 @@ export class ClaimProcess implements Process, Procedural {
       return
     }
 
-    const claimerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+    const claimerCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier)
     if (claimerCount <= 0) {
       const body = CreepBody.create([], [MOVE, CLAIM], roomResource.room.energyCapacityAvailable, this.maxClaimSize)
 
@@ -118,7 +118,6 @@ export class ClaimProcess implements Process, Procedural {
         }
         return FleeFromAttackerTask.create(task)
       },
-      () => true,
     )
   }
 

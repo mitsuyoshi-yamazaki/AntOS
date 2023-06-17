@@ -20,7 +20,6 @@ export class MoveToTransferHaulerTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     private readonly apiWrapper: TransferEnergyApiWrapper,
   ) {
     this.shortDescription = apiWrapper.shortDescription
@@ -28,7 +27,6 @@ export class MoveToTransferHaulerTask implements CreepTask {
 
   public encode(): MoveToTransferHaulerTaskState {
     return {
-      s: this.startTime,
       t: "MoveToTransferHaulerTask",
       as: this.apiWrapper.encode(),
     }
@@ -39,11 +37,11 @@ export class MoveToTransferHaulerTask implements CreepTask {
     if (wrapper == null) {
       return null
     }
-    return new MoveToTransferHaulerTask(state.s, wrapper)
+    return new MoveToTransferHaulerTask(wrapper)
   }
 
   public static create(apiWrapper: TransferEnergyApiWrapper): MoveToTransferHaulerTask {
-    return new MoveToTransferHaulerTask(Game.time, apiWrapper)
+    return new MoveToTransferHaulerTask(apiWrapper)
   }
 
   public run(creep: Creep): TaskProgressType {

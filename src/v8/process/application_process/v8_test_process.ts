@@ -1,4 +1,6 @@
+import { SemanticVersion } from "shared/utility/semantic_version"
 import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
+import { Application } from "../application/application_process"
 import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecutionSpec, ProcessState } from "../process"
 import { ProcessTypeConverter } from "../process_type"
 
@@ -7,7 +9,10 @@ const processType = "V8TestProcess"
 export interface V8TestProcessState extends ProcessState {
 }
 
-export class V8TestProcess extends Process {
+export class V8TestProcess extends Process implements Application {
+  public readonly applicationName: string = processType
+  public readonly version = new SemanticVersion(1, 0, 0)
+
   public readonly processType = processType
 
   private constructor(

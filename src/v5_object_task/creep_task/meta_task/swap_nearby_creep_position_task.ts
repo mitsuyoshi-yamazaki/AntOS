@@ -12,28 +12,26 @@ export interface SwapNearbyCreepPositionTaskState extends CreepTaskState {
 
 export class SwapNearbyCreepPositionTask implements CreepTask {
   private constructor(
-    public readonly startTime: number,
     private readonly options: Options,
   ) {
   }
 
   public encode(): SwapNearbyCreepPositionTaskState {
     return {
-      s: this.startTime,
       t: "SwapNearbyCreepPositionTask",
       options: this.options,
     }
   }
 
   public static decode(state: SwapNearbyCreepPositionTaskState): SwapNearbyCreepPositionTask | null {
-    return new SwapNearbyCreepPositionTask(state.s, state.options)
+    return new SwapNearbyCreepPositionTask(state.options)
   }
 
   public static create(options?: Partial<Options>): SwapNearbyCreepPositionTask {
     const solidOptions: Options = {
       onRoadOnly: options?.onRoadOnly ?? false,
     }
-    return new SwapNearbyCreepPositionTask(Game.time, solidOptions)
+    return new SwapNearbyCreepPositionTask(solidOptions)
   }
 
   public run(creep: Creep): TaskProgressType {

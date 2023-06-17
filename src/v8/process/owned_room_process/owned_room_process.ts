@@ -4,7 +4,7 @@ import { Process, ProcessExecutionOrder, ProcessExecutionPriority, ProcessExecut
 import { ProcessType, ProcessTypeConverter } from "../process_type"
 import { OwnedRoomChildProcess } from "./owned_room_child_process"
 import { OwnedRoomTestProcess } from "./owned_room_test_process"
-import { OwnedRoomResource } from "./owned_room_resource/owned_room_resource"
+import { OwnedRoomResource } from "../../operating_system/driver/beryllium/owned_room_resource/owned_room_resource"
 import { OwnedRoomProcessRequest } from "./owned_room_process_request"
 import { ProcessLogger } from "v8/operating_system/system_call/process_logger"
 import type { RoomName } from "shared/utility/room_name_types"

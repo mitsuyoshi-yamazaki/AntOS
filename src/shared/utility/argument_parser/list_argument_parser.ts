@@ -1,10 +1,8 @@
 import { Position } from "shared/utility/position"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleArgument, StringArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument, TypedStringListArgument, StringInListArgument } from "./string_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 import type { RoomName } from "shared/utility/room_name_types"
-import { RoomCoordinate } from "utility/room_coordinate"
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -38,8 +36,6 @@ interface KeywordArgumentsInterface {
   powerCreep(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, PowerCreep>
 
   // ---- Custom Type ---- //
-  ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource>
-  roomCoordinate(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate>
   typedString<T extends string>(index: number, key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleArgument<void, T>
   typedStringList<T extends string>(index: number, key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleArgument<void, T[]>
   stringInList<T extends string>(index: number, key: string, valueList: Readonly<T[]>): SingleArgument<void, T>
@@ -146,14 +142,6 @@ export class ListArguments implements KeywordArgumentsInterface {
   }
 
   // ---- Custom Type ---- //
-  public ownedRoomResource(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<void, OwnedRoomResource> {
-    return new OwnedRoomResourceArgument(key, this.getValueAt(index, key), options)
-  }
-
-  public roomCoordinate(index: number, key: string, options?: ArgumentParsingOptions): SingleArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
-    return new RoomCoordinateArgument(key, this.getValueAt(index, key), options)
-  }
-
   public typedString<T extends string>(index: number, key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleArgument<void, T> {
     return new TypedStringArgument(key, this.getValueAt(index, key), typeName, typeGuard, options)
   }

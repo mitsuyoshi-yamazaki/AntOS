@@ -28,7 +28,6 @@ export class MoveToRoomTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     public readonly destinationRoomName: RoomName,
     public readonly waypoints: RoomName[],
     private exitPosition: RoomPosition | null,
@@ -40,7 +39,6 @@ export class MoveToRoomTask implements CreepTask {
 
   public encode(): MoveToRoomTaskState {
     return {
-      s: this.startTime,
       t: "MoveToRoomTask",
       d: this.destinationRoomName,
       w: this.waypoints,
@@ -52,11 +50,11 @@ export class MoveToRoomTask implements CreepTask {
 
   public static decode(state: MoveToRoomTaskState): MoveToRoomTask {
     const exitPosition = state.e != null ? decodeRoomPosition(state.e) : null
-    return new MoveToRoomTask(state.s, state.d, state.w, exitPosition, state.ignoreSwamp ?? false, state.paused ?? false)
+    return new MoveToRoomTask(state.d, state.w, exitPosition, state.ignoreSwamp ?? false, state.paused ?? false)
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[], ignoreSwamp?: boolean): MoveToRoomTask {
-    return new MoveToRoomTask(Game.time, destinationRoomName, [...waypoints], null, ignoreSwamp ?? false, false)
+    return new MoveToRoomTask(destinationRoomName, [...waypoints], null, ignoreSwamp ?? false, false)
   }
 
   public pause(paused: boolean): void {

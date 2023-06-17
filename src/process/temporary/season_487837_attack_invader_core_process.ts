@@ -112,7 +112,7 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
     }
 
     const identifier = `${this.constructor.name}_${parentRoomName}_${targetRoomName}`
-    const creepCount = World.resourcePools.countCreeps(parentRoomName, identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(parentRoomName, identifier)
     if (creepCount < numberOfAttackers) {
       this.requestAttacker(parentRoomName, identifier)
     }
@@ -122,7 +122,6 @@ export class Season487837AttackInvaderCoreProcess implements Process, Procedural
       identifier,
       CreepPoolAssignPriority.Low,
       creep => this.newAttackerTask(creep, targetRoom, invaderCore),
-      () => true,
     )
     return true
   }

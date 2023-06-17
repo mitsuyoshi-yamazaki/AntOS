@@ -1,14 +1,8 @@
-import { GameMap } from "game/game_map"
 import { Position } from "shared/utility/position"
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { isCommodityConstant, isDepositConstant, isMineralBoostConstant, isResourceConstant } from "shared/utility/resource"
 import { ArgumentParsingOptions, BooleanArgument, CreepArgument, DirectionArgument, FloatArgument, IntArgument, LocalPositionArgument, LocalPositionsArgument, missingArgumentErrorMessage, OwnedRoomResourceArgument, PowerCreepArgument, PowerTypeArgument, TypedStringArgument, RoomArgument, RoomCoordinateArgument, RoomNameArgument, RoomNameListArgument, RoomPositionArgument, SingleOptionalArgument, StringArgument, validateRoomNameArgument, StringListArgument, VisibleRoomObjectArgument, GameObjectIdArgument, TypedStringListArgument, StringInListArgument } from "./string_parser"
 import { IterableArgumentType, IterableArgument } from "./iterable_argument_parser"
 import type { RoomName } from "shared/utility/room_name_types"
-import { ConsoleUtility } from "../console_utility/console_utility"
-import { RoomCoordinate } from "utility/room_coordinate"
-
-const roomLink = ConsoleUtility.roomLink
 
 /**
  * - 各メソッドはパース/検証に失敗した場合に例外を送出する
@@ -41,8 +35,6 @@ interface KeywordArgumentsInterface {
   powerCreep(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, PowerCreep>
 
   // ---- Custom Type ---- //
-  ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource>
-  roomCoordinate(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate>
   typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T>
   typedStringList<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T[]>
   stringInList<T extends string>(key: string, valueList: Readonly<T[]>): SingleOptionalArgument<void, T>
@@ -173,14 +165,6 @@ export class KeywordArguments implements KeywordArgumentsInterface {
   }
 
   // ---- Custom Type ---- //
-  public ownedRoomResource(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<void, OwnedRoomResource> {
-    return new OwnedRoomResourceArgument(key, this.argumentMap.get(key) ?? null, options)
-  }
-
-  public roomCoordinate(key: string, options?: ArgumentParsingOptions): SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomCoordinate> {
-    return new RoomCoordinateArgument(key, this.argumentMap.get(key) ?? null, options)
-  }
-
   public typedString<T extends string>(key: string, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParsingOptions): SingleOptionalArgument<void, T> {
     return new TypedStringArgument(key, this.argumentMap.get(key) ?? null, typeName, typeGuard, options)
   }

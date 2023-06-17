@@ -16,16 +16,25 @@
  - ProcessもしくはCreepTask（未定）はTrafficDriverへCreepがどのような移動を行いたいかリクエストを挙げる
  - TrafficDriverはリクエストの優先順位にもとづきCreep.move()を呼び出す
 
- ## TODO
- - Resource Transfer Managerも作る
+ ## Discussion
+ - 誰が何の責任を分担するのか？
+   - 逃走はProcessなりが指定する
+   - そもそもTaskシステムは攻撃系の行動と相性が悪い
+ - 移動の種類
+   - ある地点から離れる
+   - ある地点を回避しつつ進む
+   - ある地点へ進む
+   - その場に留まる
  */
 
+import { Position } from "shared/utility/position"
 import type { RoomName } from "shared/utility/room_name_types"
 import { ValuedArrayMap, ValuedMapMap } from "shared/utility/valued_collection"
+import { V9Creep } from "v8/prototype/creep"
 import { Driver } from "../driver"
 
 type IntraRoomPositionId = string
-const getIntraRoomPositionId = (position: Position): IntraRoomPositionId => `${position.x}_${position.y}`
+const getIntraRoomPositionId = (position: Position): IntraRoomPositionId => `${position.x},${position.y}`
 
 type MovabilityImpossible = {
   readonly case: "impossible"
@@ -64,10 +73,10 @@ type MovementMoveTo = {
   readonly case: "move to"
   readonly targetPosition: RoomPosition
 }
-type MovementFlee = {
-  readonly case: "flee"
-  readonly target
-}
+// type MovementFlee = {  // TODO:
+//   readonly case: "flee"
+//   readonly target
+// }
 type TrafficRequest = {
   readonly creep: V9Creep
 
@@ -80,6 +89,8 @@ interface TrafficDriverInterface extends Driver {
   /** request.position は移動先位置 */
   addTrafficRequest(request: TrafficRequest): void
 }
+
+
 
 export const TrafficDriver: TrafficDriverInterface = {
   // ---- OS API ---- //
@@ -136,5 +147,13 @@ const resolveRequests = (): Map<RoomName, Map<IntraRoomPositionId, Traffic>> => 
 }
 
 const callMoveApi = (traffic: Map<RoomName, Map<IntraRoomPositionId, Traffic>>): void => {
+  Array.from(traffic.entries()).forEach(([roomName, roomTraffic]) => {
+    callMoveApiInRoom(roomTraffic, roomName)
+  })
+}
+
+const callMoveApiInRoom = (traffic: Map<IntraRoomPositionId, Traffic>, roomName: RoomName): void => {
+  const result = new Map<IntraRoomPositionId, Traffic>()
+
 
 }

@@ -1,5 +1,5 @@
 import { CreepTask as V5CreepTask } from "v5_object_task/creep_task/creep_task"
-import { ShortVersion, ShortVersionV5, ShortVersionV6, ShortVersionV9 } from "shared/utility/system_info"
+import { ShortVersion, ShortVersionV5, ShortVersionV6 } from "shared/utility/system_info"
 import { CreepRole } from "./creep_role"
 import { TaskTargetCache as V5TaskTargetCache } from "v5_object_task/object_task_target_cache"
 import type { TaskIdentifier as V5TaskIdentifier } from "v5_task/task"
@@ -49,17 +49,6 @@ export interface V6Creep extends Creep {
   memory: V6CreepMemory
 }
 
-export interface V9Creep extends Creep {
-  memory: V9CreepMemory
-}
-
-export const isV9Creep = (creep: Creep): creep is V9Creep => {
-  if (creep.memory.v === ShortVersion.v9) {
-    return true
-  }
-  return false
-}
-
 // ---- Prototype ---- //
 declare global {
   interface Creep {
@@ -82,10 +71,10 @@ export function isAnyCreep(arg: any): arg is AnyCreep {
 }
 
 // ---- Memory ---- //
-export type CreepMemory = V6CreepMemory | V5CreepMemory | V9CreepMemory
+export type CreepMemory = V6CreepMemory | V5CreepMemory
 
 interface CreepBaseMemory {
-  v: ShortVersionV5 | ShortVersionV6 | ShortVersionV9
+  v: ShortVersionV5 | ShortVersionV6
 
   /** parent room name */
   p: RoomName
@@ -112,10 +101,6 @@ export interface V6CreepMemory extends CreepBaseMemory {
 
   /** creep identifier */
   ci: string | null
-}
-
-export interface V9CreepMemory extends CreepBaseMemory {  // TODO: v9未満の定義を消す際にCreepBaseMemoryの不要なメンバを消す
-  v: ShortVersionV9
 }
 
 export function isCreepMemory(memory: globalThis.CreepMemory): memory is CreepMemory {

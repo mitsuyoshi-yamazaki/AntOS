@@ -164,7 +164,7 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       this.runLinks(link, upgraderLink, resources)
     }
 
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (creepCount < 1) {
       if ((resources.controller.level > 4 && resources.activeStructures.storage != null) || resources.activeStructures.terminal != null) {
         const body = ((): BodyPartConstant[] => {
@@ -182,7 +182,6 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.newDistributorTask(creep, link, resources, distributorRoomPosition),
-      () => true,
     )
   }
 

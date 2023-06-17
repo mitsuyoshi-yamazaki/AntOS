@@ -96,4 +96,12 @@ export function initializeMemory(): void {
   if (Memory.napAlliances == null) {
     Memory.napAlliances = []
   }
+
+  if (Memory.skipSerialization == null) {
+    Memory.skipSerialization = {
+      by: null,
+      interval: null,
+      test: false,
+    }
+  }
 }

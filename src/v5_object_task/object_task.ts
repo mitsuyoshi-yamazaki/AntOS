@@ -19,9 +19,6 @@ export const TaskProgressType = {
 export interface ObjectTaskState extends State {
   /** type identifier */
   t: string
-
-  /** start time */
-  s: number
 }
 
 /**
@@ -29,7 +26,6 @@ export interface ObjectTaskState extends State {
  */
 export interface ObjectTask<ObjectType> extends Stateful {
   targetId?: TaskTargetTypeId
-  startTime: number
 
   encode(): ObjectTaskState
   run(obj: ObjectType): TaskProgressType

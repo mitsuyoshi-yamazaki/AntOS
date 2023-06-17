@@ -8,23 +8,21 @@ export interface RandomMoveTaskState extends CreepTaskState {
 
 export class RandomMoveTask implements CreepTask {
   private constructor(
-    public readonly startTime: number,
   ) {
   }
 
   public encode(): RandomMoveTaskState {
     return {
-      s: this.startTime,
       t: "RandomMoveTask",
     }
   }
 
   public static decode(state: RandomMoveTaskState): RandomMoveTask | null {
-    return new RandomMoveTask(state.s)
+    return new RandomMoveTask()
   }
 
   public static create(): RandomMoveTask {
-    return new RandomMoveTask(Game.time)
+    return new RandomMoveTask()
   }
 
   public run(creep: Creep): TaskProgressType {

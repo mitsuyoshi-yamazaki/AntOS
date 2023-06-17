@@ -81,7 +81,7 @@ export class World35587255ScoutRoomProcess implements Process, Procedural, Owned
   }
 
   public processShortDescription(): string {
-    const creep = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)[0]
+    const creep = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)[0]
     const currentLocation = creep != null ? `${roomLink(creep.room.name)}` : "none"
     return `from: ${roomLink(this.parentRoomName)}, current: ${currentLocation}`
   }
@@ -107,7 +107,7 @@ export class World35587255ScoutRoomProcess implements Process, Procedural, Owned
       if (resources.activeStructures.towers.length <= 0) {
         return false
       }
-      const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+      const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
       if (creepCount >= 1) {
         return false
       }
@@ -122,7 +122,6 @@ export class World35587255ScoutRoomProcess implements Process, Procedural, Owned
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.newTaskFor(creep),
-      () => true,
     )
   }
 

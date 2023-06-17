@@ -142,15 +142,13 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
     source: Source,
     container: StructureContainer,
   ): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Harvester, CreepRole.Mover, CreepRole.EnergyStore]
     const minimumCreepCount = 1 // TODO: lifeが短くなってきたら次をspawnさせる
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
     ]
 
     if (objects.activeStructures.storage != null) {
-      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, necessaryRoles, minimumCreepCount, source))
+      problemFinders.push(this.createCreepInsufficiencyProblemFinder(objects, minimumCreepCount, source))
     }
 
     this.checkProblemFinders(problemFinders)
@@ -166,7 +164,6 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
         }
         return FleeFromAttackerTask.create(task, 6, {failOnFlee: true})
       },
-      creepPoolFilter,
     )
 
     return problemFinders
@@ -174,12 +171,11 @@ export class OwnedRoomHarvesterTask extends EnergySourceTask {
 
   private createCreepInsufficiencyProblemFinder(
     objects: OwnedRoomObjects,
-    necessaryRoles: CreepRole[],
     minimumCreepCount: number,
     source: Source,
   ): ProblemFinder {
     const roomName = objects.controller.room.name
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, this.taskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], this.taskIdentifier, minimumCreepCount)
 
     const problemFinderWrapper: ProblemFinder = {
       identifier: problemFinder.identifier,

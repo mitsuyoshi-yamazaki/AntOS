@@ -19,21 +19,18 @@
 
 import {} from "../prototype/memory"
 import { Kernel } from "./kernel"
-import type { Driver } from "./driver"
-import { loadApplicationProcesses } from "v8/process/application_process_loader"
-// import { } from "./driver/traffic_driver"
-// import { CpuTimeProfiler } from "./driver/cpu_time_profiler"
-// import {  } from "./driver/hostile_creep_predictor"
-// import { } from "./driver/terminal_network_manager"
+import { loadApplicationProcesses } from "v8/process/application/application_process_loader"
+import { DriverFamily as DriverFamilyType } from "./driver_family/driver_family_types"
+import { DriverFamily } from "./driver_family/driver_family"
 
 export const BootLoader = {
   load(): void {
     loadApplicationProcesses()
 
-    const drivers: Driver[] = [
+    const driverFamilies: DriverFamilyType[] = [
+      DriverFamily.Beryllium,
     ]
-    Kernel.registerDrivers(drivers)
-    Kernel.load()
+    Kernel.load(driverFamilies)
   },
 
   io: Kernel.standardInput,

@@ -13,25 +13,23 @@ export interface ParallelTaskState extends CreepTaskState {
  */
 export class ParallelTask implements CreepTask {
   private constructor(
-    public readonly startTime: number,
     public readonly childTasks: CreepTask[],
   ) {
   }
 
   public encode(): ParallelTaskState {
     return {
-      s: this.startTime,
       t: "ParallelTask",
       c: this.childTasks.map(task => task.encode()),
     }
   }
 
   public static decode(state: ParallelTaskState, children: CreepTask[]): ParallelTask {
-    return new ParallelTask(state.s, children)
+    return new ParallelTask(children)
   }
 
   public static create(childTasks: CreepTask[]): ParallelTask {
-    return new ParallelTask(Game.time, childTasks)
+    return new ParallelTask(childTasks)
   }
 
   public run(creep: Creep): TaskProgressType {

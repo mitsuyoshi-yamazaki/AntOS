@@ -7,7 +7,6 @@ import { generateCodename } from "utility/unique_id"
 import { World } from "world_info/world_info"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "os/infrastructure/logger"
-import { OperatingSystem } from "os/os"
 import { DistributorProcess } from "../process/distributor_process"
 import { RoomResources } from "room_resource/room_resources"
 import { ProcessDecoder } from "process/process_decoder"
@@ -15,6 +14,7 @@ import { MessageObserver } from "os/infrastructure/message_observer"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import type { SectorName } from "shared/utility/room_sector_type"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("Season2055924SendResourcesProcess", state => {
   return Season2055924SendResourcesProcess.decode(state as Season2055924SendResourcesProcessState)
@@ -66,7 +66,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural, O
   }
 
   public static create(processId: ProcessId, parentRoomName: RoomName, targetSectorNames: SectorName[] | null, excludedResourceTypes: ResourceConstant[]): Season2055924SendResourcesProcess {
-    const distributorProcess = OperatingSystem.os.listAllProcesses()
+    const distributorProcess = (SystemCalls.systemCall()?.listAllProcesses() ?? [])
       .map(processInfo => processInfo.process)
       .find(process => {
         if (!(process instanceof DistributorProcess)) {
@@ -136,7 +136,7 @@ export class Season2055924SendResourcesProcess implements Process, Procedural, O
     const terminal = objects.activeStructures.terminal
     if (terminal == null) {
       processLog(this, `No terminal in ${roomLink(this.parentRoomName)} suspending...`)
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 

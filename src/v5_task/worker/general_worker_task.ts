@@ -61,12 +61,10 @@ export class GeneralWorkerTask extends Task {
   }
 
   public runTask(objects: OwnedRoomObjects): TaskStatus {
-    const roles: CreepRole[] = [CreepRole.Worker, CreepRole.Mover, CreepRole.Hauler]
     const filterTaskIdentifier = null
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, [CreepRole.Worker, CreepRole.Mover])
 
     const problemFinders: ProblemFinder[] = [
-      this.createCreepInsufficiencyProblemFinder(objects, roles, filterTaskIdentifier)
+      this.createCreepInsufficiencyProblemFinder(objects, filterTaskIdentifier)
     ]
 
     this.checkProblemFinders(problemFinders)
@@ -82,14 +80,13 @@ export class GeneralWorkerTask extends Task {
         }
         return FleeFromAttackerTask.create(task)
       },
-      creepPoolFilter,
     )
 
     return TaskStatus.InProgress
   }
 
   // ---- Problem Solver ---- //
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, roles: CreepRole[], filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, filterTaskIdentifier: TaskIdentifier | null): ProblemFinder {
     const room = objects.controller.room
     const roomName = room.name
     const minimumCreepCount = ((): number => {
@@ -99,7 +96,7 @@ export class GeneralWorkerTask extends Task {
       const energy = objects.activeStructures.storage.store.getUsedCapacity(RESOURCE_ENERGY)
       return Math.min(Math.max(Math.floor(energy / 10000), 3), 5)
     })()
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, roles, roles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], filterTaskIdentifier, minimumCreepCount)
 
     const noCreeps = problemFinder.creepCount < 2
     const energyCapacity = noCreeps === true ? room.energyAvailable : room.energyCapacityAvailable

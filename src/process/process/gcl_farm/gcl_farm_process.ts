@@ -140,7 +140,7 @@ export class GclFarmProcess implements Process, Procedural {
     const upgraders: Creep[] = []
     const haulers: Creep[] = []
 
-    const creepList = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const creepList = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
     creepList.forEach(creep => {
       if (hasNecessaryRoles(creep, haulerRoles) === true) {
         haulers.push(creep)

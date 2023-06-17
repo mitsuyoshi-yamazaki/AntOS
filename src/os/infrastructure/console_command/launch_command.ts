@@ -95,6 +95,7 @@ import { SaboteurHarvestProcess } from "process/onetime/saboteur_harvest_process
 // import {} from "process/non_game/distribution_simulation_process"
 import { } from "../../../../submodules/private/attack/quad_v2/quad_maker_process"
 import { MaintainLostRoomProcess } from "process/onetime/maintain_lost_room_process"
+import { DistributePowerProcess } from "process/process/distribute_power_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1664,6 +1665,19 @@ ProcessLauncher.register("MaintainLostRoomProcess", args => {
       processId,
       roomName,
       targetRoomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("DistributePowerProcess", args => {
+  try {
+    const interval = args.int("interval").parse({ min: 1 })
+
+    return Result.Succeeded((processId) => DistributePowerProcess.create(
+      processId,
+      interval,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)

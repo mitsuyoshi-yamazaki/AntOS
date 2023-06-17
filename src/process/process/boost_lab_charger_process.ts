@@ -21,9 +21,33 @@ import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { ResourceManager } from "utility/resource_manager"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { BoostLabChargerProcessLauncher } from "./boost_lab_charger_process_launcher"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("BoostLabChargerProcess", state => {
   return BoostLabChargerProcess.decode(state as BoostLabChargerProcessState)
+})
+
+BoostLabChargerProcessLauncher.load({
+  getRunningProcess(roomName: RoomName): BoostLabChargerProcess | null {
+    const processList = SystemCalls.systemCall()?.listAllProcesses() ?? []
+
+    for (const processInfo of processList) {
+      const process = processInfo.process
+      if (!(process instanceof BoostLabChargerProcess)) {
+        continue
+      }
+      if (process.parentRoomName !== roomName) {
+        continue
+      }
+      return process
+    }
+    return null
+  },
+
+  launch(roomName: RoomName): BoostLabChargerProcess | null {
+    return SystemCalls.systemCall()?.addProcess(null, processId => BoostLabChargerProcess.create(processId, roomName)) ?? null
+  },
 })
 
 const noBoostReason = "no boost"
@@ -78,7 +102,7 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
   }
 
   public processShortDescription(): string {
-    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const numberOfCreeps = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const boostDescriptions = ((): string[] => {
       const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
       if (roomResource == null) {
@@ -135,7 +159,7 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
       return false
     })()
     const shouldCollectResources = roomResource.roomInfo.config?.collectResources ?? false
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (creepCount < 1 && (needResourceTransfer === true || shouldCollectResources === true)) {
       this.requestCreep()
     }
@@ -192,7 +216,6 @@ export class BoostLabChargerProcess implements Process, Procedural, OwnedRoomPro
       this.identifier,
       CreepPoolAssignPriority.Low,
       creep => this.creepTask(creep, terminal, labs, shouldCollectResources, roomResource),
-      () => true,
     )
   }
 

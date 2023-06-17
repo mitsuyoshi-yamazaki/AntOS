@@ -18,7 +18,7 @@ export interface CreepInsufficiencyProblemSolverState extends ProblemSolverState
   /** creep request */
   cr: {
     /** necessary roles */
-    r: CreepRole[]
+    r: CreepRole[] | null
 
     /** target task identifier */
     t: TaskIdentifier | null
@@ -46,7 +46,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
     public readonly children: Task[],
     public readonly problemIdentifier: ProblemIdentifier,
     public readonly roomName: RoomName,
-    public readonly necessaryRoles: CreepRole[],
+    public readonly necessaryRoles: CreepRole[] | null,
     private readonly targetTaskIdentifier: TaskIdentifier | null,
     private readonly requiredCreepCount: number,
     public codename: string,
@@ -89,7 +89,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
   public static create(
     problemIdentifier: ProblemIdentifier,
     roomName: RoomName,
-    necessaryRoles: CreepRole[],
+    necessaryRoles: CreepRole[] | null,
     targetTaskIdentifier: TaskIdentifier | null,
     requiredCreepCount: number,
   ): CreepInsufficiencyProblemSolver {
@@ -110,7 +110,13 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
   }
 
   public runTask(): TaskStatus {
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, this.necessaryRoles)
+    const creepPoolFilter = ((): CreepPoolFilter | undefined => {
+      if (this.necessaryRoles != null) {
+        const necessaryRoles = this.necessaryRoles
+        return creep => hasNecessaryRoles(creep, necessaryRoles)
+      }
+      return undefined
+    })()
     const creepCount = World.resourcePools.countCreeps(this.roomName, this.targetTaskIdentifier, creepPoolFilter)
     const insufficientCreepCount = this.requiredCreepCount - creepCount
     if (insufficientCreepCount <= 0) {
@@ -121,7 +127,7 @@ export class CreepInsufficiencyProblemSolver extends ProblemSolver {
       priority: this.priority,
       numberOfCreeps: insufficientCreepCount,
       codename: this.codename,
-      roles: this.necessaryRoles,
+      roles: this.necessaryRoles ?? [],
       body: this.body,
       initialTask: this.initialTask,
       taskIdentifier: this.targetTaskIdentifier,

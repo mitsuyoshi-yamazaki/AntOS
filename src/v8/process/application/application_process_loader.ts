@@ -6,8 +6,8 @@
  */
 
 import { ApplicationProcessLauncher } from "./application_process_launcher"
-import { V8TestProcess, V8TestProcessState } from "./application/v8_test_process"
-import { EconomyProcess, EconomyProcessState } from "./application/economy_process"
+import { V8TestProcess, V8TestProcessState } from "../application_process/v8_test_process"
+import { EconomyProcess, EconomyProcessState } from "../application_process/economy_process"
 import { ApplicationProcessDecoder } from "./application_process_decoder"
 
 export const loadApplicationProcesses = (): void => {

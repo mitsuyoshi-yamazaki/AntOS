@@ -142,7 +142,7 @@ export class Season1655635SKMineralHarvestProcess implements Process, Procedural
       this.mineralType = mineral.mineralType
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     const attackers: Creep[] = []
     const harvesters: Creep[] = []
     const haulers: Creep[] = []
