@@ -34,6 +34,7 @@ import { roomTypeOf } from "utility/room_coordinate"
 import { CpuMeasurer, CpuPointMeasurer } from "shared/utility/cpu_measurer"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { coloredText } from "utility/log"
+import { RoomResources } from "room_resource/room_resources"
 
 // const cpuUsageHandler = (identifier: string, cpuUsage: number): void => {
 //   PrimitiveLogger.log(`${coloredText("[CPU]", "critical")} ${identifier}: ${cpuUsage}`)
@@ -101,14 +102,6 @@ export class RemoteRoomHaulerTask extends Task {
     // pointMeasurer.measure(`p00-${energySources.length}`)
 
     const filterTaskIdentifier = this.taskIdentifier
-    const minimumCreepCount = ((): number => {
-      // TODO: 距離等を加味する
-      if (objects.controller.room.energyCapacityAvailable < 2000) {
-        return Math.ceil(energyCapacity / 2000)
-      }
-      return Math.ceil(energyCapacity / 3000)
-    })()
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     const problemFinders: ProblemFinder[] = [
     ]

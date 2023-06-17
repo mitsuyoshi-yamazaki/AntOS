@@ -20,6 +20,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { GameConstants } from "utility/constants"
 import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
 import { SystemCalls } from "os/system_calls"
+import { OperatingSystem } from "os/os"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */

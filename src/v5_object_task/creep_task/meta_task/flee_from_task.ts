@@ -18,7 +18,6 @@ export class FleeFromTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     private readonly position: Position,
     private readonly range: number,
   ) {
@@ -27,7 +26,6 @@ export class FleeFromTask implements CreepTask {
 
   public encode(): FleeFromTaskState {
     return {
-      s: this.startTime,
       t: "FleeFromTask",
       d: this.position,
       r: this.range,
@@ -35,11 +33,11 @@ export class FleeFromTask implements CreepTask {
   }
 
   public static decode(state: FleeFromTaskState): FleeFromTask {
-    return new FleeFromTask(state.s, state.d, state.r)
+    return new FleeFromTask(state.d, state.r)
   }
 
   public static create(position: Position, range: number): FleeFromTask {
-    return new FleeFromTask(Game.time, {x: position.x, y: position.y}, range)
+    return new FleeFromTask({x: position.x, y: position.y}, range)
   }
 
   public run(creep: Creep): TaskProgressType {

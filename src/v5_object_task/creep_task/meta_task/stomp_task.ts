@@ -26,7 +26,6 @@ export class StompTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     private readonly position: Position,
     private previousState: {
       readonly position: Position,
@@ -39,7 +38,6 @@ export class StompTask implements CreepTask {
 
   public encode(): StompTaskState {
     return {
-      s: this.startTime,
       t: "StompTask",
       d: this.position,
       p: this.previousState?.position ?? null,
@@ -58,11 +56,11 @@ export class StompTask implements CreepTask {
         time: state.tick,
       }
     })()
-    return new StompTask(state.s, state.d, previousState, state.ignoreSwamp)
+    return new StompTask(state.d, previousState, state.ignoreSwamp)
   }
 
   public static create(destinationPosition: Position, options?: { ignoreSwamp?: boolean }): StompTask {
-    return new StompTask(Game.time, { x: destinationPosition.x, y: destinationPosition.y }, null, options?.ignoreSwamp ?? false)
+    return new StompTask({ x: destinationPosition.x, y: destinationPosition.y }, null, options?.ignoreSwamp ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {

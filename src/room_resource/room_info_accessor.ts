@@ -1,6 +1,5 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { roomLink } from "utility/log"
 import { coloredResourceType, roomLink } from "utility/log"
 import { MineralCompoundIngredients } from "shared/utility/resource"
 import { Result } from "shared/utility/result"

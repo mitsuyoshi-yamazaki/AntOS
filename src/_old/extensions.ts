@@ -11,6 +11,7 @@ import type { UniqueIdMemory } from "utility/unique_id"
 import type { RoomName } from "shared/utility/room_name_types"
 import type { OSMemory } from "os/os_memory"
 import { coloredText } from "utility/log"
+import { IntegratedAttackMemory } from "../../submodules/private/attack/integrated_attack/integrated_attack"
 
 const serialization = {
   canSkip: false,
