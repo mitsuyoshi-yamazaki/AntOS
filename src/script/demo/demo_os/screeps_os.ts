@@ -1,9 +1,7 @@
+import { AnyDriver } from "./driver"
 import { OperatingSystem } from "./os"
-import { SystemCall } from "./system_call"
 
-type ScreepsSystemCall = SystemCall & {
-  //
-}
+type ScreepsDrivers = AnyDriver
 
-export class ScreepsOS extends OperatingSystem<ScreepsSystemCall> {
+export class ScreepsOS extends OperatingSystem<ScreepsDrivers> {
 }

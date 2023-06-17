@@ -15,7 +15,7 @@ import { Environment } from "utility/environment"
 // import { Kernel } from "v8/operating_system/kernel"
 
 // ---- Demo OS ---- //
-import { ScreepsOS } from "script/demo/demo_os/screeps_os"
+import { bootLoader as demoBootLoader } from "script/demo/demo_os/boot_loader"
 
 type RootFunctions = {
   load(): void

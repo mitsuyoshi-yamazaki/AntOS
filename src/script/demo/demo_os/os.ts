@@ -11,78 +11,39 @@
    - → DIコンテナの使い所では
    - Driver群が固定されていると（Processが依存するDriverを指定していないと）シーズン間でのProcessの使い回しに不自由が出る
      - とはいえそれは実行前の段階の話なのでランタイムで条件分岐入れなくてもいいのでは
+ - DriverもSystemCallとDriverに依存する
+ - Processは依存するDriverとSystemCallの参照を持って生まれているべき
  */
 
-import { Driver } from "./driver"
+import { AnyDriver, DriverSet } from "./driver"
 import { SystemCall } from "./system_call"
+import { ProcessManager } from "./process_manager"
 
-declare namespace Tag {
-  const OpaqueTagSymbol: unique symbol
-
-  class OpaqueTag<T> {
-    private [OpaqueTagSymbol]: T
-  }
-}
-type ProcessId<T extends Process> = string & Tag.OpaqueTag<T>;
-
-// ProcessのdependencyはDriverだけではなく親Processが渡す引数が入る可能性がある
-// それをProcessManagerはどう平準化するか？
-interface Process {
-  readonly processId: ProcessId<this>
-}
-
-// ProcessからProcessManagerを呼び出す経路が循環しないようにする
-class ProcessManager {
-  private processes: Process[] = []
-
-  public load(): void {
-    this.restoreProcesses()
-  }
-
-  public startOfTick(): void {
-  }
-
-  public endOfTick(): void {
-    this.storeProcesses()
-  }
-
-  public addProcess(process: Process): void {
-  }
-
-  public getProcess<P extends Process>(processId: ProcessId<P>): P | null {
-    return null // TODO:
-  }
-
-  private restoreProcesses(): void {
-  }
-
-  private storeProcesses(): void {
-  }
-}
-
-export abstract class OperatingSystem<S extends SystemCall> {
-  private processManager = new ProcessManager()
+export abstract class OperatingSystem<D extends AnyDriver> {
+  private readonly processManager = new ProcessManager<D>()
+  private readonly driverList: D[]
 
   public constructor(
-    public readonly systemCall: S,
-    public readonly drivers: Driver[],
+    private readonly systemCall: SystemCall,
+    private readonly drivers: DriverSet<D>,
   ) {
+    this.driverList = Array.from(Object.values(drivers))
   }
 
   public load(): void {
     this.systemCall.load()
     this.processManager.load()
-    this.drivers.forEach(driver => driver.load())
+    this.driverList.forEach(driver => driver.load())
   }
 
   public startOfTick(): void {
     this.systemCall.startOfTick()
     this.processManager.startOfTick()
-    this.drivers.forEach(driver => driver.startOfTick())
+    this.driverList.forEach(driver => driver.startOfTick())
   }
 
   public endOfTick(): void {
-    this.drivers.forEach(driver => driver.endOfTick())
+    this.driverList.forEach(driver => driver.endOfTick())
     this.processManager.endOfTick()
     this.systemCall.endOfTick()
   }

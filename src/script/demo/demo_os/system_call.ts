@@ -1,5 +1,10 @@
-export type SystemCall = {
-  load(): void
-  startOfTick(): void
-  endOfTick(): void
+export class SystemCall {
+  public load(): void {
+  }
+
+  public startOfTick(): void {
+  }
+
+  public endOfTick(): void {
+  }
 }
