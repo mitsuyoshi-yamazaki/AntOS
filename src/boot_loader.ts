@@ -62,9 +62,6 @@ const v2Functions = (): RootFunctions => {
       ErrorMapper.wrapLoop((): void => {
         OperatingSystem.os.run()
       }, "OS")()
-
-      const all_cpu = Math.ceil(Game.cpu.getUsed())
-      Memory.cpu_usages.push(all_cpu)
     },
   }
 }
