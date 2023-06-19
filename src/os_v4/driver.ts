@@ -1,11 +1,11 @@
-import { SystemCall } from "./system_call"
+import { SystemCallSet } from "./system_call_set"
 
 export abstract class Driver<Name extends string, D extends (AnyDriver | never)> {
   public abstract readonly name: Name
 
   public constructor(
-    private readonly systemCall: SystemCall,
-    private readonly drivers: DriverSet<D>,
+    protected readonly systemCallSet: typeof SystemCallSet,
+    protected readonly drivers: DriverSet<D>,
   ) {
   }
 
@@ -19,16 +19,10 @@ export abstract class Driver<Name extends string, D extends (AnyDriver | never)>
   }
 }
 
-class DemoDriver1 extends Driver<"demo1", never> {
-  readonly name = "demo1"
-}
+export abstract class TransportManagerInterface extends Driver<"transport_manager", never> { }
 
-class DemoDriver2 extends Driver<"demo2", never> {
-  readonly name = "demo2"
-}
-
-export type AnyDriver = DemoDriver1 | DemoDriver2
+export type AnyDriver = TransportManagerInterface
 export type DriverName = AnyDriver["name"]
-export type GenericDriver<Name extends DriverName> = Name extends "demo1" ? DemoDriver1 : DemoDriver2
+export type GenericDriver<Name extends DriverName> = Name extends "transport_manager" ? TransportManagerInterface : never
 
 export type DriverSet<D extends AnyDriver> = Readonly<{ [K in D["name"]]: GenericDriver<K> }>

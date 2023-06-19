@@ -1,7 +1,8 @@
-import { AnyDriver } from "./driver"
+import { TransportManager } from "./driver/transport_manager"
 import { OperatingSystem } from "./os"
 
-type ScreepsDrivers = AnyDriver
+export type ScreepsDrivers = TransportManager
 
 export class ScreepsOS extends OperatingSystem<ScreepsDrivers> {
+  public readonly name = "AntOS"
 }
