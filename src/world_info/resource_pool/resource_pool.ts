@@ -27,12 +27,12 @@ export interface ResourcePoolsInterface {
   afterTick(): void
 
   // ---- Creep ---- //
-  countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
-  countCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number
+  // countAllCreeps(roomName: RoomName, filter: CreepPoolFilter): number
+  countCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): number
 
   /** @deprecated */
-  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[]
-  assignTasks(roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void
+  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): Creep[]
+  assignTasks(roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter?: CreepPoolFilter): void
   takeOverCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier, newIdentifier: TaskIdentifier | null, newParentRoomName: RoomName): void
 
   // ---- Tower ---- //
@@ -84,19 +84,19 @@ export const ResourcePools: ResourcePoolsInterface = {
   },
 
   // ---- Creep ---- //
-  countAllCreeps: function(roomName: RoomName, filter: CreepPoolFilter): number {
-    return getCreepPool(roomName)?.countAllCreeps(filter) ?? 0
-  },
+  // countAllCreeps: function(roomName: RoomName, filter: CreepPoolFilter): number {
+  //   return getCreepPool(roomName)?.countAllCreeps(filter) ?? 0
+  // },
 
-  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): Creep[] {
+  getCreeps(roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): Creep[] {
     return getCreepPool(roomName)?.getCreeps(taskIdentifier, filter) ?? []
   },
 
-  countCreeps: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter: CreepPoolFilter): number {
+  countCreeps: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, filter?: CreepPoolFilter): number {
     return getCreepPool(roomName)?.countCreeps(taskIdentifier, filter) ?? 0
   },
 
-  assignTasks: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter: CreepPoolFilter): void {
+  assignTasks: function (roomName: RoomName, taskIdentifier: TaskIdentifier | null, priority: CreepPoolAssignPriority, taskBuilder: CreepPoolTaskBuilder, filter?: CreepPoolFilter): void {
     getCreepPool(roomName)?.assignTasks(taskIdentifier, priority, taskBuilder, filter)
   },
 
@@ -106,7 +106,7 @@ export const ResourcePools: ResourcePoolsInterface = {
 
   addSpawnCreepRequest: function (roomName: RoomName, request: CreepSpawnRequest): void {
     const reqeusts = ((): CreepSpawnRequest[] => {
-      const identifier = resourcePoolIdentifier(roomName)
+      const identifier = roomName
       const stored = spawnCreepRequests.get(identifier)
       if (stored != null) {
         return stored
@@ -121,7 +121,7 @@ export const ResourcePools: ResourcePoolsInterface = {
 
   // ---- Tower ---- //
   addTowerTask: function (roomName: RoomName, task: TowerTask): void {
-    const pool = towerResourcePools.get(resourcePoolIdentifier(roomName))
+    const pool = towerResourcePools.get(roomName)
     if (pool == null) {
       return
     }
@@ -130,15 +130,15 @@ export const ResourcePools: ResourcePoolsInterface = {
   },
 
   stopSpawningIn(roomName: RoomName, duration: number): void {
-    stopSpawningUntil.set(resourcePoolIdentifier(roomName), Game.time + duration)
+    stopSpawningUntil.set(roomName, Game.time + duration)
   },
 }
 
 
 // ---- Functions ---- //
-function resourcePoolIdentifier(parentRoomName: RoomName): ResourcePoolIdentifier {
-  return `${parentRoomName}`
-}
+// function resourcePoolIdentifier(parentRoomName: RoomName): ResourcePoolIdentifier {
+//   return `${parentRoomName}`
+// }
 
 function reloadCreepResourcePools(allCreeps: Map<RoomName, Creep[]>): void {
   creepResourcePools.clear()
@@ -149,7 +149,7 @@ function reloadCreepResourcePools(allCreeps: Map<RoomName, Creep[]>): void {
         return
       }
       const pool = ((): CreepPool => {
-        const identifier = resourcePoolIdentifier(parentRoomName)
+        const identifier = parentRoomName
         const stored = creepResourcePools.get(identifier)
         if (stored != null) {
           return stored
@@ -180,7 +180,7 @@ function reloadSpawnResourcePools(allSpawns: StructureSpawn[]): void {
 
   allSpawns.forEach(spawn => {
     const pool = ((): SpawnPool => {
-      const identifier = resourcePoolIdentifier(spawn.room.name)
+      const identifier = spawn.room.name
       const stored = spawnResourcePools.get(identifier)
       if (stored != null) {
         return stored
@@ -195,6 +195,6 @@ function reloadSpawnResourcePools(allSpawns: StructureSpawn[]): void {
 }
 
 function getCreepPool(parentRoomName: RoomName): CreepPool | null {
-  const poolIdentifier = resourcePoolIdentifier(parentRoomName)
+  const poolIdentifier = parentRoomName
   return creepResourcePools.get(poolIdentifier) ?? null
 }

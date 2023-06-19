@@ -15,10 +15,13 @@ import { ProcessType, ProcessTypeConverter, rootProcessId } from "v8/process/pro
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { isLauncherProcess } from "v8/process/message_observer/launch_message_observer"
 import { ProcessInfoMemory } from "./kernel_memory"
-import { ApplicationProcessLauncher } from "v8/process/application_process_launcher"
-import { ApplicationProcessDecoder } from "v8/process/application_process_decoder"
+import { ApplicationProcessLauncher } from "v8/process/application/application_process_launcher"
+import { ApplicationProcessDecoder } from "v8/process/application/application_process_decoder"
 import { UniqueId } from "./system_call/unique_id"
 import { PrimitiveLogger } from "./primitive_logger"
+import { Application, isApplicationProcess } from "v8/process/application/application_process"
+
+
 
 interface ProcessManagerExternal {
   // ---- Accessor ---- //
@@ -26,6 +29,7 @@ interface ProcessManagerExternal {
   processInfoOf(processId: ProcessId): { parentProcessId: ProcessId, running: boolean } | null
   pauseProcess(processId: ProcessId): void
   resumeProcess(processId: ProcessId): void
+  getApplicationInfo(processId: ProcessId): Application | null  // 最上位ProcessをApplicationと呼び特別視するのは実装上必須ではない
 
   // ---- Lifecycle ---- //
   addProcess(process: Process, parentProcessId: ProcessId): void
@@ -45,9 +49,10 @@ interface ProcessManagerInterface extends SystemCall, ProcessManagerExternal {
   listProcesses(): ExternalProcessInfo[]
 }
 
-const processManagerMemory = EnvironmentalVariables.kernelMemory.process
-
 export const ProcessManager: ProcessManagerInterface = {
+  identifier: "ProcessManager",
+  description: "manages processes",
+
   // ---- Accessor ---- //
   getChildProcesses(processId: ProcessId): RunningProcess[] {
     const childProcessInfo = ProcessStore.childProcessInfo(processId) ?? []
@@ -72,6 +77,10 @@ export const ProcessManager: ProcessManagerInterface = {
       return
     }
     processInfo.running = true
+  },
+
+  getApplicationInfo(processId: ProcessId): Application | null {
+    return recursivelyGetApplicationInfo(processId)
   },
 
   // ---- Lifecycle ---- //
@@ -148,6 +157,7 @@ const resignProcessId = (process: RunningProcess): Process => {
 }
 
 const newProcessId = (): ProcessId => {
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   const processId: ProcessId = `p${UniqueId.generateFromInteger(processManagerMemory.processIdIndex) }`
   processManagerMemory.processIdIndex += 1
   return processId
@@ -204,6 +214,7 @@ const decodeProcesses = (): void => {
     return
   }
 
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   processManagerMemory.processInfoMemories.forEach(processInfoMemory => {
     const process = ApplicationProcessDecoder.decode(processInfoMemory.s)
     if (process == null) {
@@ -252,6 +263,7 @@ const recursivelyDecodeProcesses = (parentProcess: RunningProcess, childProcessI
 }
 
 const encodeProcesses = (): void => {
+  const processManagerMemory = EnvironmentalVariables.getProcessManagerMemory()
   const applicationProcesses = ProcessStore.childProcessInfo(rootProcessId) ?? []
   processManagerMemory.processInfoMemories = recursivelyEncodeProcess(applicationProcesses)
 }
@@ -289,4 +301,18 @@ const runProcessRecursively = (processInfo: ProcessInfo): void => {
   }
 
   childProcesses.forEach(childProcessInfo => runProcessRecursively(childProcessInfo))
+}
+
+const recursivelyGetApplicationInfo = (processId: ProcessId): Application | null => {
+  const processInfo = ProcessStore.processInfo(processId)
+  if (processInfo == null) {
+    return null
+  }
+  if (isApplicationProcess(processInfo.process)) {
+    return processInfo.process
+  }
+  if (processInfo.parentProcessId === rootProcessId) {
+    return null
+  }
+  return recursivelyGetApplicationInfo(processInfo.parentProcessId)
 }

@@ -294,7 +294,7 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
       if (this.stopSpawningReasons.length > 0) {
         return false
       }
-      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
+      const creepCount = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier)
       if (creepCount > 0) {
         return false
       }
@@ -321,7 +321,6 @@ export class ContinuouslyProduceCommodityProcess implements Process, Procedural,
         this.taskIdentifier,
         CreepPoolAssignPriority.Low,
         creep => this.newHaulerTask(creep, factory, terminal, allIngredients, roomResource),
-        () => true,
       )
     }
   }

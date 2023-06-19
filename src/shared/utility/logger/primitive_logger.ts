@@ -4,6 +4,8 @@ export type PrimitiveLogLevel = "log" | "notice" | "fatal" | "program error"
 
 /**
  * Processより低レベルでエラーが発生した際に使用する
+ * TODO: LoggerもOS組み込みにするため将来的に消す
+ * @deprecated
  */
 export const PrimitiveLogger = {
   log(message: string, level?: PrimitiveLogLevel): void {

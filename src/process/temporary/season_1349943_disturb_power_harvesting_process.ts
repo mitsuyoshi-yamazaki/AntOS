@@ -84,7 +84,7 @@ export class Season1349943DisturbPowerHarvestingProcess implements Process, Proc
   }
 
   public runOnTick(): void {
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
     if (creeps.length < 1) {
       this.requestCreep()
     }

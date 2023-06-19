@@ -150,7 +150,7 @@ export class CreateConstructionSiteTask extends Task {
     const [shouldPlaceExtensions, shouldPlaceRoads] = ((): [boolean, boolean] => {
       if (World.rooms.getAllOwnedRooms().length <= 1) {
         if (room.controller.level <= 3) {
-          return [true, false]
+          return [true, false] // FixMe: room planを設置した段階でconstruction siteになっている？
         }
         return [true, true]
       }

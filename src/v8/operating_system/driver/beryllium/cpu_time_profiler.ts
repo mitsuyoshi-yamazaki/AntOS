@@ -3,7 +3,7 @@
  ## 概要
  */
 
-import { SystemCall } from "../system_call"
+import { SystemCall } from "../../system_call"
 
 interface CpuTimeProfilerInterface extends SystemCall {
   measure(fn: () => void): number

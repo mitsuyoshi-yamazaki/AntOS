@@ -189,7 +189,7 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
 
   public runOnTick(): void {
     if (this.creepName == null) {
-      const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+      const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
       if (creeps[0] != null) {
         this.creepName = creeps[0].name
       } else {

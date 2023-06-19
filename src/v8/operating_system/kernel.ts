@@ -38,6 +38,7 @@ import { standardInput } from "./system_call/standard_input"
 import { LaunchCommand } from "./system_call/standard_input_command/launch_command"
 import { ProcessCommand } from "./system_call/standard_input_command/process_command"
 import { KillCommand } from "./system_call/standard_input_command/kill_command"
+import { DriverCommand, DriverInfoAccessor } from "./system_call/standard_input_command/driver_command"
 import type { ProcessId } from "v8/process/process"
 import type { ProcessType } from "v8/process/process_type"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
@@ -46,18 +47,20 @@ import { SystemCall, SystemCallDefaultInterface } from "./system_call"
 import { GameConstants } from "utility/constants"
 import { ProcessLogger } from "./system_call/process_logger"
 import { UniqueId } from "./system_call/unique_id"
+import { isMessageObserver, MessageObserver } from "./message_observer"
+import { PrimitiveLogger } from "./primitive_logger"
+import { SemanticVersion } from "shared/utility/semantic_version"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { DriverFamily } from "./driver_family/driver_family_types"
 
 type LifecycleEvent = keyof SystemCallDefaultInterface
 
-// const kernelConstants = {
-//   driverMaxLoadCpu: 10,
-// }
-
 type KernelInterface = {
+  version: SemanticVersion
+
   // ---- Boot ---- //
   standardInput: (command?: string) => string
-  registerDrivers(drivers: Driver[]): void
-  load(): void
+  load(driverFamilies: DriverFamily[]): void
 
   // ---- Every Ticks ---- //
   run(): void
@@ -65,10 +68,23 @@ type KernelInterface = {
 
 type SystemCallLifecycleFunction = () => void
 
+const driverInfo = new Map<string, [string, string][]>()
+const interactiveDrivers = new Map<string, SystemCall & MessageObserver>()
+const driverInfoAccessor: DriverInfoAccessor = {
+  listDriverInfo(): Map<string, [string, string][]> {
+    return new Map(driverInfo)
+  },
+
+  getDriver(driverIdentifier: string): (Driver & MessageObserver) | null {
+    return interactiveDrivers.get(driverIdentifier) ?? null
+  },
+}
+
 const standardInputCommands = new Map<string, StandardInputCommand>([
   ["launch", new LaunchCommand((parentProcessId: ProcessId, processType: ProcessType, args: ArgumentParser) => ProcessManager.launchProcess(parentProcessId, processType, args))],
   ["process", new ProcessCommand()],
   ["kill", new KillCommand()],
+  ["driver", new DriverCommand(driverInfoAccessor)],
 ])
 
 const driverFunctions: { [K in LifecycleEvent]: SystemCallLifecycleFunction[] } = {
@@ -102,28 +118,20 @@ systemCalls.forEach(systemCall => {
 })
 
 export const Kernel: KernelInterface = {
+  version: new SemanticVersion(3, 2, 8),
+
   standardInput: standardInput(standardInputCommands),
 
-  registerDrivers(drivers: Driver[]): void {
-    drivers.forEach(driver => {
-      if (driver.load != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        driverFunctions.load.push(() => driver.load!())
-      }
-      if (driver.startOfTick != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        driverFunctions.startOfTick.push(() => driver.startOfTick!())
-      }
-      if (driver.endOfTick != null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        driverFunctions.endOfTick.unshift(() => driver.endOfTick!())
-      }
-    })
-  },
+  load(driverFamilies: DriverFamily[]): void {
+    PrimitiveLogger.info(ConsoleUtility.colored(`${this.version} Kernel loaded`, "info"))
 
-  load(): void {
+    const loadDriverMessage = `Starting ${driverFamilies.map(family => `${family.displayName} ${family.version}`).join(", ")}`
+    PrimitiveLogger.info(ConsoleUtility.colored(loadDriverMessage, "info"))
+
     callSystemCallFunctions(systemCallFunctions.load)
     callSystemCallFunctions(driverFunctions.load)
+
+    registerDriverFamilies(driverFamilies)
   },
 
   run(): void {
@@ -159,4 +167,90 @@ const getProcessCpuLimit = (): number => {
     return Math.min(remainingCpu, 5)
   }
   return remainingCpu
+}
+
+const registerDriverFamilies = (driverFamilies: DriverFamily[]): void => {
+  driverInfo.clear()
+  interactiveDrivers.clear()
+
+  const interactiveDriverList: {
+    botDescription: string,
+    prefix: string,
+    drivers: (SystemCall & MessageObserver)[]
+  }[] = []
+  const shortDriverIdentifiers: string[] = [] // Driver Family Nameのついていない単体の名前
+  const duplicatedDriverIdentifiers: string[] = []
+
+  const interactiveSystemCalls: (SystemCall & MessageObserver)[] = []
+  systemCalls.forEach(systemCall => {
+    if (isMessageObserver(systemCall)) {
+      interactiveSystemCalls.push(systemCall)
+      if (shortDriverIdentifiers.includes(systemCall.identifier) === true) {
+        PrimitiveLogger.programError(`duplicated system call identifier: ${systemCall.identifier}`)
+      } else {
+        shortDriverIdentifiers.push(systemCall.identifier)
+      }
+    }
+  })
+
+  driverFamilies.forEach(family => {
+    const drivers: (SystemCall & MessageObserver)[] = []
+    family.drivers.forEach(driver => {
+      if (isMessageObserver(driver)) {
+        drivers.push(driver)
+        if (shortDriverIdentifiers.includes(driver.identifier) === true) {
+          duplicatedDriverIdentifiers.push(driver.identifier)
+        } else {
+          shortDriverIdentifiers.push(driver.identifier)
+        }
+      }
+
+      if (driver.load != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.load.push(() => driver.load!())
+      }
+      if (driver.startOfTick != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.startOfTick.push(() => driver.startOfTick!())
+      }
+      if (driver.endOfTick != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        driverFunctions.endOfTick.unshift(() => driver.endOfTick!())
+      }
+    })
+
+    interactiveDriverList.push({
+      botDescription: `${family.identifier} (${family.displayName})`,
+      prefix: family.prefix,
+      drivers,
+    })
+  })
+
+  const systemCallInfo: [string, string][] = []
+  interactiveSystemCalls.forEach(systemCall => {
+    interactiveDrivers.set(systemCall.identifier, systemCall)
+    systemCallInfo.push([systemCall.identifier, systemCall.description])
+  })
+  driverInfo.set("SystemCall", systemCallInfo)
+
+  interactiveDriverList.forEach(family => {
+    const info: [string, string][] = []
+
+    family.drivers.forEach(driver => {
+      const identifiers: string[] = []
+
+      const identifier = `${family.prefix}.${driver.identifier}`
+      interactiveDrivers.set(identifier, driver)
+      identifiers.push(identifier)
+
+      if (duplicatedDriverIdentifiers.includes(driver.identifier) !== true) {
+        interactiveDrivers.set(driver.identifier, driver)
+        identifiers.push(driver.identifier)
+      }
+
+      info.push([identifiers.join(", "), driver.description])
+    })
+
+    driverInfo.set(family.botDescription, info)
+  })
 }

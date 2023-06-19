@@ -1,11 +1,11 @@
-import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { isDirectionConstant } from "shared/utility/direction"
 import { isPowerConstant } from "shared/utility/power"
 import type { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "../console_utility/console_utility"
 import { Position } from "../position"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 import { RoomCoordinate } from "utility/room_coordinate"
 
 const roomLink = ConsoleUtility.roomLink

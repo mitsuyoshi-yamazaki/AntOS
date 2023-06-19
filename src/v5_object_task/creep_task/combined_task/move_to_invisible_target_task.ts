@@ -42,7 +42,6 @@ export class MoveToInvisibleTargetTask implements CreepTask {
   public readonly shortDescription: string
 
   private constructor(
-    public readonly startTime: number,
     private currentTask: CurrentTask
   ) {
     this.shortDescription = currentTask.task.shortDescription
@@ -50,7 +49,6 @@ export class MoveToInvisibleTargetTask implements CreepTask {
 
   public encode(): MoveToInvisibleTargetTaskState {
     return {
-      s: this.startTime,
       t: "MoveToInvisibleTargetTask",
       taskState: ((): TaskState => {
         switch (this.currentTask.case) {
@@ -96,7 +94,7 @@ export class MoveToInvisibleTargetTask implements CreepTask {
       return null
     }
 
-    return new MoveToInvisibleTargetTask(state.s, currentTask)
+    return new MoveToInvisibleTargetTask(currentTask)
   }
 
   public static create(destinationRoomName: RoomName, waypoints: RoomName[], target: TargetType, options?: { ignoreSwamp?: boolean}): MoveToInvisibleTargetTask {
@@ -106,7 +104,7 @@ export class MoveToInvisibleTargetTask implements CreepTask {
       task: moveToRoomTask,
       target,
     }
-    return new MoveToInvisibleTargetTask(Game.time, task)
+    return new MoveToInvisibleTargetTask(task)
   }
 
   public run(creep: Creep): TaskProgressType {

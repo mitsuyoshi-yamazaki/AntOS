@@ -1,10 +1,10 @@
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Process } from "./process"
-import { ProcessType } from "./process_type"
+import { ProcessType } from "../process_type"
+import { ApplicationProcess } from "./application_process"
 
 /** @throws */
-type Launcher = (args: ArgumentParser) => Process
+type Launcher = (args: ArgumentParser) => ApplicationProcess
 
 const launchers = new Map<ProcessType, Launcher>()
 
@@ -18,7 +18,7 @@ export const ApplicationProcessLauncher = {
   },
 
   /** @throws */
-  launch(processType: ProcessType, args: ArgumentParser): Process {
+  launch(processType: ProcessType, args: ArgumentParser): ApplicationProcess {
     const launcher = launchers.get(processType)
     if (launcher == null) {
       throw `ApplicationProcessLauncher unregistered process ${processType}`

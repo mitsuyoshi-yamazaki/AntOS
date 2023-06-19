@@ -15,4 +15,10 @@ export type SystemCallDefaultInterface = {
   endOfTick(): void
 }
 
-export type SystemCall = Partial<SystemCallDefaultInterface>
+export type SystemCall = Partial<SystemCallDefaultInterface> & {
+  /**
+   * DriverCommandで対象を指定する際に使用する
+   */
+  readonly identifier: string
+  readonly description: string
+}

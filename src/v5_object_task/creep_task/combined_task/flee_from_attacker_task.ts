@@ -6,6 +6,7 @@ import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 
 export interface FleeFromAttackerTaskState extends CreepTaskState {
+  s: number // start time
   childTaskState: CreepTaskState
   didFlee: boolean
   range: number
@@ -18,8 +19,8 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     public readonly childTask: CreepTask,
+    private readonly startTime: number,
     private didFlee: boolean,
     private readonly range: number,
     private readonly failOnFlee: boolean,
@@ -38,11 +39,11 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   public static decode(state: FleeFromAttackerTaskState, childTask: CreepTask): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(state.s, childTask, state.didFlee ?? false, state.range ?? 6, state.failOnFlee ?? true)
+    return new FleeFromAttackerTask(childTask, state.s, state.didFlee ?? false, state.range ?? 6, state.failOnFlee ?? true)
   }
 
   public static create(childTask: CreepTask, range?: number, options?: {failOnFlee?: boolean}): FleeFromAttackerTask {
-    return new FleeFromAttackerTask(Game.time, childTask, false, range ?? 4, options?.failOnFlee ?? false)
+    return new FleeFromAttackerTask(childTask, Game.time, false, range ?? 4, options?.failOnFlee ?? false)
   }
 
   public run(creep: Creep): TaskProgressType {

@@ -206,7 +206,7 @@ export class DefenseRemoteRoomProcess implements Process, Procedural, OwnedRoomP
     }
 
     const targetRooms = [...this.targetRooms]
-    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const intercepters = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
 
     if (this.currentTarget == null) {
       this.intercepterCreepNames = {}

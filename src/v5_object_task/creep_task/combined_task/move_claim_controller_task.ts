@@ -21,7 +21,6 @@ export class MoveClaimControllerTask implements CreepTask {
   public readonly shortDescription = "claim"
 
   private constructor(
-    public readonly startTime: number,
     public readonly targetRoomName: RoomName,
     private readonly moveToRoomTask: MoveToRoomTask,
   ) {
@@ -29,7 +28,6 @@ export class MoveClaimControllerTask implements CreepTask {
 
   public encode(): MoveClaimControllerTaskState {
     return {
-      s: this.startTime,
       t: "MoveClaimControllerTask",
       r: this.targetRoomName,
       m: this.moveToRoomTask.encode(),
@@ -38,12 +36,12 @@ export class MoveClaimControllerTask implements CreepTask {
 
   public static decode(state: MoveClaimControllerTaskState): MoveClaimControllerTask {
     const moveToRoomTask = MoveToRoomTask.decode(state.m)
-    return new MoveClaimControllerTask(state.s, state.r, moveToRoomTask)
+    return new MoveClaimControllerTask(state.r, moveToRoomTask)
   }
 
   public static create(targetRoomName: RoomName, waypoints: RoomName[], canIgnoreSwamp: boolean): MoveClaimControllerTask {
     const moveToRoomTask = MoveToRoomTask.create(targetRoomName, waypoints, canIgnoreSwamp)
-    return new MoveClaimControllerTask(Game.time, targetRoomName, moveToRoomTask)
+    return new MoveClaimControllerTask(targetRoomName, moveToRoomTask)
   }
 
   public run(creep: Creep): TaskProgressType {

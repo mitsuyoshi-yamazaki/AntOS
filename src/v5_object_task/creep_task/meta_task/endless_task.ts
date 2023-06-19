@@ -9,23 +9,21 @@ export class EndlessTask implements CreepTask {
   public readonly shortDescription = "stay"
 
   private constructor(
-    public readonly startTime: number,
   ) {
   }
 
   public encode(): EndlessTaskState {
     return {
-      s: this.startTime,
       t: "EndlessTask",
     }
   }
 
   public static decode(state: EndlessTaskState): EndlessTask {
-    return new EndlessTask(state.s)
+    return new EndlessTask()
   }
 
   public static create(): EndlessTask {
-    return new EndlessTask(Game.time)
+    return new EndlessTask()
   }
 
   public run(): TaskProgressType {

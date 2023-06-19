@@ -41,7 +41,6 @@ export class TravelToTargetTask implements CreepTask {
   }
 
   private constructor(
-    public readonly startTime: number,
     public readonly apiWrapper: TravelToTargetTaskApiWrapper,
     private readonly options: TravelToTargetTaskOptions,
     private lastPosition: Position | null,
@@ -51,7 +50,6 @@ export class TravelToTargetTask implements CreepTask {
 
   public encode(): TravelToTargetTaskState {
     return {
-      s: this.startTime,
       t: "TravelToTargetTask",
       as: this.apiWrapper.encode(),
       is: this.options.ignoreSwamp ?? false,
@@ -86,7 +84,7 @@ export class TravelToTargetTask implements CreepTask {
         timestamp: state.lastPosition.timestamp,
       }
     })()
-    return new TravelToTargetTask(state.s, wrapper as TravelToTargetTaskApiWrapper, options, lastPosition)
+    return new TravelToTargetTask(wrapper as TravelToTargetTaskApiWrapper, options, lastPosition)
   }
 
   public static create(apiWrapper: TravelToTargetTaskApiWrapper, options?: TravelToTargetTaskOptions): TravelToTargetTask {
@@ -99,7 +97,7 @@ export class TravelToTargetTask implements CreepTask {
         reusePath: null,
       }
     })()
-    return new TravelToTargetTask(Game.time, apiWrapper, opt, null)
+    return new TravelToTargetTask(apiWrapper, opt, null)
   }
 
   public run(creep: Creep): TaskProgressType {

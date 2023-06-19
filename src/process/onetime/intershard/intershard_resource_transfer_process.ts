@@ -190,7 +190,7 @@ export class IntershardResourceTransferProcess implements Process, Procedural, M
       return
     }
 
-    const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.roomName, this.taskIdentifier)
     creeps.forEach(creep => {
       if (creep.spawning !== true) {
         return
@@ -230,7 +230,6 @@ export class IntershardResourceTransferProcess implements Process, Procedural, M
         }
         return FleeFromAttackerTask.create(task)
       },
-      () => true,
     )
   }
 

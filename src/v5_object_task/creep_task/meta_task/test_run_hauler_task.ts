@@ -20,7 +20,6 @@ export class TestRunHaulerTask implements CreepTask {
   public readonly shortDescription = "test"
 
   private constructor(
-    public readonly startTime: number,
     public readonly destinationPosition: RoomPosition,
     public readonly storage: StructureStorage,
     private withdrawing: boolean,
@@ -29,7 +28,6 @@ export class TestRunHaulerTask implements CreepTask {
 
   public encode(): TestRunHaulerTaskState {
     return {
-      s: this.startTime,
       t: "TestRunHaulerTask",
       d: this.destinationPosition.encode(),
       i: this.storage.id,
@@ -42,11 +40,11 @@ export class TestRunHaulerTask implements CreepTask {
     if (storage == null) {
       return null
     }
-    return new TestRunHaulerTask(state.s, decodeRoomPosition(state.d), storage, state.w)
+    return new TestRunHaulerTask(decodeRoomPosition(state.d), storage, state.w)
   }
 
   public static create(destinationPosition: RoomPosition, storage: StructureStorage): TestRunHaulerTask {
-    return new TestRunHaulerTask(Game.time, destinationPosition, storage, true)
+    return new TestRunHaulerTask(destinationPosition, storage, true)
   }
 
   public run(creep: Creep): TaskProgressType {

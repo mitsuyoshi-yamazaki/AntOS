@@ -1,12 +1,11 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { OperatingSystem } from "os/os"
-import { BoostLabChargerProcess } from "process/process/boost_lab_charger_process"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { MineralCompoundIngredients } from "shared/utility/resource"
 import { Result } from "shared/utility/result"
 import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomInfo, OwnedRoomConfig, BoostLabInfo } from "./room_info"
+import { BoostLabChargerProcessLauncher } from "process/process/boost_lab_charger_process_launcher"
 
 export const defaultMaxWallHits = 10000000
 
@@ -374,9 +373,14 @@ export class OwnedRoomInfoAccessor {
       const newBoostLabInfo: BoostLabInfo[] = newBoostLabs.map(labInfo => ({ labId: labInfo.lab.id, boost: labInfo.boost, requiredAmount: labInfo.requiredAmount }))
       this.roomInfo.boostLabs.push(...newBoostLabInfo)
 
-      const runningProcess = labChargerProcessFor(this.roomName)
-      if (runningProcess == null) {
-        OperatingSystem.os.addProcess(null, processId => BoostLabChargerProcess.create(processId, this.roomName))
+      const launcher = BoostLabChargerProcessLauncher.launcher()
+      if (launcher != null) {
+        const runningProcess = launcher.getRunningProcess(this.roomName)
+        if (runningProcess == null) {
+          launcher.launch(this.roomName)
+        }
+      } else {
+        PrimitiveLogger.programError(`OwnedRoomInfoAccessor ${roomLink(this.roomName)} addBoosts() no BoostLabChargerProcessLauncher provided`)
       }
 
       return Result.Succeeded({
@@ -639,18 +643,4 @@ export class OwnedRoomInfoAccessor {
 
     return this.room.name
   }
-}
-
-function labChargerProcessFor(roomName: RoomName): BoostLabChargerProcess | null {
-  for (const processInfo of OperatingSystem.os.listAllProcesses()) {
-    const process = processInfo.process
-    if (!(process instanceof BoostLabChargerProcess)) {
-      continue
-    }
-    if (process.parentRoomName !== roomName) {
-      continue
-    }
-    return process
-  }
-  return null
 }

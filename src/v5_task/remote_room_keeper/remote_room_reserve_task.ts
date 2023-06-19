@@ -86,9 +86,7 @@ export class RemoteRoomReserveTask extends Task {
 
   // ---- Reserve ---- //
   private runReserver(objects: OwnedRoomObjects, targetController: StructureController): ProblemFinder[] {
-    const necessaryRoles: CreepRole[] = [CreepRole.Claimer]
     const filterTaskIdentifier = this.taskIdentifier
-    const creepPoolFilter: CreepPoolFilter = creep => hasNecessaryRoles(creep, necessaryRoles)
 
     World.resourcePools.assignTasks(
       objects.controller.room.name,
@@ -101,7 +99,6 @@ export class RemoteRoomReserveTask extends Task {
         }
         return FleeFromAttackerTask.create(task)
       },
-      creepPoolFilter,
     )
 
     const minimumBody = [MOVE, MOVE, CLAIM, CLAIM]
@@ -116,7 +113,7 @@ export class RemoteRoomReserveTask extends Task {
           if (targetRoom != null) {
             const invaded = targetRoom.find(FIND_HOSTILE_CREEPS).some(creep => (creep.getActiveBodyparts(ATTACK) > 0 || creep.getActiveBodyparts(RANGED_ATTACK) > 0))
             if (invaded !== true) {
-              return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, necessaryRoles, filterTaskIdentifier)]
+              return [this.createCreepInsufficiencyProblemFinder(objects, minimumBody, filterTaskIdentifier)]
             }
           }
         }
@@ -125,10 +122,10 @@ export class RemoteRoomReserveTask extends Task {
     return []
   }
 
-  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, minimumBody: BodyPartConstant[], necessaryRoles: CreepRole[], filterTaskIdentifier: TaskIdentifier): ProblemFinder {
+  private createCreepInsufficiencyProblemFinder(objects: OwnedRoomObjects, minimumBody: BodyPartConstant[], filterTaskIdentifier: TaskIdentifier): ProblemFinder {
     const roomName = objects.controller.room.name
     const minimumCreepCount = 1
-    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, necessaryRoles, necessaryRoles, filterTaskIdentifier, minimumCreepCount)
+    const problemFinder = new CreepInsufficiencyProblemFinder(roomName, null, [], filterTaskIdentifier, minimumCreepCount)
 
     return {
       identifier: problemFinder.identifier,

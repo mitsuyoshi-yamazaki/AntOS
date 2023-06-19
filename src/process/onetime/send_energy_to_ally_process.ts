@@ -54,7 +54,7 @@ export interface SendEnergyToAllyProcessState extends ProcessState {
   readonly finishWorking: number
   readonly maxNumberOfCreeps: number
   readonly stopSpawningReasons: string[]
-  readonly allyRoomEntrancePosition: Position
+  readonly allyRoomEntrancePosition: Position // Ally Roomの出口の場所
 }
 
 /** Haulerによる輸送 */
@@ -110,7 +110,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, OwnedRoomPr
   }
 
   public processShortDescription(): string {
-    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier, () => true)
+    const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     const descriptions: string[] = [
       `${creepCount}cr`,
       `${roomLink(this.parentRoomName)} => ${roomLink(this.targetRoomName)}`,
@@ -157,7 +157,7 @@ export class SendEnergyToAllyProcess implements Process, Procedural, OwnedRoomPr
       }
     }
 
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
 
     const shouldSpawn = ((): boolean => {
       if (this.stopSpawningReasons.length > 0) {
@@ -218,7 +218,6 @@ export class SendEnergyToAllyProcess implements Process, Procedural, OwnedRoomPr
         }
         return FleeFromAttackerTask.create(task)
       }),
-      () => true,
     )
   }
 

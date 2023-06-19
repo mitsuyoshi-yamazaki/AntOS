@@ -30,9 +30,19 @@ import { roomLink } from "utility/log"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
 
-const minimumNumberOfCreeps = 4
-const defaultNumberOfCreeps = 6
-const increasedNumberOfCreeps = 10
+const generalWorkerSpec = (() => {
+  const bodyUnit = [CARRY, WORK, MOVE, MOVE]
+  const unitCount = 6
+  const body = Array(unitCount).fill(bodyUnit).flatMap(x => x)
+  const maxEnergyCapacity = CreepBody.cost(body)
+
+  return {
+    bodyUnit,
+    unitCount,
+    body,
+    maxEnergyCapacity,
+  }
+})()
 
 function neighboursToObserve(roomName: RoomName): RoomName[] {
   const exits = Game.map.describeExits(roomName)
@@ -162,7 +172,7 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   public creepFileterRoles(): CreepRole[] | null {
-    return [CreepRole.Worker, CreepRole.Mover]
+    return null
   }
 
   public creepRequest(objects: OwnedRoomObjects): GeneralCreepWorkerTaskCreepRequest | null {
@@ -170,30 +180,16 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
       return null
     }
 
-    const numberOfCreeps = ((): number => {
-      if (this.targetRoomName === "W11S14" || this.targetRoomName === "W17S11") {
-        const targetRoom = Game.rooms[this.targetRoomName]
-        if (targetRoom == null) {
-          return increasedNumberOfCreeps
-        }
-        if (targetRoom.find(FIND_MY_STRUCTURES, { filter: {structureType: STRUCTURE_SPAWN}}).length <= 0) {
-          return increasedNumberOfCreeps
-        }
-      }
-      if (this.targetRoomName === "W15S8") {
-        return minimumNumberOfCreeps
-      }
-      return defaultNumberOfCreeps
-    })()
+    const { body, creepCount } = this.creepBody(objects.controller.room.energyCapacityAvailable)
 
     return {
       necessaryRoles: [CreepRole.Worker, CreepRole.Mover, CreepRole.EnergyStore],
       taskIdentifier: this.taskIdentifier,
-      numberOfCreeps,
+      numberOfCreeps: creepCount,
       codename: this.codename,
       initialTask: MoveToRoomTask.create(this.targetRoomName, this.waypoints),
       priority: CreepSpawnRequestPriority.Low,
-      body: this.creepBody(objects.controller.room.energyCapacityAvailable)
+      body,
     }
   }
 
@@ -472,8 +468,18 @@ export class UpgradeToRcl3Task extends GeneralCreepWorkerTask {
   }
 
   // ---- Creep Body ---- //
-  private creepBody(energyCapacity: number): BodyPartConstant[] {
-    return CreepBody.create([], [CARRY, WORK, MOVE, MOVE], energyCapacity, 8)
+  private creepBody(energyCapacity: number): { body: BodyPartConstant[], creepCount: number } {
+    if (energyCapacity <= generalWorkerSpec.maxEnergyCapacity) {
+      return {
+        body: [...generalWorkerSpec.body],
+        creepCount: 6,
+      }
+    }
+
+    return {
+      body: CreepBody.create([], generalWorkerSpec.bodyUnit, energyCapacity, generalWorkerSpec.unitCount + 4),
+      creepCount: 4,
+    }
   }
 
   // ---- Take Over Creeps ---- //
@@ -518,8 +524,8 @@ function shouldSpawnBootstrapCreeps(roomName: RoomName, targetRoomName: RoomName
     }
     const storage = roomResource.activeStructures.storage
     const terminal = roomResource.activeStructures.terminal
-    if (storage == null || terminal == null) {
-      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage or terminal`)
+    if (storage == null && terminal == null) {
+      PrimitiveLogger.programError(`Bootstrap parent room ${roomLink(roomName)} has no storage and terminal`)
       return 0
     }
     return (storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)

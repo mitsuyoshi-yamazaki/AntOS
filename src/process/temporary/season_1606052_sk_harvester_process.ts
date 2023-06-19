@@ -86,7 +86,7 @@ export class Season1606052SKHarvesterProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
-    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier, () => true)
+    const creeps = World.resourcePools.getCreeps(this.parentRoomName, this.identifier)
 
     if (creeps[0] == null || (creeps[0].ticksToLive != null && creeps[0].ticksToLive < 100)) {
       this.requestCreep()
