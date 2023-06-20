@@ -86,22 +86,24 @@ export function tick(): void {
   Game.whitelist = [...LeagueOfAutomatedNations.LOANlist].concat(Memory.gameInfo.whitelist)
 
   // ---- Serialization ---- //
-  if (serialization.shouldSerializeInNextTick === true) {
-    serialization.canSkip = false
-  } else {
-    serialization.canSkip = ((): boolean => {
-      // if (Memory.skipSerialization.test === true) {
-      //   return true  // テストコード無効化
-      // }
-      if (Memory.skipSerialization.by != null && Game.time < Memory.skipSerialization.by) {
-        return true
-      }
-      if (Memory.skipSerialization.interval != null && ((Game.time % Memory.skipSerialization.interval) !== 0)) {
-        return true
-      }
-      return false
-    })()
-  }
+  serialization.canSkip = false // FixMe: デバッグコード
+
+  // if (serialization.shouldSerializeInNextTick === true) {
+  //   serialization.canSkip = false
+  // } else {
+  //   serialization.canSkip = ((): boolean => {
+  //     // if (Memory.skipSerialization.test === true) {
+  //     //   return true  // テストコード無効化
+  //     // }
+  //     if (Memory.skipSerialization.by != null && Game.time < Memory.skipSerialization.by) {
+  //       return true
+  //     }
+  //     if (Memory.skipSerialization.interval != null && ((Game.time % Memory.skipSerialization.interval) !== 0)) {
+  //       return true
+  //     }
+  //     return false
+  //   })()
+  // }
   serialization.finished = false
   serialization.shouldSerializeInNextTick = false
 
