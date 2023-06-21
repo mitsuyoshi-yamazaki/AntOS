@@ -96,6 +96,8 @@ import { SaboteurHarvestProcess } from "process/onetime/saboteur_harvest_process
 import { } from "../../../../submodules/private/attack/quad_v2/quad_maker_process"
 import { MaintainLostRoomProcess } from "process/onetime/maintain_lost_room_process"
 import { DistributePowerProcess } from "process/process/distribute_power_process"
+import { Season5ClaimReactorProcess } from "process/temporary/season5_claim_reactor_process"
+import { Season5FillReactorProcess } from "process/temporary/season5_fill_reactor_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1678,6 +1680,45 @@ ProcessLauncher.register("DistributePowerProcess", args => {
     return Result.Succeeded((processId) => DistributePowerProcess.create(
       processId,
       interval,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season5ClaimReactorProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({my: true})
+    const targetRoomName = args.roomName("target_room_name").parse()
+
+    getWaypoints(args, roomName, targetRoomName)
+
+    return Result.Succeeded((processId) => Season5ClaimReactorProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("Season5FillReactorProcess", args => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const bodyUnitSize = args.int("body_unit_size").parse({ min: 1, max: 25 })
+    const delay = args.int("delay").parse({ min: 0 })
+    const startsAt = Game.time + delay
+
+    getWaypoints(args, roomName, targetRoomName)
+
+    return Result.Succeeded((processId) => Season5FillReactorProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      bodyUnitSize,
+      startsAt,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
