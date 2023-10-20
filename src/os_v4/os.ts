@@ -15,29 +15,36 @@
  - Processは依存するDriverとSystemCallの参照を持って生まれているべき
  */
 
-import { AnyDriver, DriverSet } from "./driver"
 import { SystemCall } from "./system_call"
 import { ProcessManager } from "./process_manager"
+import { SemanticVersion } from "../shared/utility/semantic_version"
+import { SystemCallSet } from "./system_call_set"
+import { AnyDriver, DriverSet } from "./driver"
 
 export abstract class OperatingSystem<D extends AnyDriver> {
-  private readonly processManager = new ProcessManager<D>()
-  private readonly driverList: D[]
+  public abstract readonly name: string
+
+  protected readonly processManager = new ProcessManager<D>()
+  protected readonly systemCallList: SystemCall[]
+  protected readonly driverList: D[]
 
   public constructor(
-    private readonly systemCall: SystemCall,
-    private readonly drivers: DriverSet<D>,
+    protected readonly systemCalls: typeof SystemCallSet,
+    protected readonly drivers: DriverSet<D>,
+    public readonly version: SemanticVersion,
   ) {
+    this.systemCallList = Array.from(Object.values(systemCalls))
     this.driverList = Array.from(Object.values(drivers))
   }
 
   public load(): void {
-    this.systemCall.load()
+    this.systemCallList.forEach(systemCall => systemCall.load())
     this.processManager.load()
     this.driverList.forEach(driver => driver.load())
   }
 
   public startOfTick(): void {
-    this.systemCall.startOfTick()
+    this.systemCallList.forEach(systemCall => systemCall.startOfTick())
     this.processManager.startOfTick()
     this.driverList.forEach(driver => driver.startOfTick())
   }
@@ -45,6 +52,6 @@ export abstract class OperatingSystem<D extends AnyDriver> {
   public endOfTick(): void {
     this.driverList.forEach(driver => driver.endOfTick())
     this.processManager.endOfTick()
-    this.systemCall.endOfTick()
+    this.systemCallList.forEach(systemCall => systemCall.endOfTick())
   }
 }

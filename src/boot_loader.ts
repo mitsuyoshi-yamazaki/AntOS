@@ -14,8 +14,8 @@ import { Environment } from "utility/environment"
 // import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
 // import { Kernel } from "v8/operating_system/kernel"
 
-// ---- Demo OS ---- //
-// import { bootLoader as demoBootLoader } from "script/demo/demo_os/boot_loader"
+// ---- v4 OS ---- //
+// import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
 
 type RootFunctions = {
   load(): void
@@ -62,9 +62,6 @@ const v2Functions = (): RootFunctions => {
       ErrorMapper.wrapLoop((): void => {
         OperatingSystem.os.run()
       }, "OS")()
-
-      const all_cpu = Math.ceil(Game.cpu.getUsed())
-      Memory.cpu_usages.push(all_cpu)
     },
   }
 }
