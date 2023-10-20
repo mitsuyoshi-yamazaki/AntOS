@@ -144,13 +144,20 @@ export class Season5FillReactorProcess implements Process, Procedural {
         if (creep.store.getUsedCapacity(RESOURCE_THORIUM) <= 0) {
           const terminal = roomResource.activeStructures.terminal
           if (terminal != null && terminal.store.getUsedCapacity(RESOURCE_THORIUM) > 0) {
-            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_THORIUM))
+            const amount = ((): number => {
+              const capacity = creep.store.getFreeCapacity()
+              if (capacity === 100 || capacity === 1000) {
+                return capacity - 1
+              }
+              return capacity
+            })()
+            return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(terminal, RESOURCE_THORIUM, amount))
           }
         }
       }
       if (creep.room.name !== this.targetRoomName) {
         const waypoints = GameMap.getWaypoints(creep.room.name, this.targetRoomName) ?? []
-        return MoveToRoomTask.create(this.targetRoomName, waypoints, true)
+        return MoveToRoomTask.create(this.targetRoomName, waypoints)
       }
 
       const reactor = creep.room.find(FIND_REACTORS)[0]
@@ -163,7 +170,7 @@ export class Season5FillReactorProcess implements Process, Procedural {
         return null
       }
       if (creep.pos.isNearTo(reactor.pos) !== true) {
-        return MoveToTask.create(reactor.pos, 1, { ignoreSwamp: true })
+        return MoveToTask.create(reactor.pos, 1)
       }
       creep.transfer(reactor, RESOURCE_THORIUM)
       return null
