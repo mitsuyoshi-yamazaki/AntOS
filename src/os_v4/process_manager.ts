@@ -1,8 +1,9 @@
 import { AnyDriver } from "./driver"
-import { Process, ProcessId } from "./process"
+import { Process, ProcessId, ProcessManagerInterface } from "./process"
 
-// ProcessからProcessManagerを呼び出す経路が循環しないようにする
-export class ProcessManager<D extends AnyDriver> {
+
+
+export class ProcessManager<D extends AnyDriver> implements ProcessManagerInterface {
   private processes: Process<D>[] = []
 
   public load(): void {
@@ -21,6 +22,14 @@ export class ProcessManager<D extends AnyDriver> {
 
   public getProcess<P extends Process<D>>(processId: ProcessId<P>): P | null {
     return null // TODO:
+  }
+
+  /** @throws */
+  public suspendProcess(process: Process<AnyDriver>): void {
+  }
+
+  /** @throws */
+  public killProcess(process: Process<AnyDriver>): void {
   }
 
   private restoreProcesses(): void {

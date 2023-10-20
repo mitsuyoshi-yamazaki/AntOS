@@ -15,7 +15,7 @@ import { Environment } from "utility/environment"
 // import { Kernel } from "v8/operating_system/kernel"
 
 // ---- v4 OS ---- //
-import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
+// import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
 
 type RootFunctions = {
   load(): void
