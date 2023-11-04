@@ -4,6 +4,7 @@ import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { ReportCollector, Reporter } from "./reporter"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("ReportProcess", state => {
   return ReportProcess.decode(state as ReportProcessState)
@@ -23,8 +24,8 @@ export class ReportProcess implements Process, Procedural {
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
-    public readonly reportTimeHour: number,
-    public readonly reportedDay: number,
+    private readonly reportTimeHour: number,
+    private reportedDay: number,
   ) {
     this.identifier = `ReportProcess${launchTime}`
   }
@@ -55,7 +56,7 @@ export class ReportProcess implements Process, Procedural {
   public processShortDescription(): string {
     const descriptions: string[] = [
       `report hour: ${this.reportTimeHour}`,
-      `time to next report: ${(new Date()).getHours() + 24 - this.reportTimeHour}`,
+      `time to next report: ${((new Date()).getHours() + 24 - this.reportTimeHour) % 24}`,
     ]
 
     return descriptions.join(", ")
@@ -72,7 +73,7 @@ export class ReportProcess implements Process, Procedural {
         return `Commands: ${commandList}`
 
       case "report":
-        return this.getReport()
+        return `Report at ${Game.time}:\n${this.getReport()}`
 
       default:
         throw `Invalid command ${commandList}. see "help"`
@@ -83,14 +84,28 @@ export class ReportProcess implements Process, Procedural {
   }
 
   public runOnTick(): void {
+    if (Game.time % 10 !== 0) {
+      return
+    }
 
+    const now = new Date()
+    if (now.getDay() === this.reportedDay) {
+      return
+    }
+
+    if (now.getHours() !== this.reportTimeHour) {
+      return
+    }
+
+    this.notifyReport()
+    this.reportedDay = now.getDay()
   }
 
   private notifyReport(): void {
     const report = this.getReport()
     ReportCollector.clearReport()
 
-    // TODO:
+    PrimitiveLogger.notice(report)
   }
 
   private getReport(): string {
