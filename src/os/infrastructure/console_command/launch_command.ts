@@ -98,7 +98,7 @@ import { MaintainLostRoomProcess } from "process/onetime/maintain_lost_room_proc
 import { DistributePowerProcess } from "process/process/distribute_power_process"
 import { Season5ClaimReactorProcess } from "process/temporary/season5_claim_reactor_process"
 import { Season5FillReactorProcess } from "process/temporary/season5_fill_reactor_process"
-import { ReportProcess } from "process/process/report_process"
+import { ReportProcess } from "process/process/report/report_process"
 
 type LaunchCommandResult = Result<Process, string>
 

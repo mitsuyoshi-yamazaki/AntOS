@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
-import { ProcessState } from "../process_state"
-import { ProcessDecoder } from "../process_decoder"
+import { ProcessState } from "../../process_state"
+import { ProcessDecoder } from "../../process_decoder"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 ProcessDecoder.register("ReportProcess", state => {
