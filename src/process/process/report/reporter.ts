@@ -6,8 +6,14 @@ import { roomSectorNameOf } from "utility/room_coordinate"
 # 仕様
 - 使用プロセスは単純な形式でイベントを登録する
   - 何が どこで 何を どうした
-- 3行程度にまとめる
+- Reportは日の単位でアーカイブし、古いものは破棄する
+  - → ProcessではなくDriver側で管理する（Processはアクセサ）
  */
+
+export type ReporterMemory = {
+  reportTimeHour: number
+  reportStoreDuration: number /// number of days
+}
 
 type RoomSubject = {
   readonly case: "room"
@@ -30,15 +36,61 @@ type Report = {
   readonly action: Action
 }
 
-const reports: Report[] = []
+type Day = number
+const dailyReports: {day: Day, reports: Report[]}[] = []
 
-export const ReportCollector = {
-  report(report: Report): void {
-    reports.push(report)
+type ReportCollectorInterface = {
+  report(report: Report): void
+  report(reports: Report[]): void
+  report(arg: Report | Report[]): void
+}
+
+export const ReportCollector: ReportCollectorInterface = {
+  report(arg: Report | Report[]): void {
+    const reports = ((): Report[] => {
+      if (arg instanceof Array) {
+        return arg
+      }
+      return [arg]
+    })()
+
+    const day = (new Date()).getDay()
+
+    if (dailyReports[0] == null || dailyReports[0].day !== day) {
+      if (dailyReports.length >= Memory.reporter.reportStoreDuration) {
+        dailyReports.pop()
+      }
+
+      dailyReports.push({
+        day,
+        reports: [...reports],
+      })
+      return
+    }
+
+    dailyReports[0].reports.push(...reports)
+  },
+}
+
+export const ReportStore = {
+  setReportTimeHour(hour: number): void {
+    Memory.reporter.reportTimeHour = hour
   },
 
-  clearReport(): void {
-    reports.splice(0, reports.length)
+  getReportTimeHour(): number {
+    return Memory.reporter.reportTimeHour
+  },
+
+  setReportStoreDuration(duration: number): void {
+    Memory.reporter.reportStoreDuration = duration
+  },
+
+  getReportStoreDuration(): number {
+    return Memory.reporter.reportStoreDuration
+  },
+
+  getDailyReports(): { day: Day, reports: Report[] }[] {
+    return [...dailyReports]
   },
 }
 

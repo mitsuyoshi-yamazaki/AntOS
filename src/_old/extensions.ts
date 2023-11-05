@@ -12,6 +12,7 @@ import type { RoomName } from "shared/utility/room_name_types"
 import type { OSMemory } from "os/os_memory"
 import { coloredText } from "utility/log"
 import { IntegratedAttackMemory } from "../../submodules/private/attack/integrated_attack/integrated_attack"
+import { ReporterMemory } from "process/process/report/reporter"
 
 const serialization = {
   canSkip: false,
@@ -51,6 +52,7 @@ declare global {
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
     v6RoomInfo: { [index: string]: RoomInfoType }  // index: RoomName
     gameMap: GameMapMemory
+    reporter: ReporterMemory
     gclFarm: GclFarmMemory
     ignoreRooms: RoomName[]
     pathCache: PathCacheMemory
