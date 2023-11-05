@@ -57,6 +57,13 @@ export function initializeMemory(): void {
     }
   }
 
+  if (Memory.reporter == null) {
+    Memory.reporter = {
+      reportTimeHour: 0,
+      reportStoreDuration: 2,
+    }
+  }
+
   if (Memory.gclFarm == null) {
     Memory.gclFarm = {
       roomNames: [],

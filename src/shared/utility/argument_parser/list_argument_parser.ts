@@ -163,15 +163,23 @@ export class ListArguments implements KeywordArgumentsInterface {
   }
 
   public stringInList<T extends string>(index: number, key: string, valueList: Readonly<T[]>): SingleArgument<void, T> {
-    return new StringInListArgument(key, this.getValueAt(index, key), valueList)
+    return new StringInListArgument(key, this.getValueAt(index, key, `options: ${valueList}`), valueList)
   }
 
   // ---- ---- //
-  private getValueAt(index: number, key: string): string {
+  private getValueAt(index: number, key: string, detailedErrorMessage?: string): string {
     const value = this.argumentList[index]
     if (value == null) {
       const argumentDetail = this.argumentList.length <= 0 ? "no arguments given" : `(given arguments: ${this.argumentList.join(" ")})`
-      throw `Missing ${index}th argument ${key}, ${argumentDetail}`
+      const errorMessages: string[] = [
+        `Missing ${index}th argument ${key}`,
+        argumentDetail,
+      ]
+      if (detailedErrorMessage != null) {
+        errorMessages.push(detailedErrorMessage)
+      }
+
+      throw errorMessages.join(", ")
     }
     return value
   }
