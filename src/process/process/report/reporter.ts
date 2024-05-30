@@ -1,6 +1,8 @@
 import { RoomResources } from "room_resource/room_resources"
 import type { RCL, RoomName } from "shared/utility/room_name_types"
 import { roomSectorNameOf } from "utility/room_coordinate"
+// import {} from "./report_db"
+import { Sentence } from "./language"
 
 /**
 # 仕様
@@ -15,45 +17,31 @@ export type ReporterMemory = {
   reportStoreDuration: number /// number of days
 }
 
-type RoomSubject = {
-  readonly case: "room"
-  readonly roomName: RoomName
-}
-type Subject = RoomSubject
-
-type RoomPlace = {
-  readonly case: "room"
-  readonly roomName: RoomName
-}
-type Place = RoomPlace
-
-// 目的語もここに入る
-type Action = never
-
-type Report = {
-  readonly subject: Subject
-  readonly place: Place
-  readonly action: Action
-}
+type Report = Sentence
 
 type Day = number
 const dailyReports: {day: Day, reports: Report[]}[] = []
 
-type ReportCollectorInterface = {
-  report(report: Report): void
-  report(reports: Report[]): void
-  report(arg: Report | Report[]): void
-}
+export const ReportCollector = {
+  addReport(report: Report): void {
+    const day = (new Date()).getDay()
 
-export const ReportCollector: ReportCollectorInterface = {
-  report(arg: Report | Report[]): void {
-    const reports = ((): Report[] => {
-      if (arg instanceof Array) {
-        return arg
+    if (dailyReports[0] == null || dailyReports[0].day !== day) {
+      if (dailyReports.length >= Memory.reporter.reportStoreDuration) {
+        dailyReports.pop()
       }
-      return [arg]
-    })()
 
+      dailyReports.push({
+        day,
+        reports: [report],
+      })
+      return
+    }
+
+    dailyReports[0].reports.push(report)
+  },
+
+  addReports(reports: Report[]): void {
     const day = (new Date()).getDay()
 
     if (dailyReports[0] == null || dailyReports[0].day !== day) {
