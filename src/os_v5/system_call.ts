@@ -1,5 +1,5 @@
 /**
-# システムコール
+# SystemCall
  */
 
 export interface SystemCall {

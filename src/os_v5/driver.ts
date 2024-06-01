@@ -1,7 +1,7 @@
 /**
-# ドライバ
+# Driver
 ## 概要
-- システムコールのうち、環境（デプロイサーバー）に依存する処理
+- SystemCallのうち、環境（デプロイサーバー）に依存する処理
  */
 
 import { SystemCall } from "./system_call"
