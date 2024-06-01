@@ -9,7 +9,7 @@ type Logger = {
 }
 
 export const Logger: SystemCall & Logger = {
-  name: "logger",
+  name: "Logger",
 
   load(): void {
   },

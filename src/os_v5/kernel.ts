@@ -3,20 +3,34 @@ import { systemCallLifecycles, SystemCalls } from "./system_calls/interface"
 import { Driver } from "./driver"
 import { DriverFamily } from "./drivers/driver_family"
 import { SemanticVersion } from "shared/utility/semantic_version"
+import { initializeKernelMemory, KernelMemory } from "./kernel_memory"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
-type KernelMemory = {}
+let kernelMemory: KernelMemory = {} as KernelMemory
 
 const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 0, 0),
+  version: new SemanticVersion(5, 0, 2),
   launchedAt: Game.time,
 
-  load(): void {
-    // TODO: メモリ初期化
+  load(memory: unknown): void {
+    kernelMemory = initializeKernelMemory(memory)
 
-    systemCallLifecycles.forEach(systemCall => systemCall.load())
+    const versionName = `${this.version}`
+    if (kernelMemory.version !== versionName) {
+      kernelMemory.version = versionName
+
+      SystemCalls.logger.log(`${ConsoleUtility.colored("Deployed", "info")} ${this.systemInfo()}`)
+    }
+
+    systemCallLifecycles.forEach(systemCall => {
+      if (kernelMemory.systemCall[systemCall.name] == null) {
+        kernelMemory.systemCall[systemCall.name] = {}
+      }
+      systemCall.load(kernelMemory.systemCall[systemCall.name])
+    })
   },
 
   startOfTick(): void {
@@ -36,7 +50,7 @@ export const Kernel = {
 
   systemInfo(): string {
     const systemInfo: string[] = [
-      `${this.name} ${this.version}`,
+      ConsoleUtility.colored(`${this.name} ${this.version}`, "info"),
       `Launched at ${this.launchedAt} (${Game.time - this.launchedAt} ticks ago)`,
       "Environment: ", // TODO:
       "Available Drivers: ", // TODO:

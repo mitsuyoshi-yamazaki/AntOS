@@ -1,4 +1,5 @@
 import { Kernel } from "./kernel"
+import { KernelMemory } from "./kernel_memory"
 
 /**
 # BootLoader
@@ -8,7 +9,11 @@ import { Kernel } from "./kernel"
 
 export const BootLoader = {
   load(): void {
-    Kernel.load()
+    if (Memory.osv5 == null) {
+      Memory.osv5 = {} as KernelMemory
+    }
+
+    Kernel.load(Memory.osv5)
   },
 
   run(): void {

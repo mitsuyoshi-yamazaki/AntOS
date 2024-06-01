@@ -13,6 +13,7 @@ import type { OSMemory } from "os/os_memory"
 import { coloredText } from "utility/log"
 import { IntegratedAttackMemory } from "../../submodules/private/attack/integrated_attack/integrated_attack"
 import { ReporterMemory } from "process/process/report/reporter"
+import { KernelMemory as v5KernelMemory } from "os_v5/kernel_memory"
 
 const serialization = {
   canSkip: false,
@@ -41,6 +42,7 @@ declare global {
 
   interface Memory {
     os: OSMemory
+    osv5: v5KernelMemory
     versions: string[]
     cpu_usages: number[]
     cpu: {
