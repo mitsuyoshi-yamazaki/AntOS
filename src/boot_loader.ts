@@ -17,6 +17,14 @@ import { Environment } from "utility/environment"
 // ---- v4 OS ---- //
 // import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
 
+// ---- v5 OS ---- //
+import { BootLoader as v5BootLoader } from "os_v5/boot_loader"
+
+/**
+ * OSとメイン処理の結合
+ * 複数のOSが共存することによる標準入出力の名前空間の解決などもここで行う
+ */
+
 type RootFunctions = {
   load(): void
   loop(): void
@@ -35,8 +43,23 @@ export const BootLoader = {
     case "swc":
     case "non game":  // ApplicationProcessLoader以外のOS機能は動作させる
     case "unknown":
-      return v2Functions()
+      return v5ExperimentalFunctions() // FixMe: Debug
     }
+  }
+}
+
+const v5ExperimentalFunctions = (): RootFunctions => {
+  const v2 = v2Functions()
+  return {
+    load(): void {
+      v2.load()
+      v5BootLoader.load()
+    },
+
+    loop(): void {
+      v2.loop()
+      v5BootLoader.run()
+    },
   }
 }
 
