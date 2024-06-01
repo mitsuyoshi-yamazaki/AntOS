@@ -1,9 +1,9 @@
+import { KernelLifecycle } from "./kernel_lifecycle"
+
 /**
 # SystemCall
  */
 
-export interface SystemCall {
-  load(): void
-  startOfTick(): void
-  endOfTick(): void
+export interface SystemCall extends KernelLifecycle {
+  readonly name: string
 }

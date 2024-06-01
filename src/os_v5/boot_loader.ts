@@ -1,4 +1,4 @@
-import { kernel } from "./kernel"
+import { Kernel } from "./kernel"
 
 /**
 # BootLoader
@@ -6,12 +6,12 @@ import { kernel } from "./kernel"
 - 現在はKernelのラッパー
  */
 
-export const bootLoader = {
+export const BootLoader = {
   load(): void {
-    kernel.load()
+    Kernel.load()
   },
 
   run(): void {
-    kernel.run()
+    Kernel.run()
   },
 }
