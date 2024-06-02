@@ -1,5 +1,5 @@
 import { SystemCall } from "os_v5/system_call"
-import { lazyLoad } from "os_v5/types"
+import { lazyLoad } from "os_v5/utility/types"
 
 type ProcessManagerMemory = {
 }
