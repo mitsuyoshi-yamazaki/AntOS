@@ -3,15 +3,21 @@ import { SystemCall } from "../system_call"
 import { Logger } from "./logger"
 import { ProcessManager } from "./process_manager"
 import { EnvironmentVariable } from "./environment_variable"
+import { UniqueId } from "./unique_id"
+import { UniqueName } from "./game_system_calls/unique_name"
 import { StartupLauncher } from "./depended_system_calls/startup_launcher"
 
 class SystemCallList {
   // Primitive
   readonly logger = Logger
   readonly environmentVariable = EnvironmentVariable
+  readonly uniqueId = UniqueId
 
   // Process
   readonly processManager = ProcessManager
+
+  // Game SystemCall
+  readonly uniqueName = UniqueName
 
   // Application
   readonly startupLauncher = StartupLauncher

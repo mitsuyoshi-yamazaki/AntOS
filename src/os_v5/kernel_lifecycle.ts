@@ -1,5 +1,5 @@
 export interface KernelLifecycle {
-  load(memory_reference: unknown): void
+  load(memoryReference: unknown): void
   startOfTick(): void
   endOfTick(): void
 }
