@@ -58,7 +58,10 @@ const v5ExperimentalFunctions = (): RootFunctions => {
 
     loop(): void {
       v2.loop()
-      v5BootLoader.run()
+
+      const v5Interface: unknown = {}
+      v5BootLoader.run(v5Interface);
+      (Game as unknown as {v5: unknown}).v5 = v5Interface
     },
   }
 }

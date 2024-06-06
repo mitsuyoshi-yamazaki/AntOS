@@ -1,5 +1,6 @@
 import { Kernel } from "./kernel"
 import { KernelMemory } from "./kernel_memory"
+import { SystemCalls } from "./system_calls/interface"
 
 /**
 # BootLoader
@@ -16,7 +17,8 @@ export const BootLoader = {
     Kernel.load(Memory.osv5)
   },
 
-  run(): void {
+  run(extendGameObject: unknown): void {
+    (extendGameObject as { io: (input: string) => string }).io = (input: string) => SystemCalls.standardIO.io(input)
     Kernel.run()
   },
 }
