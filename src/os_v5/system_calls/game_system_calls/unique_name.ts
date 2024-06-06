@@ -1,5 +1,5 @@
 
-import { lazyLoad } from "os_v5/utility/types"
+import { checkMemoryIntegrity } from "os_v5/utility/types"
 import { Mutable } from "shared/utility/types"
 import { SystemCall } from "../../system_call"
 
@@ -17,7 +17,7 @@ const initializeMemory = (rawMemory: unknown): UniqueNameMemory => {
   return memory
 }
 
-let uniqueNameMemory: UniqueNameMemory = lazyLoad<UniqueNameMemory>()
+let uniqueNameMemory: UniqueNameMemory = initializeMemory({})
 
 type UniqueName = {
   generate(): string
@@ -27,7 +27,9 @@ export const UniqueName: SystemCall & UniqueName = {
   name: "UniqueName",
 
   load(memoryReference: unknown): void {
-    uniqueNameMemory = initializeMemory(memoryReference)
+    const initializedMemory = initializeMemory(memoryReference)
+    checkMemoryIntegrity(uniqueNameMemory, initializeMemory, "UniqueName")
+    uniqueNameMemory = initializedMemory
   },
 
   startOfTick(): void {
