@@ -12,8 +12,11 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 0, 3),
-  launchedAt: Game.time,
+  version: new SemanticVersion(5, 0, 4),
+  launchedAt: {
+    time: Game.time,
+    datetime: new Date(),
+  },
 
   load(memory: unknown): void {
     kernelMemory = initializeKernelMemory(memory)
@@ -43,7 +46,7 @@ export const Kernel = {
 
   run(): void {
     // FixMe: デバッグ用
-    if (Game.time % 10 === 0) {
+    if (Game.time % 30 === 0) {
       SystemCalls.logger.log(this.systemInfo())
     }
   },
@@ -51,7 +54,7 @@ export const Kernel = {
   systemInfo(): string {
     const systemInfo: string[] = [
       ConsoleUtility.colored(`${this.name} ${this.version}`, "info"),
-      `Launched at ${this.launchedAt} (${Game.time - this.launchedAt} ticks ago)`,
+      `Launched at ${this.launchedAt} (${Game.time - this.launchedAt.time} ticks ago at ${this.launchedAt.datetime})`,
       "Environment: ", // TODO:
       "Available Drivers: ", // TODO:
     ]

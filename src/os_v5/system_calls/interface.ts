@@ -6,12 +6,16 @@ import { EnvironmentVariable } from "./environment_variable"
 import { UniqueId } from "./unique_id"
 import { UniqueName } from "./game_system_calls/unique_name"
 import { StartupLauncher } from "./depended_system_calls/startup_launcher"
+import { StandardIO } from "./depended_system_calls/standard_io"
 
 class SystemCallList {
   // Primitive
   readonly logger = Logger
   readonly environmentVariable = EnvironmentVariable
   readonly uniqueId = UniqueId
+
+  // Depended
+  readonly standardIO = StandardIO
 
   // Process
   readonly processManager = ProcessManager
