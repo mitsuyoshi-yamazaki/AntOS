@@ -1,7 +1,7 @@
 
-import { lazyLoad } from "os_v5/utility/types"
 import { Mutable } from "shared/utility/types"
 import { SystemCall } from "../system_call"
+import { checkMemoryIntegrity } from "../utility/types"
 
 type UniqueIdMemory = {
   uniqueIdIndex: number
@@ -18,7 +18,7 @@ const initializeMemory = (rawMemory: unknown): UniqueIdMemory => {
 }
 
 const radix = 36
-let uniqueIdMemory: UniqueIdMemory = lazyLoad<UniqueIdMemory>()
+let uniqueIdMemory: UniqueIdMemory = initializeMemory({})
 
 type UniqueId = {
   generate(): string
@@ -29,7 +29,9 @@ export const UniqueId: SystemCall & UniqueId = {
   name: "UniqueId",
 
   load(memoryReference: unknown): void {
-    uniqueIdMemory = initializeMemory(memoryReference)
+    const initializedMemory = initializeMemory(memoryReference)
+    checkMemoryIntegrity(uniqueIdMemory, initializeMemory, "UniqueId")
+    uniqueIdMemory = initializedMemory
   },
 
   startOfTick(): void {

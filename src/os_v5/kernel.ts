@@ -5,35 +5,46 @@ import { DriverFamily } from "./drivers/driver_family"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { initializeKernelMemory, KernelMemory } from "./kernel_memory"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { checkMemoryIntegrity } from "./utility/types"
 
-let kernelMemory: KernelMemory = {} as KernelMemory
+let kernelMemory: KernelMemory = initializeKernelMemory({})
 
 const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 0, 4),
+  version: new SemanticVersion(5, 0, 14),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
   },
 
   load(memory: unknown): void {
-    kernelMemory = initializeKernelMemory(memory)
+    const initializedMemory = initializeKernelMemory(memory)
+    checkMemoryIntegrity(kernelMemory, initializeKernelMemory, "Kernel")
+    kernelMemory = initializedMemory
 
     const versionName = `${this.version}`
+    let updated = false as boolean
+
     if (kernelMemory.version !== versionName) {
       kernelMemory.version = versionName
-
-      SystemCalls.logger.log(`${ConsoleUtility.colored("Deployed", "info")} ${this.systemInfo()}`)
+      updated = true
     }
 
     systemCallLifecycles.forEach(systemCall => {
       if (kernelMemory.systemCall[systemCall.name] == null) {
         kernelMemory.systemCall[systemCall.name] = {}
       }
-      systemCall.load(kernelMemory.systemCall[systemCall.name])
+      ErrorMapper.wrapLoop(() => {
+        systemCall.load(kernelMemory.systemCall[systemCall.name])
+      })
     })
+
+    if (updated === true) {
+      SystemCalls.logger.log(`${ConsoleUtility.colored("Deployed", "info")} ${this.systemInfo()}`)
+    }
   },
 
   startOfTick(): void {

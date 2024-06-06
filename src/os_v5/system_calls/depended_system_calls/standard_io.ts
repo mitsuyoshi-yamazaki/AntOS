@@ -5,7 +5,7 @@ type StandardIO = {
 }
 
 export const StandardIO: SystemCall & StandardIO = {
-  name: "Logger",
+  name: "StandardIO",
 
   load(): void {
   },
