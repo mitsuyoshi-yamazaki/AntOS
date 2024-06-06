@@ -14,16 +14,15 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 1, 0),
+  version: new SemanticVersion(5, 1, 1),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
   },
 
   load(memory: unknown): void {
-    const initializedMemory = initializeKernelMemory(memory)
     checkMemoryIntegrity(kernelMemory, initializeKernelMemory, "Kernel")
-    kernelMemory = initializedMemory
+    kernelMemory = initializeKernelMemory(memory)
 
     const versionName = `${this.version}`
     let updated = false as boolean
@@ -37,9 +36,9 @@ export const Kernel = {
       if (kernelMemory.systemCall[systemCall.name] == null) {
         kernelMemory.systemCall[systemCall.name] = {}
       }
-      ErrorMapper.wrapLoop(() => {
+      ErrorMapper.wrapLoop((): void => {
         systemCall.load(kernelMemory.systemCall[systemCall.name])
-      })
+      }, "systemCall.load()")()
     })
 
     if (updated === true) {
@@ -48,11 +47,19 @@ export const Kernel = {
   },
 
   startOfTick(): void {
-    systemCallLifecycles.forEach(systemCall => systemCall.startOfTick())
+    systemCallLifecycles.forEach(systemCall => {
+      ErrorMapper.wrapLoop((): void => {
+        systemCall.startOfTick()
+      }, "systemCall.startOfTick()")()
+    })
   },
 
   endOfTick(): void {
-    reversedSystemCallLifecycles.forEach(systemCall => systemCall.endOfTick())
+    reversedSystemCallLifecycles.forEach(systemCall => {
+      ErrorMapper.wrapLoop((): void => {
+        systemCall.endOfTick()
+      }, "systemCall.endOfTick()")()
+    })
   },
 
   run(): void {
@@ -65,7 +72,7 @@ export const Kernel = {
   systemInfo(): string {
     const systemInfo: string[] = [
       ConsoleUtility.colored(`${this.name} ${this.version}`, "info"),
-      `Launched at ${this.launchedAt} (${Game.time - this.launchedAt.time} ticks ago at ${this.launchedAt.datetime.toJSON()})`,
+      `Launched at ${this.launchedAt.time} (${Game.time - this.launchedAt.time} ticks ago at ${this.launchedAt.datetime.toJSON()})`,
       "Environment: ", // TODO:
       "Available Drivers: ", // TODO:
     ]
