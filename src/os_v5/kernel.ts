@@ -14,7 +14,7 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 1, 1),
+  version: new SemanticVersion(5, 1, 2),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -73,7 +73,7 @@ export const Kernel = {
     const systemInfo: string[] = [
       ConsoleUtility.colored(`${this.name} ${this.version}`, "info"),
       `Launched at ${this.launchedAt.time} (${Game.time - this.launchedAt.time} ticks ago at ${this.launchedAt.datetime.toJSON()})`,
-      "Environment: ", // TODO:
+      `Environment: ${SystemCalls.environmentVariable.environment.name}`,
       "Available Drivers: ", // TODO:
     ]
 

@@ -29,9 +29,8 @@ export const UniqueId: SystemCall & UniqueId = {
   name: "UniqueId",
 
   load(memoryReference: unknown): void {
-    const initializedMemory = initializeMemory(memoryReference)
     checkMemoryIntegrity(uniqueIdMemory, initializeMemory, "UniqueId")
-    uniqueIdMemory = initializedMemory
+    uniqueIdMemory = initializeMemory(memoryReference)
   },
 
   startOfTick(): void {
