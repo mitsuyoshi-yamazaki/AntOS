@@ -8,7 +8,13 @@ export const ProcessLauncher: Command = {
 
   /** @throws */
   run(args: string[]): string {
-    throw "not implemented yet"
+    const processType = args.shift()
+
+    if (processType == null || processType.length <= 0) {
+      return this.help([])
+    }
+
+    return "not implemented yet"
   },
 }
 

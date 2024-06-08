@@ -7,6 +7,7 @@ import { initializeKernelMemory, KernelMemory } from "./kernel_memory"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { checkMemoryIntegrity } from "./utility/types"
+import { StandardIO } from "./standard_io/standard_io"
 
 let kernelMemory: KernelMemory = initializeKernelMemory({})
 
@@ -14,7 +15,7 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 1, 7),
+  version: new SemanticVersion(5, 2, 0),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -67,6 +68,10 @@ export const Kernel = {
     if (Game.time % 30 === 0) {
       SystemCalls.logger.log(this.systemInfo())
     }
+  },
+
+  io(input: string): string {
+    return StandardIO(input)
   },
 
   systemInfo(): string {
