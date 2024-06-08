@@ -1,7 +1,7 @@
 import { KernelLifecycleMethods } from "../kernel_lifecycle"
 import { SystemCall } from "../system_call"
 import { Logger } from "./logger"
-// import { ProcessManager } from "./depended_system_calls/process_manager"
+import { ProcessManager } from "./process_manager/process_manager"
 import { EnvironmentVariable } from "./environment_variable"
 import { UniqueId } from "./unique_id"
 import { UniqueName } from "./game_system_calls/unique_name"
@@ -18,7 +18,7 @@ class SystemCallList {
   readonly standardIO = StandardIO
 
   // Process
-  // readonly processManager = ProcessManager
+  readonly processManager = ProcessManager
 
   // Game SystemCall
   readonly uniqueName = UniqueName
