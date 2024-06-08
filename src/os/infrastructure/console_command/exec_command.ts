@@ -59,11 +59,11 @@ export class ExecCommand implements ConsoleCommand {
     case "describeLabs":
       return this.describeLabs()
     case "resource":
-        return execResourceCommand(args)
+      return execResourceCommand(args)
     case "set_waiting_position":
       return this.setWaitingPosition()
     case "show_room_plan":
-        return this.showRoomPlan()
+      return this.showRoomPlan()
     case "show_wall_plan":
       return this.showWallPlan()
     case "mineral":
@@ -73,7 +73,7 @@ export class ExecCommand implements ConsoleCommand {
     case "check_alliance":
       return this.checkAlliance()
     case "unclaim":
-        return this.unclaim(args)
+      return this.unclaim(args)
     case "prepare_unclaim":
       return this.prepareUnclaim(args)
     case "creep":
@@ -93,11 +93,11 @@ export class ExecCommand implements ConsoleCommand {
     case "script":
       return this.runScript()
     case "memory_serialization":
-        return execMemorySerializationCommand(args)
-      case "find_researchable_rooms":
-        return this.findResearchableRooms()
-      case "integrated_attack":
-        return this.integratedAttack(args)
+      return execMemorySerializationCommand(args)
+    case "find_researchable_rooms":
+      return this.findResearchableRooms()
+    case "integrated_attack":
+      return this.integratedAttack(args)
     default:
       throw `Invalid script type ${scriptType}`
     }
