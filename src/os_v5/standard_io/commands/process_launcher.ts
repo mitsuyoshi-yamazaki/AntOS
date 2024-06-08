@@ -1,4 +1,12 @@
+import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
+import { Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
+
+// Processes
+import { TestProcess, TestProcessId } from "../../processes/test_process"
+import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+
+type ProcessType = string
 
 export const ProcessLauncher: Command = {
   /** @throws */
@@ -14,40 +22,49 @@ export const ProcessLauncher: Command = {
       return this.help([])
     }
 
-    return "not implemented yet"
+    return launchProcess(processType, args)
   },
 }
 
 
-// type ProcessType = string
-// type ProcessMaker = (processId: ProcessId) => Process
-// type Launcher = (args: KeywordArguments) => Result<ProcessMaker, string>
+// TODO: argument parserはOS向けに拡張可能な（任意のゲームオブジェクトをパースするような）もの + キーワード引数と配列を同時にパースできるものを作成する
 
-// const launchers = new Map<ProcessType, Launcher>()
 
-// export const ProcessLauncher = {
-//   register(processType: ProcessType, launcher: Launcher): void {
-//     if (launchers.has(processType) === true) {
-//       PrimitiveLogger.fatal(`ProcessLauncher registering ${processType} twice ${Game.time}`)
-//     }
-//     launchers.set(processType, launcher)
-//   },
+// Process Launcher
+type ProcessConstructor = <D, P extends Process<D, P>>(processId: ProcessId<D, P>) => P
+type ConstructorMaker = (args: string[]) => ProcessConstructor
 
-//   launch(processType: ProcessType, args: KeywordArguments): Result<Process, string> {
-//     const launcher = launchers.get(processType)
-//     if (launcher == null) {
-//       const errorMessage = `ProcessLauncher unregistered process ${processType}`
-//       PrimitiveLogger.programError(errorMessage)
-//       return Result.Failed(errorMessage)
-//     }
-//     const result = launcher(args)
-//     switch (result.resultType) {
-//       case "failed":
-//         return Result.Failed(result.reason)
-//       case "succeeded":
-//         break
-//     }
-//     const process = OperatingSystem.os.addProcess(null, result.value)
-//     return Result.Succeeded(process)
-//   },
-// }
+const constructorMakers = new Map<ProcessType, ConstructorMaker>()
+
+const registerProcess = (processType: ProcessType, launcher: ConstructorMaker): void => {
+  try {
+    if (constructorMakers.has(processType) === true) {
+      PrimitiveLogger.programError(`Process ${processType} is registered multiple times`)
+      return
+    }
+    constructorMakers.set(processType, launcher)
+  } catch (error) {
+    PrimitiveLogger.fatal(`An exception raised while process ${processType} is being registered: ${error}`)
+  }
+}
+
+/** @throws */
+const launchProcess = (processType: ProcessType, args: string[]): string => {
+  const constructorMaker = constructorMakers.get(processType)
+  if (constructorMaker == null) {
+    throw `Unregistered process type ${processType}`
+  }
+
+  const constructor = constructorMaker(args)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const process = ProcessManager.addProcess<any, any>(constructor)
+
+  return `Launched [${process.processId}] ${processType} ${process.shortDescription()}`
+}
+
+// Process Registration
+registerProcess("TestProcess", () => {
+  return ((processId: TestProcessId): TestProcess => {
+    return TestProcess.create(processId)
+  }) as ProcessConstructor
+})

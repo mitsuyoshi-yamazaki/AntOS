@@ -15,7 +15,7 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 2, 0),
+  version: new SemanticVersion(5, 2, 1),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),

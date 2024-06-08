@@ -1,5 +1,16 @@
 import { Codable } from "../utility/codable"
 
+/**
+# Process
+## 概要
+
+## Codable
+- メモリ空間の節約のため、Processタイプ指定子はa以上の36 radixで表現する
+  - 固定値であるため実装時に重複のないように指定する
+  - 現在：a
+  - デコーダにマップを移す
+ */
+
 declare namespace Tag {
   const OpaqueTagSymbol: unique symbol
 
@@ -14,12 +25,12 @@ type ProcessSpecifier = {
   readonly processType: string
   readonly processSpecifier: string
 }
-type ProcessDependencies = {
+export type ProcessDependencies = {
   readonly driverNames: string[]
   readonly processes: ProcessSpecifier[]
 }
 
-type ReadonlySharedMemory = {
+export type ReadonlySharedMemory = {
   get<T>(processType: string, processSpecifier: string): T | null
 }
 
@@ -28,6 +39,9 @@ export interface Process<Dependency, This extends Process<Dependency, This>> ext
   readonly dependencies: ProcessDependencies
 
   getDependentData(sharedMemory: ReadonlySharedMemory): Dependency
+
+  shortDescription(): string
+  runtimeDescription(dependency: Dependency): string
 
   run(dependency: Dependency): void
 }
