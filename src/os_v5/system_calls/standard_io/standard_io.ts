@@ -1,6 +1,7 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { SystemCall } from "../../system_call"
 import { Command } from "./command"
+import { ProcessLauncher } from "./commands/process_launcher"
 
 type StandardIO = {
   io(input: string): string
@@ -24,15 +25,33 @@ export const StandardIO: SystemCall & StandardIO = {
       const command = args.shift()
 
       switch (command) {
+      case "help":
+        return [
+          "Available commands are:",
+          "- launch",
+        ].join("\n")
+
+      case "launch":
+        return runCommand(ProcessLauncher, args)
+
       case null:
       case undefined:
-        throw "command is null"
+        throw "Command is null"
 
       default:
-        throw `unknown command "${command}"`
+        throw `Unknown command "${command}"`
       }
     } catch (error) {
       return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
     }
   },
+}
+
+/** @throws */
+const runCommand = (command: Command, args: string[]): string => {
+  if (args[0] === "help") {
+    args.shift()
+    return command.help(args)
+  }
+  return command.run(args)
 }
