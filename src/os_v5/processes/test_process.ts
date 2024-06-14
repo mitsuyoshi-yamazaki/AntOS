@@ -4,12 +4,13 @@ import { Timestamp } from "shared/utility/timestamp"
 import { shortenedNumber } from "shared/utility/console_utility"
 
 interface TestProcessState extends State {
-  // t: "a"
+  t: "a"
 }
 
-export type TestProcessId = ProcessId<void, TestProcess>
+export type TestProcessId = ProcessId<void, "Test", void, TestProcess>
 
-export class TestProcess implements Process<void, TestProcess> {
+export class TestProcess implements Process<void, "Test", void, TestProcess> {
+  public readonly identifier = "Test"
   public dependencies: ProcessDependencies = {
     driverNames: [],
     processes: [],

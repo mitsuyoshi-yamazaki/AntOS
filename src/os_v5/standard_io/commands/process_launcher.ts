@@ -31,7 +31,7 @@ export const ProcessLauncher: Command = {
 
 
 // Process Launcher
-type ProcessConstructor = <D, P extends Process<D, P>>(processId: ProcessId<D, P>) => P
+type ProcessConstructor = <D, I, M, P extends Process<D, I, M, P>>(processId: ProcessId<D, I, M, P>) => P
 type ConstructorMaker = (args: string[]) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessType, ConstructorMaker>()
@@ -57,10 +57,11 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
 
   const constructor = constructorMaker(args)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const process = ProcessManager.addProcess<any, any>(constructor)
+  const process = ProcessManager.addProcess<any, any, any, any>(constructor)
 
   return `Launched [${process.processId}] ${processType} ${process.shortDescription()}`
 }
+
 
 // Process Registration
 registerProcess("TestProcess", () => {

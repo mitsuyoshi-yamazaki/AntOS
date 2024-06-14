@@ -1,4 +1,4 @@
-import { Codable } from "../utility/codable"
+import { Codable, State } from "../utility/codable"
 
 /**
 # Process
@@ -11,6 +11,7 @@ import { Codable } from "../utility/codable"
   - デコーダにマップを移す
  */
 
+// ---- ProcessId ---- //
 declare namespace Tag {
   const OpaqueTagSymbol: unique symbol
 
@@ -18,10 +19,15 @@ declare namespace Tag {
     private [OpaqueTagSymbol]: T
   }
 }
-export type ProcessId<D, P extends Process<D, P>> = string & Tag.OpaqueTag<P>
+export type ProcessId<D, I, M, P extends Process<D, I, M, P>> = string & Tag.OpaqueTag<P>
 
 
-type ProcessSpecifier = {
+// ---- ProcessState ---- //
+export type ProcessState = State
+
+
+// ---- Process ---- //
+export type ProcessSpecifier = {
   readonly processType: string
   readonly processSpecifier: string
 }
@@ -34,20 +40,23 @@ export type ReadonlySharedMemory = {
   get<T>(processType: string, processSpecifier: string): T | null
 }
 
-export interface Process<Dependency, This extends Process<Dependency, This>> extends Codable {
-  readonly processId: ProcessId<Dependency, This>
+export interface Process<Dependency, Identifier, ProcessMemory, This extends Process<Dependency, Identifier, ProcessMemory, This>> extends Codable {
+  readonly processId: ProcessId<Dependency, Identifier, ProcessMemory, This>
+  readonly identifier: Identifier
   readonly dependencies: ProcessDependencies
+
+  encode(): ProcessState
 
   getDependentData(sharedMemory: ReadonlySharedMemory): Dependency
 
   shortDescription(): string
   runtimeDescription(dependency: Dependency): string
 
-  run(dependency: Dependency): void
+  run(dependency: Dependency): ProcessMemory
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, any>
+export type AnyProcessId = ProcessId<any, any, any, any>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, any>
+export type AnyProcess = Process<any, any, any, any>

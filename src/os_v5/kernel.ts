@@ -1,7 +1,4 @@
-import { SystemCall } from "./system_call"
 import { systemCallLifecycles, SystemCalls } from "./system_calls/interface"
-import { Driver } from "./driver"
-import { DriverFamily } from "./drivers/driver_family"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { initializeKernelMemory, KernelMemory } from "./kernel_memory"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -15,7 +12,7 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 
 export const Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 2, 1),
+  version: new SemanticVersion(5, 2, 4),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -64,10 +61,13 @@ export const Kernel = {
   },
 
   run(): void {
-    // FixMe: デバッグ用
-    if (Game.time % 30 === 0) {
-      SystemCalls.logger.log(this.systemInfo())
-    }
+    systemCallLifecycles.forEach(systemCall => {
+      ErrorMapper.wrapLoop((): void => {
+        if (systemCall.run != null) {
+          systemCall.run()
+        }
+      }, "systemCall.run()")()
+    })
   },
 
   io(input: string): string {
