@@ -8,21 +8,21 @@ export const StandardIO = (input: string): string => {
     const command = args.shift()
 
     switch (command) {
-      case "help":
-        return [
-          "Available commands are:",
-          "- launch",
-        ].join("\n")
+    case "help":
+      return [
+        "Available commands are:",
+        "- launch",
+      ].join("\n")
 
-      case "launch":
-        return runCommand(ProcessLauncher, args)
+    case "launch":
+      return runCommand(ProcessLauncher, args)
 
-      case null:
-      case undefined:
-        throw "Command is null"
+    case null:
+    case undefined:
+      throw "Command is null"
 
-      default:
-        throw `Unknown command "${command}"`
+    default:
+      throw `Unknown command "${command}"`
     }
   } catch (error) {
     return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
