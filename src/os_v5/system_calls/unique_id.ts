@@ -1,42 +1,41 @@
 
 import { Mutable } from "shared/utility/types"
 import { SystemCall } from "../system_call"
-import { checkMemoryIntegrity } from "../utility/types"
 
 type UniqueIdMemory = {
   uniqueIdIndex: number
 }
 
-const initializeMemory = (rawMemory: unknown): UniqueIdMemory => {
-  const memory = rawMemory as Mutable<UniqueIdMemory>
+const initializeMemory = (memory: UniqueIdMemory): UniqueIdMemory => {
+  const mutableMemroy = memory as Mutable<UniqueIdMemory>
 
-  if (memory.uniqueIdIndex == null) {
-    memory.uniqueIdIndex = 1
+  if (mutableMemroy.uniqueIdIndex == null) {
+    mutableMemroy.uniqueIdIndex = 1
   }
 
-  return memory
+  return mutableMemroy
 }
 
 const radix = 36
-let uniqueIdMemory: UniqueIdMemory = initializeMemory({})
+let uniqueIdMemory: UniqueIdMemory = {} as UniqueIdMemory
 
 type UniqueId = {
   generate(): string
   generateFromInteger(idIndex: number): string
 }
 
-export const UniqueId: SystemCall & UniqueId = {
+export const UniqueId: SystemCall<UniqueIdMemory> & UniqueId = {
   name: "UniqueId",
 
-  load(memoryReference: unknown): void {
-    checkMemoryIntegrity(uniqueIdMemory, initializeMemory, "UniqueId")
-    uniqueIdMemory = initializeMemory(memoryReference)
+  load(memory: UniqueIdMemory): void {
+    uniqueIdMemory = initializeMemory(memory)
   },
 
   startOfTick(): void {
   },
 
-  endOfTick(): void {
+  endOfTick(): UniqueIdMemory {
+    return uniqueIdMemory
   },
 
   // UniqueId

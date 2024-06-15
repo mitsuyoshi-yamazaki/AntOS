@@ -1,5 +1,4 @@
 
-import { checkMemoryIntegrity } from "os_v5/utility/types"
 import { Mutable } from "shared/utility/types"
 import { SystemCall } from "../../system_call"
 
@@ -17,24 +16,24 @@ const initializeMemory = (rawMemory: unknown): UniqueNameMemory => {
   return memory
 }
 
-let uniqueNameMemory: UniqueNameMemory = initializeMemory({})
+let uniqueNameMemory: UniqueNameMemory = {} as UniqueNameMemory
 
 type UniqueName = {
   generate(): string
 }
 
-export const UniqueName: SystemCall & UniqueName = {
+export const UniqueName: SystemCall<UniqueNameMemory> & UniqueName = {
   name: "UniqueName",
 
-  load(memoryReference: unknown): void {
-    checkMemoryIntegrity(uniqueNameMemory, initializeMemory, "UniqueName")
-    uniqueNameMemory = initializeMemory(memoryReference)
+  load(memory: UniqueNameMemory): void {
+    uniqueNameMemory = initializeMemory(memory)
   },
 
   startOfTick(): void {
   },
 
-  endOfTick(): void {
+  endOfTick(): UniqueNameMemory {
+    return uniqueNameMemory
   },
 
   // UniqueId

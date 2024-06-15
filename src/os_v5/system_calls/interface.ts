@@ -5,6 +5,7 @@ import { ProcessManager } from "./process_manager/process_manager"
 import { EnvironmentVariable } from "./environment_variable"
 import { UniqueId } from "./unique_id"
 import { UniqueName } from "./game_system_calls/unique_name"
+import { AnySerializable } from "os_v5/utility/types"
 // import { StartupLauncher } from "./depended_system_calls/startup_launcher"
 
 class SystemCallList {
@@ -29,4 +30,4 @@ const systemCallList = new SystemCallList()
 
 export const SystemCalls: { [Key in keyof SystemCallList]: Omit<SystemCallList[Key], KernelLifecycleMethods> } = systemCallList
 
-export const systemCallLifecycles: SystemCall[] = Array.from(Object.values(systemCallList))
+export const systemCallLifecycles: SystemCall<AnySerializable>[] = Array.from(Object.values(systemCallList))

@@ -1,25 +1,40 @@
 import { systemCallLifecycles, SystemCalls } from "./system_calls/interface"
 import { SemanticVersion } from "shared/utility/semantic_version"
-import { initializeKernelMemory, KernelMemory } from "./kernel_memory"
+import { initializeKernelMemory } from "./kernel_memory"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { checkMemoryIntegrity } from "./utility/types"
 import { StandardIO } from "./standard_io/standard_io"
-
-let kernelMemory: KernelMemory = initializeKernelMemory({})
+import { KernelLifecycle } from "./kernel_lifecycle"
+import { AnySerializable } from "./utility/types"
+import { Timestamp } from "shared/utility/timestamp"
+import { KernelMemory } from "./memory"
+import { SystemCall } from "./system_call"
 
 const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
+let kernelMemory: KernelMemory = {} as KernelMemory
 
-export const Kernel = {
+type Kernel = {
+  readonly name: string
+  readonly version: SemanticVersion
+  readonly launchedAt: {
+    readonly time: Timestamp
+    readonly datetime: Date
+  }
+
+  run(): void
+  systemInfo(): string
+  io(input: string): string
+}
+
+export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
   name: "AntOS",
-  version: new SemanticVersion(5, 2, 4),
+  version: new SemanticVersion(5, 3, 4),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
   },
 
-  load(memory: unknown): void {
-    checkMemoryIntegrity(kernelMemory, initializeKernelMemory, "Kernel")
+  load(memory: KernelMemory): void {
     kernelMemory = initializeKernelMemory(memory)
 
     const versionName = `${this.version}`
@@ -30,12 +45,12 @@ export const Kernel = {
       updated = true
     }
 
-    systemCallLifecycles.forEach(systemCall => {
+    systemCallLifecycles.forEach(<SystemCallMemory extends AnySerializable>(systemCall: SystemCall<SystemCallMemory>) => {
       if (kernelMemory.systemCall[systemCall.name] == null) {
         kernelMemory.systemCall[systemCall.name] = {}
       }
       ErrorMapper.wrapLoop((): void => {
-        systemCall.load(kernelMemory.systemCall[systemCall.name])
+        systemCall.load(kernelMemory.systemCall[systemCall.name] as SystemCallMemory)
       }, "systemCall.load()")()
     })
 
@@ -52,12 +67,14 @@ export const Kernel = {
     })
   },
 
-  endOfTick(): void {
+  endOfTick(): KernelMemory {
     reversedSystemCallLifecycles.forEach(systemCall => {
       ErrorMapper.wrapLoop((): void => {
-        systemCall.endOfTick()
+        kernelMemory.systemCall[systemCall.name] = systemCall.endOfTick()
       }, "systemCall.endOfTick()")()
     })
+
+    return kernelMemory
   },
 
   run(): void {

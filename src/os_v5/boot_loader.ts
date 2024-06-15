@@ -1,5 +1,5 @@
 import { Kernel } from "./kernel"
-import { KernelMemory } from "./kernel_memory"
+import { KernelMemory } from "./memory"
 
 /**
 # BootLoader
@@ -20,6 +20,6 @@ export const BootLoader = {
     (extendGameObject as { io: (input: string) => string }).io = (input: string) => Kernel.io(input)
     Kernel.startOfTick()
     Kernel.run()
-    Kernel.endOfTick()
+    Memory.osv5 = Kernel.endOfTick()
   },
 }

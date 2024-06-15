@@ -1,3 +1,4 @@
+import { EmptySerializable } from "os_v5/utility/types"
 import { PrimitiveLogger, PrimitiveLogLevel } from "shared/utility/logger/primitive_logger"
 import { SystemCall } from "../system_call"
 
@@ -8,7 +9,7 @@ type Logger = {
   programError(message: string): void
 }
 
-export const Logger: SystemCall & Logger = {
+export const Logger: SystemCall<EmptySerializable> & Logger = {
   name: "Logger",
 
   load(): void {
@@ -17,7 +18,8 @@ export const Logger: SystemCall & Logger = {
   startOfTick(): void {
   },
 
-  endOfTick(): void {
+  endOfTick(): EmptySerializable {
+    return {}
   },
 
   log(message: string, level?: PrimitiveLogLevel): void {

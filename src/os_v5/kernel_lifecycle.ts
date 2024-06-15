@@ -1,8 +1,11 @@
-export interface KernelLifecycle {
-  load(memoryReference: unknown): void
+import { AnySerializable } from "./utility/types"
+
+export interface KernelLifecycle<MemoryType extends AnySerializable> {
+  load(memory: MemoryType): void
   startOfTick(): void
-  endOfTick(): void
+  endOfTick(): MemoryType
   run?(): void
 }
 
-export type KernelLifecycleMethods = keyof KernelLifecycle
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type KernelLifecycleMethods = keyof KernelLifecycle<AnySerializable>

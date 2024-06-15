@@ -1,13 +1,8 @@
 import { Mutable } from "shared/utility/types"
 import { SemanticVersion } from "shared/utility/semantic_version"
+import { KernelMemory } from "./memory"
 
-export type KernelMemory = {
-  version: string
-  readonly systemCall: { [Key: string]: unknown }
-  readonly driver: { [Key: string]: unknown }
-}
-
-export const initializeKernelMemory = (memory: unknown): KernelMemory => {
+export const initializeKernelMemory = (memory: KernelMemory): KernelMemory => {
   const kernelMemory = memory as Mutable<KernelMemory>
 
   if (kernelMemory.version == null) {

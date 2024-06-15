@@ -1,6 +1,7 @@
 import { isPrivateEnvironment } from "../../../submodules/private/constants"
 import { SystemCall } from "../system_call"
 import { EnvironmentName } from "../drivers/environment"
+import { EmptySerializable } from "os_v5/utility/types"
 
 type EnvironmentInfo = {
   readonly name: EnvironmentName
@@ -53,7 +54,7 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   }
 }
 
-export const EnvironmentVariable: SystemCall & EnvironmentVariable = {
+export const EnvironmentVariable: SystemCall<EmptySerializable> & EnvironmentVariable = {
   name: "EnvironmentVariable",
   environment: initializeEnvironmentInfo(),
 
@@ -63,6 +64,7 @@ export const EnvironmentVariable: SystemCall & EnvironmentVariable = {
   startOfTick(): void {
   },
 
-  endOfTick(): void {
+  endOfTick(): EmptySerializable {
+    return {}
   },
 }
