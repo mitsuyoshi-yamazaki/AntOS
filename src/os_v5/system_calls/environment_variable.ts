@@ -54,8 +54,10 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   }
 }
 
-export const EnvironmentVariable: SystemCall<EmptySerializable> & EnvironmentVariable = {
+export const EnvironmentVariable: SystemCall<"EnvironmentVariable", EmptySerializable> & EnvironmentVariable = {
   name: "EnvironmentVariable",
+  [Symbol.toStringTag]: "EnvironmentVariable",
+
   environment: initializeEnvironmentInfo(),
 
   load(): void {

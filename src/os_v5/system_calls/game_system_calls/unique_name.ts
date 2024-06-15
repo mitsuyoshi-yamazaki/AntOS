@@ -22,8 +22,9 @@ type UniqueName = {
   generate(): string
 }
 
-export const UniqueName: SystemCall<UniqueNameMemory> & UniqueName = {
+export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName = {
   name: "UniqueName",
+  [Symbol.toStringTag]: "UniqueName",
 
   load(memory: UniqueNameMemory): void {
     uniqueNameMemory = initializeMemory(memory)

@@ -14,6 +14,7 @@ const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 let kernelMemory: KernelMemory = {} as KernelMemory
 
 type Kernel = {
+  [Symbol.toStringTag]: "Kernel"
   readonly name: string
   readonly version: SemanticVersion
   readonly launchedAt: {
@@ -27,8 +28,10 @@ type Kernel = {
 }
 
 export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
+  [Symbol.toStringTag]: "Kernel",
+
   name: "AntOS",
-  version: new SemanticVersion(5, 3, 4),
+  version: new SemanticVersion(5, 3, 6),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -45,7 +48,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
       updated = true
     }
 
-    systemCallLifecycles.forEach(<SystemCallMemory extends AnySerializable>(systemCall: SystemCall<SystemCallMemory>) => {
+    systemCallLifecycles.forEach(<SystemCallMemory extends AnySerializable>(systemCall: SystemCall<string, SystemCallMemory>) => {
       if (kernelMemory.systemCall[systemCall.name] == null) {
         kernelMemory.systemCall[systemCall.name] = {}
       }

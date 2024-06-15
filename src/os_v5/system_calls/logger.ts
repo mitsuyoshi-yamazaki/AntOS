@@ -9,8 +9,9 @@ type Logger = {
   programError(message: string): void
 }
 
-export const Logger: SystemCall<EmptySerializable> & Logger = {
+export const Logger: SystemCall<"Logger", EmptySerializable> & Logger = {
   name: "Logger",
+  [Symbol.toStringTag]: "Logger",
 
   load(): void {
   },

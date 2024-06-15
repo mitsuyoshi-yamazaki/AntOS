@@ -24,8 +24,9 @@ type UniqueId = {
   generateFromInteger(idIndex: number): string
 }
 
-export const UniqueId: SystemCall<UniqueIdMemory> & UniqueId = {
+export const UniqueId: SystemCall<"UniqueId", UniqueIdMemory> & UniqueId = {
   name: "UniqueId",
+  [Symbol.toStringTag]: "UniqueId",
 
   load(memory: UniqueIdMemory): void {
     uniqueIdMemory = initializeMemory(memory)

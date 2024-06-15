@@ -5,6 +5,7 @@ import { AnySerializable } from "./utility/types"
 # SystemCall
  */
 
-export interface SystemCall<SystemCallMemory extends AnySerializable> extends KernelLifecycle<SystemCallMemory> {
-  readonly name: string
+export interface SystemCall<Name extends string, SystemCallMemory extends AnySerializable> extends KernelLifecycle<SystemCallMemory> {
+  readonly name: Name
+  readonly [Symbol.toStringTag]: Name
 }

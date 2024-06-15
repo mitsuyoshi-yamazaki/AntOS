@@ -30,4 +30,4 @@ const systemCallList = new SystemCallList()
 
 export const SystemCalls: { [Key in keyof SystemCallList]: Omit<SystemCallList[Key], KernelLifecycleMethods> } = systemCallList
 
-export const systemCallLifecycles: SystemCall<AnySerializable>[] = Array.from(Object.values(systemCallList))
+export const systemCallLifecycles: SystemCall<string, AnySerializable>[] = Array.from(Object.values(systemCallList))

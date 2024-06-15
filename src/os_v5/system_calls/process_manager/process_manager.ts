@@ -71,8 +71,9 @@ type ProcessManager = {
 }
 
 
-export const ProcessManager: SystemCall<ProcessManagerMemory> & ProcessManager = {
+export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> & ProcessManager = {
   name: "ProcessManager",
+  [Symbol.toStringTag]: "ProcessManager",
 
   load(memory: ProcessManagerMemory): void {
     processManagerMemory = initializeMemory(memory)
