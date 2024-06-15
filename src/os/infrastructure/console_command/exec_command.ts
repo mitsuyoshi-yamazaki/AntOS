@@ -38,7 +38,7 @@ export class ExecCommand implements ConsoleCommand {
   public run(): CommandExecutionResult {
     try {
       const result = this.runCommand()
-      Game.serialization.shouldSerializeMemory()
+      // Game.serialization.shouldSerializeMemory()
       return result
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
