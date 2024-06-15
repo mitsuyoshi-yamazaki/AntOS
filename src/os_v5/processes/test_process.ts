@@ -54,5 +54,8 @@ export class TestProcess implements Process<void, "Test", void, TestProcessState
       return
     }
     console.log(`${this.constructor.name} ${this.runtimeDescription()}`)
+
+    // new RoomPosition(0, 0, "a")
+    // throw "hoge"
   }
 }
