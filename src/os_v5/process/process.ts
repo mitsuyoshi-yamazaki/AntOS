@@ -1,4 +1,4 @@
-import { Codable, State } from "../utility/codable"
+import { AnySerializable, SerializableObject } from "os_v5/utility/types"
 
 /**
 # Process
@@ -19,11 +19,7 @@ declare namespace Tag {
     private [OpaqueTagSymbol]: T
   }
 }
-export type ProcessId<D, I, M, P extends Process<D, I, M, P>> = string & Tag.OpaqueTag<P>
-
-
-// ---- ProcessState ---- //
-export type ProcessState = State
+export type ProcessId<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
 
 
 // ---- Process ---- //
@@ -40,12 +36,17 @@ export type ReadonlySharedMemory = {
   get<T>(processType: string, processSpecifier: string): T | null
 }
 
-export interface Process<Dependency, Identifier, ProcessMemory, This extends Process<Dependency, Identifier, ProcessMemory, This>> extends Codable {
-  readonly processId: ProcessId<Dependency, Identifier, ProcessMemory, This>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} | {t: any} ? never : S // t, i は ProcessManager が予約済み
+
+
+export interface Process<Dependency, Identifier, ProcessMemory, ProcessState extends SerializableObject, This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>> {
+  readonly processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
   readonly identifier: Identifier
   readonly dependencies: ProcessDependencies
 
-  encode(): ProcessState
+  encode(): RestrictedProcessState<ProcessState>
 
   getDependentData(sharedMemory: ReadonlySharedMemory): Dependency
 
@@ -56,7 +57,7 @@ export interface Process<Dependency, Identifier, ProcessMemory, This extends Pro
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, any, any, any>
+export type AnyProcessId = ProcessId<any, any, any, any, any>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, any, any, any>
+export type AnyProcess = Process<any, any, any, any, any>

@@ -5,6 +5,7 @@ import { Command } from "../command"
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/test_process"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+import { SerializableObject } from "os_v5/utility/types"
 
 type ProcessType = string
 
@@ -31,7 +32,7 @@ export const ProcessLauncher: Command = {
 
 
 // Process Launcher
-type ProcessConstructor = <D, I, M, P extends Process<D, I, M, P>>(processId: ProcessId<D, I, M, P>) => P
+type ProcessConstructor = <D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
 type ConstructorMaker = (args: string[]) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessType, ConstructorMaker>()
@@ -57,7 +58,7 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
 
   const constructor = constructorMaker(args)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const process = ProcessManager.addProcess<any, any, any, any>(constructor)
+  const process = ProcessManager.addProcess<any, any, any, any, any>(constructor)
 
   return `Launched [${process.processId}] ${processType} ${process.shortDescription()}`
 }

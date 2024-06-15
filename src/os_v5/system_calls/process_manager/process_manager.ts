@@ -1,24 +1,27 @@
 import { SystemCall } from "os_v5/system_call"
-import { checkMemoryIntegrity } from "os_v5/utility/types"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, ProcessId, ProcessSpecifier, ProcessState } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, ProcessId, ProcessSpecifier } from "../../process/process"
 import { UniqueId } from "../unique_id"
 import { SharedMemory } from "./shared_memory"
-import { ProcessDecoder } from "./process_decoder"
+import { ProcessDecoder, ProcessState } from "./process_decoder"
+import { SerializableObject } from "os_v5/utility/types"
+import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "./process_type_map"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
+
 
 type ProcessManagerMemory = {
   processes: ProcessState[] // 順序を崩さないために配列とする
 }
 
-const initializeMemory = (rawMemory: unknown): ProcessManagerMemory => {
-  const memory = rawMemory as Mutable<ProcessManagerMemory>
+const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory => {
+  const mutableMemory = memory as Mutable<ProcessManagerMemory>
 
-  if (memory.processes == null) {
-    memory.processes = []
+  if (mutableMemory.processes == null) {
+    mutableMemory.processes = []
   }
 
-  return memory
+  return mutableMemory
 }
 
 class ProcessStore {
@@ -31,17 +34,17 @@ class ProcessStore {
   /// 依存関係を保存
   // private readonly dependencyGraph =
 
-  public add<D, I, M, P extends Process<D, I, M, P>>(process: P): void {
+  public add<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): void {
     this.processList.push(process)
 
     // TODO: 他の変数に入力する
   }
 
-  public getProcessById<D, I, M, P extends Process<D, I, M, P>>(processId: ProcessId<D, I, M, P>): P | null {
+  public getProcessById<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return null // TODO:
   }
 
-  public getProcessByIdentifier<D, I, M, P extends Process<D, I, M, P>>(processType: string, identifier: I): P | null {
+  public getProcessByIdentifier<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: string, identifier: I): P | null {
     return null // TODO:
   }
 
@@ -56,40 +59,50 @@ class ProcessStore {
   }
 }
 
-let processManagerMemory: ProcessManagerMemory = initializeMemory({})
+
+let processManagerMemory: ProcessManagerMemory = {} as ProcessManagerMemory
 const processStore = new ProcessStore()
 
 
 type ProcessManager = {
-  addProcess<D, I, M, P extends Process<D, I, M, P>>(constructor: (processId: ProcessId<D, I, M, P>) => P): P
-  getProcess<D, I, M, P extends Process<D, I, M, P>>(processId: ProcessId<D, I, M, P>): P | null
+  addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
+  getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   listProcesses(): AnyProcess[]
 }
 
-export const ProcessManager: SystemCall & ProcessManager = {
+
+export const ProcessManager: SystemCall<ProcessManagerMemory> & ProcessManager = {
   name: "ProcessManager",
 
-  load(memoryReference: unknown): void {
-    checkMemoryIntegrity(processManagerMemory, initializeMemory, "ProcessManager")
-    processManagerMemory = initializeMemory(memoryReference)
+  load(memory: ProcessManagerMemory): void {
+    processManagerMemory = initializeMemory(memory)
 
-    restoreProcesses()
+    restoreProcesses(processManagerMemory.processes).forEach(process => {
+      processStore.add(process)
+    })
   },
 
   startOfTick(): void {
     SharedMemory.startOfTick()
   },
 
-  endOfTick(): void {
-    storeProcesses()
+  endOfTick(): ProcessManagerMemory {
+    processManagerMemory.processes = storeProcesses(processStore.listProcesses())
+    return processManagerMemory
   },
 
   run(): void {
+    processStore.listProcesses().forEach(process => {
+      ErrorMapper.wrapLoop((): void => {
+        const dependency = process.getDependentData(SharedMemory)
+        process.run(dependency) // FixMe: anyになってしまっている
+      }, `run ${process.constructor.name}`)()
+    })
   },
 
   // ProcessManager
   /** @throws */
-  addProcess<D, I, M, P extends Process<D, I, M, P>>(constructor: (processId: ProcessId<D, I, M, P>) => P): P {
+  addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     const process = constructor(createNewProcessId())
 
     // TODO: Driver依存チェック
@@ -107,7 +120,7 @@ export const ProcessManager: SystemCall & ProcessManager = {
     return process
   },
 
-  getProcess<D, I, M, P extends Process<D, I, M, P>>(processId: ProcessId<D, I, M, P>): P | null {
+  getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return processStore.getProcessById(processId)
   },
 
@@ -116,29 +129,43 @@ export const ProcessManager: SystemCall & ProcessManager = {
   },
 }
 
-const createNewProcessId = <D, I, M, P extends Process<D, I, M, P>>(): ProcessId<D, I, M, P> => {
-  return UniqueId.generate() as ProcessId<D, I, M, P>
+
+const createNewProcessId = <D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
+  return UniqueId.generate() as ProcessId<D, I, M, S, P>
 }
 
-const restoreProcesses = (): void => {
-  processManagerMemory.processes.forEach(processState => {
+const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
+  return processStates.flatMap((processState): AnyProcess[] => {
     try {
-      const process = ProcessDecoder.decode(processState)
-      if (process == null) {
-        return
+      const processType = processTypeDecodingMap[processState.t]
+      if (processType == null) {
+        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
+        return []
       }
-      processStore.add(process)
+      const process = ProcessDecoder.decode(processType, processState.i, processState)
+      if (process == null) {
+        return []
+      }
+      return [process]
 
     } catch (error) {
       PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+      return []
     }
   })
 }
 
-const storeProcesses = (): void => {
-  const processStates: ProcessState[] = processStore.listProcesses().map(process => {
-    return process.encode()
+const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {
+  return processes.map(process => {
+    const encodedProcessType = processTypeEncodingMap[process.constructor.name as ProcessTypes]
+    if (encodedProcessType == null) {
+      PrimitiveLogger.programError(`ProcessManager.storeProcesses failed: unknown process type: ${process.constructor.name}`)
+      return
+    }
+    return {
+      ...process.encode(),
+      i: process.processId,
+      t: encodedProcessType,
+    }
   })
-
-  processManagerMemory.processes = processStates
 }

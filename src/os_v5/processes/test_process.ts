@@ -1,15 +1,18 @@
 import { Process, ProcessDependencies, ProcessId } from "../process/process"
-import { State } from "../utility/codable"
 import { Timestamp } from "shared/utility/timestamp"
 import { shortenedNumber } from "shared/utility/console_utility"
+import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 
-interface TestProcessState extends State {
-  t: "a"
+type TestProcessState = {
+  l: Timestamp
 }
 
-export type TestProcessId = ProcessId<void, "Test", void, TestProcess>
+ProcessDecoder.register("TestProcess", (processId: TestProcessId, state: TestProcessState) => TestProcess.decode(processId, state))
 
-export class TestProcess implements Process<void, "Test", void, TestProcess> {
+export type TestProcessId = ProcessId<void, "Test", void, TestProcessState, TestProcess>
+
+
+export class TestProcess implements Process<void, "Test", void, TestProcessState, TestProcess> {
   public readonly identifier = "Test"
   public dependencies: ProcessDependencies = {
     driverNames: [],
@@ -23,11 +26,13 @@ export class TestProcess implements Process<void, "Test", void, TestProcess> {
   }
 
   public encode(): TestProcessState {
-    throw "not implemented yet"
+    return {
+      l: this.launchTime,
+    }
   }
 
-  public static decode(): TestProcess {
-    throw "not implemented yet"
+  public static decode(processId: TestProcessId, state: TestProcessState): TestProcess {
+    return new TestProcess(processId, state.l)
   }
 
   public static create(processId: TestProcessId): TestProcess {
@@ -48,6 +53,6 @@ export class TestProcess implements Process<void, "Test", void, TestProcess> {
     if (Game.time % 10 !== 0) {
       return
     }
-    console.log(this.runtimeDescription())
+    console.log(`${this.constructor.name} ${this.runtimeDescription()}`)
   }
 }

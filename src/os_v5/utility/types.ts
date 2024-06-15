@@ -1,13 +1,7 @@
-export const checkMemoryIntegrity = <M>(uninitializedMemory: M, initializer: (rawMemory: unknown) => M, location: string): void => {
-  const uninitializedContent = JSON.stringify(uninitializedMemory)
-  const actualContent = JSON.stringify(initializer({}))
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EmptySerializable = { [K in keyof any]?: never }
 
-  const isEqual = uninitializedContent === actualContent
-  if (isEqual === true) {
-    return
-  }
-
-  const errorMessage = `[${location}] 初期化前のメモリアクセスがあります\nuninitialized:\n${uninitializedContent}\nactual:\n${actualContent}`
-  console.log(errorMessage)
-  // throw errorMessage
-}
+type SerializablePrimitiveType = string | number | boolean
+type SerializableArray = AnySerializable[]
+export type SerializableObject = { [Key: string | number]: AnySerializable }
+export type AnySerializable = SerializablePrimitiveType | SerializableArray | SerializableObject | EmptySerializable
