@@ -50,14 +50,15 @@ export interface Process<Dependency, Identifier, ProcessMemory, ProcessState ext
 
   getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
 
-  shortDescription(): string
+  staticDescription(): string
   runtimeDescription(dependency: Dependency): string
 
   run(dependency: Dependency): ProcessMemory
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, any, any, any, any>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, any, any, any, any>
+export type AnyProcess = Process<any, any, any, any, AnyProcess>
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyProcessId = ProcessId<any, any, any, any, AnyProcess>

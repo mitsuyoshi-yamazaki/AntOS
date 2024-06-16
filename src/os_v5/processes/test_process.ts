@@ -41,12 +41,12 @@ export class TestProcess implements Process<void, "Test", void, TestProcessState
 
   public getDependentData(): void {}
 
-  public shortDescription(): string {
+  public staticDescription(): string {
     return `launched at ${this.launchTime} (${shortenedNumber(Game.time - this.launchTime)})`
   }
 
   public runtimeDescription(): string {
-    return this.shortDescription()
+    return this.staticDescription()
   }
 
   public run(): void {
