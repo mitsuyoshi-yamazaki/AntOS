@@ -48,7 +48,7 @@ export interface Process<Dependency, Identifier, ProcessMemory, ProcessState ext
 
   encode(): RestrictedProcessState<ProcessState>
 
-  getDependentData(sharedMemory: ReadonlySharedMemory): Dependency
+  getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
 
   shortDescription(): string
   runtimeDescription(dependency: Dependency): string

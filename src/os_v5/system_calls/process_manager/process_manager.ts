@@ -93,10 +93,14 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   run(): void {
-    processStore.listProcesses().forEach(process => {
+    processStore.listProcesses().forEach(<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
         const dependency = process.getDependentData(SharedMemory)
-        process.run(dependency) // FixMe: anyになってしまっている
+        if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
+          PrimitiveLogger.fatal(`ProcessManager.run failed: no dependent data for: ${process.constructor.name}`)  // FixMe: エラー処理
+          return
+        }
+        process.run(dependency)
       }, `run ${process.constructor.name}`)()
     })
   },
