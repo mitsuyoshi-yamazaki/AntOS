@@ -1,6 +1,6 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Command } from "./command"
-import { ProcessLauncher } from "./commands/process_launcher"
+import { ProcessLauncher } from "./commands/launch_command"
 
 export const StandardIO = (input: string): string => {
   try {
