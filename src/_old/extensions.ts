@@ -14,11 +14,11 @@ import { coloredText } from "utility/log"
 import { IntegratedAttackMemory } from "../../submodules/private/attack/integrated_attack/integrated_attack"
 import { ReporterMemory } from "process/process/report/reporter"
 
-const serialization = {
-  canSkip: false,
-  shouldSerializeInNextTick: false,
-  finished: false,  // serializeしたかどうかに関わらず、tick中の処理が終わったらtrue. consoleで手動処理を行った際にshouldSerializeInNextTickを有効化するために用いる
-}
+// const serialization = {
+//   canSkip: false,
+//   shouldSerializeInNextTick: false,
+//   finished: false,  // serializeしたかどうかに関わらず、tick中の処理が終わったらtrue. consoleで手動処理を行った際にshouldSerializeInNextTickを有効化するために用いる
+// }
 
 declare global {
   interface Game {
@@ -30,13 +30,13 @@ declare global {
     whitelist: string[]
     isEnemy(player: Owner): boolean
 
-    serialization: {
-      shouldSerializeMemory(): void
-      canSkip(): boolean
+    // serialization: {
+    //   shouldSerializeMemory(): void
+    //   canSkip(): boolean
 
-      /** memhack以外から呼び出さないこと */
-      tickFinished(): void
-    }
+    //   /** memhack以外から呼び出さないこと */
+    //   tickFinished(): void
+    // }
   }
 
   interface Memory {
@@ -87,54 +87,54 @@ export function tick(): void {
   LeagueOfAutomatedNations.populate()
   Game.whitelist = [...LeagueOfAutomatedNations.LOANlist].concat(Memory.gameInfo.whitelist)
 
-  // ---- Serialization ---- //
-  serialization.canSkip = false // FixMe: デバッグコード
+  // // ---- Serialization ---- //
+  // serialization.canSkip = false // FixMe: デバッグコード
 
-  // if (serialization.shouldSerializeInNextTick === true) {
-  //   serialization.canSkip = false
-  // } else {
-  //   serialization.canSkip = ((): boolean => {
-  //     // if (Memory.skipSerialization.test === true) {
-  //     //   return true  // テストコード無効化
-  //     // }
-  //     if (Memory.skipSerialization.by != null && Game.time < Memory.skipSerialization.by) {
-  //       return true
+  // // if (serialization.shouldSerializeInNextTick === true) {
+  // //   serialization.canSkip = false
+  // // } else {
+  // //   serialization.canSkip = ((): boolean => {
+  // //     // if (Memory.skipSerialization.test === true) {
+  // //     //   return true  // テストコード無効化
+  // //     // }
+  // //     if (Memory.skipSerialization.by != null && Game.time < Memory.skipSerialization.by) {
+  // //       return true
+  // //     }
+  // //     if (Memory.skipSerialization.interval != null && ((Game.time % Memory.skipSerialization.interval) !== 0)) {
+  // //       return true
+  // //     }
+  // //     return false
+  // //   })()
+  // // }
+  // serialization.finished = false
+  // serialization.shouldSerializeInNextTick = false
+
+  // Game.serialization = {
+  //   canSkip(): boolean {
+  //     return serialization.canSkip
+  //   },
+
+  //   shouldSerializeMemory(): void {
+  //     if (serialization.finished === true) {
+  //       if (serialization.shouldSerializeInNextTick === true) {
+  //         return
+  //       }
+  //       serialization.shouldSerializeInNextTick = true
+  //       console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization in next tick (${Game.time})`)
+  //       return
   //     }
-  //     if (Memory.skipSerialization.interval != null && ((Game.time % Memory.skipSerialization.interval) !== 0)) {
-  //       return true
+  //     if (serialization.canSkip !== true) {
+  //       console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization at ${Game.time}`)
   //     }
-  //     return false
-  //   })()
+  //     serialization.canSkip = true
+  //   },
+
+  //   tickFinished(): void {
+  //     serialization.finished = true
+  //   },
   // }
-  serialization.finished = false
-  serialization.shouldSerializeInNextTick = false
 
-  Game.serialization = {
-    canSkip(): boolean {
-      return serialization.canSkip
-    },
-
-    shouldSerializeMemory(): void {
-      if (serialization.finished === true) {
-        if (serialization.shouldSerializeInNextTick === true) {
-          return
-        }
-        serialization.shouldSerializeInNextTick = true
-        console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization in next tick (${Game.time})`)
-        return
-      }
-      if (serialization.canSkip !== true) {
-        console.log(`${coloredText("[CAUTION]", "critical")} turn on serialization at ${Game.time}`)
-      }
-      serialization.canSkip = true
-    },
-
-    tickFinished(): void {
-      serialization.finished = true
-    },
-  }
-
-  if (Game.serialization.canSkip() === true) {
-    console.log(`${coloredText("[CAUTION]", "critical")} can skip memory serialization at ${Game.time}`)
-  }
+  // if (Game.serialization.canSkip() === true) {
+  //   console.log(`${coloredText("[CAUTION]", "critical")} can skip memory serialization at ${Game.time}`)
+  // }
 }

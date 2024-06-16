@@ -164,7 +164,7 @@ export class OperatingSystem {
     this.processStore.add(process, parentProcessId)
     PrimitiveLogger.log(`Launch process ${process.taskIdentifier}, ID: ${processId}`)
 
-    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+    // Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
 
     return process
   }
@@ -228,7 +228,7 @@ export class OperatingSystem {
       this.processIdsToKill.push(processId)
     }
 
-    Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
+    // Game.serialization.shouldSerializeMemory()  // 手動行った場合は次tickにサーバーリセットがかかるとなかったことになってしまうが、一旦許容
 
     return Result.Succeeded(process.constructor.name)
   }
@@ -372,9 +372,9 @@ export class OperatingSystem {
   }
 
   private storeProcesses(): void {
-    if (Game.serialization.canSkip() === true) {
-      return
-    }
+    // if (Game.serialization.canSkip() === true) {
+    //   return
+    // }
 
     const processesMemory: ProcessMemory[] = []
     this.processStore.list().forEach(processInfo => {
