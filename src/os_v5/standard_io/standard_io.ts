@@ -1,6 +1,6 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Command } from "./command"
-import { ProcessLauncher } from "./commands/launch_command"
+import { LaunchCommand } from "./commands/launch_command"
 
 export const StandardIO = (input: string): string => {
   try {
@@ -15,7 +15,7 @@ export const StandardIO = (input: string): string => {
       ].join("\n")
 
     case "launch":
-      return runCommand(ProcessLauncher, args)
+      return runCommand(LaunchCommand, args)
 
     case null:
     case undefined:

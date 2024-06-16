@@ -9,7 +9,7 @@ import { SerializableObject } from "os_v5/utility/types"
 
 type ProcessType = string
 
-export const ProcessLauncher: Command = {
+export const LaunchCommand: Command = {
   /** @throws */
   help(): string {
     return "launch {process type} ...{arguments}"
