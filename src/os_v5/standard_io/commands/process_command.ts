@@ -12,6 +12,8 @@ arg: process ID or part of process type name
 `
 
 export const ProcessCommand: Command = {
+  command: "process",
+
   /** @throws */
   help(): string {
     return helpText

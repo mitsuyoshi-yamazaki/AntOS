@@ -1,18 +1,20 @@
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
+import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+import { SerializableObject } from "os_v5/utility/types"
 
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/test_process"
-import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { SerializableObject } from "os_v5/utility/types"
 
 type ProcessType = string
 
 export const LaunchCommand: Command = {
+  command: "launch",
+
   /** @throws */
   help(): string {
-    return "launch {process type} ...{arguments}"
+    return "> launch {process type} ...{arguments}"
   },
 
   /** @throws */

@@ -6,30 +6,33 @@ import { LaunchCommand } from "./commands/launch_command"
 import { ProcessCommand } from "./commands/process_command"
 
 
-// TODO: コマンド対応表とhelpコマンドは動的に生成する
+const commandRunners: Command[] = [
+  LaunchCommand,
+  ProcessCommand,
+]
+const commandMap = new Map<string, Command>(commandRunners.map(command => [command.command, command]))
 
 
 export const StandardIO = (input: string): string => {
   try {
     const args = input.split(" ")
     const command = args.shift()
+    if (command == null || command.length <= 0) {
+      throw "No command"
+    }
+
+    const commandRunner = commandMap.get(command)
+
+    if (commandRunner != null) {
+      return runCommand(commandRunner, args)
+    }
 
     switch (command) {
     case "help":
       return [
         "Available commands are:",
-        "- launch",
+        ...commandRunners.map(runner => `- ${runner.command}`)
       ].join("\n")
-
-    case "launch":
-      return runCommand(LaunchCommand, args)
-
-    case "process":
-      return runCommand(ProcessCommand, args)
-
-    case null:
-    case undefined:
-      throw "Command is null"
 
     default:
       throw `Unknown command "${command}"`
