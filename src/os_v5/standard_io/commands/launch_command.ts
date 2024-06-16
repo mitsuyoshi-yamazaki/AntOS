@@ -3,6 +3,7 @@ import { Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "os_v5/utility/types"
+import { ArgumentParser } from "os_v5/utility/argument_parser"
 
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
@@ -30,12 +31,9 @@ export const LaunchCommand: Command = {
 }
 
 
-// TODO: argument parserはOS向けに拡張可能な（任意のゲームオブジェクトをパースするような）もの + キーワード引数と配列を同時にパースできるものを作成する
-
-
 // Process Launcher
 type ProcessConstructor = <D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
-type ConstructorMaker = (args: string[]) => ProcessConstructor
+type ConstructorMaker = (argumentParser: ArgumentParser) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessType, ConstructorMaker>()
 
@@ -58,7 +56,8 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
     throw `Unregistered process type ${processType}`
   }
 
-  const constructor = constructorMaker(args)
+  const argumentParser = new ArgumentParser(args)
+  const constructor = constructorMaker(argumentParser)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, any>(constructor)
 
