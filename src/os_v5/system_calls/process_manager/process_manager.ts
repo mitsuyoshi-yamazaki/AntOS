@@ -6,7 +6,7 @@ import { UniqueId } from "../unique_id"
 import { SharedMemory } from "./shared_memory"
 import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { SerializableObject } from "os_v5/utility/types"
-import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "./process_type_map"
+import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 
