@@ -1,6 +1,13 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Command } from "./command"
+
+// Commands
 import { LaunchCommand } from "./commands/launch_command"
+import { ProcessCommand } from "./commands/process_command"
+
+
+// TODO: コマンド対応表とhelpコマンドは動的に生成する
+
 
 export const StandardIO = (input: string): string => {
   try {
@@ -16,6 +23,9 @@ export const StandardIO = (input: string): string => {
 
     case "launch":
       return runCommand(LaunchCommand, args)
+
+    case "process":
+      return runCommand(ProcessCommand, args)
 
     case null:
     case undefined:
