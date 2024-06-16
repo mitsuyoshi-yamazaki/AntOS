@@ -8,6 +8,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser"
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
+import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
 
 type ProcessType = string
 
@@ -78,6 +79,12 @@ registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
 
   return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
     return EnergyHarvestRoomProcess.create(processId, roomName)
+  }) as ProcessConstructor
+})
+
+registerProcess("V3BridgeSpawnRequestProcess", () => {
+  return ((processId: V3BridgeSpawnRequestProcessId): V3BridgeSpawnRequestProcess => {
+    return V3BridgeSpawnRequestProcess.create(processId)
   }) as ProcessConstructor
 })
 

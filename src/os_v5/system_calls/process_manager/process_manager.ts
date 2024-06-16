@@ -182,6 +182,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     const process = constructor(createNewProcessId())
 
+    // TODO: identifierが一意になっていることの確認
+
     // TODO: Driver依存チェック
     const { missingProcesses } = processStore.checkDependencies(process.dependencies.processes)
     if (missingProcesses.length > 0) {
