@@ -6,7 +6,7 @@ import { EnvironmentVariable } from "./environment_variable"
 import { UniqueId } from "./unique_id"
 import { UniqueName } from "./game_system_calls/unique_name"
 import { AnySerializable } from "os_v5/utility/types"
-// import { StartupLauncher } from "./depended_system_calls/startup_launcher"
+import { StartupLauncher } from "./process_manager/startup_launcher"
 
 class SystemCallList {
   // Primitive
@@ -23,7 +23,7 @@ class SystemCallList {
   readonly uniqueName = UniqueName
 
   // Application
-  // readonly startupLauncher = StartupLauncher
+  readonly startupLauncher = StartupLauncher
 }
 
 const systemCallList = new SystemCallList()
