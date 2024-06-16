@@ -5,7 +5,7 @@ import { ProcessManager } from "os_v5/system_calls/process_manager/process_manag
 import { SerializableObject } from "os_v5/utility/types"
 
 // Processes
-import { TestProcess, TestProcessId } from "../../processes/test_process"
+import { TestProcess, TestProcessId } from "../../processes/support/test_process"
 
 type ProcessType = string
 

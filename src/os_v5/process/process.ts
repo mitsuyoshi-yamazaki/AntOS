@@ -1,4 +1,4 @@
-import { AnySerializable, SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "os_v5/utility/types"
 
 /**
 # Process

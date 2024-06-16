@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId } from "../process/process"
+import { Process, ProcessDependencies, ProcessId } from "../../process/process"
 import { Timestamp } from "shared/utility/timestamp"
 import { shortenedNumber } from "shared/utility/console_utility"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
