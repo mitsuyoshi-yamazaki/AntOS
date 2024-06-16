@@ -7,6 +7,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser"
 
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
+import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
 
 type ProcessType = string
 
@@ -71,3 +72,12 @@ registerProcess("TestProcess", () => {
     return TestProcess.create(processId)
   }) as ProcessConstructor
 })
+
+registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
+  const roomName = argumentParser.roomName(0).parse({my: false, allowClosedRoom: false})
+
+  return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
+    return EnergyHarvestRoomProcess.create(processId, roomName)
+  }) as ProcessConstructor
+})
+
