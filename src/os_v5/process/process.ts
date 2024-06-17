@@ -1,4 +1,5 @@
 import { SerializableObject } from "os_v5/utility/types"
+import { ProcessTypes } from "./process_type_map"
 
 /**
 # Process
@@ -24,7 +25,7 @@ export type ProcessId<D, I, M, S extends SerializableObject, P extends Process<D
 
 // ---- Process ---- //
 export type ProcessSpecifier = {
-  readonly processType: string
+  readonly processType: ProcessTypes
   readonly processSpecifier: string
 }
 export type ProcessDependencies = {
@@ -33,7 +34,7 @@ export type ProcessDependencies = {
 }
 
 export type ReadonlySharedMemory = {
-  get<T>(processType: string, processSpecifier: string): T | null
+  get<T>(processType: ProcessTypes, processSpecifier: string): T | null
 }
 
 
@@ -54,6 +55,7 @@ export interface Process<Dependency, Identifier, ProcessMemory, ProcessState ext
   runtimeDescription(dependency: Dependency): string
 
   run(dependency: Dependency): ProcessMemory
+  runAfterTick?(dependency: Dependency): void
 }
 
 

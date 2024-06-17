@@ -1,4 +1,4 @@
-import { ArgumentKey, ArgumentParserOptions, IntArgument, RoomNameArgument } from "./string_argument_parsers"
+import { ArgumentKey, ArgumentParserOptions, IntArgument, RoomNameArgument, StringArgument } from "./string_argument_parsers"
 
 /**
 # ArgumentParser
@@ -67,6 +67,11 @@ export class ArgumentParser {
   public int(key: ArgumentKey, options?: ArgumentParserOptions): IntArgument {
     return new IntArgument(key, this.getRawValueFor(key), options)
   }
+
+  public string(key: ArgumentKey, options?: ArgumentParserOptions): StringArgument {
+    return new StringArgument(key, this.getRawValueFor(key), options)
+  }
+
 
   // ---- Game Object ---- //
   public roomName(key: ArgumentKey, options?: ArgumentParserOptions): RoomNameArgument {

@@ -28,6 +28,8 @@ class SystemCallList {
 
 const systemCallList = new SystemCallList()
 
-export const SystemCalls: { [Key in keyof SystemCallList]: Omit<SystemCallList[Key], KernelLifecycleMethods> } = systemCallList
+
+type SystemCallLifecycleFields = keyof SystemCall<string, AnySerializable>
+export const SystemCalls: { [Key in keyof SystemCallList]: Omit<SystemCallList[Key], SystemCallLifecycleFields> } = systemCallList
 
 export const systemCallLifecycles: SystemCall<string, AnySerializable>[] = Array.from(Object.values(systemCallList))

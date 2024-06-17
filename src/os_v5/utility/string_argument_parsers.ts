@@ -50,6 +50,16 @@ export class IntArgument extends SingleOptionalArgument<{ min?: number, max?: nu
   }
 }
 
+export class StringArgument extends SingleOptionalArgument<void, string> {
+  /** throws */
+  public parse(): string {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    return this.value
+  }
+}
+
 
 // ---- Game Object ---- //
 export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {

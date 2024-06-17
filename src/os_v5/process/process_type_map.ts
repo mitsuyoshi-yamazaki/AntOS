@@ -1,5 +1,6 @@
 import { reverseConstMapping } from "shared/utility/strict_entries"
 
+// ProcessTypes
 export const processTypeDecodingMap = {
   a: "TestProcess",
   b: "EnergyHarvestRoomProcess",

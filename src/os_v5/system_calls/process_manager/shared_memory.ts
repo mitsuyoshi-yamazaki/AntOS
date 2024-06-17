@@ -1,3 +1,5 @@
+import { ProcessTypes } from "os_v5/process/process_type_map"
+
 /**
 # SharedMemory
 ## 概要
@@ -7,7 +9,9 @@
 - /プロセス種別/プロセス特定子/任意の型
  */
 
-const data = new Map<string, Map<string, any>>()
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const data = new Map<ProcessTypes, Map<string, any>>()
 
 export const SharedMemory = {
   startOfTick(): void {
@@ -15,21 +19,23 @@ export const SharedMemory = {
   },
 
   //
-  get<T>(processType: string, processSpecifier: string): T | null {
+  get<T>(processType: ProcessTypes, processSpecifier: string): T | null {
     return data.get(processType)?.get(processSpecifier)
   },
 
-  set<T>(processType: string, processSpecifier: string, processData: T): void {
+  set<T>(processType: ProcessTypes, processSpecifier: string, processData: T): void {
     getProcessTypeData(processType).set(processSpecifier, processData)
   },
 }
 
-const getProcessTypeData = (processType: string): Map<string, any> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getProcessTypeData = (processType: ProcessTypes): Map<string, any> => {
   const stored = data.get(processType)
   if (stored != null) {
     return stored
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const newMap = new Map<string, any>()
   data.set(processType, newMap)
   return newMap
