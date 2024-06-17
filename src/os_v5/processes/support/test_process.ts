@@ -14,7 +14,7 @@ export type TestProcessId = ProcessId<void, "Test", void, TestProcessState, Test
 
 export class TestProcess implements Process<void, "Test", void, TestProcessState, TestProcess> {
   public readonly identifier = "Test"
-  public dependencies: ProcessDependencies = {
+  public readonly dependencies: ProcessDependencies = {
     driverNames: [],
     processes: [],
   }

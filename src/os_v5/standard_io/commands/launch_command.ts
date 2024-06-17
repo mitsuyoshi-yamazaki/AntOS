@@ -75,10 +75,11 @@ registerProcess("TestProcess", () => {
 })
 
 registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
-  const roomName = argumentParser.roomName(0).parse({my: false, allowClosedRoom: false})
+  const roomName = argumentParser.roomName("room_name").parse({my: false, allowClosedRoom: false})
+  const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
   return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
-    return EnergyHarvestRoomProcess.create(processId, roomName)
+    return EnergyHarvestRoomProcess.create(processId, roomName, parentRoomName)
   }) as ProcessConstructor
 })
 
