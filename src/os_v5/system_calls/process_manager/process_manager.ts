@@ -8,8 +8,11 @@ import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { SerializableObject } from "os_v5/utility/types"
 import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { ValuedMapMap } from "shared/utility/valued_collection"
+import { ProcessManagerError } from "./process_manager_error"
 
 
+type ProcessIdentifier = string
 type ProcessRunningState = {
   readonly isRunning: boolean
 }
@@ -39,6 +42,9 @@ class ProcessStore {
   /// IDからProcessを取得
   private readonly processMap = new Map<AnyProcessId, AnyProcess>()
 
+  /// ProcessType, IdentifierからProcessを取得
+  private readonly processIdentifierMap = new ValuedMapMap<ProcessTypes, ProcessIdentifier, AnyProcess>()
+
   /// Process実行順を保存
   private readonly processList: AnyProcess[] = []
 
@@ -49,9 +55,10 @@ class ProcessStore {
 
 
   // Public API
-  public add<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): void {
+  public add<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): void {
     this.processList.push(process)
     this.processMap.set(process.processId, process)
+    this.processIdentifierMap.getValueFor(process.processType).set(process.identifier, process)
 
     // TODO: 他の変数に入力する
   }
@@ -68,6 +75,12 @@ class ProcessStore {
       this.processMap.delete(process.processId)
     } else {
       this.programError("remove", `Process ${process.processId} not found in the process ID map`)
+    }
+
+    if (this.processIdentifierMap.getValueFor(process.processType).has(process.identifier) === true) {
+      this.processIdentifierMap.getValueFor(process.processType).delete(process.identifier)
+    } else {
+      this.programError("remove", `Process ${process.processId} not found in the process identifier map`)
     }
 
     const suspendIndex = this.suspendedProcessIds.indexOf(process.processId)
@@ -101,22 +114,30 @@ class ProcessStore {
     return true
   }
 
-  public getProcessById<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+  public getProcessById<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return this.processMap.get(processId) as P | null
   }
 
-  public getProcessByIdentifier<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: string, identifier: I): P | null {
-    console.log("getProcessByIdentifier not implemented yet") // FixMe:
-    return null // TODO:
+  public getProcessByIdentifier<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: I): P | null {
+    const process: AnyProcess | undefined = this.processIdentifierMap.getValueFor(processType).get(identifier)
+    return process as P
   }
 
   public isProcessSuspended(processId: AnyProcessId): boolean {
     return this.suspendedProcessIds.includes(processId)
   }
 
-  public checkDependencies(dependentProcesses: ProcessSpecifier[]): { missingProcesses: ProcessSpecifier[] } {
+  public checkDependencies(dependentProcesses: ProcessSpecifier[]): { missingDependencies: ProcessSpecifier[] } {
+    const missingDependencies: ProcessSpecifier[] = dependentProcesses.filter(dependency => {
+      const processMap = this.processIdentifierMap.get(dependency.processType)
+      if (processMap == null) {
+        return true // 存在しない場合をフィルタするためtrueで返す
+      }
+      return processMap.has(dependency.identifier) !== true
+    })
+
     return {
-      missingProcesses: [], // TODO:
+      missingDependencies,
     }
   }
 
@@ -144,13 +165,13 @@ const processStore = new ProcessStore()
 
 
 type ProcessManager = {
-  addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
-  getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
+  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
+  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
   suspend(process: AnyProcess): boolean
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
-  getRuntimeDescription<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
+  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
 }
@@ -180,7 +201,9 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   run(): void {
-    processStore.listProcesses().forEach(<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
+    const processRunAfterTicks: (() => void)[] = []
+
+    processStore.listProcesses().forEach(<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
         const runningState = this.getProcessRunningState(process.processId)
         if (runningState.isRunning !== true) {
@@ -189,25 +212,46 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
         const dependency = process.getDependentData(SharedMemory)
         if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
-          PrimitiveLogger.fatal(`ProcessManager.run failed: no dependent data for: ${process.constructor.name}`)  // FixMe: エラー処理 // 親processが停止していることがある
+          PrimitiveLogger.fatal(`ProcessManager.run failed: no dependent data for: ${process.processType}`)  // FixMe: エラー処理 // 親processが停止していることがある
           return
         }
-        process.run(dependency)
-      }, `ProcessManager.run(${process.constructor.name})`)()
+
+        const processMemory = process.run(dependency)
+        SharedMemory.set(process.processType, process.identifier, processMemory)
+
+        if (process.runAfterTick != null) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          processRunAfterTicks.push((() => process.runAfterTick!(dependency)))
+        }
+
+      }, `ProcessManager.run(${process.processType})`)()
     })
+
+    processRunAfterTicks.forEach(runAfterTick => runAfterTick())
   },
 
   // ProcessManager
   /** @throws */
-  addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
+  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     const process = constructor(createNewProcessId())
 
-    // TODO: identifierが一意になっていることの確認
+    const processWithSameIdentifier: AnyProcess | null = processStore.getProcessByIdentifier(process.processType, process.identifier)
+    if (processWithSameIdentifier != null) {
+      throw new ProcessManagerError({
+        case: "already launched",
+        processType: process.processType,
+        identifier: process.identifier,
+        existingProcessId: processWithSameIdentifier.processId,
+      })
+    }
 
     // TODO: Driver依存チェック
-    const { missingProcesses } = processStore.checkDependencies(process.dependencies.processes)
-    if (missingProcesses.length > 0) {
-      throw `TODO: missing dependencies: ${missingProcesses.map(p => p.processType + "[" + p.processSpecifier + "]")}`
+    const { missingDependencies } = processStore.checkDependencies(process.dependencies.processes)
+    if (missingDependencies.length > 0) {
+      throw new ProcessManagerError({
+        case: "lack of dependencies",
+        missingDependencies: missingDependencies
+      })
     }
 
     processStore.add(process)
@@ -219,7 +263,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     return process
   },
 
-  getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return processStore.getProcessById(processId)
   },
 
@@ -241,7 +285,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processStore.remove(process)
   },
 
-  getRuntimeDescription<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
+  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
     return ErrorMapper.wrapLoop((): string | null => {
       const dependency = process.getDependentData(SharedMemory)
       if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
@@ -249,7 +293,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       }
       return process.runtimeDescription(dependency)
 
-    }, `ProcessManager.getRuntimeDescription(${process.constructor.name})`)()
+    }, `ProcessManager.getRuntimeDescription(${process.processType})`)()
   },
 
   listProcesses(): AnyProcess[] {
@@ -267,7 +311,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 }
 
 
-const createNewProcessId = <D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
+const createNewProcessId = <D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
   return UniqueId.generate() as ProcessId<D, I, M, S, P>
 }
 
@@ -293,16 +337,16 @@ const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
 }
 
 const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {
-  return processes.map(process => {
-    const encodedProcessType = processTypeEncodingMap[process.constructor.name as ProcessTypes]
+  return processes.flatMap((process): ProcessState[] => {
+    const encodedProcessType = processTypeEncodingMap[process.processType]
     if (encodedProcessType == null) {
-      PrimitiveLogger.programError(`ProcessManager.storeProcesses failed: unknown process type: ${process.constructor.name}`)
-      return
+      PrimitiveLogger.programError(`ProcessManager.storeProcesses failed: unknown process type: ${process.processType}`)
+      return []
     }
-    return {
+    return [{
       ...process.encode(),
       i: process.processId,
       t: encodedProcessType,
-    }
+    }]
   })
 }

@@ -28,9 +28,9 @@ export const SuspendCommand: Command = {
     const result = ProcessManager.suspend(process)
 
     if (result !== true) {
-      throw `Cannot suspend ${process.constructor.name} ${processId}`
+      throw `Cannot suspend ${process.processType} ${processId}`
     }
 
-    return `Suspended ${process.constructor.name} ${processId}: ${processDescription}`
+    return `Suspended ${process.processType} ${processId}: ${processDescription}`
   },
 }

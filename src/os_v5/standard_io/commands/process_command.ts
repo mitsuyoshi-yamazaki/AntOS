@@ -41,7 +41,7 @@ const listProcessDescription = (filteringWord: string | null): string => {
       }
       return `[s] ${process.staticDescription()}`
     })()
-    return alignedText(process.processId, process.constructor.name, process.identifier, runningState, processDescription)
+    return alignedText(process.processId, process.processType, process.identifier, runningState, processDescription)
   })
 
   const results: string[] = [
@@ -67,7 +67,7 @@ const getFilteredProcessRunningStates = (filteringWord: string | null): ProcessR
 
   const lowerFilteringWord = filteringWord.toLowerCase()
   return ProcessManager.listProcessRunningStates().filter(state => {
-    return state.process.constructor.name.toLowerCase().includes(lowerFilteringWord) === true
+    return state.process.processType.toLowerCase().includes(lowerFilteringWord) === true
   })
 }
 

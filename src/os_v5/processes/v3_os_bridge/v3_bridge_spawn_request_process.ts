@@ -27,7 +27,7 @@ export type V3BridgeSpawnRequestProcessAPI = {
 export type V3BridgeSpawnRequestProcessId = ProcessId<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess>
 
 
-export class V3BridgeSpawnRequestProcess implements Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess> {
+export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess> {
   public readonly identifier = "V3SpawnRequest"
   public readonly dependencies: ProcessDependencies = {
     driverNames: [],
@@ -39,6 +39,7 @@ export class V3BridgeSpawnRequestProcess implements Process<void, "V3SpawnReques
   private constructor(
     public readonly processId: V3BridgeSpawnRequestProcessId,
   ) {
+    super()
   }
 
   public encode(): EmptySerializable {
@@ -108,7 +109,7 @@ export class V3BridgeSpawnRequestProcess implements Process<void, "V3SpawnReques
       }
       const result = spawn.spawnCreep(request.body.bodyParts, creepName, options)
 
-      console.log(`${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
+      console.log(`${this.processType}[${this.identifier}] ${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
     })
   }
 }

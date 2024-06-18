@@ -26,6 +26,6 @@ export const KillCommand: Command = {
 
     const processDescription = ProcessManager.getRuntimeDescription(process)
     ProcessManager.killProcess(process)
-    return `Killed ${process.constructor.name} ${processId}: ${processDescription}`
+    return `Killed ${process.processType} ${processId}: ${processDescription}`
   },
 }

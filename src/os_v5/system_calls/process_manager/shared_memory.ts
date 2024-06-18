@@ -19,12 +19,12 @@ export const SharedMemory = {
   },
 
   //
-  get<T>(processType: ProcessTypes, processSpecifier: string): T | null {
-    return data.get(processType)?.get(processSpecifier)
+  get<T>(processType: ProcessTypes, identifier: string): T | null {
+    return data.get(processType)?.get(identifier)
   },
 
-  set<T>(processType: ProcessTypes, processSpecifier: string, processData: T): void {
-    getProcessTypeData(processType).set(processSpecifier, processData)
+  set<T>(processType: ProcessTypes, identifier: string, processData: T): void {
+    getProcessTypeData(processType).set(identifier, processData)
   },
 }
 

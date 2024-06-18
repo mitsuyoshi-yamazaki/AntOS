@@ -12,7 +12,7 @@ ProcessDecoder.register("TestProcess", (processId: TestProcessId, state: TestPro
 export type TestProcessId = ProcessId<void, "Test", void, TestProcessState, TestProcess>
 
 
-export class TestProcess implements Process<void, "Test", void, TestProcessState, TestProcess> {
+export class TestProcess extends Process<void, "Test", void, TestProcessState, TestProcess> {
   public readonly identifier = "Test"
   public readonly dependencies: ProcessDependencies = {
     driverNames: [],
@@ -23,6 +23,7 @@ export class TestProcess implements Process<void, "Test", void, TestProcessState
     public readonly processId: TestProcessId,
     public readonly launchTime: Timestamp,
   ) {
+    super()
   }
 
   public encode(): TestProcessState {

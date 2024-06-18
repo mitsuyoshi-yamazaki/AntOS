@@ -20,13 +20,13 @@ declare namespace Tag {
     private [OpaqueTagSymbol]: T
   }
 }
-export type ProcessId<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
+export type ProcessId<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
 
 
 // ---- Process ---- //
 export type ProcessSpecifier = {
   readonly processType: ProcessTypes
-  readonly processSpecifier: string
+  readonly identifier: string
 }
 export type ProcessDependencies = {
   readonly driverNames: string[]
@@ -34,7 +34,7 @@ export type ProcessDependencies = {
 }
 
 export type ReadonlySharedMemory = {
-  get<T>(processType: ProcessTypes, processSpecifier: string): T | null
+  get<T>(processType: ProcessTypes, identifier: string): T | null
 }
 
 
@@ -42,25 +42,30 @@ export type ReadonlySharedMemory = {
 type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} | {t: any} ? never : S // t, i は ProcessManager が予約済み
 
 
-export interface Process<Dependency, Identifier, ProcessMemory, ProcessState extends SerializableObject, This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>> {
-  readonly processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
-  readonly identifier: Identifier
-  readonly dependencies: ProcessDependencies
+export abstract class Process<Dependency, Identifier extends string, ProcessMemory, ProcessState extends SerializableObject, This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>> {
+  readonly abstract processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  readonly abstract identifier: Identifier
+  readonly abstract dependencies: ProcessDependencies
 
-  encode(): RestrictedProcessState<ProcessState>
+  abstract encode(): RestrictedProcessState<ProcessState>
 
-  getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
+  abstract getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
 
-  staticDescription(): string
-  runtimeDescription(dependency: Dependency): string
+  abstract staticDescription(): string
+  abstract runtimeDescription(dependency: Dependency): string
 
-  run(dependency: Dependency): ProcessMemory
+  abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void
+
+  //
+  public get processType(): ProcessTypes {
+    return this.constructor.name as ProcessTypes
+  }
 }
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, any, any, any, AnyProcess>
+export type AnyProcess = Process<any, string, any, SerializableObject, AnyProcess>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, any, any, any, AnyProcess>
+export type AnyProcessId = ProcessId<any, string, any, SerializableObject, AnyProcess>

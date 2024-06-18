@@ -28,9 +28,9 @@ export const ResumeCommand: Command = {
     const result = ProcessManager.resume(process)
 
     if (result !== true) {
-      throw `Cannot resume ${process.constructor.name} ${processId}`
+      throw `Cannot resume ${process.processType} ${processId}`
     }
 
-    return `Resumed ${process.constructor.name} ${processId}: ${processDescription}`
+    return `Resumed ${process.processType} ${processId}: ${processDescription}`
   },
 }

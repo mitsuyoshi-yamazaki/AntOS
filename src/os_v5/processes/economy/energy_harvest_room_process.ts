@@ -21,12 +21,12 @@ ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoo
 export type EnergyHarvestRoomProcessId = ProcessId<EnergyHarvestRoomProcessDependency, RoomName, void, EnergyHarvestRoomProcessState, EnergyHarvestRoomProcess>
 
 
-export class EnergyHarvestRoomProcess implements Process<EnergyHarvestRoomProcessDependency, RoomName, void, EnergyHarvestRoomProcessState, EnergyHarvestRoomProcess> {
+export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDependency, RoomName, void, EnergyHarvestRoomProcessState, EnergyHarvestRoomProcess> {
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     driverNames: [],
     processes: [
-      { processType: "V3BridgeSpawnRequestProcess", processSpecifier: "V3SpawnRequest" },
+      { processType: "V3BridgeSpawnRequestProcess", identifier: "V3SpawnRequest" },
     ],
   }
 
@@ -39,6 +39,7 @@ export class EnergyHarvestRoomProcess implements Process<EnergyHarvestRoomProces
     private readonly parentRoomName: RoomName,
     creepName: CreepName | null,
   ) {
+    super()
     this.identifier = roomName
     this.codename = SystemCalls.uniqueId.generateCodename("V3BridgeSpawnRequestProcess", parseInt(processId, 36))
     this.creepName = creepName ?? SystemCalls.uniqueName.generate(this.codename)
