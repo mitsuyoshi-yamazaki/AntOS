@@ -1,10 +1,7 @@
-import { AnyProcessId } from "os_v5/process/process"
+import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { Command } from "../command"
-import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { ElementType } from "shared/utility/types"
-import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-
-type ProcessRunningState = ElementType<ReturnType<typeof ProcessManager.listProcessRunningStates>>
+import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_manager/process_manager"
+import { alignedProcessInfo, processDescription } from "./utilities"
 
 const helpText = `
 > process {arg}
@@ -31,28 +28,17 @@ export const ProcessCommand: Command = {
  */
 const listProcessDescription = (filteringWord: string | null): string => {
   const processRunningStates = getFilteredProcessRunningStates(filteringWord)
-  const processDescriptions = processRunningStates.map((state): string => {
-    const process = state.process
-    const runningState = state.isRunning === true ? "" : "suspended"
-    const processDescription = ((): string => {
-      const runtimeDescription = ProcessManager.getRuntimeDescription(process)
-      if (runtimeDescription != null) {
-        return runtimeDescription
-      }
-      return `[s] ${process.staticDescription()}`
-    })()
-    return alignedText(process.processId, process.processType, process.identifier, runningState, processDescription)
-  })
+  const processDescriptions = processRunningStates.map(processDescription)
 
   const results: string[] = [
-    alignedText("PID", "Type", "Identifier", "Running", "Description"),
+    alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description"),
     ...processDescriptions,
   ]
 
   return results.join("\n")
 }
 
-const getFilteredProcessRunningStates = (filteringWord: string | null): ProcessRunningState[] => {
+const getFilteredProcessRunningStates = (filteringWord: string | null): ({ process: AnyProcess } & ProcessRunningState)[] => {
   if (filteringWord == null || filteringWord.length <= 0) {
     return ProcessManager.listProcessRunningStates()
   }
@@ -71,9 +57,3 @@ const getFilteredProcessRunningStates = (filteringWord: string | null): ProcessR
   })
 }
 
-
-const tab = ConsoleUtility.tab
-const TabSize = ConsoleUtility.TabSize
-const alignedText = (processId: string, processType: string, identifier: string, runningState: string, description: string): string => {
-  return `${tab(processId, TabSize.small)}${tab(processType, TabSize.large)}${tab(identifier, TabSize.medium)}${tab(runningState, TabSize.medium)}${description}`
-}

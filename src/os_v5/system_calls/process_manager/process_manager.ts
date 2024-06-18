@@ -13,7 +13,7 @@ import { ProcessManagerError } from "./process_manager_error"
 
 
 type ProcessIdentifier = string
-type ProcessRunningState = {
+export type ProcessRunningState = {
   readonly isRunning: boolean
 }
 
@@ -174,6 +174,9 @@ type ProcessManager = {
   getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
+
+  /** @throws */
+  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
 }
 
 
@@ -306,7 +309,21 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
         ...this.getProcessRunningState(process.processId),
       }
     })
-  }
+  },
+
+  /** @throws */
+  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string {
+    if (process.didReceiveMessage == null) {
+      throw `${process.processType}[${process.identifier}] won't receive message`
+    }
+
+    const dependency = process.getDependentData(SharedMemory)
+    if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
+      throw `${process.processType}[${process.identifier}] no dependent data`
+    }
+
+    return process.didReceiveMessage(args, dependency)
+  },
 }
 
 

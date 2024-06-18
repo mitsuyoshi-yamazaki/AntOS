@@ -8,7 +8,7 @@ export const SuspendCommand: Command = {
 
   /** @throws */
   help(): string {
-    return "> suspend {process type}"
+    return "> suspend {process ID}"
   },
 
   /** @throws */

@@ -8,7 +8,7 @@ export const ResumeCommand: Command = {
 
   /** @throws */
   help(): string {
-    return "> resume {process type}"
+    return "> resume {process ID}"
   },
 
   /** @throws */

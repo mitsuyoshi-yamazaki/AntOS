@@ -6,6 +6,7 @@ import { V3BridgeSpawnRequestProcessAPI } from "../v3_os_bridge/v3_bridge_spawn_
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepName } from "prototype/creep"
+import { ArgumentParser } from "os_v5/utility/argument_parser"
 
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
@@ -70,6 +71,17 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
 
   public runtimeDescription(): string {
     return this.staticDescription()
+  }
+
+  /** @throws */
+  public didReceiveMessage(args: string[]): string {
+    const argumentParser = new ArgumentParser(args)
+
+    if (args.length > 1) {
+      throw `invalid args: ${args}`
+    }
+
+    return "ok"
   }
 
   public run(dependency: EnergyHarvestRoomProcessDependency): void {

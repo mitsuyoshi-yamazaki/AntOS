@@ -8,7 +8,7 @@ export const KillCommand: Command = {
 
   /** @throws */
   help(): string {
-    return "> kill {process type}"
+    return "> kill {process ID}"
   },
 
   /** @throws */

@@ -56,6 +56,9 @@ export abstract class Process<Dependency, Identifier extends string, ProcessMemo
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void
 
+  /** @throws */
+  didReceiveMessage?(args: string[], dependency: Dependency): string
+
   //
   public get processType(): ProcessTypes {
     return this.constructor.name as ProcessTypes
