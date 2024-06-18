@@ -41,7 +41,14 @@ export type ReadonlySharedMemory = {
 type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} | {t: any} ? never : S // t, i は ProcessManager が予約済み
 
 
-export abstract class Process<Dependency, Identifier extends string, ProcessMemory, ProcessState extends SerializableObject, This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>> {
+export abstract class Process<
+    Dependency,
+    Identifier extends string,
+    ProcessMemory,
+    ProcessState extends SerializableObject,
+    This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  > {
+
   readonly abstract processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
   readonly abstract identifier: Identifier
   readonly abstract dependencies: ProcessDependencies
