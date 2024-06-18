@@ -1,11 +1,11 @@
 import { SerializableObject } from "os_v5/utility/types"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
-import { AnyProcessId, Process, ProcessId } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
 import { ProcessTypes, SerializedProcessTypes } from "../../process/process_type_map"
 
 type Decoder<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = (processId: ProcessId<D, I, M, S, P>, state: S) => P
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyDecoder = Decoder<any, any, any, any, any>
+type AnyDecoder = Decoder<any, any, any, any, AnyProcess>
 const decoders = new Map<string, AnyDecoder>()
 
 

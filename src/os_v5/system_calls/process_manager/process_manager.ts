@@ -45,7 +45,7 @@ class ProcessStore {
   /// 依存関係を保存
   // private readonly dependencyGraph =
 
-  private readonly suspendedProcessIds: AnyProcessId[] = []
+  private suspendedProcessIds: AnyProcessId[] = []
 
 
   // Public API
@@ -57,9 +57,9 @@ class ProcessStore {
   }
 
   public remove(process: AnyProcess): void {
-    const index = this.processList.indexOf(process)
-    if (index >= 0) {
-      this.processList.splice(index, 1)
+    const processListIndex = this.processList.indexOf(process)
+    if (processListIndex >= 0) {
+      this.processList.splice(processListIndex, 1)
     } else {
       this.programError("remove", `Process ${process.processId} not found in the process list`)
     }
@@ -70,28 +70,35 @@ class ProcessStore {
       this.programError("remove", `Process ${process.processId} not found in the process ID map`)
     }
 
+    const suspendIndex = this.suspendedProcessIds.indexOf(process.processId)
+    if (suspendIndex >= 0) {
+      this.suspendedProcessIds.splice(suspendIndex, 1)
+    }
+
     // TODO: 依存関係の解決をする
   }
 
-  public suspend(processId: AnyProcessId): void {
+  public suspend(processId: AnyProcessId): boolean {
     if (this.processMap.has(processId) !== true) {
       this.programError("suspend", `Process ${processId} not found in the process ID map`)
-      return
+      return false
     }
     if (this.suspendedProcessIds.includes(processId) === true) {
       this.programError("suspend", `Process ${processId} is already suspended`)
-      return
+      return false
     }
     this.suspendedProcessIds.push(processId)
+    return true
   }
 
-  public resume(processId: AnyProcessId): void {
+  public resume(processId: AnyProcessId): boolean {
     const index = this.suspendedProcessIds.indexOf(processId)
     if (index < 0) {
       this.programError("resume", `Process ${processId} is not suspended`)
-      return
+      return false
     }
     this.suspendedProcessIds.splice(index, 1)
+    return true
   }
 
   public getProcessById<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
@@ -117,6 +124,14 @@ class ProcessStore {
     return [...this.processList]
   }
 
+  public setSuspendedProcessIds(ids: AnyProcessId[]): void {
+    this.suspendedProcessIds = [...ids]
+  }
+
+  public getSuspendedProcessIds(): AnyProcessId[] {
+    return [...this.suspendedProcessIds]
+  }
+
   // Private API
   private programError(label: string, message: string): void {
     PrimitiveLogger.programError(`[ProcessStore.${label}] ${message}`)
@@ -132,6 +147,8 @@ type ProcessManager = {
   addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
+  suspend(process: AnyProcess): boolean
+  resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
   getRuntimeDescription<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
@@ -149,6 +166,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     restoreProcesses(processManagerMemory.processes).forEach(process => {
       processStore.add(process)
     })
+    processStore.setSuspendedProcessIds(processManagerMemory.suspendedProcessIds as AnyProcessId[])
   },
 
   startOfTick(): void {
@@ -157,6 +175,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
   endOfTick(): ProcessManagerMemory {
     processManagerMemory.processes = storeProcesses(processStore.listProcesses())
+    processManagerMemory.suspendedProcessIds = processStore.getSuspendedProcessIds()
     return processManagerMemory
   },
 
@@ -208,6 +227,14 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     return {
       isRunning: processStore.isProcessSuspended(processId) !== true,
     }
+  },
+
+  suspend(process: AnyProcess): boolean {
+    return processStore.suspend(process.processId)
+  },
+
+  resume(process: AnyProcess): boolean {
+    return processStore.resume(process.processId)
   },
 
   killProcess(process: AnyProcess): void {

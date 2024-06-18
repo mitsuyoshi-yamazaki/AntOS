@@ -1,5 +1,5 @@
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
-import { Process, ProcessId } from "os_v5/process/process"
+import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "os_v5/utility/types"
@@ -61,9 +61,9 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
   const argumentParser = new ArgumentParser(args)
   const constructor = constructorMaker(argumentParser)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const process = ProcessManager.addProcess<any, any, any, any, any>(constructor)
+  const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
 
-  return `Launched [${process.processId}] ${processType} ${process.shortDescription()}`
+  return `Launched [${process.processId}] ${processType} ${process.staticDescription()}`
 }
 
 

@@ -75,5 +75,5 @@ const getFilteredProcessRunningStates = (filteringWord: string | null): ProcessR
 const tab = ConsoleUtility.tab
 const TabSize = ConsoleUtility.TabSize
 const alignedText = (processId: string, processType: string, identifier: string, runningState: string, description: string): string => {
-  return `${tab(processId, TabSize.small)}${tab(processType, TabSize.large)}${tab(identifier, TabSize.medium)}${tab(runningState, TabSize.small)}${description}`
+  return `${tab(processId, TabSize.small)}${tab(processType, TabSize.large)}${tab(identifier, TabSize.medium)}${tab(runningState, TabSize.medium)}${description}`
 }

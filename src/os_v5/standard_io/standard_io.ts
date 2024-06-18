@@ -5,12 +5,14 @@ import { Command } from "./command"
 import { LaunchCommand } from "./commands/launch_command"
 import { ProcessCommand } from "./commands/process_command"
 import { KillCommand } from "./commands/kill_command"
+import { SuspendCommand } from "./commands/suspend_command"
 
 
 const commandRunners: Command[] = [
   LaunchCommand,
   ProcessCommand,
   KillCommand,
+  SuspendCommand,
 ]
 const commandMap = new Map<string, Command>(commandRunners.map(command => [command.command, command]))
 
