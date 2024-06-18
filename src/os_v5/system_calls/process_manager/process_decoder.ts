@@ -16,12 +16,12 @@ export type ProcessState = SerializableObject & {
 
 
 export const ProcessDecoder = {
-  register(processType: ProcessTypes, decoder: AnyDecoder): void {
+  register<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, decoder: Decoder<D, I, M, S, P>): void {
     if (decoders.has(processType) === true) {
       PrimitiveLogger.programError(`ProcessDecoder registering ${processType} twice ${Game.time}`)
       return
     }
-    decoders.set(processType, decoder)
+    decoders.set(processType, decoder as unknown as AnyDecoder)
   },
 
   decode<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, processId: ProcessId<D, I, M, S, P>, state: S): P | null {
@@ -30,6 +30,6 @@ export const ProcessDecoder = {
       PrimitiveLogger.programError(`ProcessDecoder unregistered process ${processType}`)
       return null
     }
-    return decoder(processId, state)
+    return decoder(processId, state) as P
   },
 }
