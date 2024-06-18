@@ -132,6 +132,7 @@ type ProcessManager = {
   addProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
+  killProcess(process: AnyProcess): void
   getRuntimeDescription<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
@@ -207,6 +208,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     return {
       isRunning: processStore.isProcessSuspended(processId) !== true,
     }
+  },
+
+  killProcess(process: AnyProcess): void {
+    processStore.remove(process)
   },
 
   getRuntimeDescription<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
