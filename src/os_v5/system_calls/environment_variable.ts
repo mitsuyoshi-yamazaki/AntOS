@@ -1,7 +1,18 @@
 import { isPrivateEnvironment } from "../../../submodules/private/constants"
 import { SystemCall } from "../system_call"
-import { EnvironmentName } from "../drivers/environment"
 import { EmptySerializable } from "os_v5/utility/types"
+
+
+export enum EnvironmentName {
+  mmo = "mmo",
+  sim = "sim",
+  swc = "swc",
+  botarena = "botarena",
+  private = "private",
+  mockSeason = "mockSeason", /// シーズンマッチ未開催時
+  unknown = "unknown",
+}
+
 
 type EnvironmentInfo = {
   readonly name: EnvironmentName

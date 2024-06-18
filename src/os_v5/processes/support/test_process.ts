@@ -15,7 +15,6 @@ export type TestProcessId = ProcessId<void, "Test", void, TestProcessState, Test
 export class TestProcess extends Process<void, "Test", void, TestProcessState, TestProcess> {
   public readonly identifier = "Test"
   public readonly dependencies: ProcessDependencies = {
-    driverNames: [],
     processes: [],
   }
 

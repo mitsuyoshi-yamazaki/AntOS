@@ -245,7 +245,6 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       })
     }
 
-    // TODO: Driver依存チェック
     const { missingDependencies } = processStore.checkDependencies(process.dependencies.processes)
     if (missingDependencies.length > 0) {
       throw new ProcessManagerError({

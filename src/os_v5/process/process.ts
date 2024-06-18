@@ -29,7 +29,6 @@ export type ProcessSpecifier = {
   readonly identifier: string
 }
 export type ProcessDependencies = {
-  readonly driverNames: string[]
   readonly processes: ProcessSpecifier[]
 }
 

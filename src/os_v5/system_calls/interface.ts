@@ -1,4 +1,3 @@
-import { KernelLifecycleMethods } from "../kernel_lifecycle"
 import { SystemCall } from "../system_call"
 import { Logger } from "./logger"
 import { ProcessManager } from "./process_manager/process_manager"

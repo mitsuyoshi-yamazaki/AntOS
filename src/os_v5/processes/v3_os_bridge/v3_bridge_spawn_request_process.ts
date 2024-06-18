@@ -30,7 +30,6 @@ export type V3BridgeSpawnRequestProcessId = ProcessId<void, "V3SpawnRequest", V3
 export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess> {
   public readonly identifier = "V3SpawnRequest"
   public readonly dependencies: ProcessDependencies = {
-    driverNames: [],
     processes: [],
   }
 
