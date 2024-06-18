@@ -53,6 +53,8 @@ export abstract class Process<Dependency, Identifier extends string, ProcessMemo
   abstract staticDescription(): string
   abstract runtimeDescription(dependency: Dependency): string
 
+  didLaunch?(): void      /// 起動完了
+  willTerminate?(): void  /// 停止
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void
 

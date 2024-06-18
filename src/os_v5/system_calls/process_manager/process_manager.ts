@@ -236,6 +236,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   // ProcessManager
   /** @throws */
   addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
+    // 依存先含めて作成する場合も静的に制約できないため例外を送出するのは変わらない
+    // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
+    // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
+
     const process = constructor(createNewProcessId())
 
     const processWithSameIdentifier: AnyProcess | null = processStore.getProcessByIdentifier(process.processType, process.identifier)
@@ -258,9 +262,9 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     processStore.add(process)
 
-    // 依存先含めて作成する場合も静的に制約できないため例外を送出するのは変わらない
-    // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
-    // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
+    if (process.didLaunch != null) {
+      process.didLaunch()
+    }
 
     return process
   },
@@ -284,6 +288,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   killProcess(process: AnyProcess): void {
+    if (process.willTerminate != null) {
+      process.willTerminate()
+    }
+
     processStore.remove(process)
   },
 

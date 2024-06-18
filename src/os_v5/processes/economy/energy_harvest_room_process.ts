@@ -84,13 +84,27 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     return "ok"
   }
 
-  public run(dependency: EnergyHarvestRoomProcessDependency): void {
-    const creep = Game.creeps[this.creepName]
-    if (creep == null) {
-      dependency.addSpawnRequest(new CreepBody([WORK, TOUGH]), this.parentRoomName, { uniqueCreepName: this.creepName })
-      return
+  public didLaunch(): void {
+    if (Memory.ignoreRooms.includes(this.roomName) !== true) { // !!UNSAFE MEMORY ACCESS!!
+      Memory.ignoreRooms.push(this.roomName)
+      console.log(`${ConsoleUtility.colored("!!UNSAFE MEMORY ACCESS!!", "warn")} ${this.processType}[${this.identifier}] added ${ConsoleUtility.roomLink(this.roomName)} to ignoreRooms`)
     }
+  }
 
-    creep.say("Hey")
+  public willTerminate(): void {
+    const index = Memory.ignoreRooms.indexOf(this.roomName) // !!UNSAFE MEMORY ACCESS!!
+    if (index >= 0) {
+      Memory.ignoreRooms.splice(index, 1)
+    }
+  }
+
+  public run(dependency: EnergyHarvestRoomProcessDependency): void {
+    // const creep = Game.creeps[this.creepName]
+    // if (creep == null) {
+    //   dependency.addSpawnRequest(new CreepBody([WORK, TOUGH]), this.parentRoomName, { uniqueCreepName: this.creepName })
+    //   return
+    // }
+
+    // creep.say("Hey")
   }
 }
