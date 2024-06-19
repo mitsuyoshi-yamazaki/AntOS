@@ -1,4 +1,5 @@
-import { ArgumentKey, ArgumentParserOptions, IntArgument, RoomNameArgument, StringArgument } from "./string_argument_parsers"
+import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
+import { IntArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
 
 /**
 # ArgumentParser
