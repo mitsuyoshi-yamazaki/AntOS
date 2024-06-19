@@ -65,7 +65,7 @@ export class RoomPathfindingProcess extends Process<void, "RoomPathFinding", Roo
 
   public run(): RoomPathfindingProcessAPI {
     return {
-      exitTo(targetRoomName: RoomName, currentRoomName: RoomName): Result<RoomExit, RoomExitFailureReason> {
+      exitTo: (targetRoomName: RoomName, currentRoomName: RoomName): Result<RoomExit, RoomExitFailureReason> => {
         return this.exitTo(targetRoomName, currentRoomName)
       },
     }

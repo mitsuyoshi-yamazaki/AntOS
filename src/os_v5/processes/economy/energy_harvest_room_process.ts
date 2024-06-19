@@ -7,6 +7,8 @@ import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepName } from "prototype/creep"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
+import { RoomPathfindingProcessAPI } from "../game_object_management/room_pathfinding_process"
+import { positionFromExit } from "shared/utility/room_exit"
 
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
@@ -16,6 +18,7 @@ type EnergyHarvestRoomProcessState = {
 }
 
 type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessAPI, "addSpawnRequest">
+  & Pick<RoomPathfindingProcessAPI, "exitTo">
 
 ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState) => EnergyHarvestRoomProcess.decode(processId, state))
 
@@ -27,6 +30,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "V3BridgeSpawnRequestProcess", identifier: "V3SpawnRequest" },
+      { processType: "RoomPathfindingProcess", identifier: "RoomPathFinding" },
     ],
   }
 
@@ -62,7 +66,15 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): EnergyHarvestRoomProcessDependency | null {
-    return sharedMemory.get("V3BridgeSpawnRequestProcess", "V3SpawnRequest")
+    const spawnRequestApi: V3BridgeSpawnRequestProcessAPI | null = sharedMemory.get("V3BridgeSpawnRequestProcess", "V3SpawnRequest")
+    const pathfindingApi: RoomPathfindingProcessAPI | null = sharedMemory.get("RoomPathfindingProcess", "RoomPathFinding")
+    if (spawnRequestApi == null || pathfindingApi == null) {
+      return null
+    }
+    return {
+      ...spawnRequestApi,
+      ...pathfindingApi,
+    }
   }
 
   public staticDescription(): string {
@@ -101,6 +113,30 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
       return
     }
 
-    creep.say("Hey")
+    if (creep.room.name === this.roomName) {
+      creep.say("Yo")
+      return
+    }
+
+    const result = dependency.exitTo(this.roomName, creep.room.name)
+    switch (result.case) {
+    case "succeeded": {
+      const exitPosition = positionFromExit(result.value)
+      creep.say("Hey")
+      creep.moveTo(exitPosition.x, exitPosition.y)
+      return
+    }
+
+    case "failed":
+      creep.say("Omg")
+      creep.suicide()
+      return
+
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = result
+      return
+    }
+    }
   }
 }

@@ -66,7 +66,7 @@ const listProcessDescription = (filteringWord: string | null): string => {
   const processDescriptions = processRunningStates.map(processDescription)
 
   const results: string[] = [
-    alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description"),
+    alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     ...processDescriptions,
   ]
 

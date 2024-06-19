@@ -9,7 +9,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
-import {} from "../../processes/game_object_management/room_pathfinding_process"
+import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 
 type ProcessType = string
 
@@ -77,18 +77,24 @@ registerProcess("TestProcess", (argumentParser) => {
   }) as ProcessConstructor
 })
 
+registerProcess("V3BridgeSpawnRequestProcess", () => {
+  return ((processId: V3BridgeSpawnRequestProcessId): V3BridgeSpawnRequestProcess => {
+    return V3BridgeSpawnRequestProcess.create(processId)
+  }) as ProcessConstructor
+})
+
+registerProcess("RoomPathfindingProcess", () => {
+  return ((processId: RoomPathfindingProcessId): RoomPathfindingProcess => {
+    return RoomPathfindingProcess.create(processId)
+  }) as ProcessConstructor
+})
+
 registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
   const roomName = argumentParser.roomName("room_name").parse({my: false, allowClosedRoom: false})
   const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
   return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
     return EnergyHarvestRoomProcess.create(processId, roomName, parentRoomName)
-  }) as ProcessConstructor
-})
-
-registerProcess("V3BridgeSpawnRequestProcess", () => {
-  return ((processId: V3BridgeSpawnRequestProcessId): V3BridgeSpawnRequestProcess => {
-    return V3BridgeSpawnRequestProcess.create(processId)
   }) as ProcessConstructor
 })
 
