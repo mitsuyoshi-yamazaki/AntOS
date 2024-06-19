@@ -24,7 +24,7 @@ export const KillCommand: Command = {
       throw `No Process with ID ${process}`
     }
 
-    const processDescription = ProcessManager.getRuntimeDescription(process)
+    const processDescription = ProcessManager.getRuntimeDescription(process) ?? process.staticDescription()
     ProcessManager.killProcess(process)
     return `Killed ${process.processType} ${processId}: ${processDescription}`
   },

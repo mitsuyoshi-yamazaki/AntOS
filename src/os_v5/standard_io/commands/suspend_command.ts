@@ -24,7 +24,7 @@ export const SuspendCommand: Command = {
       throw `No Process with ID ${processId}`
     }
 
-    const processDescription = ProcessManager.getRuntimeDescription(process)
+    const processDescription = ProcessManager.getRuntimeDescription(process) ?? process.staticDescription()
     const result = ProcessManager.suspend(process)
 
     if (result !== true) {

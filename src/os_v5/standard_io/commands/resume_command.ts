@@ -24,7 +24,7 @@ export const ResumeCommand: Command = {
       throw `No Process with ID ${process}`
     }
 
-    const processDescription = ProcessManager.getRuntimeDescription(process)
+    const processDescription = ProcessManager.getRuntimeDescription(process) ?? process.staticDescription()
     const result = ProcessManager.resume(process)
 
     if (result !== true) {
