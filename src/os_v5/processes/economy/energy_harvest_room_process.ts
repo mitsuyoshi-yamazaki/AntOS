@@ -77,10 +77,6 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   public didReceiveMessage(args: string[]): string {
     const argumentParser = new ArgumentParser(args)
 
-    if (args.length > 1) {
-      throw `invalid args: ${args}`
-    }
-
     return "ok"
   }
 
@@ -99,12 +95,12 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public run(dependency: EnergyHarvestRoomProcessDependency): void {
-    // const creep = Game.creeps[this.creepName]
-    // if (creep == null) {
-    //   dependency.addSpawnRequest(new CreepBody([WORK, TOUGH]), this.parentRoomName, { uniqueCreepName: this.creepName })
-    //   return
-    // }
+    const creep = Game.creeps[this.creepName]
+    if (creep == null) {
+      dependency.addSpawnRequest(new CreepBody([MOVE]), this.parentRoomName, { uniqueCreepName: this.creepName })
+      return
+    }
 
-    // creep.say("Hey")
+    creep.say("Hey")
   }
 }

@@ -51,7 +51,7 @@ export abstract class Process<
 
   readonly abstract processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
   readonly abstract identifier: Identifier
-  readonly abstract dependencies: ProcessDependencies
+  readonly abstract dependencies: ProcessDependencies // 依存先指定をインスタンスメンバに入れることで、インスタンスごとに依存先を変更できる
 
   abstract encode(): RestrictedProcessState<ProcessState>
 

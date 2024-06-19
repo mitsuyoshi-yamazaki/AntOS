@@ -5,6 +5,7 @@ export const processTypeDecodingMap = {
   a: "TestProcess",
   b: "EnergyHarvestRoomProcess",
   c: "V3BridgeSpawnRequestProcess",
+  d: "RoomPathfindingProcess",
 } as const
 
 export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap)

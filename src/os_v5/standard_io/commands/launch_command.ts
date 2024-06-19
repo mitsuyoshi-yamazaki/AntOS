@@ -9,6 +9,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
+import {} from "../../processes/game_object_management/room_pathfinding_process"
 
 type ProcessType = string
 
