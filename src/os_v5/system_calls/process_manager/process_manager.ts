@@ -89,8 +89,9 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processManagerMemory = initializeMemory(memory)
 
     restoreProcesses(processManagerMemory.processes).forEach(process => {
-      processStore.add(process)
+      processStore.add(process, {skipSort: true})
     })
+    processStore.sortProcessList()
     processStore.setSuspendedProcessIds(processManagerMemory.suspendedProcessIds as AnyProcessId[])
   },
 

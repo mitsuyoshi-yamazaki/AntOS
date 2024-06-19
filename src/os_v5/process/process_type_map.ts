@@ -8,7 +8,20 @@ export const processTypeDecodingMap = {
   d: "RoomPathfindingProcess",
 } as const
 
+
 export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap)
 
 export type SerializedProcessTypes = keyof typeof processTypeDecodingMap
 export type ProcessTypes = keyof typeof processTypeEncodingMap
+
+
+const processDependencyOrder: ProcessTypes[] = [
+  // No dependencies
+  "TestProcess",
+  "V3BridgeSpawnRequestProcess",
+  "RoomPathfindingProcess",
+
+  // Has dependencies
+  "EnergyHarvestRoomProcess",
+]
+export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))

@@ -1,11 +1,12 @@
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { AnyProcess, AnyProcessId, Process, ProcessId, ProcessSpecifier } from "../../process/process"
 import { SerializableObject } from "os_v5/utility/types"
-import { ProcessTypes } from "../../process/process_type_map"
+import { processExecutionOrder, ProcessTypes } from "../../process/process_type_map"
 import { ValuedMapMap } from "shared/utility/valued_collection"
 import { DependencyGraphNode, ProcessDependencyGraph } from "./process_dependency_graph"
 
 type ProcessIdentifier = string
+const maxExecutingOrder = 9999
 
 
 export class ProcessStore {
@@ -26,11 +27,19 @@ export class ProcessStore {
 
 
   // Public API
-  public add<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): void {
+  public add<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, options?: {skipSort?: boolean}): void {
     this.processList.push(process)
+    if (options?.skipSort !== true) {
+      this.sortProcessList()
+    }
+
     this.processMap.set(process.processId, process)
     this.processIdentifierMap.getValueFor(process.processType).set(process.identifier, process)
     this.dependencyGraph.add(process)
+  }
+
+  public sortProcessList(): void {
+    this.processList.sort((lhs, rhs) => (processExecutionOrder.get(lhs.processType) ?? maxExecutingOrder) - (processExecutionOrder.get(rhs.processType) ?? maxExecutingOrder))
   }
 
   public remove(process: AnyProcess): void {
