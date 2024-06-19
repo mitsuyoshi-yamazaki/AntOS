@@ -10,16 +10,39 @@ import { SharedMemory } from "./shared_memory"
 import { ProcessStore } from "./process_store"
 import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
+import { DependencyGraphNode } from "./process_dependency_graph"
+
+
+/**
+# ProcessManager
+## 概要
+
+## TODO
+- suspend理由を保存する
+  - 他のsuspend理由がなくなっても手動でsuspendしたProcessは復帰させない
+  - 状態
+    - 手動でsuspend
+      - 手動でのみresume
+    - 依存Processがsuspend
+      - resumeで自動でresume (a)
+    - 依存Processがkill
+      - 新たにlaunchされたらresume (b)
+    - aとbは区別する必要はない
+ */
 
 
 export type ProcessRunningState = {
   readonly isRunning: boolean
+}
+export type ProcessRunningStateOptions = {
+  readonly recursive?: boolean  /// pause, resume, kill する際に、依存している process にも同じ操作を適用するかどうか
 }
 
 
 type ProcessManagerMemory = {
   processes: ProcessState[] // 順序を崩さないために配列とする
   suspendedProcessIds: string[]
+  noDependencyProcessIds: string[]
 }
 
 
@@ -31,6 +54,9 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
   }
   if (mutableMemory.suspendedProcessIds == null) {
     mutableMemory.suspendedProcessIds = []
+  }
+  if (mutableMemory.noDependencyProcessIds == null) {
+    mutableMemory.noDependencyProcessIds = []
   }
 
   return mutableMemory
@@ -45,12 +71,13 @@ type ProcessManager = {
   addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
-  suspend(process: AnyProcess): boolean
-  resume(process: AnyProcess): boolean
-  killProcess(process: AnyProcess): void
+  suspend(process: AnyProcess, options?: ProcessRunningStateOptions): boolean
+  resume(process: AnyProcess, options?: ProcessRunningStateOptions): boolean
+  killProcess(process: AnyProcess, options?: ProcessRunningStateOptions): void
   getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
+  getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null
 
   /** @throws */
   sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
@@ -93,7 +120,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
         const dependency = process.getDependentData(SharedMemory)
         if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
           PrimitiveLogger.fatal(`ProcessManager.run failed: no dependent data for: ${process.processType}`)  // FixMe: エラー処理 // 親processが停止していることがある
-          return
+          return // TODO: suspendする
         }
 
         const processMemory = process.run(dependency)
@@ -156,15 +183,15 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
   },
 
-  suspend(process: AnyProcess): boolean {
+  suspend(process: AnyProcess, options?: ProcessRunningStateOptions): boolean {
     return processStore.suspend(process.processId)
   },
 
-  resume(process: AnyProcess): boolean {
+  resume(process: AnyProcess, options?: ProcessRunningStateOptions): boolean {
     return processStore.resume(process.processId)
   },
 
-  killProcess(process: AnyProcess): void {
+  killProcess(process: AnyProcess, options?: ProcessRunningStateOptions): void {
     if (process.willTerminate != null) {
       process.willTerminate()
     }
@@ -194,6 +221,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
         ...this.getProcessRunningState(process.processId),
       }
     })
+  },
+
+  getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null {
+    return processStore.getDependingProcessGraphRecursively(processId)
   },
 
   /** @throws */

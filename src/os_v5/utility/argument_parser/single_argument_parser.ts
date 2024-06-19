@@ -2,7 +2,7 @@ export type ArgumentKey = string | number
 type Key = ArgumentKey
 
 export type ArgumentParserOptions = {
-  readonly errorMessage?: (rawArgument: string, error: string) => string
+  readonly missingArgumentErrorMessage?: string
 }
 
 
@@ -18,6 +18,9 @@ export abstract class SingleArgumentParser<Options, Value> {
   public abstract parse(options?: Options): Value
 
   protected missingArgumentErrorMessage(): string {
+    if (this.parseOptions?.missingArgumentErrorMessage != null) {
+      return this.parseOptions.missingArgumentErrorMessage
+    }
     return `Missing ${getKeyName(this.key)} argument`
   }
 }

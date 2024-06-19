@@ -3,6 +3,7 @@ import { AnyProcess, AnyProcessId, Process, ProcessId, ProcessSpecifier } from "
 import { SerializableObject } from "os_v5/utility/types"
 import { ProcessTypes } from "../../process/process_type_map"
 import { ValuedMapMap } from "shared/utility/valued_collection"
+import { DependencyGraphNode, ProcessDependencyGraph } from "./process_dependency_graph"
 
 type ProcessIdentifier = string
 
@@ -18,7 +19,7 @@ export class ProcessStore {
   private readonly processList: AnyProcess[] = []
 
   /// 依存関係を保存
-  // private readonly dependencyGraph =
+  private readonly dependencyGraph = new ProcessDependencyGraph()
 
   private suspendedProcessIds: AnyProcessId[] = []
 
@@ -28,7 +29,7 @@ export class ProcessStore {
     this.processList.push(process)
     this.processMap.set(process.processId, process)
     this.processIdentifierMap.getValueFor(process.processType).set(process.identifier, process)
-
+    this.dependencyGraph.add(process)
   }
 
   public remove(process: AnyProcess): void {
@@ -56,7 +57,7 @@ export class ProcessStore {
       this.suspendedProcessIds.splice(suspendIndex, 1)
     }
 
-    // TODO: 依存関係の解決をする
+    this.dependencyGraph.remove(process)
   }
 
   public suspend(processId: AnyProcessId): boolean {
@@ -69,6 +70,7 @@ export class ProcessStore {
       return false
     }
     this.suspendedProcessIds.push(processId)
+
     return true
   }
 
@@ -79,6 +81,7 @@ export class ProcessStore {
       return false
     }
     this.suspendedProcessIds.splice(index, 1)
+
     return true
   }
 
@@ -119,6 +122,10 @@ export class ProcessStore {
 
   public getSuspendedProcessIds(): AnyProcessId[] {
     return [...this.suspendedProcessIds]
+  }
+
+  public getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null {
+    return this.dependencyGraph.getDependingProcessGraphRecursively(processId)
   }
 
   // Private API
