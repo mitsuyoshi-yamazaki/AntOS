@@ -1,11 +1,15 @@
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
-import { Process, ProcessId } from "os_v5/process/process"
+import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "os_v5/utility/types"
+import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
+import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
+import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
+import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 
 type ProcessType = string
 
@@ -30,12 +34,9 @@ export const LaunchCommand: Command = {
 }
 
 
-// TODO: argument parserはOS向けに拡張可能な（任意のゲームオブジェクトをパースするような）もの + キーワード引数と配列を同時にパースできるものを作成する
-
-
 // Process Launcher
-type ProcessConstructor = <D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
-type ConstructorMaker = (args: string[]) => ProcessConstructor
+type ProcessConstructor = <D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
+type ConstructorMaker = (argumentParser: ArgumentParser) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessType, ConstructorMaker>()
 
@@ -58,17 +59,42 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
     throw `Unregistered process type ${processType}`
   }
 
-  const constructor = constructorMaker(args)
+  const argumentParser = new ArgumentParser(args)
+  const constructor = constructorMaker(argumentParser)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const process = ProcessManager.addProcess<any, any, any, any, any>(constructor)
+  const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
 
-  return `Launched [${process.processId}] ${processType} ${process.shortDescription()}`
+  return `Launched [${process.processId}] ${processType} ${process.staticDescription()}`
 }
 
 
 // Process Registration
-registerProcess("TestProcess", () => {
+registerProcess("TestProcess", (argumentParser) => {
+  const identifier = argumentParser.string(0).parse()
+
   return ((processId: TestProcessId): TestProcess => {
-    return TestProcess.create(processId)
+    return TestProcess.create(processId, identifier)
   }) as ProcessConstructor
 })
+
+registerProcess("V3BridgeSpawnRequestProcess", () => {
+  return ((processId: V3BridgeSpawnRequestProcessId): V3BridgeSpawnRequestProcess => {
+    return V3BridgeSpawnRequestProcess.create(processId)
+  }) as ProcessConstructor
+})
+
+registerProcess("RoomPathfindingProcess", () => {
+  return ((processId: RoomPathfindingProcessId): RoomPathfindingProcess => {
+    return RoomPathfindingProcess.create(processId)
+  }) as ProcessConstructor
+})
+
+registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
+  const roomName = argumentParser.roomName("room_name").parse({my: false, allowClosedRoom: false})
+  const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
+
+  return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
+    return EnergyHarvestRoomProcess.create(processId, roomName, parentRoomName)
+  }) as ProcessConstructor
+})
+

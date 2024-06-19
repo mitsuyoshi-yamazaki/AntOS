@@ -1,4 +1,5 @@
 import { SerializableObject } from "os_v5/utility/types"
+import { ProcessTypes } from "./process_type_map"
 
 /**
 # Process
@@ -19,21 +20,20 @@ declare namespace Tag {
     private [OpaqueTagSymbol]: T
   }
 }
-export type ProcessId<D, I, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
+export type ProcessId<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
 
 
 // ---- Process ---- //
 export type ProcessSpecifier = {
-  readonly processType: string
-  readonly processSpecifier: string
+  readonly processType: ProcessTypes
+  readonly identifier: string
 }
 export type ProcessDependencies = {
-  readonly driverNames: string[]
   readonly processes: ProcessSpecifier[]
 }
 
 export type ReadonlySharedMemory = {
-  get<T>(processType: string, processSpecifier: string): T | null
+  get<T>(processType: ProcessTypes, identifier: string): T | null
 }
 
 
@@ -41,24 +41,42 @@ export type ReadonlySharedMemory = {
 type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} | {t: any} ? never : S // t, i は ProcessManager が予約済み
 
 
-export interface Process<Dependency, Identifier, ProcessMemory, ProcessState extends SerializableObject, This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>> {
-  readonly processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
-  readonly identifier: Identifier
-  readonly dependencies: ProcessDependencies
+export abstract class Process<
+    Dependency,
+    Identifier extends string,
+    ProcessMemory,
+    ProcessState extends SerializableObject,
+    This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  > {
 
-  encode(): RestrictedProcessState<ProcessState>
+  readonly abstract processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  readonly abstract identifier: Identifier
+  readonly abstract dependencies: ProcessDependencies // 依存先指定をインスタンスメンバに入れることで、インスタンスごとに依存先を変更できる
 
-  getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
+  abstract encode(): RestrictedProcessState<ProcessState>
 
-  staticDescription(): string
-  runtimeDescription(dependency: Dependency): string
+  abstract getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
 
-  run(dependency: Dependency): ProcessMemory
+  abstract staticDescription(): string
+  abstract runtimeDescription(dependency: Dependency): string
+
+  didLaunch?(): void      /// 起動完了
+  willTerminate?(): void  /// 停止
+  abstract run(dependency: Dependency): ProcessMemory
+  runAfterTick?(dependency: Dependency): void
+
+  /** @throws */
+  didReceiveMessage?(args: string[], dependency: Dependency): string
+
+  //
+  public get processType(): ProcessTypes {
+    return this.constructor.name as ProcessTypes
+  }
 }
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, any, any, any, AnyProcess>
+export type AnyProcess = Process<any, string, any, SerializableObject, AnyProcess>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, any, any, any, AnyProcess>
+export type AnyProcessId = ProcessId<any, string, any, SerializableObject, AnyProcess>

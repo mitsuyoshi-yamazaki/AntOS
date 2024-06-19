@@ -11,9 +11,6 @@ export const initializeKernelMemory = (memory: KernelMemory): KernelMemory => {
   if (kernelMemory.systemCall == null) {
     kernelMemory.systemCall = {}
   }
-  if (kernelMemory.driver == null) {
-    kernelMemory.driver = {}
-  }
 
   return kernelMemory
 }

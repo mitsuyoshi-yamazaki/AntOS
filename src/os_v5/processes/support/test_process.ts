@@ -4,39 +4,41 @@ import { shortenedNumber } from "shared/utility/console_utility"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 
 type TestProcessState = {
-  l: Timestamp
+  readonly l: Timestamp
+  readonly id: string
 }
 
 ProcessDecoder.register("TestProcess", (processId: TestProcessId, state: TestProcessState) => TestProcess.decode(processId, state))
 
-export type TestProcessId = ProcessId<void, "Test", void, TestProcessState, TestProcess>
+export type TestProcessId = ProcessId<void, string, void, TestProcessState, TestProcess>
 
 
-export class TestProcess implements Process<void, "Test", void, TestProcessState, TestProcess> {
-  public readonly identifier = "Test"
-  public dependencies: ProcessDependencies = {
-    driverNames: [],
+export class TestProcess extends Process<void, string, void, TestProcessState, TestProcess> {
+  public readonly dependencies: ProcessDependencies = {
     processes: [],
   }
 
   private constructor(
     public readonly processId: TestProcessId,
     public readonly launchTime: Timestamp,
+    public readonly identifier: string,
   ) {
+    super()
   }
 
   public encode(): TestProcessState {
     return {
       l: this.launchTime,
+      id: this.identifier,
     }
   }
 
   public static decode(processId: TestProcessId, state: TestProcessState): TestProcess {
-    return new TestProcess(processId, state.l)
+    return new TestProcess(processId, state.l, state.id)
   }
 
-  public static create(processId: TestProcessId): TestProcess {
-    return new TestProcess(processId, Game.time)
+  public static create(processId: TestProcessId, identifier: string): TestProcess {
+    return new TestProcess(processId, Game.time, identifier)
   }
 
   public getDependentData(): void {}
