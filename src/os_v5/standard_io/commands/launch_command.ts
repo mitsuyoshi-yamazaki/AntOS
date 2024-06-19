@@ -3,7 +3,7 @@ import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "os_v5/utility/types"
-import { ArgumentParser } from "os_v5/utility/argument_parser"
+import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 
 // Processes
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"

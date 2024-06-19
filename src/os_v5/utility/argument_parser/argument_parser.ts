@@ -3,7 +3,7 @@ import { ArgumentKey, ArgumentParserOptions, IntArgument, RoomNameArgument, Stri
 /**
 # ArgumentParser
 ## 要件
-- 配列引数とキーワード引数を
+- 配列引数とキーワード引数をパースする
 
 ## 仕様
 - スペースで区切られた引数のうち、keyとvalueが=で紐づけられているものがキーワード引数
@@ -70,6 +70,12 @@ export class ArgumentParser {
 
   public string(key: ArgumentKey, options?: ArgumentParserOptions): StringArgument {
     return new StringArgument(key, this.getRawValueFor(key), options)
+  }
+
+
+  // ---- List ---- //
+  public list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
+    return IterableArgument.create(key, this.argumentMap.get(key) ?? null, argumentType, options)
   }
 
 
