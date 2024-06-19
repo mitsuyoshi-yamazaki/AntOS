@@ -1,5 +1,6 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { IntArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
+import { IntArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+// import {} from "./list_argument_parser"
 
 /**
 # ArgumentParser
@@ -74,10 +75,16 @@ export class ArgumentParser {
   }
 
 
-  // ---- List ---- //
-  public list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
-    return IterableArgument.create(key, this.argumentMap.get(key) ?? null, argumentType, options)
+  // ---- Typed String ---- //
+  public typedString<T extends string>(key: ArgumentKey, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParserOptions): TypedStringArgument<T> {
+    return new TypedStringArgument(key, this.getRawValueFor(key), typeName, typeGuard, options)
   }
+
+
+  // ---- List ---- //
+  // public list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
+  //   return IterableArgument.create(key, this.argumentMap.get(key) ?? null, argumentType, options)
+  // }
 
 
   // ---- Game Object ---- //

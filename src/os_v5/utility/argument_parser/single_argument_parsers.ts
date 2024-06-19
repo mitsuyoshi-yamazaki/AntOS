@@ -1,6 +1,6 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
-import { ArgumentKey, getKeyName, SingleOptionalArgument } from "./single_argument_parser"
+import { ArgumentKey, ArgumentParserOptions, getKeyName, SingleOptionalArgument } from "./single_argument_parser"
 
 
 // ---- Primitive Type ---- //
@@ -20,6 +20,31 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   public parse(): string {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
+    }
+    return this.value
+  }
+}
+
+
+// ---- Typed String ---- //
+export class TypedStringArgument<T extends string> extends SingleOptionalArgument<void, T> {
+  public constructor(
+    key: ArgumentKey,
+    value: string | null,
+    private readonly typeName: string,
+    private readonly typeGuard: ((arg: string) => arg is T),
+    parseOptions?: ArgumentParserOptions,
+  ) {
+    super(key, value, parseOptions)
+  }
+
+  /** throws */
+  public parse(): T {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    if (!(this.typeGuard(this.value))) {
+      throw `${getKeyName(this.key)} ${this.value} is not ${this.typeName}`
     }
     return this.value
   }
