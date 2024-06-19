@@ -34,9 +34,6 @@ import { DependencyGraphNode } from "./process_dependency_graph"
 export type ProcessRunningState = {
   readonly isRunning: boolean
 }
-export type ProcessRunningStateOptions = {
-  readonly recursive?: boolean  /// pause, resume, kill する際に、依存している process にも同じ操作を適用するかどうか
-}
 
 
 type ProcessManagerMemory = {
@@ -71,9 +68,9 @@ type ProcessManager = {
   addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
-  suspend(process: AnyProcess, options?: ProcessRunningStateOptions): boolean
-  resume(process: AnyProcess, options?: ProcessRunningStateOptions): boolean
-  killProcess(process: AnyProcess, options?: ProcessRunningStateOptions): void
+  suspend(process: AnyProcess): boolean
+  resume(process: AnyProcess): boolean
+  killProcess(process: AnyProcess): void
   getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
@@ -119,8 +116,9 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
         const dependency = process.getDependentData(SharedMemory)
         if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
-          PrimitiveLogger.fatal(`ProcessManager.run failed: no dependent data for: ${process.processType}`)  // FixMe: エラー処理 // 親processが停止していることがある
-          return // TODO: suspendする
+          PrimitiveLogger.log(`ProcessManager.run: no dependent data for: ${process.processType}, suspending`)
+          processStore.setMissingDependency(process.processId)
+          return
         }
 
         const processMemory = process.run(dependency)
@@ -183,15 +181,15 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
   },
 
-  suspend(process: AnyProcess, options?: ProcessRunningStateOptions): boolean {
+  suspend(process: AnyProcess): boolean {
     return processStore.suspend(process.processId)
   },
 
-  resume(process: AnyProcess, options?: ProcessRunningStateOptions): boolean {
+  resume(process: AnyProcess): boolean {
     return processStore.resume(process.processId)
   },
 
-  killProcess(process: AnyProcess, options?: ProcessRunningStateOptions): void {
+  killProcess(process: AnyProcess): void {
     if (process.willTerminate != null) {
       process.willTerminate()
     }

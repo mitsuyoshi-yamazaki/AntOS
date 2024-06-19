@@ -53,14 +53,11 @@ export class ProcessDependencyGraph {
     this.processIdentifierMap.delete(process.processId)
   }
 
-  public getDependingProcessIdsRecursively(processId: AnyProcessId): AnyProcessId[] {
-    const typeIdentifier = this.processIdentifierMap.get(processId)
-    if (typeIdentifier == null) {
-      return []
-    }
-    return [...this.getDependingInfo(typeIdentifier).dependingProcessIds].flatMap(
-      (dependingProcessId): AnyProcessId[] => this.getDependingProcessIdsRecursively(dependingProcessId)
-    )
+  public getDependingProcessIds(processId: AnyProcessId): Set<AnyProcessId> {
+    const result = new Set<AnyProcessId>()
+    this.getDependingProcessIdsRecursively(result, new Set([processId]))
+    result.delete(processId)
+    return result
   }
 
   public getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null {
@@ -85,6 +82,18 @@ export class ProcessDependencyGraph {
   }
 
   // Private
+  private getDependingProcessIdsRecursively(checkedProcessIds: Set<AnyProcessId>, processIdsToCheck: Set<AnyProcessId>): void {
+    processIdsToCheck.forEach(processId => {
+      checkedProcessIds.add(processId)
+      const typeIdentifier = this.processIdentifierMap.get(processId)
+      if (typeIdentifier == null) {
+        return
+      }
+
+      this.getDependingProcessIdsRecursively(checkedProcessIds, this.getDependingInfo(typeIdentifier).dependingProcessIds)
+    })
+  }
+
   private getDependingInfo(typeIdentifier: ProcessTypeIdentifier): DependingInfo {
     const info = this.dependingProcessIds.get(typeIdentifier)
     if (info != null) {
@@ -107,82 +116,3 @@ export class ProcessDependencyGraph {
     return `${processType}[${identifier}]`
   }
 }
-
-// export class ProcessDependencyGraph {
-//   private readonly dependencyGraph = new Map<AnyProcessId, Set<AnyProcessId>>()
-
-//   public add(process: AnyProcess): void {
-//     process.dependencies.processes.forEach(dependency => {
-//       this.getProcessIdSetFor(dependency.processType, dependency.identifier).add(process.processId)
-//     })
-//   }
-
-//   public remove(process: AnyProcess): void {
-//     process.dependencies.processes.forEach(dependency => {
-//       this.getProcessIdSetFor(dependency.processType, dependency.identifier).delete(process.processId)
-//     })
-//   }
-
-//   public getDependingProcessIds(process: AnyProcess): AnyProcessId[] {
-//     return [...this.getProcessIdSet(process.processType, process.identifier)]
-//   }
-
-//   public getDependingGraph(process: AnyProcess): "TODO" {
-//     // process本体が保管されていないと次のdepending processを辿れない
-//     return "TODO"
-//   }
-
-//   private getProcessIdSetFor(processId: AnyProcessId): Set<AnyProcessId> {
-//     const set = this.dependencyGraph.get(processId)
-//     if (set != null) {
-//       return set
-//     }
-
-//     const newSet = new Set<AnyProcessId>()
-//     this.dependencyGraph.set(processId, newSet)
-//     return newSet
-//   }
-// }
-
-// export class ProcessDependencyGraph {
-//   private readonly dependencyGraph = new ValuedMapMap<ProcessTypes, ProcessIdentifier, DependingInfo>()
-
-//   public add(process: AnyProcess): { processIdsToResume: AnyProcessId } {
-//     this.getDependingInfo(process.processType, process.identifier).processId = process.processId
-
-//     process.dependencies.processes.forEach(dependency => {
-//       this.getDependingInfo(dependency.processType, dependency.identifier).dependingProcessIds.add(process.processId)
-//     })
-//   }
-
-//   public remove(process: AnyProcess): void {
-//     process.dependencies.processes.forEach(dependency => {
-//       this.getDependingInfo(dependency.processType, dependency.identifier).dependingProcessIds.delete(process.processId)
-//     })
-
-//     this.getDependingInfo(process.processType, process.identifier).processId = null
-//   }
-
-//   public getDependingProcessIds(process: AnyProcess): AnyProcessId[] {
-//     return [...this.getDependingInfo(process.processType, process.identifier).dependingProcessIds]
-//   }
-
-//   public getDependingGraph(process: AnyProcess): "TODO" {
-//     // process本体が保管されていないと次のdepending processを辿れない
-//     return "TODO"
-//   }
-
-//   private getDependingInfo(processType: ProcessTypes, identifier: ProcessIdentifier): DependingInfo {
-//     const info = this.dependencyGraph.getValueFor(processType).get(identifier)
-//     if (info != null) {
-//       return info
-//     }
-
-//     const newInfo: DependingInfo = {
-//       processId: null,
-//       dependingProcessIds: new Set<AnyProcessId>(),
-//     }
-//     this.dependencyGraph.getValueFor(processType).set(identifier, newInfo)
-//     return newInfo
-//   }
-// }

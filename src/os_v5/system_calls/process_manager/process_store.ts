@@ -21,7 +21,8 @@ export class ProcessStore {
   /// 依存関係を保存
   private readonly dependencyGraph = new ProcessDependencyGraph()
 
-  private suspendedProcessIds: AnyProcessId[] = []
+  private suspendedProcessIds = new Set<AnyProcessId>()
+  private missingDependencyProcessIds = new Set<AnyProcessId>()
 
 
   // Public API
@@ -52,12 +53,11 @@ export class ProcessStore {
       this.programError("remove", `Process ${process.processId} not found in the process identifier map`)
     }
 
-    const suspendIndex = this.suspendedProcessIds.indexOf(process.processId)
-    if (suspendIndex >= 0) {
-      this.suspendedProcessIds.splice(suspendIndex, 1)
-    }
-
+    this.suspendedProcessIds.delete(process.processId)
     this.dependencyGraph.remove(process)
+
+    const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(process.processId)
+    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
   }
 
   public suspend(processId: AnyProcessId): boolean {
@@ -65,22 +65,35 @@ export class ProcessStore {
       this.programError("suspend", `Process ${processId} not found in the process ID map`)
       return false
     }
-    if (this.suspendedProcessIds.includes(processId) === true) {
-      this.programError("suspend", `Process ${processId} is already suspended`)
-      return false
-    }
-    this.suspendedProcessIds.push(processId)
+    this.suspendedProcessIds.add(processId)
+
+    const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(processId)
+    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
 
     return true
   }
 
   public resume(processId: AnyProcessId): boolean {
-    const index = this.suspendedProcessIds.indexOf(processId)
-    if (index < 0) {
-      this.programError("resume", `Process ${processId} is not suspended`)
+    const removeFromSuspendedProcessIds = this.suspendedProcessIds.delete(processId)
+    const removeFromMissingDependencyProcessIds = this.missingDependencyProcessIds.delete(processId) // TODO: 依存先が足りなければProcessManager.runで再度suspendするので、手動でresumeできるようにしている
+    if (removeFromSuspendedProcessIds !== true && removeFromMissingDependencyProcessIds !== true) {
       return false
     }
-    this.suspendedProcessIds.splice(index, 1)
+
+    // TODO: 依存Processがsuspendしていたprocessesをresumeする
+
+    return true
+  }
+
+  public setMissingDependency(processId: AnyProcessId): boolean {
+    if (this.processMap.has(processId) !== true) {
+      this.programError("setMissingDependency", `Process ${processId} not found in the process ID map`)
+      return false
+    }
+    this.missingDependencyProcessIds.add(processId)
+
+    const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(processId)
+    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
 
     return true
   }
@@ -95,7 +108,7 @@ export class ProcessStore {
   }
 
   public isProcessSuspended(processId: AnyProcessId): boolean {
-    return this.suspendedProcessIds.includes(processId)
+    return this.suspendedProcessIds.has(processId) || this.missingDependencyProcessIds.has(processId)
   }
 
   public checkDependencies(dependentProcesses: ProcessSpecifier[]): { missingDependencies: ProcessSpecifier[] } {
@@ -117,7 +130,7 @@ export class ProcessStore {
   }
 
   public setSuspendedProcessIds(ids: AnyProcessId[]): void {
-    this.suspendedProcessIds = [...ids]
+    this.suspendedProcessIds = new Set(ids)
   }
 
   public getSuspendedProcessIds(): AnyProcessId[] {
