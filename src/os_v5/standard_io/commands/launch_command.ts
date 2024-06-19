@@ -69,9 +69,11 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
 
 
 // Process Registration
-registerProcess("TestProcess", () => {
+registerProcess("TestProcess", (argumentParser) => {
+  const identifier = argumentParser.string(0).parse()
+
   return ((processId: TestProcessId): TestProcess => {
-    return TestProcess.create(processId)
+    return TestProcess.create(processId, identifier)
   }) as ProcessConstructor
 })
 
