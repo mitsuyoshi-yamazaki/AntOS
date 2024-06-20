@@ -9,6 +9,8 @@ import { CreepName } from "prototype/creep"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { RoomPathfindingProcessApi } from "../game_object_management/room_pathfinding_process"
 import { positionFromExit } from "shared/utility/room_exit"
+import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
+import { V5Creep } from "os_v5/utility/game_object/creep"
 
 /**
 # EnergyHarvestRoomProcess
@@ -16,15 +18,19 @@ import { positionFromExit } from "shared/utility/room_exit"
 - そのRoomのEnergyを採掘するだけの、Ownedなリモート部屋
  */
 
+type MyCreepMemory = Record<string, never>
+type MyCreep = V5Creep<MyCreepMemory>
+
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
   readonly p: RoomName
 
-  readonly c: CreepName
+  c: CreepName | null
 }
 
 type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessApi, "addSpawnRequest">
   & Pick<RoomPathfindingProcessApi, "exitTo">
+  & CreepDistributorProcessApi
 
 ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState) => EnergyHarvestRoomProcess.decode(processId, state))
 
@@ -37,22 +43,21 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     processes: [
       { processType: "V3BridgeSpawnRequestProcess", identifier: "V3SpawnRequest" },
       { processType: "RoomPathfindingProcess", identifier: "RoomPathFinding" },
+      { processType: "CreepDistributorProcess", identifier: "CreepDistributor" },
     ],
   }
 
   private readonly codename: string
-  private readonly creepName: CreepName
 
   private constructor(
     public readonly processId: EnergyHarvestRoomProcessId,
     private readonly roomName: RoomName,
     private readonly parentRoomName: RoomName,
-    creepName: CreepName | null,
+    private creepName: CreepName | null,
   ) {
     super()
     this.identifier = roomName
     this.codename = SystemCalls.uniqueId.generateCodename("V3BridgeSpawnRequestProcess", parseInt(processId, 36))
-    this.creepName = creepName ?? SystemCalls.uniqueName.generate(this.codename)
   }
 
   public encode(): EnergyHarvestRoomProcessState {
@@ -105,9 +110,12 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public run(dependency: EnergyHarvestRoomProcessDependency): void {
-    const creep = Game.creeps[this.creepName]
+    const creep = this.getCreep(dependency)
     if (creep == null) {
-      dependency.addSpawnRequest(new CreepBody([MOVE]), this.parentRoomName, { uniqueCreepName: this.creepName })
+      return
+    }
+
+    if (creep.ticksToLive == null) {  // spawning
       return
     }
 
@@ -136,5 +144,30 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
       return
     }
     }
+  }
+
+  private getCreep(dependency: EnergyHarvestRoomProcessDependency): MyCreep | null {
+    if (this.creepName == null) {
+      const creeps = dependency.getCreepsFor<MyCreepMemory>(this.processId)
+      if (creeps[0] != null) {
+        return creeps[0]
+      }
+      this.spawnCreep(dependency)
+      return null
+    }
+
+    const creep = Game.creeps[this.creepName]
+    if (creep != null) {
+      return creep as unknown as MyCreep
+    }
+
+    this.creepName = null
+    this.spawnCreep(dependency)
+    return null
+  }
+
+  private spawnCreep(dependency: EnergyHarvestRoomProcessDependency): void {
+    const memory = dependency.createSpawnCreepMemoryFor(this.processId, {})
+    dependency.addSpawnRequest(new CreepBody([MOVE]), this.parentRoomName, { codename: this.codename, memory })
   }
 }

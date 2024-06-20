@@ -1,6 +1,7 @@
-import { Process, ProcessDependencies, ProcessId } from "../../../process/process"
-import { shortenedNumber } from "shared/utility/console_utility"
+import { AnyProcessId, Process, ProcessDependencies, ProcessId } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
+import { V5Creep } from "os_v5/utility/game_object/creep"
+import { EmptySerializable } from "os_v5/utility/types"
 
 /**
 #
@@ -17,19 +18,24 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 - 入れ子の子タスクはserializeしたままで、遷移時にdeserializeすればdeserialize時間を短縮できないか
  */
 
-ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId, state: CreepTaskStateManagementProcessState) => CreepTaskStateManagementProcess.decode(processId, state))
+ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId) => CreepTaskStateManagementProcess.decode(processId))
 
+type V5StateTaskCreepMemory = {
+  //
+}
+export type V5StateTaskCreep = V5Creep<V5StateTaskCreepMemory> & {
+  //
+}
 
 export type CreepTaskStateManagementProcessApi = {
+  getStandByCreepsFor(processId: AnyProcessId): V5StateTaskCreep[]
+  getCreepsFor(processId: AnyProcessId): V5StateTaskCreep[]
 }
 
-type CreepTaskStateManagementProcessState = {
-}
-
-export type CreepTaskStateManagementProcessId = ProcessId<void, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, CreepTaskStateManagementProcessState, CreepTaskStateManagementProcess>
+export type CreepTaskStateManagementProcessId = ProcessId<void, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
 
 
-export class CreepTaskStateManagementProcess extends Process<void, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, CreepTaskStateManagementProcessState, CreepTaskStateManagementProcess> {
+export class CreepTaskStateManagementProcess extends Process<void, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess> {
   public readonly identifier = "CreepTaskStateManagement"
   public readonly dependencies: ProcessDependencies = {
     processes: [],
@@ -41,23 +47,22 @@ export class CreepTaskStateManagementProcess extends Process<void, "CreepTaskSta
     super()
   }
 
-  public encode(): CreepTaskStateManagementProcessState {
-    return {
-    }
+  public encode(): EmptySerializable {
+    return {}
   }
 
-  public static decode(processId: CreepTaskStateManagementProcessId, state: CreepTaskStateManagementProcessState): CreepTaskStateManagementProcess {
+  public static decode(processId: CreepTaskStateManagementProcessId): CreepTaskStateManagementProcess {
     return new CreepTaskStateManagementProcess(processId)
   }
 
-  public static create(processId: CreepTaskStateManagementProcessId, identifier: string): CreepTaskStateManagementProcess {
+  public static create(processId: CreepTaskStateManagementProcessId): CreepTaskStateManagementProcess {
     return new CreepTaskStateManagementProcess(processId)
   }
 
   public getDependentData(): void { }
 
   public staticDescription(): string {
-    return `launched at ${this.launchTime} (${shortenedNumber(Game.time - this.launchTime)})`
+    return "TODO"
   }
 
   public runtimeDescription(): string {
@@ -66,6 +71,8 @@ export class CreepTaskStateManagementProcess extends Process<void, "CreepTaskSta
 
   public run(): CreepTaskStateManagementProcessApi {
     return {
+      getStandByCreepsFor: (processId: AnyProcessId): V5StateTaskCreep[] => [], // TODO:
+      getCreepsFor: (processId: AnyProcessId): V5StateTaskCreep[] => [], // TODO:
     }
   }
 

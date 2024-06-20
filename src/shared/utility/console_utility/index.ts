@@ -16,7 +16,8 @@ const textColors: { [index in TextColor]: string } = {
 
 type Tab = number
 export const TabSize = {
-  veryLarge: 50,
+  veryVeryLarge: 50,
+  veryLarge: 40,
   large: 30,
   medium: 20,
   small: 10,

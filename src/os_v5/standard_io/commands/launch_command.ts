@@ -11,7 +11,8 @@ import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../proc
 
 // Game Object Management
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
-// import {  } from "../../processes/game_object_management/creep/creep_task_state_management_process"
+import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
+import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
 
 // Temporary
 import { TestProcess, TestProcessId } from "../../processes/support/test_process"
@@ -105,6 +106,18 @@ registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
 
   return ((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
     return EnergyHarvestRoomProcess.create(processId, roomName, parentRoomName)
+  }) as ProcessConstructor
+})
+
+registerProcess("CreepTaskStateManagementProcess", () => {
+  return ((processId: CreepTaskStateManagementProcessId): CreepTaskStateManagementProcess => {
+    return CreepTaskStateManagementProcess.create(processId)
+  }) as ProcessConstructor
+})
+
+registerProcess("CreepDistributorProcess", () => {
+  return ((processId: CreepDistributorProcessId): CreepDistributorProcess => {
+    return CreepDistributorProcess.create(processId)
   }) as ProcessConstructor
 })
 

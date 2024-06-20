@@ -18,5 +18,5 @@ export const processDescription = (processRunningState: { process: AnyProcess } 
 const tab = ConsoleUtility.tab
 const TabSize = ConsoleUtility.TabSize
 export const alignedProcessInfo = (processId: string, processType: string, identifier: string, runningState: string, description: string): string => {
-  return `${tab(processId, TabSize.small)}${tab(processType, TabSize.large)}${tab(identifier, TabSize.medium)}${tab(runningState, TabSize.medium)}${description}`
+  return `${tab(processId, TabSize.small)}${tab(processType, TabSize.veryLarge)}${tab(identifier, TabSize.large)}${tab(runningState, TabSize.medium)}${description}`
 }
