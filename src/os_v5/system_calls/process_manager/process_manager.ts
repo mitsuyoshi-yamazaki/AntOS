@@ -65,19 +65,19 @@ const processStore = new ProcessStore()
 
 
 type ProcessManager = {
-  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
-  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
+  addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
+  getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
   suspend(process: AnyProcess): boolean
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
-  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
+  getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
   getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null
 
   /** @throws */
-  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
 }
 
 
@@ -108,7 +108,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   run(): void {
     const processRunAfterTicks: (() => void)[] = []
 
-    processStore.listProcesses().forEach(<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
+    processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
         const runningState = this.getProcessRunningState(process.processId)
         if (runningState.isRunning !== true) {
@@ -138,7 +138,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
   // ProcessManager
   /** @throws */
-  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
+  addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     // 依存先含めて作成する場合も静的に制約できないため例外を送出するのは変わらない
     // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
     // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
@@ -172,7 +172,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     return process
   },
 
-  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+  getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return processStore.getProcessById(processId)
   },
 
@@ -198,7 +198,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processStore.remove(process)
   },
 
-  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
+  getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
     return ErrorMapper.wrapLoop((): string | null => {
       const dependency = process.getDependentData(SharedMemory)
       if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
@@ -227,7 +227,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   /** @throws */
-  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string {
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string {
     if (process.didReceiveMessage == null) {
       throw `${process.processType}[${process.identifier}] won't receive message`
     }
@@ -242,7 +242,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 }
 
 
-const createNewProcessId = <D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
+const createNewProcessId = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
   return UniqueId.generate() as ProcessId<D, I, M, S, P>
 }
 

@@ -20,7 +20,7 @@ declare namespace Tag {
     private [OpaqueTagSymbol]: T
   }
 }
-export type ProcessId<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
+export type ProcessId<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>> = string & Tag.OpaqueTag<P>
 
 
 // ---- Process ---- //
@@ -33,7 +33,7 @@ export type ProcessDependencies = {
 }
 
 export type ReadonlySharedMemory = {
-  get<T>(processType: ProcessTypes, identifier: string): T | null
+  get<T extends Record<string, unknown>>(processType: ProcessTypes, identifier: string): T | null
 }
 
 
@@ -42,7 +42,7 @@ type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} |
 
 
 export abstract class Process<
-    Dependency,
+    Dependency extends Record<string, unknown> | void,
     Identifier extends string,
     ProcessMemory,
     ProcessState extends SerializableObject,
@@ -68,9 +68,50 @@ export abstract class Process<
   /** @throws */
   didReceiveMessage?(args: string[], dependency: Dependency): string
 
-  //
+
+  // Implementation
   public get processType(): ProcessTypes {
     return this.constructor.name as ProcessTypes
+  }
+
+  protected getFlatDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
+    let dependency: Partial<Dependency> = {}
+
+    for (const processSpecifier of this.dependencies.processes) {
+      const dependentApi = sharedMemory.get(processSpecifier.processType, processSpecifier.identifier)
+      if (dependentApi == null) {
+        return null
+      }
+      dependency = {
+        ...dependency,
+        ...dependentApi,
+      }
+    }
+    return dependency as Dependency
+  }
+
+  protected getNestedDependentData<T extends ProcessTypes, D extends { [K in T]: { [I: string]: unknown } }>(sharedMemory: ReadonlySharedMemory): D | null {
+    const dependency: { [K in ProcessTypes]?: { [I: string]: unknown } } = {}
+
+    for (const processSpecifier of this.dependencies.processes) {
+      const dependentApi = sharedMemory.get(processSpecifier.processType, processSpecifier.identifier)
+      if (dependentApi == null) {
+        return null
+      }
+      const processTypeMap = ((): { [I: string]: unknown } => {
+        const stored = dependency[processSpecifier.processType]
+        if (stored != null) {
+          return stored
+        }
+
+        const newMap: { [I: string]: unknown } = {}
+        dependency[processSpecifier.processType] = newMap
+        return newMap
+      })()
+
+      processTypeMap[processSpecifier.identifier] = processTypeMap
+    }
+    return dependency as D
   }
 }
 

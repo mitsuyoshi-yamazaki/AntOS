@@ -72,15 +72,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): EnergyHarvestRoomProcessDependency | null {
-    const spawnRequestApi: V3BridgeSpawnRequestProcessApi | null = sharedMemory.get("V3BridgeSpawnRequestProcess", "V3SpawnRequest")
-    const pathfindingApi: RoomPathfindingProcessApi | null = sharedMemory.get("RoomPathfindingProcess", "RoomPathFinding")
-    if (spawnRequestApi == null || pathfindingApi == null) {
-      return null
-    }
-    return {
-      ...spawnRequestApi,
-      ...pathfindingApi,
-    }
+    return this.getFlatDependentData(sharedMemory)
   }
 
   public staticDescription(): string {

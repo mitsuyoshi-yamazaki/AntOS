@@ -45,7 +45,7 @@ export const LaunchCommand: Command = {
 
 
 // Process Launcher
-type ProcessConstructor = <D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
+type ProcessConstructor = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
 type ConstructorMaker = (argumentParser: ArgumentParser) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessType, ConstructorMaker>()
