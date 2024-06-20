@@ -21,13 +21,13 @@ type SpawnRequest = {
     readonly memory?: SerializableObject
   }
 }
-export type V3BridgeSpawnRequestProcessAPI = {
+export type V3BridgeSpawnRequestProcessApi = {
   addSpawnRequest(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: SerializableObject }): void
 }
-export type V3BridgeSpawnRequestProcessId = ProcessId<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess>
+export type V3BridgeSpawnRequestProcessId = ProcessId<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
 
 
-export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessAPI, EmptySerializable, V3BridgeSpawnRequestProcess> {
+export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess> {
   public readonly identifier = "V3SpawnRequest"
   public readonly dependencies: ProcessDependencies = {
     processes: [],
@@ -63,7 +63,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest",
     return this.staticDescription()
   }
 
-  public run(): V3BridgeSpawnRequestProcessAPI {
+  public run(): V3BridgeSpawnRequestProcessApi {
     this.spawnRequests = []
 
     return {

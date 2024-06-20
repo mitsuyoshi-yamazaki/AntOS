@@ -6,6 +6,7 @@ export const processTypeDecodingMap = {
   b: "EnergyHarvestRoomProcess",
   c: "V3BridgeSpawnRequestProcess",
   d: "RoomPathfindingProcess",
+  e: "CreepTaskStateManagementProcess",
 } as const
 
 
@@ -20,6 +21,7 @@ const processDependencyOrder: ProcessTypes[] = [
   "TestProcess",
   "V3BridgeSpawnRequestProcess",
   "RoomPathfindingProcess",
+  "CreepTaskStateManagementProcess",
 
   // Has dependencies
   "EnergyHarvestRoomProcess",

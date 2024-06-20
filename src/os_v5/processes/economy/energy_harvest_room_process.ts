@@ -2,13 +2,19 @@ import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from ".
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import { V3BridgeSpawnRequestProcessAPI } from "../v3_os_bridge/v3_bridge_spawn_request_process"
+import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepName } from "prototype/creep"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
-import { RoomPathfindingProcessAPI } from "../game_object_management/room_pathfinding_process"
+import { RoomPathfindingProcessApi } from "../game_object_management/room_pathfinding_process"
 import { positionFromExit } from "shared/utility/room_exit"
+
+/**
+# EnergyHarvestRoomProcess
+## 概要
+- そのRoomのEnergyを採掘するだけの、Ownedなリモート部屋
+ */
 
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
@@ -17,8 +23,8 @@ type EnergyHarvestRoomProcessState = {
   readonly c: CreepName
 }
 
-type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessAPI, "addSpawnRequest">
-  & Pick<RoomPathfindingProcessAPI, "exitTo">
+type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessApi, "addSpawnRequest">
+  & Pick<RoomPathfindingProcessApi, "exitTo">
 
 ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState) => EnergyHarvestRoomProcess.decode(processId, state))
 
@@ -66,8 +72,8 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): EnergyHarvestRoomProcessDependency | null {
-    const spawnRequestApi: V3BridgeSpawnRequestProcessAPI | null = sharedMemory.get("V3BridgeSpawnRequestProcess", "V3SpawnRequest")
-    const pathfindingApi: RoomPathfindingProcessAPI | null = sharedMemory.get("RoomPathfindingProcess", "RoomPathFinding")
+    const spawnRequestApi: V3BridgeSpawnRequestProcessApi | null = sharedMemory.get("V3BridgeSpawnRequestProcess", "V3SpawnRequest")
+    const pathfindingApi: RoomPathfindingProcessApi | null = sharedMemory.get("RoomPathfindingProcess", "RoomPathFinding")
     if (spawnRequestApi == null || pathfindingApi == null) {
       return null
     }
