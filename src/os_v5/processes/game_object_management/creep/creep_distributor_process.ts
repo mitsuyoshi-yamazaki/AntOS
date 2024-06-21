@@ -1,8 +1,11 @@
 import { AnyProcessId, Process, ProcessDependencies, ProcessId } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { AnyV5Creep, ExtendedV5CreepMemory, isV5Creep, V5Creep, V5CreepMemory } from "os_v5/utility/game_object/creep"
+import { AnyV5Creep, AnyV5CreepMemory, ExtendedV5CreepMemory, isV5Creep, isV5CreepMemory, V5Creep, V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
+import { CreepName } from "prototype/creep"
+import { strictEntries } from "shared/utility/strict_entries"
+import { Mutable } from "shared/utility/types"
 
 /**
 #
@@ -21,6 +24,8 @@ ProcessDecoder.register("CreepDistributorProcess", (processId: CreepDistributorP
 
 export type CreepDistributorProcessApi = {
   getCreepsFor<M extends SerializableObject>(processId: AnyProcessId): V5Creep<M>[]
+  getDeadCreepsFor(processId: AnyProcessId): CreepName[]
+  getDeadCreeps(): CreepName[]
   getUnallocatedCreeps(): AnyV5Creep[]
   createSpawnCreepMemoryFor<M extends SerializableObject>(processId: AnyProcessId, memory: ExtendedV5CreepMemory<M>): V5CreepMemory<M>
 }
@@ -36,6 +41,7 @@ export class CreepDistributorProcess extends Process<void, "CreepDistributor", C
   }
 
   private readonly v5Creeps = new ValuedArrayMap<AnyProcessId | null, AnyV5Creep>()
+  private readonly deadCreepNames = new ValuedArrayMap<AnyProcessId | null, CreepName>()
 
   private constructor(
     public readonly processId: CreepDistributorProcessId,
@@ -69,17 +75,34 @@ export class CreepDistributorProcess extends Process<void, "CreepDistributor", C
 
   public run(): CreepDistributorProcessApi {
     this.v5Creeps.clear()
-    Object.values(Game.creeps).forEach(creep => {
-      if (!isV5Creep(creep)) {
+    this.deadCreepNames.clear()
+
+    ;
+    (strictEntries(Memory.creeps) as [string, CreepMemory][]).forEach(([creepName, creepMemory]) => {
+      if (!isV5CreepMemory(creepMemory)) {
         return
       }
-      const v5Creep: AnyV5Creep = creep
+      const v5CreepMemory: AnyV5CreepMemory = creepMemory
+      const v5Creep = Game.creeps[creepName] as AnyV5Creep | undefined
+      if (v5Creep == null) {
+        this.deadCreepNames.getValueFor(v5CreepMemory.p).push(creepName)
+        return
+      }
+      (v5Creep as Mutable<AnyV5Creep>).executedActions = new Set()
       this.v5Creeps.getValueFor(v5Creep.memory.p).push(v5Creep)
     })
 
     return {
       getCreepsFor: <M extends SerializableObject>(processId: AnyProcessId): V5Creep<M>[] => {
         return [...this.v5Creeps.getValueFor(processId)] as V5Creep<M>[]
+      },
+
+      getDeadCreepsFor: (processId: AnyProcessId): CreepName[] => {
+        return [...this.deadCreepNames.getValueFor(processId)]
+      },
+
+      getDeadCreeps: (): CreepName[] => {
+        return [...this.deadCreepNames.values()].flatMap(x => x)
       },
 
       getUnallocatedCreeps: (): AnyV5Creep[] => {
