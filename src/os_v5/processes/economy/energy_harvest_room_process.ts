@@ -5,12 +5,12 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { CreepName } from "prototype/creep"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { RoomPathfindingProcessApi } from "../game_object_management/room_pathfinding_process"
-import { positionFromExit } from "shared/utility/room_exit"
 import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
 import { V5Creep } from "os_v5/utility/game_object/creep"
+import { CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "../game_object_management/creep/creep_task_state_management_process"
+import { CreepTask } from "../game_object_management/creep/creep_task/creep_task"
 
 /**
 # EnergyHarvestRoomProcess
@@ -24,13 +24,12 @@ type MyCreep = V5Creep<MyCreepMemory>
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
   readonly p: RoomName
-
-  c: CreepName | null
 }
 
 type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessApi, "addSpawnRequest">
   & Pick<RoomPathfindingProcessApi, "exitTo">
   & CreepDistributorProcessApi
+  & CreepTaskStateManagementProcessApi
 
 ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState) => EnergyHarvestRoomProcess.decode(processId, state))
 
@@ -44,6 +43,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
       { processType: "V3BridgeSpawnRequestProcess", identifier: "V3SpawnRequest" },
       { processType: "RoomPathfindingProcess", identifier: "RoomPathFinding" },
       { processType: "CreepDistributorProcess", identifier: "CreepDistributor" },
+      { processType: "CreepTaskStateManagementProcess", identifier: "CreepTaskStateManagement" },
     ],
   }
 
@@ -53,7 +53,6 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     public readonly processId: EnergyHarvestRoomProcessId,
     private readonly roomName: RoomName,
     private readonly parentRoomName: RoomName,
-    private creepName: CreepName | null,
   ) {
     super()
     this.identifier = roomName
@@ -64,16 +63,15 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     return {
       r: this.roomName,
       p: this.parentRoomName,
-      c: this.creepName,
     }
   }
 
   public static decode(processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState): EnergyHarvestRoomProcess {
-    return new EnergyHarvestRoomProcess(processId, state.r, state.p, state.c)
+    return new EnergyHarvestRoomProcess(processId, state.r, state.p)
   }
 
   public static create(processId: EnergyHarvestRoomProcessId, roomName: RoomName, parentRoomName: RoomName): EnergyHarvestRoomProcess {
-    return new EnergyHarvestRoomProcess(processId, roomName, parentRoomName, null)
+    return new EnergyHarvestRoomProcess(processId, roomName, parentRoomName)
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): EnergyHarvestRoomProcessDependency | null {
@@ -84,8 +82,18 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     return `${ConsoleUtility.roomLink(this.parentRoomName)} => ${ConsoleUtility.roomLink(this.roomName)}`
   }
 
-  public runtimeDescription(): string {
-    return this.staticDescription()
+  public runtimeDescription(dependency: EnergyHarvestRoomProcessDependency): string {
+    const creeps = dependency.getCreepsFor(this.processId)
+    const descriptions: string[] = [
+      this.staticDescription(),
+      `${creeps.length} creeps`,
+    ]
+
+    if (creeps.length <= 1 && creeps[0] != null) {
+      descriptions.push(`at ${creeps[0].pos}`)
+    }
+
+    return descriptions.join(", ")
   }
 
   /** @throws */
@@ -110,64 +118,39 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   public run(dependency: EnergyHarvestRoomProcessDependency): void {
-    const creep = this.getCreep(dependency)
-    if (creep == null) {
+    const creeps = dependency.getCreepsFor(this.processId)
+    if (creeps.length <= 0) {
+      this.spawnCreep(dependency)
       return
     }
 
-    if (creep.ticksToLive == null) {  // spawning
-      return
-    }
-
-    if (creep.room.name === this.roomName) {
-      creep.say("Yo")
-      return
-    }
-
-    const result = dependency.exitTo(this.roomName, creep.room.name)
-    switch (result.case) {
-    case "succeeded": {
-      const exitPosition = positionFromExit(result.value)
-      creep.say("Hey")
-      creep.moveTo(exitPosition.x, exitPosition.y)
-      return
-    }
-
-    case "failed":
-      creep.say("Omg")
-      creep.suicide()
-      return
-
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = result
-      return
-    }
-    }
+    const creepsWithTask = dependency.registerTaskDrivenCreeps(creeps)
+    creepsWithTask.forEach(creep => {
+      if (creep.task == null) {
+        creep.say("assign")
+        creep.task = this.taskFor(creep)
+      } else {
+        creep.say("🚶")
+      }
+    })
   }
 
-  private getCreep(dependency: EnergyHarvestRoomProcessDependency): MyCreep | null {
-    if (this.creepName == null) {
-      const creeps = dependency.getCreepsFor<MyCreepMemory>(this.processId)
-      if (creeps[0] != null) {
-        return creeps[0]
-      }
-      this.spawnCreep(dependency)
+  private taskFor(creep: TaskDrivenCreep): CreepTask.AnyTask | null {
+    const source = creep.room.find(FIND_SOURCES_ACTIVE)[0]
+    if (source == null) {
+      creep.say("meh")
       return null
     }
 
-    const creep = Game.creeps[this.creepName]
-    if (creep != null) {
-      return creep as unknown as MyCreep
-    }
-
-    this.creepName = null
-    this.spawnCreep(dependency)
-    return null
+    const tasks: CreepTask.AnyTask[] = [
+      CreepTask.Tasks.MoveTo.create(source.pos),
+      CreepTask.Tasks.HarvestEnergy.create(source.id),
+    ]
+    return CreepTask.Tasks.Sequential.create(tasks)
   }
 
   private spawnCreep(dependency: EnergyHarvestRoomProcessDependency): void {
     const memory = dependency.createSpawnCreepMemoryFor(this.processId, {})
-    dependency.addSpawnRequest(new CreepBody([MOVE]), this.parentRoomName, { codename: this.codename, memory })
+    dependency.addSpawnRequest(new CreepBody([MOVE, WORK, CARRY]), this.parentRoomName, { codename: this.codename, memory })
   }
 }

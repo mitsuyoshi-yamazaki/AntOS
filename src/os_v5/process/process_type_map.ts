@@ -23,9 +23,9 @@ const processDependencyOrder: ProcessTypes[] = [
   "V3BridgeSpawnRequestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
-  "CreepTaskStateManagementProcess",
 
   // Driver with dependencies
+  "CreepTaskStateManagementProcess",
 
   // Application process with dependencies
   "EnergyHarvestRoomProcess",
