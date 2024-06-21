@@ -11,3 +11,7 @@ export type IsUnion<T, U = T> = T extends any
   : never
 
 export type NotUnion<T> = IsUnion<T> extends true ? never : T
+
+export const isIntersected = <T>(lhs: Set<T>, rhs: Set<T>): boolean => {
+  return Array.from(lhs.values()).some(lValue => rhs.has(lValue))
+}
