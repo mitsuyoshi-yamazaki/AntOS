@@ -130,7 +130,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
           processRunAfterTicks.push((() => process.runAfterTick!(dependency)))
         }
 
-      }, `ProcessManager.run(${process.processType})`)()
+      }, `ProcessManager.run(${process.processType}) [${process.processId}]`)()
     })
 
     processRunAfterTicks.forEach(runAfterTick => runAfterTick())
