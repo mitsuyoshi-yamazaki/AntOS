@@ -76,8 +76,8 @@ export class ArgumentParser {
 
 
   // ---- Typed String ---- //
-  public typedString<T extends string>(key: ArgumentKey, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParserOptions): TypedStringArgument<T> {
-    return new TypedStringArgument(key, this.getRawValueFor(key), typeName, typeGuard, options)
+  public typedString<T extends string>(key: ArgumentKey, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParserOptions & { choices?: Readonly<T[]> }): TypedStringArgument<T> {
+    return new TypedStringArgument(key, this.getRawValueFor(key), typeName, typeGuard, options?.choices ?? null, options)
   }
 
 

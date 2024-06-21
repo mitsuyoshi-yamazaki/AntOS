@@ -33,6 +33,7 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
     value: string | null,
     private readonly typeName: string,
     private readonly typeGuard: ((arg: string) => arg is T),
+    private readonly choises: Readonly<T[]> | null,
     parseOptions?: ArgumentParserOptions,
   ) {
     super(key, value, parseOptions)
@@ -44,7 +45,13 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
       throw this.missingArgumentErrorMessage()
     }
     if (!(this.typeGuard(this.value))) {
-      throw `${getKeyName(this.key)} ${this.value} is not ${this.typeName}`
+      const errorMessages: string[] = [
+        `${getKeyName(this.key)} ${this.value} is not ${this.typeName}`,
+      ]
+      if (this.choises != null) {
+        errorMessages.push(`choices are: [${this.choises}]`)
+      }
+      throw errorMessages.join(", ")
     }
     return this.value
   }
