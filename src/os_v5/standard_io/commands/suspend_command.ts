@@ -1,6 +1,6 @@
-import { AnyProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
 export const SuspendCommand: Command = {
@@ -13,24 +13,20 @@ export const SuspendCommand: Command = {
 
   /** @throws */
   run(args: string[]): string {
-    const processId = args.shift() as AnyProcessId | undefined
-
-    if (processId == null || processId.length <= 0) {
+    const argumentParser = new ArgumentParser(args)
+    if (argumentParser.isEmpty === true) {
       return this.help([])
     }
 
-    const process = ProcessManager.getProcess(processId)
-    if (process == null) {
-      throw `No Process with ID ${processId}`
-    }
+    const process = argumentParser.process(0).parse()
 
     const processDescription = ProcessManager.getRuntimeDescription(process) ?? process.staticDescription()
     const result = ProcessManager.suspend(process)
 
     if (result !== true) {
-      throw `Cannot suspend ${process.processType} ${processId}`
+      throw `Cannot suspend ${process.processType} ${process.processId}`
     }
 
-    return `Suspended ${process.processType} ${processId}: ${processDescription}`
+    return `Suspended ${process.processType} ${process.processId}: ${processDescription}`
   },
 }
