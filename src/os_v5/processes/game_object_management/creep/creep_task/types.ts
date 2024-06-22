@@ -10,6 +10,7 @@ export const taskTypeDecodingMap = {
   c: "Sequential",
   d: "ClaimController",
   e: "TargetRoomObject",
+  f: "MoveToRoom",
 } as const
 
 export type TaskTypeEncodingMap = ReversedMapping<typeof taskTypeDecodingMap>

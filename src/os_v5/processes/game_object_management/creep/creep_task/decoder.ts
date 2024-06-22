@@ -17,6 +17,7 @@ const decoders: { [K in TaskTypes]: (state: SerializableObject) => AnyTask | nul
 
   // Move
   MoveTo: state => Tasks.MoveTo.decode(state as ReturnType<Tasks.MoveTo["encode"]>),
+  MoveToRoom: state => Tasks.MoveToRoom.decode(state as ReturnType<Tasks.MoveToRoom["encode"]>),
 
   // Combined
   Sequential: state => {
