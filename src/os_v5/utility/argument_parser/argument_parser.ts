@@ -13,13 +13,21 @@ import { IntArgument, RoomNameArgument, StringArgument, TypedStringArgument } fr
  */
 
 export class ArgumentParser {
-  private readonly rawArguments: string[] = []
-  private readonly rawKeywordArguments = new Map<string, string>()
+  public readonly isEmpty: boolean
+
+  protected readonly rawArguments: string[] = []
+  protected readonly rawKeywordArguments = new Map<string, string>()
 
   /** @throws */
   public constructor(
     args: string[],
   ) {
+    if (args[0] == null || args[0].length <= 0) {
+      this.isEmpty = true
+    } else {
+      this.isEmpty = false
+    }
+
     let hasKeywordArguments = false
     const errors: string[] = []
 
@@ -57,7 +65,7 @@ export class ArgumentParser {
     }
   }
 
-  private getRawValueFor(key: ArgumentKey): string | null {
+  protected getRawValueFor(key: ArgumentKey): string | null {
     if (typeof key === "string") {
       return this.rawKeywordArguments.get(key) ?? null
     }
