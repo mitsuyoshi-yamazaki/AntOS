@@ -8,7 +8,6 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { RoomPathfindingProcessApi } from "../game_object_management/room_pathfinding_process"
 import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
-import { V5Creep } from "os_v5/utility/game_object/creep"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "../game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "../game_object_management/creep/creep_task/creep_task"
 
@@ -18,8 +17,7 @@ import { CreepTask } from "../game_object_management/creep/creep_task/creep_task
 - そのRoomのEnergyを採掘するだけの、Ownedなリモート部屋
  */
 
-type MyCreepMemory = Record<string, never>
-type MyCreep = V5Creep<MyCreepMemory>
+type CreepRoles = "worker"
 
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
@@ -124,7 +122,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
       return
     }
 
-    const creepsWithTask = dependency.registerTaskDrivenCreeps(creeps)
+    const creepsWithTask = dependency.registerTaskDrivenCreeps<CreepRoles>(creeps)
     creepsWithTask.forEach(creep => {
       if (creep.task == null) {
         creep.say("assign")
@@ -135,7 +133,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     })
   }
 
-  private taskFor(creep: TaskDrivenCreep): CreepTask.AnyTask | null {
+  private taskFor(creep: TaskDrivenCreep<CreepRoles>): CreepTask.AnyTask | null {
     const source = creep.room.find(FIND_SOURCES_ACTIVE)[0]
     if (source == null) {
       creep.say("meh")

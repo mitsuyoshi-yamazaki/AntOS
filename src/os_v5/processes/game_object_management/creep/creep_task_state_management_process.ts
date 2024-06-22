@@ -5,6 +5,7 @@ import { EmptySerializable } from "os_v5/utility/types"
 import { CreepTask } from "./creep_task/creep_task"
 import { CreepName } from "prototype/creep"
 import { CreepDistributorProcessApi } from "./creep_distributor_process"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 /**
 #
@@ -23,16 +24,18 @@ import { CreepDistributorProcessApi } from "./creep_distributor_process"
 
 ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId) => CreepTaskStateManagementProcess.decode(processId))
 
-type TaskDrivenCreepMemory = {
+type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
+  r: Roles
 }
-export type TaskDrivenCreep = V5Creep<TaskDrivenCreepMemory> & {
+export type TaskDrivenCreep<Roles extends string> = V5Creep<TaskDrivenCreepMemory<Roles>> & {
   task: CreepTask.AnyTask | null
 }
+type AnyTaskDrivenCreep = TaskDrivenCreep<string>
 
 
 export type CreepTaskStateManagementProcessApi = {
-  registerTaskDrivenCreeps(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
+  registerTaskDrivenCreeps<Roles extends string>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
 }
 
 export type CreepTaskStateManagementProcessId = ProcessId<Dependency, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
@@ -48,7 +51,7 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, "CreepT
     ],
   }
 
-  private taskDrivenCreeps: TaskDrivenCreep[] = []
+  private taskDrivenCreeps: AnyTaskDrivenCreep[] = []
   private readonly creepTaskCache = new Map<CreepName, CreepTask.AnyTask>()
 
   private constructor(
@@ -93,8 +96,8 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, "CreepT
 
 
     return {
-      registerTaskDrivenCreeps: (creepsToRegister: AnyV5Creep[]): TaskDrivenCreep[] => {
-        const creeps = creepsToRegister as TaskDrivenCreep[]
+      registerTaskDrivenCreeps: <Roles extends string>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles>[] => {
+        const creeps = creepsToRegister as TaskDrivenCreep<Roles>[]
         creeps.forEach(creep => {
           creep.task = this.parseRootTask(creep) // TODO: タスクをキャッシュ
           this.taskDrivenCreeps.push(creep)
@@ -107,23 +110,7 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, "CreepT
 
   public runAfterTick(): void {
     this.taskDrivenCreeps.forEach(creep => {
-      if (creep.task == null) {
-        return
-      }
-      const result = creep.task.run(creep)
-      switch (result) {
-      case "in progress":
-        break
-      case "finished":
-      case "failed":
-        creep.task = null
-        break
-      default: {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const _: never = result
-        break
-      }
-      }
+      this.runCreepTask(creep)
     })
 
     this.taskDrivenCreeps.forEach(creep => {
@@ -135,10 +122,38 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, "CreepT
   }
 
   // Private
-  private parseRootTask(creep: TaskDrivenCreep): CreepTask.AnyTask | null {
+  private runCreepTask(creep: AnyTaskDrivenCreep): void {
+    if (creep.task == null) {
+      return
+    }
+    const task = creep.task
+
+    ErrorMapper.wrapLoop((): void => {
+      const result = task.run(creep)
+      switch (result) {
+      case "in progress":
+        break
+      case "finished":
+      case "failed":
+        creep.task = null
+        break
+      default:
+        creep.task = result
+        if (result.canRun(creep) === true) {
+          this.runCreepTask(creep)
+        }
+        break
+      }
+    }, `CreepTaskStateManagementProcess.runCreepTask(${task.constructor.name}) for creep ${creep.name}`)()
+  }
+
+  private parseRootTask(creep: AnyTaskDrivenCreep): CreepTask.AnyTask | null {
     if (creep.memory.t == null) {
       return null
     }
-    return CreepTask.decode(creep.memory.t)
+    const taskState = creep.memory.t
+    return ErrorMapper.wrapLoop((): CreepTask.AnyTask | null => {
+      return CreepTask.decode(taskState)
+    }, `CreepTaskStateManagementProcess.parseRootTask(${taskState.t}) for creep ${creep.name}`)()
   }
 }
