@@ -7,7 +7,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 
 // ---- Processes ---- //
 // Economy
-import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room_process"
+import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
 
 // Game Object Management
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"

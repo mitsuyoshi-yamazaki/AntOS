@@ -24,7 +24,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId) => CreepTaskStateManagementProcess.decode(processId))
 
-type TaskDrivenCreepMemory<Roles> = {
+export type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
   r: Roles
 }

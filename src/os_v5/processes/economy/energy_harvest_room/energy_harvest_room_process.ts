@@ -1,15 +1,15 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../process/process"
+import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
+import { V3BridgeSpawnRequestProcessApi } from "../../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
-import { RoomPathfindingProcessApi } from "../game_object_management/room_pathfinding_process"
-import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
-import { CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "../game_object_management/creep/creep_task_state_management_process"
-import { CreepTask } from "../game_object_management/creep/creep_task/creep_task"
+import { RoomPathfindingProcessApi } from "../../game_object_management/room_pathfinding_process"
+import { CreepDistributorProcessApi } from "../../game_object_management/creep/creep_distributor_process"
+import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "../../game_object_management/creep/creep_task_state_management_process"
+import { CreepTask } from "../../game_object_management/creep/creep_task/creep_task"
 
 /**
 # EnergyHarvestRoomProcess
@@ -17,7 +17,9 @@ import { CreepTask } from "../game_object_management/creep/creep_task/creep_task
 - そのRoomのEnergyを採掘するだけの、Ownedなリモート部屋
  */
 
-type CreepRoles = "worker"
+type CreepRoles = "worker" | "claimer"
+type MyCreep = TaskDrivenCreep<CreepRoles>
+type MyCreepMemory = TaskDrivenCreepMemory<CreepRoles>
 
 type EnergyHarvestRoomProcessState = {
   readonly r: RoomName
@@ -133,7 +135,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     })
   }
 
-  private taskFor(creep: TaskDrivenCreep<CreepRoles>): CreepTask.AnyTask | null {
+  private taskFor(creep: MyCreep): CreepTask.AnyTask | null {
     const source = creep.room.find(FIND_SOURCES_ACTIVE)[0]
     if (source == null) {
       creep.say("meh")
@@ -148,7 +150,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   }
 
   private spawnCreep(dependency: EnergyHarvestRoomProcessDependency): void {
-    const memory = dependency.createSpawnCreepMemoryFor(this.processId, {})
+    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, {t: null, r: "worker"})
     dependency.addSpawnRequest(new CreepBody([MOVE, WORK, CARRY]), this.parentRoomName, { codename: this.codename, memory })
   }
 }
