@@ -1,3 +1,5 @@
-export * from "./primitive_tasks/move_to_task"
+export * from "./move_tasks/move_to_task"
 export * from "./primitive_tasks/harvest_energy_task"
+export * from "./primitive_tasks/claim_controller_task"
 export * from "./combined_tasks/sequential_task"
+export * from "./wrapper_tasks/target_room_object_task"

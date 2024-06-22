@@ -8,6 +8,8 @@ export const taskTypeDecodingMap = {
   a: "MoveTo",
   b: "HarvestEnergy",
   c: "Sequential",
+  d: "ClaimController",
+  e: "TargetRoomObject",
 } as const
 
 export type TaskTypeEncodingMap = ReversedMapping<typeof taskTypeDecodingMap>
@@ -20,7 +22,7 @@ export type TaskState = SerializableObject & {
   readonly t: SerializedTaskTypes
 }
 
-export type TaskResult = "finished" | "in progress" | "failed"
+export type TaskResult = "finished" | "in progress" | "failed" | AnyTask
 
 
 export abstract class Task<State extends TaskState> {

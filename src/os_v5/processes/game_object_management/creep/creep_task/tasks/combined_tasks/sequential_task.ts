@@ -40,7 +40,8 @@ export class Sequential extends Task<SequentialState> {
       return "finished"
     }
 
-    switch (currentTask.run(creep)) {
+    const result = currentTask.run(creep)
+    switch (result) {
     case "finished":
       break
 
@@ -51,6 +52,10 @@ export class Sequential extends Task<SequentialState> {
       if (this.ignoreFailure !== true) {
         return "failed"
       }
+      break
+
+    default:
+      this.childTasks.unshift(result)
       break
     }
 
