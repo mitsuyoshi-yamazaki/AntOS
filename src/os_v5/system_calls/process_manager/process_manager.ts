@@ -11,6 +11,7 @@ import { ProcessStore } from "./process_store"
 import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
+import { ProcessExecutionLog } from "./process_execution_log"
 
 
 /**
@@ -62,6 +63,7 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
 
 let processManagerMemory: ProcessManagerMemory = {} as ProcessManagerMemory
 const processStore = new ProcessStore()
+const processExecutionLogs: ProcessExecutionLog[] = []
 
 
 type ProcessManager = {
@@ -106,32 +108,59 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   run(): void {
+    const executionLog: Mutable<ProcessExecutionLog> = {
+      time: Game.time,
+      iteratedProcessId: null,
+      iterateFinished: false,
+      errorRaised: new Set(),
+    }
+    processExecutionLogs.unshift(executionLog)
+
     const processRunAfterTicks: (() => void)[] = []
 
     processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
-        const runningState = this.getProcessRunningState(process.processId)
-        if (runningState.isRunning !== true) {
-          return
+        try {
+          executionLog.iteratedProcessId = process.processId
+
+          const runningState = this.getProcessRunningState(process.processId)
+          if (runningState.isRunning !== true) {
+            return
+          }
+
+          const dependency = process.getDependentData(SharedMemory)
+          if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
+            PrimitiveLogger.log(`ProcessManager.run(${processIdentifierText(process)}): no dependent data. Suspending...`)
+            processStore.setMissingDependency(process.processId)
+            return
+          }
+
+          const processMemory = process.run(dependency)
+          SharedMemory.set(process.processType, process.identifier, processMemory)
+
+          if (process.runAfterTick != null) {
+            processRunAfterTicks.push((() => {
+              ErrorMapper.wrapLoop((): void => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                process.runAfterTick!(dependency)
+              }, `ProcessManager.runAfterTick(${processIdentifierText(process)})`)()
+            }))
+          }
+        } catch (error) {
+          executionLog.errorRaised.add(process.processId)
+          if (processExecutionLogs[1]?.errorRaised.has(process.processId) === true) {
+            processStore.suspend(process.processId)
+            PrimitiveLogger.fatal(`ProcessManager.run(${processIdentifierText(process)}): raised error twice. Suspending...`)
+          }
+          throw error
         }
-
-        const dependency = process.getDependentData(SharedMemory)
-        if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
-          PrimitiveLogger.log(`ProcessManager.run: no dependent data for: ${process.processType}, suspending`)
-          processStore.setMissingDependency(process.processId)
-          return
-        }
-
-        const processMemory = process.run(dependency)
-        SharedMemory.set(process.processType, process.identifier, processMemory)
-
-        if (process.runAfterTick != null) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          processRunAfterTicks.push((() => process.runAfterTick!(dependency)))
-        }
-
-      }, `ProcessManager.run(${process.processType}) [${process.processId}]`)()
+      }, `ProcessManager.run(${processIdentifierText(process)})`)()
     })
+
+    executionLog.iterateFinished = true
+    if (processExecutionLogs.length > 2) {
+      processExecutionLogs.splice(2, processExecutionLogs.length - 2)
+    }
 
     processRunAfterTicks.forEach(runAfterTick => runAfterTick())
   },
@@ -280,4 +309,8 @@ const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {
       t: encodedProcessType,
     }]
   })
+}
+
+const processIdentifierText = (process: AnyProcess): string => {
+  return `${process.processType}[${process.identifier}]:${process.processId}`
 }
