@@ -6,6 +6,11 @@ import { SerializableObject } from "os_v5/utility/types"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 
 // ---- Processes ---- //
+// Bot
+import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot_process"
+
+// Application
+
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
 
@@ -121,3 +126,8 @@ registerProcess("CreepDistributorProcess", () => {
   }) as ProcessConstructor
 })
 
+registerProcess("MitsuyoshiBotProcess", () => {
+  return ((processId: MitsuyoshiBotProcessId): MitsuyoshiBotProcess => {
+    return MitsuyoshiBotProcess.create(processId)
+  }) as ProcessConstructor
+})

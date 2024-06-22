@@ -10,11 +10,11 @@ import { Process } from "./process"
  */
 
 export abstract class ApplicationProcess<
-    Dependency,
-    Identifier extends string,
-    ProcessMemory,
-    ProcessState extends SerializableObject,
-    This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  Dependency extends Record<string, unknown> | void,
+  Identifier extends string,
+  ProcessMemory,
+  ProcessState extends SerializableObject,
+  This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
   > extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This> {
 
   abstract readonly version: SemanticVersion

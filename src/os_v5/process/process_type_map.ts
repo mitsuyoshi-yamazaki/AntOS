@@ -8,6 +8,7 @@ export const processTypeDecodingMap = {
   d: "RoomPathfindingProcess",
   e: "CreepTaskStateManagementProcess",
   f: "CreepDistributorProcess",
+  g: "MitsuyoshiBotProcess",
 } as const
 
 
@@ -18,6 +19,11 @@ export type ProcessTypes = keyof typeof processTypeEncodingMap
 
 
 const processDependencyOrder: ProcessTypes[] = [
+  // Bot
+  "MitsuyoshiBotProcess",
+
+  // Application
+
   // No dependencies
   "TestProcess",
   "V3BridgeSpawnRequestProcess",
