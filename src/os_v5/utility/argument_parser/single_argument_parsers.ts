@@ -76,7 +76,7 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
 const parseIntValue = (key: ArgumentKey, value: string, options?: { min?: number, max?: number }): number => {
   const intValue = parseInt(value, 10)
   if (isNaN(intValue) === true) {
-    throw `${value} is not an integer value`
+    throw `"${value}" is not an integer value`
   }
   validateNumberRange(key, intValue, options)
   return intValue

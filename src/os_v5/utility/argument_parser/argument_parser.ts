@@ -1,6 +1,7 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
 import { IntArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
-// import {} from "./list_argument_parser"
+import { IterableArgumentReturnType, IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
+import { NotUnion } from "shared/utility/types"
 
 /**
 # ArgumentParser
@@ -90,9 +91,9 @@ export class ArgumentParser {
 
 
   // ---- List ---- //
-  // public list<T extends IterableArgumentType>(key: string, argumentType: T, options?: ArgumentParsingOptions): IterableArgument<T> {
-  //   return IterableArgument.create(key, this.argumentMap.get(key) ?? null, argumentType, options)
-  // }
+  public list<T extends IterableArgumentType>(key: ArgumentKey, argumentType: T, options?: ArgumentParserOptions): ListArgumentParser<T> {
+    return new ListArgumentParser(key, this.getRawValueFor(key), argumentType, options)
+  }
 
 
   // ---- Game Object ---- //
