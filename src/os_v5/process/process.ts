@@ -74,6 +74,10 @@ export abstract class Process<
     return this.constructor.name as ProcessTypes
   }
 
+  public toString(): string {
+    return `(${this.processId}) ${this.processType}[${this.identifier}]`
+  }
+
   protected getFlatDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
     let dependency: Partial<Dependency> = {}
 

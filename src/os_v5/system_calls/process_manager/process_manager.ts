@@ -130,7 +130,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
           const dependency = process.getDependentData(SharedMemory)
           if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
-            PrimitiveLogger.log(`ProcessManager.run(${processIdentifierText(process)}): no dependent data. Suspending...`)
+            PrimitiveLogger.log(`ProcessManager.run(${process}): no dependent data. Suspending...`)
             processStore.setMissingDependency(process.processId)
             return
           }
@@ -143,18 +143,18 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
               ErrorMapper.wrapLoop((): void => {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 process.runAfterTick!(dependency)
-              }, `ProcessManager.runAfterTick(${processIdentifierText(process)})`)()
+              }, `ProcessManager.runAfterTick(${process})`)()
             }))
           }
         } catch (error) {
           executionLog.errorRaised.add(process.processId)
           if (processExecutionLogs[1]?.errorRaised.has(process.processId) === true) {
             processStore.suspend(process.processId)
-            PrimitiveLogger.fatal(`ProcessManager.run(${processIdentifierText(process)}): raised error twice. Suspending...`)
+            PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised error twice. Suspending...`)
           }
           throw error
         }
-      }, `ProcessManager.run(${processIdentifierText(process)})`)()
+      }, `ProcessManager.run(${process})`)()
     })
 
     executionLog.iterateFinished = true
@@ -309,8 +309,4 @@ const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {
       t: encodedProcessType,
     }]
   })
-}
-
-const processIdentifierText = (process: AnyProcess): string => {
-  return `${process.processType}[${process.identifier}]:${process.processId}`
 }
