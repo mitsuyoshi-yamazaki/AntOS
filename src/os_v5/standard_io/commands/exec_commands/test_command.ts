@@ -34,7 +34,7 @@ export const TestCommand: Command = {
 }
 
 
-const argumentParserArgumentTypes = ["string", "int"] as const
+const argumentParserArgumentTypes = ["string", "int", "process"] as const
 type ArgumentParserArgumentType = typeof argumentParserArgumentTypes[number]
 const isArgumentParserArgumentType = (arg: string): arg is ArgumentParserArgumentType => (argumentParserArgumentTypes as Readonly<string[]>).includes(arg)
 
@@ -42,7 +42,7 @@ const isArgumentParserArgumentType = (arg: string): arg is ArgumentParserArgumen
 /** @throws */
 const testArgumentParser = (argumentParser: ArgumentParser): string => {
   const alignedValueDescription = (value: string, valueType: string): string => {
-    return `${tab(value, TabSize.small)}${tab(valueType, TabSize.veryLarge)}`
+    return `${tab(valueType, TabSize.large)} ${value}`
   }
 
   const argumentType = argumentParser.typedString(0, "ArgumentParserArgumentType", isArgumentParserArgumentType, {choices: argumentParserArgumentTypes}).parse()
@@ -50,15 +50,15 @@ const testArgumentParser = (argumentParser: ArgumentParser): string => {
   const values = argumentParser.list(1, argumentType).parse()
   const valueDescriptions = values.map((value): string => {
     const valueType = typeof value
-    if (valueType === "object") {
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      return alignedValueDescription(`${value}`, (value as Object).constructor.name)
+    if (valueType !== "object") {
+      return alignedValueDescription(`${value}`, valueType)
     }
-    return alignedValueDescription(`${value}`, valueType)
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    return alignedValueDescription(`${value}`, (value as Object).constructor.name)
   })
 
   return [
-    alignedValueDescription("value", "type"),
+    alignedValueDescription("type", "value"),
     ...valueDescriptions,
   ].join("\n")
 }
