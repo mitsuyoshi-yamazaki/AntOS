@@ -18,8 +18,8 @@ type EnvironmentInfo = {
   readonly name: EnvironmentName
 }
 
-type EnvironmentVariable = {
-  readonly environment: EnvironmentInfo
+type Environment = {
+  readonly info: EnvironmentInfo
 }
 
 const initializeEnvironmentInfo = (): EnvironmentInfo => {
@@ -65,11 +65,11 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   }
 }
 
-export const EnvironmentVariable: SystemCall<"EnvironmentVariable", EmptySerializable> & EnvironmentVariable = {
-  name: "EnvironmentVariable",
-  [Symbol.toStringTag]: "EnvironmentVariable",
+export const Environment: SystemCall<"Environment", EmptySerializable> & Environment = {
+  name: "Environment",
+  [Symbol.toStringTag]: "Environment",
 
-  environment: initializeEnvironmentInfo(),
+  info: initializeEnvironmentInfo(),
 
   load(): void {
   },

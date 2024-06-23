@@ -31,7 +31,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
   [Symbol.toStringTag]: "Kernel",
 
   name: "AntOS",
-  version: new SemanticVersion(5, 5, 32),
+  version: new SemanticVersion(5, 5, 34),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -98,7 +98,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
     const systemInfo: string[] = [
       ConsoleUtility.colored(`${this.name} ${this.version}`, "info"),
       `Launched at ${this.launchedAt.time} (${Game.time - this.launchedAt.time} ticks ago at ${this.launchedAt.datetime.toJSON()})`,
-      `Environment: ${SystemCalls.environmentVariable.environment.name}`,
+      `Environment: ${SystemCalls.environment.info.name}`,
     ]
 
     return systemInfo.join("\n")
