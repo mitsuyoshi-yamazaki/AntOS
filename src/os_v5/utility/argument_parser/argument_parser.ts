@@ -1,7 +1,6 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
 import { IntArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
-import { IterableArgumentReturnType, IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
-import { NotUnion } from "shared/utility/types"
+import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
 # ArgumentParser
@@ -64,6 +63,10 @@ export class ArgumentParser {
     if (errors.length > 0) {
       throw `Argument parse errors: ${errors.join("\n")}`
     }
+  }
+
+  public dropFirstListArguments(count?: number): void { // ArgumentParser を別関数に渡すなどの場合の用途
+    this.rawArguments.splice(0, count ?? 1)
   }
 
   protected getRawValueFor(key: ArgumentKey): string | null {
