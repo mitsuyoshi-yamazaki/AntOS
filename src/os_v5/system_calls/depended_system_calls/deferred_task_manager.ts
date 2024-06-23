@@ -3,10 +3,11 @@ import { SystemCall } from "../../system_call"
 import { Environment } from "../environment"
 import { ProcessManager } from "../process_manager/process_manager"
 import { UniqueId } from "../unique_id"
-import type { AnyDeferredTask, AnyDeferredTaskState, DeferredTask, DeferredTaskErrorReasons, DeferredTaskId, DeferredTaskResult, DeferredTaskState } from "./deferred_task"
+import { AnyDeferredTask, AnyDeferredTaskState, DeferredTask, DeferredTaskErrorReasons, DeferredTaskId, deferredTaskPriority, DeferredTaskPriority, DeferredTaskResult, DeferredTaskState } from "./deferred_task"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import type { AnyProcess } from "os_v5/process/process"
+import type { AnyProcess, AnyProcessId } from "os_v5/process/process"
+import type { Timestamp } from "shared/utility/timestamp"
 
 
 type DeferredTaskManagerMemory = {
@@ -29,7 +30,7 @@ const restoredTasks: AnyDeferredTaskState[] = []
 let runningTask: AnyDeferredTask | null = null
 
 type DeferredTaskManager = {
-  register<TaskType extends string, T>(task: DeferredTask<TaskType, T>): DeferredTaskId
+  register<TaskType extends string, T>(processId: AnyProcessId, taskType: TaskType, task: () => T, options?: { expiredBy?: Timestamp, priority: DeferredTaskPriority}): DeferredTaskId
 }
 
 export const DeferredTaskManager: SystemCall<"DeferredTaskManager", DeferredTaskManagerMemory> & DeferredTaskManager = {
@@ -57,6 +58,8 @@ export const DeferredTaskManager: SystemCall<"DeferredTaskManager", DeferredTask
 
     runTasks()
 
+    // TODO: expirationチェック
+
     const taskStates: AnyDeferredTaskState[] = [
       ...tasks.map(task => ({ // Memoryに保存できないプロパティを除外
         id: task.id,
@@ -71,11 +74,15 @@ export const DeferredTaskManager: SystemCall<"DeferredTaskManager", DeferredTask
   },
 
   // DeferredTaskManager
-  register<TaskType extends string, T>(task: Omit<DeferredTask<TaskType, T>, "id">): DeferredTaskId {
+  register<TaskType extends string, T>(processId: AnyProcessId, taskType: TaskType, task: () => T, options?: { expiredBy?: Timestamp, priority: DeferredTaskPriority }): DeferredTaskId {
     const taskId: DeferredTaskId = UniqueId.generate()
     tasks.push({
-      ...task,
       id: taskId,
+      processId,
+      taskType,
+      priority: options?.priority ?? deferredTaskPriority.low,
+      expiredBy: options?.expiredBy ?? null,
+      task,
     })
     tasks.sort((lhs, rhs) => lhs.priority - rhs.priority)
 
