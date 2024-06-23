@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { Mutable } from "shared/utility/types"
 import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
-import { processTypeDecodingMap, processTypeEncodingMap } from "../../process/process_type_map"
+import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "os_v5/utility/types"
 import { UniqueId } from "../unique_id"
@@ -69,10 +69,14 @@ const processExecutionLogs: ProcessExecutionLog[] = []
 type ProcessManager = {
   addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
+  getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: string): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
+  hasProcess(processType: ProcessTypes, identifier: string): boolean
+
   suspend(process: AnyProcess): boolean
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
+
   getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
@@ -165,7 +169,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processRunAfterTicks.forEach(runAfterTick => runAfterTick())
   },
 
-  // ProcessManager
+  // ---- ProcessManager ---- //
+  // Process Lifecycle
   /** @throws */
   addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     // 依存先含めて作成する場合も静的に制約できないため例外を送出するのは変わらない
@@ -192,17 +197,20 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       })
     }
 
-    processStore.add(process)
-
     if (process.didLaunch != null) {
       process.didLaunch()
     }
 
+    processStore.add(process) // 全ての処理が完了してから追加する： process側で中断する際は didLaunch() で例外を出す
     return process
   },
 
   getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return processStore.getProcessById(processId)
+  },
+
+  getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: string): P | null {
+    return processStore.getProcessByIdentifier(processType, identifier)
   },
 
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState {
@@ -211,6 +219,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
   },
 
+  hasProcess(processType: ProcessTypes, identifier: string): boolean {
+    return processStore.getProcessByIdentifier(processType, identifier) != null
+  },
+
+
+  // Process Control
   suspend(process: AnyProcess): boolean {
     return processStore.suspend(process.processId)
   },
@@ -227,6 +241,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processStore.remove(process)
   },
 
+
+  // Utility
   getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
     return ErrorMapper.wrapLoop((): string | null => {
       const dependency = process.getDependentData(SharedMemory)
