@@ -43,7 +43,7 @@ export const controlProcessResult = (processes: AnyProcess[], controller: (proce
     })
 
   return [
-    alignedProcessActionResult("result", "PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+    alignedProcessActionResult("Result", "PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     ...results,
   ]
     .join("\n")

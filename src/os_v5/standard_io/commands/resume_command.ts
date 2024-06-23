@@ -9,7 +9,7 @@ export const ResumeCommand: Command = {
 
   /** @throws */
   help(): string {
-    return "> resume {process ID}"
+    return "> resume {process IDs}"
   },
 
   /** @throws */
