@@ -1,5 +1,5 @@
 
-import { Mutable } from "shared/utility/types"
+import type { Mutable } from "shared/utility/types"
 import { SystemCall } from "../system_call"
 
 type UniqueIdMemory = {

@@ -1,5 +1,6 @@
-import { SerializableObject } from "os_v5/utility/types"
-import { ProcessTypes } from "./process_type_map"
+import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
+import type { SerializableObject } from "os_v5/utility/types"
+import type { ProcessTypes } from "./process_type_map"
 
 /**
 # Process
@@ -70,6 +71,8 @@ export abstract class Process<
 
   /** @throws */
   didReceiveMessage?(args: string[], dependency: Dependency): string
+
+  didFinishDeferredTask?<TaskType extends string, T>(taskResult: DeferredTaskResult<TaskType, T>): void
 
 
   // Implementation

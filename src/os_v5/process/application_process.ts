@@ -1,4 +1,4 @@
-import { SerializableObject } from "os_v5/utility/types"
+import type { SerializableObject } from "os_v5/utility/types"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { Process } from "./process"
 
