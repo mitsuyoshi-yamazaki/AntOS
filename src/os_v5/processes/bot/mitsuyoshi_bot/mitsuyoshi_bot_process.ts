@@ -1,5 +1,5 @@
-import { ProcessDependencies, ProcessId } from "../../process/process"
-import { ApplicationProcess } from "../../process/application_process"
+import { ProcessDependencies, ProcessId } from "../../../process/process"
+import { ApplicationProcess } from "../../../process/application_process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { SemanticVersion } from "shared/utility/semantic_version"
 
@@ -24,7 +24,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, "MitsuyoshiBo
     processes: [],
   }
 
-  public readonly version = new SemanticVersion(10, 0, 0)
+  public readonly version = new SemanticVersion(10, 0, 1)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,

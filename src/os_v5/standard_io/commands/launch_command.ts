@@ -7,7 +7,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 
 // ---- Processes ---- //
 // Bot
-import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot_process"
+import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
 
