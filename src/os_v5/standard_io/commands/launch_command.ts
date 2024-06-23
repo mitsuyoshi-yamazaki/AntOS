@@ -80,7 +80,7 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
 
-  return `Launched [${process.processId}] ${processType} ${process.staticDescription()}`
+  return `Launched ${process} ${process.staticDescription()}`
 }
 
 
@@ -126,8 +126,10 @@ registerProcess("CreepDistributorProcess", () => {
   }) as ProcessConstructor
 })
 
-registerProcess("MitsuyoshiBotProcess", () => {
+registerProcess("MitsuyoshiBotProcess", (argumentParser) => {
+  const identifier = argumentParser.string(0).parse()
+
   return ((processId: MitsuyoshiBotProcessId): MitsuyoshiBotProcess => {
-    return MitsuyoshiBotProcess.create(processId)
+    return MitsuyoshiBotProcess.create(processId, identifier)
   }) as ProcessConstructor
 })

@@ -1,5 +1,6 @@
 import { reverseConstMapping } from "shared/utility/strict_entries"
 
+
 // ProcessTypes
 export const processTypeDecodingMap = {
   a: "TestProcess",
@@ -18,6 +19,7 @@ export type SerializedProcessTypes = keyof typeof processTypeDecodingMap
 export type ProcessTypes = keyof typeof processTypeEncodingMap
 
 
+// Dependency Order
 const processDependencyOrder: ProcessTypes[] = [
   // Bot
   "MitsuyoshiBotProcess",
