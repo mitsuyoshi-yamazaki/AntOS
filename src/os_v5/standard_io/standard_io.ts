@@ -1,7 +1,9 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Command } from "./command"
+import { runCommand } from "./utilities"
 
 // Commands
+import { ExecCommand } from "./commands/exec_command"
 import { LaunchCommand } from "./commands/launch_command"
 import { ProcessCommand } from "./commands/process_command"
 import { KillCommand } from "./commands/kill_command"
@@ -11,6 +13,7 @@ import { MessageCommand } from "./commands/message_command"
 
 
 const commandRunners: Command[] = [
+  ExecCommand,
   LaunchCommand,
   ProcessCommand,
   KillCommand,
@@ -47,33 +50,5 @@ export const StandardIO = (input: string): string => {
     }
   } catch (error) {
     return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
-  }
-}
-
-/** @throws */
-const runCommand = (command: Command, args: string[]): string => {
-  if (args[0] === "help") {
-    args.shift()
-    return command.help(args)
-  }
-
-  const output = command.run(args)
-  if (typeof output === "string") {
-    return output
-  } else {
-    const messages: string[] = output.map(line => {
-      switch (line.outputType) {
-      case "output":
-        return line.message
-      case "error":
-        return `${ConsoleUtility.colored("[ERROR]", "error")} ${line.message}`
-      default: {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const _: never = line.outputType
-        return ""
-      }
-      }
-    })
-    return messages.join("\n")
   }
 }
