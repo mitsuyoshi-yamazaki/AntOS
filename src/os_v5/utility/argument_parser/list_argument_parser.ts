@@ -1,11 +1,7 @@
-import { NotUnion } from "shared/utility/types"
+import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
 import { IntArgument, StringArgument } from "./single_argument_parsers"
 
-// const iterableTypeParsers = {
-//   int: IntArgument,
-//   string: StringArgument,
-// } as const
 
 const iterableTypeParserMakers = {
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
@@ -46,11 +42,7 @@ const iterableTypeParserMakers = {
   // },
 } as const
 
-// type IterableTypeParsers = typeof iterableTypeParsers
 export type IterableArgumentType = keyof typeof iterableTypeParserMakers
-// type IterableArgumentParserType = IterableTypeParsers[IterableArgumentType]
-
-type ParameterType<T> = T extends (arg: infer P) => any ? P : never
 type IterableArgumentParserType<T extends IterableArgumentType> = ReturnType<(typeof iterableTypeParserMakers)[T]>
 type IterableArgumentOption<T extends IterableArgumentType> = ParameterType<IterableArgumentParserType<T>["parse"]>
 export type IterableArgumentReturnType<T extends IterableArgumentType> = ReturnType<IterableArgumentParserType<T>["parse"]>
@@ -66,18 +58,8 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
     super(key, value, parseOptions)
   }
 
-  // public static create<S extends IterableArgumentType>(
-  //   key: string,
-  //   value: string | null,
-  //   argumentType: S,
-  //   parseOptions?: ArgumentParserOptions,
-  // ): IterableArgument<S> {
-  //   const parserMaker = SingularParsers[argumentType] as (key: string, value: string, parseOptions?: ArgumentParserOptions) => SingleOptionalArgument<IterableArgumentOption<S>, IterableArgumentReturnType<S>>
-  //   return new IterableArgument(key, value, parserMaker, parseOptions)
-  // }
-
   /** throws */
-  public parse(options?: IterableArgumentOption<NotUnion<T>>): Array<IterableArgumentReturnType<T>> {
+  public parse(options?: IterableArgumentOption<T>): Array<IterableArgumentReturnType<T>> {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -90,7 +72,8 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
       try {
         const parserMaker = iterableTypeParserMakers[this.argumentType]
         const parser = parserMaker(this.key, component, this.parseOptions) as IterableArgumentParserType<T>
-        const parseResult = parser.parse(options as any) //
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parseResult = parser.parse(options as any) // IterableArgumentOption<T> の T は argumentType の T と独立して解決されるので、 T が UnionType であるときに特定の型を引数に取る parse() 引数に入れられないため
         results.push(parseResult as IterableArgumentReturnType<T>)
 
       } catch (error) {
@@ -104,48 +87,3 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
     return results
   }
 }
-
-
-// export type IterableArgumentType = "string"
-//   | "int"
-//   | "float"
-//   | "boolean"
-//   | "resource"
-//   | "mineral_boost"
-//   | "deposit"
-//   | "commodity"
-//   | "object_id"
-//   | "room_name"
-//   | "room"
-//   | "visible_room_object"
-//   | "local_position"
-
-// type IterableArgumentOption<T extends IterableArgumentType> = T extends "string" ? { allowSpacing?: boolean }
-//   : T extends "int" ? { min?: number, max?: number }
-//   : T extends "float" ? { min?: number, max?: number }
-//   : T extends "resource" ? void
-//   : T extends "mineral_boost" ? void
-//   : T extends "deposit" ? void
-//   : T extends "commodity" ? void
-//   : T extends "object_id" ? void
-//   : T extends "room_name" ? { my?: boolean, allowClosedRoom?: boolean }
-//   : T extends "room" ? { my?: boolean, allowClosedRoom?: boolean }
-//   : T extends "visible_room_object" ? { inRoomName?: RoomName }
-//   : T extends "local_position" ? void
-//   : void  // "boolean"
-
-// type IterableArgumentReturnType<T extends IterableArgumentType> = T extends "string" ? string
-//   : T extends "int" ? number
-//   : T extends "float" ? number
-//   : T extends "resource" ? ResourceConstant
-//   : T extends "mineral_boost" ? MineralBoostConstant
-//   : T extends "deposit" ? DepositConstant
-//   : T extends "commodity" ? CommodityConstant
-//   : T extends "object_id" ? string
-//   : T extends "room_name" ? RoomName
-//   : T extends "room" ? Room
-//   : T extends "visible_room_object" ? RoomObject
-//   : T extends "local_position" ? Position
-//   : boolean // "boolean"
-
-
