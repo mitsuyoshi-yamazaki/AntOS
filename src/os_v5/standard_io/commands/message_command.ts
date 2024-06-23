@@ -1,7 +1,7 @@
 import { AnyProcessId } from "os_v5/process/process"
 import { Command, CommandOutput } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { processDescription } from "./utilities"
+import { alignedProcessInfo, processDescription } from "./utilities"
 
 
 export const MessageCommand: Command = {
@@ -25,10 +25,16 @@ export const MessageCommand: Command = {
       throw `No Process with ID ${processId}`
     }
 
-    const output: CommandOutput[] = [{
-      outputType: "output",
-      message: processDescription({ process, ...ProcessManager.getProcessRunningState(process.processId) }),
-    }]
+    const output: CommandOutput[] = [
+      {
+        outputType: "output",
+        message: alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+      },
+      {
+        outputType: "output",
+        message: processDescription({ process, ...ProcessManager.getProcessRunningState(process.processId) }),
+      },
+    ]
 
     try {
       output.push({
