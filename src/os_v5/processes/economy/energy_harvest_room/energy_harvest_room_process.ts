@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -6,7 +6,6 @@ import { V3BridgeSpawnRequestProcessApi } from "../../v3_os_bridge/v3_bridge_spa
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
-import { RoomPathfindingProcessApi } from "../../game_object_management/room_pathfinding_process"
 import { CreepDistributorProcessApi } from "../../game_object_management/creep/creep_distributor_process"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "../../game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "../../game_object_management/creep/creep_task/creep_task"
@@ -27,7 +26,6 @@ type EnergyHarvestRoomProcessState = {
 }
 
 type EnergyHarvestRoomProcessDependency = Pick<V3BridgeSpawnRequestProcessApi, "addSpawnRequest">
-  & Pick<RoomPathfindingProcessApi, "exitTo">
   & CreepDistributorProcessApi
   & CreepTaskStateManagementProcessApi
 
@@ -40,10 +38,9 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     processes: [
-      { processType: "V3BridgeSpawnRequestProcess", identifier: "V3SpawnRequest" },
-      { processType: "RoomPathfindingProcess", identifier: "RoomPathFinding" },
-      { processType: "CreepDistributorProcess", identifier: "CreepDistributor" },
-      { processType: "CreepTaskStateManagementProcess", identifier: "CreepTaskStateManagement" },
+      { processType: "V3BridgeSpawnRequestProcess", identifier: processDefaultIdentifier },
+      { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },
+      { processType: "CreepTaskStateManagementProcess", identifier: processDefaultIdentifier },
     ],
   }
 
@@ -103,6 +100,7 @@ export class EnergyHarvestRoomProcess extends Process<EnergyHarvestRoomProcessDe
     return "ok"
   }
 
+  /** @throws */
   public didLaunch(): void {
     if (Memory.ignoreRooms.includes(this.roomName) !== true) { // !!UNSAFE MEMORY ACCESS!!
       Memory.ignoreRooms.push(this.roomName)

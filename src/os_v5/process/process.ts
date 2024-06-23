@@ -24,6 +24,8 @@ export type ProcessId<D extends Record<string, unknown> | void, I extends string
 
 
 // ---- Process ---- //
+export type ProcessDefaultIdentifier = "default" /// OSにひとつだけ起動する想定の Process Identifier
+export const processDefaultIdentifier: ProcessDefaultIdentifier = "default"
 export type ProcessSpecifier = {
   readonly processType: ProcessTypes
   readonly identifier: string
@@ -60,7 +62,8 @@ export abstract class Process<
   abstract staticDescription(): string
   abstract runtimeDescription(dependency: Dependency): string
 
-  didLaunch?(): void      /// 起動完了
+  /** @throws */
+  didLaunch?(): void      /// 起動完了：Process 側で起動処理がある場合、ここで例外を出せば Process の追加処理が完了しない
   willTerminate?(): void  /// 停止
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void
@@ -121,7 +124,7 @@ export abstract class Process<
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcess = Process<any, string, any, SerializableObject, AnyProcess>
+export type AnyProcess = Process<Record<string, unknown> | void, string, any, SerializableObject, AnyProcess>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyProcessId = ProcessId<any, string, any, SerializableObject, AnyProcess>
+export type AnyProcessId = ProcessId<Record<string, unknown> | void, string, any, SerializableObject, AnyProcess>

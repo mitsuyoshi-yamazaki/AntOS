@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { AnyV5Creep, V5Creep } from "os_v5/utility/game_object/creep"
 import { EmptySerializable } from "os_v5/utility/types"
@@ -38,16 +38,16 @@ export type CreepTaskStateManagementProcessApi = {
   registerTaskDrivenCreeps<Roles extends string>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
 }
 
-export type CreepTaskStateManagementProcessId = ProcessId<Dependency, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
+export type CreepTaskStateManagementProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
 
 type Dependency = CreepDistributorProcessApi
 
 
-export class CreepTaskStateManagementProcess extends Process<Dependency, "CreepTaskStateManagement", CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess> {
-  public readonly identifier = "CreepTaskStateManagement"
+export class CreepTaskStateManagementProcess extends Process<Dependency, ProcessDefaultIdentifier, CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess> {
+  public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [
-      { processType: "CreepDistributorProcess", identifier: "CreepDistributor" },
+      { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },
     ],
   }
 

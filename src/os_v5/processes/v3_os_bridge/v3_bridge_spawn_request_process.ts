@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId } from "../../process/process"
+import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
 import { CreepBody } from "utility/creep_body_v2"
@@ -31,11 +31,11 @@ type SpawnRequest = {
 export type V3BridgeSpawnRequestProcessApi = {
   addSpawnRequest(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: SerializableObject }): void
 }
-export type V3BridgeSpawnRequestProcessId = ProcessId<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
+export type V3BridgeSpawnRequestProcessId = ProcessId<void, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
 
 
-export class V3BridgeSpawnRequestProcess extends Process<void, "V3SpawnRequest", V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess> {
-  public readonly identifier = "V3SpawnRequest"
+export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess> {
+  public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }

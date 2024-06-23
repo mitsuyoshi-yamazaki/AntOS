@@ -1,4 +1,4 @@
-import { AnyProcessId, Process, ProcessDependencies, ProcessId } from "../../../process/process"
+import { AnyProcessId, Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { AnyV5Creep, AnyV5CreepMemory, ExtendedV5CreepMemory, isV5Creep, isV5CreepMemory, V5Creep, V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
@@ -31,11 +31,11 @@ export type CreepDistributorProcessApi = {
 }
 
 
-export type CreepDistributorProcessId = ProcessId<void, "CreepDistributor", CreepDistributorProcessApi, EmptySerializable, CreepDistributorProcess>
+export type CreepDistributorProcessId = ProcessId<void, ProcessDefaultIdentifier, CreepDistributorProcessApi, EmptySerializable, CreepDistributorProcess>
 
 
-export class CreepDistributorProcess extends Process<void, "CreepDistributor", CreepDistributorProcessApi, EmptySerializable, CreepDistributorProcess> {
-  public readonly identifier = "CreepDistributor"
+export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentifier, CreepDistributorProcessApi, EmptySerializable, CreepDistributorProcess> {
+  public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }

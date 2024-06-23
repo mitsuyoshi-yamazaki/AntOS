@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId } from "../../process/process"
+import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { RoomExit } from "shared/utility/room_exit"
@@ -25,11 +25,11 @@ type RoomPathfindingProcessState = {
 
 ProcessDecoder.register("RoomPathfindingProcess", (processId: RoomPathfindingProcessId, state: RoomPathfindingProcessState) => RoomPathfindingProcess.decode(processId, state))
 
-export type RoomPathfindingProcessId = ProcessId<void, "RoomPathFinding", RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess>
+export type RoomPathfindingProcessId = ProcessId<void, ProcessDefaultIdentifier, RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess>
 
 
-export class RoomPathfindingProcess extends Process<void, "RoomPathFinding", RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess> {
-  public readonly identifier = "RoomPathFinding"
+export class RoomPathfindingProcess extends Process<void, ProcessDefaultIdentifier, RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess> {
+  public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }

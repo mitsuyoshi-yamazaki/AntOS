@@ -20,6 +20,8 @@ export abstract class ApplicationProcess<
   abstract readonly version: SemanticVersion
   abstract readonly applicationName: string
 
+
+
   /** @throws */
   abstract didReceiveMessage(args: string[], dependency: Dependency): string
 }
