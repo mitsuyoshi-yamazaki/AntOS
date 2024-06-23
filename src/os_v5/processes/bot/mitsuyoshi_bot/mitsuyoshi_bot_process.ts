@@ -59,7 +59,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     processes: [],
   }
 
-  public readonly version = new SemanticVersion(10, 0, 2)
+  public readonly version = new SemanticVersion(10, 0, 3)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,
@@ -85,6 +85,21 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
   public static create(processId: MitsuyoshiBotProcessId, identifier: string): MitsuyoshiBotProcess {
     return new MitsuyoshiBotProcess(processId, identifier, (new SemanticVersion(10, 0, 0)).toString(), {})
   }
+
+  public getDependentData(): void { }
+
+  public staticDescription(): string {
+    const descriptions: string[] = [
+      `${this.version}`,
+      `managing ${Object.keys(this.managingRoomInfo).length} rooms`,
+    ]
+    return descriptions.join("\n")
+  }
+
+  public runtimeDescription(): string {
+    return this.staticDescription()
+  }
+
 
   /** @throws */
   public didLaunch(): void {
@@ -117,15 +132,6 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     }
   }
 
-  public getDependentData(): void { }
-
-  public staticDescription(): string {
-    return `${this.version}`
-  }
-
-  public runtimeDescription(): string {
-    return this.staticDescription()
-  }
 
   // Message
   /** @throws */
