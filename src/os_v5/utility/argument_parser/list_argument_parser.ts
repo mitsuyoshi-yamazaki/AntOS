@@ -3,7 +3,7 @@ import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./si
 import { IntArgument, StringArgument } from "./single_argument_parsers"
 
 
-const iterableTypeParserMakers = {
+export const iterableTypeParserMakers = {
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
   },

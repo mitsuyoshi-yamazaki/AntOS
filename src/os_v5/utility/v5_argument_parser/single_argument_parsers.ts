@@ -2,7 +2,7 @@ import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { getKeyName, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
 
-// ---- Process ---- //
+
 export class ProcessArgument extends SingleOptionalArgument<void, AnyProcess> {
   /** throws */
   public parse(): AnyProcess {
