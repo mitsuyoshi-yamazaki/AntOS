@@ -5,7 +5,9 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { RoomName } from "shared/utility/room_name_types"
+import type { RoomName } from "shared/utility/room_name_types"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { BotTypes } from "os_v5/process/process_type_map"
 
 // Driver Process
 import { CreepDistributorProcess, CreepDistributorProcessId } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
@@ -14,7 +16,6 @@ import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "os_v
 
 // Child Process
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "os_v5/processes/economy/energy_harvest_room/energy_harvest_room_process"
-import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 
 const commands = ["help", "expand"] as const
@@ -22,7 +23,7 @@ type Command = typeof commands[number]
 const isCommand = (value: string): value is Command => (commands as Readonly<string[]>).includes(value)
 
 
-const roomManagementTypes = ["normal", "energy harvest"] as const
+const roomManagementTypes = ["normal", "energy_harvest"] as const
 type RoomManagementType = typeof roomManagementTypes[number]
 const isRoomManagementType = (value: string): value is RoomManagementType => (roomManagementTypes as Readonly<string[]>).includes(value)
 
@@ -58,8 +59,11 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }
+  public get processType(): BotTypes {
+    return this.constructor.name as BotTypes
+  }
 
-  public readonly version = new SemanticVersion(10, 0, 3)
+  public readonly version = new SemanticVersion(10, 0, 6)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,
@@ -93,7 +97,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
       `${this.version}`,
       `managing ${Object.keys(this.managingRoomInfo).length} rooms`,
     ]
-    return descriptions.join("\n")
+    return descriptions.join(", ")
   }
 
   public runtimeDescription(): string {
@@ -157,7 +161,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     }
 
     const roomName = argumentParser.roomName(0).parse({ my: false, allowClosedRoom: false })
-    const roomManagementType = argumentParser.typedString(1, "RoomManagementType", isRoomManagementType).parse()
+    const roomManagementType = argumentParser.typedString(1, "RoomManagementType", isRoomManagementType, { choices: roomManagementTypes }).parse()
     const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
     if (this.managingRoomInfo[roomName] != null) {
@@ -168,7 +172,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     case "normal":
       throw `${roomManagementType} is not implemented yet`
 
-    case "energy harvest":
+    case "energy_harvest":
       return this.launchEnergyHarvestRoom(roomName, parentRoomName)
 
     default: {
@@ -182,8 +186,11 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
   // Run
   public run(): MitsuyoshiBotProcessApi {
     return {
-      name: this.applicationName,
-      version: this.version,
+      botInfo: {
+        name: this.applicationName,
+        identifier: this.identifier,
+        version: this.version,
+      },
     }
   }
 
@@ -191,7 +198,17 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
   /** @throws */
   private launchEnergyHarvestRoom(roomName: RoomName, parentRoomName: RoomName): string {
     const process = SystemCalls.processManager.addProcess((processId: EnergyHarvestRoomProcessId): EnergyHarvestRoomProcess => {
-      return EnergyHarvestRoomProcess.create(processId, roomName, parentRoomName)
+      return EnergyHarvestRoomProcess.create(
+        processId,
+        roomName,
+        parentRoomName,
+        {
+          botSpecifier: {
+            processType: this.processType,
+            identifier: this.identifier,
+          },
+        },
+      )
     })
 
     this.managingRoomInfo[roomName] = {
