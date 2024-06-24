@@ -1,6 +1,3 @@
-import { SemanticVersion } from "shared/utility/semantic_version"
+import { BotApi } from "../types"
 
-export type MitsuyoshiBotProcessApi = {
-  readonly name: string
-  readonly version: SemanticVersion
-}
+export type MitsuyoshiBotProcessApi = BotApi
