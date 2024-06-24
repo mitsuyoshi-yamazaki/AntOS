@@ -1,6 +1,6 @@
 import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import type { SerializableObject } from "os_v5/utility/types"
-import type { ProcessTypes } from "./process_type_map"
+import type { BotTypes, ProcessTypes } from "./process_type_map"
 
 /**
 # Process
@@ -29,6 +29,10 @@ export type ProcessDefaultIdentifier = "default" /// OSにひとつだけ起動�
 export const processDefaultIdentifier: ProcessDefaultIdentifier = "default"
 export type ProcessSpecifier = {
   readonly processType: ProcessTypes
+  readonly identifier: string
+}
+export type BotSpecifier = {
+  readonly processType: BotTypes
   readonly identifier: string
 }
 export type ProcessDependencies = {

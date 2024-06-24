@@ -18,6 +18,8 @@ export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap
 export type SerializedProcessTypes = keyof typeof processTypeDecodingMap
 export type ProcessTypes = keyof typeof processTypeEncodingMap
 
+export type BotTypes = "MitsuyoshiBotProcess"
+
 
 // Dependency Order
 const processDependencyOrder: ProcessTypes[] = [
