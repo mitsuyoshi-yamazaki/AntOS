@@ -1,9 +1,10 @@
 import { AnyV5Creep } from "os_v5/utility/game_object/creep"
 import { CreepActions } from "os_v5/utility/game_object/creep_action"
 import { RoomName } from "shared/utility/room_name_types"
-import { ClaimController, MoveTo, Sequential } from ".."
-import { AnyTask } from "../.."
-import { Task, TaskResult, taskTypeEncodingMap, TaskTypeEncodingMap } from "../../types"
+import { AnyTask, Task, TaskResult, taskTypeEncodingMap, TaskTypeEncodingMap } from "../../types"
+import { Sequential } from "../combined_tasks/sequential_task"
+import { MoveTo } from "../move_tasks/move_to_task"
+import { ClaimController } from "../primitive_tasks/claim_controller_task"
 
 
 type ChildTaskArgumentClaimController = {
