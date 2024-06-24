@@ -20,6 +20,6 @@ export const ResumeCommand: Command = {
     }
 
     const processes = argumentParser.list(0, "process").parse()
-    return "Resume processes:\n" + controlProcessResult(processes, process => ProcessManager.suspend(process) === true ? "suspended" : "failed")
+    return "Resume processes:\n" + controlProcessResult(processes, process => ProcessManager.resume(process) === true ? "resumed" : "failed")
   },
 }
