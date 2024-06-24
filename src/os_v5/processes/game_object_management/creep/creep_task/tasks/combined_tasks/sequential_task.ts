@@ -43,6 +43,7 @@ export class Sequential extends Task<SequentialState> {
     const result = currentTask.run(creep)
     switch (result) {
     case "finished":
+      this.childTasks.shift()
       break
 
     case "in progress":
@@ -52,14 +53,14 @@ export class Sequential extends Task<SequentialState> {
       if (this.ignoreFailure !== true) {
         return "failed"
       }
+      this.childTasks.shift()
       break
 
     default:
+      this.childTasks.shift()
       this.childTasks.unshift(result)
       break
     }
-
-    this.childTasks.shift()
 
     const nextTask = this.childTasks[0]
     if (nextTask == null) {
