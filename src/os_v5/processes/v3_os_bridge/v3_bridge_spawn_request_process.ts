@@ -75,7 +75,9 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
   public didReceiveMessage(args: string[]): string {
     const argumentParser = new ArgumentParser(args)
 
-    const command = argumentParser.typedString(0, "Command", isCommand, {choices: commands}).parse()
+    const command = argumentParser.typedString(0, "Command", isCommand, { choices: commands }).parse()
+    argumentParser.dropFirstListArguments()
+
     switch (command) {
     case "help":
       return `Commands: [${commands}]`
