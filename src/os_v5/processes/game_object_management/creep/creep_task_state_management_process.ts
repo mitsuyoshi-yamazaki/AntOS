@@ -28,14 +28,17 @@ export type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
   r: Roles
 }
-export type TaskDrivenCreep<Roles extends string> = V5Creep<TaskDrivenCreepMemory<Roles>> & {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TaskDrivenCreep<Roles extends string, MemoryExtension extends Record<string, any>> = V5Creep<TaskDrivenCreepMemory<Roles> & MemoryExtension> & {
   task: CreepTask.AnyTask | null
 }
-type AnyTaskDrivenCreep = TaskDrivenCreep<string>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyTaskDrivenCreep = TaskDrivenCreep<string, Record<string, any>>
 
 
 export type CreepTaskStateManagementProcessApi = {
-  registerTaskDrivenCreeps<Roles extends string>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerTaskDrivenCreeps<Roles extends string, MemoryExtension extends Record<string, any>>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, MemoryExtension>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
 }
 
 export type CreepTaskStateManagementProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
@@ -96,8 +99,9 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
 
 
     return {
-      registerTaskDrivenCreeps: <Roles extends string>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles>[] => {
-        const creeps = creepsToRegister as TaskDrivenCreep<Roles>[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      registerTaskDrivenCreeps: <Roles extends string, MemoryExtension extends Record<string, any>>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, MemoryExtension>[] => {
+        const creeps = creepsToRegister as TaskDrivenCreep<Roles, MemoryExtension>[]
         creeps.forEach(creep => {
           creep.task = this.parseRootTask(creep) // TODO: タスクをキャッシュ
           this.taskDrivenCreeps.push(creep)
