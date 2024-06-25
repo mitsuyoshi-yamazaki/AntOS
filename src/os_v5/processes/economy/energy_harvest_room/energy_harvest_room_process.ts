@@ -27,8 +27,11 @@ import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./ene
 
 
 type CreepRoles = "worker" | "claimer" | "distributor" | "puller"
-type MyCreep = TaskDrivenCreep<CreepRoles>
-type MyCreepMemory = TaskDrivenCreepMemory<CreepRoles>
+type CreepMemoryExtension = {
+  tempState: "harvesting" | "working"
+}
+type MyCreep = TaskDrivenCreep<CreepRoles, CreepMemoryExtension>
+type MyCreepMemory = TaskDrivenCreepMemory<CreepRoles> & CreepMemoryExtension
 
 
 type DeferredTaskType = "make layout"
@@ -179,17 +182,99 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, void
       }
       return
     }
+
+    const workers = creepsByRole.get("worker")
+    if (workers == null || workers.length <= 0) {
+      this.spawnWorker(dependency)
+    } else {
+      this.runWorkers(workers)
+    }
+  }
+
+  private runWorkers(workers: MyCreep[]): void {
+    workers.forEach(creep => {
+      if (creep.task != null) {
+        return
+      }
+      // creep.task = this.workerTaskFor(creep)
+      this.runWorker(creep)
+    })
+  }
+
+  private runWorker(creep: MyCreep): void {
+    if (creep.room.name !== this.roomName) {
+      creep.task = CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
+      return
+    }
+
+    // TODO: CreepTaskへ移す
+    switch (creep.memory.tempState) {
+    case "harvesting": {
+      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
+        creep.memory.tempState = "working"
+        return
+      }
+      const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE)
+      if (source == null) {
+        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+          creep.memory.tempState = "working"
+        }
+        return
+      }
+      if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(source)
+      }
+      return
+    }
+
+    case "working": {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
+        creep.memory.tempState = "harvesting"
+        return
+      }
+
+      const controller = creep.room.controller
+      if (controller == null) {
+        return
+      }
+      if (creep.upgradeController(controller) === ERR_NOT_IN_RANGE) {
+        creep.moveTo(controller)
+      }
+      return
+    }
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = creep.memory.tempState
+      return
+    }
+    }
   }
 
   private getMyCreeps(dependency: Dependency): Map<CreepRoles, MyCreep[]> {
     const creeps = dependency.getCreepsFor(this.processId)
-    const creepsWithTask = dependency.registerTaskDrivenCreeps<CreepRoles>(creeps)
+    const creepsWithTask = dependency.registerTaskDrivenCreeps<CreepRoles, CreepMemoryExtension>(creeps)
 
     const creepsByRole = new ValuedArrayMap<CreepRoles, MyCreep>()
     creepsWithTask.forEach(creep => {
       creepsByRole.getValueFor(creep.memory.r).push(creep)
     })
     return creepsByRole
+  }
+
+  private spawnWorker(dependency: Dependency): void {
+    const body = [
+      WORK, WORK, WORK,
+      WORK, WORK, WORK, WORK, WORK,
+      WORK, WORK, WORK, WORK, WORK,
+      MOVE, MOVE, MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      MOVE, MOVE, MOVE, MOVE, MOVE,
+      CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+      WORK, WORK,
+      MOVE,
+    ]
+    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: null, r: "worker", tempState: "harvesting" })
+    dependency.addSpawnRequest(new CreepBody(body), this.parentRoomName, { codename: this.codename, memory })
   }
 
   private spawnClaimer(dependency: Dependency): void {
@@ -208,21 +293,7 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, void
       }),
     ]
     const claimerTask = CreepTask.Tasks.Sequential.create(tasks)
-    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: claimerTask.encode(), r: "claimer" })
+    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: claimerTask.encode(), r: "claimer", tempState: "working" })
     dependency.addSpawnRequest(new CreepBody([MOVE, CLAIM]), this.parentRoomName, { codename: this.codename, memory })
   }
-
-  // private taskFor(creep: MyCreep): CreepTask.AnyTask | null {
-  //   const source = creep.room.find(FIND_SOURCES_ACTIVE)[0]
-  //   if (source == null) {
-  //     creep.say("meh")
-  //     return null
-  //   }
-
-  //   const tasks: CreepTask.AnyTask[] = [
-  //     CreepTask.Tasks.MoveTo.create(source.pos),
-  //     CreepTask.Tasks.HarvestEnergy.create(source.id),
-  //   ]
-  //   return CreepTask.Tasks.Sequential.create(tasks)
-  // }
 }

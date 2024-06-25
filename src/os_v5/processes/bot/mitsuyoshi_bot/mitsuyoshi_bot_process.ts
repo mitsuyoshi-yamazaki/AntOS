@@ -63,7 +63,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     return this.constructor.name as BotTypes
   }
 
-  public readonly version = new SemanticVersion(10, 0, 6)
+  public readonly version = new SemanticVersion(10, 0, 7)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,
