@@ -18,7 +18,7 @@ import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "os_v
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "os_v5/processes/economy/energy_harvest_room/energy_harvest_room_process"
 
 
-const commands = ["help", "expand"] as const
+const commands = ["help", "expand", "debug"] as const
 type Command = typeof commands[number]
 const isCommand = (value: string): value is Command => (commands as Readonly<string[]>).includes(value)
 
@@ -63,7 +63,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     return this.constructor.name as BotTypes
   }
 
-  public readonly version = new SemanticVersion(10, 0, 7)
+  public readonly version = new SemanticVersion(10, 0, 10)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,
@@ -148,6 +148,9 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     switch (command) {
     case "help":
       return `Commands: [${commands}]`
+
+    case "debug":
+      return "OK"
 
     case "expand":
       return this.expand(argumentParser)
