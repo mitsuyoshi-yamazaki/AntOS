@@ -44,6 +44,21 @@ export type ReadonlySharedMemory = {
 }
 
 
+type ProcessRunningStateChangeEventSuspended = {
+  readonly case: "suspended"
+  readonly reason: "manually" | "missing dependencies"
+}
+type ProcessRunningStateChangeEventResumed = {
+  readonly case: "resumed"
+  readonly reason: "manually" | "restored missing dependencies"
+}
+type ProcessRunningStateChangeEventKilled = {
+  readonly case: "killed"
+  readonly reason: "manually" | "failed to restore" | "by process"
+}
+export type ProcessRunningStateChangeEvent = ProcessRunningStateChangeEventSuspended | ProcessRunningStateChangeEventResumed | ProcessRunningStateChangeEventKilled
+
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RestrictedProcessState<S extends SerializableObject> = S extends {i: any} | {t: any} ? never : S // t, i は ProcessManager が予約済み
 
@@ -76,7 +91,9 @@ export abstract class Process<
   /** @throws */
   didReceiveMessage?(args: string[], dependency: Dependency): string
 
-  didFinishDeferredTask?<TaskType extends string, T>(taskResult: DeferredTaskResult<TaskType, T>): void
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  didFinishDeferredTask?(taskResult: DeferredTaskResult<string, any>): void
 
 
   // Implementation
