@@ -115,6 +115,7 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
 
     this.taskDrivenCreeps.forEach(creep => {
       if (creep.task == null) {
+        creep.memory.t = null
         return
       }
       creep.memory.t = creep.task.encode()
