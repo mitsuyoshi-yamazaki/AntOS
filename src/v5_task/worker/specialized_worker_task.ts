@@ -379,33 +379,33 @@ export class SpecializedWorkerTask extends GeneralCreepWorkerTask {
       }
     }
 
-    const droppedResource = ((): Resource | null => {
-      if (objects.hostiles.creeps.length > 0) {
-        return null
-      }
-      if (hasResource === true) {
-        return null
-      }
-      return objects.droppedResources.filter(resource => {
-        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
-          if (resource.pos.x <= 1) {
-            return false
-          }
-        }
-        if (this.roomName === "W48N46" && Environment.world === "persistent world" && Environment.shard === "shard3") { // FixMe:
-          if (resource.resourceType === RESOURCE_KEANIUM) {
-            return false
-          }
-        }
-        if (resource.resourceType !== RESOURCE_ENERGY) {
-          return true
-        }
-        return resource.amount > 200
-      })[0] ?? null
-    })()
-    if (droppedResource != null) {
-      return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
-    }
+    // const droppedResource = ((): Resource | null => {
+    //   if (objects.hostiles.creeps.length > 0) {
+    //     return null
+    //   }
+    //   if (hasResource === true) {
+    //     return null
+    //   }
+    //   return objects.droppedResources.filter(resource => {
+    //     if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+    //       if (resource.pos.x <= 1) {
+    //         return false
+    //       }
+    //     }
+    //     if (this.roomName === "W48N46" && Environment.world === "persistent world" && Environment.shard === "shard3") { // FixMe:
+    //       if (resource.resourceType === RESOURCE_KEANIUM) {
+    //         return false
+    //       }
+    //     }
+    //     if (resource.resourceType !== RESOURCE_ENERGY) {
+    //       return true
+    //     }
+    //     return resource.amount > 200
+    //   })[0] ?? null
+    // })()
+    // if (droppedResource != null) {
+    //   return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
+    // }
 
     return null
   }

@@ -217,8 +217,8 @@ export class OwnedRoomObjects {
     this.tombStones = room.find(FIND_TOMBSTONES)
     this.flags = room.find(FIND_FLAGS)
 
-    this.energySources = this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 50)
-    this.energySources.push(...this.droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
+    this.energySources = [] //this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 50)
+    // this.energySources.push(...this.droppedResources.filter(resource => resource.resourceType === RESOURCE_ENERGY))
 
     this.energyStores = this.energySources.concat([])
     // this.energyStores.push(...this.tombStones.filter(tombStone => tombStone.store.getUsedCapacity(RESOURCE_ENERGY) > 0)) // TODO: Creepを含められるようにする: 互いに食い合わないようにする
