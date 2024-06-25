@@ -133,7 +133,11 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
           return
         }
       }
-      const spawn = spawns[spawns.length - 1] as StructureSpawn
+      const spawn = spawns.find(spawn => spawn.spawning == null)
+      if (spawn == null) {
+        return
+      }
+
       const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generate(request.options?.codename)
       const options: SpawnOptions = {}
       if (request.options?.memory != null) {
@@ -141,10 +145,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
         (options.memory as any) = request.options.memory
       }
       const result = spawn.spawnCreep(request.body.bodyParts, creepName, options)
-
-      if (result === OK) {
-        this.forceSpawn.delete(request.roomName)
-      }
+      this.forceSpawn.delete(request.roomName)
 
       console.log(`${this.processType}[${this.identifier}] ${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
     })
