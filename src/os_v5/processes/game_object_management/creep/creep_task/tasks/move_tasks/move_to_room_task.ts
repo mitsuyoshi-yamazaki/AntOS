@@ -38,6 +38,18 @@ export class MoveToRoom extends Task<MoveToRoomState> {
 
   public run(creep: AnyV5Creep): TaskResult {
     if (creep.room.name === this.destinationRoomName) {
+      if (creep.pos.x === GameConstants.room.edgePosition.min) {
+        this.moveCreepToDirection(creep, RIGHT)
+      }
+      if (creep.pos.x === GameConstants.room.edgePosition.max) {
+        this.moveCreepToDirection(creep, LEFT)
+      }
+      if (creep.pos.y === GameConstants.room.edgePosition.min) {
+        this.moveCreepToDirection(creep, BOTTOM)
+      }
+      if (creep.pos.y === GameConstants.room.edgePosition.max) {
+        this.moveCreepToDirection(creep, TOP)
+      }
       return "finished"
     }
 
@@ -139,6 +151,30 @@ export class MoveToRoom extends Task<MoveToRoomState> {
     case ERR_NO_PATH:
     case ERR_NOT_FOUND:
     case ERR_INVALID_TARGET:
+    case ERR_NO_BODYPART:
+    case ERR_NOT_OWNER:
+      return "failed"
+
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = result
+      return "failed"
+    }
+    }
+  }
+
+  private moveCreepToDirection(creep: AnyV5Creep, direction: TOP | BOTTOM | RIGHT | LEFT): TaskResult {
+    const result = creep.move(direction)
+
+    switch (result) {
+    case OK:
+      creep.executedActions.add("move")
+      return "in progress"
+
+    case ERR_BUSY:
+    case ERR_TIRED:
+      return "in progress"
+
     case ERR_NO_BODYPART:
     case ERR_NOT_OWNER:
       return "failed"
