@@ -1,10 +1,3 @@
-import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
-import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
-import { Command } from "../command"
-import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { SerializableObject } from "os_v5/utility/types"
-import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
-
 // ---- Processes ---- //
 // Bot
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
@@ -26,26 +19,29 @@ import { TestProcess, TestProcessId } from "../../processes/support/test_process
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
 
 
-type ProcessType = string
+// ---- ---- //
+import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
+import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
+import { Command } from "../command"
+import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+import { SerializableObject } from "os_v5/utility/types"
+import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
+import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 
 
 export const LaunchCommand: Command = {
   command: "launch",
 
-  /** @throws */
   help(): string {
     return "> launch {process type} ...{arguments}"
   },
 
   /** @throws */
-  run(args: string[]): string {
-    const processType = args.shift()
+  run(argumentParser: ArgumentParser): string {
+    const processType = argumentParser.typedString([0, "process type"], "ProcessTypes", isProcessType).parse()
+    argumentParser.moveOffset(+1)
 
-    if (processType == null || processType.length <= 0) {
-      return this.help([])
-    }
-
-    return launchProcess(processType, args)
+    return launchProcess(processType, argumentParser)
   },
 }
 
@@ -54,9 +50,9 @@ export const LaunchCommand: Command = {
 type ProcessConstructor = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
 type ConstructorMaker = (argumentParser: ArgumentParser) => ProcessConstructor
 
-const constructorMakers = new Map<ProcessType, ConstructorMaker>()
+const constructorMakers = new Map<ProcessTypes, ConstructorMaker>()
 
-const registerProcess = (processType: ProcessType, launcher: ConstructorMaker): void => {
+const registerProcess = (processType: ProcessTypes, launcher: ConstructorMaker): void => {
   try {
     if (constructorMakers.has(processType) === true) {
       PrimitiveLogger.programError(`Process ${processType} is registered multiple times`)
@@ -69,13 +65,12 @@ const registerProcess = (processType: ProcessType, launcher: ConstructorMaker): 
 }
 
 /** @throws */
-const launchProcess = (processType: ProcessType, args: string[]): string => {
+const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser): string => {
   const constructorMaker = constructorMakers.get(processType)
   if (constructorMaker == null) {
     throw `Unregistered process type ${processType}`
   }
 
-  const argumentParser = new ArgumentParser(args)
   const constructor = constructorMaker(argumentParser)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
@@ -86,7 +81,7 @@ const launchProcess = (processType: ProcessType, args: string[]): string => {
 
 // Process Registration
 registerProcess("TestProcess", (argumentParser) => {
-  const identifier = argumentParser.string(0).parse()
+  const identifier = argumentParser.string([0, "process identifier"]).parse()
 
   return ((processId: TestProcessId): TestProcess => {
     return TestProcess.create(processId, identifier)
@@ -127,7 +122,7 @@ registerProcess("CreepDistributorProcess", () => {
 })
 
 registerProcess("MitsuyoshiBotProcess", (argumentParser) => {
-  const identifier = argumentParser.string(0).parse()
+  const identifier = argumentParser.string([0, "process identifier"]).parse()
 
   return ((processId: MitsuyoshiBotProcessId): MitsuyoshiBotProcess => {
     return MitsuyoshiBotProcess.create(processId, identifier)

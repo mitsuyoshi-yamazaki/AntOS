@@ -6,14 +6,10 @@ import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { CreepName } from "prototype/creep"
-import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
+import { Command, runCommands } from "os_v5/standard_io/command"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 // SpawnPoolのライフサイクルはv3 OSのライフサイクル内で閉じているので、直接Spawn APIを呼び出す
-
-
-const commands = ["help", "force_spawn"] as const
-type Command = typeof commands[number]
-const isCommand = (command: string): command is Command => (commands as Readonly<string[]>).includes(command)
 
 
 ProcessDecoder.register("V3BridgeSpawnRequestProcess", (processId: V3BridgeSpawnRequestProcessId) => V3BridgeSpawnRequestProcess.decode(processId))
@@ -72,27 +68,10 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
   }
 
   /** @throws */
-  public didReceiveMessage(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-
-    const command = argumentParser.typedString(0, "Command", isCommand, { choices: commands }).parse()
-    argumentParser.dropFirstListArguments()
-
-    switch (command) {
-    case "help":
-      return `Commands: [${commands}]`
-
-    case "force_spawn":
-      return this.setForceSpawn(argumentParser)
-    }
-  }
-
-  /** @throws */
-  private setForceSpawn(argumentParser: ArgumentParser): string {
-    const roomName = argumentParser.roomName(0).parse({ my: true, allowClosedRoom: false })
-    this.forceSpawn.add(roomName)
-
-    return `Set force spawn on ${ConsoleUtility.roomLink(roomName)}`
+  public didReceiveMessage(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.forceSpawnCommand,
+    ])
   }
 
   public run(): V3BridgeSpawnRequestProcessApi {
@@ -149,5 +128,20 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
 
       console.log(`${this.processType}[${this.identifier}] ${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
     })
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly forceSpawnCommand: Command = {
+    command: "force_spawn",
+    help: (): string => "force_spawn {room name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const roomName = argumentParser.roomName([0, "room name"]).parse({ my: true, allowClosedRoom: false })
+      this.forceSpawn.add(roomName)
+
+      return `Set force spawn on ${ConsoleUtility.roomLink(roomName)}`
+    }
   }
 }

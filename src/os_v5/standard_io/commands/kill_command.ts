@@ -7,19 +7,13 @@ import { controlProcessResult } from "./utilities"
 export const KillCommand: Command = {
   command: "kill",
 
-  /** @throws */
   help(): string {
     return "> kill {process IDs}"
   },
 
   /** @throws */
-  run(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-    if (argumentParser.isEmpty === true) {
-      return this.help([])
-    }
-
-    const processes = argumentParser.list(0, "process").parse()
+  run(argumentParser: ArgumentParser): string {
+    const processes = argumentParser.list([0, "process IDs"], "process").parse()
     return "Kill processes:\n" + controlProcessResult(processes, process => {
       ProcessManager.killProcess(process)
       return "killed"

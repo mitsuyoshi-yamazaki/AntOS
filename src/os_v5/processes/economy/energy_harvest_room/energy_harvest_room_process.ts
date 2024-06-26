@@ -1,3 +1,9 @@
+// Energy Harvest Room
+import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./energy_harvest_room_resource"
+import { EnergyHarvestRoomLayoutMaker } from "./energy_harvest_room_layout_maker"
+import { Command, runCommands } from "os_v5/standard_io/command"
+
+// Import
 import { AnyProcessId, BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
@@ -5,7 +11,6 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { V3BridgeSpawnRequestProcessApi } from "../../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { CreepDistributorProcessApi } from "../../game_object_management/creep/creep_distributor_process"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "../../game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "../../game_object_management/creep/creep_task/creep_task"
@@ -13,11 +18,8 @@ import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { BotApi } from "os_v5/processes/bot/types"
 import { BotTypes } from "os_v5/process/process_type_map"
 import { DeferredTaskId, deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
-// Energy Harvest Room
-import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./energy_harvest_room_resource"
-// import { } from "./energy_harvest_room_state_machine"
-import { EnergyHarvestRoomLayoutMaker } from "./energy_harvest_room_layout_maker"
 
 
 /**
@@ -174,10 +176,10 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
   }
 
   /** @throws */
-  public didReceiveMessage(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-
-    return "ok"
+  public didReceiveMessage(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.resetLayoutCommand,
+    ])
   }
 
   /** @throws */
@@ -374,5 +376,31 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
 
     const walls = room.find<StructureWall>(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } })
     walls.forEach(wall => wall.destroy())
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly resetLayoutCommand: Command = {
+    command: "reset_layout",
+    help: (): string => "reset_layout {room name}",
+
+    /** @throws */
+    run: (): string => {
+      const deletedObjects: string[] = []
+      if (this.roomResource != null) {
+        deletedObjects.push("room resource")
+        this.roomResource = null
+      }
+      if (this.roomResourceStateCache != null) {
+        deletedObjects.push("room resource state cache")
+        this.roomResourceStateCache = null
+      }
+
+      if (deletedObjects.length <= 0) {
+        return "Nothing to reset"
+      }
+
+      return `Reset ${deletedObjects.join(" & ")}`
+    }
   }
 }

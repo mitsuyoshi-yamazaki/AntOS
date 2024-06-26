@@ -1,4 +1,4 @@
-import { Command } from "../../command"
+import { Command, runCommands } from "../../command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
@@ -7,29 +7,18 @@ const tab = ConsoleUtility.tab
 const TabSize = ConsoleUtility.TabSize
 
 
-const testTypes = ["parser"] as const
-type TestType = typeof testTypes[number]
-const isTestType = (arg: string): arg is TestType => (testTypes as Readonly<string[]>).includes(arg)
-
-
 export const TestCommand: Command = {
   command: "test",
 
-  /** @throws */
   help(): string {
-    return "> exec test "
+    return "test {test subject} {...args}"
   },
 
   /** @throws */
-  run(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-    const testType = argumentParser.typedString(0, "TestType", isTestType, {choices: testTypes}).parse()
-
-    switch (testType) {
-    case "parser":
-      args.shift()
-      return testArgumentParser(new ArgumentParser(args))
-    }
+  run(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      ArgumentParserCommand,
+    ])
   },
 }
 
@@ -39,26 +28,33 @@ type ArgumentParserArgumentType = typeof argumentParserArgumentTypes[number]
 const isArgumentParserArgumentType = (arg: string): arg is ArgumentParserArgumentType => (argumentParserArgumentTypes as Readonly<string[]>).includes(arg)
 
 
-/** @throws */
-const testArgumentParser = (argumentParser: ArgumentParser): string => {
-  const alignedValueDescription = (value: string, valueType: string): string => {
-    return `${tab(valueType, TabSize.large)} ${value}`
-  }
+const ArgumentParserCommand: Command = {
+  command: "parser",
 
-  const argumentType = argumentParser.typedString(0, "ArgumentParserArgumentType", isArgumentParserArgumentType, {choices: argumentParserArgumentTypes}).parse()
+  help(): string {
+    return "parser {argument type} {...argument list of the type}"
+  },
 
-  const values = argumentParser.list(1, argumentType).parse()
-  const valueDescriptions = values.map((value): string => {
-    const valueType = typeof value
-    if (valueType !== "object") {
-      return alignedValueDescription(`${value}`, valueType)
+  /** @throws */
+  run(argumentParser: ArgumentParser): string {
+    const alignedValueDescription = (value: string, valueType: string): string => {
+      return `${tab(valueType, TabSize.large)} ${value}`
     }
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    return alignedValueDescription(`${value}`, (value as Object).constructor.name)
-  })
 
-  return [
-    alignedValueDescription("type", "value"),
-    ...valueDescriptions,
-  ].join("\n")
+    const argumentType = argumentParser.typedString([0, "argument type"], "ArgumentParserArgumentType", isArgumentParserArgumentType, { choices: argumentParserArgumentTypes }).parse()
+
+    const values = argumentParser.list([1, "values"], argumentType).parse()
+    const valueDescriptions = values.map((value): string => {
+      const valueType = typeof value
+      if (valueType !== "object") {
+        return alignedValueDescription(`${value}`, valueType)
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-types
+      return alignedValueDescription(`${value}`, (value as Object).constructor.name)
+    })
+
+    return [
+      alignedValueDescription("type", "value"),
+      ...valueDescriptions,
+    ].join("\n")  },
 }

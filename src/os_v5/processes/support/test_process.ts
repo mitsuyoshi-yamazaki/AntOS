@@ -5,11 +5,7 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
-
-
-const commands = ["help", "add_deferred_task"] as const
-type Command = typeof commands[number]
-const isCommand = (command: string): command is Command => (commands as Readonly<string[]>).includes(command)
+import { Command, runCommands } from "os_v5/standard_io/command"
 
 
 const deferredTaskTypes = ["loop_task"] as const
@@ -65,43 +61,10 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
   }
 
   /** @throws */
-  didReceiveMessage(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-
-    const command = argumentParser.typedString(0, "Command", isCommand, { choices: commands }).parse()
-    argumentParser.dropFirstListArguments()
-
-    switch (command) {
-    case "help":
-      return `Commands: [${commands}]`
-
-    case "add_deferred_task":
-      return this.addDeferredTask(argumentParser)
-    }
-  }
-
-  /** @throws */
-  private addDeferredTask(argumentParser: ArgumentParser): string {
-    const loopCount = argumentParser.int("loop_count").parse({ min: 0 })
-
-    const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskTypes, number>(
-      this.processId,
-      "loop_task",
-      (): number => {
-        this.log(`Deferred task ${"loop_task"} started`)
-
-        let result = 0
-        for (let i = 0; i < loopCount; i += 1) {
-          result += i
-        }
-        return result
-      },
-      {
-        priority: deferredTaskPriority.low,
-      },
-    )
-
-    return `Registered diferred task ${"loop_task"} (${taskId})`
+  public didReceiveMessage(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.addDeferredTaskCommand,
+    ])
   }
 
   public run(): void {
@@ -133,5 +96,36 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
 
   private log(message: string): void {
     console.log(`${this} ${message}`)
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly addDeferredTaskCommand: Command = {
+    command: "add_deferred_task",
+    help: (): string => "add_deferred_task loop_count={calculation loop count}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const loopCount = argumentParser.int("loop_count").parse({ min: 0 })
+
+      const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskTypes, number>(
+        this.processId,
+        "loop_task",
+        (): number => {
+          this.log(`Deferred task ${"loop_task"} started`)
+
+          let result = 0
+          for (let i = 0; i < loopCount; i += 1) {
+            result += i
+          }
+          return result
+        },
+        {
+          priority: deferredTaskPriority.low,
+        },
+      )
+
+      return `Registered diferred task ${"loop_task"} (${taskId})`
+    }
   }
 }

@@ -7,19 +7,13 @@ import { controlProcessResult } from "./utilities"
 export const SuspendCommand: Command = {
   command: "suspend",
 
-  /** @throws */
   help(): string {
-    return "> suspend {process IDs}"
+    return "suspend {process IDs}"
   },
 
   /** @throws */
-  run(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-    if (argumentParser.isEmpty === true) {
-      return this.help([])
-    }
-
-    const processes = argumentParser.list(0, "process").parse()
+  run(argumentParser: ArgumentParser): string {
+    const processes = argumentParser.list([0, "process IDs"], "process").parse()
     return "Suspend processes:\n" + controlProcessResult(processes, process => ProcessManager.suspend(process) === true ? "suspended" : "failed")
   },
 }

@@ -18,6 +18,11 @@ export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap
 export type SerializedProcessTypes = keyof typeof processTypeDecodingMap
 export type ProcessTypes = keyof typeof processTypeEncodingMap
 
+const processTypes: ProcessTypes[] = Array.from(Object.values(processTypeDecodingMap))
+export const isProcessType = (value: string): value is ProcessTypes => {
+  return (processTypes as string[]).includes(value)
+}
+
 export type BotTypes = "MitsuyoshiBotProcess"
 
 

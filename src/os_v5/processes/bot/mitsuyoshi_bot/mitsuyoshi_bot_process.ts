@@ -1,3 +1,12 @@
+// Driver Process
+import { CreepDistributorProcess, CreepDistributorProcessId } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
+import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
+import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "os_v5/processes/v3_os_bridge/v3_bridge_spawn_request_process"
+
+// Child Process
+import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "os_v5/processes/economy/energy_harvest_room/energy_harvest_room_process"
+
+// Import
 import { MitsuyoshiBotProcessApi } from "./types"
 import { AnyProcess, processDefaultIdentifier, ProcessDependencies, ProcessId } from "../../../process/process"
 import { ApplicationProcess } from "../../../process/application_process"
@@ -8,19 +17,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import type { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { BotTypes } from "os_v5/process/process_type_map"
-
-// Driver Process
-import { CreepDistributorProcess, CreepDistributorProcessId } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
-import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
-import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "os_v5/processes/v3_os_bridge/v3_bridge_spawn_request_process"
-
-// Child Process
-import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "os_v5/processes/economy/energy_harvest_room/energy_harvest_room_process"
-
-
-const commands = ["help", "expand", "debug"] as const
-type Command = typeof commands[number]
-const isCommand = (value: string): value is Command => (commands as Readonly<string[]>).includes(value)
+import { Command, runCommands } from "os_v5/standard_io/command"
 
 
 const roomManagementTypes = ["normal", "energy_harvest"] as const
@@ -63,7 +60,7 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
     return this.constructor.name as BotTypes
   }
 
-  public readonly version = new SemanticVersion(10, 0, 10)
+  public readonly version = new SemanticVersion(10, 0, 11)
 
   private constructor(
     public readonly processId: MitsuyoshiBotProcessId,
@@ -139,51 +136,11 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
 
   // Message
   /** @throws */
-  public didReceiveMessage(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-
-    const command = argumentParser.typedString(0, "Command", isCommand, { choices: commands }).parse()
-    argumentParser.dropFirstListArguments()
-
-    switch (command) {
-    case "help":
-      return `Commands: [${commands}]`
-
-    case "debug":
-      return "OK"
-
-    case "expand":
-      return this.expand(argumentParser)
-    }
-  }
-
-  /** @throws */
-  private expand(argumentParser: ArgumentParser): string { // argumentParser の
-    if (argumentParser.string(0).parseOptional() === "help") {
-      return "expand {room name} {room management type} parent_room_name={room name}"
-    }
-
-    const roomName = argumentParser.roomName(0).parse({ my: false, allowClosedRoom: false })
-    const roomManagementType = argumentParser.typedString(1, "RoomManagementType", isRoomManagementType, { choices: roomManagementTypes }).parse()
-    const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
-
-    if (this.managingRoomInfo[roomName] != null) {
-      throw `${ConsoleUtility.roomLink(roomName)} is already running (${this.managingRoomInfo[roomName]?.case})`
-    }
-
-    switch (roomManagementType) {
-    case "normal":
-      throw `${roomManagementType} is not implemented yet`
-
-    case "energy_harvest":
-      return this.launchEnergyHarvestRoom(roomName, parentRoomName)
-
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = roomManagementType
-      throw `Unknown room management type ${roomManagementType}`
-    }
-    }
+  public didReceiveMessage(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.debugCommand,
+      this.expandCommand,
+    ])
   }
 
   // Run
@@ -219,5 +176,47 @@ export class MitsuyoshiBotProcess extends ApplicationProcess<void, string, Mitsu
       processId: process.processId
     }
     return `Launched ${process}`
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly debugCommand: Command = {
+    command: "debug",
+    help: (): string => "debug",
+
+    /** @throws */
+    run: (): string => {
+      return "OK"
+    }
+  }
+
+  private readonly expandCommand: Command = {
+    command: "expand",
+    help: (): string => "expand {room name} {room management type} parent_room_name={room name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const roomName = argumentParser.roomName([0, "room name"]).parse({ my: false, allowClosedRoom: false })
+      const roomManagementType = argumentParser.typedString([1, "room management type"], "RoomManagementType", isRoomManagementType, { choices: roomManagementTypes }).parse()
+      const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
+
+      if (this.managingRoomInfo[roomName] != null) {
+        throw `${ConsoleUtility.roomLink(roomName)} is already running (${this.managingRoomInfo[roomName]?.case})`
+      }
+
+      switch (roomManagementType) {
+      case "normal":
+        throw `${roomManagementType} is not implemented yet`
+
+      case "energy_harvest":
+        return this.launchEnergyHarvestRoom(roomName, parentRoomName)
+
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = roomManagementType
+        throw `Unknown room management type ${roomManagementType}`
+      }
+      }
+    }
   }
 }
