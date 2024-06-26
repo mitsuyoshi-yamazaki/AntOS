@@ -1,4 +1,4 @@
-export type ArgumentKey = string | number
+export type ArgumentKey = string | [number, string | null] /// [index, description]
 type Key = ArgumentKey
 
 export type ArgumentParserOptions = {
@@ -21,7 +21,7 @@ export abstract class SingleArgumentParser<Options, Value> {
     if (this.parseOptions?.missingArgumentErrorMessage != null) {
       return this.parseOptions.missingArgumentErrorMessage
     }
-    return `Missing ${getKeyName(this.key)} argument`
+    return `Missing ${getKeyDescription(this.key)} argument`
   }
 }
 
@@ -40,11 +40,11 @@ export abstract class SingleOptionalArgument<Options, Value> extends SingleArgum
 }
 
 
-export const getKeyName = (key: ArgumentKey): string => {
+export const getKeyDescription = (key: ArgumentKey): string => {
   if (typeof key === "string") {
     return key
   }
-  const index = key
+  const [index, description] = key
   const indexName = ((): string => {
     switch (index % 10) {
     case 1:
@@ -57,5 +57,9 @@ export const getKeyName = (key: ArgumentKey): string => {
       return "th"
     }
   })()
-  return `${index}${indexName}`
+
+  if (description == null) {
+    return `${index}${indexName}`
+  }
+  return `${description} (${index}${indexName})`
 }

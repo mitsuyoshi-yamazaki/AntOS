@@ -1,6 +1,6 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
-import { ArgumentKey, ArgumentParserOptions, getKeyName, SingleOptionalArgument } from "./single_argument_parser"
+import { ArgumentKey, ArgumentParserOptions, getKeyDescription, SingleOptionalArgument } from "./single_argument_parser"
 
 
 // ---- Primitive Type ---- //
@@ -46,7 +46,7 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
     }
     if (!(this.typeGuard(this.value))) {
       const errorMessages: string[] = [
-        `${getKeyName(this.key)} ${this.value} is not ${this.typeName}`,
+        `${getKeyDescription(this.key)} ${this.value} is not ${this.typeName}`,
       ]
       if (this.choises != null) {
         errorMessages.push(`choices are: [${this.choises}]`)
@@ -85,10 +85,10 @@ const parseIntValue = (key: ArgumentKey, value: string, options?: { min?: number
 /** throws */
 const validateNumberRange = (key: ArgumentKey, value: number, options?: { min?: number, max?: number }): void => {
   if (options?.min != null && value < options.min) {
-    throw `${getKeyName(key)} is too small (${value} < ${options.min})`
+    throw `${getKeyDescription(key)} is too small (${value} < ${options.min})`
   }
   if (options?.max != null && value > options.max) {
-    throw `${getKeyName(key)} is too large (${value} > ${options.max})`
+    throw `${getKeyDescription(key)} is too large (${value} > ${options.max})`
   }
 }
 

@@ -1,6 +1,6 @@
 import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { getKeyName, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
+import { getKeyDescription, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
 
 
 export class ProcessArgument extends SingleOptionalArgument<void, AnyProcess> {
@@ -12,7 +12,7 @@ export class ProcessArgument extends SingleOptionalArgument<void, AnyProcess> {
 
     const process = ProcessManager.getProcess(this.value as AnyProcessId)
     if (process == null) {
-      throw `No process with ID ${this.value} (${getKeyName(this.key)})`
+      throw `No process with ID ${this.value} (${getKeyDescription(this.key)})`
     }
 
     return process
