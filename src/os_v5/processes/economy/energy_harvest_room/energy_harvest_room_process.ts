@@ -2,20 +2,20 @@
 import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./room_resource"
 import { EnergyHarvestRoomLayoutMaker } from "./room_layout_maker"
 import { Command, runCommands } from "os_v5/standard_io/command"
+import { EnergyHarvestRoomProcessCreep, EnergyHarvestRoomProcessCreepMemory, EnergyHarvestRoomProcessCreepMemoryExtension, EnergyHarvestRoomProcessCreepRoles, EnergyHarvestRoomProcessDependency } from "./types"
+
+// Object Controller
+import { PrimitiveWorkerCreepController } from "./object_controllers/primitive_worker_creep_controller"
 
 // Import
 import { AnyProcessId, BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import { V3BridgeSpawnRequestProcessApi } from "../../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { CreepDistributorProcessApi } from "../../game_object_management/creep/creep_distributor_process"
-import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "../../game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "../../game_object_management/creep/creep_task/creep_task"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
-import { BotApi } from "os_v5/processes/bot/types"
 import { BotTypes } from "os_v5/process/process_type_map"
 import { DeferredTaskId, deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
@@ -29,20 +29,17 @@ import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser
  */
 
 
-type CreepRoles = "worker" | "claimer" | "distributor" | "puller"
-type CreepMemoryExtension = {
-  tempState: "harvesting" | "working"
-}
-type MyCreep = TaskDrivenCreep<CreepRoles, CreepMemoryExtension>
-type MyCreepMemory = TaskDrivenCreepMemory<CreepRoles> & CreepMemoryExtension
-
-
-type DeferredTaskType = "make layout"
-
-
 type EnergyHarvestRoomProcessApi = {
   readonly roomResource: EnergyHarvestRoomResource | null,
 }
+
+
+type CreepMemoryExtension = EnergyHarvestRoomProcessCreepMemoryExtension
+type CreepRoles = EnergyHarvestRoomProcessCreepRoles
+type MyCreep = EnergyHarvestRoomProcessCreep
+type MyCreepMemory = EnergyHarvestRoomProcessCreepMemory
+type Dependency = EnergyHarvestRoomProcessDependency
+type DeferredTaskType = "make layout"
 
 
 type EnergyHarvestRoomProcessState = {
@@ -56,10 +53,6 @@ type EnergyHarvestRoomProcessState = {
   } | null
 }
 
-type Dependency = Pick<V3BridgeSpawnRequestProcessApi, "addSpawnRequest">
-  & CreepDistributorProcessApi
-  & CreepTaskStateManagementProcessApi
-  & Partial<BotApi>
 
 ProcessDecoder.register("EnergyHarvestRoomProcess", (processId: EnergyHarvestRoomProcessId, state: EnergyHarvestRoomProcessState) => EnergyHarvestRoomProcess.decode(processId, state))
 
@@ -80,6 +73,8 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
   private roomResourceStateCache: EnergyHarvestRoomResourceState | null
   private roomResourceGenerationResult: "succeeded" | "failed" | null = null
   private readonly codename: string
+
+  private readonly workerController = new PrimitiveWorkerCreepController()
 
   private constructor(
     public readonly processId: EnergyHarvestRoomProcessId,
@@ -233,7 +228,8 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     if (workers == null || workers.length <= 0) {
       this.spawnWorker(dependency)
     } else {
-      this.runWorkers(workers)
+      // TODO: roomResourceがない状態のprimitive worker controller
+      workers.forEach(creep => this.workerController.run(creep, this.roomName))
     }
 
     return {
@@ -262,65 +258,6 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
   }
 
   // Private
-  private runWorkers(workers: MyCreep[]): void {
-    workers.forEach(creep => {
-      if (creep.task != null) {
-        return
-      }
-      // creep.task = this.workerTaskFor(creep)
-      this.runWorker(creep)
-    })
-  }
-
-  private runWorker(creep: MyCreep): void {
-    if (creep.room.name !== this.roomName) {
-      creep.task = CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
-      return
-    }
-
-    // TODO: CreepTaskへ移す
-    switch (creep.memory.tempState) {
-    case "harvesting": {
-      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= 0) {
-        creep.memory.tempState = "working"
-        return
-      }
-      const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE)
-      if (source == null) {
-        if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
-          creep.memory.tempState = "working"
-        }
-        return
-      }
-      if (creep.harvest(source) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(source)
-      }
-      return
-    }
-
-    case "working": {
-      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= 0) {
-        creep.memory.tempState = "harvesting"
-        return
-      }
-
-      const controller = creep.room.controller
-      if (controller == null) {
-        return
-      }
-      if (creep.upgradeController(controller) === ERR_NOT_IN_RANGE) {
-        creep.moveTo(controller)
-      }
-      return
-    }
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = creep.memory.tempState
-      return
-    }
-    }
-  }
-
   private getMyCreeps(dependency: Dependency): Map<CreepRoles, MyCreep[]> {
     const creeps = dependency.getCreepsFor(this.processId)
     const creepsWithTask = dependency.registerTaskDrivenCreeps<CreepRoles, CreepMemoryExtension>(creeps)
