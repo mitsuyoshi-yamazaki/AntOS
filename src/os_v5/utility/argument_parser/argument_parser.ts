@@ -13,8 +13,11 @@ import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser
  */
 
 export class ArgumentParser {
-  public readonly isEmpty: boolean
+  public get isEmpty(): boolean {
+    return Array.from(this.rawKeywordArguments.values()).length === 0 && this.rawArguments.length <= this.rawArgumentOffset
+  }
 
+  protected rawArgumentOffset = 0
   protected readonly rawArguments: string[] = []
   protected readonly rawKeywordArguments = new Map<string, string>()
 
@@ -22,12 +25,6 @@ export class ArgumentParser {
   public constructor(
     args: string[],
   ) {
-    if (args[0] == null || args[0].length <= 0) {
-      this.isEmpty = true
-    } else {
-      this.isEmpty = false
-    }
-
     let hasKeywordArguments = false
     const errors: string[] = []
 
@@ -65,15 +62,19 @@ export class ArgumentParser {
     }
   }
 
-  public dropFirstListArguments(count?: number): void { // ArgumentParser を別関数に渡すなどの場合の用途
-    this.rawArguments.splice(0, count ?? 1)
+  public moveOffset(offset: number): void { // ArgumentParser を別関数に渡すなどの場合の用途
+    this.rawArgumentOffset += offset
+  }
+
+  public negativeOffsetElements(): string[] { /// offset より前の配列引数
+    return this.rawArguments.slice(0, this.rawArgumentOffset)
   }
 
   protected getRawValueFor(key: ArgumentKey): string | null {
     if (typeof key === "string") {
       return this.rawKeywordArguments.get(key) ?? null
     }
-    return this.rawArguments[key] ?? null
+    return this.rawArguments[key[0] + this.rawArgumentOffset] ?? null
   }
 
 
