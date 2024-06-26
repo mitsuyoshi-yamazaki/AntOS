@@ -1,6 +1,6 @@
 // Energy Harvest Room
-import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./energy_harvest_room_resource"
-import { EnergyHarvestRoomLayoutMaker } from "./energy_harvest_room_layout_maker"
+import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./room_resource"
+import { EnergyHarvestRoomLayoutMaker } from "./room_layout_maker"
 import { Command, runCommands } from "os_v5/standard_io/command"
 
 // Import
@@ -248,12 +248,10 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
       this.queuingDeferredTasks.delete(taskResult.taskType)
       this.roomResource = taskResult.result.value
       this.destroyStructures(taskResult.result.value.room)  // ここで行うのは、roomResource が算出される際に残しておくべき Structure の判断も行う想定のため
-      console.log(`${this} room resource succeeded`)  // FixMe:
       return
     case "failed":
       this.roomResourceGenerationResult = "failed"
       this.queuingDeferredTasks.delete(taskResult.taskType)
-      console.log(`${this} room resource failed`)  // FixMe:
       return
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

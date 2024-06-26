@@ -1,4 +1,4 @@
-import { EnergyHarvestRoomResource } from "./energy_harvest_room_resource"
+import { EnergyHarvestRoomResource } from "./room_resource"
 
 export class EnergyHarvestRoomLayoutMaker {
   public constructor(
