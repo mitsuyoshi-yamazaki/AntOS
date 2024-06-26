@@ -1,5 +1,6 @@
 import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import type { SerializableObject } from "os_v5/utility/types"
+import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import type { BotTypes, ProcessTypes } from "./process_type_map"
 
 /**
@@ -89,7 +90,7 @@ export abstract class Process<
   runAfterTick?(dependency: Dependency): void
 
   /** @throws */
-  didReceiveMessage?(args: string[], dependency: Dependency): string
+  didReceiveMessage?(argumentParser: ArgumentParser, dependency: Dependency): string
 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

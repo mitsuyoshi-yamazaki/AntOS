@@ -12,6 +12,7 @@ import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
 import { ProcessExecutionLog } from "./process_execution_log"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
 /**
@@ -83,7 +84,7 @@ type ProcessManager = {
   getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null
 
   /** @throws */
-  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string
 }
 
 
@@ -272,7 +273,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   /** @throws */
-  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string {
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string {
     if (process.didReceiveMessage == null) {
       throw `${process.processType}[${process.identifier}] won't receive message`
     }
@@ -282,7 +283,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       throw `${process.processType}[${process.identifier}] no dependent data`
     }
 
-    return process.didReceiveMessage(args, dependency)
+    return process.didReceiveMessage(argumentParser, dependency)
   },
 }
 

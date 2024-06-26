@@ -1,5 +1,6 @@
 import type { SerializableObject } from "os_v5/utility/types"
-import { SemanticVersion } from "shared/utility/semantic_version"
+import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import type { SemanticVersion } from "shared/utility/semantic_version"
 import { Process } from "./process"
 
 /**
@@ -23,5 +24,5 @@ export abstract class ApplicationProcess<
 
 
   /** @throws */
-  abstract didReceiveMessage(args: string[], dependency: Dependency): string
+  abstract didReceiveMessage(argumentParser: ArgumentParser, dependency: Dependency): string
 }
