@@ -40,7 +40,7 @@ export class UpgradeController extends Task<UpgradeControllerState> {
       creep.executedActions.add(this.actionType)
 
       const upgradePower = creep.body.filter(body => body.type === WORK).length * GameConstants.creep.actionPower.upgradeController
-      if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= upgradePower) {
+      if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= upgradePower) {
         return "finished"
       }
       return "in progress"

@@ -35,7 +35,7 @@ export class MoveTo extends Task<MoveToState> {
   }
 
   public run(creep: AnyV5Creep): TaskResult {
-    if (creep.pos.isNearTo(this.position) === true) {
+    if (creep.pos.getRangeTo(this.position) <= (this.range ?? 1)) {
       return "finished"
     }
 
