@@ -53,7 +53,7 @@ export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName
   generate(prefix?: string): string {
     const index = uniqueNameMemory.uniqueIdIndex
     uniqueNameMemory.uniqueIdIndex += 1
-    const shortName = `${prefix}${index.toString(UniqueId.radix)}`
+    const shortName = `${prefix ?? ""}${index.toString(UniqueId.radix)}`
 
     const creep = Game.creeps[shortName]
     if (creep != null) {
