@@ -100,12 +100,18 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, Position
 
 export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
   /** throws */
-  public parse(): CreepBody {
+  public parse(options: { requiredEnergyLimit?: number }): CreepBody {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
 
-    return CreepBody.createFromTextRepresentation(this.value)
+    const creepBody = CreepBody.createFromTextRepresentation(this.value)
+    if (options?.requiredEnergyLimit != null) {
+      if (creepBody.energyCost > options.requiredEnergyLimit) {
+        throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`
+      }
+    }
+    return creepBody
   }
 }
 
