@@ -1,22 +1,31 @@
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
+
 export type CommandOutput = {
   readonly outputType: "output" | "error"
   readonly message: string
 }
 
-export type Command = {
+
+export type ObjectParserCommand<T> = {
   readonly command: string
 
   help(): string
 
   /** @throws */
-  run(argumentParser: ArgumentParser): string | CommandOutput[]
+  run(argumentParser: ArgumentParser): T
 }
 
-export const runCommands = (argumentParser: ArgumentParser, commandRunners: Command[]): string => {
-  const availableCommands = new Map<string, Command>(commandRunners.map(command => [command.command, command]))
+export type Command = ObjectParserCommand<string | CommandOutput[]>
+
+
+const runCommandswith = <CommandOutput, Output>(
+  argumentParser: ArgumentParser,
+  commandRunners: ObjectParserCommand<CommandOutput>[],
+  runCommand: (command: ObjectParserCommand<CommandOutput>, argumentParser: ArgumentParser) => Output
+): Output => {
+  const availableCommands = new Map<string, ObjectParserCommand<CommandOutput>>(commandRunners.map(command => [command.command, command]))
 
   const command = argumentParser.string([0, "command"]).parseOptional()
   const parentCommands = argumentParser.negativeOffsetElements()
@@ -28,13 +37,13 @@ export const runCommands = (argumentParser: ArgumentParser, commandRunners: Comm
   ].join("\n")
 
   if (command == null || command.length <= 0 || command === "help") {
-    return helpText
+    throw helpText
   }
 
   const commandRunner = availableCommands.get(command)
   if (commandRunner != null) {
     if (argumentParser.string([0, null]).parseOptional() === "help") {
-      return [
+      throw [
         ...parentCommands,
         commandRunner.help(),
       ].join(" ")
@@ -43,6 +52,15 @@ export const runCommands = (argumentParser: ArgumentParser, commandRunners: Comm
   }
 
   throw `Unknown command "${command}", ${helpText}`
+}
+
+
+export const runObjectParserCommands = <T>(argumentParser: ArgumentParser, commandRunners: ObjectParserCommand<T>[]): T => {
+  return runCommandswith(argumentParser, commandRunners, (command, argumentParser) => command.run(argumentParser))
+}
+
+export const runCommands = (argumentParser: ArgumentParser, commandRunners: Command[]): string => {
+  return runCommandswith<string | CommandOutput[], string>(argumentParser, commandRunners, (command, argumentParser) => runCommand(command, argumentParser))
 }
 
 
