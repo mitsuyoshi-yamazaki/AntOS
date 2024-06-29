@@ -11,7 +11,8 @@ import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../proc
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
-import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "../../processes/game_object_management/creep/creep_traffic_manager_process"
+import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
+
 
 // Temporary
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
