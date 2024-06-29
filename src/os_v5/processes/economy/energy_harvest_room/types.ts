@@ -5,8 +5,8 @@ import type { V3BridgeSpawnRequestProcessApi } from "os_v5/processes/v3_os_bridg
 
 // Creep
 export type EnergyHarvestRoomProcessCreepRoles = "worker" | "claimer" | "distributor" | "puller"
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type EnergyHarvestRoomProcessCreepMemoryExtension = {
-  tempState: "harvesting" | "working" // FixMe: タスク管理に移す
 }
 export type EnergyHarvestRoomProcessCreep = TaskDrivenCreep<EnergyHarvestRoomProcessCreepRoles, EnergyHarvestRoomProcessCreepMemoryExtension>
 export type EnergyHarvestRoomProcessCreepMemory = TaskDrivenCreepMemory<EnergyHarvestRoomProcessCreepRoles> & EnergyHarvestRoomProcessCreepMemoryExtension
