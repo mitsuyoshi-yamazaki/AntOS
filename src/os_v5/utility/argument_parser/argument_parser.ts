@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { IntArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { IntArgument, LocalPositionArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -103,5 +103,9 @@ export class ArgumentParser {
   // ---- Game Object ---- //
   public roomName(key: ArgumentKey, options?: ArgumentParserOptions): RoomNameArgument {
     return new RoomNameArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public localPosition(key: ArgumentKey, options?: ArgumentParserOptions): LocalPositionArgument {
+    return new LocalPositionArgument(key, this.getRawValueFor(key), options)
   }
 }
