@@ -141,7 +141,7 @@ export class MoveToRoom extends Task<MoveToRoomState> {
 
     switch (result) {
     case OK:
-      creep.executedActions.add("move")
+      creep.executedActions.add(this.actionType)
       return "in progress"
 
     case ERR_BUSY:
@@ -168,7 +168,7 @@ export class MoveToRoom extends Task<MoveToRoomState> {
 
     switch (result) {
     case OK:
-      creep.executedActions.add("move")
+      creep.executedActions.add(this.actionType)
       return "in progress"
 
     case ERR_BUSY:

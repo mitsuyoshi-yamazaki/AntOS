@@ -37,7 +37,7 @@ export class HarvestEnergy extends Task<HarvestEnergyState> {
       return "failed"
     }
     if (creep.harvest(target) === OK) {
-      creep.executedActions.add("harvest")
+      creep.executedActions.add(this.actionType)
 
       const harvestPower = creep.body.filter(body => body.type === WORK).length * GameConstants.creep.actionPower.harvestEnergy
       if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= harvestPower) {

@@ -42,7 +42,7 @@ export class MoveTo extends Task<MoveToState> {
     const result = creep.moveTo(this.position)
     switch (result) {
     case OK:
-      creep.executedActions.add("move")
+      creep.executedActions.add(this.actionType)
       return "in progress"
 
     case ERR_BUSY:
