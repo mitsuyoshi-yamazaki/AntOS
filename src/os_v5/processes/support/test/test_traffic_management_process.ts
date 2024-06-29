@@ -270,6 +270,8 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
   private parseCreepOrder(argumentParser: ArgumentParser): CreepOrder {
     return runObjectParserCommands<CreepOrder>(argumentParser, [
       this.parseMoveToOrderCommand,
+      this.parseAvoidOrderCommand,
+      this.parseFollowOrderCommand,
     ])
   }
 
@@ -285,6 +287,40 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
       return {
         case: "move_to",
         p: position,
+        r: range == null ? undefined : range
+      }
+    }
+  }
+
+  private readonly parseAvoidOrderCommand: ObjectParserCommand<CreepOrderAvoid> = {
+    command: "avoid",
+    help: (): string => "avoid {position} {range}?",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): CreepOrderAvoid => {
+      const position = argumentParser.localPosition([0, "position"]).parse()
+      const range = argumentParser.int([1, "range"]).parseOptional({ min: 0, max: 3 })
+
+      return {
+        case: "avoid",
+        p: position,
+        r: range == null ? undefined : range
+      }
+    }
+  }
+
+  private readonly parseFollowOrderCommand: ObjectParserCommand<CreepOrderFollow> = {
+    command: "follow",
+    help: (): string => "follow {target creep name} {range}?",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): CreepOrderFollow => {
+      const creep = argumentParser.v5Creep([0, "target creep name"]).parse({processId: this.processId})
+      const range = argumentParser.int([1, "range"]).parseOptional({ min: 0, max: 3 })
+
+      return {
+        case: "follow",
+        c: creep.name,
         r: range == null ? undefined : range
       }
     }
