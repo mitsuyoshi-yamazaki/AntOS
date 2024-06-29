@@ -98,6 +98,36 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, Position
   }
 }
 
+export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creep = Game.creeps[this.value]
+    if (creep == null) {
+      throw `No my creep named ${this.value}`
+    }
+    return creep
+  }
+}
+
+export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creep = Game.getObjectById(this.value as Id<Creep>)
+    if (creep == null) {
+      throw `No my creep named ${this.value}`
+    }
+    return creep
+  }
+}
+
 export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
   /** throws */
   public parse(options: { requiredEnergyLimit?: number }): CreepBody {
