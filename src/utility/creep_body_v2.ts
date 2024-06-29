@@ -13,6 +13,15 @@ const bodyPartEncodingMap = {
 const bodyPartDecodingMap = reverseConstMapping(bodyPartEncodingMap)
 
 export class CreepBody {
+  public get stringRepresentation(): string {
+    if (this._stringRepresentation == null) {
+      this._stringRepresentation = this.getStringRepresentation()
+    }
+    return this._stringRepresentation
+  }
+  private _stringRepresentation: string | null = null
+
+
   private constructor(
     public readonly bodyParts: BodyPartConstant[]
   ) {
@@ -28,6 +37,40 @@ export class CreepBody {
    */
   public static createFromTextRepresentation(input: string): CreepBody {
     return new CreepBody(parseEncodedCreepBody(input))
+  }
+
+
+  // Private
+  private getStringRepresentation(): string {
+    const consecutiveBodyParts: {count: number, body: BodyPartConstant}[] = []
+    let currentBody: { count: number, body: BodyPartConstant } | null = null
+
+    this.bodyParts.forEach(body => {
+      if (currentBody == null) {
+        currentBody = {
+          count: 1,
+          body,
+        }
+        return
+      }
+
+      if (currentBody.body !== body) {
+        consecutiveBodyParts.push(currentBody)
+        currentBody = {
+          count: 1,
+          body,
+        }
+        return
+      }
+
+      currentBody.count += 1
+    })
+
+    if (currentBody != null) {
+      consecutiveBodyParts.push(currentBody)
+    }
+
+    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join()
   }
 }
 
