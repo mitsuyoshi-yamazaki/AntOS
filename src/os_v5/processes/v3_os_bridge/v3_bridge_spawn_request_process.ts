@@ -60,7 +60,15 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
   public getDependentData(): void { }
 
   public staticDescription(): string {
-    return ""
+    const descriptions: string[] = [
+      `${this.spawnRequests.length} requests`,
+    ]
+    if (this.forceSpawn.size > 0) {
+      const forceSpawnRooms = Array.from(this.forceSpawn).map(roomName => ConsoleUtility.roomLink(roomName)).join(",")
+      descriptions.push(`force spawn: ${forceSpawnRooms}`)
+    }
+
+    return descriptions.join(", ")
   }
 
   public runtimeDescription(): string {
@@ -84,6 +92,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
           roomName,
           options,
         })
+        console.log(`${this} added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
       },
     }
   }
@@ -126,7 +135,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
       const result = spawn.spawnCreep(request.body.bodyParts, creepName, options)
       this.forceSpawn.delete(request.roomName)
 
-      console.log(`${this.processType}[${this.identifier}] ${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
+      console.log(`${this} ${spawn.name} in ${ConsoleUtility.roomLink(spawn.room.name)}: ${result}`)
     })
   }
 
