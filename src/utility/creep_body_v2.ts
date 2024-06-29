@@ -81,7 +81,7 @@ export class CreepBody {
       consecutiveBodyParts.push(currentBody)
     }
 
-    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join().toUpperCase()
+    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join("").toUpperCase()
   }
 }
 
@@ -106,6 +106,6 @@ const parseEncodedCreepBody = (input: string): BodyPartConstant[] => {
     if (bodyPart == null) {
       throw `Invalid body part specifier ${encodedBodyPart} (in ${input} at ${index})`
     }
-    return new Array(count).map(_ => bodyPart)
+    return new Array(count).fill(bodyPart)
   })
 }
