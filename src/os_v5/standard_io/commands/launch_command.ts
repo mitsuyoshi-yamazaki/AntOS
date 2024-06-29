@@ -13,7 +13,7 @@ import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } fr
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
 
 // Temporary
-import { TestProcess, TestProcessId } from "../../processes/support/test_process"
+import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 
 // v3 Bridge
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
