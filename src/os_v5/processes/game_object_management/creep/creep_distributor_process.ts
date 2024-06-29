@@ -1,6 +1,6 @@
 import { AnyProcessId, Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { AnyV5Creep, AnyV5CreepMemory, ExtendedV5CreepMemory, isV5Creep, isV5CreepMemory, V5Creep, V5CreepMemory } from "os_v5/utility/game_object/creep"
+import { AnyV5Creep, AnyV5CreepMemory, ExtendedV5CreepMemory, isV5CreepMemory, V5Creep, V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { CreepName } from "prototype/creep"
@@ -23,6 +23,7 @@ ProcessDecoder.register("CreepDistributorProcess", (processId: CreepDistributorP
 
 
 export type CreepDistributorProcessApi = {
+  countCreepsFor(processId: AnyProcessId): number
   getCreepsFor<M extends SerializableObject>(processId: AnyProcessId): V5Creep<M>[]
   getDeadCreepsFor(processId: AnyProcessId): CreepName[]
   getDeadCreeps(): CreepName[]
@@ -93,6 +94,10 @@ export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentif
     })
 
     return {
+      countCreepsFor: (processId: AnyProcessId): number => {
+        return this.v5Creeps.get(processId)?.length ?? 0
+      },
+
       getCreepsFor: <M extends SerializableObject>(processId: AnyProcessId): V5Creep<M>[] => {
         return [...this.v5Creeps.getValueFor(processId)] as V5Creep<M>[]
       },
