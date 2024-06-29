@@ -1,5 +1,5 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import { Position } from "shared/utility/position"
+import { Position } from "shared/utility/position_v2"
 import { RoomName } from "shared/utility/room_name_types"
 import { AvailableRoomPositions } from "shared/utility/room_position"
 import { GameConstants } from "utility/constants"
@@ -106,6 +106,7 @@ export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLi
     }
 
     const creepBody = CreepBody.createFromTextRepresentation(this.value)
+    console.log(`Creep body: ${creepBody.bodyParts}\ncost: ${creepBody.energyCost}, limit: ${options?.requiredEnergyLimit}`)
     if (options?.requiredEnergyLimit != null) {
       if (creepBody.energyCost > options.requiredEnergyLimit) {
         throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`

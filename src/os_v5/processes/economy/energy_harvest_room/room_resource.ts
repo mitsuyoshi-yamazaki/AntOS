@@ -1,4 +1,12 @@
-import { Position } from "shared/utility/position"
+import { Position } from "shared/utility/position_v2"
+
+/**
+# EnergyHarvestRoomResource
+## 概要
+
+## レイアウト
+
+ */
 
 export type EnergyHarvestRoomResourceState = {
   readonly w: Position
