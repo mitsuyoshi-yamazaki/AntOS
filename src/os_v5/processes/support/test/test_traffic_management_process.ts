@@ -55,17 +55,17 @@ type MyCreep = TaskDrivenCreep<CreepRole, CreepMemoryExtension>
 type MyCreepMemory = V5CreepMemory<TaskDrivenCreepMemory<CreepRole> & CreepMemoryExtension>
 
 
-type TestTrafficManagementProcessState = {
+type TestTrafficManagerProcessState = {
   readonly r: RoomName
   readonly p: RoomName
 }
 
-ProcessDecoder.register("TestTrafficManagementProcess", (processId: TestTrafficManagementProcessId, state: TestTrafficManagementProcessState) => TestTrafficManagementProcess.decode(processId, state))
+ProcessDecoder.register("TestTrafficManagerProcess", (processId: TestTrafficManagerProcessId, state: TestTrafficManagerProcessState) => TestTrafficManagerProcess.decode(processId, state))
 
-export type TestTrafficManagementProcessId = ProcessId<Dependency, RoomName, void, TestTrafficManagementProcessState, TestTrafficManagementProcess>
+export type TestTrafficManagerProcessId = ProcessId<Dependency, RoomName, void, TestTrafficManagerProcessState, TestTrafficManagerProcess>
 
 
-export class TestTrafficManagementProcess extends Process<Dependency, RoomName, void, TestTrafficManagementProcessState, TestTrafficManagementProcess> {
+export class TestTrafficManagerProcess extends Process<Dependency, RoomName, void, TestTrafficManagerProcessState, TestTrafficManagerProcess> {
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     processes: [
@@ -82,28 +82,28 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
 
 
   private constructor(
-    public readonly processId: TestTrafficManagementProcessId,
+    public readonly processId: TestTrafficManagerProcessId,
     public readonly roomName: RoomName,
     public readonly parentRoomName: RoomName,
   ) {
     super()
     this.identifier = roomName
-    this.codename = SystemCalls.uniqueId.generateCodename("TestTrafficManagementProcess", parseInt(processId, 36))
+    this.codename = SystemCalls.uniqueId.generateCodename("TestTrafficManagerProcess", parseInt(processId, 36))
   }
 
-  public encode(): TestTrafficManagementProcessState {
+  public encode(): TestTrafficManagerProcessState {
     return {
       r: this.roomName,
       p: this.parentRoomName,
     }
   }
 
-  public static decode(processId: TestTrafficManagementProcessId, state: TestTrafficManagementProcessState): TestTrafficManagementProcess {
-    return new TestTrafficManagementProcess(processId, state.r, state.p)
+  public static decode(processId: TestTrafficManagerProcessId, state: TestTrafficManagerProcessState): TestTrafficManagerProcess {
+    return new TestTrafficManagerProcess(processId, state.r, state.p)
   }
 
-  public static create(processId: TestTrafficManagementProcessId, roomName: RoomName, parentRoomName: RoomName): TestTrafficManagementProcess {
-    return new TestTrafficManagementProcess(processId, roomName, parentRoomName)
+  public static create(processId: TestTrafficManagerProcessId, roomName: RoomName, parentRoomName: RoomName): TestTrafficManagerProcess {
+    return new TestTrafficManagerProcess(processId, roomName, parentRoomName)
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {

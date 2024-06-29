@@ -11,11 +11,11 @@ import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../proc
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
-import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "../../processes/game_object_management/creep/creep_traffic_management_process"
+import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "../../processes/game_object_management/creep/creep_traffic_manager_process"
 
 // Temporary
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
-import { TestTrafficManagementProcess, TestTrafficManagementProcessId } from "../../processes/support/test/test_traffic_management_process"
+import { TestTrafficManagerProcess, TestTrafficManagerProcessId } from "../../processes/support/test/test_traffic_management_process"
 
 // v3 Bridge
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
@@ -137,11 +137,11 @@ registerProcess("CreepTrafficManagerProcess", () => {
   }) as ProcessConstructor
 })
 
-registerProcess("TestTrafficManagementProcess", (argumentParser) => {
+registerProcess("TestTrafficManagerProcess", (argumentParser) => {
   const roomName = argumentParser.roomName("room_name").parse({ my: false, allowClosedRoom: false })
   const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
-  return ((processId: TestTrafficManagementProcessId): TestTrafficManagementProcess => {
-    return TestTrafficManagementProcess.create(processId, roomName, parentRoomName)
+  return ((processId: TestTrafficManagerProcessId): TestTrafficManagerProcess => {
+    return TestTrafficManagerProcess.create(processId, roomName, parentRoomName)
   }) as ProcessConstructor
 })
