@@ -1,14 +1,29 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
-import { IntArgument, StringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
 
 
 export const iterableTypeParserMakers = {
+  int: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): IntArgument => {
+    return new IntArgument(key, value, options)
+  },
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
   },
-  int: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): IntArgument => {
-    return new IntArgument(key, value, options)
+  room_name: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomNameArgument => {
+    return new RoomNameArgument(key, value, parseOptions)
+  },
+  local_position: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): LocalPositionArgument => {
+    return new LocalPositionArgument(key, value, parseOptions)
+  },
+  my_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): MyCreepArgument => {
+    return new MyCreepArgument(key, value, parseOptions)
+  },
+  hostile_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): HostileCreepArgument => {
+    return new HostileCreepArgument(key, value, parseOptions)
+  },
+  creep_body: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): CreepBodyArgument => {
+    return new CreepBodyArgument(key, value, parseOptions)
   },
   // float: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): FloatArgument => {
   //   return new FloatArgument(key, value, options)
@@ -31,14 +46,8 @@ export const iterableTypeParserMakers = {
   // object_id: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RawStringArgument => {
   //   return new RawStringArgument(key, value, parseOptions)
   // },
-  // room_name: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomNameArgument => {
-  //   return new RoomNameArgument(key, value, parseOptions)
-  // },
   // room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
   //   return new RoomArgument(key, value, parseOptions)
-  // },
-  // local_position: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): LocalPositionArgument => {
-  //   return new LocalPositionArgument(key, value, parseOptions)
   // },
 } as const
 

@@ -1,6 +1,6 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
-import { ProcessArgument } from "./single_argument_parsers"
+import { ProcessArgument, V5CreepArgument } from "./single_argument_parsers"
 import { iterableTypeParserMakers as primitiveIterableTypeParserMakers } from "../argument_parser/list_argument_parser"
 
 
@@ -8,6 +8,9 @@ const iterableTypeParserMakers = {
   ...primitiveIterableTypeParserMakers,
   process: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): ProcessArgument => {
     return new ProcessArgument(key, value, parseOptions)
+  },
+  v5_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): V5CreepArgument => {
+    return new V5CreepArgument(key, value, parseOptions)
   },
 } as const
 
