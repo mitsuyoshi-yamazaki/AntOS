@@ -127,6 +127,7 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
   didReceiveMessage?(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
       this.addCreepCommand,
+      this.clearSpawnRequestCommand,
     ])
   }
 
@@ -143,6 +144,7 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
   private runCreeps(creeps: MyCreep[]): void {
     creeps.forEach(creep => {
       if (creep.task != null) {
+        creep.say("🚶")
         return
       }
 
@@ -205,6 +207,19 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
       })
 
       return `Creep ${creepBody.stringRepresentation} is added to spawn queue with order ${order.case}`
+    }
+  }
+
+  private readonly clearSpawnRequestCommand: Command = {
+    command: "clear_spawn_request",
+    help: (): string => "clear_spawn_request",
+
+    /** @throws */
+    run: (): string => {
+      const requestCount = this.creepSpawnRequests.size
+      this.creepSpawnRequests.clear()
+
+      return `Cleared ${requestCount} requests`
     }
   }
 
