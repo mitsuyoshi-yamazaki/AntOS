@@ -3,6 +3,7 @@ import { Position } from "shared/utility/position"
 import { RoomName } from "shared/utility/room_name_types"
 import { AvailableRoomPositions } from "shared/utility/room_position"
 import { GameConstants } from "utility/constants"
+import { CreepBody } from "utility/creep_body_v2"
 import { ArgumentKey, ArgumentParserOptions, getKeyDescription, SingleOptionalArgument } from "./single_argument_parser"
 
 
@@ -97,6 +98,16 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, Position
   }
 }
 
+export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
+  /** throws */
+  public parse(): CreepBody {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    return CreepBody.createFromTextRepresentation(this.value)
+  }
+}
 
 // ---- Parser ---- //
 /** throws */
