@@ -3,6 +3,14 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 import { EmptySerializable } from "os_v5/utility/types"
 import { RoomName } from "shared/utility/room_name_types"
 
+/**
+# CreepTrafficManagerProcess
+## 概要
+
+## ライフサイクル
+- 全体でCostMatrixを作成
+- [Discussion] 全ての移動処理をTrafficManagerで行えるか？
+ */
 
 type CreepTrafficPositionState = "fatigue" | "static" | "conbat" | "economy" | "random"
 const creepTrafficPositionPriority = {
@@ -33,17 +41,17 @@ type RequestsInRoom = {
   readonly creepMoves: CreepMove[]
 }
 
-export type CreepTrafficManagementProcessApi = {
+export type CreepTrafficManagerProcessApi = {
   registerCreepPositions(room: Room, creepMoves: CreepMove[]): void // TODO: コールバック関数を引数に渡せるようにする
 }
 
 
-ProcessDecoder.register("CreepTrafficManagementProcess", (processId: CreepTrafficManagementProcessId) => CreepTrafficManagementProcess.decode(processId))
+ProcessDecoder.register("CreepTrafficManagerProcess", (processId: CreepTrafficManagerProcessId) => CreepTrafficManagerProcess.decode(processId))
 
-export type CreepTrafficManagementProcessId = ProcessId<void, ProcessDefaultIdentifier, CreepTrafficManagementProcessApi, EmptySerializable, CreepTrafficManagementProcess>
+export type CreepTrafficManagerProcessId = ProcessId<void, ProcessDefaultIdentifier, CreepTrafficManagerProcessApi, EmptySerializable, CreepTrafficManagerProcess>
 
 
-export class CreepTrafficManagementProcess extends Process<void, ProcessDefaultIdentifier, CreepTrafficManagementProcessApi, EmptySerializable, CreepTrafficManagementProcess> {
+export class CreepTrafficManagerProcess extends Process<void, ProcessDefaultIdentifier, CreepTrafficManagerProcessApi, EmptySerializable, CreepTrafficManagerProcess> {
   public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [],
@@ -52,7 +60,7 @@ export class CreepTrafficManagementProcess extends Process<void, ProcessDefaultI
   private readonly roomMoveReservations = new Map<RoomName, RequestsInRoom>()
 
   private constructor(
-    public readonly processId: CreepTrafficManagementProcessId,
+    public readonly processId: CreepTrafficManagerProcessId,
   ) {
     super()
   }
@@ -61,12 +69,12 @@ export class CreepTrafficManagementProcess extends Process<void, ProcessDefaultI
     return {}
   }
 
-  public static decode(processId: CreepTrafficManagementProcessId): CreepTrafficManagementProcess {
-    return new CreepTrafficManagementProcess(processId)
+  public static decode(processId: CreepTrafficManagerProcessId): CreepTrafficManagerProcess {
+    return new CreepTrafficManagerProcess(processId)
   }
 
-  public static create(processId: CreepTrafficManagementProcessId): CreepTrafficManagementProcess {
-    return new CreepTrafficManagementProcess(processId)
+  public static create(processId: CreepTrafficManagerProcessId): CreepTrafficManagerProcess {
+    return new CreepTrafficManagerProcess(processId)
   }
 
   public getDependentData(): void { }
@@ -79,7 +87,7 @@ export class CreepTrafficManagementProcess extends Process<void, ProcessDefaultI
     return this.staticDescription()
   }
 
-  public run(): CreepTrafficManagementProcessApi {
+  public run(): CreepTrafficManagerProcessApi {
     this.roomMoveReservations.clear()
 
     return {

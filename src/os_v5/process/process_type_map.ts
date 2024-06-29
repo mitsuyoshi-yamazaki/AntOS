@@ -10,7 +10,7 @@ export const processTypeDecodingMap = {
   e: "CreepTaskStateManagementProcess",
   f: "CreepDistributorProcess",
   g: "MitsuyoshiBotProcess",
-  i: "CreepTrafficManagementProcess",
+  i: "CreepTrafficManagerProcess",
   j: "TestTrafficManagementProcess",
 } as const
 
@@ -40,7 +40,7 @@ const processDependencyOrder: ProcessTypes[] = [
   "V3BridgeSpawnRequestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
-  "CreepTrafficManagementProcess", // TODO: 実装したら再度確認
+  "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
 
   // Driver with dependencies
   "CreepTaskStateManagementProcess",
