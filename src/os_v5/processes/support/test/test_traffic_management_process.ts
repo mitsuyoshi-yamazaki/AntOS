@@ -129,6 +129,7 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
     return runCommands(argumentParser, [
       this.addCreepCommand,
       this.clearSpawnRequestCommand,
+      this.clearOrderCommand,
     ])
   }
 
@@ -224,6 +225,25 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
     }
   }
 
+  private readonly clearOrderCommand: Command = {
+    command: "clear_order",
+    help: (): string => "clear_order {creep name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const creep = argumentParser.v5Creep([0, "creep name"]).parse({processId: this.processId}) as MyCreep
+      const order = creep.memory.o
+      if (order == null) {
+        return `Creep ${creep.name} does not have order`
+      }
+
+      delete creep.memory.o
+
+      return `Creep ${creep.name} order ${order.case} cleared`
+    }
+  }
+
+  // Parse MoveToOrder
   private readonly parseMoveToOrderCommand: ObjectParserCommand<CreepOrderMoveTo> = {
     command: "move_to",
     help: (): string => "move_to {position} {range}?",
