@@ -22,6 +22,17 @@ export class CreepBody {
   private _stringRepresentation: string | null = null
 
 
+  public get energyCost(): number {
+    if (this._energyCost == null) {
+      this._energyCost = this.bodyParts.reduce((result, current) => {
+        return result + BODYPART_COST[current]
+      }, 0)
+    }
+    return this._energyCost
+  }
+  private _energyCost: number | null = null
+
+
   private constructor(
     public readonly bodyParts: BodyPartConstant[]
   ) {
@@ -70,7 +81,7 @@ export class CreepBody {
       consecutiveBodyParts.push(currentBody)
     }
 
-    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join()
+    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join().toUpperCase()
   }
 }
 
