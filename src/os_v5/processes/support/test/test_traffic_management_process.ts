@@ -130,6 +130,7 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
       this.addCreepCommand,
       this.clearSpawnRequestCommand,
       this.clearOrderCommand,
+      this.setOrderCommand,
     ])
   }
 
@@ -189,17 +190,15 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
 
   // ---- Command Runner ---- //
   private readonly addCreepCommand: Command = {
-    command: "add",
-    help: (): string => "add {creep body} {order type} {...args}",
+    command: "add_creep",
+    help: (): string => "add_creep {creep body} {order type} {...args}",
 
     /** @throws */
     run: (argumentParser: ArgumentParser): string => {
       const creepBody = argumentParser.creepBody([0, "creep body"]).parse({ requiredEnergyLimit: 500 })
-      argumentParser.moveOffset(+1)
 
-      const order = runObjectParserCommands<CreepOrder>(argumentParser, [
-        this.parseMoveToOrderCommand,
-      ])
+      argumentParser.moveOffset(+1)
+      const order = this.parseCreepOrder(argumentParser)
 
       const codename = SystemCalls.uniqueId.generateTickUniqueId()
       this.creepSpawnRequests.set(codename, {
@@ -243,7 +242,37 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
     }
   }
 
+  private readonly setOrderCommand: Command = {
+    command: "set_order",
+    help: (): string => "set_order {creep name} {order type} {...args}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const creep = argumentParser.v5Creep([0, "creep name"]).parse({ processId: this.processId }) as MyCreep
+
+      argumentParser.moveOffset(+1)
+      const order = this.parseCreepOrder(argumentParser)
+
+      const currentOrder = creep.memory.o
+      creep.memory.o = order
+
+      if (currentOrder == null) {
+        return `Creep ${creep.name} set order ${order.case}`
+      } else {
+        return `Creep ${creep.name} change order ${order.case} from ${currentOrder.case}`
+      }
+    }
+  }
+
+
   // Parse MoveToOrder
+  /** @throws */
+  private parseCreepOrder(argumentParser: ArgumentParser): CreepOrder {
+    return runObjectParserCommands<CreepOrder>(argumentParser, [
+      this.parseMoveToOrderCommand,
+    ])
+  }
+
   private readonly parseMoveToOrderCommand: ObjectParserCommand<CreepOrderMoveTo> = {
     command: "move_to",
     help: (): string => "move_to {position} {range}?",
