@@ -4,6 +4,9 @@ import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bo
 
 // Application
 
+// Combat
+import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
+
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
 
