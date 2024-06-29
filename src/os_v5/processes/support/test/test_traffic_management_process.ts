@@ -1,7 +1,7 @@
 import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { V3BridgeSpawnRequestProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_spawn_request_process"
-import { CreepTrafficManagerProcessApi } from "os_v5/processes/game_object_management/creep/creep_traffic_management_process"
+import { CreepTrafficManagerProcessApi } from "os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
