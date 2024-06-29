@@ -3,7 +3,8 @@ import { SerializableObject } from "../types"
 import { CreepActions } from "./creep_action"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExtendedV5CreepMemory<M extends SerializableObject> = M extends { v: any } | { p: any } ? never : M // v, p は ProcessManager が予約済み
+export type V5CreepMemoryReservedProperties = { v: any } | { p: any } // v, p は ProcessManager が予約
+export type ExtendedV5CreepMemory<M extends SerializableObject> = M extends V5CreepMemoryReservedProperties ? never : M
 
 export type V5CreepMemory<M extends SerializableObject> = {
   readonly v: "o5"  // アプリケーションの"v5"がすでに存在するため

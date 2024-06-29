@@ -1,7 +1,7 @@
 import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { AnyV5Creep, V5Creep } from "os_v5/utility/game_object/creep"
-import { EmptySerializable } from "os_v5/utility/types"
+import { AnyV5Creep, V5Creep, V5CreepMemoryReservedProperties } from "os_v5/utility/game_object/creep"
+import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
 import { CreepTask } from "./creep_task/creep_task"
 import { CreepName } from "prototype/creep"
 import { CreepDistributorProcessApi } from "./creep_distributor_process"
@@ -28,8 +28,11 @@ export type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
   r: Roles
 }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TaskDrivenCreep<Roles extends string, MemoryExtension extends Record<string, any>> = V5Creep<TaskDrivenCreepMemory<Roles> & MemoryExtension> & {
+type TaskDrivenCreepMemoryReservedProperties = V5CreepMemoryReservedProperties | { t: any } | { r: any }
+
+export type TaskDrivenCreep<Roles extends string, M extends SerializableObject> = M extends TaskDrivenCreepMemoryReservedProperties ? never : V5Creep<TaskDrivenCreepMemory<Roles> & M> & {
   task: CreepTask.AnyTask | null
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +41,7 @@ type AnyTaskDrivenCreep = TaskDrivenCreep<string, Record<string, any>>
 
 export type CreepTaskStateManagementProcessApi = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registerTaskDrivenCreeps<Roles extends string, MemoryExtension extends Record<string, any>>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, MemoryExtension>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
+  registerTaskDrivenCreeps<Roles extends string, M extends SerializableObject>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, M>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
 }
 
 export type CreepTaskStateManagementProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
