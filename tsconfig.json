@@ -10,6 +10,11 @@
     ],
     "outDir": "dist",
     "baseUrl": "src/",
+    "paths": {
+      "@private/*": [
+        "../submodules/private/*"
+      ]
+    },
     "sourceMap": true,
     "types": [
       "./node_modules/typed-screeps",

@@ -13,6 +13,7 @@ import { CreepBody } from "utility/creep_body_v2"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "os_v5/processes/game_object_management/creep/creep_task/creep_task"
 import { V5CreepMemory } from "os_v5/utility/game_object/creep"
+import { CreepTrafficManagerProcessApi } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 
 
 type Dependency = V3BridgeSpawnRequestProcessApi
