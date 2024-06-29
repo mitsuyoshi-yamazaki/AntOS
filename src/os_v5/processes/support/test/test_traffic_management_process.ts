@@ -13,6 +13,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepBody } from "utility/creep_body_v2"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepTask } from "os_v5/processes/game_object_management/creep/creep_task/creep_task"
+import { V5CreepMemory } from "os_v5/utility/game_object/creep"
 
 
 type Dependency = V3BridgeSpawnRequestProcessApi
@@ -51,7 +52,7 @@ type CreepMemoryExtension = {
   o?: CreepOrder
 }
 type MyCreep = TaskDrivenCreep<CreepRole, CreepMemoryExtension>
-type MyCreepMemory = TaskDrivenCreepMemory<CreepRole> & CreepMemoryExtension
+type MyCreepMemory = V5CreepMemory<TaskDrivenCreepMemory<CreepRole> & CreepMemoryExtension>
 
 
 type TestTrafficManagementProcessState = {
@@ -164,12 +165,12 @@ export class TestTrafficManagementProcess extends Process<Dependency, RoomName, 
       return
     }
 
-    const memory: MyCreepMemory = {
+    const memory: MyCreepMemory = dependency.createSpawnCreepMemoryFor(this.processId, {
       t: CreepTask.Tasks.MoveToRoom.create(this.roomName, []).encode(),
       r: "",
       codename: request.codename,
       o: request.order,
-    }
+    })
     dependency.addSpawnRequest(request.creepBody, this.parentRoomName, {codename: this.codename, memory})
   }
 

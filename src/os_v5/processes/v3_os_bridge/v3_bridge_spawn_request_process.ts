@@ -8,6 +8,7 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { CreepName } from "prototype/creep"
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import { V5CreepMemory } from "os_v5/utility/game_object/creep"
 
 // SpawnPoolのライフサイクルはv3 OSのライフサイクル内で閉じているので、直接Spawn APIを呼び出す
 
@@ -25,7 +26,7 @@ type SpawnRequest = {
   }
 }
 export type V3BridgeSpawnRequestProcessApi = {
-  addSpawnRequest(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: SerializableObject }): void
+  addSpawnRequest<M extends SerializableObject>(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<M> }): void
 }
 export type V3BridgeSpawnRequestProcessId = ProcessId<void, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
 
@@ -86,7 +87,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
     this.spawnRequests = []
 
     return {
-      addSpawnRequest: (body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: SerializableObject }): void => {
+      addSpawnRequest: <M extends SerializableObject>(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<M> }): void => {
         this.spawnRequests.push({
           body,
           roomName,
