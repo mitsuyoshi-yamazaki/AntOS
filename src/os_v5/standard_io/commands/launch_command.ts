@@ -15,7 +15,7 @@ import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "../../
 
 // Temporary
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
-import { TestTrafficManagerProcess, TestTrafficManagerProcessId } from "../../processes/support/test/test_traffic_management_process"
+import { TestTrafficManagerProcess, TestTrafficManagerProcessId } from "../../processes/support/test/test_traffic_manager_process"
 
 // v3 Bridge
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
