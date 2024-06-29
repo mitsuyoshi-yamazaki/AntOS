@@ -10,6 +10,7 @@ export const processTypeDecodingMap = {
   e: "CreepTaskStateManagementProcess",
   f: "CreepDistributorProcess",
   g: "MitsuyoshiBotProcess",
+  j: "TestTrafficManagementProcess",
 } as const
 
 
@@ -44,5 +45,6 @@ const processDependencyOrder: ProcessTypes[] = [
 
   // Application process with dependencies
   "EnergyHarvestRoomProcess",
+  "TestTrafficManagementProcess",
 ]
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
