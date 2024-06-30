@@ -102,7 +102,7 @@ export class ProcessStore {
     this.missingDependencyProcessIds.add(processId)
 
     const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(processId)
-    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
+    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId)) // TODO: 再帰的に行う必要がある // TODO: メソッド呼び出し元からは何がsuspendされたかわからない
 
     return true
   }
