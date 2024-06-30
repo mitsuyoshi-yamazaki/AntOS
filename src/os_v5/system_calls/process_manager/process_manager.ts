@@ -78,6 +78,7 @@ type ProcessManager = {
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
 
+  getDependencyFor<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): D | null
   getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
@@ -244,6 +245,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
 
   // Utility
+  getDependencyFor<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): D | null {
+    return process.getDependentData(SharedMemory)
+  },
+
   getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
     return ErrorMapper.wrapLoop((): string | null => {
       const dependency = process.getDependentData(SharedMemory)
