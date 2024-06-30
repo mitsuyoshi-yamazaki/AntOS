@@ -33,7 +33,7 @@ const creepBody = CreepBody.createWithBodyParts([
   MOVE,
 ])
 
-const defaultTrashableResources: ResourceConstant[] = [
+const defaultDisposableResources: ResourceConstant[] = [
   ...DepositConstant,
   ...MineralConstant,
 ]
@@ -49,7 +49,7 @@ type StoppedReasons = "manually" | "finished"
 type DisposeResourceProcessState = {
   readonly r: RoomName
   readonly p?: RoomName
-  readonly tr?: ResourceConstant[] /// undefined なら defaultTrashableResources
+  readonly tr?: ResourceConstant[] /// undefined なら defaultDisposableResources
   readonly s: StoppedReasons[]
 }
 
@@ -78,7 +78,7 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
     public readonly processId: DisposeResourceProcessId,
     public readonly roomName: RoomName,
     public readonly parentRoomName: RoomName,
-    public readonly resourcesToTrash: ResourceConstant[] | undefined,
+    public readonly disposableResources: ResourceConstant[] | undefined,
     public readonly stoppedReasons: StoppedReasons[],
   ) {
     super()
@@ -90,7 +90,7 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
     return {
       r: this.roomName,
       p: this.parentRoomName === this.roomName ? undefined : this.parentRoomName,
-      tr: this.resourcesToTrash,
+      tr: this.disposableResources,
       s: this.stoppedReasons,
     }
   }
@@ -179,7 +179,7 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
   }
 
   private getDisposeTarget(roomResource: OwnedRoomResource): DisposeState | null {
-    const disposableResources = this.resourcesToTrash ?? defaultTrashableResources
+    const disposableResources = this.disposableResources ?? defaultDisposableResources
 
     const targets: DrainableStructures[] = []
     if (roomResource.activeStructures.terminal != null) {
