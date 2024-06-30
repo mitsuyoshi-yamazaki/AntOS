@@ -71,20 +71,17 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
     if (Game.time % 10 !== 0) {
       return
     }
-    this.log(this.runtimeDescription())
-
-    // new RoomPosition(0, 0, "a")
-    // throw "hoge"
+    SystemCalls.logger.log(this, this.runtimeDescription())
   }
 
   public didFinishDeferredTask<TaskType extends string, T>(taskResult: DeferredTaskResult<TaskType, T>): void {
     switch (taskResult.result.case) {
     case "succeeded":
-      this.log(`Deferred task ${taskResult.taskType} (${taskResult.id}) finished. Result: ${taskResult.result.value}`)
+      SystemCalls.logger.log(this, `Deferred task ${taskResult.taskType} (${taskResult.id}) finished. Result: ${taskResult.result.value}`, true)
       break
 
     case "failed":
-      this.log(`Deferred task ${taskResult.taskType} (${taskResult.id}) failed with error: ${taskResult.result.error.case}`)
+      SystemCalls.logger.log(this, `Deferred task ${taskResult.taskType} (${taskResult.id}) failed with error: ${taskResult.result.error.case}`, true)
 
       /**
 [2:02:23 AM][shard2](p) TestProcess[Test] Deferred task loop_task (v) failed with error: server restarted
@@ -92,10 +89,6 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
 */
       break
     }
-  }
-
-  private log(message: string): void {
-    console.log(`${this} ${message}`)
   }
 
 
@@ -112,7 +105,7 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
         this.processId,
         "loop_task",
         (): number => {
-          this.log(`Deferred task ${"loop_task"} started`)
+          SystemCalls.logger.log(this, `Deferred task ${"loop_task"} started`, true)
 
           let result = 0
           for (let i = 0; i < loopCount; i += 1) {
