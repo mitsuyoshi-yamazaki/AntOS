@@ -7,6 +7,7 @@ import { RoomResources } from "room_resource/room_resources"
 
 
 export type V3BridgeDriverProcessApi = {
+  getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
 }
 
@@ -52,9 +53,8 @@ export class V3BridgeDriverProcess extends Process<void, ProcessDefaultIdentifie
 
   public run(): V3BridgeDriverProcessApi {
     return {
-      getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => {
-        return RoomResources.getOwnedRoomResource(roomName)
-      },
+      getOwnedRoomResources: (): OwnedRoomResource[] => RoomResources.getOwnedRoomResources(),
+      getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => RoomResources.getOwnedRoomResource(roomName),
     }
   }
 }
