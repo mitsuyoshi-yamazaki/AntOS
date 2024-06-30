@@ -17,6 +17,7 @@ const decoders: { [K in TaskTypes]: (state: SerializableObject) => AnyTask | nul
   UpgradeController: state => Tasks.UpgradeController.decode(state as ReturnType<Tasks.UpgradeController["encode"]>),
   WithdrawResource: state => Tasks.WithdrawResource.decode(state as ReturnType<Tasks.WithdrawResource["encode"]>),
   DropResource: state => Tasks.DropResource.decode(state as ReturnType<Tasks.DropResource["encode"]>),
+  DropAllResources: () => Tasks.DropAllResources.decode(),
 
   // Move
   MoveTo: state => Tasks.MoveTo.decode(state as ReturnType<Tasks.MoveTo["encode"]>),
