@@ -3,7 +3,7 @@
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
-import {} from "../../processes/application/v3_resource_distributor_process"
+import { V3ResourceDistributorProcess, V3ResourceDistributorProcessId } from "../../processes/application/v3_resource_distributor_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
@@ -97,6 +97,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["CreepTaskStateManagementProcess", processId => CreepTaskStateManagementProcess.create(processId as CreepTaskStateManagementProcessId)],
     ["CreepDistributorProcess", processId => CreepDistributorProcess.create(processId as CreepDistributorProcessId)],
     ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
+    ["V3ResourceDistributorProcess", processId => V3ResourceDistributorProcess.create(processId as V3ResourceDistributorProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
