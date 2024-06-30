@@ -1,5 +1,6 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Position } from "shared/utility/position_v2"
+import { isMyRoom, MyRoom } from "shared/utility/room"
 import { RoomName } from "shared/utility/room_name_types"
 import { AvailableRoomPositions } from "shared/utility/room_position"
 import { GameConstants } from "utility/constants"
@@ -63,6 +64,42 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
 
 
 // ---- Game Object ---- //
+export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room> {
+  /** throws */
+  public parse(options?: { my?: boolean }): Room {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomName(this.value, options) // options.my の検証も行っている
+
+    const room = Game.rooms[this.value]
+    if (room == null) {
+      throw `No room with name ${this.value} or not visible`
+    }
+    return room
+  }
+}
+
+export class MyRoomArgument extends SingleOptionalArgument<void, MyRoom> {
+  /** throws */
+  public parse(): MyRoom {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const room = Game.rooms[this.value]
+    if (room == null) {
+      throw `No room with name ${this.value} or not visible`
+    }
+
+    if (!isMyRoom(room)) {
+      throw `Room ${ConsoleUtility.roomLink(room.name)} is not my room`
+    }
+
+    return room
+  }
+}
+
 export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName {

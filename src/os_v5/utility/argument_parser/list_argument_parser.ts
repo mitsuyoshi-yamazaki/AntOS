@@ -1,6 +1,6 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
-import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
 
 
 export const iterableTypeParserMakers = {
@@ -9,6 +9,12 @@ export const iterableTypeParserMakers = {
   },
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
+  },
+  room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
+    return new RoomArgument(key, value, parseOptions)
+  },
+  my_room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): MyRoomArgument => {
+    return new MyRoomArgument(key, value, parseOptions)
   },
   room_name: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomNameArgument => {
     return new RoomNameArgument(key, value, parseOptions)
