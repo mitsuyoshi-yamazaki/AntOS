@@ -76,3 +76,9 @@ if (undefinedDependencyOrderProcessTypes.length > 0) {
   console.log(errorMessage)
   Game.notify(errorMessage)
 }
+
+if (Array.from(Object.keys(processTypeDecodingMap)).length !== processDependencyOrder.length) {
+  const errorMessage = ConsoleUtility.colored(`[Program Error] Inconsistent process mapping: ${Array.from(Object.keys(processTypeDecodingMap)).length} : ${processDependencyOrder.length}`, "error")
+  console.log(errorMessage)
+  Game.notify(errorMessage)
+}
