@@ -39,7 +39,6 @@ const processDependencyOrder: ProcessTypes[] = [
   "MitsuyoshiBotProcess",
 
   // Application
-  "V3ResourceDistributorProcess",
 
   // No dependencies
   "TestProcess",
@@ -53,7 +52,10 @@ const processDependencyOrder: ProcessTypes[] = [
   "CreepTaskStateManagementProcess",
   "V3BridgeSpawnRequestProcess",
 
-  // Application process with dependencies
+  // Application with dependencies
+  "V3ResourceDistributorProcess",
+
+  // Process with dependencies
   "EnergyHarvestRoomProcess",
   "TestTrafficManagerProcess",
   "TrashResourceProcess",
