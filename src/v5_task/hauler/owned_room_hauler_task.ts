@@ -260,28 +260,28 @@ export class OwnedRoomHaulerTask extends Task {
           }
         }
 
-        const droppedResource = ((): Resource | null => {
-          if (objects.hostiles.creeps.length > 0) {
-            return null
-          }
-          if (hasResource === true) {
-            return null
-          }
-          return objects.droppedResources.filter(resource => {
-            if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
-              if (resource.pos.x <= 1) {
-                return false
-              }
-            }
-            if (resource.resourceType !== RESOURCE_ENERGY) {
-              return true
-            }
-            return resource.amount > 100
-          })[0] ?? null
-        })()
-        if (droppedResource != null) {
-          return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
-        }
+        // const droppedResource = ((): Resource | null => {
+        //   if (objects.hostiles.creeps.length > 0) {
+        //     return null
+        //   }
+        //   if (hasResource === true) {
+        //     return null
+        //   }
+        //   return objects.droppedResources.filter(resource => {
+        //     if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+        //       if (resource.pos.x <= 1) {
+        //         return false
+        //       }
+        //     }
+        //     if (resource.resourceType !== RESOURCE_ENERGY) {
+        //       return true
+        //     }
+        //     return resource.amount > 100
+        //   })[0] ?? null
+        // })()
+        // if (droppedResource != null) {
+        //   return MoveToTargetTask.create(PickupApiWrapper.create(droppedResource))
+        // }
       }
 
       if (creep.store.getUsedCapacity() > 0) {
@@ -318,23 +318,23 @@ export class OwnedRoomHaulerTask extends Task {
 
   private getEnergySource(position: RoomPosition, objects: OwnedRoomObjects, energySources: EnergySource[]): EnergyStore | null {
     if (objects.hostiles.creeps.length <= 0) {
-      const droppedEnergy = objects.droppedResources.find(resource => {
-        if (resource.v5TargetedBy.length > 0) {
-          return false
-        }
-        if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
-          return false
-        }
-        if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
-          if (resource.pos.x <= 1) {
-            return false
-          }
-        }
-        return resource.amount >= 100
-      })
-      if (droppedEnergy != null) {
-        return droppedEnergy
-      }
+      // const droppedEnergy = objects.droppedResources.find(resource => {
+      //   if (resource.v5TargetedBy.length > 0) {
+      //     return false
+      //   }
+      //   if (resource.resourceType !== RESOURCE_ENERGY) {  // TODO: その他のリソースも回収する
+      //     return false
+      //   }
+      //   if (this.roomName === "W47S2" && Environment.world === "persistent world" && Environment.shard === "shard2") { // FixMe:
+      //     if (resource.pos.x <= 1) {
+      //       return false
+      //     }
+      //   }
+      //   return resource.amount >= 100
+      // })
+      // if (droppedEnergy != null) {
+      //   return droppedEnergy
+      // }
 
       const tombstone = objects.tombStones.find(tombstone => {
         if (tombstone.v5TargetedBy.length > 0) {

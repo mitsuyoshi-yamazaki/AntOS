@@ -27,7 +27,7 @@ export class ProcessStore {
 
 
   // Public API
-  public add<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, options?: {skipSort?: boolean}): void {
+  public add<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, options?: {skipSort?: boolean}): void {
     this.processList.push(process)
     if (options?.skipSort !== true) {
       this.sortProcessList()
@@ -102,16 +102,16 @@ export class ProcessStore {
     this.missingDependencyProcessIds.add(processId)
 
     const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(processId)
-    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
+    dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId)) // TODO: 再帰的に行う必要がある // TODO: メソッド呼び出し元からは何がsuspendされたかわからない
 
     return true
   }
 
-  public getProcessById<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+  public getProcessById<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return this.processMap.get(processId) as P | null
   }
 
-  public getProcessByIdentifier<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: I): P | null {
+  public getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: I): P | null {
     const process: AnyProcess | undefined = this.processIdentifierMap.getValueFor(processType).get(identifier)
     return process as P
   }

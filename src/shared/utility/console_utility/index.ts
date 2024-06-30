@@ -16,7 +16,8 @@ const textColors: { [index in TextColor]: string } = {
 
 type Tab = number
 export const TabSize = {
-  veryLarge: 50,
+  veryVeryLarge: 50,
+  veryLarge: 40,
   large: 30,
   medium: 20,
   small: 10,
@@ -30,6 +31,10 @@ export const colored = (text: string, color: TextColor | "none"): string => {
   }
 
   return coloredText(text, textColors[color])
+}
+
+export const safe = (text: string): string => {
+  return text.replace("<", "&lt").replace(">", "&gt")
 }
 
 export const tab = (text: string, tabSize: Tab): string => {

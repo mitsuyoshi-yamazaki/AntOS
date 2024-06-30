@@ -1,6 +1,11 @@
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { Position } from "shared/utility/position_v2"
+import { isMyRoom, MyRoom } from "shared/utility/room"
 import { RoomName } from "shared/utility/room_name_types"
-import { ArgumentKey, ArgumentParserOptions, getKeyName, SingleOptionalArgument } from "./single_argument_parser"
+import { AvailableRoomPositions } from "shared/utility/room_position"
+import { GameConstants } from "utility/constants"
+import { CreepBody } from "utility/creep_body_v2"
+import { ArgumentKey, ArgumentParserOptions, getKeyDescription, SingleOptionalArgument } from "./single_argument_parser"
 
 
 // ---- Primitive Type ---- //
@@ -33,6 +38,7 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
     value: string | null,
     private readonly typeName: string,
     private readonly typeGuard: ((arg: string) => arg is T),
+    private readonly choises: Readonly<T[]> | null,
     parseOptions?: ArgumentParserOptions,
   ) {
     super(key, value, parseOptions)
@@ -44,7 +50,13 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
       throw this.missingArgumentErrorMessage()
     }
     if (!(this.typeGuard(this.value))) {
-      throw `${getKeyName(this.key)} ${this.value} is not ${this.typeName}`
+      const errorMessages: string[] = [
+        `${getKeyDescription(this.key)} ${this.value} is not ${this.typeName}`,
+      ]
+      if (this.choises != null) {
+        errorMessages.push(`choices are: [${this.choises}]`)
+      }
+      throw errorMessages.join(", ")
     }
     return this.value
   }
@@ -52,6 +64,42 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
 
 
 // ---- Game Object ---- //
+export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room> {
+  /** throws */
+  public parse(options?: { my?: boolean }): Room {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    validateRoomName(this.value, options) // options.my の検証も行っている
+
+    const room = Game.rooms[this.value]
+    if (room == null) {
+      throw `No room with name ${this.value} or not visible`
+    }
+    return room
+  }
+}
+
+export class MyRoomArgument extends SingleOptionalArgument<void, MyRoom> {
+  /** throws */
+  public parse(): MyRoom {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const room = Game.rooms[this.value]
+    if (room == null) {
+      throw `No room with name ${this.value} or not visible`
+    }
+
+    if (!isMyRoom(room)) {
+      throw `Room ${ConsoleUtility.roomLink(room.name)} is not my room`
+    }
+
+    return room
+  }
+}
+
 export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, allowClosedRoom?: boolean }, RoomName> {
   /** throws */
   public parse(options?: { my?: boolean, allowClosedRoom?: boolean }): RoomName {
@@ -63,13 +111,84 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   }
 }
 
+export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
+  /** throws */
+  public parse(): Position {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const [x, y] = ((): [AvailableRoomPositions, AvailableRoomPositions] => {
+      const components = this.value.split(",")
+      if (components[0] == null || components[1] == null || components.length !== 2) {
+        throw `Invalid format ${this.value}. expected: "x,y"`
+      }
+      const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
+      return [
+        parseIntValue("x", components[0], parseOptions) as AvailableRoomPositions,
+        parseIntValue("y", components[1], parseOptions) as AvailableRoomPositions,
+      ]
+    })()
+    return {
+      x,
+      y,
+    }
+  }
+}
+
+export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creep = Game.creeps[this.value]
+    if (creep == null) {
+      throw `No my creep named ${this.value}`
+    }
+    return creep
+  }
+}
+
+export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
+  /** throws */
+  public parse(): Creep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creep = Game.getObjectById(this.value as Id<Creep>)
+    if (creep == null) {
+      throw `No my creep named ${this.value}`
+    }
+    return creep
+  }
+}
+
+export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
+  /** throws */
+  public parse(options: { requiredEnergyLimit?: number }): CreepBody {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creepBody = CreepBody.createFromTextRepresentation(this.value)
+    console.log(`Creep body: ${creepBody.bodyParts}\ncost: ${creepBody.energyCost}, limit: ${options?.requiredEnergyLimit}`)
+    if (options?.requiredEnergyLimit != null) {
+      if (creepBody.energyCost > options.requiredEnergyLimit) {
+        throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`
+      }
+    }
+    return creepBody
+  }
+}
 
 // ---- Parser ---- //
 /** throws */
 const parseIntValue = (key: ArgumentKey, value: string, options?: { min?: number, max?: number }): number => {
   const intValue = parseInt(value, 10)
   if (isNaN(intValue) === true) {
-    throw `${value} is not an integer value`
+    throw `"${value}" is not an integer value`
   }
   validateNumberRange(key, intValue, options)
   return intValue
@@ -78,10 +197,10 @@ const parseIntValue = (key: ArgumentKey, value: string, options?: { min?: number
 /** throws */
 const validateNumberRange = (key: ArgumentKey, value: number, options?: { min?: number, max?: number }): void => {
   if (options?.min != null && value < options.min) {
-    throw `${getKeyName(key)} is too small (${value} < ${options.min})`
+    throw `${getKeyDescription(key)} is too small (${value} < ${options.min})`
   }
   if (options?.max != null && value > options.max) {
-    throw `${getKeyName(key)} is too large (${value} > ${options.max})`
+    throw `${getKeyDescription(key)} is too large (${value} > ${options.max})`
   }
 }
 

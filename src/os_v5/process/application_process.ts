@@ -1,5 +1,6 @@
-import { SerializableObject } from "os_v5/utility/types"
-import { SemanticVersion } from "shared/utility/semantic_version"
+import type { SerializableObject } from "os_v5/utility/types"
+import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import type { SemanticVersion } from "shared/utility/semantic_version"
 import { Process } from "./process"
 
 /**
@@ -10,16 +11,17 @@ import { Process } from "./process"
  */
 
 export abstract class ApplicationProcess<
-    Dependency,
-    Identifier extends string,
-    ProcessMemory,
-    ProcessState extends SerializableObject,
-    This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
+  Dependency extends Record<string, unknown> | void,
+  Identifier extends string,
+  ProcessMemory,
+  ProcessState extends SerializableObject,
+  This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
   > extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This> {
 
-  abstract readonly version: SemanticVersion
   abstract readonly applicationName: string
+  abstract readonly version: SemanticVersion
+
 
   /** @throws */
-  abstract didReceiveMessage(args: string[], dependency: Dependency): string
+  abstract didReceiveMessage(argumentParser: ArgumentParser, dependency: Dependency): string
 }

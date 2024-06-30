@@ -2,8 +2,8 @@ import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_manager/process_manager"
 import { alignedProcessInfo, processDescription } from "./utilities"
-import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { DependencyGraphNode } from "os_v5/system_calls/process_manager/process_dependency_graph"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
 const optionValues = ["description", "graph", "memory"] as const
@@ -13,38 +13,35 @@ const isOption = (value: string): value is Option => {
 }
 
 const helpText = `
-> process {arg} option={option}
-arg: process ID or part of process type name (filter)
-option: one of following output options:
-- description:  shows process description (default)
-- graph:        shows dependency graph
-- memory:       shows memory content
+process {arg} option={option}
+- arg: process ID or part of process type name (filter)
+- option: one of following output options:
+  - description:  shows process description (default)
+  - graph:        shows dependency graph
+  - memory:       shows memory content
 `
 
 export const ProcessCommand: Command = {
   command: "process",
 
-  /** @throws */
   help(): string {
     return helpText
   },
 
   /** @throws */
-  run(args: string[]): string {
-    const argumentParser = new ArgumentParser(args)
-
-    const filteringWord = argumentParser.string(0).parseOptional()
+  run(argumentParser: ArgumentParser): string {
+    const filteringWord = argumentParser.string([0, "process ID / filtering term (process type)"]).parseOptional()
     const option: Option = argumentParser.typedString("option", "Option", isOption).parseOptional() ?? "description"
 
     if (option === "description") {
       return listProcessDescription(filteringWord)
     }
 
-    const processId = argumentParser.string(0, {missingArgumentErrorMessage: "No process ID at 0th argument"}).parse()
+    const process = argumentParser.process([0, "process ID"]).parse()
 
     switch (option) {
     case "graph":
-      return processDependencyGraph(processId)
+      return processDependencyGraph(process.processId)
     case "memory":
       throw "Not implemented yet"
     default: {

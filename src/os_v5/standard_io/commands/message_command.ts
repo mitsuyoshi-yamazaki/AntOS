@@ -1,39 +1,36 @@
-import { AnyProcessId } from "os_v5/process/process"
 import { Command, CommandOutput } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { processDescription } from "./utilities"
+import { alignedProcessInfo, processDescription } from "./utilities"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
 export const MessageCommand: Command = {
   command: "message",
 
-  /** @throws */
   help(): string {
     return "> message {process ID} ...{arguments}"
   },
 
   /** @throws */
-  run(args: string[]): string | CommandOutput[] {
-    const processId = args.shift() as AnyProcessId | undefined
+  run(argumentParser: ArgumentParser): string | CommandOutput[] {
+    const process = argumentParser.process([0, "process ID"]).parse()
+    argumentParser.moveOffset(+1)
 
-    if (processId == null || processId.length <= 0) {
-      return this.help([])
-    }
-
-    const process = ProcessManager.getProcess(processId)
-    if (process == null) {
-      throw `No Process with ID ${processId}`
-    }
-
-    const output: CommandOutput[] = [{
-      outputType: "output",
-      message: processDescription({ process, ...ProcessManager.getProcessRunningState(process.processId) }),
-    }]
+    const output: CommandOutput[] = [
+      {
+        outputType: "output",
+        message: alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+      },
+      {
+        outputType: "output",
+        message: processDescription({ process, ...ProcessManager.getProcessRunningState(process.processId) }),
+      },
+    ]
 
     try {
       output.push({
         outputType: "output",
-        message: ProcessManager.sendMessage(process, args)
+        message: ProcessManager.sendMessage(process, argumentParser)
       })
     } catch (error) {
       output.push({
