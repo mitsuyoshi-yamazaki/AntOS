@@ -280,7 +280,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   /** @throws */
   sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string {
     if (process.didReceiveMessage == null) {
-      throw `${process.processType}[${process.identifier}] won't receive message`
+      throw `${process.processType}[${process.identifier}] doesn't receive message`
     }
 
     const dependency = process.getDependentData(SharedMemory)
