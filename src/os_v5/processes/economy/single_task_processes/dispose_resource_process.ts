@@ -12,6 +12,7 @@ import { MyRoom } from "shared/utility/room"
 import { DepositConstant, MineralConstant } from "shared/utility/resource"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { V3BridgeDriverProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_driver_process"
+import { ProcessTypes } from "os_v5/process/process_type_map"
 
 
 type Dependency = V3BridgeSpawnRequestProcessApi
@@ -40,19 +41,19 @@ type DisposeState = {
 
 type StoppedReasons = "manually" | "finished"
 
-type TrashResourceProcessState = {
+type DisposeResourceProcessState = {
   readonly r: RoomName
   readonly p?: RoomName
   readonly tr?: ResourceConstant[] /// undefined なら defaultTrashableResources
   readonly s: StoppedReasons[]
 }
 
-ProcessDecoder.register("TrashResourceProcess", (processId: TrashResourceProcessId, state: TrashResourceProcessState) => TrashResourceProcess.decode(processId, state))
+ProcessDecoder.register("DisposeResourceProcess", (processId: DisposeResourceProcessId, state: DisposeResourceProcessState) => DisposeResourceProcess.decode(processId, state))
 
-export type TrashResourceProcessId = ProcessId<Dependency, RoomName, void, TrashResourceProcessState, TrashResourceProcess>
+export type DisposeResourceProcessId = ProcessId<Dependency, RoomName, void, DisposeResourceProcessState, DisposeResourceProcess>
 
 
-export class TrashResourceProcess extends Process<Dependency, RoomName, void, TrashResourceProcessState, TrashResourceProcess> {
+export class DisposeResourceProcess extends Process<Dependency, RoomName, void, DisposeResourceProcessState, DisposeResourceProcess> {
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     processes: [
@@ -69,7 +70,7 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
 
 
   private constructor(
-    public readonly processId: TrashResourceProcessId,
+    public readonly processId: DisposeResourceProcessId,
     public readonly roomName: RoomName,
     public readonly parentRoomName: RoomName,
     public readonly resourcesToTrash: ResourceConstant[] | undefined,
@@ -77,10 +78,10 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
   ) {
     super()
     this.identifier = roomName
-    this.codename = SystemCalls.uniqueId.generateCodename("TrashResourceProcess", parseInt(processId, 36))
+    this.codename = SystemCalls.uniqueId.generateCodename("DisposeResourceProcess", parseInt(processId, 36))
   }
 
-  public encode(): TrashResourceProcessState {
+  public encode(): DisposeResourceProcessState {
     return {
       r: this.roomName,
       p: this.parentRoomName === this.roomName ? undefined : this.parentRoomName,
@@ -89,12 +90,12 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
     }
   }
 
-  public static decode(processId: TrashResourceProcessId, state: TrashResourceProcessState): TrashResourceProcess {
-    return new TrashResourceProcess(processId, state.r, state.p ?? state.r, state.tr, state.s ?? [])
+  public static decode(processId: DisposeResourceProcessId, state: DisposeResourceProcessState): DisposeResourceProcess {
+    return new DisposeResourceProcess(processId, state.r, state.p ?? state.r, state.tr, state.s ?? [])
   }
 
-  public static create(processId: TrashResourceProcessId, room: MyRoom, parentRoom: MyRoom): TrashResourceProcess {
-    return new TrashResourceProcess(processId, room.name, parentRoom.name, undefined, [])
+  public static create(processId: DisposeResourceProcessId, room: MyRoom, parentRoom: MyRoom): DisposeResourceProcess {
+    return new DisposeResourceProcess(processId, room.name, parentRoom.name, undefined, [])
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {

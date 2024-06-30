@@ -7,7 +7,7 @@ import { Command, runCommands } from "os_v5/standard_io/command"
 import { V3BridgeDriverProcessApi } from "../v3_os_bridge/v3_bridge_driver_process"
 import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { TrashResourceProcess, TrashResourceProcessId } from "../economy/single_task_processes/dispose_resource_process"
+import { DisposeResourceProcess, DisposeResourceProcessId } from "../economy/single_task_processes/dispose_resource_process"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 
@@ -137,8 +137,8 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
       const myRoom = argumentParser.myRoom("room_name").parse()
       const roomName = myRoom.name
 
-      const process = SystemCalls.processManager.addProcess((newProcessId: TrashResourceProcessId) => {
-        return TrashResourceProcess.create(newProcessId, myRoom, myRoom)
+      const process = SystemCalls.processManager.addProcess((newProcessId: DisposeResourceProcessId) => {
+        return DisposeResourceProcess.create(newProcessId, myRoom, myRoom)
       })
 
       if (this.roomProcessIds[roomName] == null) {
