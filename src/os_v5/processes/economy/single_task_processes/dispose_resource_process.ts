@@ -12,7 +12,6 @@ import { MyRoom } from "shared/utility/room"
 import { DepositConstant, MineralConstant } from "shared/utility/resource"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { V3BridgeDriverProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_driver_process"
-import { ProcessTypes } from "os_v5/process/process_type_map"
 
 
 type Dependency = V3BridgeSpawnRequestProcessApi
@@ -27,6 +26,12 @@ type CreepMemoryExtension = {}
 type MyCreep = TaskDrivenCreep<CreepRoles, CreepMemoryExtension>
 type MyCreepMemory = TaskDrivenCreepMemory<CreepRoles> & CreepMemoryExtension
 
+
+const creepBody = CreepBody.createWithBodyParts([
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  CARRY, CARRY, CARRY, CARRY, CARRY,
+  MOVE,
+])
 
 const defaultTrashableResources: ResourceConstant[] = [
   ...DepositConstant,
@@ -129,7 +134,13 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
     if (this.disposeState == null) {
       this.disposeState = this.getDisposeTarget(roomResource)
       if (this.disposeState == null) {
+        SystemCalls.logger.log(this, "Finish working")
         this.stoppedReasons.push("finished")
+
+        creepsWithTask.forEach(creep => {
+          creep.say("finished!")
+          creep.suicide()
+        })
         return
       }
     }
@@ -145,7 +156,7 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
   // Private
   private spawnCreep(dependency: Dependency): void {
     const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: null, r: "" })
-    dependency.addSpawnRequest(CreepBody.createWithBodyParts([CARRY, MOVE]), this.parentRoomName, { codename: this.codename, memory })
+    dependency.addSpawnRequest(creepBody, this.parentRoomName, { codename: this.codename, memory })
   }
 
   private creepTaskFor(creep: MyCreep, disposeState: DisposeState): CreepTask.AnyTask | null {
