@@ -93,7 +93,7 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
           roomName,
           options,
         })
-        console.log(`${this} added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
+        // console.log(`${this} added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
       },
     }
   }

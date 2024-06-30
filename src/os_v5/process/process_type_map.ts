@@ -1,4 +1,5 @@
-import { reverseConstMapping } from "shared/utility/strict_entries"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { reverseConstMapping, strictEntries } from "shared/utility/strict_entries"
 
 
 // ProcessTypes
@@ -14,6 +15,7 @@ export const processTypeDecodingMap = {
   i: "CreepTrafficManagerProcess",
   j: "TestTrafficManagerProcess",
   k: "V3ResourceDistributorProcess",
+  l: "TrashResourceProcess",
 } as const
 
 
@@ -36,6 +38,7 @@ const processDependencyOrder: ProcessTypes[] = [
   "MitsuyoshiBotProcess",
 
   // Application
+  "V3ResourceDistributorProcess",
 
   // No dependencies
   "TestProcess",
@@ -51,6 +54,23 @@ const processDependencyOrder: ProcessTypes[] = [
   // Application process with dependencies
   "EnergyHarvestRoomProcess",
   "TestTrafficManagerProcess",
-  "V3ResourceDistributorProcess",
+  "TrashResourceProcess",
 ]
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
+
+
+// Debug
+const undefinedDependencyOrderProcessTypes = strictEntries(processTypeDecodingMap).flatMap(([, processType]): ProcessTypes[] => {
+  const index = processDependencyOrder.indexOf(processType)
+  if (index >= 0) {
+    return []
+  }
+  return [processType]
+})
+
+if (undefinedDependencyOrderProcessTypes.length > 0) {
+  const processTypeList = undefinedDependencyOrderProcessTypes.map(processType => `- ${processType}`).join("\n")
+  const errorMessage = ConsoleUtility.colored(`[Program Error] Following process types don't have dependency order: \n${processTypeList}`, "error")
+  console.log(errorMessage)
+  Game.notify(errorMessage)
+}
