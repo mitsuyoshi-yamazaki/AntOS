@@ -3,6 +3,7 @@
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
+import {} from "../../processes/application/v3_resource_distributor_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"

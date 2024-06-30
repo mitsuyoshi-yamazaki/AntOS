@@ -18,9 +18,8 @@ export abstract class ApplicationProcess<
   This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
   > extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This> {
 
-  abstract readonly version: SemanticVersion
   abstract readonly applicationName: string
-
+  abstract readonly version: SemanticVersion
 
 
   /** @throws */
