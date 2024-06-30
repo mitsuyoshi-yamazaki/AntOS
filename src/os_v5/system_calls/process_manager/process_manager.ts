@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { Mutable } from "shared/utility/types"
 import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
-import { processTypeDecodingMap, processTypeEncodingMap } from "../../process/process_type_map"
+import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "os_v5/utility/types"
 import { UniqueId } from "../unique_id"
@@ -11,6 +11,8 @@ import { ProcessStore } from "./process_store"
 import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
+import { ProcessExecutionLog } from "./process_execution_log"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
 /**
@@ -62,22 +64,28 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
 
 let processManagerMemory: ProcessManagerMemory = {} as ProcessManagerMemory
 const processStore = new ProcessStore()
+const processExecutionLogs: ProcessExecutionLog[] = []
 
 
 type ProcessManager = {
-  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
-  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
+  addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
+  getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
+  getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: string): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
+  hasProcess(processType: ProcessTypes, identifier: string): boolean
+
   suspend(process: AnyProcess): boolean
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
-  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
+
+  getDependencyFor<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): D | null
+  getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
   listProcessRunningStates(): Readonly<ProcessRunningState & { process: AnyProcess }>[]
   getDependingProcessGraphRecursively(processId: AnyProcessId): DependencyGraphNode | null
 
   /** @throws */
-  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string
 }
 
 
@@ -106,39 +114,67 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   run(): void {
+    const executionLog: Mutable<ProcessExecutionLog> = {
+      time: Game.time,
+      iteratedProcessId: null,
+      iterateFinished: false,
+      errorRaised: new Set(),
+    }
+    processExecutionLogs.unshift(executionLog)
+
     const processRunAfterTicks: (() => void)[] = []
 
-    processStore.listProcesses().forEach(<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
+    processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
-        const runningState = this.getProcessRunningState(process.processId)
-        if (runningState.isRunning !== true) {
-          return
+        try {
+          executionLog.iteratedProcessId = process.processId
+
+          const runningState = this.getProcessRunningState(process.processId)
+          if (runningState.isRunning !== true) {
+            return
+          }
+
+          const dependency = process.getDependentData(SharedMemory)
+          if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
+            PrimitiveLogger.log(`ProcessManager.run(${process}): no dependent data. Suspending...`)
+            processStore.setMissingDependency(process.processId)
+            return
+          }
+
+          const processMemory = process.run(dependency)
+          SharedMemory.set(process.processType, process.identifier, processMemory)
+
+          if (process.runAfterTick != null) {
+            processRunAfterTicks.push((() => {
+              ErrorMapper.wrapLoop((): void => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                process.runAfterTick!(dependency)
+              }, `ProcessManager.runAfterTick(${process})`)()
+            }))
+          }
+        } catch (error) {
+          executionLog.errorRaised.add(process.processId)
+          if (processExecutionLogs[1]?.errorRaised.has(process.processId) === true) {
+            processStore.suspend(process.processId)
+            PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised error twice. Suspending...`)
+          }
+          throw error
         }
-
-        const dependency = process.getDependentData(SharedMemory)
-        if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
-          PrimitiveLogger.log(`ProcessManager.run: no dependent data for: ${process.processType}, suspending`)
-          processStore.setMissingDependency(process.processId)
-          return
-        }
-
-        const processMemory = process.run(dependency)
-        SharedMemory.set(process.processType, process.identifier, processMemory)
-
-        if (process.runAfterTick != null) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          processRunAfterTicks.push((() => process.runAfterTick!(dependency)))
-        }
-
-      }, `ProcessManager.run(${process.processType})`)()
+      }, `ProcessManager.run(${process})`)()
     })
+
+    executionLog.iterateFinished = true
+    if (processExecutionLogs.length > 2) {
+      processExecutionLogs.splice(2, processExecutionLogs.length - 2)
+    }
 
     processRunAfterTicks.forEach(runAfterTick => runAfterTick())
   },
 
-  // ProcessManager
+  // ---- ProcessManager ---- //
+  // Process Lifecycle
   /** @throws */
-  addProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
+  addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P {
     // 依存先含めて作成する場合も静的に制約できないため例外を送出するのは変わらない
     // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
     // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
@@ -163,17 +199,20 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       })
     }
 
-    processStore.add(process)
-
     if (process.didLaunch != null) {
       process.didLaunch()
     }
 
+    processStore.add(process) // 全ての処理が完了してから追加する： process側で中断する際は didLaunch() で例外を出す
     return process
   },
 
-  getProcess<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+  getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
     return processStore.getProcessById(processId)
+  },
+
+  getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: string): P | null {
+    return processStore.getProcessByIdentifier(processType, identifier)
   },
 
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState {
@@ -182,6 +221,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
   },
 
+  hasProcess(processType: ProcessTypes, identifier: string): boolean {
+    return processStore.getProcessByIdentifier(processType, identifier) != null
+  },
+
+
+  // Process Control
   suspend(process: AnyProcess): boolean {
     return processStore.suspend(process.processId)
   },
@@ -198,7 +243,13 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     processStore.remove(process)
   },
 
-  getRuntimeDescription<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
+
+  // Utility
+  getDependencyFor<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): D | null {
+    return process.getDependentData(SharedMemory)
+  },
+
+  getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null {
     return ErrorMapper.wrapLoop((): string | null => {
       const dependency = process.getDependentData(SharedMemory)
       if (dependency === null) { // Dependencyがvoidでundefinedが返る場合を除外するため
@@ -227,9 +278,9 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   /** @throws */
-  sendMessage<D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, args: string[]): string {
+  sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string {
     if (process.didReceiveMessage == null) {
-      throw `${process.processType}[${process.identifier}] won't receive message`
+      throw `${process.processType}[${process.identifier}] doesn't receive message`
     }
 
     const dependency = process.getDependentData(SharedMemory)
@@ -237,12 +288,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       throw `${process.processType}[${process.identifier}] no dependent data`
     }
 
-    return process.didReceiveMessage(args, dependency)
+    return process.didReceiveMessage(argumentParser, dependency)
   },
 }
 
 
-const createNewProcessId = <D, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
+const createNewProcessId = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
   return UniqueId.generate() as ProcessId<D, I, M, S, P>
 }
 

@@ -3,6 +3,11 @@ import { SystemCall } from "../system_call"
 import { EmptySerializable } from "os_v5/utility/types"
 
 
+// Server
+const serverRestartTime = Game.time
+
+
+// Environment Info
 export enum EnvironmentName {
   mmo = "mmo",
   sim = "sim",
@@ -18,9 +23,6 @@ type EnvironmentInfo = {
   readonly name: EnvironmentName
 }
 
-type EnvironmentVariable = {
-  readonly environment: EnvironmentInfo
-}
 
 const initializeEnvironmentInfo = (): EnvironmentInfo => {
   const shardName = Game.shard.name
@@ -65,11 +67,22 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   }
 }
 
-export const EnvironmentVariable: SystemCall<"EnvironmentVariable", EmptySerializable> & EnvironmentVariable = {
-  name: "EnvironmentVariable",
-  [Symbol.toStringTag]: "EnvironmentVariable",
 
-  environment: initializeEnvironmentInfo(),
+// Environment
+type Environment = {
+  // Environment Info
+  readonly info: EnvironmentInfo
+
+  // Server
+  isServerRestarted(): boolean
+  serverUptime(): number
+}
+
+export const Environment: SystemCall<"Environment", EmptySerializable> & Environment = {
+  name: "Environment",
+  [Symbol.toStringTag]: "Environment",
+
+  info: initializeEnvironmentInfo(),
 
   load(): void {
   },
@@ -79,5 +92,14 @@ export const EnvironmentVariable: SystemCall<"EnvironmentVariable", EmptySeriali
 
   endOfTick(): EmptySerializable {
     return {}
+  },
+
+  // Environment
+  isServerRestarted(): boolean {
+    return Game.time === serverRestartTime
+  },
+
+  serverUptime(): number {
+    return Game.time - serverRestartTime
   },
 }

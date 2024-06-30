@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId } from "../../process/process"
+import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { RoomExit } from "shared/utility/room_exit"
@@ -14,7 +14,7 @@ type RoomExitFailureReasonNotSupported = {  /// 手動で実装している間�
 }
 type RoomExitFailureReason = RoomExitFailureReasonSameRoom | RoomExitFailureReasonNotSupported
 
-export type RoomPathfindingProcessAPI = {
+export type RoomPathfindingProcessApi = {
   exitTo(targetRoomName: RoomName, currentRoomName: RoomName): Result<RoomExit, RoomExitFailureReason>
   // exitsTo(targetRoomName: RoomName, currentRoomName: RoomName): RoomPosition[] // TODO:
 }
@@ -25,11 +25,11 @@ type RoomPathfindingProcessState = {
 
 ProcessDecoder.register("RoomPathfindingProcess", (processId: RoomPathfindingProcessId, state: RoomPathfindingProcessState) => RoomPathfindingProcess.decode(processId, state))
 
-export type RoomPathfindingProcessId = ProcessId<void, "RoomPathFinding", RoomPathfindingProcessAPI, RoomPathfindingProcessState, RoomPathfindingProcess>
+export type RoomPathfindingProcessId = ProcessId<void, ProcessDefaultIdentifier, RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess>
 
 
-export class RoomPathfindingProcess extends Process<void, "RoomPathFinding", RoomPathfindingProcessAPI, RoomPathfindingProcessState, RoomPathfindingProcess> {
-  public readonly identifier = "RoomPathFinding"
+export class RoomPathfindingProcess extends Process<void, ProcessDefaultIdentifier, RoomPathfindingProcessApi, RoomPathfindingProcessState, RoomPathfindingProcess> {
+  public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }
@@ -63,7 +63,7 @@ export class RoomPathfindingProcess extends Process<void, "RoomPathFinding", Roo
     return this.staticDescription()
   }
 
-  public run(): RoomPathfindingProcessAPI {
+  public run(): RoomPathfindingProcessApi {
     return {
       exitTo: (targetRoomName: RoomName, currentRoomName: RoomName): Result<RoomExit, RoomExitFailureReason> => {
         return this.exitTo(targetRoomName, currentRoomName)
