@@ -9,16 +9,23 @@ import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/dep
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { DisposeResourceProcess, DisposeResourceProcessId } from "../economy/single_task_processes/dispose_resource_process"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { RoomName } from "shared/utility/room_name_types"
 
 
 type Dependency = V3BridgeDriverProcessApi
 
+type RoomDescription = {
+  readonly roomName: RoomName
+  readonly processIds: AnyProcessId[]
+  readonly warnings: string[]
+}
+
 type DeferredTaskTypes = "check_v3_rooms"
 type DeferredTaskResultV3Room = {
   readonly case: "check_v3_rooms"
-  readonly room: Room
-  readonly state: string
+  readonly roomDescriptions: RoomDescription[]
 }
+type DeferredTaskResults = DeferredTaskResultV3Room
 
 
 type RoomProcessIds = { [RoomName: string]: AnyProcessId[] }
@@ -39,7 +46,7 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
     ],
   }
   public readonly applicationName = "v3 ResourceDistributor"
-  public readonly version = new SemanticVersion(1, 0, 5)
+  public readonly version = new SemanticVersion(1, 0, 7)
 
 
   private constructor(
@@ -88,10 +95,21 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
 
 
   // ---- Deferred Task ---- //
-  public didFinishDeferredTask<TaskType extends string, T>(taskResult: DeferredTaskResult<TaskType, T>): void {
+  public didFinishDeferredTask(taskResult: DeferredTaskResult<DeferredTaskTypes, DeferredTaskResults>): void {
     switch (taskResult.result.case) {
     case "succeeded":
-      SystemCalls.logger.log(this, `Deferred task ${taskResult.taskType} finished`, true)
+      switch (taskResult.result.value.case) {
+      case "check_v3_rooms": {
+        const roomDescription = taskResult.result.value.roomDescriptions.map(formatRoomDescription).join("\n")
+        SystemCalls.logger.log(this, `Deferred task ${taskResult.taskType} finished:\n${roomDescription}`, true)
+        break
+      }
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = taskResult.result.value.case
+        break
+      }
+      }
       break
 
     case "failed":
@@ -108,18 +126,44 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
 
     /** @throws */
     run: (): string => {
-      const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskTypes, DeferredTaskResultV3Room[]>(
+      const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskTypes, DeferredTaskResults>(
         this.processId,
         "check_v3_rooms",
-        (): DeferredTaskResultV3Room[] => {
+        (): DeferredTaskResults => {
           const dependency = SystemCalls.processManager.getDependencyFor<Dependency, ProcessDefaultIdentifier, void, V3ResourceDistributorProcessState, V3ResourceDistributorProcess>(this)
           if (dependency == null) {
             throw "Cannot get dependency"
           }
-          // const ownedRoomResources = dependency.getOwnedRoomResources()
-          // TODO:
 
-          throw "Not implemented yet"
+          const roomDescriptions: RoomDescription[] = []
+          const ownedRoomResources = dependency.getOwnedRoomResources()
+
+          ownedRoomResources.forEach(roomResource => {
+            const stores: (StructureStorage | StructureTerminal)[] = []
+            if (roomResource.activeStructures.storage != null) {
+              stores.push(roomResource.activeStructures.storage)
+            }
+            if (roomResource.activeStructures.terminal != null) {
+              stores.push(roomResource.activeStructures.terminal)
+            }
+
+            const processIds = this.roomProcessIds[roomResource.room.name] ?? []
+            const warnings = getStorageWarnings(stores)
+            if (warnings.length <= 0 && processIds.length <= 0) {
+              return
+            }
+
+            roomDescriptions.push({
+              roomName: roomResource.room.name,
+              processIds,
+              warnings,
+            })
+          })
+
+          return {
+            case: "check_v3_rooms",
+            roomDescriptions,
+          }
         },
         { priority: deferredTaskPriority.anytime },
       )
@@ -150,4 +194,45 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
       return `Added ${process} to ${ConsoleUtility.roomLink(roomName)}`
     }
   }
+}
+
+
+const getStorageWarnings = (stores: (StructureStorage | StructureTerminal)[]): string[] => {
+  const warnings: string[] = []
+
+  let totalCapacity = 0
+  let freeCapacity = 0
+  stores.forEach(store => {
+    totalCapacity += store.store.getCapacity()
+    freeCapacity += store.store.getFreeCapacity()
+  })
+  const usedCapacity = totalCapacity - freeCapacity
+
+  if (freeCapacity < 40000) {
+    warnings.push(`Usage warning: ${Math.floor((usedCapacity / totalCapacity) * 100)}% (${ConsoleUtility.shortenedNumber(usedCapacity)}/${ConsoleUtility.shortenedNumber(totalCapacity)})`)
+  }
+
+  const energyAmount = stores.reduce((result, current) => result + current.store.getUsedCapacity(RESOURCE_ENERGY), 0)
+  if (energyAmount < 50000) {
+    warnings.push(`Energy warning: ${ConsoleUtility.shortenedNumber(energyAmount)} ${ConsoleUtility.coloredResourceType(RESOURCE_ENERGY)}`)
+  }
+
+  return warnings
+}
+
+const formatRoomDescription = (description: RoomDescription): string => {
+  const descriptions: string[] = [
+    `- ${ConsoleUtility.roomLink(description.roomName)}:`,
+  ]
+
+  if (description.processIds.length > 0) {
+    descriptions.push(`  - Processes: ${description.processIds.join(", ")}`)
+  }
+
+  if (description.warnings.length > 0) {
+    descriptions.push("  - warnings:")
+    descriptions.push(...description.warnings.map(warning => `    - ${warning}`))
+  }
+
+  return descriptions.join("\n")
 }

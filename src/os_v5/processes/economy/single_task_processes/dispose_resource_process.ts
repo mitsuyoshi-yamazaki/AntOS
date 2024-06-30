@@ -107,7 +107,15 @@ export class DisposeResourceProcess extends Process<Dependency, RoomName, void, 
     return this.getFlatDependentData(sharedMemory)
   }
   public staticDescription(): string {
-    return `${ConsoleUtility.roomLink(this.parentRoomName)} => ${ConsoleUtility.roomLink(this.roomName)}`
+    const descriptions: string[] = [
+      `${ConsoleUtility.roomLink(this.parentRoomName)} => ${ConsoleUtility.roomLink(this.roomName)}`,
+    ]
+
+    if (this.stoppedReasons.length > 0) {
+      descriptions.push(`stopped by: ${this.stoppedReasons.join(",")}`)
+    }
+
+    return descriptions.join(", ")
   }
 
   public runtimeDescription(): string {
