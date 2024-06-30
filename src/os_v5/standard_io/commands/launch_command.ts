@@ -10,7 +10,7 @@ import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
 
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
-import {  } from "../../processes/economy/single_task_processes/trash_resource_process"
+import {  } from "../../processes/economy/single_task_processes/dispose_resource_process"
 
 // Game Object Management
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"

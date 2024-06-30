@@ -7,7 +7,7 @@ import { Command, runCommands } from "os_v5/standard_io/command"
 import { V3BridgeDriverProcessApi } from "../v3_os_bridge/v3_bridge_driver_process"
 import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { TrashResourceProcess, TrashResourceProcessId } from "../economy/single_task_processes/trash_resource_process"
+import { TrashResourceProcess, TrashResourceProcessId } from "../economy/single_task_processes/dispose_resource_process"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 
