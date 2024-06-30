@@ -9,6 +9,7 @@ import { AnySerializable } from "./utility/types"
 import { Timestamp } from "shared/utility/timestamp"
 import { KernelMemory } from "./memory"
 import { SystemCall } from "./system_call"
+import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 
 const reversedSystemCallLifecycles = [...systemCallLifecycles].reverse()
 let kernelMemory: KernelMemory = {} as KernelMemory
@@ -31,7 +32,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
   [Symbol.toStringTag]: "Kernel",
 
   name: "AntOS",
-  version: new SemanticVersion(5, 5, 50),
+  version: new SemanticVersion(5, 6, 0),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),
@@ -58,7 +59,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
     })
 
     if (updated === true) {
-      SystemCalls.logger.log(`${ConsoleUtility.colored("Deployed", "info")} ${this.systemInfo()}`)
+      PrimitiveLogger.log(`${ConsoleUtility.colored("Deployed", "info")} ${this.systemInfo()}`, "log")
     }
   },
 
