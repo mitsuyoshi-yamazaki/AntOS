@@ -3,6 +3,7 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 import { EmptySerializable } from "os_v5/utility/types"
 import { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomResources } from "room_resource/room_resources"
 
 
 export type V3BridgeDriverProcessApi = {
@@ -52,7 +53,7 @@ export class V3BridgeDriverProcess extends Process<void, ProcessDefaultIdentifie
   public run(): V3BridgeDriverProcessApi {
     return {
       getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => {
-        return null // TODO:
+        return RoomResources.getOwnedRoomResource(roomName)
       },
     }
   }
