@@ -92,8 +92,23 @@ export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
       return
     }
 
-    const processIdsToAdd = processIds.filter(processId => processIdsByTimestamp.has(processId) !== true)
     const untilTime = Game.time + duration
+    const processIdsToAdd: AnyProcessId[] = []
+    const processIdsToDelete: AnyProcessId[] = []
+
+    processIds.forEach(processId => {
+      const storedTimestamp = processIdsByTimestamp.get(processId)
+      if (storedTimestamp == null) {
+        processIdsToAdd.push(processId)
+      } else {
+        if (storedTimestamp < untilTime) {
+          processIdsToAdd.push(processId)
+          processIdsToDelete.push(processId)
+        }
+      }
+    })
+
+    this.setLogDisabled(processIdsToDelete)
 
     if (timestampByProcessId[untilTime] == null) {
       timestampByProcessId[untilTime] = [...processIdsToAdd]
