@@ -24,13 +24,13 @@ import { TestProcess, TestProcessId } from "../../processes/support/test/test_pr
 import { TestTrafficManagerProcess, TestTrafficManagerProcessId } from "../../processes/support/test/test_traffic_manager_process"
 
 // v3 Bridge
-import {  } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
+import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
 import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
 
 
 // ---- ---- //
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
-import { AnyProcess, Process, ProcessId } from "os_v5/process/process"
+import { AnyProcess, AnyProcessId, Process, ProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "os_v5/utility/types"
@@ -89,23 +89,26 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 
 
 // Process Registration
+((): void => {
+  const processConstructors: [ProcessTypes, (processId: AnyProcessId) => AnyProcess][] = [
+    ["V3BridgeSpawnRequestProcess", processId => V3BridgeSpawnRequestProcess.create(processId as V3BridgeSpawnRequestProcessId)],
+    ["V3BridgeDriverProcess", processId => V3BridgeDriverProcess.create(processId as V3BridgeDriverProcessId)],
+    ["RoomPathfindingProcess", processId => RoomPathfindingProcess.create(processId as RoomPathfindingProcessId)],
+    ["CreepTaskStateManagementProcess", processId => CreepTaskStateManagementProcess.create(processId as CreepTaskStateManagementProcessId)],
+    ["CreepDistributorProcess", processId => CreepDistributorProcess.create(processId as CreepDistributorProcessId)],
+    ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
+  ]
+
+  processConstructors.forEach(([processType, constructor]) => {
+    registerProcess(processType, () => constructor as ProcessConstructor)
+  })
+})()
+
 registerProcess("TestProcess", (argumentParser) => {
   const identifier = argumentParser.string([0, "process identifier"]).parse()
 
   return ((processId: TestProcessId): TestProcess => {
     return TestProcess.create(processId, identifier)
-  }) as ProcessConstructor
-})
-
-registerProcess("V3BridgeSpawnRequestProcess", () => {
-  return ((processId: V3BridgeSpawnRequestProcessId): V3BridgeSpawnRequestProcess => {
-    return V3BridgeSpawnRequestProcess.create(processId)
-  }) as ProcessConstructor
-})
-
-registerProcess("RoomPathfindingProcess", () => {
-  return ((processId: RoomPathfindingProcessId): RoomPathfindingProcess => {
-    return RoomPathfindingProcess.create(processId)
   }) as ProcessConstructor
 })
 
@@ -118,29 +121,11 @@ registerProcess("EnergyHarvestRoomProcess", (argumentParser) => {
   }) as ProcessConstructor
 })
 
-registerProcess("CreepTaskStateManagementProcess", () => {
-  return ((processId: CreepTaskStateManagementProcessId): CreepTaskStateManagementProcess => {
-    return CreepTaskStateManagementProcess.create(processId)
-  }) as ProcessConstructor
-})
-
-registerProcess("CreepDistributorProcess", () => {
-  return ((processId: CreepDistributorProcessId): CreepDistributorProcess => {
-    return CreepDistributorProcess.create(processId)
-  }) as ProcessConstructor
-})
-
 registerProcess("MitsuyoshiBotProcess", (argumentParser) => {
   const identifier = argumentParser.string([0, "process identifier"]).parse()
 
   return ((processId: MitsuyoshiBotProcessId): MitsuyoshiBotProcess => {
     return MitsuyoshiBotProcess.create(processId, identifier)
-  }) as ProcessConstructor
-})
-
-registerProcess("CreepTrafficManagerProcess", () => {
-  return ((processId: CreepTrafficManagerProcessId): CreepTrafficManagerProcess => {
-    return CreepTrafficManagerProcess.create(processId)
   }) as ProcessConstructor
 })
 
