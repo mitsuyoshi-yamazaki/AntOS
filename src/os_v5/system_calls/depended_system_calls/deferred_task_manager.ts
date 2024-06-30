@@ -30,7 +30,7 @@ const restoredTasks: AnyDeferredTaskState[] = []
 let runningTask: AnyDeferredTask | null = null
 
 type DeferredTaskManager = {
-  register<TaskType extends string, T>(processId: AnyProcessId, taskType: TaskType, task: () => T, options?: { expiredBy?: Timestamp, priority: DeferredTaskPriority}): DeferredTaskId
+  register<TaskType extends string, T>(processId: AnyProcessId, taskType: TaskType, task: () => T, options?: { expiredBy?: Timestamp, priority?: DeferredTaskPriority}): DeferredTaskId
 }
 
 export const DeferredTaskManager: SystemCall<"DeferredTaskManager", DeferredTaskManagerMemory> & DeferredTaskManager = {
@@ -133,7 +133,7 @@ const runTasks = (): void => {
       },
     }
     process.didFinishDeferredTask(result)
-    logError(`Task ${task.taskType} for ${process} raises an error ${error}`)
+    logError(`Task ${task.taskType} for ${process} raises an error: ${error}`)
   }
 
   runningTask = null
