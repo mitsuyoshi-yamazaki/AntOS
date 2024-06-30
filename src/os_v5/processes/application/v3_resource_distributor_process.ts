@@ -39,7 +39,7 @@ export class V3ResourceDistributorProcess extends ApplicationProcess<Dependency,
     ],
   }
   public readonly applicationName = "v3 ResourceDistributor"
-  public readonly version = new SemanticVersion(1, 0, 3)
+  public readonly version = new SemanticVersion(1, 0, 4)
 
 
   private constructor(

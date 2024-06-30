@@ -10,11 +10,14 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepTask } from "os_v5/processes/game_object_management/creep/creep_task/creep_task"
 import { MyRoom } from "shared/utility/room"
 import { DepositConstant, MineralConstant } from "shared/utility/resource"
+import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { V3BridgeDriverProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_driver_process"
 
 
 type Dependency = V3BridgeSpawnRequestProcessApi
   & CreepDistributorProcessApi
   & CreepTaskStateManagementProcessApi
+  & V3BridgeDriverProcessApi
 
 
 type CreepRoles = ""
@@ -28,10 +31,20 @@ const defaultTrashableResources: ResourceConstant[] = [
   ...DepositConstant,
   ...MineralConstant,
 ]
+
+type DrainableStructures = StructureTerminal | StructureStorage
+type DisposeState = {
+  readonly resourceType: ResourceConstant
+  readonly storeId: Id<DrainableStructures>
+}
+
+type StoppedReasons = "manually" | "finished"
+
 type TrashResourceProcessState = {
   readonly r: RoomName
   readonly p?: RoomName
   readonly tr?: ResourceConstant[] /// undefined なら defaultTrashableResources
+  readonly s: StoppedReasons[]
 }
 
 ProcessDecoder.register("TrashResourceProcess", (processId: TrashResourceProcessId, state: TrashResourceProcessState) => TrashResourceProcess.decode(processId, state))
@@ -43,6 +56,7 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     processes: [
+      { processType: "V3BridgeDriverProcess", identifier: processDefaultIdentifier },
       { processType: "V3BridgeSpawnRequestProcess", identifier: processDefaultIdentifier },
       { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },
       { processType: "CreepTaskStateManagementProcess", identifier: processDefaultIdentifier },
@@ -51,6 +65,7 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
 
 
   private readonly codename: string
+  private disposeState: DisposeState | null = null
 
 
   private constructor(
@@ -58,6 +73,7 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
     public readonly roomName: RoomName,
     public readonly parentRoomName: RoomName,
     public readonly resourcesToTrash: ResourceConstant[] | undefined,
+    public readonly stoppedReasons: StoppedReasons[],
   ) {
     super()
     this.identifier = roomName
@@ -69,15 +85,16 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
       r: this.roomName,
       p: this.parentRoomName === this.roomName ? undefined : this.parentRoomName,
       tr: this.resourcesToTrash,
+      s: this.stoppedReasons,
     }
   }
 
   public static decode(processId: TrashResourceProcessId, state: TrashResourceProcessState): TrashResourceProcess {
-    return new TrashResourceProcess(processId, state.r, state.p ?? state.r, state.tr)
+    return new TrashResourceProcess(processId, state.r, state.p ?? state.r, state.tr, state.s ?? [])
   }
 
   public static create(processId: TrashResourceProcessId, room: MyRoom, parentRoom: MyRoom): TrashResourceProcess {
-    return new TrashResourceProcess(processId, room.name, parentRoom.name, undefined)
+    return new TrashResourceProcess(processId, room.name, parentRoom.name, undefined, [])
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
@@ -92,6 +109,10 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
   }
 
   public run(dependency: Dependency): void {
+    if (this.stoppedReasons.length > 0) {
+      return
+    }
+
     const creeps = dependency.getCreepsFor(this.processId)
     const creepsWithTask: MyCreep[] = dependency.registerTaskDrivenCreeps(creeps)
 
@@ -99,9 +120,23 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
       this.spawnCreep(dependency)
     }
 
+    const roomResource = dependency.getOwnedRoomResource(this.roomName)
+    if (roomResource == null) {
+      return
+    }
+
+    if (this.disposeState == null) {
+      this.disposeState = this.getDisposeTarget(roomResource)
+      if (this.disposeState == null) {
+        this.stoppedReasons.push("finished")
+        return
+      }
+    }
+    const disposeState = this.disposeState
+
     creepsWithTask.forEach(creep => {
       if (creep.task == null) {
-        creep.task = this.creepTaskFor(creep)
+        creep.task = this.creepTaskFor(creep, disposeState)
       }
     })
   }
@@ -112,7 +147,46 @@ export class TrashResourceProcess extends Process<Dependency, RoomName, void, Tr
     dependency.addSpawnRequest(CreepBody.createWithBodyParts([CARRY, MOVE]), this.parentRoomName, { codename: this.codename, memory })
   }
 
-  private creepTaskFor(creep: MyCreep): CreepTask.AnyTask | null {
+  private creepTaskFor(creep: MyCreep, disposeState: DisposeState): CreepTask.AnyTask | null {
+    if (creep.room.name !== this.roomName) {
+      return CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
+    }
+
+    const target = Game.getObjectById(disposeState.storeId)
+    if (target == null || target.store.getUsedCapacity(disposeState.resourceType) <= 0) {
+      this.disposeState = null
+      return null
+    }
+
+    const tasks: CreepTask.AnyTask[] = [
+      CreepTask.Tasks.MoveTo.create(target.pos),
+      CreepTask.Tasks.WithdrawResource.create(target.id, disposeState.resourceType),
+      CreepTask.Tasks.DropResource.create(disposeState.resourceType),
+    ]
+    return CreepTask.Tasks.Sequential.create(tasks)
+  }
+
+  private getDisposeTarget(roomResource: OwnedRoomResource): DisposeState | null {
+    const disposableResources = this.resourcesToTrash ?? defaultTrashableResources
+
+    const targets: DrainableStructures[] = []
+    if (roomResource.activeStructures.terminal != null) {
+      targets.push(roomResource.activeStructures.terminal)
+    }
+    if (roomResource.activeStructures.storage != null) {
+      targets.push(roomResource.activeStructures.storage)
+    }
+
+    for (const target of targets) {
+      for (const resourceType of disposableResources) {
+        if (target.store.getUsedCapacity(resourceType) > 0) {
+          return {
+            storeId: target.id,
+            resourceType,
+          }
+        }
+      }
+    }
     return null
   }
 }
