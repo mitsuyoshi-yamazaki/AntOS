@@ -16,6 +16,7 @@ export const processTypeDecodingMap = {
   j: "TestTrafficManagerProcess",
   k: "V3ResourceDistributorProcess",
   l: "TrashResourceProcess",
+  m: "V3BridgeDriverProcess",
 } as const
 
 
@@ -47,6 +48,7 @@ const processDependencyOrder: ProcessTypes[] = [
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
   "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
+  "V3BridgeDriverProcess",
 
   // Driver with dependencies
   "CreepTaskStateManagementProcess",
