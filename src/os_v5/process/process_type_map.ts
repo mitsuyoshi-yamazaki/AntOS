@@ -43,7 +43,6 @@ const processDependencyOrder: ProcessTypes[] = [
 
   // No dependencies
   "TestProcess",
-  "V3BridgeSpawnRequestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
@@ -52,6 +51,7 @@ const processDependencyOrder: ProcessTypes[] = [
 
   // Driver with dependencies
   "CreepTaskStateManagementProcess",
+  "V3BridgeSpawnRequestProcess",
 
   // Application process with dependencies
   "EnergyHarvestRoomProcess",

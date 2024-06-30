@@ -1,4 +1,4 @@
-import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId } from "../../process/process"
+import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
 import { CreepBody } from "utility/creep_body_v2"
@@ -9,11 +9,9 @@ import { CreepName } from "prototype/creep"
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { V5CreepMemory } from "os_v5/utility/game_object/creep"
+import { V3BridgeDriverProcessApi } from "./v3_bridge_driver_process"
 
 // SpawnPoolのライフサイクルはv3 OSのライフサイクル内で閉じているので、直接Spawn APIを呼び出す
-
-
-ProcessDecoder.register("V3BridgeSpawnRequestProcess", (processId: V3BridgeSpawnRequestProcessId) => V3BridgeSpawnRequestProcess.decode(processId))
 
 
 type SpawnRequest = {
@@ -28,13 +26,21 @@ type SpawnRequest = {
 export type V3BridgeSpawnRequestProcessApi = {
   addSpawnRequest<M extends SerializableObject>(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<M> }): void
 }
-export type V3BridgeSpawnRequestProcessId = ProcessId<void, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
 
 
-export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess> {
+type Dependency = V3BridgeDriverProcessApi
+
+
+ProcessDecoder.register("V3BridgeSpawnRequestProcess", (processId: V3BridgeSpawnRequestProcessId) => V3BridgeSpawnRequestProcess.decode(processId))
+export type V3BridgeSpawnRequestProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess>
+
+
+export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefaultIdentifier, V3BridgeSpawnRequestProcessApi, EmptySerializable, V3BridgeSpawnRequestProcess> {
   public readonly identifier = processDefaultIdentifier
   public readonly dependencies: ProcessDependencies = {
-    processes: [],
+    processes: [
+      { processType: "V3BridgeDriverProcess", identifier: processDefaultIdentifier },
+    ],
   }
 
   private spawnRequests: SpawnRequest[] = []
@@ -58,7 +64,9 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
     return new V3BridgeSpawnRequestProcess(processId)
   }
 
-  public getDependentData(): void { }
+  public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
+    return this.getFlatDependentData(sharedMemory)
+  }
 
   public staticDescription(): string {
     const descriptions: string[] = [
@@ -98,19 +106,19 @@ export class V3BridgeSpawnRequestProcess extends Process<void, ProcessDefaultIde
     }
   }
 
-  public runAfterTick(): void {
+  public runAfterTick(dependency: Dependency): void {
     const skipRoomNames: RoomName[] = []
 
     this.spawnRequests.forEach(request => {
       if (skipRoomNames.includes(request.roomName) === true) {
         return
       }
-      const room = Game.rooms[request.roomName]
-      if (room == null) {
+      const roomResource = dependency.getOwnedRoomResource(request.roomName)
+      if (roomResource == null) {
         skipRoomNames.push(request.roomName)
         return
       }
-      const spawns = room.find<StructureSpawn>(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_SPAWN } })
+      const spawns = roomResource.activeStructures.spawns
       if (spawns.length <= 0) {
         skipRoomNames.push(request.roomName)
         return
