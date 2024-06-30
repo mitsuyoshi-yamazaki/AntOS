@@ -74,6 +74,7 @@ export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
     if (timestampByProcessId[time] != null) {
       timestampByProcessId[time]?.forEach(processId => {
         processIdsByTimestamp.delete(processId)
+        logLogDisabled(processId)
       })
       delete timestampByProcessId[time]
     }
@@ -167,4 +168,15 @@ export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
   programError(process: AnyProcess, message: string): void {
     PrimitiveLogger.programError(`${process} ${message}`)
   },
+}
+
+
+const logLogDisabled = (processId: AnyProcessId): void => {
+  const process = ProcessManager.getProcess(processId)
+
+  if (process != null) {
+    PrimitiveLogger.log(`Logger: disable log for ${process}`)
+  } else {
+    PrimitiveLogger.log(`Logger: disable log for terminated process with ID ${processId}`)
+  }
 }
