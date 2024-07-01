@@ -8,6 +8,7 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { CreepName } from "prototype/creep"
 import { V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { V3BridgeDriverProcessApi } from "./v3_bridge_driver_process"
+import {} from "os_v5/utility/onheap_logger"
 
 // SpawnPoolのライフサイクル（v3 OSの実行）が終わった後に実行する必要がある
 
@@ -86,7 +87,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
           roomName,
           options,
         })
-        // console.log(`${this} added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
+        SystemCalls.logger.log(this, `Added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
         // TODO: 内部的にSystemCalls.Loggerを呼び出すOnHeapLogger
       },
     }
@@ -100,9 +101,19 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
         return
       }
 
-      const idleSpawn = dependency.getIdleSpawnsFor(request.roomName)[0]
+      const spawnInfo = dependency.getIdleSpawnsFor(request.roomName)
+      if (spawnInfo == null) {
+        skipRoomNames.push(request.roomName)
+        return
+      }
+
+      const idleSpawn = spawnInfo.idleSpawns[0]
       if (idleSpawn == null) {
         skipRoomNames.push(request.roomName)
+        return
+      }
+
+      if (request.body.energyCost > spawnInfo.remainingEnergy) {
         return
       }
 

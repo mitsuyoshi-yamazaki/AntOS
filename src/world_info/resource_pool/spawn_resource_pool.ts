@@ -28,6 +28,9 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
 
   public addResource(spawn: StructureSpawn): void {
     this.spawns.push(spawn)
+    if (spawn.spawning == null) {
+      this.idleSpawns.push(spawn)
+    }
   }
 
   public show(text: string, color: string): void {
@@ -40,7 +43,6 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
 
   public spawnCreeps(rawRequests: CreepSpawnRequest[]): void {
     const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null)
-    this.idleSpawns.push(...idleSpawns)
 
     const spawn = idleSpawns[0]
     if (spawn == null) {

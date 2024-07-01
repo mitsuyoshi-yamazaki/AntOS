@@ -40,7 +40,7 @@ export interface ResourcePoolsInterface {
   addTowerTask(roomName: RoomName, task: TowerTask): void
 
   // ---- v3 API ---- //
-  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[]
+  getIdleSpawnsFor(roomName: RoomName): { remainingEnergy: number, idleSpawns: StructureSpawn[]} | null
 
   /** 毎tick呼び出す */
   addSpawnCreepRequest(roomName: RoomName, request: CreepSpawnRequest): void
@@ -138,8 +138,16 @@ export const ResourcePools: ResourcePoolsInterface = {
   },
 
   // ---- v3 API ---- //
-  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[] {
-    return [...(spawnResourcePools.get(roomName)?.idleSpawns ?? [])]
+  getIdleSpawnsFor(roomName: RoomName): { remainingEnergy: number, idleSpawns: StructureSpawn[] } | null {
+    const spawnPool = spawnResourcePools.get(roomName)
+    if ( spawnPool == null) {
+      return null
+    }
+
+    return {
+      remainingEnergy: spawnPool.availableEnergy,
+      idleSpawns: [...spawnPool.idleSpawns],
+    }
   },
 }
 

@@ -13,7 +13,7 @@ export type V3BridgeDriverProcessApi = {
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
 
   // Spawn
-  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[]
+  getIdleSpawnsFor(roomName: RoomName): { remainingEnergy: number, idleSpawns: StructureSpawn[] } | null
 }
 
 
@@ -60,7 +60,7 @@ export class V3BridgeDriverProcess extends Process<void, ProcessDefaultIdentifie
     return {
       getOwnedRoomResources: (): OwnedRoomResource[] => RoomResources.getOwnedRoomResources(),
       getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => RoomResources.getOwnedRoomResource(roomName),
-      getIdleSpawnsFor: (roomName: RoomName): StructureSpawn[] => ResourcePools.getIdleSpawnsFor(roomName),
+      getIdleSpawnsFor: (roomName: RoomName): { remainingEnergy: number, idleSpawns: StructureSpawn[] } | null => ResourcePools.getIdleSpawnsFor(roomName),
     }
   }
 }
