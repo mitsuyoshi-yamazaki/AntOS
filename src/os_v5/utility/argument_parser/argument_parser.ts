@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -81,6 +81,10 @@ export class ArgumentParser {
   // ---- Primitive Type ---- //
   public int(key: ArgumentKey, options?: ArgumentParserOptions): IntArgument {
     return new IntArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public float(key: ArgumentKey, options?: ArgumentParserOptions): FloatArgument {
+    return new FloatArgument(key, this.getRawValueFor(key), options)
   }
 
   public string(key: ArgumentKey, options?: ArgumentParserOptions): StringArgument {

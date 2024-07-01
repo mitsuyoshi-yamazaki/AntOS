@@ -1,11 +1,14 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
-import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
 
 
 export const iterableTypeParserMakers = {
   int: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): IntArgument => {
     return new IntArgument(key, value, options)
+  },
+  float: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): FloatArgument => {
+    return new FloatArgument(key, value, options)
   },
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
@@ -31,9 +34,6 @@ export const iterableTypeParserMakers = {
   creep_body: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): CreepBodyArgument => {
     return new CreepBodyArgument(key, value, parseOptions)
   },
-  // float: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): FloatArgument => {
-  //   return new FloatArgument(key, value, options)
-  // },
   // boolean: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): BooleanArgument => {
   //   return new BooleanArgument(key, value, options)
   // },

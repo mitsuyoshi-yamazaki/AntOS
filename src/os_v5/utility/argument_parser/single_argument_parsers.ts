@@ -20,6 +20,22 @@ export class IntArgument extends SingleOptionalArgument<{ min?: number, max?: nu
   }
 }
 
+export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: number }, number> {
+  /** throws */
+  public parse(options?: { min?: number, max?: number }): number {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const floatValue = parseFloat(this.value)
+    if (isNaN(floatValue) === true) {
+      throw `${this.value} is not an floating number`
+    }
+    validateNumberRange(this.key, floatValue, options)
+
+    return floatValue
+  }
+}
+
 export class StringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
   public parse(): string {
