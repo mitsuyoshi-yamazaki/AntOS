@@ -1,16 +1,25 @@
-import { Command } from "../command"
+// Commands
+import { LoggerCommand } from "./setting_commands/logger_command"
+
+// Import
+import { Command, runCommands } from "../command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+
+
+const commandRunners: Command[] = [
+  LoggerCommand,
+]
 
 
 export const SettingCommand: Command = {
   command: "setting",
 
   help(): string {
-    return "setting {...args}"
+    return "setting {target} {...args}"
   },
 
   /** @throws */
   run(argumentParser: ArgumentParser): string {
-    return "OK"
+    return runCommands(argumentParser, commandRunners)
   },
 }

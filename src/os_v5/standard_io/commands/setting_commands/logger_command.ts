@@ -1,7 +1,7 @@
 import { Logger } from "os_v5/system_calls/logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
-import { Command, runCommands } from "../command"
+import { Command, runCommands } from "../../command"
 
 
 const EnableProcessCommand: Command = {

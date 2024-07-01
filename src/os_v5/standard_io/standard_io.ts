@@ -6,7 +6,6 @@ import { KillCommand } from "./commands/kill_command"
 import { SuspendCommand } from "./commands/suspend_command"
 import { ResumeCommand } from "./commands/resume_command"
 import { MessageCommand } from "./commands/message_command"
-import { LoggerCommand } from "./commands/logger_command"
 import { SettingCommand } from "./commands/setting_command"
 
 // ---- ---- //
@@ -23,7 +22,6 @@ const commandRunners: Command[] = [
   SuspendCommand,
   ResumeCommand,
   MessageCommand,
-  LoggerCommand,
   SettingCommand,
 ]
 
