@@ -42,6 +42,7 @@ type ProcessManagerMemory = {
   processes: ProcessState[] // 順序を崩さないために配列とする
   suspendedProcessIds: string[]
   noDependencyProcessIds: string[]
+  cpuUsageThreshold: number
 }
 
 
@@ -56,6 +57,9 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
   }
   if (mutableMemory.noDependencyProcessIds == null) {
     mutableMemory.noDependencyProcessIds = []
+  }
+  if (mutableMemory.cpuUsageThreshold == null) {
+    mutableMemory.cpuUsageThreshold = 20
   }
 
   return mutableMemory
@@ -86,6 +90,9 @@ type ProcessManager = {
 
   /** @throws */
   sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string
+
+  cpuUsageThreshold(): number
+  setCpuUsageThreshold(threshold: number): void
 }
 
 
@@ -124,6 +131,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     const processRunAfterTicks: (() => void)[] = []
 
+    let cpuUsage = Game.cpu.getUsed()
+
     processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
         try {
@@ -159,7 +168,18 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
             PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised error twice. Suspending...`)
           }
           throw error
+
+        } finally {
+
+          // TODO: runAfterTick() が計測されていない
+          const currentCpuUsage = Game.cpu.getUsed()
+          const timeTaken = currentCpuUsage - cpuUsage
+          if (timeTaken > processManagerMemory.cpuUsageThreshold) {
+            PrimitiveLogger.fatal(`ProcessManager.run(${process}): took ${timeTaken.toFixed(1)} to execute`)
+          }
+          cpuUsage = currentCpuUsage
         }
+
       }, `ProcessManager.run(${process})`)()
     })
 
@@ -289,6 +309,17 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     return process.didReceiveMessage(argumentParser, dependency)
+  },
+
+  cpuUsageThreshold(): number {
+    return processManagerMemory.cpuUsageThreshold
+  },
+
+  setCpuUsageThreshold(threshold: number): void {
+    if (threshold < 1) {
+      return
+    }
+    processManagerMemory.cpuUsageThreshold = threshold
   },
 }
 
