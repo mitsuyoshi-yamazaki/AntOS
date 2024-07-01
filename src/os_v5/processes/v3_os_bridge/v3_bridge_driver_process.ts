@@ -4,11 +4,16 @@ import { EmptySerializable } from "os_v5/utility/types"
 import { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
+import { ResourcePools } from "world_info/resource_pool/resource_pool"
 
 
 export type V3BridgeDriverProcessApi = {
+  // Room Resource
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
+
+  // Spawn
+  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[]
 }
 
 
@@ -55,6 +60,7 @@ export class V3BridgeDriverProcess extends Process<void, ProcessDefaultIdentifie
     return {
       getOwnedRoomResources: (): OwnedRoomResource[] => RoomResources.getOwnedRoomResources(),
       getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => RoomResources.getOwnedRoomResource(roomName),
+      getIdleSpawnsFor: (roomName: RoomName): StructureSpawn[] => ResourcePools.getIdleSpawnsFor(roomName),
     }
   }
 }
