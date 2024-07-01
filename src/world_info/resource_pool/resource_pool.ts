@@ -1,4 +1,5 @@
 import { isV5CreepMemory } from "prototype/creep"
+import { MyRoom } from "shared/utility/room"
 import type { RoomName } from "shared/utility/room_name_types"
 import { TaskIdentifier } from "v5_task/task"
 import { CreepPool, CreepPoolAssignPriority, CreepPoolFilter, CreepPoolTaskBuilder } from "./creep_resource_pool"
@@ -37,6 +38,9 @@ export interface ResourcePoolsInterface {
 
   // ---- Tower ---- //
   addTowerTask(roomName: RoomName, task: TowerTask): void
+
+  // ---- v3 API ---- //
+  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[]
 
   /** 毎tick呼び出す */
   addSpawnCreepRequest(roomName: RoomName, request: CreepSpawnRequest): void
@@ -132,6 +136,11 @@ export const ResourcePools: ResourcePoolsInterface = {
   stopSpawningIn(roomName: RoomName, duration: number): void {
     stopSpawningUntil.set(roomName, Game.time + duration)
   },
+
+  // ---- v3 API ---- //
+  getIdleSpawnsFor(roomName: RoomName): StructureSpawn[] {
+    return [...(spawnResourcePools.get(roomName)?.idleSpawns ?? [])]
+  },
 }
 
 
@@ -185,7 +194,7 @@ function reloadSpawnResourcePools(allSpawns: StructureSpawn[]): void {
       if (stored != null) {
         return stored
       }
-      const newPool = new SpawnPool(spawn.room.name)
+      const newPool = new SpawnPool(spawn.room as MyRoom)
       spawnResourcePools.set(identifier, newPool)
       return newPool
     })()
