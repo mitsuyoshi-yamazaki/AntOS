@@ -8,7 +8,7 @@ export const MessageCommand: Command = {
   command: "message",
 
   help(): string {
-    return "> message {process ID} ...{arguments}"
+    return "message {process ID} ...{arguments}"
   },
 
   /** @throws */

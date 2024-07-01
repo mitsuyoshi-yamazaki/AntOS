@@ -42,7 +42,7 @@ export const LaunchCommand: Command = {
   command: "launch",
 
   help(): string {
-    return "> launch {process type} ...{arguments}"
+    return "launch {process type} ...{arguments}"
   },
 
   /** @throws */
