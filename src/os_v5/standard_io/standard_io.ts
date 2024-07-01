@@ -7,6 +7,7 @@ import { SuspendCommand } from "./commands/suspend_command"
 import { ResumeCommand } from "./commands/resume_command"
 import { MessageCommand } from "./commands/message_command"
 import { LoggerCommand } from "./commands/logger_command"
+import { SettingCommand } from "./commands/setting_command"
 
 // ---- ---- //
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -23,6 +24,7 @@ const commandRunners: Command[] = [
   ResumeCommand,
   MessageCommand,
   LoggerCommand,
+  SettingCommand,
 ]
 
 
