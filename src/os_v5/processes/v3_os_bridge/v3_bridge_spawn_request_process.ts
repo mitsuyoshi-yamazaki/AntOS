@@ -87,7 +87,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
           roomName,
           options,
         })
-        SystemCalls.logger.log(this, `Added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
+        // SystemCalls.logger.log(this, `Added spawn request ${body.stringRepresentation} in ${ConsoleUtility.roomLink(roomName)}`)
         // TODO: 内部的にSystemCalls.Loggerを呼び出すOnHeapLogger
       },
     }
