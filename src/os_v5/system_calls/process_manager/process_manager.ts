@@ -175,7 +175,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
           const currentCpuUsage = Game.cpu.getUsed()
           const timeTaken = currentCpuUsage - cpuUsage
           if (timeTaken > processManagerMemory.cpuUsageThreshold) {
-            PrimitiveLogger.fatal(`ProcessManager.run(${process}): took ${timeTaken.toFixed(1)} to execute`)
+            PrimitiveLogger.fatal(`ProcessManager.run(${process}): took ${timeTaken.toFixed(1)} cpu to execute`)
           }
           cpuUsage = currentCpuUsage
         }
