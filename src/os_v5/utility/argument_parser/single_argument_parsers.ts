@@ -3,6 +3,7 @@ import { Position } from "shared/utility/position_v2"
 import { isMyRoom, MyRoom } from "shared/utility/room"
 import { RoomName } from "shared/utility/room_name_types"
 import { AvailableRoomPositions } from "shared/utility/room_position"
+import { Range } from "shared/utility/types"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body_v2"
 import { ArgumentKey, ArgumentParserOptions, getKeyDescription, SingleOptionalArgument } from "./single_argument_parser"
@@ -43,6 +44,59 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
       throw this.missingArgumentErrorMessage()
     }
     return this.value
+  }
+}
+
+export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
+  /** throws */
+  public parse(): Position {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const [x, y] = ((): [AvailableRoomPositions, AvailableRoomPositions] => {
+      const components = this.value.split(",")
+      if (components[0] == null || components[1] == null || components.length !== 2) {
+        throw `Invalid format ${this.value}. expected: "{x},{y}"`
+      }
+      const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
+      return [
+        parseIntValue("x", components[0], parseOptions) as AvailableRoomPositions,
+        parseIntValue("y", components[1], parseOptions) as AvailableRoomPositions,
+      ]
+    })()
+    return {
+      x,
+      y,
+    }
+  }
+}
+
+/// {start}..{end}
+export class RangeArgument extends SingleOptionalArgument<{ min?: number, max?: number }, Range> {
+  /** throws */
+  public parse(options?: { min?: number, max?: number }): Range {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const components = this.value.split("..")
+    if (components.length !== 2 || components[0] == null || components[1] == null) {
+      throw `Invalid format ${this.value}. expected: "{start}..{end}"`
+    }
+
+    const start = parseIntValue(this.key, components[0], options)
+    const end = parseIntValue(this.key, components[1], options)
+    if (start === end) {
+      throw `Invalid range: zero length (${this.value})`
+    }
+    if (start > end) {
+      throw `Invalid range: start (${start}) is bigger than end (${end})`
+    }
+
+    return {
+      start,
+      end,
+    }
   }
 }
 
@@ -124,30 +178,6 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
     }
     validateRoomName(this.value, options)
     return this.value
-  }
-}
-
-export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
-  /** throws */
-  public parse(): Position {
-    if (this.value == null) {
-      throw this.missingArgumentErrorMessage()
-    }
-    const [x, y] = ((): [AvailableRoomPositions, AvailableRoomPositions] => {
-      const components = this.value.split(",")
-      if (components[0] == null || components[1] == null || components.length !== 2) {
-        throw `Invalid format ${this.value}. expected: "x,y"`
-      }
-      const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
-      return [
-        parseIntValue("x", components[0], parseOptions) as AvailableRoomPositions,
-        parseIntValue("y", components[1], parseOptions) as AvailableRoomPositions,
-      ]
-    })()
-    return {
-      x,
-      y,
-    }
   }
 }
 

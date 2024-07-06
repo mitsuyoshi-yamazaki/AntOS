@@ -8,6 +8,10 @@ export type ElementType<T> = T extends (infer U)[] ? U : never;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ParameterType<T> = T extends (arg: infer P) => any ? P : never
 
+export type Range = {
+  readonly start: number
+  readonly end: number
+}
 
 
 // ---- Union ---- //

@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -91,6 +91,14 @@ export class ArgumentParser {
     return new StringArgument(key, this.getRawValueFor(key), options)
   }
 
+  public localPosition(key: ArgumentKey, options?: ArgumentParserOptions): LocalPositionArgument {
+    return new LocalPositionArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public range(key: ArgumentKey, options?: ArgumentParserOptions): RangeArgument {
+    return new RangeArgument(key, this.getRawValueFor(key), options)
+  }
+
 
   // ---- Typed String ---- //
   public typedString<T extends string>(key: ArgumentKey, typeName: string, typeGuard: ((arg: string) => arg is T), options?: ArgumentParserOptions & { choices?: Readonly<T[]> }): TypedStringArgument<T> {
@@ -115,10 +123,6 @@ export class ArgumentParser {
 
   public roomName(key: ArgumentKey, options?: ArgumentParserOptions): RoomNameArgument {
     return new RoomNameArgument(key, this.getRawValueFor(key), options)
-  }
-
-  public localPosition(key: ArgumentKey, options?: ArgumentParserOptions): LocalPositionArgument {
-    return new LocalPositionArgument(key, this.getRawValueFor(key), options)
   }
 
   public myCreep(key: ArgumentKey, options?: ArgumentParserOptions): MyCreepArgument {
