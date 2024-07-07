@@ -648,7 +648,7 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
     }
   }
 
-  private withdrawOps(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource, opsAmount: number): OperationResult {
+  private withdrawOps(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource, requiredOpsAmount: number): OperationResult {
     const opsStore = ((): StructureTerminal | StructureStorage | null => {
       const storage = roomResource.activeStructures.storage
       if (storage != null && storage.store.getUsedCapacity(RESOURCE_OPS) > 0) {
@@ -666,10 +666,25 @@ export class PowerCreepProcess implements Process, Procedural, OwnedRoomProcess,
         blocksFurtherOperations: false,
       }
     }
-    const withdrawAmount = opsAmount - powerCreep.store.getUsedCapacity(RESOURCE_POWER)
-    if (powerCreep.withdraw(opsStore, RESOURCE_OPS, withdrawAmount) === ERR_NOT_IN_RANGE) {
+    const withdrawAmount = requiredOpsAmount - powerCreep.store.getUsedCapacity(RESOURCE_POWER)
+    const result = powerCreep.withdraw(opsStore, RESOURCE_OPS, withdrawAmount)
+
+    switch (result) {
+    case OK:
+      break
+
+    case ERR_NOT_IN_RANGE:
       powerCreep.moveTo(opsStore, defaultMoveToOptions())
+      break
+
+    case ERR_NOT_ENOUGH_RESOURCES:
+      powerCreep.withdraw(opsStore, RESOURCE_OPS)
+      break
+
+    default:
+      break
     }
+
     return {
       blocksFurtherOperations: true,
     }
