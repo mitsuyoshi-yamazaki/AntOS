@@ -101,11 +101,17 @@ const parseEncodedCreepBody = (input: string): BodyPartConstant[] => {
     result.push([numberPart, stringPart])
   }
 
-  return result.flatMap(([count, encodedBodyPart], index): BodyPartConstant[] => {
+  const body = result.flatMap(([count, encodedBodyPart], index): BodyPartConstant[] => {
     const bodyPart = (bodyPartEncodingMap as Record<string, BodyPartConstant>)[encodedBodyPart.toLowerCase()]
     if (bodyPart == null) {
       throw `Invalid body part specifier ${encodedBodyPart} (in ${input} at ${index})`
     }
     return new Array(count).fill(bodyPart)
   })
+
+  if (body.length <= 0) {
+    throw `No body parts for ${input}`
+  }
+
+  return body
 }
