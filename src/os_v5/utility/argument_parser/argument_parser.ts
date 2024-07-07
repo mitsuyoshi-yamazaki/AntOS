@@ -78,6 +78,16 @@ export class ArgumentParser {
   }
 
 
+  // ---- Value Check ---- //
+  public hasAnyKeywordArgumentsOf(keys: string[]): boolean {
+    return keys.some(key => this.rawKeywordArguments.has(key) === true)
+  }
+
+  public hasListArgumentsOf(index: number): boolean {
+    return this.rawArguments.length > (this.rawArgumentOffset + index)
+  }
+
+
   // ---- Primitive Type ---- //
   public int(key: ArgumentKey, options?: ArgumentParserOptions): IntArgument {
     return new IntArgument(key, this.getRawValueFor(key), options)
