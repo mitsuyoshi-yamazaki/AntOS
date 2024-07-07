@@ -33,6 +33,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "toggle_remote",
     "toggle_auto_attack",
     "show_labs",
+    "clear_research_labs",
     "no_repair_walls",
     "research",
     ...numberAccessorCommands,
@@ -64,6 +65,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleAutoAttack(roomResource, args)
   case "show_labs":
     return showLabs(roomResource)
+  case "clear_research_labs":
+    return clearResearchLabs(roomResource)
   case "no_repair_walls":
     return noRepairWalls(roomResource, args)
   case "research":
@@ -220,7 +223,7 @@ function showLabs(roomResource: OwnedRoomResource): string {
   const labs: LabDescription[] = []
 
   const boostLabs: LabDescription[] = roomResource.roomInfoAccessor.boostLabs.map(labInfo => ({
-    labType: labInfo.boost[0] == null ? "empty" : ConsoleUtility.coloredResourceType(labInfo.boost[0] as ResourceConstant),
+    labType: ConsoleUtility.coloredResourceType(labInfo.boost),
     lab: labInfo.lab,
     text: (labInfo.boost[0] ?? "").toUpperCase(),
     color: coloredResourceType(labInfo.boost),
@@ -273,6 +276,22 @@ function showLabs(roomResource: OwnedRoomResource): string {
 
 
   return results.join("\n")
+}
+
+function clearResearchLabs(roomResource: OwnedRoomResource): string {
+  const researchLabs = roomResource.roomInfoAccessor.researchLabs
+  if (researchLabs == null) {
+    return "no research labs"
+  }
+
+  roomResource.roomInfoAccessor.clearResearchLabs()
+
+  return [
+    "cleared research labs:",
+    `- input: ${researchLabs.inputLab1}`,
+    `- input: ${researchLabs.inputLab2}`,
+    `- output: ${researchLabs.outputLabs}`,
+  ].join("\n")
 }
 
 /** @throws */
