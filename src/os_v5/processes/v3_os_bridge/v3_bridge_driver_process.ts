@@ -8,6 +8,9 @@ import { ResourcePools } from "world_info/resource_pool/resource_pool"
 
 
 export type V3BridgeDriverProcessApi = {
+  // io
+  sendMessageToV3(message: string): string
+
   // Room Resource
   getOwnedRoomResources(): OwnedRoomResource[]
   getOwnedRoomResource(roomName: RoomName): OwnedRoomResource | null
@@ -58,6 +61,12 @@ export class V3BridgeDriverProcess extends Process<void, ProcessDefaultIdentifie
 
   public run(): V3BridgeDriverProcessApi {
     return {
+      sendMessageToV3: (message: string): string => {
+        if (Game.v3?.io == null) {
+          return "No v3 I/O"
+        }
+        return Game.v3.io(message)
+      },
       getOwnedRoomResources: (): OwnedRoomResource[] => RoomResources.getOwnedRoomResources(),
       getOwnedRoomResource: (roomName: RoomName): OwnedRoomResource | null => RoomResources.getOwnedRoomResource(roomName),
       getIdleSpawnsFor: (roomName: RoomName): { remainingEnergy: number, idleSpawns: StructureSpawn[] } | null => ResourcePools.getIdleSpawnsFor(roomName),

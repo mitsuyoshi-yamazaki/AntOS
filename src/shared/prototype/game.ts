@@ -1,6 +1,9 @@
 declare global {
   interface Game {
     io: (message: string) => string
+    v3: {
+      io: (message: string) => string
+    }
   }
 }
 

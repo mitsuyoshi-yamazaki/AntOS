@@ -74,6 +74,9 @@ const v2Functions = (): RootFunctions => {
 
     loop(): void {
       Game.io = standardInput
+      Game.v3 = {
+        io: standardInput,
+      }
 
       ErrorMapper.wrapLoop(() => {
         initializerTick()
