@@ -6,6 +6,8 @@ export type Position = {
   readonly y: AvailableRoomPositions
 }
 
+export const describePosition = (position: AnyPosition): string => `(${position.x},${position.y})`
+
 export const isEqualLocalPosition = (position1: AnyPosition, position2: AnyPosition): boolean => {
   return position1.x === position2.x && position1.y === position2.y
 }
