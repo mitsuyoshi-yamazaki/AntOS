@@ -47,9 +47,9 @@ export class StringArgument extends SingleOptionalArgument<void, string> {
   }
 }
 
-export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
+export class LocalPositionArgument extends SingleOptionalArgument<{ minX: number, maxX: number, minY: number, maxY: number }, Position> {
   /** throws */
-  public parse(): Position {
+  public parse(options?: { minX: number, maxX: number, minY: number, maxY: number }): Position {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -58,10 +58,12 @@ export class LocalPositionArgument extends SingleOptionalArgument<void, Position
       if (components[0] == null || components[1] == null || components.length !== 2) {
         throw `Invalid format ${this.value}. expected: "{x},{y}"`
       }
-      const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
+
+      const { min, max } = GameConstants.room.edgePosition
+
       return [
-        parseIntValue("x", components[0], parseOptions) as AvailableRoomPositions,
-        parseIntValue("y", components[1], parseOptions) as AvailableRoomPositions,
+        parseIntValue("x", components[0], { min: Math.max(min, options?.minX ?? min), max: Math.min(max, options?.maxX ?? max) }) as AvailableRoomPositions,
+        parseIntValue("y", components[1], { min: Math.max(min, options?.minY ?? min), max: Math.min(max, options?.maxY ?? max) }) as AvailableRoomPositions,
       ]
     })()
     return {
