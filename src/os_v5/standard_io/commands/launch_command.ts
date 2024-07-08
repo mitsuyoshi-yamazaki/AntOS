@@ -19,9 +19,10 @@ import { CreepDistributorProcess, CreepDistributorProcessId } from "../../proces
 import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 
 
-// Temporary
+// Support
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
+import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
