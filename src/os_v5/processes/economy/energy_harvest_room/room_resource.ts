@@ -14,14 +14,17 @@ export type EnergyHarvestRoomResourceState = {
 }
 
 export class EnergyHarvestRoomResource {
-  public readonly room: Room
+  public get controller(): StructureController {
+    return this._controller
+  }
+  private _controller: StructureController
 
   private constructor(
-    public readonly controller: StructureController,
+    controller: StructureController,
     public readonly workerPosition: Position,
     public readonly distributorPosition: Position,
   ) {
-    this.room = controller.room
+    this._controller = controller
   }
 
   public encode(): EnergyHarvestRoomResourceState {
@@ -37,5 +40,9 @@ export class EnergyHarvestRoomResource {
 
   public static create(controller: StructureController, workerPosition: Position, distributorPosition: Position): EnergyHarvestRoomResource {
     return new EnergyHarvestRoomResource(controller, workerPosition, distributorPosition)
+  }
+
+  public reload(controller: StructureController): void {
+    this._controller = controller
   }
 }
