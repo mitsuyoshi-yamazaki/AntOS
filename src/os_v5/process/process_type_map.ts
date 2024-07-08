@@ -14,7 +14,7 @@ export const processTypeDecodingMap = {
   g: "MitsuyoshiBotProcess",
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
-  j: "TestTrafficManagerProcess",
+  // j: "TestTrafficManagerProcess",
   k: "V3ResourceDistributorProcess",
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
@@ -59,7 +59,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
 
   // Process with dependencies
   "EnergyHarvestRoomProcess",
-  "TestTrafficManagerProcess",
   "TestTrafficManagerV2Process",
   "DisposeResourceProcess",
 ] as const
@@ -117,7 +116,6 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Support
   TestProcess: "support",
-  TestTrafficManagerProcess: "support",
   TestTrafficManagerV2Process: "support",
 } as const
 

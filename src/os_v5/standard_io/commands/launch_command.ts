@@ -21,7 +21,6 @@ import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@priva
 
 // Temporary
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
-import { TestTrafficManagerProcess, TestTrafficManagerProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 
 // v3 Bridge
@@ -128,15 +127,6 @@ registerProcess("MitsuyoshiBotProcess", (argumentParser) => {
 
   return ((processId: MitsuyoshiBotProcessId): MitsuyoshiBotProcess => {
     return MitsuyoshiBotProcess.create(processId, identifier)
-  }) as ProcessConstructor
-})
-
-registerProcess("TestTrafficManagerProcess", (argumentParser) => {
-  const roomName = argumentParser.roomName("room_name").parse({ my: false, allowClosedRoom: false })
-  const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
-
-  return ((processId: TestTrafficManagerProcessId): TestTrafficManagerProcess => {
-    return TestTrafficManagerProcess.create(processId, roomName, parentRoomName)
   }) as ProcessConstructor
 })
 
