@@ -20,6 +20,8 @@ export const processTypeDecodingMap = {
   m: "V3BridgeDriverProcess",
   n: "TestTrafficManagerV2Process",
   o: "TestGuardRoomProcess",
+  p: "StaticMonoCreepKeeperRoomProcess",
+  q: "StaticMonoCreepBuildRoomProcess",
 } as const
 
 
@@ -60,8 +62,10 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
 
   // Process with dependencies
   "EnergyHarvestRoomProcess",
-  "TestTrafficManagerV2Process",
+  "StaticMonoCreepKeeperRoomProcess",
+  "StaticMonoCreepBuildRoomProcess",
   "DisposeResourceProcess",
+  "TestTrafficManagerV2Process",
   "TestGuardRoomProcess",
 ] as const
 
@@ -104,6 +108,8 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Economy
   EnergyHarvestRoomProcess: "economy",
+  StaticMonoCreepKeeperRoomProcess: "economy",
+  StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
 
   // Driver
