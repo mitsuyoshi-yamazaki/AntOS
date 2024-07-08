@@ -1,7 +1,7 @@
 import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { Command } from "../command"
 import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_manager/process_manager"
-import { alignedProcessInfo, processDescription } from "./utilities"
+import { AlignedProcessInfo, processDescription } from "./utilities"
 import { DependencyGraphNode } from "os_v5/system_calls/process_manager/process_dependency_graph"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
@@ -63,7 +63,7 @@ const listProcessDescription = (filteringWord: string | null): string => {
   const processDescriptions = processRunningStates.map(processDescription)
 
   const results: string[] = [
-    alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+    AlignedProcessInfo.header("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     ...processDescriptions,
   ]
 

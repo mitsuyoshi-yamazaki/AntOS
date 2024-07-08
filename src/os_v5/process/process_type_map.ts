@@ -1,3 +1,4 @@
+import { NativeTextColor } from "shared/utility/console_utility"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { reverseConstMapping, strictEntries } from "shared/utility/strict_entries"
 
@@ -35,7 +36,7 @@ export type BotTypes = "MitsuyoshiBotProcess"
 
 
 // Dependency Order
-const processDependencyOrder: ProcessTypes[] = [
+const processDependencyOrder: Readonly<ProcessTypes[]> = [
   // Bot
   "MitsuyoshiBotProcess",
 
@@ -61,7 +62,8 @@ const processDependencyOrder: ProcessTypes[] = [
   "TestTrafficManagerProcess",
   "TestTrafficManagerV2Process",
   "DisposeResourceProcess",
-]
+] as const
+
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
 
 
@@ -85,4 +87,49 @@ if (Array.from(Object.keys(processTypeDecodingMap)).length !== processDependency
   const errorMessage = ConsoleUtility.colored(`[Program Error] Inconsistent process mapping: ${Array.from(Object.keys(processTypeDecodingMap)).length} : ${processDependencyOrder.length}`, "error")
   console.log(errorMessage)
   Game.notify(errorMessage)
+}
+
+
+export type ProcessCategory = "bot" | "application" | "combat" | "economy" | "driver" | "support"
+export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = {
+  // Bot
+  MitsuyoshiBotProcess: "bot",
+
+  // Application
+  V3ResourceDistributorProcess: "application",
+
+  // Combat
+  AttackRoomManagerProcess: "combat",
+
+  // Economy
+  EnergyHarvestRoomProcess: "economy",
+  DisposeResourceProcess: "economy",
+
+  // Driver
+  RoomPathfindingProcess: "driver",
+  CreepDistributorProcess: "driver",
+  CreepTrafficManagerProcess: "driver",
+  CreepTaskStateManagementProcess: "driver",
+
+  // v3 Bridge
+  V3BridgeDriverProcess: "driver",
+  V3BridgeSpawnRequestProcess: "driver",
+
+  // Support
+  TestProcess: "support",
+  TestTrafficManagerProcess: "support",
+  TestTrafficManagerV2Process: "support",
+} as const
+
+const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {
+  bot: "blue",
+  application: "white",
+  combat: "red",
+  economy: "green",
+  driver: "orange",
+  support: "none",
+} as const
+
+export const coloredProcessType = (processType: ProcessTypes): string => {
+  return ConsoleUtility.colored(processType, categoryColor[categorizedProcessType[processType]])
 }

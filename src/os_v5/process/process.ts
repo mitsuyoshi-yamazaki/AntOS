@@ -1,7 +1,7 @@
 import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import type { SerializableObject } from "os_v5/utility/types"
 import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
-import type { BotTypes, ProcessTypes } from "./process_type_map"
+import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
 
 /**
 # Process
@@ -103,7 +103,7 @@ export abstract class Process<
   }
 
   public toString(): string {
-    return `(${this.processId}) ${this.processType}[${this.identifier}]`
+    return `(${this.processId}) ${coloredProcessType(this.processType)}[${this.identifier}]`
   }
 
   protected getFlatDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {

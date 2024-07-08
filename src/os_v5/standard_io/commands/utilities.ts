@@ -1,4 +1,5 @@
 import { AnyProcess } from "os_v5/process/process"
+import { coloredProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_manager/process_manager"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
@@ -15,18 +16,30 @@ export const processDescription = (processRunningState: { process: AnyProcess } 
     }
     return `[s] ${process.staticDescription()}`
   })()
-  return alignedProcessInfo(process.processId, process.processType, process.identifier, runningState, processDescription)
+  return AlignedProcessInfo.processInfo(process.processId, process.processType, process.identifier, runningState, processDescription)
 }
 
 const tab = ConsoleUtility.tab
 const TabSize = ConsoleUtility.TabSize
 
-export const alignedProcessInfo = (processId: string, processType: string, identifier: string, runningState: string, description: string): string => {
-  return `${tab(processId, TabSize.small)} ${tab(processType, TabSize.veryLarge)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+export const AlignedProcessInfo = {
+  header(processId: string, processType: string, identifier: string, runningState: string, description: string): string {
+    return `${tab(processId, TabSize.small)} ${tab(processType, TabSize.veryLarge)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+  },
+
+  processInfo(processId: string, processType: ProcessTypes, identifier: string, runningState: string, description: string): string {
+    return `${tab(processId, TabSize.small)} ${tab(coloredProcessType(processType), TabSize.veryLarge, processType)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+  },
 }
 
-const alignedProcessActionResult = (result: string, processId: string, processType: string, identifier: string, runningState: string, description: string): string => {
-  return `${tab(result, TabSize.small)} ${tab(processId, TabSize.small)} ${tab(processType, TabSize.veryLarge)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+const AlignedProcessActionResult = {
+  header(result: string, processId: string, processType: string, identifier: string, runningState: string, description: string): string {
+    return `${tab(result, TabSize.small)} ${tab(processId, TabSize.small)} ${tab(processType, TabSize.veryLarge)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+  },
+
+  actionResult(result: string, processId: string, processType: ProcessTypes, identifier: string, runningState: string, description: string): string {
+    return `${tab(result, TabSize.small)} ${tab(processId, TabSize.small)} ${tab(coloredProcessType(processType), TabSize.veryLarge, processType)} ${tab(identifier, TabSize.medium)} ${tab(runningState, TabSize.small)} ${description}`
+  },
 }
 
 
@@ -39,11 +52,11 @@ export const controlProcessResult = (processes: AnyProcess[], controller: (proce
       const resultDescription = controller(process)
       const state = ProcessManager.getProcessRunningState(process.processId)
 
-      return alignedProcessActionResult(resultDescription, process.processId, process.processType, process.identifier, `${state.isRunning}`, processDescription)
+      return AlignedProcessActionResult.actionResult(resultDescription, process.processId, process.processType, process.identifier, `${state.isRunning}`, processDescription)
     })
 
   return [
-    alignedProcessActionResult("Result", "PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+    AlignedProcessActionResult.header("Result", "PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     ...results,
   ]
     .join("\n")
