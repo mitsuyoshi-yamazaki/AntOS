@@ -15,6 +15,7 @@ export const taskTypeDecodingMap = {
   h: "WithdrawResource",
   i: "DropResource",
   j: "DropAllResources",
+  k: "Build",
 } as const
 
 export type TaskTypeEncodingMap = ReversedMapping<typeof taskTypeDecodingMap>

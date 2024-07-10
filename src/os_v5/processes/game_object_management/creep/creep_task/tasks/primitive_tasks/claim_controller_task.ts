@@ -8,7 +8,7 @@ type ClaimControllerState = {
 }
 
 export class ClaimController extends Task<ClaimControllerState> {
-  public readonly actionType = "move"
+  public readonly actionType = null
 
   private constructor(
     public readonly controllerId: Id<StructureController>,
