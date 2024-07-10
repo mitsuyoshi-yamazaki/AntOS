@@ -136,6 +136,38 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
 
 
 // ---- Game Object ---- //
+export class RoomObjectIdArgument extends SingleOptionalArgument<{shouldVisible?: boolean}, string> {
+  /** throws */
+  public parse(options?: { shouldVisible?: boolean }): string {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const roomObject = Game.getObjectById(this.value)
+    if (options?.shouldVisible === true && roomObject == null) {
+      throw `No RoomObject with ID ${this.value} or not visible`
+    }
+
+    return this.value
+  }
+}
+
+export class RoomObjectArgument extends SingleOptionalArgument<void, RoomObject> {
+  /** throws */
+  public parse(): RoomObject {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const roomObject = Game.getObjectById(this.value)
+    if (roomObject == null) {
+      throw `No RoomObject with ID ${this.value} or not visible`
+    }
+
+    return roomObject as unknown as RoomObject
+  }
+}
+
 export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room> {
   /** throws */
   public parse(options?: { my?: boolean }): Room {

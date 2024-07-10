@@ -1,6 +1,6 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
-import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument } from "./single_argument_parsers"
 
 
 export const iterableTypeParserMakers = {
@@ -18,6 +18,12 @@ export const iterableTypeParserMakers = {
   },
   local_position: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): LocalPositionArgument => {
     return new LocalPositionArgument(key, value, parseOptions)
+  },
+  room_object_id: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomObjectIdArgument => {
+    return new RoomObjectIdArgument(key, value, parseOptions)
+  },
+  room_object: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomObjectArgument => {
+    return new RoomObjectArgument(key, value, parseOptions)
   },
   room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
     return new RoomArgument(key, value, parseOptions)
@@ -51,12 +57,6 @@ export const iterableTypeParserMakers = {
   // },
   // commodity: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): TypedStringArgument<CommodityConstant> => {
   //   return new TypedStringArgument(key, value, "CommodityConstant", isCommodityConstant, options)
-  // },
-  // object_id: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RawStringArgument => {
-  //   return new RawStringArgument(key, value, parseOptions)
-  // },
-  // room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
-  //   return new RoomArgument(key, value, parseOptions)
   // },
 } as const
 

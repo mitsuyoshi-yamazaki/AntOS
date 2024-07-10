@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -123,6 +123,14 @@ export class ArgumentParser {
 
 
   // ---- Game Object ---- //
+  public roomObjectId(key: ArgumentKey, options?: ArgumentParserOptions): RoomObjectIdArgument {
+    return new RoomObjectIdArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public roomObject(key: ArgumentKey, options?: ArgumentParserOptions): RoomObjectArgument {
+    return new RoomObjectArgument(key, this.getRawValueFor(key), options)
+  }
+
   public room(key: ArgumentKey, options?: ArgumentParserOptions): RoomArgument {
     return new RoomArgument(key, this.getRawValueFor(key), options)
   }
