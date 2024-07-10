@@ -163,12 +163,24 @@ export class StaticMonoCreepBuildRoomProcess extends Process<Dependency, RoomNam
       return CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
     }
 
+    const consumeEnergyTasks = ((): CreepTask.AnyTask[] => {
+      if (roomResource.controller.ticksToDowngrade < 10000) {
+        return [CreepTask.Tasks.UpgradeController.create(roomResource.controller.id)]
+      }
+      const constructionSite = creep.pos.findClosestByRange(FIND_CONSTRUCTION_SITES)
+      if (constructionSite != null) {
+        return [CreepTask.Tasks.Build.create(constructionSite.id)]
+      }
+      return [CreepTask.Tasks.UpgradeController.create(roomResource.controller.id)]
+    })()
+
     const tasks: CreepTask.AnyTask[] = [
       CreepTask.Tasks.MoveTo.create(roomResource.source.pos, GameConstants.creep.actionRange.harvest),
       CreepTask.Tasks.HarvestEnergy.create(roomResource.source.id),
-      CreepTask.Tasks.MoveTo.create(roomResource.controller.pos, GameConstants.creep.actionRange.upgradeController),
-      CreepTask.Tasks.UpgradeController.create(roomResource.controller.id),
+      // CreepTask.Tasks.MoveTo.create(roomResource.controller.pos, GameConstants.creep.actionRange.upgradeController), // 不要のはず
+      ...consumeEnergyTasks,
     ]
+
     return CreepTask.Tasks.Sequential.create(tasks)
   }
 }
