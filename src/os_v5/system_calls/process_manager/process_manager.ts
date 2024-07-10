@@ -1,7 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, ProcessError, ProcessId } from "../../process/process"
 import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "os_v5/utility/types"
@@ -162,6 +162,21 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
             }))
           }
         } catch (error) {
+          if (error instanceof ProcessError) {
+            switch (error.error.case) {
+            case "not_executable":
+              processStore.suspend(process.processId)
+              PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised not_executable error. Suspending...`)
+              break
+            default: {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const _: never = error.error.case
+              break
+            }
+            }
+            throw error
+          }
+
           executionLog.errorRaised.add(process.processId)
           if (processExecutionLogs[1]?.errorRaised.has(process.processId) === true) {
             processStore.suspend(process.processId)

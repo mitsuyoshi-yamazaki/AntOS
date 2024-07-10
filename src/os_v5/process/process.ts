@@ -10,9 +10,23 @@ import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
 ## Codable
 - メモリ空間の節約のため、Processタイプ指定子はa以上の36 radixで表現する
   - 固定値であるため実装時に重複のないように指定する
-  - 現在：a
-  - デコーダにマップを移す
  */
+
+// ---- Error ---- //
+type ProcessErrorNotExecutable = {
+  readonly case: "not_executable"
+  readonly reason: string
+}
+type ProcessErrorTypes = ProcessErrorNotExecutable
+
+export class ProcessError extends Error {
+  public constructor(
+    public readonly error: ProcessErrorTypes,
+  ) {
+    super(error.reason)
+  }
+}
+
 
 // ---- ProcessId ---- //
 declare namespace Tag {
