@@ -12,6 +12,8 @@ import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
 import {  } from "../../processes/economy/single_task_processes/dispose_resource_process"
 import { StaticMonoCreepKeeperRoomProcess, StaticMonoCreepKeeperRoomProcessId } from "../../processes/economy/static_mono_creep_keeper_room/static_mono_creep_keeper_room_process"
+import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_keeper_process"
+import { } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 
 // Game Object Management
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"

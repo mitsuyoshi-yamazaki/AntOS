@@ -22,6 +22,8 @@ export const processTypeDecodingMap = {
   o: "TestGuardRoomProcess",
   p: "StaticMonoCreepKeeperRoomProcess",
   q: "StaticMonoCreepBuildRoomProcess",
+  r: "GenericRoomKeeperProcess",
+  s: "GenericRoomManagerProcess",
 } as const
 
 
@@ -60,6 +62,9 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   // Application with dependencies
   "V3ResourceDistributorProcess",
 
+  // Manager Processes
+  "GenericRoomManagerProcess",
+
   // Process with dependencies
   "EnergyHarvestRoomProcess",
   "StaticMonoCreepKeeperRoomProcess",
@@ -67,6 +72,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "DisposeResourceProcess",
   "TestTrafficManagerV2Process",
   "TestGuardRoomProcess",
+  "GenericRoomKeeperProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -107,6 +113,8 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   AttackRoomManagerProcess: "combat",
 
   // Economy
+  GenericRoomManagerProcess: "economy",
+  GenericRoomKeeperProcess: "economy",
   EnergyHarvestRoomProcess: "economy",
   StaticMonoCreepKeeperRoomProcess: "economy",
   StaticMonoCreepBuildRoomProcess: "economy",
