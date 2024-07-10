@@ -1,7 +1,7 @@
 import { StaticMonoCreepBuildRoomProcess, StaticMonoCreepBuildRoomProcessId } from "./static_mono_creep_build_room_process"
 
 // Import
-import { BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessError, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -9,6 +9,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { BotTypes } from "os_v5/process/process_type_map"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
 import { isMyRoom } from "shared/utility/room"
+import { MyController } from "shared/utility/structure_controller"
 
 
 /**
@@ -21,9 +22,19 @@ import { isMyRoom } from "shared/utility/room"
 - 問題が起きたらそのまま殺す
  */
 
+export type RoomResourceNotClaimed = {
+  readonly case: "not_claimed"
+}
+export type RoomResourceClaimed = {
+  readonly case: "claimed"
+  readonly controller: MyController
+  readonly source: Source
+}
+export type RoomResource = RoomResourceNotClaimed | RoomResourceClaimed
+
 export type StaticMonoCreepKeeperRoomProcessApi = {
   readonly parentV3RoomName: RoomName
-  readonly controller: StructureController | null
+  readonly roomResource: RoomResource
 }
 
 type Dependency = CreepDistributorProcessApi
@@ -31,7 +42,8 @@ type Dependency = CreepDistributorProcessApi
 type StaticMonoCreepKeeperRoomProcessState = {
   readonly r: RoomName  /// Room name
   readonly p: RoomName  /// Parent room name
-  readonly bp?: StaticMonoCreepBuildRoomProcessId
+  readonly s: Id<Source>  /// Source ID
+  readonly bp?: StaticMonoCreepBuildRoomProcessId /// Build room process ID
   readonly b: {
     readonly t: BotTypes
     readonly i: string  /// Bot process identifier
@@ -58,6 +70,7 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
     public readonly processId: StaticMonoCreepKeeperRoomProcessId,
     private readonly roomName: RoomName,
     private readonly parentRoomName: RoomName,
+    private readonly sourceId: Id<Source>,
     private buildProcessId: StaticMonoCreepBuildRoomProcessId | undefined,
     private readonly botProcessSpecifier: BotSpecifier | null,
   ) {
@@ -74,6 +87,7 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
     return {
       r: this.roomName,
       p: this.parentRoomName,
+      s: this.sourceId,
       bp: this.buildProcessId,
       b: this.botProcessSpecifier == null ? null : {
         t: this.botProcessSpecifier.processType,
@@ -87,14 +101,15 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
       processType: state.b.t,
       identifier: state.b.i,
     }
-    return new StaticMonoCreepKeeperRoomProcess(processId, state.r, state.p, state.bp, botSpecifier)
+    return new StaticMonoCreepKeeperRoomProcess(processId, state.r, state.p, state.s, state.bp, botSpecifier)
   }
 
-  public static create(processId: StaticMonoCreepKeeperRoomProcessId, roomName: RoomName, parentRoomName: RoomName, options?: { botSpecifier?: BotSpecifier }): StaticMonoCreepKeeperRoomProcess {
+  public static create(processId: StaticMonoCreepKeeperRoomProcessId, roomName: RoomName, parentRoomName: RoomName, sourceId: Id<Source>, options?: { botSpecifier?: BotSpecifier }): StaticMonoCreepKeeperRoomProcess {
     return new StaticMonoCreepKeeperRoomProcess(
       processId,
       roomName,
       parentRoomName,
+      sourceId,
       undefined,
       options?.botSpecifier ?? null
     )
@@ -140,24 +155,39 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
 
   public run(dependency: Dependency): StaticMonoCreepKeeperRoomProcessApi {
     const room = Game.rooms[this.roomName]
-    if (room != null && isMyRoom(room)) {
-      if (this.buildProcessId == null && room.controller.level < 8) {
-        try {
-          this.buildProcessId = this.launchBuildProcess()
-        } catch (error) {
-          SystemCalls.logger.fatal(this, "Cannot launch StaticMonoCreepBuildRoomProcess")
-          SystemCalls.processManager.suspend(this)
-        }
-        return {
-          parentV3RoomName: this.parentRoomName,
-          controller: room?.controller ?? null,
-        }
+    if (room == null || !isMyRoom(room)) {
+      return {
+        parentV3RoomName: this.parentRoomName,
+        roomResource: {
+          case: "not_claimed",
+        },
+      }
+    }
+
+    const source = Game.getObjectById(this.sourceId)
+    if (source == null) {
+      throw new ProcessError({
+        case: "not_executable",
+        reason: `No source with ID ${this.sourceId} in ${ConsoleUtility.roomLink(room.name)}`
+      })
+    }
+
+    if (this.buildProcessId == null && room.controller.level < 8) {
+      try {
+        this.buildProcessId = this.launchBuildProcess()
+      } catch (error) {
+        SystemCalls.logger.fatal(this, "Cannot launch StaticMonoCreepBuildRoomProcess")
+        SystemCalls.processManager.suspend(this)
       }
     }
 
     return {
       parentV3RoomName: this.parentRoomName,
-      controller: room?.controller ?? null,
+      roomResource: {
+        case: "claimed",
+        controller: room.controller,
+        source,
+      },
     }
   }
 

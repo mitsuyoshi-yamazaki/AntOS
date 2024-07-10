@@ -9,7 +9,7 @@ import { CreepTask } from "../../game_object_management/creep/creep_task/creep_t
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { V3BridgeSpawnRequestProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
-import { StaticMonoCreepKeeperRoomProcessApi } from "./static_mono_creep_keeper_room_process"
+import { RoomResourceClaimed, StaticMonoCreepKeeperRoomProcessApi } from "./static_mono_creep_keeper_room_process"
 import { CreepTaskStateManagementProcessApi, TaskDrivenCreep, TaskDrivenCreepMemory } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 import { GameConstants } from "utility/constants"
 
@@ -102,9 +102,17 @@ export class StaticMonoCreepBuildRoomProcess extends Process<Dependency, RoomNam
   public run(dependency: Dependency): void {
     const creeps = this.getMyCreeps(dependency)
 
-    if (dependency.controller == null) {
+    switch (dependency.roomResource.case) {
+    case "not_claimed":
       // TODO:
       return
+    case "claimed":
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = dependency.roomResource
+      return
+    }
     }
 
     const workers = creeps.get("worker")
@@ -112,7 +120,7 @@ export class StaticMonoCreepBuildRoomProcess extends Process<Dependency, RoomNam
       this.spawnWorker(dependency)
       return
     }
-    this.runWorker(workers[0])
+    this.runWorker(workers[0], dependency.roomResource)
   }
 
   // Private
@@ -143,32 +151,23 @@ export class StaticMonoCreepBuildRoomProcess extends Process<Dependency, RoomNam
     dependency.addSpawnRequest<CreepMemoryExtension>(CreepBody.createWithBodyParts(body), dependency.parentV3RoomName, { codename: this.codename, memory })
   }
 
-  private runWorker(creep: MyCreep): void {
+  private runWorker(creep: MyCreep, roomResource: RoomResourceClaimed): void {
     if (creep.task != null) {
       return
     }
-    creep.task = this.workerTaskFor(creep)
+    creep.task = this.workerTaskFor(creep, roomResource)
   }
 
-  private workerTaskFor(creep: MyCreep): CreepTask.AnyTask | null {
+  private workerTaskFor(creep: MyCreep, roomResource: RoomResourceClaimed): CreepTask.AnyTask | null {
     if (creep.room.name !== this.roomName) {
       return CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
     }
 
-    const source = creep.pos.findClosestByRange(FIND_SOURCES)
-    if (source == null) {
-      return null // FixMe: 一度に全ての状態を設定するので、タスク状態とCreepMemory両方で無駄が発生している
-    }
-    const controller = creep.room.controller
-    if (controller == null) {
-      return null
-    }
-
     const tasks: CreepTask.AnyTask[] = [
-      CreepTask.Tasks.MoveTo.create(source.pos, GameConstants.creep.actionRange.harvest),
-      CreepTask.Tasks.HarvestEnergy.create(source.id),
-      CreepTask.Tasks.MoveTo.create(controller.pos, GameConstants.creep.actionRange.upgradeController),
-      CreepTask.Tasks.UpgradeController.create(controller.id),
+      CreepTask.Tasks.MoveTo.create(roomResource.source.pos, GameConstants.creep.actionRange.harvest),
+      CreepTask.Tasks.HarvestEnergy.create(roomResource.source.id),
+      CreepTask.Tasks.MoveTo.create(roomResource.controller.pos, GameConstants.creep.actionRange.upgradeController),
+      CreepTask.Tasks.UpgradeController.create(roomResource.controller.id),
     ]
     return CreepTask.Tasks.Sequential.create(tasks)
   }
