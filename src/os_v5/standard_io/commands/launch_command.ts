@@ -26,6 +26,7 @@ import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@priva
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
+import { } from "@private/os_v5/processes/support/test_harvest_room_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -40,6 +41,7 @@ import { ProcessManager } from "os_v5/system_calls/process_manager/process_manag
 import { SerializableObject } from "os_v5/utility/types"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 
 export const LaunchCommand: Command = {
@@ -61,7 +63,7 @@ export const LaunchCommand: Command = {
 
 // Process Launcher
 type ProcessConstructor = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
-type ConstructorMaker = (argumentParser: ArgumentParser) => ProcessConstructor
+type ConstructorMaker = (argumentParser: ArgumentParser, log: (output: string) => void) => ProcessConstructor
 
 const constructorMakers = new Map<ProcessTypes, ConstructorMaker>()
 
@@ -84,11 +86,18 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     throw `Unregistered process type ${processType}`
   }
 
-  const constructor = constructorMaker(argumentParser)
+  const outputs: string[] = []
+  const addOutput = (output: string): void => {
+    outputs.push(output)
+  }
+
+  const constructor = constructorMaker(argumentParser, addOutput)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
 
-  return `Launched ${process} ${process.staticDescription()}`
+  outputs.unshift(`Launched ${process} ${process.staticDescription()}`)
+
+  return outputs.join("\n")
 }
 
 
@@ -135,7 +144,7 @@ registerProcess("MitsuyoshiBotProcess", (argumentParser) => {
 })
 
 registerProcess("TestTrafficManagerV2Process", (argumentParser) => {
-  const roomName = argumentParser.roomName("room_name").parse({ my: false, allowClosedRoom: false })
+  const roomName = argumentParser.roomName("room_name").parse({ allowClosedRoom: false })
   const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
   return ((processId: TestTrafficManagerV2ProcessId): TestTrafficManagerV2Process => {
@@ -143,11 +152,36 @@ registerProcess("TestTrafficManagerV2Process", (argumentParser) => {
   }) as ProcessConstructor
 })
 
-registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser) => {
-  const roomName = argumentParser.roomName("room_name").parse({ my: false, allowClosedRoom: false })
+registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
+  const roomName = argumentParser.roomName("room_name").parse({ allowClosedRoom: false })
+
+  const room = Game.rooms[roomName]
+  const sourceId = ((): Id<Source> => {
+    if (room == null) {
+      return argumentParser.roomObjectId("source_id").parse() as Id<Source>
+    }
+
+    if (room.controller == null) {
+      throw `${ConsoleUtility.roomLink(roomName)} doesn't have a controller`
+    }
+
+    const source = room.controller.pos.findClosestByRange(FIND_SOURCES)
+    if (source == null) {
+      throw `No source in ${ConsoleUtility.roomLink(roomName)}`
+    }
+
+    const range = source.pos.getRangeTo(room.controller.pos)
+    if (range > 4) {
+      throw `Source at ${source.pos} and controller at ${room.controller.pos} are too far`
+    }
+
+    log(`Set source at ${source.pos} (range: ${range})`)
+    return source.id
+  })()
+
   const parentRoomName = argumentParser.roomName("parent_room_name").parse({ my: true, allowClosedRoom: false })
 
   return ((processId: StaticMonoCreepKeeperRoomProcessId): StaticMonoCreepKeeperRoomProcess => {
-    return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName)
+    return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName, sourceId)
   }) as ProcessConstructor
 })

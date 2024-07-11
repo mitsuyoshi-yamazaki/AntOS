@@ -24,6 +24,7 @@ export const processTypeDecodingMap = {
   q: "StaticMonoCreepBuildRoomProcess",
   r: "GenericRoomKeeperProcess",
   s: "GenericRoomManagerProcess",
+  t: "TestHarvestRoomProcess",
 } as const
 
 
@@ -73,6 +74,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "TestTrafficManagerV2Process",
   "TestGuardRoomProcess",
   "GenericRoomKeeperProcess",
+  "TestHarvestRoomProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -134,6 +136,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   TestProcess: "support",
   TestTrafficManagerV2Process: "support",
   TestGuardRoomProcess: "support",
+  TestHarvestRoomProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

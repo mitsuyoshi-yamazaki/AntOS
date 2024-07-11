@@ -46,5 +46,4 @@ export abstract class Task<State extends TaskState> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyTask = Task<TaskState>
