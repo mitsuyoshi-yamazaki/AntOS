@@ -13,7 +13,7 @@ import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../proc
 import {  } from "../../processes/economy/single_task_processes/dispose_resource_process"
 import { StaticMonoCreepKeeperRoomProcess, StaticMonoCreepKeeperRoomProcessId } from "../../processes/economy/static_mono_creep_keeper_room/static_mono_creep_keeper_room_process"
 import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_keeper_process"
-import { } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
+import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 
 // Game Object Management
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
@@ -26,7 +26,7 @@ import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@priva
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
-import { } from "@private/os_v5/processes/support/test_harvest_room_process"
+import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -111,6 +111,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["CreepDistributorProcess", processId => CreepDistributorProcess.create(processId as CreepDistributorProcessId)],
     ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
     ["V3ResourceDistributorProcess", processId => V3ResourceDistributorProcess.create(processId as V3ResourceDistributorProcessId)],
+    ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)]
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
@@ -183,5 +184,13 @@ registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
 
   return ((processId: StaticMonoCreepKeeperRoomProcessId): StaticMonoCreepKeeperRoomProcess => {
     return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName, sourceId)
+  }) as ProcessConstructor
+})
+
+registerProcess("TestHarvestRoomProcess", (argumentParser) => {
+  const roomName = argumentParser.roomName("room_name").parse({ allowClosedRoom: false })
+
+  return ((processId: TestHarvestRoomProcessId): TestHarvestRoomProcess => {
+    return TestHarvestRoomProcess.create(processId, roomName)
   }) as ProcessConstructor
 })
