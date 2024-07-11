@@ -131,10 +131,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     const processRunAfterTicks: (() => void)[] = []
 
-    let cpuUsage = Game.cpu.getUsed()
-
     processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
+        const cpuUsage = Game.cpu.getUsed()
+
         try {
           executionLog.iteratedProcessId = process.processId
 
@@ -192,7 +192,6 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
           if (timeTaken > processManagerMemory.cpuUsageThreshold) {
             PrimitiveLogger.fatal(`ProcessManager.run(${process}): took ${timeTaken.toFixed(1)} cpu to execute`)
           }
-          cpuUsage = currentCpuUsage
         }
 
       }, `ProcessManager.run(${process})`)()
