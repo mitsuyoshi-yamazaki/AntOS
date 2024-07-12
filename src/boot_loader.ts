@@ -10,10 +10,6 @@ import { standardInput } from "os/infrastructure/standard_input"
 import { initializeMemory } from "_old/initialize_memory"
 import { Environment } from "utility/environment"
 
-
-// ---- v4 OS ---- //
-// import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
-
 // ---- v5 OS ---- //
 import { BootLoader as v5BootLoader } from "os_v5/boot_loader"
 
@@ -92,24 +88,3 @@ const v2Functions = (): RootFunctions => {
   }
 }
 
-// const v3Functions = (): RootFunctions => {
-//   return {
-//     load(): void {
-//       V3BootLoader.load()
-//     },
-
-//     loop(): void {
-//       Game.io = V3BootLoader.io
-
-//       // ErrorMapper.wrapLoop(() => {
-//       //   initializerTick()
-//       // }, "initializerTick")()
-
-//       // TODO: Respawn対応
-
-//       ErrorMapper.wrapLoop((): void => {
-//         Kernel.run()
-//       })()
-//     },
-//   }
-// }
