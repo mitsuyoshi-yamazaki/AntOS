@@ -127,6 +127,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 ((): void => {
   const processConstructors: [ProcessTypes, boolean, (roomName: RoomName) => (processId: AnyProcessId) => AnyProcess][] = [
     ["TestPullProcess", true, roomName => processId => TestPullProcess.create(processId as TestPullProcessId, roomName)],
+    ["TestHarvestRoomProcess", true, roomName => processId => TestHarvestRoomProcess.create(processId as TestHarvestRoomProcessId, roomName)],
   ]
 
   processConstructors.forEach(([processType, my, constructor]) => {
@@ -199,13 +200,5 @@ registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
 
   return ((processId: StaticMonoCreepKeeperRoomProcessId): StaticMonoCreepKeeperRoomProcess => {
     return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName, sourceId)
-  }) as ProcessConstructor
-})
-
-registerProcess("TestHarvestRoomProcess", (argumentParser) => {
-  const roomName = argumentParser.roomName("room_name").parse({ allowClosedRoom: false })
-
-  return ((processId: TestHarvestRoomProcessId): TestHarvestRoomProcess => {
-    return TestHarvestRoomProcess.create(processId, roomName)
   }) as ProcessConstructor
 })
