@@ -10,9 +10,6 @@ import { standardInput } from "os/infrastructure/standard_input"
 import { initializeMemory } from "_old/initialize_memory"
 import { Environment } from "utility/environment"
 
-// ---- v3 OS ---- //
-// import { BootLoader as V3BootLoader } from "v8/operating_system/boot_loader"
-// import { Kernel } from "v8/operating_system/kernel"
 
 // ---- v4 OS ---- //
 // import { bootLoader as v4BootLoader } from "os_v4/boot_loader"
