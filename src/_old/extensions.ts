@@ -47,6 +47,9 @@ declare global {
       last_bucket: number
     }
 
+    v3: {
+      rooms: RoomName[],
+    }
     uniqueId: UniqueIdMemory
     gameInfo: GameInfoMemory
     room_info: { [index: string]: V5RoomInfoMemory }  // index: RoomName
