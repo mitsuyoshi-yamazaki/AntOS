@@ -24,6 +24,7 @@ import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@priva
 
 // Support
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
+import { TestPullProcess, TestPullProcessId } from "../../processes/support/test/test_pull_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
@@ -42,6 +43,7 @@ import { SerializableObject } from "os_v5/utility/types"
 import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { RoomName } from "shared/utility/room_name_types"
 
 
 export const LaunchCommand: Command = {
@@ -61,7 +63,7 @@ export const LaunchCommand: Command = {
 }
 
 
-// Process Launcher
+// ---- Process Launcher ---- //
 type ProcessConstructor = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>) => P
 type ConstructorMaker = (argumentParser: ArgumentParser, log: (output: string) => void) => ProcessConstructor
 
@@ -101,7 +103,8 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 }
 
 
-// Process Registration
+// ---- Process Registration ---- //
+// No arguments
 ((): void => {
   const processConstructors: [ProcessTypes, (processId: AnyProcessId) => AnyProcess][] = [
     ["V3BridgeSpawnRequestProcess", processId => V3BridgeSpawnRequestProcess.create(processId as V3BridgeSpawnRequestProcessId)],
@@ -116,6 +119,18 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 
   processConstructors.forEach(([processType, constructor]) => {
     registerProcess(processType, () => constructor as ProcessConstructor)
+  })
+})()
+
+// Only room name
+;
+((): void => {
+  const processConstructors: [ProcessTypes, boolean, (roomName: RoomName) => (processId: AnyProcessId) => AnyProcess][] = [
+    ["TestPullProcess", true, roomName => processId => TestPullProcess.create(processId as TestPullProcessId, roomName)],
+  ]
+
+  processConstructors.forEach(([processType, my, constructor]) => {
+    registerProcess(processType, argumentParser => constructor(argumentParser.roomName([0, "room name"]).parse({ my })) as ProcessConstructor)
   })
 })()
 

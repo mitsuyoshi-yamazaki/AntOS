@@ -253,7 +253,6 @@ export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLi
     }
 
     const creepBody = CreepBody.createFromTextRepresentation(this.value)
-    console.log(`Creep body: ${creepBody.bodyParts}\ncost: ${creepBody.energyCost}, limit: ${options?.requiredEnergyLimit}`)
     if (options?.requiredEnergyLimit != null) {
       if (creepBody.energyCost > options.requiredEnergyLimit) {
         throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`
