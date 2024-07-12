@@ -75,7 +75,7 @@ export const Rooms: RoomsInterface = {
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
       allVisibleRooms.push(room)
 
-      if (room.controller != null && room.controller.my === true && Memory.ignoreRooms.includes(roomName) !== true) {
+      if (room.controller != null && room.controller.my === true && Memory.v3.rooms.includes(roomName) === true && Memory.ignoreRooms.includes(roomName) !== true) {
         ownedRooms.push(room)
         ownedRoomObjects.set(roomName, enumerateObjects(room.controller))
 
