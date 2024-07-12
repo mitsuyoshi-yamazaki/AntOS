@@ -137,22 +137,6 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
     return descriptions.join(", ")
   }
 
-  /** @throws */
-  public didLaunch(): void {
-    if (Memory.ignoreRooms.includes(this.roomName) !== true) { // !!UNSAFE MEMORY ACCESS!!
-      Memory.ignoreRooms.push(this.roomName)
-      SystemCalls.logger.log(this, `${ConsoleUtility.colored("!!UNSAFE MEMORY ACCESS!!", "warn")} Added ${ConsoleUtility.roomLink(this.roomName)} to ignoreRooms`, true)
-    }
-  }
-
-  public willTerminate(): void {
-    const index = Memory.ignoreRooms.indexOf(this.roomName) // !!UNSAFE MEMORY ACCESS!!
-    if (index >= 0) {
-      Memory.ignoreRooms.splice(index, 1)
-      SystemCalls.logger.log(this, `${ConsoleUtility.colored("!!UNSAFE MEMORY ACCESS!!", "warn")} Removed ${ConsoleUtility.roomLink(this.roomName)} to ignoreRooms`, true)
-    }
-  }
-
   public run(dependency: Dependency): StaticMonoCreepKeeperRoomProcessApi {
     const room = Game.rooms[this.roomName]
     if (room == null || !isMyRoom(room)) {

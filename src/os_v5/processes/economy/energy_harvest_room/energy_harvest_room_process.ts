@@ -156,21 +156,6 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     ])
   }
 
-  /** @throws */
-  public didLaunch(): void {
-    if (Memory.ignoreRooms.includes(this.roomName) !== true) { // !!UNSAFE MEMORY ACCESS!!
-      Memory.ignoreRooms.push(this.roomName)
-      console.log(`${ConsoleUtility.colored("!!UNSAFE MEMORY ACCESS!!", "warn")} ${this.processType}[${this.identifier}] added ${ConsoleUtility.roomLink(this.roomName)} to ignoreRooms`)
-    }
-  }
-
-  public willTerminate(): void {
-    const index = Memory.ignoreRooms.indexOf(this.roomName) // !!UNSAFE MEMORY ACCESS!!
-    if (index >= 0) {
-      Memory.ignoreRooms.splice(index, 1)
-    }
-  }
-
   public run(dependency: Dependency): EnergyHarvestRoomProcessApi {
     const room = Game.rooms[this.roomName]
     const creepsByRole = this.getMyCreeps(dependency)
