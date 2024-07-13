@@ -7,6 +7,7 @@ import { UniqueName } from "./game_system_calls/unique_name"
 import { AnySerializable } from "os_v5/utility/types"
 import { StartupLauncher } from "./process_manager/startup_launcher"
 import { DeferredTaskManager } from "./depended_system_calls/deferred_task_manager"
+import { ScheduledStaticTaskManager } from "./depended_system_calls/scheduled_static_task_manager"
 
 class SystemCallList {
   // Primitive
@@ -16,6 +17,7 @@ class SystemCallList {
 
   // Depended
   readonly deferredTaskManager = DeferredTaskManager
+  readonly scheduledStaticTaskManager = ScheduledStaticTaskManager
 
   // Process
   readonly processManager = ProcessManager
