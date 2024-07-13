@@ -31,6 +31,12 @@ export const StandardIO = (input: string): string => {
     const argumentParser = new ArgumentParser(input.split(" "))
     return runCommands(argumentParser, commandRunners)
   } catch (error) {
+    if (error instanceof Error) {
+      const stackTrace = error.stack
+      if (stackTrace != null) {
+        return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}\n${stackTrace}`
+      }
+    }
     return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
   }
 }

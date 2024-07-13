@@ -95,22 +95,22 @@ export const NotificationManager: SystemCall<"NotificationManager", Notification
   },
 
   send(notification: Notification): void {
-    const systemCallObservers = systemCallEventObservers.get(notification.eventName)
-    if (systemCallObservers != null) {
-      systemCallObservers.forEach(observer => {
-        ErrorMapper.wrapLoop((): void => {
-          observer.didReceiveNotification(notification)
-        }, `NotificationManager.send(${observer}, ${notification.eventName})`)()
-      })
-    }
+    ErrorMapper.wrapLoop((): void => {
+      const systemCallObservers = systemCallEventObservers.get(notification.eventName)
+      if (systemCallObservers != null) {
+        systemCallObservers.forEach(observer => {
+          ErrorMapper.wrapLoop((): void => {
+            observer.didReceiveNotification(notification)
+          }, `NotificationManager.send(${observer}, ${notification.eventName})`)()
+        })
+      }
 
-    const processIds = notificationManagerMemory.observers[notification.eventName]
-    if (processIds == null) {
-      return
-    }
+      const processIds = notificationManagerMemory.observers[notification.eventName]
+      if (processIds == null) {
+        return
+      }
 
-    processIds.forEach(processId => {
-      ErrorMapper.wrapLoop((): void => {
+      processIds.forEach(processId => {
         const process = ProcessManager.getProcess(processId) as (AnyProcess & NotificationReceiver) | null
         if (process == null || process.didReceiveNotification == null) {
           return
@@ -120,10 +120,11 @@ export const NotificationManager: SystemCall<"NotificationManager", Notification
           return
         }
 
-        process.didReceiveNotification(notification)
-
-      }, `NotificationManager.send(${process}, ${notification.eventName})`)()
-    })
+        ErrorMapper.wrapLoop((): void => {
+          process.didReceiveNotification(notification)
+        }, `NotificationManager.send(${process}, ${notification.eventName})`)()
+      })
+    }, "NotificationManager.send()")()
   },
 }
 
