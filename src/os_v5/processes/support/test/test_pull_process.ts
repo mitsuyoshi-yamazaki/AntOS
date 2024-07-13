@@ -9,7 +9,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepBody } from "utility/creep_body_v2"
 import { V5Creep } from "os_v5/utility/game_object/creep"
 import { V3BridgeSpawnRequestProcessApi } from "os_v5/processes/v3_os_bridge/v3_bridge_spawn_request_process"
-import { Position } from "shared/utility/position_v2"
+import { describePosition, Position } from "shared/utility/position_v2"
 import { CreepName } from "prototype/creep"
 
 
@@ -41,6 +41,7 @@ type TestPullProcessState = {
   readonly r: RoomName    /// Room name
   readonly ci: number     /// Creep index
   readonly s: CreepName[] /// Squad creep names
+  readonly o: CreepOrder | null /// Creep order
 }
 
 ProcessDecoder.register("TestPullProcess", (processId: TestPullProcessId, state: TestPullProcessState) => TestPullProcess.decode(processId, state))
@@ -64,7 +65,8 @@ export class TestPullProcess extends Process<Dependency, RoomName, void, TestPul
     public readonly processId: TestPullProcessId,
     private readonly roomName: RoomName,
     private creepIndex: number,
-    private readonly squadCreepNames: CreepName[],
+    private squadCreepNames: CreepName[],
+    private creepOrder: CreepOrder | null,
   ) {
     super()
     this.identifier = roomName
@@ -76,15 +78,16 @@ export class TestPullProcess extends Process<Dependency, RoomName, void, TestPul
       r: this.roomName,
       ci: this.creepIndex,
       s: this.squadCreepNames,
+      o: this.creepOrder,
     }
   }
 
   public static decode(processId: TestPullProcessId, state: TestPullProcessState): TestPullProcess {
-    return new TestPullProcess(processId, state.r, state.ci, state.s)
+    return new TestPullProcess(processId, state.r, state.ci, state.s, state.o)
   }
 
   public static create(processId: TestPullProcessId, roomName: RoomName): TestPullProcess {
-    return new TestPullProcess(processId, roomName, 0, [])
+    return new TestPullProcess(processId, roomName, 0, [], null)
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
@@ -113,11 +116,16 @@ export class TestPullProcess extends Process<Dependency, RoomName, void, TestPul
   public didReceiveMessage(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
       this.addCreepsCommand,
+      this.addCreepOrderCommand,
     ])
   }
 
   public run(dependency: Dependency): void {
     const creeps: MyCreep[] = dependency.getCreepsFor(this.processId)
+    if (creeps.length <= 0) {
+      this.squadCreepNames = []
+    }
+
     if (this.spawnRequests[0] != null) {
       const creepCodename = this.spawnRequests[0].codename
       const spawned = creeps.some(creep => creep.memory.c === creepCodename)
@@ -130,11 +138,92 @@ export class TestPullProcess extends Process<Dependency, RoomName, void, TestPul
       this.spawn(dependency, this.spawnRequests[0])
     }
 
+    creeps.forEach(creep => {
+      if (this.squadCreepNames.includes(creep.name) === true) {
+        return
+      }
+      switch (creep.memory.r) {
+      case "puller":
+        this.squadCreepNames.unshift(creep.name)
+        break
+      case "worker":
+        this.squadCreepNames.push(creep.name)
+        break
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = creep.memory.r
+        break
+      }
+      }
+    })
 
+    const squadCreeps = this.squadCreepNames.flatMap((creepName): MyCreep[] => {
+      const creep = Game.creeps[creepName]
+      if (creep == null) {
+        return []
+      }
+      return [creep as unknown as MyCreep]
+    })
+
+    if (this.creepOrder != null) {
+      this.runSquad(squadCreeps, this.creepOrder)
+    }
   }
 
 
   // Private
+  private runSquad(creeps: MyCreep[], order: CreepOrder): void {
+    switch (order.case) {
+    case "move":
+      this.runMoveOrder(creeps, order)
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = order.case
+      break
+    }
+    }
+  }
+
+  private runMoveOrder(creeps: MyCreep[], order: CreepOrderMove): void {
+    const puller = creeps.shift()
+    if (puller == null || puller.memory.r !== "puller") {
+      return
+    }
+
+    const firstWorker = creeps[0]
+    if (firstWorker == null) {
+      return
+    }
+
+    if (puller.pos.getRangeTo(firstWorker.pos) > 1) {
+      puller.moveTo(firstWorker)
+      return
+    }
+
+    if (puller.pos.isEqualTo(order.position.x, order.position.y) === true) {
+      return
+    }
+
+    puller.moveTo(order.position.x, order.position.y)
+    const pullResult = puller.pull(firstWorker as unknown as Creep)
+    const moveResult = firstWorker.move(puller as unknown as Creep)
+
+    if (pullResult !== OK) {
+      puller.say(`${pullResult}`)
+    }
+    if (moveResult !== OK) {
+      firstWorker.say(`${moveResult}`)
+    }
+
+    // let isSnake = true
+    // creeps.reduce((previous, current) => {
+    //   if (previous.pos.getRangeTo(current.pos) !== 1) {
+    //     isSnake = false
+    //   }
+    //   return current
+    // })
+  }
 
   private spawn(dependency: Dependency, request: SpawnRequest): void {
     const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { c: request.codename, r: request.role })
@@ -171,6 +260,35 @@ export class TestPullProcess extends Process<Dependency, RoomName, void, TestPul
       })
 
       return `Added ${this.spawnRequests.map(x => x.role).join(", ")}`
+    }
+  }
+
+  private readonly addCreepOrderCommand: Command = {
+    command: "add_order",
+    help: (): string => "add_order {order type} {...args}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      return runCommands(argumentParser, [
+        this.parseMoveOrderCommand,
+      ])
+    }
+  }
+
+  private readonly parseMoveOrderCommand: Command = {
+    command: "move",
+    help: (): string => "move {x},{y}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const position = argumentParser.localPosition([0, "position"]).parse()
+
+      this.creepOrder = {
+        case: "move",
+        position,
+      }
+
+      return `Set move order to ${describePosition(position)}`
     }
   }
 }
