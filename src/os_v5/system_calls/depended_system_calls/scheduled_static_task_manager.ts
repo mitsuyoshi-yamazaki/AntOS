@@ -3,6 +3,9 @@ import { AnyProcessId } from "os_v5/process/process"
 import { SystemCall } from "os_v5/system_call"
 import { EmptySerializable } from "os_v5/utility/types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
+import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
+import { NotificationReceiver, PrimitiveNotificationCenter } from "./notification_center"
+import { Notification } from "./notification_center_types"
 
 // ScheduledStaticTaskManagerで管理することのオーバーヘッドがあるため、短期間の定期処理は行わない
 type ScheduledStaticTaskInterval = "100" | "1000" | "10000" | "50000"
@@ -21,7 +24,7 @@ type Task = {
 }
 
 let taskIdIndex = 0
-const taskQueue: Task[] = []
+let taskQueue: Task[] = []
 const taskIdsInQueue = new Set<TaskId>()
 const allTasks = new ValuedArrayMap<ScheduledStaticTaskInterval, Task>()
 
@@ -31,6 +34,7 @@ export const ScheduledStaticTaskManager: SystemCall<"ScheduledStaticTaskManager"
   [Symbol.toStringTag]: "ScheduledStaticTaskManager",
 
   load(): void {
+    PrimitiveNotificationCenter.addObserver(processWatcher, processManagerProcessDidKillNotification)
   },
 
   startOfTick(): void {
@@ -57,7 +61,12 @@ export const ScheduledStaticTaskManager: SystemCall<"ScheduledStaticTaskManager"
 
   // ScheduledStaticTaskManager
   add(processId: AnyProcessId, interval: ScheduledStaticTaskInterval, task: () => void, options?: { canSkip?: 1 | 2 | 4 }): void {
-    allTasks.getValueFor(interval).push({
+    const tasks = allTasks.getValueFor(interval)
+    if (tasks.some(task => task.processId === processId) === true) {
+      return
+    }
+
+    tasks.push({
       taskId: taskIdIndex,
       processId,
       interval,
@@ -67,6 +76,31 @@ export const ScheduledStaticTaskManager: SystemCall<"ScheduledStaticTaskManager"
 
     taskIdIndex += 1
   },
+}
+
+const processWatcher: NotificationReceiver = {
+  didReceiveNotification(notification: Notification): void {
+    switch (notification.eventName) {
+    case processManagerProcessDidKillNotification: {
+      const didKillNotification = notification as Notification & ProcessManagerProcessDidKillNotification
+      removeTasksFor(didKillNotification.killedProcessId)
+      return
+    }
+    default:
+      return
+    }
+  },
+}
+
+const removeTasksFor = (processId: AnyProcessId): void => {
+  taskQueue = taskQueue.filter(task => task.processId !== processId)
+  allTasks.forEach(tasks => {
+    // Processごとに登録できるタスクは各intervalでひとつずつであるため
+    const index = tasks.findIndex(task => task.processId === processId)
+    if (index >= 0) {
+      tasks.splice(index, 1)
+    }
+  })
 }
 
 const addTasksToQueue = (tasks: Task[]): void => {
