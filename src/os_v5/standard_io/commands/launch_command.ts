@@ -20,6 +20,7 @@ import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processe
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
 import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
+import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
 
 
 // Support
@@ -113,6 +114,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["CreepTaskStateManagementProcess", processId => CreepTaskStateManagementProcess.create(processId as CreepTaskStateManagementProcessId)],
     ["CreepDistributorProcess", processId => CreepDistributorProcess.create(processId as CreepDistributorProcessId)],
     ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
+    ["CreepPositionAssignerProcess", processId => CreepPositionAssignerProcess.create(processId as CreepPositionAssignerProcessId)],
     ["V3ResourceDistributorProcess", processId => V3ResourceDistributorProcess.create(processId as V3ResourceDistributorProcessId)],
     ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)]
   ]

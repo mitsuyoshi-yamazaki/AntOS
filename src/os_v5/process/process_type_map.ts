@@ -26,6 +26,7 @@ export const processTypeDecodingMap = {
   s: "GenericRoomManagerProcess",
   t: "TestHarvestRoomProcess",
   u: "TestPullProcess",
+  v: "CreepPositionAssignerProcess",
 } as const
 
 
@@ -55,6 +56,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
   "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
+  "CreepPositionAssignerProcess",
   "V3BridgeDriverProcess",
 
   // Driver with dependencies
@@ -128,6 +130,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   RoomPathfindingProcess: "driver",
   CreepDistributorProcess: "driver",
   CreepTrafficManagerProcess: "driver",
+  CreepPositionAssignerProcess: "driver",
   CreepTaskStateManagementProcess: "driver",
 
   // v3 Bridge
