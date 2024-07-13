@@ -126,6 +126,27 @@ export const NotificationCenter: SystemCall<"NotificationCenter", NotificationCe
   },
 }
 
+export const NotificationCenterAccessor = {
+  getRegisteredObservers(): Map<string, AnyProcess[]> {
+    const result = new Map<string, AnyProcess[]>()
+
+    ;
+    (strictEntries(notificationCenterMemory.observers) as [string, AnyProcessId[]][]).forEach(([eventName, processIds]) => {
+      const processes = processIds.flatMap((processId): AnyProcess[] => {
+        const process = ProcessManager.getProcess(processId)
+        if (process == null) {
+          return []
+        }
+        return [process]
+      })
+
+      result.set(eventName, processes)
+    })
+
+    return result
+  },
+}
+
 export const PrimitiveNotificationCenter = {
   addObserver(observer: NotificationReceiver, eventName: string): void {
     const observers = systemCallEventObservers.get(eventName)

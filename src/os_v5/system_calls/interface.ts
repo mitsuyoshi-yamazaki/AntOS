@@ -15,17 +15,17 @@ class SystemCallList {
   readonly logger = Logger
   readonly environment = Environment
   readonly uniqueId = UniqueId
-  readonly notificationCenter = NotificationCenter
 
   // Depended
   readonly deferredTaskManager = DeferredTaskManager
   readonly scheduledStaticTaskManager = ScheduledStaticTaskManager
-
-  // Process
-  readonly processManager = ProcessManager
-
+  readonly notificationCenter = NotificationCenter
   // Game SystemCall
   readonly uniqueName = UniqueName
+
+  // Process
+  // ProcessManagerがProcessを復元する前にStartupLauncher以外のSystemCallは初期化されている必要がある
+  readonly processManager = ProcessManager
 
   // Application
   readonly startupLauncher = StartupLauncher
