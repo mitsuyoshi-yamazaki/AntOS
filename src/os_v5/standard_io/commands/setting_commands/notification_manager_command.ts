@@ -1,6 +1,6 @@
 import { Command, runCommands } from "os_v5/standard_io/command"
-import { NotificationCenter, NotificationCenterAccessor } from "os_v5/system_calls/depended_system_calls/notification_center"
-import { NotificationCenterTestNotification } from "os_v5/system_calls/depended_system_calls/notification_center_types"
+import { NotificationCenter, NotificationCenterAccessor } from "os_v5/system_calls/depended_system_calls/notification_manager"
+import { NotificationCenterTestNotification } from "os_v5/system_calls/depended_system_calls/notification_manager_types"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 

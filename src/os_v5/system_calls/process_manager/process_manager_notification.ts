@@ -1,5 +1,5 @@
 import { AnyProcessId } from "os_v5/process/process"
-import { Notification } from "../depended_system_calls/notification_center_types"
+import { Notification } from "../depended_system_calls/notification_manager_types"
 
 export const processManagerProcessDidLaunchNotification = "pm_process_launched"
 export const processManagerProcessDidKillNotification = "pm_process_killed"

@@ -7,7 +7,7 @@ import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { SystemCall } from "../../system_call"
 import { ProcessManager } from "../process_manager/process_manager"
 import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
-import { Notification } from "./notification_center_types"
+import { Notification } from "./notification_manager_types"
 
 export type NotificationReceiver = {
   didReceiveNotification(notification: Notification): void

@@ -4,8 +4,8 @@ import { SystemCall } from "os_v5/system_call"
 import { EmptySerializable } from "os_v5/utility/types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
-import { NotificationReceiver, PrimitiveNotificationCenter } from "./notification_center"
-import { Notification } from "./notification_center_types"
+import { NotificationReceiver, PrimitiveNotificationCenter } from "./notification_manager"
+import { Notification } from "./notification_manager_types"
 
 // ScheduledStaticTaskManagerで管理することのオーバーヘッドがあるため、短期間の定期処理は行わない
 type ScheduledStaticTaskInterval = "100" | "1000" | "10000" | "50000"
