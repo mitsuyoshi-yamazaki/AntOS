@@ -1,5 +1,6 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
 import { AnyProcess, AnyProcessId, Process, ProcessError, ProcessId } from "../../process/process"
 import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
@@ -12,7 +13,7 @@ import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
 import { ProcessExecutionLog } from "./process_execution_log"
-import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
 
 
 /**
@@ -238,6 +239,11 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     processStore.add(process) // 全ての処理が完了してから追加する： process側で中断する際は didLaunch() で例外を出す
+    notificationCenterDelegate({
+      eventName: processManagerProcessDidLaunchNotification,
+      launchedProcessId: process.processId,
+    })
+
     return process
   },
 
@@ -275,6 +281,11 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     processStore.remove(process)
+
+    notificationCenterDelegate({
+      eventName: processManagerProcessDidKillNotification,
+      killedProcessId: process.processId,
+    })
   },
 
 
@@ -335,6 +346,14 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
     processManagerMemory.cpuUsageThreshold = threshold
   },
+}
+
+
+let notificationCenterDelegate: (notification: ProcessManagerNotification) => void = (): void => {
+  console.log("NotificationCenterDelegate called before initialized")
+}
+export const setNotificationCenterDelegate = (delegate: (notification: ProcessManagerNotification) => void): void => {
+  notificationCenterDelegate = delegate
 }
 
 

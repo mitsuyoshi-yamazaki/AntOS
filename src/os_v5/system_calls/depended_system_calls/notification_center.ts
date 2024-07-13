@@ -3,8 +3,11 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { strictEntries } from "shared/utility/strict_entries"
 import type { Mutable } from "shared/utility/types"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { SystemCall } from "../../system_call"
 import { ProcessManager } from "../process_manager/process_manager"
+import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
+import { Notification } from "./notification_center_types"
 
 export type NotificationReceiver = {
   didReceiveNotification(notification: Notification): void
@@ -25,16 +28,14 @@ const initializeMemory = (memory: NotificationCenterMemory): NotificationCenterM
 }
 
 let notificationCenterMemory: NotificationCenterMemory = {} as NotificationCenterMemory
+const notificationEventsByProcessId = new ValuedArrayMap<AnyProcessId, string>()
 const systemCallEventObservers = new Map<string, NotificationReceiver[]>() // EventName, NotificationReceiver[]
-
-type Notification = {
-  readonly eventName: string
-}
 
 
 type NotificationCenter = {
   addObserver(process: AnyProcess & NotificationReceiver, eventName: string): void
-  removeObserver(process: AnyProcess & NotificationReceiver, eventName: string): void
+  removeObserverFor(processId: AnyProcessId, eventName: string): void
+  removeObserver(processId: AnyProcessId): void
 
   send(notification: Notification): void
 }
@@ -46,6 +47,8 @@ export const NotificationCenter: SystemCall<"NotificationCenter", NotificationCe
   load(memory: NotificationCenterMemory): void {
     notificationCenterMemory = initializeMemory(memory)
     clearNotObservedEvents()
+
+    PrimitiveNotificationCenter.addObserver(processWatcher, processManagerProcessDidKillNotification)
   },
 
   startOfTick(): void {
@@ -62,23 +65,35 @@ export const NotificationCenter: SystemCall<"NotificationCenter", NotificationCe
     if (observers.includes(processId) === true) {
       return
     }
+
+    notificationEventsByProcessId.getValueFor(processId).push(eventName)
     observers.push(processId)
   },
 
-  removeObserver(process: AnyProcess & NotificationReceiver, eventName: string): void {
+  removeObserverFor(processId: AnyProcessId, eventName: string): void {
     const observers = notificationCenterMemory.observers[eventName]
     if (observers == null) {
       return
     }
 
-    const index = observers.indexOf(process.processId)
+    const index = observers.indexOf(processId)
     if (index >= 0) {
       observers.splice(index, 0)
     }
   },
 
+  removeObserver(processId: AnyProcessId): void {
+    const eventNames = notificationEventsByProcessId.get(processId)
+    if (eventNames == null) {
+      return
+    }
+
+    eventNames.forEach(eventName => {
+      this.removeObserverFor(processId, eventName)
+    })
+  },
+
   send(notification: Notification): void {
-  // TODO: system call のobserver
     const systemCallObservers = systemCallEventObservers.get(notification.eventName)
     if (systemCallObservers != null) {
       systemCallObservers.forEach(observer => {
@@ -111,7 +126,7 @@ export const NotificationCenter: SystemCall<"NotificationCenter", NotificationCe
   },
 }
 
-export const NotificationCenterSystemCall = {
+export const PrimitiveNotificationCenter = {
   addObserver(observer: NotificationReceiver, eventName: string): void {
     const observers = systemCallEventObservers.get(eventName)
     if (observers != null) {
@@ -121,6 +136,20 @@ export const NotificationCenterSystemCall = {
 
     const newObservers: NotificationReceiver[] = [observer]
     systemCallEventObservers.set(eventName, newObservers)
+  },
+}
+
+const processWatcher: NotificationReceiver = {
+  didReceiveNotification(notification: Notification): void {
+    switch (notification.eventName) {
+    case processManagerProcessDidKillNotification: {
+      const didKillNotification = notification as Notification & ProcessManagerProcessDidKillNotification
+      NotificationCenter.removeObserver(didKillNotification.killedProcessId)
+      return
+    }
+    default:
+      return
+    }
   },
 }
 
