@@ -4,7 +4,7 @@ import { SystemCall } from "os_v5/system_call"
 import { EmptySerializable } from "os_v5/utility/types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
-import { NotificationReceiver, PrimitiveNotificationCenter } from "./notification_manager"
+import { NotificationReceiver, PrimitiveNotificationManager } from "./notification_manager"
 import { Notification } from "./notification_manager_types"
 
 // ScheduledStaticTaskManagerで管理することのオーバーヘッドがあるため、短期間の定期処理は行わない
@@ -34,7 +34,7 @@ export const ScheduledStaticTaskManager: SystemCall<"ScheduledStaticTaskManager"
   [Symbol.toStringTag]: "ScheduledStaticTaskManager",
 
   load(): void {
-    PrimitiveNotificationCenter.addObserver(processWatcher, processManagerProcessDidKillNotification)
+    PrimitiveNotificationManager.addObserver(processWatcher, processManagerProcessDidKillNotification)
   },
 
   startOfTick(): void {

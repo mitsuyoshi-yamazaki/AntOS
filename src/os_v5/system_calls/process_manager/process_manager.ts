@@ -239,7 +239,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     processStore.add(process) // 全ての処理が完了してから追加する： process側で中断する際は didLaunch() で例外を出す
-    notificationCenterDelegate({
+    notificationManagerDelegate({
       eventName: processManagerProcessDidLaunchNotification,
       launchedProcessId: process.processId,
     })
@@ -282,7 +282,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     processStore.remove(process)
 
-    notificationCenterDelegate({
+    notificationManagerDelegate({
       eventName: processManagerProcessDidKillNotification,
       killedProcessId: process.processId,
     })
@@ -349,11 +349,11 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 }
 
 
-let notificationCenterDelegate: (notification: ProcessManagerNotification) => void = (): void => {
-  console.log("NotificationCenterDelegate called before initialized")
+let notificationManagerDelegate: (notification: ProcessManagerNotification) => void = (): void => {
+  console.log("notificationManagerDelegate called before initialized")
 }
-export const setNotificationCenterDelegate = (delegate: (notification: ProcessManagerNotification) => void): void => {
-  notificationCenterDelegate = delegate
+export const setNotificationManagerDelegate = (delegate: (notification: ProcessManagerNotification) => void): void => {
+  notificationManagerDelegate = delegate
 }
 
 

@@ -2,8 +2,8 @@ export type Notification = {
   readonly eventName: string
 }
 
-export const notificationCenterTestNotification = "nc_test"
-export type NotificationCenterTestNotification = Notification & {
-  readonly eventName: "nc_test"
+export const notificationManagerTestNotification = "nm_test"
+export type NotificationManagerTestNotification = Notification & {
+  readonly eventName: "nm_test"
   readonly message: string
 }

@@ -4,7 +4,7 @@ import { Logger } from "./logger"
 import { ProcessManager } from "./process_manager/process_manager"
 import { Environment } from "./environment"
 import { UniqueId } from "./unique_id"
-import { NotificationCenter } from "./depended_system_calls/notification_manager"
+import { NotificationManager } from "./depended_system_calls/notification_manager"
 import { UniqueName } from "./game_system_calls/unique_name"
 import { StartupLauncher } from "./process_manager/startup_launcher"
 import { DeferredTaskManager } from "./depended_system_calls/deferred_task_manager"
@@ -19,7 +19,8 @@ class SystemCallList {
   // Depended
   readonly deferredTaskManager = DeferredTaskManager
   readonly scheduledStaticTaskManager = ScheduledStaticTaskManager
-  readonly notificationCenter = NotificationCenter
+  readonly notificationManager = NotificationManager
+
   // Game SystemCall
   readonly uniqueName = UniqueName
 
