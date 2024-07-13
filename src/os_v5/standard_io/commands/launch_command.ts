@@ -16,6 +16,7 @@ import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_r
 import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 
 // Game Object Management
+import { TerrainCacheProcess, TerrainCacheProcessId } from "../../processes/game_object_management/terrain_cache_process"
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
@@ -116,7 +117,8 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
     ["CreepPositionAssignerProcess", processId => CreepPositionAssignerProcess.create(processId as CreepPositionAssignerProcessId)],
     ["V3ResourceDistributorProcess", processId => V3ResourceDistributorProcess.create(processId as V3ResourceDistributorProcessId)],
-    ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)]
+    ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)],
+    ["TerrainCacheProcess", processId => TerrainCacheProcess.create(processId as TerrainCacheProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
