@@ -166,7 +166,7 @@ const processWatcher: NotificationReceiver = {
   didReceiveNotification(notification: Notification): void {
     switch (notification.eventName) {
     case processManagerProcessDidKillNotification: {
-      const didKillNotification = notification as Notification & ProcessManagerProcessDidKillNotification
+      const didKillNotification = notification as ProcessManagerProcessDidKillNotification
       NotificationManager.removeObserver(didKillNotification.killedProcessId)
       return
     }

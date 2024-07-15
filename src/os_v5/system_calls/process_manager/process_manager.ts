@@ -376,7 +376,11 @@ const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
       return [process]
 
     } catch (error) {
-      PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+      if (error instanceof Error) {
+        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
+      } else {
+        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+      }
       return []
     }
   })

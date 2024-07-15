@@ -28,6 +28,7 @@ export const processTypeDecodingMap = {
   u: "TestPullProcess",
   v: "CreepPositionAssignerProcess",
   w: "TerrainCacheProcess",
+  x: "OnHeapContinuousTaskProcess",
 } as const
 
 
@@ -59,6 +60,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
   "V3BridgeDriverProcess",
   "TerrainCacheProcess",
+  "OnHeapContinuousTaskProcess",
 
   // Driver with dependencies
   "CreepTaskStateManagementProcess",
@@ -146,6 +148,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   TestGuardRoomProcess: "support",
   TestHarvestRoomProcess: "support",
   TestPullProcess: "support",
+  OnHeapContinuousTaskProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {
