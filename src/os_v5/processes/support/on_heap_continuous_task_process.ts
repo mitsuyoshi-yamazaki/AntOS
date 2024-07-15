@@ -24,12 +24,14 @@ export class OnHeapContinuousTaskProcess extends Process<void, string, void, OnH
     processes: [],
   }
 
+  private ticksPassed = 0
+
   private constructor(
     public readonly processId: OnHeapContinuousTaskProcessId,
     public readonly identifier: string,
     private readonly launcherProcessId: AnyProcessId | "system",
     private readonly until: Timestamp,
-    private readonly task: () => void,
+    private readonly task: (ticksPassed: Timestamp) => void,
   ) {
     super()
 
@@ -50,7 +52,7 @@ export class OnHeapContinuousTaskProcess extends Process<void, string, void, OnH
     throw new Error(`(${processId}) ${coloredProcessType("OnHeapContinuousTaskProcess")}[${state.id}] Stopped task launched by ${state.l} (${ticksLeft} ticks left)`)
   }
 
-  public static create(processId: OnHeapContinuousTaskProcessId, identifier: string, launcherProcessId: AnyProcessId | "system", duration: Timestamp, task: () => void): OnHeapContinuousTaskProcess {
+  public static create(processId: OnHeapContinuousTaskProcessId, identifier: string, launcherProcessId: AnyProcessId | "system", duration: Timestamp, task: (ticksPassed: Timestamp) => void): OnHeapContinuousTaskProcess {
     return new OnHeapContinuousTaskProcess(processId, identifier, launcherProcessId, Game.time + duration, task)
   }
 
@@ -71,7 +73,8 @@ export class OnHeapContinuousTaskProcess extends Process<void, string, void, OnH
       return
     }
 
-    this.task()
+    this.task(this.ticksPassed)
+    this.ticksPassed += 1
   }
 
 

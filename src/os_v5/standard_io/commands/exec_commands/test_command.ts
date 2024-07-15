@@ -1,6 +1,10 @@
 import { Command, runCommands } from "../../command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
+import { OnHeapContinuousTaskProcess, OnHeapContinuousTaskProcessId } from "os_v5/processes/support/on_heap_continuous_task_process"
+import { Timestamp } from "shared/utility/timestamp"
+import { Logger } from "os_v5/system_calls/logger"
 
 
 const tab = ConsoleUtility.tab
@@ -18,11 +22,39 @@ export const TestCommand: Command = {
   run(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
       ArgumentParserCommand,
+      ContinuousTaskTestCommand,
     ])
   },
 }
 
 
+// OnHeapContinuousTaskProcess
+const ContinuousTaskTestCommand: Command = {
+  command: "continuous_task",
+
+  help(): string {
+    return "continuous_task duration={duration}"
+  },
+
+  /** @throws */
+  run(argumentParser: ArgumentParser): string {
+    const duration = argumentParser.int("duration").parse({ min: 1, max: 100 })
+    const task = (ticksPassed: Timestamp) => {
+      console.log(`OnHeapContinuousTask test: ${Game.time} at ${ticksPassed}`)
+    }
+
+    const process = ProcessManager.addProcess((processId: OnHeapContinuousTaskProcessId) => {
+      return OnHeapContinuousTaskProcess.create(processId, "Test", "system", duration, task)
+    })
+
+    Logger.setLogEnabledFor([process.processId], duration + 1)
+
+    return `Launched ${process}`
+  },
+}
+
+
+// ArgumentParserCommand
 const argumentParserArgumentTypes = ["string", "int", "process"] as const
 type ArgumentParserArgumentType = typeof argumentParserArgumentTypes[number]
 const isArgumentParserArgumentType = (arg: string): arg is ArgumentParserArgumentType => (argumentParserArgumentTypes as Readonly<string[]>).includes(arg)
