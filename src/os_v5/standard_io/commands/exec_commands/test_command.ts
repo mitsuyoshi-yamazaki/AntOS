@@ -5,6 +5,7 @@ import { ProcessManager } from "os_v5/system_calls/process_manager/process_manag
 import { OnHeapContinuousTaskProcess, OnHeapContinuousTaskProcessId } from "os_v5/processes/support/on_heap_continuous_task_process"
 import { Timestamp } from "shared/utility/timestamp"
 import { Logger } from "os_v5/system_calls/logger"
+import { RoomModuleTestCommand } from "./test_room_module_command"
 
 
 const tab = ConsoleUtility.tab
@@ -23,6 +24,7 @@ export const TestCommand: Command = {
     return runCommands(argumentParser, [
       ArgumentParserCommand,
       ContinuousTaskTestCommand,
+      RoomModuleTestCommand,
     ])
   },
 }
