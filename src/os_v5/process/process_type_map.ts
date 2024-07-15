@@ -57,13 +57,13 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
   "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
-  "CreepPositionAssignerProcess",
   "V3BridgeDriverProcess",
   "TerrainCacheProcess",
 
   // Driver with dependencies
   "CreepTaskStateManagementProcess",
   "V3BridgeSpawnRequestProcess",
+  "CreepPositionAssignerProcess",
 
   // Application with dependencies
   "V3ResourceDistributorProcess",
