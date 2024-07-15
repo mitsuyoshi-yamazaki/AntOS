@@ -29,6 +29,7 @@ import { /* 直接手動で生成することはない */ } from "../../processe
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 import { TestPullProcess, TestPullProcessId } from "../../processes/support/test/test_pull_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
+import {  } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 

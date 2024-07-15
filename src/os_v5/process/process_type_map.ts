@@ -29,6 +29,7 @@ export const processTypeDecodingMap = {
   v: "CreepPositionAssignerProcess",
   w: "TerrainCacheProcess",
   x: "OnHeapContinuousTaskProcess",
+  y: "TestTrafficManagerV3Process",
 } as const
 
 
@@ -79,6 +80,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "StaticMonoCreepBuildRoomProcess",
   "DisposeResourceProcess",
   "TestTrafficManagerV2Process",
+  "TestTrafficManagerV3Process",
   "TestGuardRoomProcess",
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
@@ -145,6 +147,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   // Support
   TestProcess: "support",
   TestTrafficManagerV2Process: "support",
+  TestTrafficManagerV3Process: "support",
   TestGuardRoomProcess: "support",
   TestHarvestRoomProcess: "support",
   TestPullProcess: "support",
