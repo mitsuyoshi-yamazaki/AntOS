@@ -187,6 +187,14 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
     if (this.stopSpawningReasons.length > 0) {
       descriptions.push(`spawn stopped due to: ${this.stopSpawningReasons.join(", ")}`)
     }
+
+    const target = Game.getObjectById(this.targetId)
+    if (target != null) {
+      descriptions.push(`${target}`)
+    } else {
+      descriptions.push(this.targetId)
+    }
+
     return descriptions.join(", ")
   }
 
