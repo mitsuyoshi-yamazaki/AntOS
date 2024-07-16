@@ -27,6 +27,7 @@ import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { AggressiveClaimProcess } from "process/onetime/attack/aggressive_claim_process"
+import { EndlessTask } from "v5_object_task/creep_task/meta_task/endless_task"
 
 ProcessDecoder.register("World35440623DowngradeControllerProcess", state => {
   return World35440623DowngradeControllerProcess.decode(state as World35440623DowngradeControllerProcessState)
@@ -45,6 +46,7 @@ export interface World35440623DowngradeControllerProcessState extends ProcessSta
   maxClaimSize: number
   spawnStopReasons: string[]
   attackControllerInterval: number
+  suicideWhenFinished: boolean
 }
 
 export class World35440623DowngradeControllerProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
@@ -68,6 +70,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
     private readonly maxClaimSize: number,
     private spawnStopReasons: string[],
     private attackControllerInterval: number,
+    private suicideWhenFinished: boolean,
   ) {
     this.identifier = `${this.constructor.name}_${this.launchTime}_${this.parentRoomName}_${this.targetRoomNames}`
     this.codename = generateCodename(this.identifier, this.launchTime)
@@ -85,6 +88,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       maxClaimSize: this.maxClaimSize,
       spawnStopReasons: this.spawnStopReasons,
       attackControllerInterval: this.attackControllerInterval,
+      suicideWhenFinished: this.suicideWhenFinished,
     }
   }
 
@@ -99,6 +103,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       state.maxClaimSize,
       state.spawnStopReasons,
       state.attackControllerInterval,
+      state.suicideWhenFinished ?? true,
     )
   }
 
@@ -112,6 +117,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       maxClaimSize,
       [],
       defaultAttackControllerInterval,
+      true,
     )
   }
 
@@ -137,7 +143,7 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "stop", "resume", "reset_timer", "change_interval"]
+    const commandList = ["help", "stop", "resume", "reset_timer", "change_interval", "suicide_when_finished"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -169,6 +175,14 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       return `changed interval ${oldValue} =&gt ${this.attackControllerInterval}`
     }
 
+    case "suicide_when_finished": {
+      const listArguments = new ListArguments(components)
+      const previousValue = this.suicideWhenFinished
+      this.suicideWhenFinished = listArguments.boolean(0, "suicide enabled").parse()
+
+      return `set suicide_when_finished ${previousValue} => ${this.suicideWhenFinished}`
+    }
+
     default:
       return `Invalid command ${command}. "help" to show command list`
     }
@@ -195,6 +209,48 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
       creep => this.newTaskFor(creep),
     )
   }
+
+  // private destroyStructures(targetRoom: Room): boolean {
+  //   if (targetRoom.find(FIND_HOSTILE_CREEPS).length > 0) {
+  //     return false
+  //   }
+
+  //   try {
+  //     const destroyStructure = (structure: AnyStructure): void => {
+  //       const result = structure.destroy()
+  //       switch (result) {
+  //       case OK:
+  //         return
+  //       case ERR_NOT_OWNER:
+  //         throw `destroyStructure() ${roomLink(targetRoom.name)} is not mine`
+  //       case ERR_BUSY:
+  //         throw `destroyStructure() enemy in ${roomLink(targetRoom.name)}`
+  //       }
+  //     }
+
+  //     const walls = targetRoom.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_WALL } })
+  //     walls.forEach(wall => destroyStructure(wall))
+
+  //     const hostileStructures = targetRoom.find(FIND_HOSTILE_STRUCTURES)
+  //     const excludeStructureTypes: StructureConstant[] = [
+  //       STRUCTURE_STORAGE,
+  //       STRUCTURE_TERMINAL,
+  //       STRUCTURE_NUKER,
+  //     ]
+  //     hostileStructures.forEach(structure => {
+  //       if (excludeStructureTypes.includes(structure.structureType) === true) {
+  //         return
+  //       }
+  //       destroyStructure(structure)
+  //     })
+
+  //   } catch (error) {
+  //     PrimitiveLogger.fatal(`${this.taskIdentifier} ${error}`)
+  //     return false
+  //   }
+
+  //   return true
+  // }
 
   private spawnDowngrader(resources: OwnedRoomResource): void {
     const maxClaimSize = Math.min(this.maxClaimSize, 20)
@@ -313,7 +369,11 @@ export class World35440623DowngradeControllerProcess implements Process, Procedu
         processLog(this, `${coloredText("[Downgrade]", "info")} ${roomLink(creep.room.name)} is about to unclaim`)
       }
 
-      return RunApiTask.create(SuicideApiWrapper.create())
+      if (this.suicideWhenFinished === true) {
+        return RunApiTask.create(SuicideApiWrapper.create())
+      } else {
+        return EndlessTask.create()
+      }
     }
     return moveToNextRoomTask
   }
