@@ -247,7 +247,7 @@ export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
 
 export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
   /** throws */
-  public parse(options: { requiredEnergyLimit?: number }): CreepBody {
+  public parse(options?: { requiredEnergyLimit?: number }): CreepBody {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
