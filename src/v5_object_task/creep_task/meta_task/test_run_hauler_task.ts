@@ -69,13 +69,13 @@ export class TestRunHaulerTask implements CreepTask {
     }
 
     if (creep.pos.getRangeTo(this.storage.pos) < 5) {
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions())
+      this.moveCreep(creep)
       return TaskProgressType.InProgress
     }
 
     if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       creep.drop(RESOURCE_ENERGY)
-      creep.moveTo(this.destinationPosition, defaultMoveToOptions())
+      this.moveCreep(creep)
       // const droppedResource = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 0)[0]
       // const talk = droppedResource == null ? "no" : "!"  // no
       // creep.say(talk)
@@ -83,12 +83,19 @@ export class TestRunHaulerTask implements CreepTask {
       const droppedResource = creep.pos.findInRange(FIND_DROPPED_RESOURCES, 1)[0]
       if (droppedResource != null) {
         if (droppedResource.pos.isEqualTo(creep.pos) === true) {
-          creep.moveTo(this.destinationPosition, defaultMoveToOptions())
+          this.moveCreep(creep)
           return TaskProgressType.InProgress
         }
         creep.pickup(droppedResource)
       }
     }
     return TaskProgressType.InProgress
+  }
+
+  private moveCreep(creep: Creep): void {
+    if (creep.fatigue > 0) {
+      return
+    }
+    creep.moveTo(this.destinationPosition, defaultMoveToOptions())
   }
 }

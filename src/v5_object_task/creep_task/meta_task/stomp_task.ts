@@ -79,6 +79,9 @@ export class StompTask implements CreepTask {
       time: Game.time,
     }
 
+    if (creep.fatigue > 0) {
+      return TaskProgressType.InProgress
+    }
     const result = creep.moveTo(this.position.x, this.position.y, this.moveToOpts())
     switch (result) {
     case OK:
