@@ -24,8 +24,6 @@ import { prepareUnclaim, unclaim } from "./exec_commands/unclaim_command"
 import { execIntegratedAttackCommand } from "../../../../submodules/private/attack/integrated_attack/standard_io/integrated_attack_command"
 import { execResourceCommand } from "./exec_commands/resource_command"
 import { ArgumentParser } from "shared/utility/argument_parser/argument_parser"
-import { isRoomName } from "utility/room_coordinate"
-import { SendEnergyToAllyProcess } from "process/onetime/send_energy_to_ally_process"
 import { execMemorySerializationCommand } from "./exec_commands/memory_serialization_command"
 
 export class ExecCommand implements ConsoleCommand {
