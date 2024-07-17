@@ -58,7 +58,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
-  "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
   "V3BridgeDriverProcess",
   "TerrainCacheProcess",
   "OnHeapContinuousTaskProcess",
@@ -67,6 +66,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepTaskStateManagementProcess",
   "V3BridgeSpawnRequestProcess",
   "CreepPositionAssignerProcess",
+  "CreepTrafficManagerProcess",
 
   // Application with dependencies
   "V3ResourceDistributorProcess",
