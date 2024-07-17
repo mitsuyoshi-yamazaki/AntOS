@@ -32,7 +32,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
   [Symbol.toStringTag]: "Kernel",
 
   name: "AntOS",
-  version: new SemanticVersion(5, 10, 3),
+  version: new SemanticVersion(5, 10, 5),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),

@@ -12,14 +12,16 @@ const bodyPartEncodingMap = {
 } as const
 const bodyPartDecodingMap = reverseConstMapping(bodyPartEncodingMap)
 
+
+export type CreepBodyStringRepresentation = string & { readonly idType: unique symbol }
+
 export class CreepBody {
-  public get stringRepresentation(): string {
+  public get stringRepresentation(): CreepBodyStringRepresentation {
     if (this._stringRepresentation == null) {
       this._stringRepresentation = this.getStringRepresentation()
     }
     return this._stringRepresentation
   }
-  private _stringRepresentation: string | null = null
 
 
   public get energyCost(): number {
@@ -34,25 +36,29 @@ export class CreepBody {
 
 
   private constructor(
-    public readonly bodyParts: BodyPartConstant[]
+    public readonly bodyParts: BodyPartConstant[],
+    private _stringRepresentation: CreepBodyStringRepresentation | null,
   ) {
   }
 
   public static createWithBodyParts(bodyParts: BodyPartConstant[]): CreepBody {
-    return new CreepBody(bodyParts)
+    return new CreepBody(bodyParts, null)
   }
 
   /**
    * @throws
    * @param body {parts count}{parts type}... ex: 3w3c6m
    */
-  public static createFromTextRepresentation(input: string): CreepBody {
-    return new CreepBody(parseEncodedCreepBody(input))
+  public static createFromRawStringRepresentation(input: string): CreepBody {
+    return new CreepBody(parseEncodedCreepBody(input), input as CreepBodyStringRepresentation)
   }
 
+  public static createFromStringRepresentation(input: CreepBodyStringRepresentation): CreepBody {
+    return new CreepBody(parseEncodedCreepBody(input), input)
+  }
 
   // Private
-  private getStringRepresentation(): string {
+  private getStringRepresentation(): CreepBodyStringRepresentation {
     const consecutiveBodyParts: {count: number, body: BodyPartConstant}[] = []
     let currentBody: { count: number, body: BodyPartConstant } | null = null
 
@@ -81,7 +87,12 @@ export class CreepBody {
       consecutiveBodyParts.push(currentBody)
     }
 
-    return consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join("").toUpperCase()
+    const stringRepresentation = consecutiveBodyParts.map(body => `${body.count}${bodyPartDecodingMap[body.body]}`).join("").toUpperCase()
+    return stringRepresentation as CreepBodyStringRepresentation
+  }
+
+  public toString(): string {
+    return this.stringRepresentation
   }
 }
 
