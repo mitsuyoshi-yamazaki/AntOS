@@ -30,7 +30,7 @@ import { /* 直接手動で生成することはない */ } from "../../processe
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
 import { TestPullProcess, TestPullProcessId } from "../../processes/support/test/test_pull_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
-import {  } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
+import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 
@@ -136,6 +136,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
   const processConstructors: [ProcessTypes, boolean, (roomName: RoomName) => (processId: AnyProcessId) => AnyProcess][] = [
     ["TestPullProcess", true, roomName => processId => TestPullProcess.create(processId as TestPullProcessId, roomName)],
     ["TestHarvestRoomProcess", true, roomName => processId => TestHarvestRoomProcess.create(processId as TestHarvestRoomProcessId, roomName)],
+    ["TestTrafficManagerV3Process", true, roomName => processId => TestTrafficManagerV3Process.create(processId as TestTrafficManagerV3ProcessId, roomName)],
   ]
 
   processConstructors.forEach(([processType, my, constructor]) => {
