@@ -49,6 +49,7 @@ import { ArgumentParser } from "os_v5/utility/argument_parser/argument_parser"
 import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
+import { ProcessManagerError } from "os_v5/system_calls/process_manager/process_manager_error"
 
 
 export const LaunchCommand: Command = {
@@ -63,7 +64,24 @@ export const LaunchCommand: Command = {
     const processType = argumentParser.typedString([0, "process type"], "ProcessTypes", isProcessType).parse()
     argumentParser.moveOffset(+1)
 
-    return launchProcess(processType, argumentParser)
+    try {
+      return launchProcess(processType, argumentParser)
+    } catch (error) {
+      if (error instanceof ProcessManagerError) {
+        switch (error.error.case) {
+        case "already launched":
+        case "lack of dependencies":
+          return `${ConsoleUtility.colored("[Failed to launch]", "error")} ${error}`
+
+        default: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const _: never = error.error
+          throw error
+        }
+        }
+      }
+      throw error
+    }
   },
 }
 
