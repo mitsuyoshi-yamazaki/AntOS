@@ -116,13 +116,14 @@ const showMemory = (process: AnyProcess): string => {
     process,
     ...ProcessManager.getProcessRunningState(process.processId),
   }
+  const processState = process.encode()
+
   const results: string[] = [
     AlignedProcessInfo.header("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     processDescription(runningState),
+    "Process State:",
+    getObjectDescription(processState, 0),
   ]
-
-  const processState = process.encode()
-  results.push(getObjectDescription(processState, 0))
 
   return results.join("\n")
 }
