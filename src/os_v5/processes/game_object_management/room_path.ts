@@ -1,4 +1,4 @@
-import { Position } from "shared/utility/position_v2"
+import { getDirectionFrom, Position } from "shared/utility/position_v2"
 import { RoomName } from "shared/utility/room_name_types"
 
 export type RoomPathState = {
@@ -68,7 +68,11 @@ export class RoomPath {
 
   // ---- Private ---- //
   private getDirections(): DirectionConstant[] {
-    console.log("getDirections() not implemented yet")
-    return [] // TODO:
+    const directions: DirectionConstant[] = []
+    this.path.reduce((previous, current) => {
+      directions.push(getDirectionFrom(previous, current))
+      return current
+    })
+    return directions
   }
 }
