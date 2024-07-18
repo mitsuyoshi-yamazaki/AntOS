@@ -15,6 +15,7 @@ import { KeywordArguments } from "shared/utility/argument_parser/keyword_argumen
 import { GameMap } from "game/game_map"
 import type { RoomName } from "shared/utility/room_name_types"
 import { isRoomName } from "utility/room_coordinate"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 type TargetRoom = {
   readonly parentRoomName: RoomName
@@ -222,6 +223,12 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
       requiredEnergy,
       ignoreSpawn,
     })
+
+    if (Memory.v3.rooms.includes(targetRoomName) === true) {
+      PrimitiveLogger.programError(`BootstrapRoomManagerProcess ${ConsoleUtility.roomLink(targetRoomName)} already added to v3 room list`)
+    }
+
+    Memory.v3.rooms.push(targetRoomName)
   }
 
   private addBootstrapRoom(parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], claimInfo: { parentRoomName: RoomName, waypoints: RoomName[] }, requiredEnergy: number, ignoreSpawn: boolean): Result<string, string> {
