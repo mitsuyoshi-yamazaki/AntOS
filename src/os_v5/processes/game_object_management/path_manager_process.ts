@@ -2,11 +2,13 @@ import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, Read
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { ProcessDefaultIdentifier } from "os_v5/process/process"
 import { TerrainCacheProcessApi } from "./terrain_cache_process"
-import { Position } from "shared/utility/position_v2"
+import { getPositionSpecifier, Position } from "shared/utility/position_v2"
 import { RoomPath, RoomPathState } from "./room_path"
 import { RoomName } from "shared/utility/room_name_types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { strictEntries } from "shared/utility/strict_entries"
+import { GameConstants } from "utility/constants"
+import { describePosition } from "prototype/room_position"
 
 
 type FindPathOptions = {
@@ -16,6 +18,7 @@ type FindPathOptions = {
 
 export type PathManagerProcessApi = {
   findPath(room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null
+  createPath(roomName: RoomName, path: Position[]): RoomPath
 }
 
 type PathManagerProcessState = {
@@ -39,6 +42,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
   }
 
   private readonly roomPaths = new ValuedArrayMap<RoomName, RoomPath>()
+  private readonly costMatrixCache = new Map<RoomName, CostMatrix>()
 
   private constructor(
     public readonly processId: PathManagerProcessId,
@@ -81,14 +85,61 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
   public run(dependency: Dependency): PathManagerProcessApi {
     return {
       findPath: (room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null => this.findPath(room, start, end, options),
+      createPath: (roomName: RoomName, path: Position[]) => RoomPath.create("TODO", roomName, path),
     }
   }
 
 
   // Private
   private findPath(room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null {
+    const obstacleCost = GameConstants.pathFinder.costs.obstacle
+
+    const roomCallback = () => {
+      const cached = this.costMatrixCache.get(room.name)
+      if (cached != null) {
+        return cached
+      }
+
+      const costMatrix = new PathFinder.CostMatrix
+      const fixedPositions = new Set<string>()
+
+      room.find(FIND_STRUCTURES).forEach(structure => {
+        const positionSpecifier = getPositionSpecifier(structure.pos)
+        if (fixedPositions.has(positionSpecifier) === true) {
+          return
+        }
+
+        switch (structure.structureType) {
+        case STRUCTURE_ROAD:
+          costMatrix.set(structure.pos.x, structure.pos.y, 1)
+          fixedPositions.add(positionSpecifier)
+          return
+        case STRUCTURE_CONTAINER:
+          return
+        case STRUCTURE_RAMPART:
+          if (structure.my === true) {
+            costMatrix.set(structure.pos.x, structure.pos.y, 2)
+          } else {
+            costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+            fixedPositions.add(positionSpecifier)
+          }
+          return
+        default:
+          costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+          fixedPositions.add(positionSpecifier)
+          return
+        }
+      })
+
+      this.costMatrixCache.set(room.name, costMatrix)
+      return costMatrix
+    }
+
     const pathFinderOptions: PathFinderOpts = {
+      plainCost: 2,
+      swampCost: 10,
       maxRooms: 1,
+      roomCallback,
     }
     const destination = {
       pos: new RoomPosition(end.x, end.y, room.name),
@@ -99,10 +150,12 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
     const startPosition = new RoomPosition(start.x, start.y, room.name)
     const result = PathFinder.search(startPosition, destination, pathFinderOptions)
 
+    console.log(`${room.name} from ${describePosition(start)} to ${describePosition(end)} path: ${result.path}`) // FixMe:
+
     if (result.incomplete === true || result.path.length <= 0) {
       return null
     }
 
-    return RoomPath.createWithRoomPositionPath("TODO", room.name, result.path)
+    return RoomPath.createWithRoomPositionPath("TODO", room.name, [new RoomPosition(start.x, start.y, room.name), ...result.path])
   }
 }
