@@ -26,7 +26,7 @@ export class TerrainCacheProcess extends Process<void, ProcessDefaultIdentifier,
     ],
   }
 
-  // private readonly accessLog = new ValuedArrayMap<RoomName, Timestamp>() // TODO: キャッシュのクリア
+  // private readonly accessLog = new ValuedArrayMap<RoomName, Timestamp>() // TODO: キャッシュのクリア // キャッシュ不要な部屋についてはオプションできるようにする
   private readonly terrainCache = new ValuedMapMap<RoomName, PositionSpecifier, Terrain>()
 
   private constructor(
