@@ -12,7 +12,7 @@ export class RoomPath {
     if (this._directions == null) {
       this._directions = this.getDirections()
     }
-    return [...this.directions]
+    return [...this._directions]
   }
 
   private constructor(
