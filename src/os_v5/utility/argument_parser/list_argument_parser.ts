@@ -66,6 +66,7 @@ type IterableArgumentOption<T extends IterableArgumentType> = ParameterType<Iter
 export type IterableArgumentReturnType<T extends IterableArgumentType> = ReturnType<IterableArgumentParserType<T>["parse"]>
 
 
+// src/os_v5/utility/v5_argument_parser/list_argument_parser.ts も変更すること
 export class ListArgumentParser<T extends IterableArgumentType> extends SingleOptionalArgument<IterableArgumentOption<T>, Array<IterableArgumentReturnType<T>>> {
   public constructor(
     key: ArgumentKey,
@@ -82,7 +83,16 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
       throw this.missingArgumentErrorMessage()
     }
 
-    const components = this.value.split(",")
+    const separator = ((): string => {
+      switch (this.argumentType) {
+      case "local_position":
+        return ";"
+      default:
+        return ","
+      }
+    })()
+
+    const components = this.value.split(separator)
     const results: Array<IterableArgumentReturnType<T>> = []
     const errors: string[] = []
 

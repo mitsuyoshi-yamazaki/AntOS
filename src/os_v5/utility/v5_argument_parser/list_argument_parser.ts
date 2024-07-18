@@ -36,7 +36,16 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
       throw this.missingArgumentErrorMessage()
     }
 
-    const components = this.value.split(",")
+    const separator = ((): string => {
+      switch (this.argumentType) {
+      case "local_position":
+        return ";"
+      default:
+        return ","
+      }
+    })()
+
+    const components = this.value.split(separator)
     const results: Array<IterableArgumentReturnType<T>> = []
     const errors: string[] = []
 

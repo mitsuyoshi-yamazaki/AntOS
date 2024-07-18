@@ -39,7 +39,8 @@ export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: 
 
 export class StringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
-  public parse(): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): string {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -117,7 +118,8 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
   }
 
   /** throws */
-  public parse(): T {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): T {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -154,7 +156,8 @@ export class RoomObjectIdArgument extends SingleOptionalArgument<{shouldVisible?
 
 export class RoomObjectArgument extends SingleOptionalArgument<void, RoomObject & _HasId> {
   /** throws */
-  public parse(): RoomObject & _HasId {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): RoomObject & _HasId {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -186,7 +189,8 @@ export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room>
 
 export class MyRoomArgument extends SingleOptionalArgument<void, MyRoom> {
   /** throws */
-  public parse(): MyRoom {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): MyRoom {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -217,7 +221,8 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
 
 export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
   /** throws */
-  public parse(): Creep {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): Creep {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -232,7 +237,8 @@ export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
 
 export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
   /** throws */
-  public parse(): Creep {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): Creep {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -252,7 +258,7 @@ export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLi
       throw this.missingArgumentErrorMessage()
     }
 
-    const creepBody = CreepBody.createFromTextRepresentation(this.value)
+    const creepBody = CreepBody.createFromRawStringRepresentation(this.value)
     if (options?.requiredEnergyLimit != null) {
       if (creepBody.energyCost > options.requiredEnergyLimit) {
         throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`
